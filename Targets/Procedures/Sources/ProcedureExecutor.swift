@@ -9,7 +9,7 @@ import Combine
 import Conversations
 import MessagePack
 
-enum ProcedureExecutorEvent {
+public enum ProcedureExecutorEvent {
   case requestReceived(id: UInt, method: String, params: [MessagePackValue])
   case notificationReceived(method: String, params: [MessagePackValue])
 }
@@ -67,7 +67,6 @@ public class ProcedureExecutor {
         let messages = messageEmitter.messages
         let iterator = messages.makeAsyncIterator()
         while let message = try await iterator.next() {
-          print(message)
           guard !Task.isCancelled, let self else {
             break
           }
