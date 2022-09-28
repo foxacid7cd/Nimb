@@ -1,0 +1,146 @@
+//
+//  Message.swift
+//
+//
+//  Created by Yevhenii Matviienko on 28.09.2022.
+//
+
+import MessagePack
+
+public enum Message {
+  case request(id: UInt, method: String, params: [MessagePackValue])
+  case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
+  case notification(method: String, params: [MessagePackValue])
+}
+
+extension Message: Packable {
+  public var packed: MessagePackValue {
+    let array: [MessagePackValue]
+
+    switch self {
+      case let .request(id, method, params):
+        array = [
+          .uint(UInt64(MessageTypeCode.request.rawValue)),
+          .uint(UInt64(id)),
+          .string(method),
+          .array(params)
+        ]
+        
+      case let .response(id, isSuccess, payload):
+        array = [
+          .uint(UInt64(MessageTypeCode.response.rawValue)),
+          .uint(UInt64(id)),
+          isSuccess ? .nil : payload,
+          isSuccess ? payload : .nil
+        ]
+
+      case let .notification(method, params):
+        array = [
+          .uint(UInt64(MessageTypeCode.notification.rawValue)),
+          .string(method),
+          .array(params)
+        ]
+    }
+
+    return .array(array)
+  }
+}
+
+extension Message: Unpackable {
+  public init(packed: MessagePackValue) throws {
+    switch packed {
+      case var .array(array):
+        var message: Message
+
+        guard !array.isEmpty, let messageTypeCode = array.removeFirst().uintValue.flatMap(MessageTypeCode.init) else {
+          throw MessageUnpackError(description: "Could not unpack message type code.")
+        }
+        switch messageTypeCode {
+          case .request:
+            guard !array.isEmpty, let id = array.removeFirst().uintValue else {
+              throw MessageUnpackError(description: "Could not unpack request messsage id")
+            }
+            guard !array.isEmpty, let method = array.removeFirst().stringValue else {
+              throw MessageUnpackError(description: "Could not unpack request message method")
+            }
+            let params: [MessagePackValue]? = {
+              guard !array.isEmpty else { return nil }
+              let value = array.removeFirst()
+              if value.isNil {
+                return []
+              } else if let params = value.arrayValue {
+                return params
+              } else {
+                return nil
+              }
+            }()
+            guard let params else {
+              throw MessageUnpackError(description: "Could not unpack request message method params")
+            }
+            message = .request(id: id, method: method, params: params)
+
+          case .response:
+            guard !array.isEmpty, let id = array.removeFirst().uintValue else {
+              throw MessageUnpackError(description: "Could not unpack response messsage id")
+            }
+            guard !array.isEmpty else {
+              throw MessageUnpackError(description: "Could not unpack response error message element")
+            }
+            let errorValue = array.removeFirst()
+            guard !array.isEmpty else {
+              throw MessageUnpackError(description: "Could not unpack response result message element")
+            }
+            let resultValue = array.removeFirst()
+
+            let isSuccess: Bool
+            let payload: MessagePackValue
+            if errorValue.isNil {
+              isSuccess = true
+              payload = resultValue
+            } else {
+              isSuccess = false
+              payload = errorValue
+            }
+            message = .response(id: id, isSuccess: isSuccess, payload: payload)
+
+          case .notification:
+            guard !array.isEmpty, let method = array.removeFirst().stringValue else {
+              throw MessageUnpackError(description: "Could not unpack notification message method")
+            }
+            let params: [MessagePackValue]? = {
+              guard !array.isEmpty else {
+                return nil
+              }
+              let value = array.removeFirst()
+              if value.isNil {
+                return []
+              } else if let params = value.arrayValue {
+                return params
+              } else {
+                return nil
+              }
+            }()
+            guard let params else {
+              throw MessageUnpackError(description: "Could not unpack notification message params")
+            }
+            message = .notification(method: method, params: params)
+        }
+
+        guard array.isEmpty else {
+          throw MessageUnpackError(description: "Too much elements in root array")
+        }
+        self = message
+
+      default:
+        throw MessageUnpackError(description: "Root packed value is not an array.")
+    }
+  }
+}
+
+public enum MessageTypeCode: UInt {
+  case request = 0, response, notification
+}
+
+public struct MessageUnpackError: Error, CustomStringConvertible {
+  public var description: String
+}
