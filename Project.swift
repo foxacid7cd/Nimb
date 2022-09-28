@@ -1,7 +1,7 @@
 import ProjectDescription
 
 func createTarget(name: String, product: Product, dependencies: [TargetDependency] = []) -> Target {
-  return .init(name: name, platform: .macOS, product: product, productName: nil, bundleId: "foxacid7cd.\(name)", deploymentTarget: .macOS(targetVersion: "12.3"), infoPlist: .extendingDefault(with: [:]), sources: ["Targets/\(name)/Sources/**"], resources: ["Targets/\(name)/Resources/**"], copyFiles: nil, headers: nil, entitlements: nil, scripts: [], dependencies: dependencies, settings: nil, coreDataModels: [], environment: [:], launchArguments: [], additionalFiles: [])
+  return .init(name: name, platform: .macOS, product: product, bundleId: "foxacid7cd.\(name)", deploymentTarget: .macOS(targetVersion: "12.3"), infoPlist: .extendingDefault(with: [:]), sources: ["Targets/\(name)/Sources/**"], resources: ["Targets/\(name)/Resources/**"], dependencies: dependencies)
 }
 
 let project = Project(
@@ -15,13 +15,19 @@ let project = Project(
       indentWidth: 2,
       tabWidth: 2,
       wrapsLines: true
-    ),
-    xcodeProjectName: "Nims"
+    )
   ),
   targets: [
     createTarget(
       name: "Nims",
       product: .app,
+      dependencies: [
+        .target(name: "Procedures")
+      ]
+    ),
+    createTarget(
+      name: "neogen",
+      product: .commandLineTool,
       dependencies: [
         .target(name: "Procedures")
       ]
@@ -39,10 +45,6 @@ let project = Project(
       dependencies: [
         .external(name: "MessagePack")
       ]
-    ),
-  ],
-  schemes: [],
-  fileHeaderTemplate: .none,
-  additionalFiles: [],
-  resourceSynthesizers: []
+    )
+  ]
 )
