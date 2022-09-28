@@ -29,7 +29,8 @@ let project = Project(
       name: "neogen",
       product: .commandLineTool,
       dependencies: [
-        .target(name: "Procedures")
+        .target(name: "Procedures"),
+        .external(name: "Stencil")
       ]
     ),
     createTarget(

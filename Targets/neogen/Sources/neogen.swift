@@ -1,5 +1,6 @@
 import Foundation
 import MessagePack
+import Stencil
 import Procedures
 
 @main
