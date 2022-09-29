@@ -19,8 +19,18 @@ let project = Project(
       product: .app(infoPlist: .default),
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Procedures")
+        .target(name: "Client")
       ]
+    ),
+    .nimsTarget(
+      name: "Client",
+      product: .library,
+      dependencies: [
+        .target(name: "Library"),
+        .target(name: "Procedures")
+      ],
+      hasGeneratedSources: true,
+      hasBuildSupportAssets: true
     ),
     .nimsTarget(
       name: "neogen",
@@ -30,8 +40,7 @@ let project = Project(
         .target(name: "Procedures"),
         .external(name: "Stencil"),
         .external(name: "ArgumentParser")
-      ],
-      hasDevelopmentAssets: true
+      ]
     ),
     .nimsTarget(
       name: "Procedures",
@@ -59,7 +68,9 @@ let project = Project(
       name: "Nims",
       shared: true,
       hidden: false,
-      buildAction: .buildAction(targets: ["Nims"]),
+      buildAction: .buildAction(
+        targets: ["Nims"]
+      ),
       testAction: nil,
       runAction: .runAction(configuration: .debug),
       archiveAction: .archiveAction(configuration: .release),
@@ -76,20 +87,13 @@ let project = Project(
       testAction: nil,
       runAction: .runAction(
         configuration: .debug,
-        preActions: [
-          .init(
-            title: "Create Development Run Output Directory",
-            scriptText: "mkdir ${DERIVED_FILE_DIR}/Generated",
-            target: "neogen"
-          )
-        ],
         arguments: .init(
           launchArguments: [
             "/opt/homebrew/bin/nvim",
-            "${PROJECT_DIR}/Targets/neogen/Development/Templates",
-            "${DERIVED_FILE_DIR}/Generated"
+            "${PROJECT_DIR}/Targets/Client/Support/Templates",
+            "${PROJECT_DIR}/Targets/Client/Generated"
           ]
-            .map { .init(name: $0, isEnabled: true) }
+          .map { .init(name: $0, isEnabled: true) }
         )
       ),
       archiveAction: nil,

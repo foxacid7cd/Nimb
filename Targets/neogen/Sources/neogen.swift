@@ -1,6 +1,6 @@
-import Foundation
-import Combine
 import ArgumentParser
+import Combine
+import Foundation
 import Library
 import MessagePack
 import PathKit
@@ -26,7 +26,7 @@ struct neogen: AsyncParsableCommand {
   
   private func fetchRawNvimAPIInfo() async throws -> [MessagePackValue: MessagePackValue] {
     let process = Process()
-    process.executableURL = Path(nvim).url
+    process.executableURL = URL(fileURLWithPath: nvim)
     process.arguments = ["--api-info"]
     
     let inputPipe = Pipe()

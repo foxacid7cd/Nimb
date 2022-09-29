@@ -6,12 +6,15 @@ public enum NimsProduct {
   case library
 }
 
-extension Target {
-  public static func nimsTarget(
+public extension Target {
+  static func nimsTarget(
     name: String,
     product: NimsProduct,
+    scripts: [TargetScript] = [],
     dependencies: [TargetDependency] = [],
-    hasDevelopmentAssets: Bool = false
+    hasGeneratedSources: Bool = false,
+    hasDevelopmentAssets: Bool = false,
+    hasBuildSupportAssets: Bool = false
   ) -> Target {
     .init(
       name: name,
@@ -36,7 +39,13 @@ extension Target {
             return .default
         }
       }(),
-      sources: ["Targets/\(name)/Sources/**"],
+      sources: .init(
+        globs: [
+          "Targets/\(name)/Sources/**",
+          hasGeneratedSources ? "Targets/\(name)/Generated/**" : nil
+        ]
+        .compactMap { $0 }
+      ),
       resources: {
         switch product {
           case .app:
@@ -45,9 +54,14 @@ extension Target {
             return []
         }
       }(),
+      scripts: scripts,
       dependencies: dependencies,
       settings: .settings(),
-      additionalFiles: hasDevelopmentAssets ? ["Targets/\(name)/Development/**"] : []
+      additionalFiles: [
+        hasDevelopmentAssets ? "Targets/\(name)/Development/**" : nil,
+        hasBuildSupportAssets ? "Targets/\(name)/Support/**" : nil
+      ]
+      .compactMap { $0 }
     )
   }
 }

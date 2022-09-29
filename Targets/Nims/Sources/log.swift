@@ -1,6 +1,6 @@
 //
 //  log.swift
-//  
+//
 //
 //  Created by Yevhenii Matviienko on 22.09.2022.
 //

@@ -5,20 +5,20 @@
 //  Created by Yevhenii Matviienko on 27.09.2022.
 //
 
-import Foundation
 import Combine
-import Procedures
+import Foundation
 import MessagePack
+import Procedures
 
 @MainActor
 class NvimInstance {
   var events: AsyncThrowingPublisher<some Publisher> {
     procedureExecutor.events
   }
-  
+
   private let process: Process
   private let procedureExecutor: ProcedureExecutor
-  
+
   init(executableURL: URL) throws {
     let process = Process()
     self.process = process
@@ -33,7 +33,7 @@ class NvimInstance {
 
     let outputPipe = Pipe()
     process.standardOutput = outputPipe
-    
+
     self.procedureExecutor = .init(
       messageEmitter: outputPipe.fileHandleForReading,
       messageConsumer: inputPipe.fileHandleForWriting
@@ -53,11 +53,11 @@ class NvimInstance {
         log(.error, "nvim stderr: \(string).")
       }
     }
-    
+
     try process.run()
     log(.info, "Started nvim.")
   }
-  
+
   func execute(procedure: Procedure) async throws -> ExecutionResult {
     try await procedureExecutor.execute(procedure: procedure)
   }
