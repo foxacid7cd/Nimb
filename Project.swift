@@ -1,7 +1,23 @@
 import ProjectDescription
 
-func createTarget(name: String, product: Product, dependencies: [TargetDependency] = []) -> Target {
-  return .init(name: name, platform: .macOS, product: product, bundleId: "foxacid7cd.\(name)", deploymentTarget: .macOS(targetVersion: "12.3"), infoPlist: .extendingDefault(with: [:]), sources: ["Targets/\(name)/Sources/**"], resources: ["Targets/\(name)/Resources/**"], dependencies: dependencies, settings: .settings(base: [:], debug: [:], release: [:], defaultSettings: .recommended()))
+func makeTarget(name: String, product: Product, dependencies: [TargetDependency] = []) -> Target {
+  return .init(
+    name: name,
+    platform: .macOS,
+    product: product,
+    bundleId: "foxacid7cd.\(name)",
+    deploymentTarget: .macOS(targetVersion: "12.3"),
+    infoPlist: .extendingDefault(with: [:]),
+    sources: ["Targets/\(name)/Sources/**"],
+    resources: product == .app ? ["Targets/\(name)/Resources/**"] : [],
+    dependencies: dependencies,
+    settings: .settings(
+      base: [:],
+      debug: [:],
+      release: [:],
+      defaultSettings: .recommended()
+    )
+  )
 }
 
 let project = Project(
@@ -17,36 +33,44 @@ let project = Project(
     )
   ),
   targets: [
-    createTarget(
+    makeTarget(
       name: "Nims",
       product: .app,
       dependencies: [
+        .target(name: "Library"),
         .target(name: "Procedures")
       ]
     ),
-    createTarget(
+    makeTarget(
       name: "neogen",
       product: .commandLineTool,
       dependencies: [
+        .target(name: "Library"),
         .target(name: "Procedures"),
         .external(name: "Stencil"),
-        .external(name: "ArgumentParser"),
+        .external(name: "ArgumentParser")
       ]
     ),
-    createTarget(
+    makeTarget(
       name: "Procedures",
       product: .staticLibrary,
       dependencies: [
+        .target(name: "Library"),
         .target(name: "Conversations")
       ]
     ),
-    createTarget(
+    makeTarget(
       name: "Conversations",
       product: .staticLibrary,
       dependencies: [
+        .target(name: "Library"),
         .external(name: "MessagePack")
       ]
     ),
+    makeTarget(
+      name: "Library",
+      product: .staticLibrary
+    )
   ],
   additionalFiles: ["Templates/**"]
 )

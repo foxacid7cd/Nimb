@@ -6,6 +6,7 @@
 //
 
 import MessagePack
+import Library
 
 public enum Message {
   case request(id: UInt, method: String, params: [MessagePackValue])
@@ -53,15 +54,15 @@ extension Message: Unpackable {
         var message: Message
 
         guard !array.isEmpty, let messageTypeCode = array.removeFirst().uintValue.flatMap(MessageTypeCode.init) else {
-          throw MessageUnpackError(description: "Could not unpack message type code.")
+          throw "Could not unpack message type code."
         }
         switch messageTypeCode {
           case .request:
             guard !array.isEmpty, let id = array.removeFirst().uintValue else {
-              throw MessageUnpackError(description: "Could not unpack request messsage id")
+              throw "Could not unpack request messsage id"
             }
             guard !array.isEmpty, let method = array.removeFirst().stringValue else {
-              throw MessageUnpackError(description: "Could not unpack request message method")
+              throw "Could not unpack request message method"
             }
             let params: [MessagePackValue]? = {
               guard !array.isEmpty else { return nil }
@@ -75,20 +76,20 @@ extension Message: Unpackable {
               }
             }()
             guard let params else {
-              throw MessageUnpackError(description: "Could not unpack request message method params")
+              throw "Could not unpack request message method params"
             }
             message = .request(id: id, method: method, params: params)
 
           case .response:
             guard !array.isEmpty, let id = array.removeFirst().uintValue else {
-              throw MessageUnpackError(description: "Could not unpack response messsage id")
+              throw "Could not unpack response messsage id"
             }
             guard !array.isEmpty else {
-              throw MessageUnpackError(description: "Could not unpack response error message element")
+              throw "Could not unpack response error message element"
             }
             let errorValue = array.removeFirst()
             guard !array.isEmpty else {
-              throw MessageUnpackError(description: "Could not unpack response result message element")
+              throw "Could not unpack response result message element"
             }
             let resultValue = array.removeFirst()
 
@@ -105,7 +106,7 @@ extension Message: Unpackable {
 
           case .notification:
             guard !array.isEmpty, let method = array.removeFirst().stringValue else {
-              throw MessageUnpackError(description: "Could not unpack notification message method")
+              throw "Could not unpack notification message method"
             }
             let params: [MessagePackValue]? = {
               guard !array.isEmpty else {
@@ -121,18 +122,18 @@ extension Message: Unpackable {
               }
             }()
             guard let params else {
-              throw MessageUnpackError(description: "Could not unpack notification message params")
+              throw "Could not unpack notification message params"
             }
             message = .notification(method: method, params: params)
         }
 
         guard array.isEmpty else {
-          throw MessageUnpackError(description: "Too much elements in root array")
+          throw "Too much elements in root array"
         }
         self = message
 
       default:
-        throw MessageUnpackError(description: "Root packed value is not an array.")
+        throw "Root packed value is not an array."
     }
   }
 }

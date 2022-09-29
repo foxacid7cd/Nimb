@@ -2,6 +2,7 @@ import Foundation
 import MessagePack
 import Stencil
 import ArgumentParser
+import Library
 import Procedures
 
 @main
@@ -58,10 +59,10 @@ struct neogen: AsyncParsableCommand {
         
         do {
           let (value, remainder) = try unpack(outputAccumulator)
-          assert(remainder.isEmpty, "Entire stdout output must be one message pack object")
+          assert(remainder.isEmpty, "Entire stdout output is expected to be one message pack object.")
           let json = try jsonify(value: value)
           guard let dictionary = json as? [String: Any] else {
-            throw JsonifyError(description: "Not a top level dictionary.")
+            throw "Not a top level dictionary."
           }
           let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
           let nvimApiInfo = try JSONDecoder().decode(NvimAPIInfo.self, from: jsonData)
@@ -100,7 +101,7 @@ struct neogen: AsyncParsableCommand {
 private func jsonify(value: MessagePackValue) throws -> Any {
   switch value {
     case .nil:
-      throw JsonifyError(description: "Unsupported nil value type.")
+      throw "Unsupported nil value type."
       
     case let .bool(value):
       return value
@@ -131,17 +132,13 @@ private func jsonify(value: MessagePackValue) throws -> Any {
       try value
         .forEach { key, value in
           guard let key = key.stringValue else {
-            throw JsonifyError(description: "Unsupported map key, \(key), \(value).")
+            throw "Unsupported map key, \(key), \(value)."
           }
           dictionary[key] = try jsonify(value: value)
         }
       return dictionary
       
     case .extended:
-      throw JsonifyError(description: "Unsupported extended value type.")
+      throw "Unsupported extended value type."
   }
-}
-
-struct JsonifyError: Error, CustomStringConvertible {
-  var description: String
 }
