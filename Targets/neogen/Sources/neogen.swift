@@ -1,45 +1,31 @@
-import Foundation
-import MessagePack
-import Stencil
 import ArgumentParser
+import Foundation
 import Library
+import MessagePack
+import PathKit
 import Procedures
+import Stencil
 
 @main
 struct neogen: AsyncParsableCommand {
   @Argument(help: "Path to nvim executable.", completion: .file(extensions: ["nvim"]))
   var nvim: String
   
-  @Argument(help: "Directory with templates.", completion: .directory)
-  var templatesDirectory: String
+  @Argument(help: "Path to templates directory.", completion: .directory)
+  var templates: String
   
-  @Argument(help: "Directory for generated source code files.", completion: .directory)
-  var outputDirectory: String
+  @Argument(help: "Path to directory for generated output files.", completion: .directory)
+  var output: String
   
   mutating func run() async throws {
-    struct Article {
-      let title: String
-      let author: String
-    }
-    
-    let context = [
-      "articles": [
-        Article(title: "Migrating from OCUnit to XCTest", author: "Kyle Fuller"),
-        Article(title: "Memory Management with ARC", author: "Kyle Fuller"),
-      ]
-    ]
-    
-    let env = Environment(loader: FileSystemLoader(paths: [.init(templatesDirectory)]), templateClass: Template.self, trimBehaviour: .smart)
-    let rendered = try env.renderTemplate(name: "Template.stencil", context: context)
-    
-    let url = URL(fileURLWithPath: outputDirectory, isDirectory: true)
-    let fileUrl = url.appendingPathComponent("output.txt", isDirectory: false)
-    try rendered.data(using: .utf8)!.write(to: fileUrl, options: [])
+    let rawNvimAPIInfo = try fetchRawNvimAPIInfo()
+    let renderingContext = try makeRenderingContext(rawNvimAPIInfo: rawNvimAPIInfo)
+    try generateOutputFiles(renderingContext: renderingContext)
   }
   
-  static func _main() async throws {
+  private func fetchRawNvimAPIInfo() throws -> [MessagePackValue: MessagePackValue] {
     let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
+    process.executableURL = Path(nvim).url
     process.arguments = ["--api-info"]
     
     let inputPipe = Pipe()
@@ -51,34 +37,30 @@ struct neogen: AsyncParsableCommand {
     let errorPipe = Pipe()
     process.standardError = errorPipe
     
+    var result: Result<[MessagePackValue: MessagePackValue], Error>?
     var outputAccumulator = Data()
     outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
       let data = fileHandle.availableData
-      guard !data.isEmpty else {
-        outputPipe.fileHandleForReading.readabilityHandler = nil
-        
-        do {
-          let (value, remainder) = try unpack(outputAccumulator)
-          assert(remainder.isEmpty, "Entire stdout output is expected to be one message pack object.")
-          let json = try jsonify(value: value)
-          guard let dictionary = json as? [String: Any] else {
-            throw "Not a top level dictionary."
-          }
-          let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
-          let nvimApiInfo = try JSONDecoder().decode(NvimAPIInfo.self, from: jsonData)
-          let types = nvimApiInfo.functions.flatMap { $0.parameters.map { $0.type } } +
-            nvimApiInfo.uiEvents.flatMap { $0.parameters.map { $0.type } } +
-            nvimApiInfo.functions.map { $0.returnType }
-          let unique_types = Set(types)
-          print(unique_types)
-          
-        } catch {
-          print("Could not unpack accumulated output, \(error).")
-        }
-        
-        return
+      
+      if !data.isEmpty {
+        outputAccumulator += data
       }
-      outputAccumulator += data
+      
+      outputPipe.fileHandleForReading.readabilityHandler = nil
+      
+      do {
+        let (value, remainder) = try unpack(outputAccumulator)
+        guard remainder.isEmpty else {
+          throw "nvim API info stdout is not one message pack value."
+        }
+        guard let dictionaryValue = value.dictionaryValue else {
+          throw "nvim API info stdout is not a message pack map."
+        }
+        result = .success(dictionaryValue)
+        
+      } catch {
+        result = .failure(error)
+      }
     }
     
     errorPipe.fileHandleForReading.readabilityHandler = { fileHandle in
@@ -87,58 +69,90 @@ struct neogen: AsyncParsableCommand {
         errorPipe.fileHandleForReading.readabilityHandler = nil
         return
       }
-      print("stderr:", String(data: data, encoding: .utf8) ?? "nil")
+      print("nvim stderr:", String(data: data, encoding: .utf8) ?? "nil")
     }
     
-    Task {
-      try process.run()
+    try process.run()
+    process.waitUntilExit()
+    
+    return try result!.get()
+  }
+  
+  private func generateOutputFiles(renderingContext: [String: Any]) throws {
+    let templatesPath = Path(templates)
+    guard templatesPath.isDirectory, templatesPath.isReadable else {
+      throw "Could not access templates directory."
     }
     
-    RunLoop.main.run()
+    let outputPath = Path(output)
+    guard outputPath.isDirectory, outputPath.isWritable else {
+      throw "Could not access output directory."
+    }
+    
+    let environment = Environment(
+      loader: FileSystemLoader(paths: [templatesPath])
+    )
+    
+    for templatePath in try templatesPath.children() {
+      guard templatePath.isFile, templatePath.extension == "stencil", templatePath.isReadable else {
+        continue
+      }
+      
+      let renderedTemplate = try environment.renderTemplate(
+        name: templatePath.lastComponent,
+        context: renderingContext
+      )
+      let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
+      try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
+    }
   }
 }
 
-private func jsonify(value: MessagePackValue) throws -> Any {
-  switch value {
-    case .nil:
-      throw "Unsupported nil value type."
-      
-    case let .bool(value):
-      return value
-      
-    case let .int(value):
-      return Int(value)
-      
-    case let .uint(value):
-      return UInt(value)
-      
-    case let .float(value):
-      return value
-      
-    case let .double(value):
-      return value
-      
-    case let .string(value):
-      return value
-      
-    case let .binary(value):
-      return value
-      
-    case let .array(value):
-      return try value.map { try jsonify(value: $0) }
-      
-    case let .map(value):
-      var dictionary = [String: Any]()
-      try value
-        .forEach { key, value in
-          guard let key = key.stringValue else {
-            throw "Unsupported map key, \(key), \(value)."
+private func makeRenderingContext(rawNvimAPIInfo: [MessagePackValue: MessagePackValue]) throws -> [String: Any] {
+  return try process(value: .map(rawNvimAPIInfo)) as! [String: Any]
+  
+  func process(value: MessagePackValue) throws -> Any {
+    switch value {
+      case let .bool(value):
+        return value
+        
+      case let .int(value):
+        return Int(value)
+        
+      case let .uint(value):
+        return UInt(value)
+        
+      case let .float(value):
+        return value
+        
+      case let .double(value):
+        return value
+        
+      case let .string(value):
+        return value
+        
+      case let .binary(value):
+        return value
+        
+      case let .array(value):
+        return try value.map { try process(value: $0) }
+        
+      case let .map(value):
+        var dictionary = [String: Any]()
+        try value
+          .forEach { key, value in
+            guard let key = key.stringValue else {
+              throw "Unsupported map key, \(key), \(value)."
+            }
+            dictionary[key] = try process(value: value)
           }
-          dictionary[key] = try jsonify(value: value)
-        }
-      return dictionary
-      
-    case .extended:
-      throw "Unsupported extended value type."
+        return dictionary
+        
+      case .extended:
+        throw "Unsupported extended value type."
+        
+      case .nil:
+        throw "Unsupported nil value type."
+    }
   }
 }
