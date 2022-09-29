@@ -1,5 +1,6 @@
-import ArgumentParser
 import Foundation
+import Combine
+import ArgumentParser
 import Library
 import MessagePack
 import PathKit
@@ -18,12 +19,12 @@ struct neogen: AsyncParsableCommand {
   var output: String
   
   mutating func run() async throws {
-    let rawNvimAPIInfo = try fetchRawNvimAPIInfo()
+    let rawNvimAPIInfo = try await fetchRawNvimAPIInfo()
     let renderingContext = try makeRenderingContext(rawNvimAPIInfo: rawNvimAPIInfo)
     try generateOutputFiles(renderingContext: renderingContext)
   }
   
-  private func fetchRawNvimAPIInfo() throws -> [MessagePackValue: MessagePackValue] {
+  private func fetchRawNvimAPIInfo() async throws -> [MessagePackValue: MessagePackValue] {
     let process = Process()
     process.executableURL = Path(nvim).url
     process.arguments = ["--api-info"]
@@ -37,29 +38,31 @@ struct neogen: AsyncParsableCommand {
     let errorPipe = Pipe()
     process.standardError = errorPipe
     
-    var result: Result<[MessagePackValue: MessagePackValue], Error>?
-    var outputAccumulator = Data()
-    outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-      let data = fileHandle.availableData
-      
-      if !data.isEmpty {
-        outputAccumulator += data
-      }
-      
-      outputPipe.fileHandleForReading.readabilityHandler = nil
-      
-      do {
-        let (value, remainder) = try unpack(outputAccumulator)
-        guard remainder.isEmpty else {
-          throw "nvim API info stdout is not one message pack value."
-        }
-        guard let dictionaryValue = value.dictionaryValue else {
-          throw "nvim API info stdout is not a message pack map."
-        }
-        result = .success(dictionaryValue)
+    let result = Future<[MessagePackValue: MessagePackValue], Error> { fulfill in
+      var outputAccumulator = Data()
+      outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
+        let data = fileHandle.availableData
         
-      } catch {
-        result = .failure(error)
+        if !data.isEmpty {
+          outputAccumulator += data
+          return
+        }
+        
+        outputPipe.fileHandleForReading.readabilityHandler = nil
+        
+        do {
+          let (value, remainder) = try unpack(outputAccumulator)
+          guard remainder.isEmpty else {
+            throw "nvim API info stdout is not one message pack value."
+          }
+          guard let dictionaryValue = value.dictionaryValue else {
+            throw "nvim API info stdout is not a message pack map."
+          }
+          fulfill(.success(dictionaryValue))
+          
+        } catch {
+          fulfill(.failure(error))
+        }
       }
     }
     
@@ -73,9 +76,8 @@ struct neogen: AsyncParsableCommand {
     }
     
     try process.run()
-    process.waitUntilExit()
     
-    return try result!.get()
+    return try await result.value
   }
   
   private func generateOutputFiles(renderingContext: [String: Any]) throws {
@@ -90,7 +92,8 @@ struct neogen: AsyncParsableCommand {
     }
     
     let environment = Environment(
-      loader: FileSystemLoader(paths: [templatesPath])
+      loader: FileSystemLoader(paths: [templatesPath]),
+      trimBehaviour: .smart
     )
     
     for templatePath in try templatesPath.children() {
@@ -104,6 +107,8 @@ struct neogen: AsyncParsableCommand {
       )
       let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
       try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
+      
+      print(outputFilePath)
     }
   }
 }

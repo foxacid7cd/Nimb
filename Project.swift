@@ -1,30 +1,11 @@
 import ProjectDescription
-
-func makeTarget(name: String, product: Product, dependencies: [TargetDependency] = []) -> Target {
-  return .init(
-    name: name,
-    platform: .macOS,
-    product: product,
-    bundleId: "foxacid7cd.\(name)",
-    deploymentTarget: .macOS(targetVersion: "12.3"),
-    infoPlist: .extendingDefault(with: [:]),
-    sources: ["Targets/\(name)/Sources/**"],
-    resources: product == .app ? ["Targets/\(name)/Resources/**"] : [],
-    dependencies: dependencies,
-    settings: .settings(
-      base: [:],
-      debug: [:],
-      release: [:],
-      defaultSettings: .recommended()
-    )
-  )
-}
+import ProjectDescriptionHelpers
 
 let project = Project(
   name: "Nims",
   organizationName: "foxacid7cd",
   options: .options(
-    automaticSchemesOptions: .enabled(),
+    automaticSchemesOptions: .disabled,
     textSettings: .textSettings(
       usesTabs: false,
       indentWidth: 2,
@@ -33,15 +14,15 @@ let project = Project(
     )
   ),
   targets: [
-    makeTarget(
+    .nimsTarget(
       name: "Nims",
-      product: .app,
+      product: .app(infoPlist: .default),
       dependencies: [
         .target(name: "Library"),
         .target(name: "Procedures")
       ]
     ),
-    makeTarget(
+    .nimsTarget(
       name: "neogen",
       product: .commandLineTool,
       dependencies: [
@@ -49,28 +30,71 @@ let project = Project(
         .target(name: "Procedures"),
         .external(name: "Stencil"),
         .external(name: "ArgumentParser")
-      ]
+      ],
+      hasDevelopmentAssets: true
     ),
-    makeTarget(
+    .nimsTarget(
       name: "Procedures",
-      product: .staticLibrary,
+      product: .library,
       dependencies: [
         .target(name: "Library"),
         .target(name: "Conversations")
       ]
     ),
-    makeTarget(
+    .nimsTarget(
       name: "Conversations",
-      product: .staticLibrary,
+      product: .library,
       dependencies: [
         .target(name: "Library"),
         .external(name: "MessagePack")
       ]
     ),
-    makeTarget(
+    .nimsTarget(
       name: "Library",
-      product: .staticLibrary
+      product: .library
     )
   ],
-  additionalFiles: ["Templates/**"]
+  schemes: [
+    .init(
+      name: "Nims",
+      shared: true,
+      hidden: false,
+      buildAction: .buildAction(targets: ["Nims"]),
+      testAction: nil,
+      runAction: .runAction(configuration: .debug),
+      archiveAction: .archiveAction(configuration: .release),
+      profileAction: .profileAction(configuration: .release),
+      analyzeAction: nil
+    ),
+    .init(
+      name: "neogen",
+      shared: true,
+      hidden: false,
+      buildAction: .buildAction(
+        targets: ["neogen"]
+      ),
+      testAction: nil,
+      runAction: .runAction(
+        configuration: .debug,
+        preActions: [
+          .init(
+            title: "Create Development Run Output Directory",
+            scriptText: "mkdir ${DERIVED_FILE_DIR}/Generated",
+            target: "neogen"
+          )
+        ],
+        arguments: .init(
+          launchArguments: [
+            "/opt/homebrew/bin/nvim",
+            "${PROJECT_DIR}/Targets/neogen/Development/Templates",
+            "${DERIVED_FILE_DIR}/Generated"
+          ]
+            .map { .init(name: $0, isEnabled: true) }
+        )
+      ),
+      archiveAction: nil,
+      profileAction: nil,
+      analyzeAction: nil
+    )
+  ]
 )
