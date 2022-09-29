@@ -105,9 +105,9 @@ struct neogen: AsyncParsableCommand {
         name: templatePath.lastComponent,
         context: renderingContext
       )
+     
       let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
       try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
-      
       print(outputFilePath)
     }
   }
