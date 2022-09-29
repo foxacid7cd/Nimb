@@ -92,8 +92,7 @@ struct neogen: AsyncParsableCommand {
     }
     
     let environment = Environment(
-      loader: FileSystemLoader(paths: [templatesPath]),
-      trimBehaviour: .smart
+      loader: FileSystemLoader(paths: [templatesPath])
     )
     
     for templatePath in try templatesPath.children() {

@@ -1,0 +1,19 @@
+import MessagePack
+
+public extension Client {
+{% for function in functions %}  /// {% if function.method %}Method{% else %}Function{% endif %} `{{ function.name }}` exists since version {{ function.since }}.{% if function.parameters.count != 0 or function.return_type != "void" %}
+  ///{% endif %}
+  {% if function.parameters.count > 1 %}/// - Parameters:
+  {% endif %}{% for parameter in function.parameters %}///{% if function.parameters.count == 1 %} - Parameter {% else %}   - {% endif %}{{ parameter[1] }}: {{ parameter[0] }}
+  {% endfor %}{% if function.return_type != "void" %}/// - Returns: {{ function.return_type }}
+  {% endif %}{% if function.deprecated_since %}@available(*, deprecated, message: "Deprecated since {{ function.deprecated_since }}.")
+  {% endif %}func {{ function.name }}(
+{% for parameter in function.parameters %}    {{ parameter[1]|indent:4 }}: MessagePackValue{% if not forloop.last %},{% endif %}
+{% endfor %}  ) async throws -> MessagePackValue {
+    try await execute(
+      method: "{{ function.name }}",
+      parameters: [{% for parameter in function.parameters %}{{ parameter[1] }}{% if not forloop.last %}, {% endif %}{% endfor %}]
+    )
+  }{% if not forloop.last %}
+{% endif %}
+{% endfor %}}
