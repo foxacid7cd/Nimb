@@ -1,17 +1,17 @@
 //
-//  NvimApiInfo.swift
+//  NvimAPIInfo.swift
 //  neogen
 //
 //  Created by Yevhenii Matviienko on 28.09.2022.
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-struct NvimApiInfo: Decodable {
+struct NvimAPIInfo: Decodable {
   var errorTypes: [String: ErrorType]
   var uiOptions: [String]
   var functions: [Function]
   var types: [String: `Type`]
-  var uiEvents: [UiEvent]
+  var uiEvents: [UIEvent]
   
   struct ErrorType: Decodable {
     var id: Int
@@ -34,7 +34,7 @@ struct NvimApiInfo: Decodable {
     var since: Int
     
     enum CodingKeys: String, CodingKey {
-      case deprecatedSince = "deprecatedSince"
+      case deprecatedSince = "deprecated_since"
       case method
       case name
       case parameters
@@ -48,7 +48,7 @@ struct NvimApiInfo: Decodable {
     var prefix: String
   }
   
-  struct UiEvent: Decodable {
+  struct UIEvent: Decodable {
     var name: String
     var parameters: [Parameter]
     var since: Int

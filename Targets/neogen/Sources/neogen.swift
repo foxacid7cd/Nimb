@@ -1,11 +1,42 @@
 import Foundation
 import MessagePack
 import Stencil
+import ArgumentParser
 import Procedures
 
 @main
-struct neogen {
-  static func main() async throws {
+struct neogen: AsyncParsableCommand {
+  @Argument(help: "Path to nvim executable.", completion: .file(extensions: ["nvim"]))
+  var nvim: String
+  
+  @Argument(help: "Directory with templates.", completion: .directory)
+  var templatesDirectory: String
+  
+  @Argument(help: "Directory for generated source code files.", completion: .directory)
+  var outputDirectory: String
+  
+  mutating func run() async throws {
+    struct Article {
+      let title: String
+      let author: String
+    }
+    
+    let context = [
+      "articles": [
+        Article(title: "Migrating from OCUnit to XCTest", author: "Kyle Fuller"),
+        Article(title: "Memory Management with ARC", author: "Kyle Fuller"),
+      ]
+    ]
+    
+    let env = Environment(loader: FileSystemLoader(paths: [.init(templatesDirectory)]), templateClass: Template.self, trimBehaviour: .smart)
+    let rendered = try env.renderTemplate(name: "Template.stencil", context: context)
+    
+    let url = URL(fileURLWithPath: outputDirectory, isDirectory: true)
+    let fileUrl = url.appendingPathComponent("output.txt", isDirectory: false)
+    try rendered.data(using: .utf8)!.write(to: fileUrl, options: [])
+  }
+  
+  static func _main() async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
     process.arguments = ["--api-info"]
@@ -33,7 +64,7 @@ struct neogen {
             throw JsonifyError(description: "Not a top level dictionary.")
           }
           let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
-          let nvimApiInfo = try JSONDecoder().decode(NvimApiInfo.self, from: jsonData)
+          let nvimApiInfo = try JSONDecoder().decode(NvimAPIInfo.self, from: jsonData)
           let types = nvimApiInfo.functions.flatMap { $0.parameters.map { $0.type } } +
             nvimApiInfo.uiEvents.flatMap { $0.parameters.map { $0.type } } +
             nvimApiInfo.functions.map { $0.returnType }

@@ -1,7 +1,7 @@
 import ProjectDescription
 
 func createTarget(name: String, product: Product, dependencies: [TargetDependency] = []) -> Target {
-  return .init(name: name, platform: .macOS, product: product, bundleId: "foxacid7cd.\(name)", deploymentTarget: .macOS(targetVersion: "12.3"), infoPlist: .extendingDefault(with: [:]), sources: ["Targets/\(name)/Sources/**"], resources: ["Targets/\(name)/Resources/**"], dependencies: dependencies)
+  return .init(name: name, platform: .macOS, product: product, bundleId: "foxacid7cd.\(name)", deploymentTarget: .macOS(targetVersion: "12.3"), infoPlist: .extendingDefault(with: [:]), sources: ["Targets/\(name)/Sources/**"], resources: ["Targets/\(name)/Resources/**"], dependencies: dependencies, settings: .settings(base: [:], debug: [:], release: [:], defaultSettings: .recommended()))
 }
 
 let project = Project(
@@ -9,7 +9,6 @@ let project = Project(
   organizationName: "foxacid7cd",
   options: .options(
     automaticSchemesOptions: .enabled(),
-    developmentRegion: "UA",
     textSettings: .textSettings(
       usesTabs: false,
       indentWidth: 2,
@@ -30,22 +29,24 @@ let project = Project(
       product: .commandLineTool,
       dependencies: [
         .target(name: "Procedures"),
-        .external(name: "Stencil")
+        .external(name: "Stencil"),
+        .external(name: "ArgumentParser"),
       ]
     ),
     createTarget(
       name: "Procedures",
-      product: .framework,
+      product: .staticLibrary,
       dependencies: [
         .target(name: "Conversations")
       ]
     ),
     createTarget(
       name: "Conversations",
-      product: .framework,
+      product: .staticLibrary,
       dependencies: [
         .external(name: "MessagePack")
       ]
-    )
-  ]
+    ),
+  ],
+  additionalFiles: ["Templates/**"]
 )
