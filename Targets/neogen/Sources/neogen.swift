@@ -84,9 +84,9 @@ struct neogen: AsyncParsableCommand {
       throw "Could not access project directory."
     }
     
-    let clientTargetPath = projectPath + "Targets/Client"
-    let templatesPath = clientTargetPath + "Support/Templates"
-    let outputPath = clientTargetPath + "Generated"
+    let apiTargetPath = projectPath + "Targets/API"
+    let templatesPath = apiTargetPath + "Support/Templates"
+    let outputPath = apiTargetPath + "Generated"
     
     let oldGeneratedFiles = Set(try outputPath.children())
     

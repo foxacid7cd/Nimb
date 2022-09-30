@@ -19,11 +19,11 @@ let project = Project(
       product: .app(infoPlist: .default),
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Client")
+        .target(name: "API")
       ]
     ),
     .nimsTarget(
-      name: "Client",
+      name: "API",
       product: .library,
       dependencies: [
         .target(name: "Library"),
@@ -88,10 +88,8 @@ let project = Project(
       runAction: .runAction(
         configuration: .debug,
         arguments: .init(
-          launchArguments: [
-            "$PROJECT_DIR"
-          ]
-          .map { .init(name: $0, isEnabled: true) }
+          launchArguments: ["$PROJECT_DIR"]
+            .map { .init(name: $0, isEnabled: true) }
         )
       ),
       archiveAction: nil,
