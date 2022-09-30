@@ -6,12 +6,12 @@
 //
 
 import AppKit
-import MessagePack
+import Conversations
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-  var nvimInstance: NvimInstance?
+  var nvim: MessagingProcess?
 
-  func applicationDidFinishLaunching(_: Notification) {
+  @MainActor func applicationDidFinishLaunching(_: Notification) {
     let menubar = NSMenu()
     let appMenuItem = NSMenuItem()
     menubar.addItem(appMenuItem)
@@ -41,18 +41,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     window.title = appName
     window.makeKeyAndOrderFront(nil)
 
-    Task.detached { [weak self] in
+    let nvim = MessagingProcess(
+      executableURL: URL(fileURLWithPath: "/bin/zsh"),
+      arguments: ["-c", "nvim --embed"]
+    )
+    self.nvim = nvim
+
+    Task {
       do {
-        let nvimInstance = try await NvimInstance(
-          executableURL: URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
-        )
-        self?.nvimInstance = nvimInstance
-        try await nvimInstance.client.nvimUiAttach(width: 80, height: 24, options: .map([:]))
-        for try await event in await nvimInstance.events {
-          log(.debug, "Received event \(event).")
+        for try await event in nvim {
+          print(event)
         }
       } catch {
-        log(.error, "Failed starting nvim instance, \(error).")
+        log(.error, "Error: \(error)")
       }
     }
   }

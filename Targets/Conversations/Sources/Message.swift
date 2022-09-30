@@ -5,51 +5,16 @@
 //  Created by Yevhenii Matviienko on 28.09.2022.
 //
 
-import MessagePack
 import Library
+import MessagePack
 
 public enum Message {
   case request(id: UInt, method: String, params: [MessagePackValue])
   case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
   case notification(method: String, params: [MessagePackValue])
-}
 
-extension Message: Packable {
-  public var packed: MessagePackValue {
-    let array: [MessagePackValue]
-
-    switch self {
-      case let .request(id, method, params):
-        array = [
-          .uint(UInt64(MessageTypeCode.request.rawValue)),
-          .uint(UInt64(id)),
-          .string(method),
-          .array(params)
-        ]
-        
-      case let .response(id, isSuccess, payload):
-        array = [
-          .uint(UInt64(MessageTypeCode.response.rawValue)),
-          .uint(UInt64(id)),
-          isSuccess ? .nil : payload,
-          isSuccess ? payload : .nil
-        ]
-
-      case let .notification(method, params):
-        array = [
-          .uint(UInt64(MessageTypeCode.notification.rawValue)),
-          .string(method),
-          .array(params)
-        ]
-    }
-
-    return .array(array)
-  }
-}
-
-extension Message: Unpackable {
-  public init(packed: MessagePackValue) throws {
-    switch packed {
+  public init(messagePackValue: MessagePackValue) throws {
+    switch messagePackValue {
       case var .array(array):
         var message: Message
 
@@ -136,12 +101,39 @@ extension Message: Unpackable {
         throw "Root packed value is not an array."
     }
   }
+
+  public var messagePackValue: MessagePackValue {
+    let array: [MessagePackValue]
+
+    switch self {
+      case let .request(id, method, params):
+        array = [
+          .uint(UInt64(MessageTypeCode.request.rawValue)),
+          .uint(UInt64(id)),
+          .string(method),
+          .array(params)
+        ]
+
+      case let .response(id, isSuccess, payload):
+        array = [
+          .uint(UInt64(MessageTypeCode.response.rawValue)),
+          .uint(UInt64(id)),
+          isSuccess ? .nil : payload,
+          isSuccess ? payload : .nil
+        ]
+
+      case let .notification(method, params):
+        array = [
+          .uint(UInt64(MessageTypeCode.notification.rawValue)),
+          .string(method),
+          .array(params)
+        ]
+    }
+
+    return .array(array)
+  }
 }
 
 public enum MessageTypeCode: UInt {
   case request = 0, response, notification
-}
-
-public struct MessageUnpackError: Error, CustomStringConvertible {
-  public var description: String
 }

@@ -16,7 +16,9 @@ public enum ProcedureExecutorEvent {
 
 @MainActor
 public class ProcedureExecutor {
-  public var events: AsyncThrowingPublisher<some Publisher> {
+  public typealias EventsSubject = PassthroughSubject<ProcedureExecutorEvent, Never>
+  
+  public var events: AnyPublisher<ProcedureExecutorEvent, Never> {
     .init(eventsSubject)
   }
   
@@ -24,7 +26,7 @@ public class ProcedureExecutor {
   private var subscription: Task<Void, Never>?
   private var handlers = [UInt: (ExecutionResult) -> Void]()
   private var procedureCounter: UInt = 0
-  private let eventsSubject = PassthroughSubject<ProcedureExecutorEvent, Error>()
+  private let eventsSubject = EventsSubject()
   
   public init(messageEmitter: MessageEmitter, messageConsumer: MessageConsumer) {
     self.messageConsumer = messageConsumer
@@ -95,7 +97,8 @@ public class ProcedureExecutor {
           }
         }
       } catch {
-        self?.eventsSubject.send(completion: .failure(error))
+        print(error)
+        self?.eventsSubject.send(completion: .finished)
       }
     }
   }

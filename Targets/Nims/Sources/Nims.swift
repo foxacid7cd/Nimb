@@ -8,15 +8,12 @@
 import AppKit
 
 @main
-enum Nims {
-  static func main() {
+private enum Nims {
+  private static let appDelegate = AppDelegate()
+  
+  static func main() async {
     let application = NSApplication.shared
-    NSApp.setActivationPolicy(.regular)
-
-    let appDelegate = AppDelegate()
     application.delegate = appDelegate
-
-    NSApp.activate(ignoringOtherApps: true)
-    NSApp.run()
+    application.run()
   }
 }

@@ -13,8 +13,8 @@ import Procedures
 
 @MainActor
 class NvimInstance {
-  var events: AsyncThrowingPublisher<some Publisher> {
-    procedureExecutor.events
+  var events: AsyncThrowingPublisher<AnyPublisher<ProcedureExecutorEvent, Error>> {
+    fatalError()
   }
 
   private let process: Process

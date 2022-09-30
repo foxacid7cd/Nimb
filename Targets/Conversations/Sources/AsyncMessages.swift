@@ -1,12 +1,12 @@
 //
 //  AsyncMessages.swift
-//  
+//
 //
 //  Created by Yevhenii Matviienko on 28.09.2022.
 //
 
-import Foundation
 import Combine
+import Foundation
 import MessagePack
 
 public class AsyncMessages: AsyncSequence {
@@ -50,9 +50,9 @@ public class AsyncMessages: AsyncSequence {
             }
             
             while true {
-              var value: MessagePackValue
-              (value, subdata) = try unpack(subdata)
-              self.messages.append(try Message(packed: value))
+              let messagePackValue: MessagePackValue
+              (messagePackValue, subdata) = try unpack(subdata)
+              self.messages.append(try Message(messagePackValue: messagePackValue))
               messagesUpdatedSubject.send(())
             }
           } catch MessagePackError.insufficientData {
@@ -91,6 +91,6 @@ public class AsyncMessages: AsyncSequence {
   
   @MainActor
   public func makeAsyncIterator() -> AsyncIterator {
-    AsyncIterator(fileHandle: fileHandle)
+    .init(fileHandle: fileHandle)
   }
 }

@@ -8,6 +8,7 @@
 
 import Procedures
 
+@MainActor
 public class Client {
   private let procedureExecutor: ProcedureExecutor
 
