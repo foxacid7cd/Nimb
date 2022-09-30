@@ -5,6 +5,7 @@
 //  Created by Yevhenii Matviienko on 27.09.2022.
 //
 
+import API
 import Combine
 import Foundation
 import MessagePack
@@ -18,6 +19,8 @@ class NvimInstance {
 
   private let process: Process
   private let procedureExecutor: ProcedureExecutor
+
+  let client: Client
 
   init(executableURL: URL) throws {
     let process = Process()
@@ -34,10 +37,12 @@ class NvimInstance {
     let outputPipe = Pipe()
     process.standardOutput = outputPipe
 
-    self.procedureExecutor = .init(
+    let procedureExecutor = ProcedureExecutor(
       messageEmitter: outputPipe.fileHandleForReading,
       messageConsumer: inputPipe.fileHandleForWriting
     )
+    self.procedureExecutor = procedureExecutor
+    self.client = Client(procedureExecutor: procedureExecutor)
 
     let errorPipe = Pipe()
     process.standardError = errorPipe
@@ -56,9 +61,5 @@ class NvimInstance {
 
     try process.run()
     log(.info, "Started nvim.")
-  }
-
-  func execute(procedure: Procedure) async throws -> ExecutionResult {
-    try await procedureExecutor.execute(procedure: procedure)
   }
 }

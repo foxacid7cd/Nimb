@@ -9,7 +9,7 @@ public extension Client {
     guard let value = {{ function.obtainingReturnValue }} else {
       throw "Invalid return value type."
     }
-    return value{% endif %}{% if not forloop.last %}
-{% endif %}  }
-
-{% endfor %}}
+    return value{% endif %}{% if not forloop.last %}{% endif %}
+  }
+{% if not forloop.last %}
+{% endif %}{% endfor %}}

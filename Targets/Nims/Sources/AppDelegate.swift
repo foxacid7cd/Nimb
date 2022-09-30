@@ -47,12 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           executableURL: URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
         )
         self?.nvimInstance = nvimInstance
-        let attach_result = try await nvimInstance.execute(
-          procedure: .init(method: "nvim_ui_attach", params: [.uint(80), .uint(24), .map([:])])
-        )
-        log(.debug, "nvim_ui_attach \(attach_result)")
-        let result = try await nvimInstance.execute(procedure: .init(method: "nvim_get_api_info", params: []))
-        log(.debug, "nvim_get_namespaces \(result)")
+        try await nvimInstance.client.nvimUiAttach(width: 80, height: 24, options: .map([:]))
         for try await event in await nvimInstance.events {
           log(.debug, "Received event \(event).")
         }
