@@ -6,7 +6,6 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import MessagePack
 import Procedures
 
 public class Client {
@@ -16,12 +15,13 @@ public class Client {
     self.procedureExecutor = procedureExecutor
   }
 
-  func execute(method: String, parameters: [MessagePackValue]) async throws -> MessagePackValue {
+  @discardableResult
+  func execute(method: String, parameters: [Value]) async throws -> Value {
     let result = try await procedureExecutor.execute(
       procedure: .init(method: method, params: parameters)
     )
     guard result.isSuccess else {
-      throw NvimError(payload: result.payload)
+      throw result.payload
     }
     return result.payload
   }

@@ -1,12 +1,12 @@
 //
-//  NvimAPIInfo.swift
+//  APIInfo.swift
 //  neogen
 //
 //  Created by Yevhenii Matviienko on 28.09.2022.
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-struct NvimAPIInfo: Decodable {
+struct APIInfo: Decodable {
   var errorTypes: [String: ErrorType]
   var uiOptions: [String]
   var functions: [Function]

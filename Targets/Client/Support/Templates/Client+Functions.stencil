@@ -1,19 +1,15 @@
-import MessagePack
-
 public extension Client {
-{% for function in functions %}  /// {% if function.method %}Method{% else %}Function{% endif %} `{{ function.name }}` exists since version {{ function.since }}.{% if function.parameters.count != 0 or function.return_type != "void" %}
-  ///{% endif %}
-  {% if function.parameters.count > 1 %}/// - Parameters:
-  {% endif %}{% for parameter in function.parameters %}///{% if function.parameters.count == 1 %} - Parameter {% else %}   - {% endif %}{{ parameter[1] }}: {{ parameter[0] }}
-  {% endfor %}{% if function.return_type != "void" %}/// - Returns: {{ function.return_type }}
-  {% endif %}{% if function.deprecated_since %}@available(*, deprecated, message: "Deprecated since {{ function.deprecated_since }}.")
-  {% endif %}func {{ function.name }}(
-{% for parameter in function.parameters %}    {{ parameter[1]|indent:4 }}: MessagePackValue{% if not forloop.last %},{% endif %}
-{% endfor %}  ) async throws -> MessagePackValue {
-    try await execute(
+{% for function in functions %}  /// {{ function.description }} {% if function.isDeprecated %}
+  @available(*, deprecated){% endif %}
+  {{ function.signature }} {
+    {% if function.returnType and function.returnType != "Value" %}let result = {% endif %}try await execute(
       method: "{{ function.name }}",
-      parameters: [{% for parameter in function.parameters %}{{ parameter[1] }}{% if not forloop.last %}, {% endif %}{% endfor %}]
-    )
-  }{% if not forloop.last %}
-{% endif %}
+      parameters: [{{ function.parametersArray }}]
+    ){% if function.returnType and function.returnType != "Value" %}
+    guard let value = {{ function.obtainingReturnValue }} else {
+      throw "Invalid return value type."
+    }
+    return value{% endif %}{% if not forloop.last %}
+{% endif %}  }
+
 {% endfor %}}

@@ -9,25 +9,21 @@ import Stencil
 
 @main
 struct neogen: AsyncParsableCommand {
-  @Argument(help: "Path to nvim executable.", completion: .file(extensions: ["nvim"]))
-  var nvim: String
-  
-  @Argument(help: "Path to templates directory.", completion: .directory)
-  var templates: String
-  
-  @Argument(help: "Path to directory for generated output files.", completion: .directory)
-  var output: String
+  @Argument
+  var project: String
   
   mutating func run() async throws {
-    let rawNvimAPIInfo = try await fetchRawNvimAPIInfo()
-    let renderingContext = try makeRenderingContext(rawNvimAPIInfo: rawNvimAPIInfo)
-    try generateOutputFiles(renderingContext: renderingContext)
+    try generateOutputFiles(
+      renderingContext: try renderingContext(
+        apiInfo: try await fetchAPIInfo()
+      )
+    )
   }
   
-  private func fetchRawNvimAPIInfo() async throws -> [MessagePackValue: MessagePackValue] {
+  private func fetchAPIInfo() async throws -> APIInfo {
     let process = Process()
-    process.executableURL = URL(fileURLWithPath: nvim)
-    process.arguments = ["--api-info"]
+    process.executableURL = URL(fileURLWithPath: "/bin/bash")
+    process.arguments = ["-c", "nvim --api-info"]
     
     let inputPipe = Pipe()
     process.standardInput = inputPipe
@@ -38,7 +34,7 @@ struct neogen: AsyncParsableCommand {
     let errorPipe = Pipe()
     process.standardError = errorPipe
     
-    let result = Future<[MessagePackValue: MessagePackValue], Error> { fulfill in
+    let result = Future<APIInfo, Error> { fulfill in
       var outputAccumulator = Data()
       outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
@@ -55,10 +51,12 @@ struct neogen: AsyncParsableCommand {
           guard remainder.isEmpty else {
             throw "nvim API info stdout is not one message pack value."
           }
-          guard let dictionaryValue = value.dictionaryValue else {
+          guard let dictionary = try value.makeJSON() as? [String: Any] else {
             throw "nvim API info stdout is not a message pack map."
           }
-          fulfill(.success(dictionaryValue))
+          let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
+          let apiInfo = try JSONDecoder().decode(APIInfo.self, from: jsonData)
+          fulfill(.success(apiInfo))
           
         } catch {
           fulfill(.failure(error))
@@ -81,20 +79,22 @@ struct neogen: AsyncParsableCommand {
   }
   
   private func generateOutputFiles(renderingContext: [String: Any]) throws {
-    let templatesPath = Path(templates)
-    guard templatesPath.isDirectory, templatesPath.isReadable else {
-      throw "Could not access templates directory."
+    let projectPath = Path(project)
+    guard projectPath.isDirectory else {
+      throw "Could not access project directory."
     }
     
-    let outputPath = Path(output)
-    guard outputPath.isDirectory, outputPath.isWritable else {
-      throw "Could not access output directory."
-    }
+    let clientTargetPath = projectPath + "Targets/Client"
+    let templatesPath = clientTargetPath + "Support/Templates"
+    let outputPath = clientTargetPath + "Generated"
+    
+    let oldGeneratedFiles = Set(try outputPath.children())
     
     let environment = Environment(
       loader: FileSystemLoader(paths: [templatesPath])
     )
     
+    var generatedFiles = Set<Path>()
     for templatePath in try templatesPath.children() {
       guard templatePath.isFile, templatePath.extension == "stencil", templatePath.isReadable else {
         continue
@@ -107,56 +107,148 @@ struct neogen: AsyncParsableCommand {
      
       let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
       try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
-      print(outputFilePath)
+      generatedFiles.insert(outputFilePath)
+    }
+    
+    for file in generatedFiles {
+      print("+ \(file)")
+    }
+    
+    for file in oldGeneratedFiles.subtracting(generatedFiles) {
+      try file.delete()
+      print("- \(file)")
     }
   }
 }
 
-private func makeRenderingContext(rawNvimAPIInfo: [MessagePackValue: MessagePackValue]) throws -> [String: Any] {
-  return try process(value: .map(rawNvimAPIInfo)) as! [String: Any]
-  
-  func process(value: MessagePackValue) throws -> Any {
-    switch value {
+private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
+  return [
+    "functions": apiInfo.functions
+      .map { function in
+        var dictionary = [
+          "name": function.name,
+          "parametersArray": function.parameters
+            .map { obtainingValue(nvimType: $0.type, name: $0.name.camelCased) }
+            .joined(separator: ", "),
+          "signature": {
+            let formattedParameters = function.parameters
+              .map { "\($0.name.camelCased): \(swiftType(nvimType: $0.type))" }
+              .joined(separator: ", ")
+            
+            return [
+              "func \(function.name.camelCased)(\(formattedParameters)) async throws",
+              function.returnType == "void" ? nil : swiftType(nvimType: function.returnType)
+            ]
+            .compactMap { $0 }
+            .joined(separator: " -> ")
+          }(),
+          "description": {
+            let formattedParameters = function.parameters
+              .map { "\($0.name): \($0.type)" }
+              .joined(separator: ", ")
+            
+            return [
+              "\(function.name)(\(formattedParameters))",
+              function.returnType == "void" ? nil : function.returnType
+            ]
+            .compactMap { $0 }
+            .joined(separator: " -> ")
+          }(),
+          "isDeprecated": function.deprecatedSince != nil
+        ]
+        if function.returnType != "void" {
+          dictionary["returnType"] = swiftType(nvimType: function.returnType)
+          dictionary["obtainingReturnValue"] = obtainingReturnValue(nvimType: function.returnType, name: "result")
+        }
+        return dictionary
+      }
+  ]
+}
+
+extension String {
+  var camelCased: String {
+    split(separator: "_")
+      .enumerated()
+      .map { index, word in index == 0 ? String(word) : word.capitalized }
+      .joined()
+  }
+}
+
+extension MessagePackValue {
+  func makeJSON() throws -> Any {
+    switch self {
+      case let .array(array):
+        return try array.map { try $0.makeJSON() }
+        
+      case let .map(map):
+        var dictionary = [String: Any]()
+        for (key, value) in map {
+          guard let key = key.stringValue else {
+            throw "Unsupported map key type."
+          }
+          dictionary[key] = try value.makeJSON()
+        }
+        return dictionary
+        
       case let .bool(value):
-        return value
-        
-      case let .int(value):
-        return Int(value)
-        
-      case let .uint(value):
-        return UInt(value)
-        
-      case let .float(value):
         return value
         
       case let .double(value):
         return value
         
+      case let .float(value):
+        return value
+        
       case let .string(value):
         return value
         
-      case let .binary(value):
+      case let .int(value):
         return value
         
-      case let .array(value):
-        return try value.map { try process(value: $0) }
+      case let .uint(value):
+        return UInt(value)
         
-      case let .map(value):
-        var dictionary = [String: Any]()
-        try value
-          .forEach { key, value in
-            guard let key = key.stringValue else {
-              throw "Unsupported map key, \(key), \(value)."
-            }
-            dictionary[key] = try process(value: value)
-          }
-        return dictionary
-        
-      case .extended:
-        throw "Unsupported extended value type."
-        
-      case .nil:
-        throw "Unsupported nil value type."
+      case .extended, .binary, .nil:
+        throw "Unsupported value type."
     }
+  }
+}
+
+private func swiftType(nvimType: String) -> String {
+  switch nvimType {
+    case "Boolean":
+      return "Bool"
+    case "String":
+      return "String"
+    case "Integer":
+      return "Int"
+    default:
+      return "Value"
+  }
+}
+
+private func obtainingValue(nvimType: String, name: String) -> String {
+  switch nvimType {
+    case "Boolean":
+      return ".bool(\(name))"
+    case "String":
+      return ".string(\(name))"
+    case "Integer":
+      return ".int(Int64(\(name)))"
+    default:
+      return name
+  }
+}
+
+private func obtainingReturnValue(nvimType: String, name: String) -> String {
+  switch nvimType {
+    case "Boolean":
+      return "\(name).boolValue"
+    case "String":
+      return "\(name).stringValue"
+    case "Integer":
+      return "\(name).intValue"
+    default:
+      return name
   }
 }

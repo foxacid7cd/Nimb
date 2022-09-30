@@ -89,9 +89,7 @@ let project = Project(
         configuration: .debug,
         arguments: .init(
           launchArguments: [
-            "/opt/homebrew/bin/nvim",
-            "${PROJECT_DIR}/Targets/Client/Support/Templates",
-            "${PROJECT_DIR}/Targets/Client/Generated"
+            "$PROJECT_DIR"
           ]
           .map { .init(name: $0, isEnabled: true) }
         )
