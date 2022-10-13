@@ -6,24 +6,19 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import Foundation
+import Library
+import MessagePack
 import Procedures
 
-@MainActor
 public class Client {
-  private let procedureExecutor: ProcedureExecutor
+  let process: ProceduringProcess
 
-  public init(procedureExecutor: ProcedureExecutor) {
-    self.procedureExecutor = procedureExecutor
-  }
-
-  @discardableResult
-  func execute(method: String, parameters: [Value]) async throws -> Value {
-    let result = try await procedureExecutor.execute(
-      procedure: .init(method: method, params: parameters)
+  @MainActor
+  public init() {
+    self.process = .init(
+      executableURL: URL(fileURLWithPath: "/bin/zsh"),
+      arguments: ["-c", "nvim --embed"]
     )
-    guard result.isSuccess else {
-      throw result.payload
-    }
-    return result.payload
   }
 }

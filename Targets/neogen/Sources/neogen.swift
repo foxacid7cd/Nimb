@@ -1,10 +1,10 @@
 import ArgumentParser
 import Combine
+import Conversations
 import Foundation
 import Library
 import MessagePack
 import PathKit
-import Procedures
 import Stencil
 
 @main
@@ -20,9 +20,10 @@ struct neogen: AsyncParsableCommand {
     )
   }
   
+  @MainActor
   private func fetchAPIInfo() async throws -> APIInfo {
     let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/bin/bash")
+    process.executableURL = URL(fileURLWithPath: "/bin/zsh")
     process.arguments = ["-c", "nvim --api-info"]
     
     let inputPipe = Pipe()
@@ -34,48 +35,33 @@ struct neogen: AsyncParsableCommand {
     let errorPipe = Pipe()
     process.standardError = errorPipe
     
-    let result = Future<APIInfo, Error> { fulfill in
-      var outputAccumulator = Data()
-      outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-        let data = fileHandle.availableData
-        
-        if !data.isEmpty {
-          outputAccumulator += data
-          return
-        }
-        
-        outputPipe.fileHandleForReading.readabilityHandler = nil
-        
-        do {
-          let (value, remainder) = try unpack(outputAccumulator)
-          guard remainder.isEmpty else {
-            throw "nvim API info stdout is not one message pack value."
-          }
-          guard let dictionary = try value.makeJSON() as? [String: Any] else {
-            throw "nvim API info stdout is not a message pack map."
-          }
-          let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
-          let apiInfo = try JSONDecoder().decode(APIInfo.self, from: jsonData)
-          fulfill(.success(apiInfo))
-          
-        } catch {
-          fulfill(.failure(error))
-        }
+    let apiInfoTask = Task<APIInfo, Error>.detached {
+      let outputData = try await AsyncFileData(outputPipe.fileHandleForReading)
+        .reduce(into: Data()) { $0 += $1 }
+      
+      let (value, remainder) = try unpack(outputData)
+      guard remainder.isEmpty else {
+        throw "nvim API info stdout is not one message pack value."
       }
+      guard let dictionary = try value.makeJSON() as? [String: Any] else {
+        throw "nvim API info stdout is not a message pack map."
+      }
+      let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
+      return try JSONDecoder().decode(APIInfo.self, from: jsonData)
     }
     
-    errorPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-      let data = fileHandle.availableData
-      guard !data.isEmpty else {
-        errorPipe.fileHandleForReading.readabilityHandler = nil
-        return
+    Task {
+      for try await data in AsyncFileData(errorPipe.fileHandleForReading) {
+        guard let string = String(data: data, encoding: .utf8) else {
+          fatalError("Could not decode UTF-8 string from nvim stderr.")
+        }
+        print("nvim stderr -> \(string)")
       }
-      print("nvim stderr:", String(data: data, encoding: .utf8) ?? "nil")
     }
     
     try process.run()
     
-    return try await result.value
+    return try await apiInfoTask.value
   }
   
   private func generateOutputFiles(renderingContext: [String: Any]) throws {
@@ -223,7 +209,7 @@ private func swiftType(nvimType: String) -> String {
     case "Integer":
       return "Int"
     default:
-      return "Value"
+      return "MessagePackValue"
   }
 }
 
@@ -250,5 +236,90 @@ private func obtainingReturnValue(nvimType: String, name: String) -> String {
       return "\(name).intValue"
     default:
       return name
+  }
+}
+
+private struct APIInfo: Decodable {
+  var errorTypes: [String: ErrorType]
+  var uiOptions: [String]
+  var functions: [Function]
+  var types: [String: Type]
+  var uiEvents: [UIEvent]
+  
+  struct ErrorType: Decodable {
+    var id: Int
+  }
+  
+  enum CodingKeys: String, CodingKey {
+    case errorTypes = "error_types"
+    case uiOptions = "ui_options"
+    case functions
+    case types
+    case uiEvents = "ui_events"
+  }
+  
+  struct Function: Decodable {
+    var deprecatedSince: Int?
+    var method: Bool
+    var name: String
+    var parameters: [Parameter]
+    var returnType: String
+    var since: Int
+    
+    enum CodingKeys: String, CodingKey {
+      case deprecatedSince = "deprecated_since"
+      case method
+      case name
+      case parameters
+      case returnType = "return_type"
+      case since
+    }
+  }
+  
+  struct `Type`: Decodable {
+    var id: Int
+    var prefix: String
+  }
+  
+  struct UIEvent: Decodable {
+    var name: String
+    var parameters: [Parameter]
+    var since: Int
+  }
+  
+  struct Version: Decodable {
+    var apiCompatible: Int
+    var apiLevel: Int
+    var apiPrerelease: Bool
+    var major: Int
+    var minor: Int
+    var patch: Int
+    var prerelease: Bool
+    
+    enum CodingKeys: String, CodingKey {
+      case apiCompatible = "api_compatible"
+      case apiLevel = "api_level"
+      case apiPrerelease = "api_prerelease"
+      case major
+      case minor
+      case patch
+      case prerelease
+    }
+  }
+  
+  struct Parameter: Decodable {
+    var type: String
+    var name: String
+    
+    init(type: String, name: String) {
+      self.type = type
+      self.name = name
+    }
+    
+    init(from decoder: Decoder) throws {
+      var container: UnkeyedDecodingContainer = try decoder.unkeyedContainer()
+      type = try container.decode(String.self)
+      name = try container.decode(String.self)
+    }
   }
 }

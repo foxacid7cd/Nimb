@@ -60,7 +60,10 @@ let project = Project(
     ),
     .nimsTarget(
       name: "Library",
-      product: .library
+      product: .library,
+      dependencies: [
+        .external(name: "AsyncAlgorithms")
+      ]
     )
   ],
   schemes: [

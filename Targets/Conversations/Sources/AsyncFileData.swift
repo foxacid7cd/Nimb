@@ -21,6 +21,7 @@ public struct AsyncFileData: AsyncSequence {
         let data = fileHandle.availableData
         
         guard !data.isEmpty else {
+          fileHandle.readabilityHandler = nil
           continuation.finish()
           return
         }

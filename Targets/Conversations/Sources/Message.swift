@@ -11,7 +11,7 @@ import MessagePack
 public enum Message {
   case request(id: UInt, method: String, params: [MessagePackValue])
   case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
-  case notification(method: String, params: [MessagePackValue])
+  case notification(Notification)
 
   public init(messagePackValue: MessagePackValue) throws {
     switch messagePackValue {
@@ -89,7 +89,7 @@ public enum Message {
             guard let params else {
               throw "Could not unpack notification message params"
             }
-            message = .notification(method: method, params: params)
+            message = .notification(.init(method: method, params: params))
         }
 
         guard array.isEmpty else {
@@ -122,11 +122,11 @@ public enum Message {
           isSuccess ? payload : .nil
         ]
 
-      case let .notification(method, params):
+      case let .notification(notification):
         array = [
           .uint(UInt64(MessageTypeCode.notification.rawValue)),
-          .string(method),
-          .array(params)
+          .string(notification.method),
+          .array(notification.params)
         ]
     }
 
