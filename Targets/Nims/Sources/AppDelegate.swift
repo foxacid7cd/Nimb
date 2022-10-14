@@ -58,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       do {
-        try await client.nvimUIAttach(width: 80, height: 24, options: ["ext_multigrid": true])
+        try await client.nvimUIAttach(width: 80, height: 24, options: [.string(UIOption.extMultigrid.rawValue): true])
       } catch let errorValue as MessagePackValue {
         fatalError("nvim error \(errorValue)")
 

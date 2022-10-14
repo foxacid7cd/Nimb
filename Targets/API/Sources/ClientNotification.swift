@@ -34,7 +34,7 @@ public enum ClientNotification {
       self = .redraw(uiEvents: uiEvents)
       
     default:
-      assertionFailure("unknown notification method '\(messageNotification.method)'")
+      assertionFailure("unknown notification method \(messageNotification.method)")
       return nil
     }
   }

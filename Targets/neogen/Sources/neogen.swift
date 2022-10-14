@@ -177,6 +177,13 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
         }
         return dictionary
       },
+    "uiOptions": apiInfo.uiOptions
+      .map { uiOption in
+        [
+          "name": uiOption.camelCased(capitalized: false),
+          "originalName": uiOption,
+        ]
+      },
   ]
 
   var uiEvents = [Any]()
