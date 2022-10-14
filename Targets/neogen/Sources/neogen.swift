@@ -240,7 +240,7 @@ extension String {
         }
         
         switch word {
-          case "ui", "id":
+          case "ui", "id", "api":
             return word.uppercased()
             
           default:
@@ -299,6 +299,8 @@ private func swiftType(nvimType: String) -> String {
       return "String"
     case "Integer":
       return "Int"
+    case "Array":
+      return "[MessagePackValue]"
     default:
       return "MessagePackValue"
   }
@@ -312,6 +314,8 @@ private func obtainingValue(nvimType: String, name: String) -> String {
       return ".string(\(name))"
     case "Integer":
       return ".int(Int64(\(name)))"
+    case "Array":
+      return ".array(\(name))"
     default:
       return name
   }
@@ -325,6 +329,8 @@ private func obtainingReturnValue(nvimType: String, name: String) -> String {
       return "\(name).stringValue"
     case "Integer":
       return "\(name).intValue"
+    case "Array":
+      return "\(name).arrayValue"
     default:
       return name
   }

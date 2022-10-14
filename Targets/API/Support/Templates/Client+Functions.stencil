@@ -4,10 +4,10 @@ public extension Client {
 {% for function in functions %}  /// {{ function.description }} {% if function.isDeprecated %}
   @available(*, deprecated){% endif %}
   {{ function.signature }} {
-    {% if function.returnType %}{% if function.returnType != "MessagePackValue" %}let result = {% endif %}{% else %}_ = {% endif %}try await request(
-      "{{ function.name }}",
-      [{{ function.parametersArray }}]
-    ){% if function.returnType and function.returnType != "MessagePackValue" %}
+    {% if function.returnType %}{% if function.returnType != "MessagePackValue" %}let result = {% endif %}{% else %}_ = {% endif %}try await request(.init(
+      name: "{{ function.name }}",
+      parameters: [{{ function.parametersArray }}]
+    )){% if function.returnType and function.returnType != "MessagePackValue" %}
     guard let value = {{ function.obtainingReturnValue }} else {
       throw "Invalid return value type."
     }
