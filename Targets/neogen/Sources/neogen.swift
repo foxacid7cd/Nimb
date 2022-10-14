@@ -13,11 +13,9 @@ struct neogen: AsyncParsableCommand {
   var project: String
   
   mutating func run() async throws {
-    try generateOutputFiles(
-      renderingContext: try renderingContext(
-        apiInfo: try await fetchAPIInfo()
-      )
-    )
+    let apiInfo = try await fetchAPIInfo()
+    let renderingContext = try renderingContext(apiInfo: apiInfo)
+    try generateOutputFiles(renderingContext: renderingContext)
   }
   
   @MainActor
@@ -25,9 +23,6 @@ struct neogen: AsyncParsableCommand {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/zsh")
     process.arguments = ["-c", "nvim --api-info"]
-    
-    let inputPipe = Pipe()
-    process.standardInput = inputPipe
     
     let outputPipe = Pipe()
     process.standardOutput = outputPipe

@@ -5,11 +5,12 @@
 //  Created by Yevhenii Matviienko on 22.09.2022.
 //
 
+import API
 import AppKit
-import Conversations
+import MessagePack
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-  var nvim: MessagingProcess?
+  var client: Client?
 
   @MainActor func applicationDidFinishLaunching(_: Notification) {
     let menubar = NSMenu()
@@ -41,19 +42,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     window.title = appName
     window.makeKeyAndOrderFront(nil)
 
-    let nvim = MessagingProcess(
-      executableURL: URL(fileURLWithPath: "/bin/zsh"),
-      arguments: ["-c", "nvim --embed"]
-    )
-    self.nvim = nvim
+    let client = Client()
+    self.client = client
 
     Task {
       do {
-        for try await event in nvim {
+        for try await event in client {
           print(event)
         }
       } catch {
         log(.error, "Error: \(error)")
+      }
+    }
+
+    Task {
+      do {
+        try await client.nvimUiAttach(width: 120, height: 80, options: ["ext_multigrid": true])
+      } catch let errorValue as MessagePackValue {
+        print(errorValue)
+
+      } catch {
+        fatalError("Unknown error: \(error)")
       }
     }
   }
