@@ -1,0 +1,31 @@
+import MessagePack
+import Library
+
+public enum UIEvent {
+{% for uiEvent in uiEvents %}  /// {{ uiEvent.description }}
+  case {{ uiEvent.signature }}
+
+{% endfor %}  case unknown(description: String)
+
+  public init(method: Method) throws {
+    switch method.name {
+{% for uiEvent in uiEvents %}      case "{{ uiEvent.originalName }}":
+        guard method.parameters.count == {{ uiEvent.parameters.count }} else {
+          throw "Invalid number of parameters, expected {{ uiEvent.parameters.count }}, got \(method.parameters.count)."
+        }{% if uiEvent.parameters.count != 0 %}
+        
+        var remainingParameters = method.parameters
+        var currentParameter = MessagePackValue.nil
+{% for parameter in uiEvent.parameters %}
+        currentParameter = remainingParameters.removeFirst()
+{% if parameter.type != "MessagePackValue" %}        guard let {{ parameter.name }} = currentParameter{{ parameter.obtainingValue }} else {
+          throw "Unexpected parameter type got for parameter {{ parameter.name }}, expected {{ parameter.type }}, got \(currentParameter)."
+        }{% else %}        let {{ parameter.name }} = currentParameter{% endif %}
+{% endfor %}{% endif %}
+        {{ uiEvent.setSelf }}
+
+{% endfor %}      default:
+        self = .unknown(description: "\(method)")
+    }
+  }
+}

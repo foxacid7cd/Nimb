@@ -103,21 +103,21 @@ struct neogen: AsyncParsableCommand {
 }
 
 private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
-  return [
+  var dictionary: [String: Any] = [
     "functions": apiInfo.functions
       .map { function in
         var dictionary = [
           "name": function.name,
           "parametersArray": function.parameters
-            .map { obtainingValue(nvimType: $0.type, name: $0.name.camelCased) }
+            .map { obtainingValue(nvimType: $0.type, name: $0.name.camelCased(capitalized: false)) }
             .joined(separator: ", "),
           "signature": {
             let formattedParameters = function.parameters
-              .map { "\($0.name.camelCased): \(swiftType(nvimType: $0.type))" }
+              .map { "\($0.name.camelCased(capitalized: false)): \(swiftType(nvimType: $0.type))" }
               .joined(separator: ", ")
             
             return [
-              "func \(function.name.camelCased)(\(formattedParameters)) async throws",
+              "func \(function.name.camelCased(capitalized: false))(\(formattedParameters)) async throws",
               function.returnType == "void" ? nil : swiftType(nvimType: function.returnType)
             ]
             .compactMap { $0 }
@@ -142,15 +142,111 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           dictionary["obtainingReturnValue"] = obtainingReturnValue(nvimType: function.returnType, name: "result")
         }
         return dictionary
+      },
+    "uiEvents": apiInfo.uiEvents
+      .map { uiEvent in
+        var dictionary = [
+          "caseSignature": [
+            uiEvent.name.camelCased(capitalized: false),
+            uiEvent.parameters.isEmpty ? nil : "(\(uiEvent.name.camelCased(capitalized: true)))"
+          ]
+          .compactMap { $0 }
+          .joined(),
+          "description": {
+            let formattedParameters = uiEvent.parameters
+              .map { "\($0.name): \($0.type)" }
+              .joined(separator: ", ")
+            
+            return "\(uiEvent.name)(\(formattedParameters))"
+          }(),
+          "parameters": uiEvent.parameters
+            .map { parameter in
+              [
+                "signature": "public var \(parameter.name.camelCased(capitalized: false)): \(swiftType(nvimType: parameter.type))"
+              ]
+            }
+        ]
+        
+        if !uiEvent.parameters.isEmpty {
+          dictionary["signature"] = "public struct \(uiEvent.name.camelCased(capitalized: true))"
+        }
+        
+        return dictionary
       }
   ]
+  
+  var uiEvents = [Any]()
+  for uiEvent in apiInfo.uiEvents {
+    let description: String = {
+      guard !uiEvent.parameters.isEmpty else {
+        return uiEvent.name
+      }
+              
+      let formattedParameters = uiEvent.parameters
+        .map { "\($0.name): \($0.type)" }
+        .joined(separator: ", ")
+      
+      return "\(uiEvent.name)(\(formattedParameters))"
+    }()
+    func signature(forSetSelf: Bool) -> String {
+      [
+        uiEvent.name.camelCased(capitalized: false),
+        {
+          guard !uiEvent.parameters.isEmpty else {
+            return ""
+          }
+        
+          let formattedParameters = uiEvent.parameters
+            .map { parameter in
+              let name = parameter.name.camelCased(capitalized: false)
+              return "\(name): \(forSetSelf ? name : swiftType(nvimType: parameter.type))"
+            }
+            .joined(separator: ", ")
+        
+          return "(\(formattedParameters))"
+        }()
+      ]
+      .compactMap { $0 }
+      .joined()
+    }
+    uiEvents.append([
+      "description": description,
+      "signature": signature(forSetSelf: false),
+      "name": uiEvent.name.camelCased(capitalized: false),
+      "originalName": uiEvent.name,
+      "parameters": uiEvent.parameters
+        .map { parameter in
+          [
+            "name": parameter.name.camelCased(capitalized: false),
+            "type": swiftType(nvimType: parameter.type),
+            "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: "")
+          ]
+        },
+      "setSelf": "self = .\(signature(forSetSelf: true))"
+    ])
+  }
+  dictionary["uiEvents"] = uiEvents
+  
+  return dictionary
 }
 
 extension String {
-  var camelCased: String {
+  func camelCased(capitalized: Bool) -> String {
     split(separator: "_")
       .enumerated()
-      .map { index, word in index == 0 ? String(word) : word.capitalized }
+      .map { index, word in
+        if !capitalized, index == 0 {
+          return String(word)
+        }
+        
+        switch word {
+          case "ui", "id":
+            return word.uppercased()
+            
+          default:
+            return word.capitalized
+        }
+      }
       .joined()
   }
 }

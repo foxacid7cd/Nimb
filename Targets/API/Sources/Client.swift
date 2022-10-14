@@ -16,14 +16,14 @@ public class Client: AsyncSequence {
   public typealias Element = Event
 
   public enum Event {
-    case notificationReceived(Library.Notification)
+    case notificationReceived(method: Library.Method)
     case standardError(line: String)
     case terminated(exitCode: Int, reason: Process.TerminationReason)
   }
 
   private let stream: AsyncThrowingStream<Event, Error>
 
-  let request: (_ method: String, _ params: [MessagePackValue]) async throws -> MessagePackValue
+  let request: (Library.Method) async throws -> MessagePackValue
 
   @MainActor
   public init() {
@@ -36,7 +36,7 @@ public class Client: AsyncSequence {
         for await event in process {
           switch event {
             case let .notificationReceived(notification):
-              continuation.yield(.notificationReceived(notification))
+              continuation.yield(.notificationReceived(method: notification))
 
             case let .standardError(line):
               continuation.yield(.standardError(line: line))

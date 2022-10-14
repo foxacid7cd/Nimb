@@ -19,7 +19,7 @@ public class ProceduringProcess: AsyncSequence {
   public typealias Handler = (_ isSuccess: Bool, _ payload: MessagePackValue) async -> Void
   
   public enum Event {
-    case notificationReceived(Notification)
+    case notificationReceived(method: Library.Method)
     case standardError(line: String)
     case terminated(exitCode: Int, reason: Process.TerminationReason)
   }
@@ -41,8 +41,8 @@ public class ProceduringProcess: AsyncSequence {
         switch message {
           case let .standardOutput(message):
             switch message {
-              case let .request(id, method, params):
-                assertionFailure("Receiving requests not supported, request id: \(id), method: \(method), params: \(params).")
+              case let .request(id, method):
+                assertionFailure("Receiving requests not supported, request id: \(id), method: \(method).")
                 
               case let .response(id, isSuccess, payload):
                 guard let handler = handlers[id] else {
@@ -50,8 +50,8 @@ public class ProceduringProcess: AsyncSequence {
                 }
                 await handler(isSuccess, payload)
                 
-              case let .notification(notification):
-                await eventsChannel.send(.notificationReceived(notification))
+              case let .notification(method):
+                await eventsChannel.send(.notificationReceived(method: method))
             }
             
           case let .standardError(line):
@@ -65,7 +65,7 @@ public class ProceduringProcess: AsyncSequence {
   }
   
   @MainActor @discardableResult
-  public func request(method: String, params: [MessagePackValue]) async throws -> MessagePackValue {
+  public func request(method: Library.Method) async throws -> MessagePackValue {
     return try await withCheckedThrowingContinuation { continuation in
       let id = counter
       counter += 1
@@ -81,7 +81,7 @@ public class ProceduringProcess: AsyncSequence {
       }
       
       Task {
-        await process.send(.request(id: id, method: method, params: params))
+        await process.send(.request(id: id, method: method))
       }
     }
   }

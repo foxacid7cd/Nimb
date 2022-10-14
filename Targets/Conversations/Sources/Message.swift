@@ -9,9 +9,9 @@ import Library
 import MessagePack
 
 public enum Message {
-  case request(id: UInt, method: String, params: [MessagePackValue])
+  case request(id: UInt, method: Method)
   case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
-  case notification(Notification)
+  case notification(method: Method)
 
   public init(messagePackValue: MessagePackValue) throws {
     switch messagePackValue {
@@ -43,7 +43,7 @@ public enum Message {
             guard let params else {
               throw "Could not unpack request message method params"
             }
-            message = .request(id: id, method: method, params: params)
+            message = .request(id: id, method: .init(name: method, parameters: params))
 
           case .response:
             guard !array.isEmpty, let id = array.removeFirst().uintValue else {
@@ -89,7 +89,7 @@ public enum Message {
             guard let params else {
               throw "Could not unpack notification message params"
             }
-            message = .notification(.init(method: method, params: params))
+            message = .notification(method: .init(name: method, parameters: params))
         }
 
         guard array.isEmpty else {
@@ -106,12 +106,12 @@ public enum Message {
     let array: [MessagePackValue]
 
     switch self {
-      case let .request(id, method, params):
+      case let .request(id, method):
         array = [
           .uint(UInt64(MessageTypeCode.request.rawValue)),
           .uint(UInt64(id)),
-          .string(method),
-          .array(params)
+          .string(method.name),
+          .array(method.parameters)
         ]
 
       case let .response(id, isSuccess, payload):
@@ -122,11 +122,11 @@ public enum Message {
           isSuccess ? payload : .nil
         ]
 
-      case let .notification(notification):
+      case let .notification(method):
         array = [
           .uint(UInt64(MessageTypeCode.notification.rawValue)),
-          .string(notification.method),
-          .array(notification.params)
+          .string(method.name),
+          .array(method.parameters)
         ]
     }
 
