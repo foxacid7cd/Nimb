@@ -1,0 +1,34 @@
+import MessagePack
+
+public enum UIEvents {
+  {% for model in uiEventModels %}
+  public struct {{ model.parametersType }} {
+    {% for parameter in model.parameters %}public var {{ parameter.name }}: {{ parameter.type }}
+    {% endfor %}
+    
+    public init({% for parameter in model.parameters %}{{ parameter.name }}: {{ parameter.type }}{% if not forloop.last %}, {% endif %}{% endfor %}) {
+      {% for parameter in model.parameters %}self.{{ parameter.name }} = {{ parameter.name }}
+      {% endfor %}
+    }
+    
+    public static func fromUIEvent(parameters: [MessagePackValue]) throws -> Self {
+      guard parameters.count == {{ model.parameters.count }} else {
+        throw "Invalid number of parameters, expected {{ model.parameters.count }}, got \(parameters.count), parameters \(parameters)."
+      }
+      
+      var remainingParameters = parameters
+      var currentParameter = MessagePackValue.nil
+      {% for parameter in model.parameters %}
+      currentParameter = remainingParameters.removeFirst()
+      {% if parameter.type != "MessagePackValue" %}guard let {{ parameter.name }} = currentParameter{{ parameter.obtainingValue }} else {
+        throw "Unexpected parameter type got for parameter {{ parameter.name }}, expected {{ parameter.type }}, got \(currentParameter)."
+      }
+      {% else %}let {{ parameter.name }} = currentParameter
+      {% endif %}
+      
+      {% endfor %}
+      return .init({% for parameter in model.parameters %}{{ parameter.name }}: {{ parameter.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+    }
+  }
+  {% endfor %}
+}

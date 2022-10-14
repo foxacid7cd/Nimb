@@ -12,25 +12,25 @@ public struct AsyncFileData: AsyncSequence {
   public typealias Element = Data
   public typealias Failure = Error
   public typealias AsyncIterator = AsyncThrowingStream<Element, Failure>.AsyncIterator
-  
+
   private let stream: AsyncThrowingStream<Element, Failure>
-  
+
   public init(_ fileHandle: FileHandle) {
     stream = .init { continuation in
       fileHandle.readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
-        
+
         guard !data.isEmpty else {
           fileHandle.readabilityHandler = nil
           continuation.finish()
           return
         }
-        
+
         continuation.yield(data)
       }
     }
   }
-  
+
   public func makeAsyncIterator() -> AsyncIterator {
     stream.makeAsyncIterator()
   }

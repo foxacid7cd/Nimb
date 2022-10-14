@@ -37,7 +37,7 @@ public struct MessagingProcess: AsyncSequence {
     let inputMessages = AsyncChannel<Message>()
     self.inputMessages = inputMessages
 
-    self.stream = .init { continuation in
+    stream = .init { continuation in
       let process = Process()
       process.executableURL = executableURL
       process.arguments = arguments

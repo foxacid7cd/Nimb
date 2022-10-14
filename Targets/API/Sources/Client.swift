@@ -16,7 +16,7 @@ public class Client: AsyncSequence {
   public typealias Element = Event
 
   public enum Event {
-    case ui(UIEvent)
+    case notificationReceived(Notification)
     case standardError(line: String)
     case terminated(exitCode: Int, reason: Process.TerminationReason)
   }
@@ -35,19 +35,24 @@ public class Client: AsyncSequence {
       Task {
         for await event in process {
           switch event {
-            case let .notificationReceived(method):
-              do {
-                let uiEvent = try UIEvent(method: method)
-                continuation.yield(.ui(uiEvent))
-              } catch {
-                assertionFailure("UIEvent parsing error: \(error).")
-              }
+          case let .notificationReceived(method):
+            do {
+              let uiEvents = try method.parameters
+                .map(Method.init)
+                .map(UIEvent.init)
 
-            case let .standardError(line):
-              continuation.yield(.standardError(line: line))
+              let notification = Notification.redraw(uiEvents: uiEvents)
+              continuation.yield(.notificationReceived(notification))
 
-            case let .terminated(exitCode, reason):
-              continuation.yield(.terminated(exitCode: exitCode, reason: reason))
+            } catch {
+              assertionFailure("notification parsing failed with error '\(error)', method \(method)")
+            }
+
+          case let .standardError(line):
+            continuation.yield(.standardError(line: line))
+
+          case let .terminated(exitCode, reason):
+            continuation.yield(.terminated(exitCode: exitCode, reason: reason))
           }
         }
         continuation.finish()

@@ -12,7 +12,7 @@ import MessagePack
 class AppDelegate: NSObject, NSApplicationDelegate {
   var client: Client?
 
-  @MainActor func applicationDidFinishLaunching(_: Notification) {
+  @MainActor func applicationDidFinishLaunching(_: AppKit.Notification) {
     let menubar = NSMenu()
     let appMenuItem = NSMenuItem()
     menubar.addItem(appMenuItem)
@@ -57,7 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       do {
-        try await client.nvimUIAttach(width: 120, height: 80, options: ["ext_multigrid": true])
+        try await client.nvimUIAttach(width: 80, height: 24, options: ["ext_multigrid": true])
       } catch let errorValue as MessagePackValue {
         print(errorValue)
 

@@ -2,29 +2,34 @@ import MessagePack
 import Library
 
 public enum UIEvent {
-{% for uiEvent in uiEvents %}  /// {{ uiEvent.description }}
-  case {{ uiEvent.signature }}
-
-{% endfor %}  case unknown(description: String)
+  {% for uiEvent in uiEvents %}
+  /// {{ uiEvent.description }}
+  case {{ uiEvent.name }}{% if uiEvent.parametersType %}({% if uiEvent.isArray %}[{% endif %}UIEvents.{{ uiEvent.parametersType }}{% if uiEvent.isArray %}]{% endif %}){% endif %}
+  
+  
+  {% endfor %}
+  
+  /// Unknown event.
+  case unknown(description: String)
 
   public init(method: Method) throws {
     switch method.name {
-{% for uiEvent in uiEvents %}      case "{{ uiEvent.originalName }}":
-        guard method.parameters.count == {{ uiEvent.parameters.count }} else {
-          throw "Invalid number of parameters, expected {{ uiEvent.parameters.count }}, got \(method.parameters.count)."
-        }{% if uiEvent.parameters.count != 0 %}
+      {% for uiEvent in uiEvents %}
+      case "{{ uiEvent.originalName }}":
+      {% if uiEvent.parametersType %}{% if uiEvent.isArray %}let children = try method.parameters
+          .map { parameter -> UIEvents.{{ uiEvent.parametersType }} in
+            guard let childParameters = parameter.arrayValue else {
+              throw "not an array, parameter \(parameter)"
+            }
+            return try .fromUIEvent(parameters: childParameters)
+          }
+        self = .{{ uiEvent.name }}(children)
+        {% else %}self = .{{ uiEvent.name }}(try .fromUIEvent(parameters: method.parameters))
+        {% endif %}
+      {% else %}self = .{{ uiEvent.name }}{% endif %}
         
-        var remainingParameters = method.parameters
-        var currentParameter = MessagePackValue.nil
-{% for parameter in uiEvent.parameters %}
-        currentParameter = remainingParameters.removeFirst()
-{% if parameter.type != "MessagePackValue" %}        guard let {{ parameter.name }} = currentParameter{{ parameter.obtainingValue }} else {
-          throw "Unexpected parameter type got for parameter {{ parameter.name }}, expected {{ parameter.type }}, got \(currentParameter)."
-        }{% else %}        let {{ parameter.name }} = currentParameter{% endif %}
-{% endfor %}{% endif %}
-        {{ uiEvent.setSelf }}
-
-{% endfor %}      default:
+      {% endfor %}
+      default:
         self = .unknown(description: "\(method)")
     }
   }
