@@ -9,131 +9,116 @@ import Library
 import MessagePack
 
 public enum Message {
-  case request(id: UInt, method: Method)
+  case request(id: UInt, method: String, parameters: [MessagePackValue])
   case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
-  case notification(method: Method)
+  case notification(MessageNotification)
 
-  public init(messagePackValue: MessagePackValue) throws {
-    switch messagePackValue {
-    case var .array(array):
-      var message: Message
+  public init?(messagePackValue: MessagePackValue) {
+    guard let arrayValue = messagePackValue.arrayValue else {
+      assertionFailure("message expected to be created from array value")
+      return nil
+    }
 
-      guard !array.isEmpty, let messageTypeCode = array.removeFirst().uintValue.flatMap(MessageTypeCode.init) else {
-        throw "Could not unpack message type code."
-      }
-      switch messageTypeCode {
-      case .request:
-        guard !array.isEmpty, let id = array.removeFirst().uintValue else {
-          throw "Could not unpack request messsage id"
-        }
-        guard !array.isEmpty, let method = array.removeFirst().stringValue else {
-          throw "Could not unpack request message method"
-        }
-        let params: [MessagePackValue]? = {
-          guard !array.isEmpty else { return nil }
-          let value = array.removeFirst()
-          if value.isNil {
-            return []
-          } else if let params = value.arrayValue {
-            return params
-          } else {
-            return nil
-          }
-        }()
-        guard let params else {
-          throw "Could not unpack request message method params"
-        }
-        message = .request(id: id, method: .init(name: method, parameters: params))
+    var previousPosition: Int?
+    func next<ValueType>(_ entity: String, _ transform: (MessagePackValue) -> ValueType? = { $0 }, file: StaticString = #file, line: UInt = #line) -> ValueType? {
+      let currentPosition = previousPosition.map { $0 + 1 } ?? 0
+      defer { previousPosition = currentPosition }
 
-      case .response:
-        guard !array.isEmpty, let id = array.removeFirst().uintValue else {
-          throw "Could not unpack response messsage id"
-        }
-        guard !array.isEmpty else {
-          throw "Could not unpack response error message element"
-        }
-        let errorValue = array.removeFirst()
-        guard !array.isEmpty else {
-          throw "Could not unpack response result message element"
-        }
-        let resultValue = array.removeFirst()
-
-        let isSuccess: Bool
-        let payload: MessagePackValue
-        if errorValue.isNil {
-          isSuccess = true
-          payload = resultValue
-        } else {
-          isSuccess = false
-          payload = errorValue
-        }
-        message = .response(id: id, isSuccess: isSuccess, payload: payload)
-
-      case .notification:
-        guard !array.isEmpty, let method = array.removeFirst().stringValue else {
-          throw "Could not unpack notification message method"
-        }
-        let params: [MessagePackValue]? = {
-          guard !array.isEmpty else {
-            return nil
-          }
-          let value = array.removeFirst()
-          if value.isNil {
-            return []
-          } else if let params = value.arrayValue {
-            return params
-          } else {
-            return nil
-          }
-        }()
-        guard let params else {
-          throw "Could not unpack notification message params"
-        }
-        message = .notification(method: .init(name: method, parameters: params))
+      guard arrayValue.count > currentPosition, let value = transform(arrayValue[currentPosition]) else {
+        assertionFailure("element at index \(currentPosition) is expected to be \(entity)", file: file, line: line)
+        return nil
       }
 
-      guard array.isEmpty else {
-        throw "Too much elements in root array"
-      }
-      self = message
+      return value
+    }
 
-    default:
-      throw "Root packed value is not an array."
+    func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) -> Bool {
+      guard let previousPosition, previousPosition == arrayValue.count - 1 else {
+        assertionFailure("\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed", file: file, line: line)
+        return false
+      }
+
+      return true
+    }
+
+    guard let messageType = next("unsigned integer representing message type", { $0.uintValue.flatMap(MessageType.init) }) else {
+      return nil
+    }
+    switch messageType {
+    case .request:
+      guard
+        let id = next("unsigned integer representing request id", { $0.uintValue }),
+        let method = next("string representing request method", { $0.stringValue }),
+        let parameters = next("array of request parameters", { $0.arrayValue }),
+        finalize("request message")
+      else {
+        return nil
+      }
+
+      self = .request(id: id, method: method, parameters: parameters)
+
+    case .response:
+      guard
+        let id = next("unsiged integer representing response id", { $0.uintValue }),
+        let failure = next("value representing payload for response on failed request"),
+        let success = next("value representing payload for response on succeeded request"),
+        finalize("response message")
+      else {
+        return nil
+      }
+
+      self = .response(id: id, isSuccess: failure.isNil, payload: failure.isNil ? success : failure)
+
+    case .notification:
+      guard
+        let method = next("string representing notification method", { $0.stringValue }),
+        let parameters = next("array representing notification parameters", { $0.arrayValue }),
+        finalize("notification message")
+      else {
+        return nil
+      }
+
+      self = .notification(.init(method: method, parametersArray: parameters.normalizedToParametersArray))
     }
   }
 
   public var messagePackValue: MessagePackValue {
-    let array: [MessagePackValue]
+    let arrayValue: [MessagePackValue]
 
     switch self {
-    case let .request(id, method):
-      array = [
-        .uint(UInt64(MessageTypeCode.request.rawValue)),
+    case let .request(id, method, parameters):
+      arrayValue = [
+        .uint(UInt64(MessageType.request.rawValue)),
         .uint(UInt64(id)),
-        .string(method.name),
-        .array(method.parameters),
+        .string(method),
+        .array(parameters),
       ]
 
     case let .response(id, isSuccess, payload):
-      array = [
-        .uint(UInt64(MessageTypeCode.response.rawValue)),
+      arrayValue = [
+        .uint(UInt64(MessageType.response.rawValue)),
         .uint(UInt64(id)),
         isSuccess ? .nil : payload,
         isSuccess ? payload : .nil,
       ]
 
-    case let .notification(method):
-      array = [
-        .uint(UInt64(MessageTypeCode.notification.rawValue)),
-        .string(method.name),
-        .array(method.parameters),
+    case let .notification(notification):
+      let parametersArrayValue: [MessagePackValue] = {
+        if notification.parametersArray.count == 1 {
+          return notification.parametersArray[0]
+        } else {
+          return notification.parametersArray
+            .map(MessagePackValue.array)
+        }
+      }()
+
+      arrayValue = [
+        .uint(UInt64(MessageType.notification.rawValue)),
+        .string(notification.method),
+        .array(parametersArrayValue),
       ]
     }
 
-    return .array(array)
+    return .array(arrayValue)
   }
-}
-
-public enum MessageTypeCode: UInt {
-  case request = 0, response, notification
 }

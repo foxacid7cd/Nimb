@@ -14,23 +14,17 @@ import MessagePack
 
 public class ProceduringProcess: AsyncSequence {
   public typealias AsyncIterator = AsyncChannel<Element>.Iterator
-  public typealias Element = Event
+  public typealias Element = MessageNotification
 
   public typealias Handler = (_ isSuccess: Bool, _ payload: MessagePackValue) async -> Void
-
-  public enum Event {
-    case notificationReceived(method: Library.Method)
-    case standardError(line: String)
-    case terminated(exitCode: Int, reason: Process.TerminationReason)
-  }
 
   @MainActor
   private var process: MessagingProcess
   @MainActor
   private var handlers = [UInt: Handler]()
   @MainActor
-  private var counter: UInt = 0
-  private let eventsChannel = AsyncChannel<Event>()
+  private var previousID: UInt?
+  private let notificationsChannel = AsyncChannel<MessageNotification>()
 
   @MainActor
   public init(executableURL: URL, arguments: [String]) {
@@ -39,56 +33,44 @@ public class ProceduringProcess: AsyncSequence {
     Task {
       for try await message in process {
         switch message {
-        case let .standardOutput(message):
-          switch message {
-          case let .request(id, method):
-            assertionFailure("Receiving requests not supported, request id: \(id), method: \(method).")
+        case let .request(id, method, parameters):
+          fatalError("unexpected request received, id \(id) method \(method) parameters: \(parameters)")
 
-          case let .response(id, isSuccess, payload):
-            guard let handler = handlers[id] else {
-              fatalError("Handler for request id \(id) is not registered.")
-            }
-            await handler(isSuccess, payload)
-
-          case let .notification(method):
-            await eventsChannel.send(.notificationReceived(method: method))
+        case let .response(id, isSuccess, payload):
+          guard let handler = handlers[id] else {
+            fatalError("handler for response with id \(id) is not registered")
           }
+          await handler(isSuccess, payload)
 
-        case let .standardError(line):
-          await eventsChannel.send(.standardError(line: line))
-
-        case let .terminated(exitCode, reason):
-          await eventsChannel.send(.terminated(exitCode: exitCode, reason: reason))
+        case let .notification(notification):
+          await notificationsChannel.send(notification)
         }
       }
     }
   }
 
   @MainActor @discardableResult
-  public func request(method: Library.Method) async throws -> MessagePackValue {
+  public func request(method: String, parameters: [MessagePackValue]) async throws -> MessagePackValue {
     try await withCheckedThrowingContinuation { continuation in
-      let id = counter
-      counter += 1
+      let currentID = previousID.map { $0 + 1 } ?? 0
 
-      self.registerHandler(id: id) { [weak self] isSuccess, payload in
-        self?.unregisterHandler(id: id)
+      self.registerHandler(id: currentID) { [weak self] isSuccess, payload in
+        self?.unregisterHandler(id: currentID)
 
-        if isSuccess {
-          continuation.resume(returning: payload)
-        } else {
-          continuation.resume(throwing: payload)
-        }
+        isSuccess ? continuation.resume(returning: payload) : continuation.resume(throwing: payload)
       }
 
       Task {
-        await process.send(.request(id: id, method: method))
+        await process.send(.request(id: currentID, method: method, parameters: parameters))
       }
+
+      self.previousID = currentID
     }
   }
 
   @MainActor
   public func makeAsyncIterator() -> AsyncIterator {
-    eventsChannel.makeAsyncIterator()
+    notificationsChannel.makeAsyncIterator()
   }
 
   @MainActor

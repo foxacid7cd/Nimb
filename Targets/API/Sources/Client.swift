@@ -12,18 +12,12 @@ import MessagePack
 import Procedures
 
 public class Client: AsyncSequence {
-  public typealias AsyncIterator = AsyncThrowingStream<Element, Error>.AsyncIterator
-  public typealias Element = Event
+  public typealias AsyncIterator = AsyncStream<Element>.AsyncIterator
+  public typealias Element = ClientNotification
 
-  public enum Event {
-    case notificationReceived(Notification)
-    case standardError(line: String)
-    case terminated(exitCode: Int, reason: Process.TerminationReason)
-  }
+  private let stream: AsyncStream<ClientNotification>
 
-  private let stream: AsyncThrowingStream<Event, Error>
-
-  let request: (Library.Method) async throws -> MessagePackValue
+  let request: (_ method: String, _ parameters: [MessagePackValue]) async throws -> MessagePackValue
 
   @MainActor
   public init() {
@@ -33,28 +27,14 @@ public class Client: AsyncSequence {
     )
     stream = .init { continuation in
       Task {
-        for await event in process {
-          switch event {
-          case let .notificationReceived(method):
-            do {
-              let uiEvents = try method.parameters
-                .map(Method.init)
-                .map(UIEvent.init)
-
-              let notification = Notification.redraw(uiEvents: uiEvents)
-              continuation.yield(.notificationReceived(notification))
-
-            } catch {
-              assertionFailure("notification parsing failed with error '\(error)', method \(method)")
-            }
-
-          case let .standardError(line):
-            continuation.yield(.standardError(line: line))
-
-          case let .terminated(exitCode, reason):
-            continuation.yield(.terminated(exitCode: exitCode, reason: reason))
+        for await messageNotification in process {
+          guard let notification = ClientNotification(messageNotification: messageNotification) else {
+            continue
           }
+
+          continuation.yield(notification)
         }
+
         continuation.finish()
       }
     }

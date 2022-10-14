@@ -8,8 +8,6 @@ import MessagePack
 import PathKit
 import Stencil
 
-private let ArrayUIEvents = ["option_set", "mode_info_set", "highlight_set", "default_colors_set", "hl_group_set", "hl_attr_define", "grid_resize", "grid_clear", "msg_set_pos", "grid_line", "win_viewport"]
-
 @main
 struct neogen: AsyncParsableCommand {
   @Argument
@@ -184,7 +182,6 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
   var uiEvents = [Any]()
   var uiEventModels = [Any]()
   for uiEvent in apiInfo.uiEvents {
-    let isArray = ArrayUIEvents.contains(uiEvent.name)
     let description: String = {
       guard !uiEvent.parameters.isEmpty else {
         return uiEvent.name
@@ -205,7 +202,6 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
       "description": description,
       "name": uiEvent.name.camelCased(capitalized: false),
       "originalName": uiEvent.name,
-      "isArray": isArray,
       "parameters": uiEvent.parameters
         .map { parameter in
           [
@@ -217,24 +213,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
     ]
 
     if !uiEvent.parameters.isEmpty {
-      dictionary["parametersType"] = {
-        if isArray {
-          var name = uiEvent.name
-
-          let setSuffix = "_set"
-          if name.hasSuffix(setSuffix) {
-            name = String(name.prefix(name.count - setSuffix.count))
-          }
-
-          if name.hasSuffix("s") {
-            name.removeLast()
-          }
-
-          return name.camelCased(capitalized: true)
-        } else {
-          return uiEvent.name.camelCased(capitalized: true)
-        }
-      }()
+      dictionary["parametersType"] = uiEvent.name.camelCased(capitalized: true)
     }
 
     uiEvents.append(dictionary)

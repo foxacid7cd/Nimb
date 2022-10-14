@@ -46,12 +46,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     self.client = client
 
     Task {
-      do {
-        for try await event in client {
-          print(event)
+      for try await notification in client {
+        switch notification {
+        case let .redraw(uiEvents):
+          for uiEvent in uiEvents {
+            log(.debug, String(describing: uiEvent))
+          }
         }
-      } catch {
-        log(.error, "Error: \(error)")
       }
     }
 
@@ -59,10 +60,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       do {
         try await client.nvimUIAttach(width: 80, height: 24, options: ["ext_multigrid": true])
       } catch let errorValue as MessagePackValue {
-        print(errorValue)
+        fatalError("nvim error \(errorValue)")
 
       } catch {
-        fatalError("Unknown error: \(error)")
+        fatalError("unknown error \(error)")
       }
     }
   }

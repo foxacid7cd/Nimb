@@ -4,13 +4,8 @@ public extension Client {
   {% for function in functions %}
   /// {{ function.description }}{% if function.isDeprecated %}
   @available(*, deprecated){% endif %}
-  func {{ function.name }} ({% for parameter in function.parameters %}{{ parameter.name }}: {{ parameter.type }}{% if not forloop.last %}, {% endif %}{% endfor %}) async throws {% if function.returnType %} -> {{ function.returnType }} {% endif %} {
-    {% if function.returnType %}{% if function.returnType != "MessagePackValue" %} let result = {% endif %}{% else %} _ = {% endif %}try await request(
-      .init(
-        name: "{{ function.originalName }}",
-        parameters: [{{ function.parametersInitializationSignature }}]
-      )
-    )
+  func {{ function.name }}({% for parameter in function.parameters %}{{ parameter.name }}: {{ parameter.type }}{% if not forloop.last %}, {% endif %}{% endfor %}) async throws {% if function.returnType %} -> {{ function.returnType }} {% endif %} {
+    {% if function.returnType %}{% if function.returnType != "MessagePackValue" %} let result = {% endif %}{% else %} _ = {% endif %}try await request("{{ function.originalName }}", [{{ function.parametersInitializationSignature }}])
     
     {% if function.returnType and function.returnType != "MessagePackValue" %}
     guard let value = {{ function.obtainingReturnValue }} else {
