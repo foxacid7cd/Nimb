@@ -14,21 +14,28 @@ import MessagePack
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-  private let store = Store()
+  private lazy var store = Store()
+  private lazy var window = Window(store: store)
 
   @MainActor
   func applicationDidFinishLaunching(_: AppKit.Notification) {
+    setupMenu()
+    runClient()
+
+    window.title = ProcessInfo.processInfo.processName
+    window.makeMain()
+    window.makeKeyAndOrderFront(nil)
+  }
+
+  @MainActor
+  private func setupMenu() {
     let menubar = NSMenu()
     let appMenuItem = NSMenuItem()
     menubar.addItem(appMenuItem)
-
     NSApp.mainMenu = menubar
 
     let appMenu = NSMenu()
-    let appName = ProcessInfo.processInfo.processName
-
-    let quitTitle = "Quit \(appName)"
-
+    let quitTitle = "Quit \(ProcessInfo.processInfo.processName)"
     let quitMenuItem = NSMenuItem(
       title: quitTitle,
       action: #selector(NSApplication.shared.terminate(_:)),
@@ -36,12 +43,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     )
     appMenu.addItem(quitMenuItem)
     appMenuItem.submenu = appMenu
+  }
 
-    let window = Window(store: store)
-    window.title = appName
-    window.makeMain()
-    window.makeKeyAndOrderFront(nil)
-
+  @MainActor
+  private func runClient() {
     let client = Client()
 
     Task {
@@ -53,9 +58,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             case let .gridResize(models):
               store.dispatch { state in
                 for model in models {
+                  state.grids.ensureIndexInBounds(model.grid)
+
                   state.grids[model.grid] = .init(id: model.grid, width: model.width, height: model.height)
-                  if state.currentGridID == nil {
-                    state.currentGridID = model.grid
+
+                  if state.currentGridIndex == nil {
+                    state.currentGridIndex = model.grid
                   }
                 }
               }
@@ -63,13 +71,79 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             case let .gridDestroy(models):
               store.dispatch { state in
                 for model in models {
-                  if state.currentGridID == model.grid {
-                    state.currentGridID = nil
+                  guard state.grids[model.grid] != nil else {
+                    "grid_destroy for unexisting grid".fail().failAssertion()
+                    continue
                   }
-                  let removedGrid = state.grids.removeValue(forKey: model.grid)
-                  if removedGrid == nil {
-                    "tried to remove unexisting grid".fail().failAssertion()
+                  state.grids[model.grid] = nil
+
+                  if state.currentGridIndex == model.grid {
+                    state.currentGridIndex = nil
                   }
+                }
+              }
+
+            case let .gridLine(models):
+              store.dispatch { state in
+                var lastHlID: UInt?
+                for model in models {
+                  guard var grid = state.grids[model.grid] else {
+                    "unexisting grid".fail().failAssertion()
+                    continue
+                  }
+
+                  let startingCellIndex = model.row * grid.width + model.colStart
+
+                  var updatedCellsCount = 0
+                  for messagePackValue in model.data {
+                    guard var arrayValue = messagePackValue.arrayValue else {
+                      "cell data is not an array".fail().failAssertion()
+                      continue
+                    }
+
+                    guard !arrayValue.isEmpty, let string = arrayValue.removeFirst().stringValue else {
+                      "expected cell text is not a string".fail().failAssertion()
+                      continue
+                    }
+
+                    var repeatCount: UInt = 1
+
+                    if !arrayValue.isEmpty {
+                      guard let hlID = arrayValue.removeFirst().uintValue else {
+                        "expected cell hl_id is not an unsigned integer".fail().failAssertion()
+                        continue
+                      }
+                      lastHlID = hlID
+
+                      if !arrayValue.isEmpty {
+                        guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
+                          "expected cell repeat count is not an unsigned integer".fail().failAssertion()
+                          continue
+                        }
+                        repeatCount = parsedRepeatCount
+                      }
+                    }
+
+                    guard let lastHlID else {
+                      "at least one hlID was expected to be parsed".fail().failAssertion()
+                      continue
+                    }
+
+                    let character = string.first
+
+                    for _ in 0 ..< repeatCount {
+                      grid.cells[startingCellIndex + updatedCellsCount] = .init(character: character, hlID: lastHlID)
+
+                      updatedCellsCount += 1
+                    }
+                  }
+
+                  state.grids[model.grid] = grid
+
+                  window.handle(
+                    updates: .line(row: model.row, columnStart: model.colStart, cellsCount: updatedCellsCount),
+                    forGridID: model.grid
+                  )
                 }
               }
 

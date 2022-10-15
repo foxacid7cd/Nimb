@@ -13,21 +13,46 @@ import Library
 
 class Store: ObservableObject {
   struct State {
+    struct Cell {
+      var character: Character?
+      var hlID: UInt
+    }
+
     struct Grid: Identifiable {
       var id: Int
       var width: Int
       var height: Int
+      var cells: [Cell?]
+
+      init(id: Int, width: Int, height: Int) {
+        self.id = id
+        self.width = width
+        self.height = height
+        self.cells = .init(repeating: nil, count: width * height)
+      }
     }
 
-    var grids = [Grid.ID: Grid]()
-    var currentGridID: Grid.ID?
+    var grids = [Grid?]()
+    var currentGridIndex: Int?
     var cellSize = CGSize(width: 12, height: 24)
+
+    var currentGrid: Grid? {
+      currentGridIndex.flatMap { grids[$0] }
+    }
   }
 
-  @Published private(set) var state = State()
+  @Published @MainActor private(set) var state = State()
 
   @MainActor
   func dispatch(_ action: (inout State) -> Void) {
-    action(&self.state)
+    action(&state)
+  }
+}
+
+extension Array where Element == Store.State.Grid? {
+  mutating func ensureIndexInBounds(_ index: Int) {
+    while count < index {
+      self += .init(repeating: nil, count: isEmpty ? 10 : count)
+    }
   }
 }

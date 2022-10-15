@@ -14,25 +14,24 @@ import SwiftUI
 
 class Window: NSWindow {
   private let store: Store
+  private lazy var viewController = ViewController(store: store)
 
   init(store: Store) {
     self.store = store
     super.init(contentRect: .init(), styleMask: [.titled], backing: .buffered, defer: true)
 
     self.delegate = self
-    self.contentViewController = ViewController(store: store)
+    self.contentViewController = viewController
   }
 
   override var canBecomeMain: Bool {
     true
   }
-}
 
-extension Window: NSWindowDelegate {
-  func windowDidBecomeMain(_ notification: Notification) {
+  private func subscribe() {
     Task {
       for await state in AsyncPublisher(store.$state) {
-        guard let currentGridID = state.currentGridID, let currentGrid = state.grids[currentGridID] else {
+        guard let currentGrid = store.state.currentGrid else {
           continue
         }
 
@@ -44,5 +43,15 @@ extension Window: NSWindowDelegate {
         setContentSize(contentSize)
       }
     }
+  }
+
+  func handle(updates: GridUpdates, forGridID id: Int) {
+    viewController.handle(updates: updates, forGridID: id)
+  }
+}
+
+extension Window: NSWindowDelegate {
+  func windowDidBecomeMain(_ notification: Notification) {
+    subscribe()
   }
 }

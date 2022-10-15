@@ -7,10 +7,12 @@
 //
 
 import AppKit
+import Combine
 import Drawing
 
 class ViewController: NSViewController {
   private let store: Store
+  private lazy var drawingView = DrawingView()
   
   @MainActor
   init(store: Store) {
@@ -25,6 +27,10 @@ class ViewController: NSViewController {
   }
   
   override func loadView() {
-    self.view = DrawingView()
+    view = drawingView
+  }
+  
+  func handle(updates: GridUpdates, forGridID id: Int) {
+    print(id, updates)
   }
 }
