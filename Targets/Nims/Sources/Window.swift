@@ -8,50 +8,22 @@
 
 import AppKit
 import Combine
-import Drawing
 import Library
 import SwiftUI
 
-class Window: NSWindow {
-  private let store: Store
-  private lazy var viewController = ViewController(store: store)
-
+class Window: NSWindow, NSWindowDelegate {
   init(store: Store) {
-    self.store = store
     super.init(contentRect: .init(), styleMask: [.titled], backing: .buffered, defer: true)
 
     self.delegate = self
-    self.contentViewController = viewController
+    self.contentViewController = ViewController(store: store)
   }
 
   override var canBecomeMain: Bool {
     true
   }
 
-  private func subscribe() {
-    Task {
-      for await state in AsyncPublisher(store.$state) {
-        guard let currentGrid = store.state.currentGrid else {
-          continue
-        }
-
-        let contentSize = NSSize(
-          width: CGFloat(currentGrid.width) * state.cellSize.width,
-          height: CGFloat(currentGrid.height) * state.cellSize.height
-        )
-
-        setContentSize(contentSize)
-      }
-    }
-  }
-
-  func handle(updates: GridUpdates, forGridID id: Int) {
-    viewController.handle(updates: updates, forGridID: id)
-  }
-}
-
-extension Window: NSWindowDelegate {
-  func windowDidBecomeMain(_ notification: Notification) {
-    subscribe()
+  func windowDidBecomeMain(_: Notification) {
+    setContentSize(.init(width: 640, height: 480))
   }
 }

@@ -19,15 +19,7 @@ let project = Project(
       product: .app(infoPlist: .default),
       dependencies: [
         .target(name: "Library"),
-        .target(name: "API"),
-        .target(name: "Drawing")
-      ]
-    ),
-    .nimsTarget(
-      name: "Drawing",
-      product: .library,
-      dependencies: [
-        .target(name: "Library")
+        .target(name: "API")
       ]
     ),
     .nimsTarget(

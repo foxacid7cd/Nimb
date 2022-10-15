@@ -9,13 +9,8 @@
 import Foundation
 
 public struct AsyncFileData: AsyncSequence {
-  public typealias Element = Data
-  public typealias AsyncIterator = AsyncStream<Data>.AsyncIterator
-
-  private let stream: AsyncStream<Data>
-
   public init(_ fileHandle: FileHandle) {
-    stream = .init { continuation in
+    self.stream = .init { continuation in
       fileHandle.readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
 
@@ -30,7 +25,12 @@ public struct AsyncFileData: AsyncSequence {
     }
   }
 
+  public typealias Element = Data
+  public typealias AsyncIterator = AsyncStream<Data>.AsyncIterator
+
   public func makeAsyncIterator() -> AsyncIterator {
-    stream.makeAsyncIterator()
+    self.stream.makeAsyncIterator()
   }
+
+  private let stream: AsyncStream<Data>
 }

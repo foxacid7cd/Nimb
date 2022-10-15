@@ -8,16 +8,16 @@
 
 import MessagePack
 
-public extension Sequence where Element == MessagePackValue {
+public extension Sequence<MessagePackValue> {
   var normalizedToParametersArray: [[MessagePackValue]] {
     var parameters = [MessagePackValue]()
-    
+
     var parametersArray = [[MessagePackValue]]()
     var isAssumingParametersArray = true
-    
+
     for parameter in self {
       parameters.append(parameter)
-      
+
       if isAssumingParametersArray, let arrayValue = parameter.arrayValue {
         parametersArray.append(arrayValue)
       } else {

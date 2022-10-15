@@ -42,7 +42,9 @@ public extension MessagePackValue {
     case let .uint(value):
       return UInt(value)
 
-    case .extended, .binary, .nil:
+    case .binary,
+         .extended,
+         .nil:
       throw "unsupported value type -> \(self)".fail()
     }
   }

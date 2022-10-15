@@ -14,18 +14,18 @@ import MessagePack
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-  private lazy var store = Store()
-  private lazy var window = Window(store: store)
-
   @MainActor
   func applicationDidFinishLaunching(_: AppKit.Notification) {
-    setupMenu()
-    runClient()
+    self.setupMenu()
+    self.runClient()
 
-    window.title = ProcessInfo.processInfo.processName
-    window.makeMain()
-    window.makeKeyAndOrderFront(nil)
+    self.window.title = ProcessInfo.processInfo.processName
+    self.window.makeMain()
+    self.window.makeKeyAndOrderFront(nil)
   }
+
+  private lazy var store = Store()
+  private lazy var window = Window(store: store)
 
   @MainActor
   private func setupMenu() {
@@ -56,43 +56,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           for uiEvent in uiEvents {
             switch uiEvent {
             case let .gridResize(models):
-              store.dispatch { state in
+              store.mutateState { state in
                 for model in models {
-                  state.grids.ensureIndexInBounds(model.grid)
-
-                  state.grids[model.grid] = .init(id: model.grid, width: model.width, height: model.height)
-
-                  if state.currentGridIndex == nil {
-                    state.currentGridIndex = model.grid
-                  }
+                  let grid = Library.Grid<Cell?>(
+                    repeating: nil,
+                    rowsCount: model.height,
+                    columnsCount: model.width
+                  )
+                  state.grids[model.grid] = grid
                 }
+
+                return models.map { .gridCreated(id: $0.grid) }
               }
 
             case let .gridDestroy(models):
-              store.dispatch { state in
+              store.mutateState { state in
                 for model in models {
                   guard state.grids[model.grid] != nil else {
                     "grid_destroy for unexisting grid".fail().failAssertion()
                     continue
                   }
                   state.grids[model.grid] = nil
-
-                  if state.currentGridIndex == model.grid {
-                    state.currentGridIndex = nil
-                  }
                 }
+
+                return models.map { .gridDestroyed(id: $0.grid) }
               }
 
             case let .gridLine(models):
-              store.dispatch { state in
+              store.mutateState { state in
+                var notifications = [Store.Notification]()
+
                 var lastHlID: UInt?
                 for model in models {
                   guard var grid = state.grids[model.grid] else {
                     "unexisting grid".fail().failAssertion()
                     continue
                   }
-
-                  let startingCellIndex = model.row * grid.width + model.colStart
 
                   var updatedCellsCount = 0
                   for messagePackValue in model.data {
@@ -106,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       continue
                     }
 
-                    var repeatCount: UInt = 1
+                    var repeatCount = 1
 
                     if !arrayValue.isEmpty {
                       guard let hlID = arrayValue.removeFirst().uintValue else {
@@ -120,7 +119,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                           "expected cell repeat count is not an unsigned integer".fail().failAssertion()
                           continue
                         }
-                        repeatCount = parsedRepeatCount
+                        repeatCount = Int(parsedRepeatCount)
                       }
                     }
 
@@ -131,8 +130,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                     let character = string.first
 
-                    for _ in 0 ..< repeatCount {
-                      grid.cells[startingCellIndex + updatedCellsCount] = .init(character: character, hlID: lastHlID)
+                    for repeatIndex in 0 ..< repeatCount {
+                      grid[.init(row: model.row, column: model.colStart + Int(repeatIndex))] =
+                        .init(character: character, hlID: lastHlID)
 
                       updatedCellsCount += 1
                     }
@@ -140,11 +140,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                   state.grids[model.grid] = grid
 
-                  window.handle(
-                    updates: .line(row: model.row, columnStart: model.colStart, cellsCount: updatedCellsCount),
-                    forGridID: model.grid
+                  notifications.append(
+                    .gridUpdated(
+                      id: model.grid,
+                      updates: .line(
+                        row: model.row,
+                        columnStart: model.colStart,
+                        cellsCount: updatedCellsCount
+                      )
+                    )
                   )
                 }
+
+                return notifications
               }
 
             default:
@@ -157,7 +165,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       do {
-        try await client.nvimUIAttach(width: 90, height: 32, options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true])
+        try await client.nvimUIAttach(
+          width: 90,
+          height: 32,
+          options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true]
+        )
       } catch {
         "failed to attach nvim UI".fail(child: error.fail()).failAssertion()
       }

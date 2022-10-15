@@ -7,5 +7,7 @@
 //
 
 public enum MessageType: UInt {
-  case request = 0, response, notification
+  case request = 0
+  case response
+  case notification
 }

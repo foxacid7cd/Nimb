@@ -25,7 +25,7 @@ struct neogen: AsyncParsableCommand {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/zsh")
     let formattedFilePathes = filePathes
-      .map { $0.string }
+      .map(\.string)
       .joined(separator: " ")
     process.arguments = ["-c", "swiftformat \(formattedFilePathes) --swiftversion 5.7.1"]
 
@@ -139,7 +139,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
               [
                 "name": parameter.name.camelCased(capitalized: false),
                 "type": swiftType(nvimType: parameter.type),
-                "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: ""),
+                "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: "")
               ]
             },
           "parametersInitializationSignature": function.parameters
@@ -152,7 +152,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
 
             return [
               "func \(function.name.camelCased(capitalized: false))(\(formattedParameters)) async throws",
-              function.returnType == "void" ? nil : swiftType(nvimType: function.returnType),
+              function.returnType == "void" ? nil : swiftType(nvimType: function.returnType)
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
@@ -164,12 +164,12 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
 
             return [
               "\(function.name)(\(formattedParameters))",
-              function.returnType == "void" ? nil : function.returnType,
+              function.returnType == "void" ? nil : function.returnType
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
           }(),
-          "isDeprecated": function.deprecatedSince != nil,
+          "isDeprecated": function.deprecatedSince != nil
         ]
         if function.returnType != "void" {
           dictionary["returnType"] = swiftType(nvimType: function.returnType)
@@ -181,9 +181,9 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
       .map { uiOption in
         [
           "name": uiOption.camelCased(capitalized: false),
-          "originalName": uiOption,
+          "originalName": uiOption
         ]
-      },
+      }
   ]
 
   var uiEvents = [Any]()
@@ -214,9 +214,9 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           [
             "name": parameter.name.camelCased(capitalized: false),
             "type": swiftType(nvimType: parameter.type),
-            "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: ""),
+            "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: "")
           ]
-        },
+        }
     ]
 
     if !uiEvent.parameters.isEmpty {
@@ -244,7 +244,9 @@ extension StringProtocol {
         }
 
         switch word {
-        case "ui", "id", "api":
+        case "api",
+             "id",
+             "ui":
           return word.uppercased()
 
         default:
@@ -301,12 +303,6 @@ private func obtainingReturnValue(nvimType: String, name: String) -> String {
 }
 
 private struct APIInfo: Decodable {
-  var errorTypes: [String: ErrorType]
-  var uiOptions: [String]
-  var functions: [Function]
-  var types: [String: Type]
-  var uiEvents: [UIEvent]
-
   struct ErrorType: Decodable {
     var id: Int
   }
@@ -320,13 +316,6 @@ private struct APIInfo: Decodable {
   }
 
   struct Function: Decodable {
-    var deprecatedSince: Int?
-    var method: Bool
-    var name: String
-    var parameters: [Parameter]
-    var returnType: String
-    var since: Int
-
     enum CodingKeys: String, CodingKey {
       case deprecatedSince = "deprecated_since"
       case method
@@ -335,6 +324,13 @@ private struct APIInfo: Decodable {
       case returnType = "return_type"
       case since
     }
+
+    var deprecatedSince: Int?
+    var method: Bool
+    var name: String
+    var parameters: [Parameter]
+    var returnType: String
+    var since: Int
   }
 
   struct `Type`: Decodable {
@@ -349,14 +345,6 @@ private struct APIInfo: Decodable {
   }
 
   struct Version: Decodable {
-    var apiCompatible: Int
-    var apiLevel: Int
-    var apiPrerelease: Bool
-    var major: Int
-    var minor: Int
-    var patch: Int
-    var prerelease: Bool
-
     enum CodingKeys: String, CodingKey {
       case apiCompatible = "api_compatible"
       case apiLevel = "api_level"
@@ -366,12 +354,17 @@ private struct APIInfo: Decodable {
       case patch
       case prerelease
     }
+
+    var apiCompatible: Int
+    var apiLevel: Int
+    var apiPrerelease: Bool
+    var major: Int
+    var minor: Int
+    var patch: Int
+    var prerelease: Bool
   }
 
   struct Parameter: Decodable {
-    var type: String
-    var name: String
-
     init(type: String, name: String) {
       self.type = type
       self.name = name
@@ -379,8 +372,17 @@ private struct APIInfo: Decodable {
 
     init(from decoder: Decoder) throws {
       var container: UnkeyedDecodingContainer = try decoder.unkeyedContainer()
-      type = try container.decode(String.self)
-      name = try container.decode(String.self)
+      self.type = try container.decode(String.self)
+      self.name = try container.decode(String.self)
     }
+
+    var type: String
+    var name: String
   }
+
+  var errorTypes: [String: ErrorType]
+  var uiOptions: [String]
+  var functions: [Function]
+  var types: [String: Type]
+  var uiEvents: [UIEvent]
 }

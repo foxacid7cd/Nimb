@@ -7,18 +7,17 @@
 //
 
 import API
-import Drawing
 import SwiftUI
 
 @main
 enum Nims {
-  private static let appDelegate = AppDelegate()
-
   static func main() {
     let application = NSApplication.shared
-    application.delegate = appDelegate
+    application.delegate = self.appDelegate
     application.run()
   }
+
+  private static let appDelegate = AppDelegate()
 }
 
 /*@main

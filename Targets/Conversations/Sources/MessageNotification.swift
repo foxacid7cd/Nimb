@@ -9,11 +9,11 @@
 import MessagePack
 
 public struct MessageNotification {
-  public var method: String
-  public var parametersArray: [[MessagePackValue]]
-
   public init(method: String, parametersArray: [[MessagePackValue]]) {
     self.method = method
     self.parametersArray = parametersArray
   }
+
+  public var method: String
+  public var parametersArray: [[MessagePackValue]]
 }

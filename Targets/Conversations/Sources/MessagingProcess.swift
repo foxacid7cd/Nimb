@@ -12,18 +12,8 @@ import Library
 import MessagePack
 
 public class MessagingProcess: AsyncSequence {
-  public typealias AsyncIterator = AsyncThrowingChannel<Element, Error>.AsyncIterator
-  public typealias Element = Message
-
-  private let channel = AsyncThrowingChannel<Message, Error>()
-
-  public let send: (Message) throws -> Void
-
   @MainActor
   public init(executableURL: URL, arguments: [String]) {
-    // let channel = AsyncThrowingChannel<Message, Error>()
-    // self.channel = channel
-
     let process = Process()
     process.executableURL = executableURL
     process.arguments = arguments
@@ -69,11 +59,18 @@ public class MessagingProcess: AsyncSequence {
     do {
       try process.run()
     } catch {
-      channel.fail("failed starting process".fail(child: error.fail()))
+      self.channel.fail("failed starting process".fail(child: error.fail()))
     }
   }
 
+  public typealias AsyncIterator = AsyncThrowingChannel<Element, Error>.AsyncIterator
+  public typealias Element = Message
+
+  public let send: (Message) throws -> Void
+
   public func makeAsyncIterator() -> AsyncIterator {
-    channel.makeAsyncIterator()
+    self.channel.makeAsyncIterator()
   }
+
+  private let channel = AsyncThrowingChannel<Message, Error>()
 }

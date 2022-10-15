@@ -10,6 +10,17 @@ import Foundation
 import OSLog
 
 public struct Fail: Error, CustomStringConvertible {
+  public init(_ content: Content, children: [Fail] = [], file: StaticString = #file, line: UInt = #line) {
+    self.content = content
+    self.children = children
+    self.file = file
+    self.line = line
+  }
+
+  public init(_ content: Content, child: Fail? = nil, file: StaticString = #file, line: UInt = #line) {
+    self.init(content, children: child.map { [$0] } ?? [], file: file, line: line)
+  }
+
   public enum Content: CustomStringConvertible {
     case details(String)
     case wrapped(Error)
@@ -30,17 +41,6 @@ public struct Fail: Error, CustomStringConvertible {
   public var file: StaticString
   public var line: UInt
 
-  public init(_ content: Content, children: [Fail] = [], file: StaticString = #file, line: UInt = #line) {
-    self.content = content
-    self.children = children
-    self.file = file
-    self.line = line
-  }
-
-  public init(_ content: Content, child: Fail? = nil, file: StaticString = #file, line: UInt = #line) {
-    self.init(content, children: child.map { [$0] } ?? [], file: file, line: line)
-  }
-
   public var description: String {
     let fileName = URL(fileURLWithPath: file.description).lastPathComponent
     let lines = [
@@ -48,7 +48,7 @@ public struct Fail: Error, CustomStringConvertible {
       content.description
         .split(separator: "\n")
         .map { " |\($0)" },
-      children.map { child in
+      self.children.map { child in
         let lines = child.description
           .split(separator: "\n", omittingEmptySubsequences: false)
 
@@ -62,7 +62,7 @@ public struct Fail: Error, CustomStringConvertible {
         return formattedLines
           .joined(separator: "\n")
       },
-      children.isEmpty ? ["-*>"] : []
+      self.children.isEmpty ? ["-*>"] : []
     ]
     .flatMap { $0 }
 
@@ -71,11 +71,11 @@ public struct Fail: Error, CustomStringConvertible {
   }
 
   public func fatal() -> Never {
-    fatalError("\(self)", file: file, line: line)
+    fatalError("\(self)", file: self.file, line: self.line)
   }
 
   public func failAssertion() {
-    assertionFailure("\(self)", file: file, line: line)
+    assertionFailure("\(self)", file: self.file, line: self.line)
   }
 }
 

@@ -8,29 +8,46 @@
 
 import AppKit
 import Combine
-import Drawing
 
 class ViewController: NSViewController {
-  private let store: Store
-  private lazy var drawingView = DrawingView()
-  
-  @MainActor
   init(store: Store) {
     self.store = store
-    
     super.init(nibName: nil, bundle: nil)
   }
-  
+
   @available(*, unavailable)
-  required init?(coder: NSCoder) {
+  required init?(coder _: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-  
+
   override func loadView() {
-    view = drawingView
+    let view = NSStackView()
+
+    Task {
+      for await notification in store.notifications {
+        switch notification {
+        case let .gridCreated(id):
+          let gridView = GridView(id: id, store: store)
+          view.addArrangedSubview(gridView)
+          gridViews[id] = gridView
+
+        case let .gridDestroyed(id):
+          guard let gridView = gridViews[id] else {
+            "tried to destroy unexisting grid".fail().failAssertion()
+            continue
+          }
+          gridView.removeFromSuperview()
+          gridViews.removeValue(forKey: id)
+
+        default:
+          continue
+        }
+      }
+    }
+
+    self.view = view
   }
-  
-  func handle(updates: GridUpdates, forGridID id: Int) {
-    print(id, updates)
-  }
+
+  private var store: Store
+  private var gridViews = [Int: GridView]()
 }

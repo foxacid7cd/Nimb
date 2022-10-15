@@ -12,20 +12,13 @@ import Library
 import MessagePack
 
 public class Client: AsyncSequence {
-  public typealias AsyncIterator = AsyncThrowingStream<Element, Error>.AsyncIterator
-  public typealias Element = ClientNotification
-
-  private let stream: AsyncThrowingStream<ClientNotification, Error>
-
-  let request: (_ method: String, _ parameters: [MessagePackValue]) async throws -> MessagePackValue
-
   @MainActor
   public init() {
     let process = ProceduringProcess(
       executableURL: URL(fileURLWithPath: "/bin/zsh"),
       arguments: ["-c", "nvim --embed"]
     )
-    stream = .init { continuation in
+    self.stream = .init { continuation in
       Task {
         for try await messageNotification in process {
           guard let notification = ClientNotification(messageNotification: messageNotification) else {
@@ -38,10 +31,17 @@ public class Client: AsyncSequence {
         continuation.finish()
       }
     }
-    request = process.request
+    self.request = process.request
   }
 
+  public typealias AsyncIterator = AsyncThrowingStream<Element, Error>.AsyncIterator
+  public typealias Element = ClientNotification
+
   public func makeAsyncIterator() -> AsyncIterator {
-    stream.makeAsyncIterator()
+    self.stream.makeAsyncIterator()
   }
+
+  let request: (_ method: String, _ parameters: [MessagePackValue]) async throws -> MessagePackValue
+
+  private let stream: AsyncThrowingStream<ClientNotification, Error>
 }

@@ -12,22 +12,9 @@ import Library
 import MessagePack
 
 public class ProceduringProcess: AsyncSequence {
-  public typealias AsyncIterator = AsyncThrowingChannel<Element, Error>.AsyncIterator
-  public typealias Element = MessageNotification
-
-  public typealias Handler = (_ isSuccess: Bool, _ payload: MessagePackValue) async -> Void
-
-  @MainActor
-  private var process: MessagingProcess
-  @MainActor
-  private var handlers = [UInt: Handler]()
-  @MainActor
-  private var previousID: UInt?
-  private let channel = AsyncThrowingChannel<MessageNotification, Error>()
-
   @MainActor
   public init(executableURL: URL, arguments: [String]) {
-    process = .init(executableURL: executableURL, arguments: arguments)
+    self.process = .init(executableURL: executableURL, arguments: arguments)
 
     Task {
       for try await message in process {
@@ -48,6 +35,11 @@ public class ProceduringProcess: AsyncSequence {
       }
     }
   }
+
+  public typealias AsyncIterator = AsyncThrowingChannel<Element, Error>.AsyncIterator
+  public typealias Element = MessageNotification
+
+  public typealias Handler = (_ isSuccess: Bool, _ payload: MessagePackValue) async -> Void
 
   @MainActor @discardableResult
   public func request(method: String, parameters: [MessagePackValue]) async throws -> MessagePackValue {
@@ -72,16 +64,24 @@ public class ProceduringProcess: AsyncSequence {
 
   @MainActor
   public func makeAsyncIterator() -> AsyncIterator {
-    channel.makeAsyncIterator()
+    self.channel.makeAsyncIterator()
   }
 
   @MainActor
+  private var process: MessagingProcess
+  @MainActor
+  private var handlers = [UInt: Handler]()
+  @MainActor
+  private var previousID: UInt?
+  private let channel = AsyncThrowingChannel<MessageNotification, Error>()
+
+  @MainActor
   private func registerHandler(id: UInt, handler: @escaping Handler) {
-    handlers[id] = handler
+    self.handlers[id] = handler
   }
 
   @MainActor
   private func unregisterHandler(id: UInt) {
-    handlers[id] = nil
+    self.handlers[id] = nil
   }
 }

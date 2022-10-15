@@ -8,51 +8,42 @@
 
 import API
 import AppKit
-import Combine
+import AsyncAlgorithms
 import Library
 
-class Store: ObservableObject {
+class Store {
   struct State {
-    struct Cell {
-      var character: Character?
-      var hlID: UInt
-    }
-
-    struct Grid: Identifiable {
-      var id: Int
-      var width: Int
-      var height: Int
-      var cells: [Cell?]
-
-      init(id: Int, width: Int, height: Int) {
-        self.id = id
-        self.width = width
-        self.height = height
-        self.cells = .init(repeating: nil, count: width * height)
-      }
-    }
-
-    var grids = [Grid?]()
-    var currentGridIndex: Int?
+    var grids = [Int: Grid<Cell?>]()
     var cellSize = CGSize(width: 12, height: 24)
-
-    var currentGrid: Grid? {
-      currentGridIndex.flatMap { grids[$0] }
-    }
   }
 
-  @Published @MainActor private(set) var state = State()
+  enum Notification {
+    case gridCreated(id: Int)
+    case gridUpdated(id: Int, updates: GridUpdates)
+    case gridDestroyed(id: Int)
+
+    enum GridUpdates {
+      case line(row: Int, columnStart: Int, cellsCount: Int)
+    }
+  }
 
   @MainActor
-  func dispatch(_ action: (inout State) -> Void) {
-    action(&state)
-  }
-}
+  private(set) var state = State()
 
-extension Array where Element == Store.State.Grid? {
-  mutating func ensureIndexInBounds(_ index: Int) {
-    while count < index {
-      self += .init(repeating: nil, count: isEmpty ? 10 : count)
+  var notifications: AnyAsyncSequence<Notification> {
+    .init(channel: self.notificationsChannel)
+  }
+
+  @MainActor
+  func mutateState(_ fn: (inout State) -> [Notification]) {
+    let notifications = fn(&self.state)
+
+    Task {
+      for notification in notifications {
+        await notificationsChannel.send(notification)
+      }
     }
   }
+
+  private let notificationsChannel = AsyncChannel<Notification>()
 }
