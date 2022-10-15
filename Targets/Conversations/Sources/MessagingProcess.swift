@@ -11,80 +11,69 @@ import Foundation
 import Library
 import MessagePack
 
-public struct MessagingProcess: AsyncSequence {
-  public typealias AsyncIterator = AsyncStream<Element>.Iterator
+public class MessagingProcess: AsyncSequence {
+  public typealias AsyncIterator = AsyncThrowingChannel<Element, Error>.AsyncIterator
   public typealias Element = Message
 
-  private let stream: AsyncStream<Message>
+  private let channel = AsyncThrowingChannel<Message, Error>()
 
-  public let send: (Message) async -> Void
+  public let send: (Message) throws -> Void
 
   @MainActor
   public init(executableURL: URL, arguments: [String]) {
-    let inputMessages = AsyncChannel<Message>()
-    
-    stream = .init { continuation in
-      let process = Process()
-      process.executableURL = executableURL
-      process.arguments = arguments
+    // let channel = AsyncThrowingChannel<Message, Error>()
+    // self.channel = channel
 
-      let inputPipe = Pipe()
-      process.standardInput = inputPipe
+    let process = Process()
+    process.executableURL = executableURL
+    process.arguments = arguments
 
-      Task {
-        for await message in inputMessages {
-          do {
-            try inputPipe.fileHandleForWriting.write(contentsOf: pack(message.messagePackValue))
-          } catch {
-            assertionFailure("failed writing to process standard input with error '\(error)'")
-          }
-        }
-      }
+    let inputPipe = Pipe()
+    process.standardInput = inputPipe
 
-      let outputPipe = Pipe()
-      process.standardOutput = outputPipe
-
-      Task {
-        do {
-          var bufferData = Data()
-
-          for try await data in AsyncFileData(outputPipe.fileHandleForReading) {
-            bufferData += data
-
-            do {
-              let messagePackValue: MessagePackValue
-              (messagePackValue, bufferData) = try unpack(bufferData)
-              guard let message = Message(messagePackValue: messagePackValue) else { continue }
-              continuation.yield(message)
-
-            } catch MessagePackError.insufficientData {
-              continue
-
-            } catch {
-              assertionFailure("failed parsing buffer data with error \(error)")
-              continuation.finish()
-            }
-          }
-          
-          continuation.finish()
-
-        } catch {
-          assertionFailure("failed reading process standard output with error \(error)")
-          continuation.finish()
-        }
-      }
-
+    self.send = { message in
       do {
-        try process.run()
+        try inputPipe.fileHandleForWriting.write(contentsOf: pack(message.messagePackValue))
       } catch {
-        assertionFailure("failed starting process with error \(error)")
-        continuation.finish()
+        throw "failed writing to process standard input".fail(child: error.fail())
       }
     }
-    send = inputMessages.send(_:)
+
+    let outputPipe = Pipe()
+    process.standardOutput = outputPipe
+
+    Task {
+      var bufferData = Data()
+
+      for await data in AsyncFileData(outputPipe.fileHandleForReading) {
+        bufferData += data
+
+        do {
+          let messagePackValue: MessagePackValue
+          (messagePackValue, bufferData) = try unpack(bufferData)
+          let message = try Message(messagePackValue: messagePackValue)
+          await channel.send(message)
+
+        } catch MessagePackError.insufficientData {
+          continue
+
+        } catch {
+          channel.fail("failed parsing buffer data".fail(child: error.fail()))
+          return
+        }
+      }
+
+      channel.finish()
+    }
+
+    do {
+      try process.run()
+    } catch {
+      channel.fail("failed starting process".fail(child: error.fail()))
+    }
   }
 
   public func makeAsyncIterator() -> AsyncIterator {
-    stream.makeAsyncIterator()
+    channel.makeAsyncIterator()
   }
 }

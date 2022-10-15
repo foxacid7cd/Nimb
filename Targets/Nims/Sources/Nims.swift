@@ -5,15 +5,16 @@
 //  Created by Yevhenii Matviienko on 22.09.2022.
 //
 
-import AppKit
+import SwiftUI
 
 @main
-private enum Nims {
-  private static let appDelegate = AppDelegate()
+struct Nims: App {
+  @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
-  static func main() async {
-    let application = NSApplication.shared
-    application.delegate = appDelegate
-    application.run()
+  var body: some Scene {
+    WindowGroup {
+      EmptyView()
+        .frame(width: 300, height: 300, alignment: .center)
+    }
   }
 }

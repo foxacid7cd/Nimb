@@ -1,4 +1,5 @@
 import MessagePack
+import Library
 
 public extension Client {
   {% for function in functions %}
@@ -9,7 +10,7 @@ public extension Client {
     
     {% if function.returnType and function.returnType != "MessagePackValue" %}
     guard let value = {{ function.obtainingReturnValue }} else {
-      throw "Invalid return value type."
+      throw "invalid return value type".fail()
     }
     
     return value

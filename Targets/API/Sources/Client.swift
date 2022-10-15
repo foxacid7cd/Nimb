@@ -6,16 +6,16 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import Conversations
 import Foundation
 import Library
 import MessagePack
-import Procedures
 
 public class Client: AsyncSequence {
-  public typealias AsyncIterator = AsyncStream<Element>.AsyncIterator
+  public typealias AsyncIterator = AsyncThrowingStream<Element, Error>.AsyncIterator
   public typealias Element = ClientNotification
 
-  private let stream: AsyncStream<ClientNotification>
+  private let stream: AsyncThrowingStream<ClientNotification, Error>
 
   let request: (_ method: String, _ parameters: [MessagePackValue]) async throws -> MessagePackValue
 
@@ -27,7 +27,7 @@ public class Client: AsyncSequence {
     )
     stream = .init { continuation in
       Task {
-        for await messageNotification in process {
+        for try await messageNotification in process {
           guard let notification = ClientNotification(messageNotification: messageNotification) else {
             continue
           }

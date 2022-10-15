@@ -13,71 +13,50 @@ public enum Message {
   case response(id: UInt, isSuccess: Bool, payload: MessagePackValue)
   case notification(MessageNotification)
 
-  public init?(messagePackValue: MessagePackValue) {
+  public init(messagePackValue: MessagePackValue) throws {
     guard let arrayValue = messagePackValue.arrayValue else {
-      assertionFailure("message expected to be created from array value")
-      return nil
+      throw "message expected to be created from array value".fail()
     }
 
     var previousPosition: Int?
-    func next<ValueType>(_ entity: String, _ transform: (MessagePackValue) -> ValueType? = { $0 }, file: StaticString = #file, line: UInt = #line) -> ValueType? {
+    func next<ValueType>(_ entity: String, _ transform: (MessagePackValue) -> ValueType? = { $0 }, file: StaticString = #file, line: UInt = #line) throws -> ValueType {
       let currentPosition = previousPosition.map { $0 + 1 } ?? 0
       defer { previousPosition = currentPosition }
 
       guard arrayValue.count > currentPosition, let value = transform(arrayValue[currentPosition]) else {
-        assertionFailure("element at index \(currentPosition) is expected to be \(entity)", file: file, line: line)
-        return nil
+        throw "element at index \(currentPosition) is expected to be \(entity)".fail(file: file, line: line)
       }
 
       return value
     }
 
-    func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) -> Bool {
+    func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) throws {
       guard let previousPosition, previousPosition == arrayValue.count - 1 else {
-        assertionFailure("\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed", file: file, line: line)
-        return false
+        throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed".fail(file: file, line: line)
       }
-
-      return true
     }
 
-    guard let messageType = next("unsigned integer representing message type", { $0.uintValue.flatMap(MessageType.init) }) else {
-      return nil
-    }
+    let messageType = try next("unsigned integer representing message type") { $0.uintValue.flatMap(MessageType.init) }
+
     switch messageType {
     case .request:
-      guard
-        let id = next("unsigned integer representing request id", { $0.uintValue }),
-        let method = next("string representing request method", { $0.stringValue }),
-        let parameters = next("array of request parameters", { $0.arrayValue }),
-        finalize("request message")
-      else {
-        return nil
-      }
-
+      let id = try next("unsigned integer representing request id") { $0.uintValue }
+      let method = try next("string representing request method") { $0.stringValue }
+      let parameters = try next("array of request parameters") { $0.arrayValue }
+      try finalize("request message")
       self = .request(id: id, method: method, parameters: parameters)
 
     case .response:
-      guard
-        let id = next("unsiged integer representing response id", { $0.uintValue }),
-        let failure = next("value representing payload for response on failed request"),
-        let success = next("value representing payload for response on succeeded request"),
-        finalize("response message")
-      else {
-        return nil
-      }
-
+      let id = try next("unsiged integer representing response id") { $0.uintValue }
+      let failure = try next("value representing payload for response on failed request")
+      let success = try next("value representing payload for response on succeeded request")
+      try finalize("response message")
       self = .response(id: id, isSuccess: failure.isNil, payload: failure.isNil ? success : failure)
 
     case .notification:
-      guard
-        let method = next("string representing notification method", { $0.stringValue }),
-        let parameters = next("array representing notification parameters", { $0.arrayValue }),
-        finalize("notification message")
-      else {
-        return nil
-      }
-
+      let method = try next("string representing notification method") { $0.stringValue }
+      let parameters = try next("array representing notification parameters") { $0.arrayValue }
+      try finalize("notification message")
       self = .notification(.init(method: method, parametersArray: parameters.normalizedToParametersArray))
     }
   }

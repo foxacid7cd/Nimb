@@ -56,7 +56,7 @@ public extension Target {
       }(),
       scripts: scripts,
       dependencies: dependencies,
-      settings: .settings(),
+      settings: .settings(defaultSettings: .recommended),
       additionalFiles: [
         hasDevelopmentAssets ? "Targets/\(name)/Development/**" : nil,
         hasBuildSupportAssets ? "Targets/\(name)/Support/**" : nil

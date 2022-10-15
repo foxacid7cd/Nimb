@@ -18,7 +18,7 @@ public extension MessagePackValue {
       var dictionary = [String: Any]()
       for (key, value) in map {
         guard let key = key.stringValue else {
-          throw "Unsupported map key type."
+          throw "dictionary key is expected to be a string in JSON -> \(key)".fail()
         }
         dictionary[key] = try value.makeJSON()
       }
@@ -43,7 +43,7 @@ public extension MessagePackValue {
       return UInt(value)
 
     case .extended, .binary, .nil:
-      throw "Unsupported value type."
+      throw "unsupported value type -> \(self)".fail()
     }
   }
 }

@@ -10,10 +10,9 @@ import Foundation
 
 public struct AsyncFileData: AsyncSequence {
   public typealias Element = Data
-  public typealias Failure = Error
-  public typealias AsyncIterator = AsyncThrowingStream<Element, Failure>.AsyncIterator
+  public typealias AsyncIterator = AsyncStream<Data>.AsyncIterator
 
-  private let stream: AsyncThrowingStream<Element, Failure>
+  private let stream: AsyncStream<Data>
 
   public init(_ fileHandle: FileHandle) {
     stream = .init { continuation in

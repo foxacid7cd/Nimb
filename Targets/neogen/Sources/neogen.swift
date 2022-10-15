@@ -35,7 +35,7 @@ struct neogen: AsyncParsableCommand {
         terminationChannel.finish()
 
       } else {
-        terminationChannel.fail("swiftformat process failed with exit code \(process.terminationStatus).")
+        terminationChannel.fail("swiftformat process failed with exit code \(process.terminationStatus).".fail())
       }
     }
 
@@ -57,15 +57,15 @@ struct neogen: AsyncParsableCommand {
     process.standardError = errorPipe
 
     let apiInfoTask = Task<APIInfo, Error>.detached {
-      let outputData = try await AsyncFileData(outputPipe.fileHandleForReading)
+      let outputData = await AsyncFileData(outputPipe.fileHandleForReading)
         .reduce(into: Data()) { $0 += $1 }
 
       let (value, remainder) = try unpack(outputData)
       guard remainder.isEmpty else {
-        throw "nvim API info stdout is not one message pack value."
+        throw "nvim API info stdout is not one message pack value".fail()
       }
       guard let dictionary = try value.makeJSON() as? [String: Any] else {
-        throw "nvim API info stdout is not a message pack map."
+        throw "nvim API info stdout is not a message pack map".fail()
       }
       let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
       return try JSONDecoder().decode(APIInfo.self, from: jsonData)
@@ -85,7 +85,7 @@ struct neogen: AsyncParsableCommand {
   private func generateOutputFiles(renderingContext: [String: Any]) throws -> Set<Path> {
     let projectPath = Path(project)
     guard projectPath.isDirectory else {
-      throw "Could not access project directory."
+      throw "could not access project directory".fail()
     }
 
     let apiTargetPath = projectPath + "Targets/API"

@@ -9,7 +9,7 @@ let project = Project(
     textSettings: .textSettings(
       usesTabs: false,
       indentWidth: 2,
-      tabWidth: 2,
+      tabWidth: 8,
       wrapsLines: true
     )
   ),
@@ -27,7 +27,7 @@ let project = Project(
       product: .library,
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Procedures")
+        .target(name: "Conversations")
       ],
       hasGeneratedSources: true,
       hasBuildSupportAssets: true
@@ -37,17 +37,8 @@ let project = Project(
       product: .commandLineTool,
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Procedures"),
         .external(name: "Stencil"),
         .external(name: "ArgumentParser")
-      ]
-    ),
-    .nimsTarget(
-      name: "Procedures",
-      product: .library,
-      dependencies: [
-        .target(name: "Library"),
-        .target(name: "Conversations")
       ]
     ),
     .nimsTarget(
