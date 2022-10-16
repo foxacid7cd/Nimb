@@ -10,13 +10,17 @@ import AsyncAlgorithms
 import Foundation
 import Library
 import MessagePack
+import RxSwift
 
-public class MessagingProcess: AsyncSequence {
-  @MainActor
+@ProcessActor
+public class MessagingProcess {
   public init(executableURL: URL, arguments: [String]) {
     let process = Process()
     process.executableURL = executableURL
     process.arguments = arguments
+
+    process.terminationHandler = { _ in
+    }
 
     let inputPipe = Pipe()
     process.standardInput = inputPipe
@@ -31,6 +35,11 @@ public class MessagingProcess: AsyncSequence {
 
     let outputPipe = Pipe()
     process.standardOutput = outputPipe
+    
+    outputPipe.fileHandleForReading.data
+      .reduce(Data()) { result, data in
+        let newData = result + data
+      }
 
     Task {
       var bufferData = Data()
@@ -42,18 +51,18 @@ public class MessagingProcess: AsyncSequence {
           let messagePackValue: MessagePackValue
           (messagePackValue, bufferData) = try unpack(bufferData)
           let message = try Message(messagePackValue: messagePackValue)
-          await channel.send(message)
+          await self.channel.send(message)
 
         } catch MessagePackError.insufficientData {
           continue
 
         } catch {
-          channel.fail("failed parsing buffer data".fail(child: error.fail()))
+          self.channel.fail("failed parsing buffer data".fail(child: error.fail()))
           return
         }
       }
 
-      channel.finish()
+      self.channel.finish()
     }
 
     do {

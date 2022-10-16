@@ -21,35 +21,53 @@ class ViewController: NSViewController {
   }
 
   override func loadView() {
-    let view = NSStackView()
+    self.view = NSView()
+  }
 
-    Task {
-      for await array in store.notifications {
-        for notification in array {
-          switch notification {
-          case let .gridCreated(id):
-            let gridView = GridView(id: id, store: store)
-            view.addArrangedSubview(gridView)
-            gridViews[id] = gridView
+  override func viewDidLoad() {
+    super.viewDidLoad()
 
-          case let .gridDestroyed(id):
-            guard let gridView = gridViews[id] else {
-              "tried to destroy unexisting grid".fail().failAssertion()
-              continue
-            }
-            gridView.removeFromSuperview()
-            gridViews.removeValue(forKey: id)
-
-          default:
-            continue
-          }
-        }
-      }
-    }
-
-    self.view = view
+    self.store.notifications
+      .sink { [weak self] in self?.handle(notifications: $0) }
+      .store(in: &self.cancellables)
   }
 
   private var store: Store
+  private var cancellables = Set<AnyCancellable>()
   private var gridViews = [Int: GridView]()
+
+  private func handle(notifications: [Store.Notification]) {
+    for notification in notifications {
+      switch notification {
+      case let .gridCreated(id):
+        let gridView = GridView(store: store, id: id)
+        gridView.frame = self.view.bounds
+        self.view.addSubview(gridView)
+        self.gridViews[id] = gridView
+        self.showCurrentGrid()
+
+      case let .gridDestroyed(id):
+        guard let gridView = gridViews[id] else {
+          assertionFailure()
+          continue
+        }
+        gridView.removeFromSuperview()
+        self.gridViews.removeValue(forKey: id)
+        self.showCurrentGrid()
+
+      case .currentGridChanged:
+        self.showCurrentGrid()
+
+      default:
+        continue
+      }
+    }
+  }
+
+  private func showCurrentGrid() {
+    self.gridViews
+      .forEach { id, gridView in
+        gridView.isHidden = store.state.currentGridID != id
+      }
+  }
 }

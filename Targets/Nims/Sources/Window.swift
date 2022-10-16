@@ -9,21 +9,48 @@
 import AppKit
 import Combine
 import Library
-import SwiftUI
 
 class Window: NSWindow, NSWindowDelegate {
   init(store: Store) {
-    super.init(contentRect: .init(), styleMask: [.titled], backing: .buffered, defer: true)
+    self.store = store
+    super.init(
+      contentRect: .init(),
+      styleMask: [.titled],
+      backing: .buffered,
+      defer: true
+    )
 
     self.delegate = self
     self.contentViewController = ViewController(store: store)
+    self.subtitle = "nvim"
+
+    self.updateSubtitle()
+
+    store.notifications
+      .sink { [weak self] in self?.handle(notifications: $0) }
+      .store(in: &self.cancellables)
   }
 
   override var canBecomeMain: Bool {
     true
   }
 
-  func windowDidBecomeMain(_: Notification) {
-    setContentSize(.init(width: 1280, height: 960))
+  private let store: Store
+  private var cancellables = Set<AnyCancellable>()
+
+  private func handle(notifications: [Store.Notification]) {
+    for notification in notifications {
+      switch notification {
+      case .currentGridChanged:
+        self.updateSubtitle()
+
+      default:
+        continue
+      }
+    }
+  }
+
+  private func updateSubtitle() {
+    self.subtitle = self.store.state.currentGridID.map { "Grid \($0)" } ?? ""
   }
 }

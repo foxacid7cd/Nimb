@@ -8,7 +8,7 @@
 
 import OSLog
 
-private let osLog = OSLog(subsystem: "Nims", category: "main")
+private let osLog = OSLog.default
 
 public func log(_ logLevel: OSLogType = .default, _ items: Any...) {
   let message = items

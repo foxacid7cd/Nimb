@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import RxSwift
 
 public struct AsyncFileData: AsyncSequence {
   public init(_ fileHandle: FileHandle) {

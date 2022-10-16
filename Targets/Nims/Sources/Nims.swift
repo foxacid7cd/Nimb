@@ -6,16 +6,10 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import API
-import SwiftUI
+import AppKit
 
-@main
 enum Nims {
-  static func main() {
-    let application = NSApplication.shared
-    application.delegate = self.appDelegate
-    application.run()
-  }
+  static func main() {}
 
   private static let appDelegate = AppDelegate()
 }

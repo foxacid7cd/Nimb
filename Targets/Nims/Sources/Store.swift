@@ -8,24 +8,55 @@
 
 import API
 import AppKit
-import AsyncAlgorithms
+import Combine
 import Library
 
 class Store {
+  init() {
+    let notifications = PassthroughSubject<[Notification], Never>()
+    self.notifications = notifications
+      .share()
+      .eraseToAnyPublisher()
+    self.publishNotifications = { notifications.send($0) }
+
+    self.notifications
+      .handleEvents(receiveCancel: { log(.debug, "receiveCancel") })
+      .sink(
+        receiveCompletion: { log(.debug, "notifications completion \($0)") },
+        receiveValue: { log(.debug, "notifications value \($0)") }
+      )
+      .store(in: &self.cancellables)
+  }
+
   struct State {
     var grids = [Int: Grid<Cell?>]()
+    var currentGridID: Int?
     var cellSize = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular).makeCellSize(for: "A")
+
+    var currentGrid: Grid<Cell?>? {
+      self.currentGridID.flatMap { grids[$0] }
+    }
+
+    func gridSize(id: Int) -> CGSize {
+      let grid = self.grids[id]!
+
+      return .init(
+        width: self.cellSize.width * CGFloat(grid.columnsCount),
+        height: self.cellSize.height * CGFloat(grid.rowsCount)
+      )
+    }
   }
 
   struct Cell {
-    var text: String?
-    var hlID: UInt
+    var character: Character?
+    var hlID: Int
   }
 
   enum Notification {
     case gridCreated(id: Int)
     case gridUpdated(id: Int, updates: GridUpdates)
     case gridDestroyed(id: Int)
+    case currentGridChanged
 
     enum GridUpdates {
       case line(row: Int, columnStart: Int, cellsCount: Int)
@@ -35,9 +66,7 @@ class Store {
   @MainActor
   private(set) var state = State()
 
-  var notifications: AnyAsyncSequence<[Notification]> {
-    .init(channel: self.notificationsChannel)
-  }
+  let notifications: AnyPublisher<[Notification], Never>
 
   @MainActor
   func mutateState(_ fn: (inout State) -> [Notification]) {
@@ -46,9 +75,10 @@ class Store {
     self.state = state
 
     Task {
-      await notificationsChannel.send(notifications)
+      self.publishNotifications(notifications)
     }
   }
 
-  private let notificationsChannel = AsyncChannel<[Notification]>()
+  private var cancellables = Set<AnyCancellable>()
+  private let publishNotifications: ([Notification]) -> Void
 }

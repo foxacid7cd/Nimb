@@ -17,11 +17,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @MainActor
   func applicationDidFinishLaunching(_: AppKit.Notification) {
     self.setupMenu()
-    self.runClient()
+
+    Task {
+      await self.runClient()
+    }
 
     self.window.title = ProcessInfo.processInfo.processName
+    self.window.setContentSize(.init(width: 1280, height: 960))
     self.window.makeMain()
-    self.window.makeKeyAndOrderFront(nil)
+    self.window.orderFront(nil)
   }
 
   private lazy var store = Store()
@@ -45,18 +49,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     appMenuItem.submenu = appMenu
   }
 
-  @MainActor
+  @ProcessActor
   private func runClient() {
     let client = Client()
 
-    Task {
+    Task.detached {
       for try await notification in client {
         switch notification {
         case let .redraw(uiEvents):
+          log(
+            .debug,
+            "received UI events " + uiEvents.map { "\($0)".prefix(while: { $0 != "(" }) }.joined(separator: ", ")
+          )
+
           for uiEvent in uiEvents {
             switch uiEvent {
             case let .gridResize(models):
-              store.mutateState { state in
+              await self.store.mutateState { state in
+                var notifications = [Store.Notification]()
+
                 for model in models {
                   let grid = Library.Grid<Store.Cell?>(
                     repeating: nil,
@@ -64,29 +75,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     columnsCount: model.width
                   )
                   state.grids[model.grid] = grid
+                  notifications.append(.gridCreated(id: model.grid))
+
+                  if state.currentGridID == nil {
+                    state.currentGridID = model.grid
+                    notifications.append(.currentGridChanged)
+                  }
                 }
 
                 return models.map { .gridCreated(id: $0.grid) }
               }
 
             case let .gridDestroy(models):
-              store.mutateState { state in
+              await self.store.mutateState { state in
+                var notifications = [Store.Notification]()
+
                 for model in models {
                   guard state.grids[model.grid] != nil else {
                     "grid_destroy for unexisting grid".fail().failAssertion()
                     continue
                   }
-                  state.grids[model.grid] = nil
+                  state.grids.removeValue(forKey: model.grid)
+                  notifications.append(.gridDestroyed(id: model.grid))
+
+                  if state.currentGridID == model.grid {
+                    state.currentGridID = state.grids.keys.first
+                    notifications.append(.currentGridChanged)
+                  }
                 }
 
-                return models.map { .gridDestroyed(id: $0.grid) }
+                return notifications
               }
 
             case let .gridLine(models):
-              store.mutateState { state in
+              await self.store.mutateState { state in
                 var notifications = [Store.Notification]()
 
-                var lastHlID: UInt?
+                var lastHlID: Int?
                 for model in models {
                   guard var grid = state.grids[model.grid] else {
                     "unexisting grid".fail().failAssertion()
@@ -112,7 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         "expected cell hl_id is not an unsigned integer".fail().failAssertion()
                         continue
                       }
-                      lastHlID = hlID
+                      lastHlID = Int(hlID)
 
                       if !arrayValue.isEmpty {
                         guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
@@ -134,7 +159,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       guard row < grid.columnsCount else {
                         break
                       }
-                      grid[.init(row: row, column: column)] = .init(text: text, hlID: lastHlID)
+                      grid[.init(row: row, column: column)] = .init(character: text.first, hlID: lastHlID)
 
                       updatedCellsCount += 1
                     }
@@ -165,7 +190,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       }
     }
 
-    Task {
+    Task.detached {
       do {
         try await client.nvimUIAttach(
           width: 90,

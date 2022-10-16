@@ -12,26 +12,30 @@ import Library
 import MessagePack
 
 public class Client: AsyncSequence {
-  @MainActor
+  @ProcessActor
   public init() {
     let process = ProceduringProcess(
       executableURL: URL(fileURLWithPath: "/bin/zsh"),
       arguments: ["-c", "nvim --embed"]
     )
     self.stream = .init { continuation in
-      Task {
-        for try await messageNotification in process {
-          guard let notification = ClientNotification(messageNotification: messageNotification) else {
-            continue
+      Task.detached {
+        do {
+          for try await messageNotification in process {
+            guard let notification = ClientNotification(messageNotification: messageNotification) else {
+              continue
+            }
+
+            continuation.yield(notification)
           }
 
-          continuation.yield(notification)
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: "failed receiving notifications".fail(child: error.fail()))
         }
-
-        continuation.finish()
       }
     }
-    self.request = process.request
+    self.request = { try await process.request(method: $0, parameters: $1) }
   }
 
   public typealias AsyncIterator = AsyncThrowingStream<Element, Error>.AsyncIterator

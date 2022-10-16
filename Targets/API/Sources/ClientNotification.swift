@@ -24,8 +24,11 @@ public enum ClientNotification {
           return nil
         }
 
-        guard let uiEvent = UIEvent(method: method,
-                                    parametersArray: parameters.dropFirst().normalizedToParametersArray)
+        guard
+          let uiEvent = UIEvent(
+            method: method,
+            parametersArray: parameters.dropFirst().normalizedToParametersArray
+          )
         else {
           return nil
         }

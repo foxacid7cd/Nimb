@@ -7,65 +7,18 @@
 //
 
 import AppKit
+import Combine
 import Library
 
 class GridView: NSView {
-  init(id: Int, store: Store) {
-    self.id = id
+  init(store: Store, id: Int) {
     self.store = store
-
-    let paragraphStyle = NSMutableParagraphStyle()
-    paragraphStyle.alignment = .natural
-    paragraphStyle.lineBreakMode = .byWordWrapping
-
-    let font = NSFont.monospacedSystemFont(ofSize: 24, weight: .regular)
-
-    let textAttributes = [
-      NSAttributedString.Key.paragraphStyle: paragraphStyle,
-      NSAttributedString.Key.font: font,
-      NSAttributedString.Key.foregroundColor: NSColor.white
-    ]
-    let attributedString = CFAttributedStringCreate(nil, "Hello World!" as CFString, textAttributes as CFDictionary)!
-
-    let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    self.ctFramesetter = ctFramesetter
-
-    let ctFrame = CTFramesetterCreateFrame(
-      ctFramesetter,
-      .init(location: 0, length: "Hello World!".count),
-      .init(rect: .init(x: 50, y: -50, width: 300, height: 300), transform: nil),
-      nil
-    )
-    self.ctFrame = ctFrame
-
+    self.id = id
     super.init(frame: .init())
 
-    setNeedsDisplay(bounds)
-
-    Task {
-      for await array in store.notifications {
-        for notification in array {
-          switch notification {
-          case let .gridUpdated(id, updates):
-            guard id == self.id else {
-              continue
-            }
-
-            switch updates {
-            case let .line(row, columnStart, cellsCount):
-              let updatedRect = self.cellsRect(
-                first: (row, columnStart),
-                second: (row, columnStart + cellsCount - 1)
-              )
-              setNeedsDisplay(updatedRect)
-            }
-
-          default:
-            continue
-          }
-        }
-      }
-    }
+    store.notifications
+      .sink { [weak self] in self?.handle(notifications: $0) }
+      .store(in: &self.cancellables)
   }
 
   @available(*, unavailable)
@@ -73,64 +26,114 @@ class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  @MainActor
   override public func draw(_: NSRect) {
-    guard let context = NSGraphicsContext.current else {
-      "missing current graphics context".fail().failAssertion()
-      return
-    }
-    context.saveGraphicsState()
-    defer { context.restoreGraphicsState() }
+    let context = NSGraphicsContext.current!
+
+    context.cgContext.saveGState()
+    defer { context.cgContext.restoreGState() }
 
     var rects: UnsafePointer<NSRect>!
     var count = 0
     getRectsBeingDrawn(&rects, count: &count)
 
     let grid = self.store.state.grids[self.id]!
+    let gridSize = self.store.state.gridSize(id: self.id)
 
     for index in 0 ..< count {
       let rect = rects.advanced(by: index).pointee
+        .intersection(.init(origin: .zero, size: gridSize))
 
       let gridIntersection = self.gridIntersection(with: rect)
-      for rowOffset in 0 ..< gridIntersection.width {
-        for columnOffset in 0 ..< gridIntersection.height {
+
+      var glyphs = [CGGlyph]()
+      var positions = [CGPoint]()
+
+      for columnOffset in 0 ..< gridIntersection.width {
+        for rowOffset in 0 ..< gridIntersection.height {
           let row = gridIntersection.row + rowOffset
           let column = gridIntersection.column + columnOffset
-          let cell = grid[.init(row: row, column: column)]
 
-          context.cgContext.setFillColor(
-            red: CGFloat((0 ..< 10).randomElement() ?? 0) / 10.0,
-            green: 0.5,
-            blue: 0.5,
-            alpha: 1
-          )
-          context.cgContext.fill(self.cellRect(row: row, column: column))
+          if
+            let cell = grid[.init(row: row, column: column)],
+            let rawCharacter = cell.character?.utf16.first
+          {
+            let glyph: CGGlyph
+            if let cachedGlyph = self.cachedGlyphs[rawCharacter] {
+              glyph = cachedGlyph
+
+            } else {
+              var glyphs = [CGGlyph(0)]
+              CTFontGetGlyphsForCharacters(self.font, [rawCharacter], &glyphs, 1)
+              glyph = glyphs[0]
+            }
+
+            let position = self.cellOrigin(row: row, column: column)
+
+            glyphs.append(glyph)
+            positions.append(position)
+          }
         }
       }
-    }
 
-    CTFrameDraw(self.ctFrame, context.cgContext)
+      context.cgContext.textMatrix = .identity
+      // context.cgContext.translateBy(x: 0, y: gridSize.height)
+      // context.cgContext.scaleBy(x: 1, y: -1)
+
+      log(.debug, "drawing \(glyphs.count) glyphs")
+
+      CTFontDrawGlyphs(
+        self.font,
+        glyphs,
+        positions,
+        glyphs.count,
+        context.cgContext
+      )
+    }
   }
 
-  private let id: Int
   private let store: Store
-  private var ctFramesetter: CTFramesetter
-  private var ctFrame: CTFrame
+  private let id: Int
+  private var cancellables = Set<AnyCancellable>()
+  private var cachedGlyphs = [UInt16: CGGlyph]()
+  private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+
+  private func handle(notifications: [Store.Notification]) {
+    for notification in notifications {
+      switch notification {
+      case let .gridUpdated(id, updates):
+        guard id == self.id else {
+          continue
+        }
+        switch updates {
+        case let .line(row, columnStart, cellsCount):
+          let updatedRect = self.cellsRect(first: (row, columnStart), second: (row, columnStart + cellsCount))
+          self.setNeedsDisplay(updatedRect)
+        }
+
+      default:
+        continue
+      }
+    }
+  }
 
   private func gridIntersection(with rect: CGRect) -> (row: Int, column: Int, width: Int, height: Int) {
-    let offset = CGPoint()
+    let grid = self.store.state.grids[self.id]!
+    let gridSize = self.store.state.gridSize(id: self.id)
     let cellSize = self.store.state.cellSize
 
-    let row = max(0, Int(floor((self.bounds.height - offset.y - (rect.origin.y + rect.size.height)) / cellSize.height)))
-    let width = min(
-      self.store.state.grids[self.id]!.rowsCount,
-      Int(ceil((self.bounds.height - offset.y - rect.origin.y) / cellSize.height))
-    ) - row
+    let row = max(0, Int(floor((gridSize.height - (rect.origin.y + rect.size.height)) / cellSize.height)))
+    let column = max(0, Int(floor((gridSize.width - (rect.origin.x + rect.size.width)) / cellSize.width)))
 
-    let column = max(0, Int(floor((rect.origin.x - offset.x) / cellSize.width)))
-    let height = min(
-      self.store.state.grids[self.id]!.columnsCount,
-      Int(ceil((rect.origin.x - offset.x + rect.size.width) / cellSize.width))
+    let width = min(
+      grid.columnsCount,
+      Int(ceil((rect.origin.x + rect.size.width) / cellSize.width))
     ) - column
+
+    let height = min(
+      grid.rowsCount,
+      Int(ceil((gridSize.height - rect.origin.y) / cellSize.height))
+    ) - row
 
     return (row, column, width, height)
   }

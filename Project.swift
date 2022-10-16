@@ -53,7 +53,9 @@ let project = Project(
       name: "Library",
       product: .library,
       dependencies: [
-        .external(name: "AsyncAlgorithms")
+        .external(name: "AsyncAlgorithms"),
+        .external(name: "RxSwift"),
+        .external(name: "RxCocoa")
       ]
     )
   ],
