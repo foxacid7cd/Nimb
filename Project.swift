@@ -5,7 +5,6 @@ let project = Project(
   name: "Nims",
   organizationName: "foxacid7cd",
   options: .options(
-    automaticSchemesOptions: .disabled,
     textSettings: .textSettings(
       usesTabs: false,
       indentWidth: 2,
@@ -19,15 +18,14 @@ let project = Project(
       product: .app(infoPlist: .default),
       dependencies: [
         .target(name: "Library"),
-        .target(name: "API")
+        .target(name: "Nvim")
       ]
     ),
     .nimsTarget(
-      name: "API",
+      name: "Nvim",
       product: .library,
       dependencies: [
-        .target(name: "Library"),
-        .target(name: "Conversations")
+        .target(name: "Library")
       ],
       hasGeneratedSources: true,
       hasBuildSupportAssets: true
@@ -39,14 +37,6 @@ let project = Project(
         .target(name: "Library"),
         .external(name: "Stencil"),
         .external(name: "ArgumentParser")
-      ]
-    ),
-    .nimsTarget(
-      name: "Conversations",
-      product: .library,
-      dependencies: [
-        .target(name: "Library"),
-        .external(name: "MessagePack")
       ]
     ),
     .nimsTarget(

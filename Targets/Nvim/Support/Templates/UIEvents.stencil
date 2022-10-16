@@ -1,4 +1,4 @@
-import MessagePack
+import Library
 
 public enum UIEvents {
   {% for model in uiEventModels %}
@@ -11,35 +11,28 @@ public enum UIEvents {
       {% endfor %}
     }
     
-    public init?(parameters: [MessagePackValue]) {
+    public init(parameters: [Value]) throws {
       var previousPosition: Int?
-      func next<ValueType>(_ entity: String, _ transform: (MessagePackValue) -> ValueType?, file: StaticString = #file, line: UInt = #line) -> ValueType? {
+      func next<ValueType>(_ entity: String, _ transform: (Value) -> ValueType?, file: StaticString = #file, line: UInt = #line) throws -> ValueType {
         let currentPosition = previousPosition.map { $0 + 1 } ?? 0
         defer { previousPosition = currentPosition }
         
         guard parameters.count > currentPosition, let value = transform(parameters[currentPosition]) else {
-          assertionFailure("element at index \(currentPosition) is expected to be \(entity)", file: file, line: line)
-          return nil
+          throw "element at index \(currentPosition) is expected to be \(entity)".fail()
         }
         
         return value
       }
       
-      func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) -> Bool {
+      func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) throws {
         guard let previousPosition, previousPosition == parameters.count - 1 else {
-          assertionFailure("\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(parameters.count) elements were passed", file: file, line: line)
-          return false
+          throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(parameters.count) elements were passed".fail()
         }
-        
-        return true
       }
       
-      guard{% for parameter in model.parameters %}
-        let {{ parameter.name }} = next("{{ parameter.type }} representing parameter {{ parameter.name }}", { $0{{ parameter.obtainingValue }} }),{% endfor %}
-        finalize("UIEvents.{{ model.name }}")
-      else {
-        return nil
-      }
+      {% for parameter in model.parameters %}
+      let {{ parameter.name }} = try next("{{ parameter.type }} representing parameter {{ parameter.name }}", { $0{{ parameter.obtainingValue }} }){% endfor %}
+      try finalize("UIEvents.{{ model.name }}")
       
       self = .init({% for parameter in model.parameters %}{{ parameter.name }}: {{ parameter.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
     }

@@ -8,5 +8,5 @@
 
 public struct Notification {
   public var method: String
-  public var parameters: [Value]
+  public var parameters: [[Value]]
 }

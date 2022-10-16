@@ -7,6 +7,11 @@
 //
 
 public struct Response {
+  public init(isSuccess: Bool, value: Value) {
+    self.isSuccess = isSuccess
+    self.value = value
+  }
+
   public var isSuccess: Bool
   public var value: Value
 }

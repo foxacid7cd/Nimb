@@ -10,16 +10,14 @@ public enum UIEvent {
   
   {% endfor %}
 
-  public init?(method: String, parametersArray: [[MessagePackValue]]) {
+  public init(method: String, parametersArray: [[MessagePackValue]]) throws {
     switch method {
       {% for uiEvent in uiEvents %}
       case "{{ uiEvent.originalName }}":
         {% if uiEvent.parametersType %}var children = [UIEvents.{{ uiEvent.parametersType }}]()
         
         for parameters in parametersArray {
-          guard let child = UIEvents.{{ uiEvent.parametersType }}(parameters: parameters) else {
-            return nil
-          }
+          let child = try UIEvents.{{ uiEvent.parametersType }}(parameters: parameters)
           
           children.append(child)
         }
@@ -29,8 +27,7 @@ public enum UIEvent {
         
       {% endfor %}
       default:
-        assertionFailure("unknown UI event method \(method)")
-        return nil
+        throw "unknown UI event method \(method)".fail()
     }
   }
 }

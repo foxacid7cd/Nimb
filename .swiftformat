@@ -1,4 +1,3 @@
---swiftversion 5.7
 --acronyms API,ID,UI,URL,UUID
 --allman false
 --assetliterals visual-width
@@ -36,6 +35,8 @@
 --lineaftermarks false
 --linebreaks lf
 --markcategories false
+--markextensions never
+--marktypes never
 --maxwidth 120
 --modifierorder 
 --nevertrailing 
@@ -48,11 +49,11 @@
 --ranges spaced
 --redundanttype inferred
 --self insert
---selfrequired 
+--selfrequired x
 --semicolons inline
 --shortoptionals always
 --smarttabs enabled
---stripunusedargs always
+--stripunusedargs closure-only
 --structthreshold 0
 --tabwidth unspecified
 --trailingclosures 
@@ -62,13 +63,14 @@
 --typemark "MARK: - %t"
 --varattributes preserve
 --voidtype void
---wraparguments preserve
---wrapcollections preserve
+--wraparguments before-first
+--wrapcollections after-first
 --wrapconditions preserve
---wrapparameters default
+--wrapparameters disabled
 --wrapreturntype preserve
 --wrapternary default
 --wraptypealiases preserve
 --xcodeindentation disabled
 --yodaswap always
---enable acronyms,blankLinesBetweenImports,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
+--disable unusedArguments,wrap,wrapArguments,wrapAttributes,wrapMultilineStatementBraces
+--enable acronyms,blankLinesBetweenImports,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases

@@ -88,39 +88,51 @@ struct neogen: AsyncParsableCommand {
       throw "could not access project directory".fail()
     }
 
-    let apiTargetPath = projectPath + "Targets/API"
-    let templatesPath = apiTargetPath + "Support/Templates"
-    let outputPath = apiTargetPath + "Generated"
-
-    let oldGeneratedFiles = Set(try outputPath.children())
-
-    let environment = Environment(
-      loader: FileSystemLoader(paths: [templatesPath])
-    )
-
     var generatedFiles = Set<Path>()
-    for templatePath in try templatesPath.children() {
-      guard templatePath.isFile, templatePath.extension == "stencil", templatePath.isReadable else {
+
+    let targetsPath = projectPath + "Targets"
+    for targetPath in try targetsPath.children() {
+      guard targetPath.isDirectory else {
         continue
       }
 
-      let renderedTemplate = try environment.renderTemplate(
-        name: templatePath.lastComponent,
-        context: renderingContext
+      let templatesPath = targetPath + "Support" + "Templates"
+      guard templatesPath.isDirectory else {
+        continue
+      }
+
+      let outputPath = targetPath + "Generated"
+      if !outputPath.exists {
+        try outputPath.mkdir()
+      }
+
+      for oldFilePath in try outputPath.children() {
+        guard oldFilePath.isFile, oldFilePath.extension == "swift" else {
+          continue
+        }
+
+        try oldFilePath.delete()
+      }
+
+      let environment = Environment(
+        loader: FileSystemLoader(paths: [templatesPath])
       )
 
-      let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
-      try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
-      generatedFiles.insert(outputFilePath)
-    }
+      for templatePath in try templatesPath.children() {
+        guard templatePath.isFile, templatePath.extension == "stencil" else {
+          continue
+        }
 
-    for file in generatedFiles {
-      print("+ \(file)")
-    }
+        let renderedTemplate = try environment.renderTemplate(
+          name: templatePath.lastComponent,
+          context: renderingContext
+        )
 
-    for file in oldGeneratedFiles.subtracting(generatedFiles) {
-      try file.delete()
-      print("- \(file)")
+        let outputFilePath = outputPath + "\(templatePath.lastComponentWithoutExtension).swift"
+
+        try outputFilePath.write(renderedTemplate.data(using: .utf8)!)
+        generatedFiles.insert(outputFilePath)
+      }
     }
 
     return generatedFiles
@@ -139,7 +151,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
               [
                 "name": parameter.name.camelCased(capitalized: false),
                 "type": swiftType(nvimType: parameter.type),
-                "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: "")
+                "obtainingValue": obtainingReturnValue(nvimType: parameter.type)
               ]
             },
           "parametersInitializationSignature": function.parameters
@@ -173,7 +185,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
         ]
         if function.returnType != "void" {
           dictionary["returnType"] = swiftType(nvimType: function.returnType)
-          dictionary["obtainingReturnValue"] = obtainingReturnValue(nvimType: function.returnType, name: "result")
+          dictionary["obtainingReturnValue"] = obtainingReturnValue(nvimType: function.returnType)
         }
         return dictionary
       },
@@ -214,7 +226,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           [
             "name": parameter.name.camelCased(capitalized: false),
             "type": swiftType(nvimType: parameter.type),
-            "obtainingValue": obtainingReturnValue(nvimType: parameter.type, name: "")
+            "obtainingValue": obtainingReturnValue(nvimType: parameter.type)
           ]
         }
     ]
@@ -266,9 +278,9 @@ private func swiftType(nvimType: String) -> String {
   case "Integer":
     return "Int"
   case "Array":
-    return "[MessagePackValue]"
+    return "[Value]"
   default:
-    return "MessagePackValue"
+    return "Value"
   }
 }
 
@@ -287,18 +299,18 @@ private func obtainingValue(nvimType: String, name: String) -> String {
   }
 }
 
-private func obtainingReturnValue(nvimType: String, name: String) -> String {
+private func obtainingReturnValue(nvimType: String) -> String {
   switch nvimType {
   case "Boolean":
-    return "\(name).boolValue"
+    return ".boolValue"
   case "String":
-    return "\(name).stringValue"
+    return ".stringValue"
   case "Integer":
-    return "\(name).intValue"
+    return ".intValue"
   case "Array":
-    return "\(name).arrayValue"
+    return ".arrayValue"
   default:
-    return name
+    return ""
   }
 }
 
