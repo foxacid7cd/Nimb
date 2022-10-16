@@ -43,24 +43,26 @@ class GridView: NSView {
     setNeedsDisplay(bounds)
 
     Task {
-      for await notification in store.notifications {
-        switch notification {
-        case let .gridUpdated(id, updates):
-          guard id == self.id else {
+      for await array in store.notifications {
+        for notification in array {
+          switch notification {
+          case let .gridUpdated(id, updates):
+            guard id == self.id else {
+              continue
+            }
+
+            switch updates {
+            case let .line(row, columnStart, cellsCount):
+              let updatedRect = self.cellsRect(
+                first: (row, columnStart),
+                second: (row, columnStart + cellsCount - 1)
+              )
+              setNeedsDisplay(updatedRect)
+            }
+
+          default:
             continue
           }
-
-          switch updates {
-          case let .line(row, columnStart, cellsCount):
-            let updatedRect = self.cellsRect(
-              first: (row, columnStart),
-              second: (row, columnStart + cellsCount)
-            )
-            setNeedsDisplay(updatedRect)
-          }
-
-        default:
-          continue
         }
       }
     }
@@ -83,10 +85,27 @@ class GridView: NSView {
     var count = 0
     getRectsBeingDrawn(&rects, count: &count)
 
+    let grid = self.store.state.grids[self.id]!
+
     for index in 0 ..< count {
       let rect = rects.advanced(by: index).pointee
 
-      print(rect)
+      let gridIntersection = self.gridIntersection(with: rect)
+      for rowOffset in 0 ..< gridIntersection.width {
+        for columnOffset in 0 ..< gridIntersection.height {
+          let row = gridIntersection.row + rowOffset
+          let column = gridIntersection.column + columnOffset
+          let cell = grid[.init(row: row, column: column)]
+
+          context.cgContext.setFillColor(
+            red: CGFloat((0 ..< 10).randomElement() ?? 0) / 10.0,
+            green: 0.5,
+            blue: 0.5,
+            alpha: 1
+          )
+          context.cgContext.fill(self.cellRect(row: row, column: column))
+        }
+      }
     }
 
     CTFrameDraw(self.ctFrame, context.cgContext)
@@ -103,14 +122,14 @@ class GridView: NSView {
 
     let row = max(0, Int(floor((self.bounds.height - offset.y - (rect.origin.y + rect.size.height)) / cellSize.height)))
     let width = min(
-      self.store.state.grids[self.id]!.rowsCount - 1,
-      Int(ceil((self.bounds.height - offset.y - rect.origin.y) / cellSize.height)) - 1
+      self.store.state.grids[self.id]!.rowsCount,
+      Int(ceil((self.bounds.height - offset.y - rect.origin.y) / cellSize.height))
     ) - row
 
     let column = max(0, Int(floor((rect.origin.x - offset.x) / cellSize.width)))
     let height = min(
-      self.store.state.grids[self.id]!.columnsCount - 1,
-      Int(ceil((rect.origin.x - offset.x + rect.size.width) / cellSize.width)) - 1
+      self.store.state.grids[self.id]!.columnsCount,
+      Int(ceil((rect.origin.x - offset.x + rect.size.width) / cellSize.width))
     ) - column
 
     return (row, column, width, height)

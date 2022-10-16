@@ -24,6 +24,6 @@ class Window: NSWindow, NSWindowDelegate {
   }
 
   func windowDidBecomeMain(_: Notification) {
-    setContentSize(.init(width: 640, height: 480))
+    setContentSize(.init(width: 1280, height: 960))
   }
 }

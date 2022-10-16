@@ -24,23 +24,25 @@ class ViewController: NSViewController {
     let view = NSStackView()
 
     Task {
-      for await notification in store.notifications {
-        switch notification {
-        case let .gridCreated(id):
-          let gridView = GridView(id: id, store: store)
-          view.addArrangedSubview(gridView)
-          gridViews[id] = gridView
+      for await array in store.notifications {
+        for notification in array {
+          switch notification {
+          case let .gridCreated(id):
+            let gridView = GridView(id: id, store: store)
+            view.addArrangedSubview(gridView)
+            gridViews[id] = gridView
 
-        case let .gridDestroyed(id):
-          guard let gridView = gridViews[id] else {
-            "tried to destroy unexisting grid".fail().failAssertion()
+          case let .gridDestroyed(id):
+            guard let gridView = gridViews[id] else {
+              "tried to destroy unexisting grid".fail().failAssertion()
+              continue
+            }
+            gridView.removeFromSuperview()
+            gridViews.removeValue(forKey: id)
+
+          default:
             continue
           }
-          gridView.removeFromSuperview()
-          gridViews.removeValue(forKey: id)
-
-        default:
-          continue
         }
       }
     }

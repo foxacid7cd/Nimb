@@ -58,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             case let .gridResize(models):
               store.mutateState { state in
                 for model in models {
-                  let grid = Library.Grid<Cell?>(
+                  let grid = Library.Grid<Store.Cell?>(
                     repeating: nil,
                     rowsCount: model.height,
                     columnsCount: model.width
@@ -100,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       continue
                     }
 
-                    guard !arrayValue.isEmpty, let string = arrayValue.removeFirst().stringValue else {
+                    guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
                       "expected cell text is not a string".fail().failAssertion()
                       continue
                     }
@@ -128,11 +128,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       continue
                     }
 
-                    let character = string.first
-
                     for repeatIndex in 0 ..< repeatCount {
-                      grid[.init(row: model.row, column: model.colStart + Int(repeatIndex))] =
-                        .init(character: character, hlID: lastHlID)
+                      let row = model.row
+                      let column = model.colStart + Int(repeatIndex)
+                      guard row < grid.columnsCount else {
+                        break
+                      }
+                      grid[.init(row: row, column: column)] = .init(text: text, hlID: lastHlID)
 
                       updatedCellsCount += 1
                     }

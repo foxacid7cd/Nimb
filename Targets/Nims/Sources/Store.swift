@@ -14,7 +14,12 @@ import Library
 class Store {
   struct State {
     var grids = [Int: Grid<Cell?>]()
-    var cellSize = CGSize(width: 12, height: 24)
+    var cellSize = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular).makeCellSize(for: "A")
+  }
+
+  struct Cell {
+    var text: String?
+    var hlID: UInt
   }
 
   enum Notification {
@@ -30,20 +35,20 @@ class Store {
   @MainActor
   private(set) var state = State()
 
-  var notifications: AnyAsyncSequence<Notification> {
+  var notifications: AnyAsyncSequence<[Notification]> {
     .init(channel: self.notificationsChannel)
   }
 
   @MainActor
   func mutateState(_ fn: (inout State) -> [Notification]) {
-    let notifications = fn(&self.state)
+    var state = self.state
+    let notifications = fn(&state)
+    self.state = state
 
     Task {
-      for notification in notifications {
-        await notificationsChannel.send(notification)
-      }
+      await notificationsChannel.send(notifications)
     }
   }
 
-  private let notificationsChannel = AsyncChannel<Notification>()
+  private let notificationsChannel = AsyncChannel<[Notification]>()
 }
