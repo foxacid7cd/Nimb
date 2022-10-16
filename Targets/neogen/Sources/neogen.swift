@@ -1,11 +1,10 @@
 import ArgumentParser
 import AsyncAlgorithms
-import Combine
-import Conversations
 import Foundation
 import Library
 import MessagePack
 import PathKit
+import RxSwift
 import Stencil
 
 @main
@@ -53,33 +52,25 @@ struct neogen: AsyncParsableCommand {
     let outputPipe = Pipe()
     process.standardOutput = outputPipe
 
-    let errorPipe = Pipe()
-    process.standardError = errorPipe
+    let outputMessages = outputPipe.fileHandleForReading.data
+      .unpack()
+      .replayAll()
 
-    let apiInfoTask = Task<APIInfo, Error>.detached {
-      let outputData = await AsyncFileData(outputPipe.fileHandleForReading)
-        .reduce(into: Data()) { $0 += $1 }
-
-      let (value, remainder) = try unpack(outputData)
-      guard remainder.isEmpty else {
-        throw "nvim API info stdout is not one message pack value".fail()
-      }
-      guard let dictionary = try value.makeJSON() as? [String: Any] else {
-        throw "nvim API info stdout is not a message pack map".fail()
-      }
-      let jsonData = try JSONSerialization.data(withJSONObject: dictionary)
-      return try JSONDecoder().decode(APIInfo.self, from: jsonData)
-    }
-
-    Task {
-      for try await data in AsyncFileData(errorPipe.fileHandleForReading) {
-        print("stderr >> \(String(data: data, encoding: .utf8)!)")
-      }
-    }
+    let disposable = outputMessages.connect()
+    defer { disposable.dispose() }
 
     try process.run()
 
-    return try await apiInfoTask.value
+    let apiInfo = outputMessages
+      .flatMap { Observable.from($0) }
+      .map { try APIInfo(value: $0) }
+      .first()
+
+    guard let model = try await apiInfo.value else {
+      throw "no api info from output of process".fail()
+    }
+
+    return model
   }
 
   private func generateOutputFiles(renderingContext: [String: Any]) throws -> Set<Path> {
@@ -315,6 +306,12 @@ private func obtainingReturnValue(nvimType: String) -> String {
 }
 
 private struct APIInfo: Decodable {
+  init(value: Value) throws {
+    let json = try value.makeJSON()
+    let data = try JSONSerialization.data(withJSONObject: json)
+    self = try JSONDecoder().decode(APIInfo.self, from: data)
+  }
+
   struct ErrorType: Decodable {
     var id: Int
   }

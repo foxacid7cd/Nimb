@@ -1,14 +1,12 @@
 //
-//  MessagePackValue+JSON.swift
+//  Value+JSON.swift
 //  Library
 //
 //  Created by Yevhenii Matviienko on 14.10.2022.
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import MessagePack
-
-public extension MessagePackValue {
+public extension Value {
   func makeJSON() throws -> Any {
     switch self {
     case let .array(array):

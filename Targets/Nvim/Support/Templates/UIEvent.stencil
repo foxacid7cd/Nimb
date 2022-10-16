@@ -1,6 +1,5 @@
 import MessagePack
 import Library
-import Conversations
 
 public enum UIEvent {
   {% for uiEvent in uiEvents %}

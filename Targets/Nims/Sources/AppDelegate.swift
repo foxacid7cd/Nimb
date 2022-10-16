@@ -10,7 +10,7 @@ import AppKit
 import AsyncAlgorithms
 import Library
 import MessagePack
-import Neovim
+import Nvim
 import RxSwift
 
 class AppDelegate: NSObject, NSApplicationDelegate {

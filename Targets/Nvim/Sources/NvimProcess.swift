@@ -22,6 +22,7 @@ public class NvimProcess {
 
     let outputMessages = outputPipe.fileHandleForReading.data
       .unpack()
+      .flatMap { Observable.from($0) }
       .map { try Message(value: $0) }
 
     let rpc = RPC(inputMessages: outputMessages)

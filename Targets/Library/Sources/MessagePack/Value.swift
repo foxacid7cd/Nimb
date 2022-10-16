@@ -18,52 +18,51 @@ public extension Value {
   }
 }
 
-public enum ValueParsingResult {
-  case success(value: Value, remainder: Data)
-  case insufficientData
-}
-
 public extension Data {
-  func parseValue() throws -> ValueParsingResult {
+  func parseValues() throws -> (values: [Value], remainder: Data) {
+    var subdata = Subdata(data: self)
+    var parsedValues = [Value]()
+
     do {
-      let (value, remainder) = try unpack(self)
-      return .success(value: value, remainder: remainder)
+      while true {
+        let value: Value
+        (value, subdata) = try unpack(subdata)
+        parsedValues.append(value)
+      }
 
     } catch MessagePackError.insufficientData {
-      return .insufficientData
+      return (parsedValues, subdata.data)
 
     } catch {
-      "failed parsing value"
+      throw "failed parsing values"
         .fail(child: error.fail())
-        .fatal()
     }
   }
 }
 
 public extension ObservableType where Element == Data {
-  func unpack() -> Observable<Value> {
+  func unpack() -> Observable<[Value]> {
     .create { observer in
       var bufferData = Data()
 
-      return self.subscribe(onNext: { data in
-        bufferData += data
+      return self.subscribe(
+        onNext: { data in
+          bufferData += data
 
-        do {
-          while true {
-            let value: Value
-            (value, bufferData) = try MessagePack.unpack(bufferData)
-            observer.onNext(value)
+          do {
+            let values: [Value]
+            (values, bufferData) = try bufferData.parseValues()
+            observer.onNext(values)
+
+          } catch {
+            observer.onError(
+              "failed parsing values".fail(child: error.fail())
+            )
           }
-
-        } catch MessagePackError.insufficientData {
-          return
-
-        } catch {
-          "failed parsing data"
-            .fail(child: error.fail())
-            .fatal()
-        }
-      })
+        },
+        onError: observer.onError,
+        onCompleted: observer.onCompleted
+      )
     }
   }
 }

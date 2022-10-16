@@ -45,7 +45,8 @@ let project = Project(
       dependencies: [
         .external(name: "AsyncAlgorithms"),
         .external(name: "RxSwift"),
-        .external(name: "RxCocoa")
+        .external(name: "RxCocoa"),
+        .external(name: "MessagePack")
       ]
     )
   ],

@@ -6,7 +6,6 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import Conversations
 import Library
 import MessagePack
 
@@ -30,7 +29,7 @@ public enum NvimNotification {
             parametersArray: parameters.dropFirst().normalizedToParametersArray
           )
           uiEvents.append(uiEvent)
-          
+
         } catch {
           throw "first".fail(child: error.fail())
         }
