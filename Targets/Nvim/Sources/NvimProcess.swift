@@ -11,9 +11,11 @@ import Library
 import RxSwift
 
 public class NvimProcess {
+  private let process = Process()
+  
   @MainActor
   public init() {
-    let process = Foundation.Process()
+    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     process.executableURL = .init(fileURLWithPath: "/bin/zsh")
     process.arguments = ["-c", "nvim --embed"]
 
@@ -50,6 +52,14 @@ public class NvimProcess {
         .fail()
         .log(.info)
     }
+
+    do {
+      try process.run()
+    } catch {
+      "failed running nvim process"
+        .fail(child: error.fail())
+        .fatal()
+    }
   }
 
   public var notifications: Observable<NvimNotification> {
@@ -64,6 +74,10 @@ public class NvimProcess {
             .fatal()
         }
       }
+  }
+  
+  public func run() throws {
+    try process.run()
   }
 
   let rpc: RPC

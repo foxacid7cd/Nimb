@@ -15,7 +15,14 @@ let project = Project(
   targets: [
     .nimsTarget(
       name: "Nims",
-      product: .app(infoPlist: .default),
+      product: .app(
+        infoPlist: .extendingDefault(
+          with: [
+            "NSMainStoryboardFile": "",
+            "NSMainNibFile": "MainMenu"
+          ]
+        )
+      ),
       dependencies: [
         .target(name: "Library"),
         .target(name: "Nvim")

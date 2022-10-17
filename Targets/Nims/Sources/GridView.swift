@@ -11,12 +11,11 @@ import Combine
 import Library
 
 class GridView: NSView {
-  init(store: Store, id: Int) {
-    self.store = store
+  init(id: Int) {
     self.id = id
     super.init(frame: .init())
 
-    store.notifications
+    Store.shared.notifications
       .sink { [weak self] in self?.handle(notifications: $0) }
       .store(in: &self.cancellables)
   }
@@ -37,8 +36,8 @@ class GridView: NSView {
     var count = 0
     getRectsBeingDrawn(&rects, count: &count)
 
-    let grid = self.store.state.grids[self.id]!
-    let gridSize = self.store.state.gridSize(id: self.id)
+    let grid = self.grid
+    let gridSize = Store.shared.state.gridSize(id: self.id)
 
     for index in 0 ..< count {
       let rect = rects.advanced(by: index).pointee
@@ -56,8 +55,7 @@ class GridView: NSView {
 
           if
             let cell = grid[.init(row: row, column: column)],
-            let rawCharacter = cell.character?.utf16.first
-          {
+            let rawCharacter = cell.character?.utf16.first {
             let glyph: CGGlyph
             if let cachedGlyph = self.cachedGlyphs[rawCharacter] {
               glyph = cachedGlyph
@@ -92,11 +90,22 @@ class GridView: NSView {
     }
   }
 
-  private let store: Store
   private let id: Int
   private var cancellables = Set<AnyCancellable>()
   private var cachedGlyphs = [UInt16: CGGlyph]()
   private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+
+  private var grid: Grid<State.Cell?> {
+    Store.shared.state.grids[self.id]!
+  }
+
+  private var gridFrame: CGRect {
+    .init(origin: .zero, size: Store.shared.state.gridSize(id: self.id))
+  }
+
+  private var cellSize: CGSize {
+    Store.shared.state.cellSize
+  }
 
   private func handle(notifications: [Store.Notification]) {
     for notification in notifications {
@@ -118,21 +127,22 @@ class GridView: NSView {
   }
 
   private func gridIntersection(with rect: CGRect) -> (row: Int, column: Int, width: Int, height: Int) {
-    let grid = self.store.state.grids[self.id]!
-    let gridSize = self.store.state.gridSize(id: self.id)
-    let cellSize = self.store.state.cellSize
+    let grid = self.grid
+    let gridFrame = self.gridFrame
 
-    let row = max(0, Int(floor((gridSize.height - (rect.origin.y + rect.size.height)) / cellSize.height)))
-    let column = max(0, Int(floor((gridSize.width - (rect.origin.x + rect.size.width)) / cellSize.width)))
+    let intersection = gridFrame.intersection(rect)
+
+    let row = Int(floor(intersection.minY / self.cellSize.height))
+    let column = Int(floor(intersection.minX / self.cellSize.width))
 
     let width = min(
       grid.columnsCount,
-      Int(ceil((rect.origin.x + rect.size.width) / cellSize.width))
+      Int(ceil(intersection.maxX / self.cellSize.width))
     ) - column
 
     let height = min(
       grid.rowsCount,
-      Int(ceil((gridSize.height - rect.origin.y) / cellSize.height))
+      Int(ceil(intersection.maxY / self.cellSize.height))
     ) - row
 
     return (row, column, width, height)
@@ -147,14 +157,14 @@ class GridView: NSView {
   private func cellRect(row: Int, column: Int) -> CGRect {
     .init(
       origin: self.cellOrigin(row: row, column: column),
-      size: self.store.state.cellSize
+      size: Store.shared.state.cellSize
     )
   }
 
   private func cellOrigin(row: Int, column: Int) -> CGPoint {
     .init(
-      x: Double(column) * self.store.state.cellSize.width,
-      y: Double(row) * self.store.state.cellSize.height
+      x: Double(column) * Store.shared.state.cellSize.width,
+      y: Double(row) * Store.shared.state.cellSize.height
     )
   }
 }

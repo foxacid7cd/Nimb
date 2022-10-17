@@ -10,14 +10,14 @@ import Foundation
 import OSLog
 
 public struct Fail: Error, CustomStringConvertible {
-  public init(_ content: Content, children: [Fail] = [], file: StaticString = #file, line: UInt = #line) {
+  public init(_ content: Content, children: [Fail] = [], file: StaticString = #fileID, line: UInt = #line) {
     self.content = content
     self.children = children
     self.file = file
     self.line = line
   }
 
-  public init(_ content: Content, child: Fail? = nil, file: StaticString = #file, line: UInt = #line) {
+  public init(_ content: Content, child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) {
     self.init(content, children: child.map { [$0] } ?? [], file: file, line: line)
   }
 
@@ -28,7 +28,15 @@ public struct Fail: Error, CustomStringConvertible {
     public var description: String {
       switch self {
       case let .details(details):
-        return details
+        var text = details
+          .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let first = text.first, first.isLowercase {
+          text = first.uppercased() + text.dropFirst()
+        }
+        if text.last != "." {
+          text += "."
+        }
+        return text
 
       case let .wrapped(error):
         return String(describing: error)
@@ -44,10 +52,10 @@ public struct Fail: Error, CustomStringConvertible {
   public var description: String {
     let fileName = URL(fileURLWithPath: file.description).lastPathComponent
     let lines = [
-      ["\n *--> \(fileName):\(line)"],
-      content.description
-        .split(separator: "\n")
-        .map { " |\($0)" },
+      [" *--> \(fileName):\(line)"],
+      (self.content.description + "\n")
+        .split(separator: "\n", omittingEmptySubsequences: false)
+        .map { " | \($0)" },
       self.children.map { child in
         let lines = child.description
           .split(separator: "\n", omittingEmptySubsequences: false)
@@ -62,12 +70,11 @@ public struct Fail: Error, CustomStringConvertible {
         return formattedLines
           .joined(separator: "\n")
       },
-      self.children.isEmpty ? ["-*>"] : []
+      self.children.isEmpty ? ["-*-->"] : []
     ]
     .flatMap { $0 }
 
-    return lines
-      .joined(separator: "\n")
+    return lines.joined(separator: "\n")
   }
 
   public func fatal() -> Never {
@@ -80,13 +87,13 @@ public struct Fail: Error, CustomStringConvertible {
 }
 
 public extension StringProtocol {
-  func fail(child: Fail? = nil, file: StaticString = #file, line: UInt = #line) -> Fail {
+  func fail(child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) -> Fail {
     .init(.details(String(self)), child: child, file: file, line: line)
   }
 }
 
 public extension Error {
-  func fail(child: Fail? = nil, file: StaticString = #file, line: UInt = #line) -> Fail {
+  func fail(child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) -> Fail {
     Fail(.wrapped(self), child: child, file: file, line: line)
   }
 

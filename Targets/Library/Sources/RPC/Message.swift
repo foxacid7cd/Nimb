@@ -20,7 +20,7 @@ public enum Message {
     func next<ReturnType>(
       _ entity: String,
       _ transform: (Value) -> ReturnType? = { $0 },
-      file: StaticString = #file,
+      file: StaticString = #fileID,
       line: UInt = #line
     ) throws -> ReturnType {
       let currentPosition = previousPosition.map { $0 + 1 } ?? 0
@@ -33,7 +33,7 @@ public enum Message {
       return value
     }
 
-    func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) throws {
+    func finalize(_ entity: String, file: StaticString = #fileID, line: UInt = #line) throws {
       guard let previousPosition, previousPosition == arrayValue.count - 1 else {
         throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed"
           .fail(file: file, line: line)

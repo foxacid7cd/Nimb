@@ -17,38 +17,6 @@ class Store {
       .share()
       .eraseToAnyPublisher()
     self.publishNotifications = { notifications.send($0) }
-
-    self.notifications
-      .handleEvents(receiveCancel: { log(.debug, "receiveCancel") })
-      .sink(
-        receiveCompletion: { log(.debug, "notifications completion \($0)") },
-        receiveValue: { log(.debug, "notifications value \($0)") }
-      )
-      .store(in: &self.cancellables)
-  }
-
-  struct State {
-    var grids = [Int: Grid<Cell?>]()
-    var currentGridID: Int?
-    var cellSize = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular).makeCellSize(for: "A")
-
-    var currentGrid: Grid<Cell?>? {
-      self.currentGridID.flatMap { grids[$0] }
-    }
-
-    func gridSize(id: Int) -> CGSize {
-      let grid = self.grids[id]!
-
-      return .init(
-        width: self.cellSize.width * CGFloat(grid.columnsCount),
-        height: self.cellSize.height * CGFloat(grid.rowsCount)
-      )
-    }
-  }
-
-  struct Cell {
-    var character: Character?
-    var hlID: Int
   }
 
   enum Notification {
@@ -61,6 +29,8 @@ class Store {
       case line(row: Int, columnStart: Int, cellsCount: Int)
     }
   }
+
+  static let shared = Store()
 
   @MainActor
   private(set) var state = State()
@@ -78,6 +48,34 @@ class Store {
     }
   }
 
-  private var cancellables = Set<AnyCancellable>()
   private let publishNotifications: ([Notification]) -> Void
+}
+
+struct State {
+  struct Cell {
+    var character: Character?
+    var hlID: Int
+  }
+
+  @MainActor
+  static var shared: State {
+    Store.shared.state
+  }
+
+  var grids = [Int: Grid<Cell?>]()
+  var currentGridID: Int?
+  var cellSize = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular).makeCellSize(for: "A")
+
+  var currentGrid: Grid<Cell?>? {
+    self.currentGridID.flatMap { grids[$0] }
+  }
+
+  func gridSize(id: Int) -> CGSize {
+    let grid = self.grids[id]!
+
+    return .init(
+      width: self.cellSize.width * CGFloat(grid.columnsCount),
+      height: self.cellSize.height * CGFloat(grid.rowsCount)
+    )
+  }
 }

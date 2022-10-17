@@ -13,7 +13,7 @@ public enum UIEvents {
     
     public init(parameters: [Value]) throws {
       var previousPosition: Int?
-      func next<ValueType>(_ entity: String, _ transform: (Value) -> ValueType?, file: StaticString = #file, line: UInt = #line) throws -> ValueType {
+      func next<ValueType>(_ entity: String, _ transform: (Value) -> ValueType?, file: StaticString = #fileID, line: UInt = #line) throws -> ValueType {
         let currentPosition = previousPosition.map { $0 + 1 } ?? 0
         defer { previousPosition = currentPosition }
         
@@ -24,7 +24,7 @@ public enum UIEvents {
         return value
       }
       
-      func finalize(_ entity: String, file: StaticString = #file, line: UInt = #line) throws {
+      func finalize(_ entity: String, file: StaticString = #fileID, line: UInt = #line) throws {
         guard let previousPosition, previousPosition == parameters.count - 1 else {
           throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(parameters.count) elements were passed".fail()
         }

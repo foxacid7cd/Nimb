@@ -10,8 +10,7 @@ import AppKit
 import Combine
 
 class ViewController: NSViewController {
-  init(store: Store) {
-    self.store = store
+  init() {
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -27,12 +26,16 @@ class ViewController: NSViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    self.store.notifications
+    self.view.addConstraints([
+      self.view.widthAnchor.constraint(equalToConstant: 300),
+      self.view.heightAnchor.constraint(equalToConstant: 300)
+    ])
+
+    Store.shared.notifications
       .sink { [weak self] in self?.handle(notifications: $0) }
       .store(in: &self.cancellables)
   }
 
-  private var store: Store
   private var cancellables = Set<AnyCancellable>()
   private var gridViews = [Int: GridView]()
 
@@ -40,7 +43,7 @@ class ViewController: NSViewController {
     for notification in notifications {
       switch notification {
       case let .gridCreated(id):
-        let gridView = GridView(store: store, id: id)
+        let gridView = GridView(id: id)
         gridView.frame = self.view.bounds
         self.view.addSubview(gridView)
         self.gridViews[id] = gridView
@@ -67,7 +70,7 @@ class ViewController: NSViewController {
   private func showCurrentGrid() {
     self.gridViews
       .forEach { id, gridView in
-        gridView.isHidden = store.state.currentGridID != id
+        gridView.isHidden = Store.shared.state.currentGridID != id
       }
   }
 }

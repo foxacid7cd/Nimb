@@ -7,58 +7,45 @@
 //
 
 import AppKit
-import AsyncAlgorithms
 import Library
-import MessagePack
 import Nvim
 import RxSwift
 
+@NSApplicationMain @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
-  @MainActor
-  func applicationDidFinishLaunching(_: AppKit.Notification) {
-    self.setupMenu()
+  func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
     self.startNvimProcess()
 
-    self.window.title = ProcessInfo.processInfo.processName
-    self.window.setContentSize(.init(width: 1280, height: 960))
-    self.window.makeMain()
-    self.window.orderFront(nil)
+    let windowController = WindowController()
+    self.windowController = windowController
+    windowController.showWindow(nil)
   }
 
-  private lazy var store = Store()
-  private lazy var window = Window(store: store)
+  @IBOutlet private var mainMenu: NSMenu!
+
+  private var windowController: WindowController?
   private let disposeBag = DisposeBag()
-
-  @MainActor
-  private func setupMenu() {
-    let menubar = NSMenu()
-    let appMenuItem = NSMenuItem()
-    menubar.addItem(appMenuItem)
-    NSApp.mainMenu = menubar
-
-    let appMenu = NSMenu()
-    let quitTitle = "Quit \(ProcessInfo.processInfo.processName)"
-    let quitMenuItem = NSMenuItem(
-      title: quitTitle,
-      action: #selector(NSApplication.shared.terminate(_:)),
-      keyEquivalent: "q"
-    )
-
-    appMenu.addItem(quitMenuItem)
-    appMenuItem.submenu = appMenu
-  }
+  private var nvimProcess: NvimProcess?
 
   @MainActor
   private func startNvimProcess() {
-    let process = NvimProcess()
+    let nvimProcess = NvimProcess()
+    self.nvimProcess = nvimProcess
 
-    process.notifications
+    nvimProcess.notifications
       .subscribe(onNext: { [weak self] in self?.handle(notification: $0) })
       .disposed(by: self.disposeBag)
 
+//    do {
+//      try nvimProcess.run()
+//    } catch {
+//      "failed running nvim process".fail(child: error.fail())
+//        .log(.error)
+//    }
+
     Task {
       do {
-        try await process.nvimUIAttach(
+        try await nvimProcess.nvimUIAttach(
           width: 90,
           height: 32,
           options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true]
@@ -76,11 +63,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       for uiEvent in uiEvents {
         switch uiEvent {
         case let .gridResize(models):
-          self.store.mutateState { state in
+          Store.shared.mutateState { state in
             var notifications = [Store.Notification]()
 
             for model in models {
-              let grid = Library.Grid<Store.Cell?>(
+              let grid = Library.Grid<State.Cell?>(
                 repeating: nil,
                 rowsCount: model.height,
                 columnsCount: model.width
@@ -98,7 +85,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridDestroy(models):
-          self.store.mutateState { state in
+          Store.shared.mutateState { state in
             var notifications = [Store.Notification]()
 
             for model in models {
@@ -119,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridLine(models):
-          self.store.mutateState { state in
+          Store.shared.mutateState { state in
             var notifications = [Store.Notification]()
 
             var lastHlID: Int?
