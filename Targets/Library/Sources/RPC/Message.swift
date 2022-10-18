@@ -27,7 +27,7 @@ public enum Message {
       defer { previousPosition = currentPosition }
 
       guard arrayValue.count > currentPosition, let value = transform(arrayValue[currentPosition]) else {
-        throw "element at index \(currentPosition) is expected to be \(entity)".fail(file: file, line: line)
+        throw "element at index \(currentPosition) is expected to be \(entity)".fail()
       }
 
       return value
@@ -36,7 +36,7 @@ public enum Message {
     func finalize(_ entity: String, file: StaticString = #fileID, line: UInt = #line) throws {
       guard let previousPosition, previousPosition == arrayValue.count - 1 else {
         throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed"
-          .fail(file: file, line: line)
+          .fail()
       }
     }
 

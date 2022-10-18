@@ -60,7 +60,7 @@ public class RPC {
     } catch {
       "awaiting for response message failed"
         .fail(child: error.fail())
-        .fatal()
+        .fatalError()
     }
   }
 

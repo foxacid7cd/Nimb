@@ -11,16 +11,14 @@ import Library
 import RxSwift
 
 public class NvimProcess {
-  private let process = Process()
-  
   @MainActor
   public init() {
-    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-    process.executableURL = .init(fileURLWithPath: "/bin/zsh")
-    process.arguments = ["-c", "nvim --embed"]
+    self.process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+    self.process.executableURL = .init(fileURLWithPath: "/bin/zsh")
+    self.process.arguments = ["-c", "nvim --embed"]
 
     let outputPipe = Pipe()
-    process.standardOutput = outputPipe
+    self.process.standardOutput = outputPipe
 
     let outputMessages = outputPipe.fileHandleForReading.data
       .unpack()
@@ -31,7 +29,7 @@ public class NvimProcess {
     self.rpc = rpc
 
     let inputPipe = Pipe()
-    process.standardInput = inputPipe
+    self.process.standardInput = inputPipe
 
     let disposable = rpc.outputMessages
       .map { $0.value.data }
@@ -41,24 +39,16 @@ public class NvimProcess {
         } catch {
           "failed writing to process standard input"
             .fail(child: error.fail())
-            .fatal()
+            .fatalError()
         }
       })
 
-    process.terminationHandler = { process in
+    self.process.terminationHandler = { process in
       disposable.dispose()
 
       "nvim process terminated with status \(process.terminationStatus), reason \(process.terminationReason)"
         .fail()
         .log(.info)
-    }
-
-    do {
-      try process.run()
-    } catch {
-      "failed running nvim process"
-        .fail(child: error.fail())
-        .fatal()
     }
   }
 
@@ -71,14 +61,16 @@ public class NvimProcess {
         } catch {
           "failed parsing nvim notification"
             .fail(child: error.fail())
-            .fatal()
+            .fatalError()
         }
       }
   }
-  
+
   public func run() throws {
-    try process.run()
+    try self.process.run()
   }
 
   let rpc: RPC
+
+  private let process = Process()
 }

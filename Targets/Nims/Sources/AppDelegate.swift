@@ -36,12 +36,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       .subscribe(onNext: { [weak self] in self?.handle(notification: $0) })
       .disposed(by: self.disposeBag)
 
-//    do {
-//      try nvimProcess.run()
-//    } catch {
-//      "failed running nvim process".fail(child: error.fail())
-//        .log(.error)
-//    }
+    do {
+      try nvimProcess.run()
+    } catch {
+      "failed running nvim process"
+        .fail(child: error.fail())
+        .log()
+    }
 
     Task {
       do {
@@ -51,7 +52,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true]
         )
       } catch {
-        "failed to attach nvim UI".fail(child: error.fail()).failAssertion()
+        "failed to attach nvim UI"
+          .fail(child: error.fail())
+          .assertionFailure()
       }
     }
   }
@@ -90,7 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             for model in models {
               guard state.grids[model.grid] != nil else {
-                "grid_destroy for unexisting grid".fail().failAssertion()
+                "grid_destroy for unexisting grid".fail().assertionFailure()
                 continue
               }
               state.grids.removeValue(forKey: model.grid)
@@ -112,19 +115,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             var lastHlID: Int?
             for model in models {
               guard var grid = state.grids[model.grid] else {
-                "unexisting grid".fail().failAssertion()
+                "unexisting grid".fail().assertionFailure()
                 continue
               }
 
               var updatedCellsCount = 0
               for messagePackValue in model.data {
                 guard var arrayValue = messagePackValue.arrayValue else {
-                  "cell data is not an array".fail().failAssertion()
+                  "cell data is not an array".fail().assertionFailure()
                   continue
                 }
 
                 guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                  "expected cell text is not a string".fail().failAssertion()
+                  "expected cell text is not a string".fail().assertionFailure()
                   continue
                 }
 
@@ -132,14 +135,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 if !arrayValue.isEmpty {
                   guard let hlID = arrayValue.removeFirst().uintValue else {
-                    "expected cell hl_id is not an unsigned integer".fail().failAssertion()
+                    "expected cell hl_id is not an unsigned integer".fail().assertionFailure()
                     continue
                   }
                   lastHlID = Int(hlID)
 
                   if !arrayValue.isEmpty {
                     guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
-                      "expected cell repeat count is not an unsigned integer".fail().failAssertion()
+                      "expected cell repeat count is not an unsigned integer".fail().assertionFailure()
                       continue
                     }
                     repeatCount = Int(parsedRepeatCount)
@@ -147,7 +150,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
 
                 guard let lastHlID else {
-                  "at least one hlID was expected to be parsed".fail().failAssertion()
+                  "at least one hlID was expected to be parsed".fail().assertionFailure()
                   continue
                 }
 

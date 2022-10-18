@@ -9,16 +9,14 @@
 import Foundation
 import OSLog
 
-public struct Fail: Error, CustomStringConvertible {
-  public init(_ content: Content, children: [Fail] = [], file: StaticString = #fileID, line: UInt = #line) {
+public struct Fail: Error {
+  public init(_ content: Content, children: [Fail] = []) {
     self.content = content
     self.children = children
-    self.file = file
-    self.line = line
   }
 
-  public init(_ content: Content, child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) {
-    self.init(content, children: child.map { [$0] } ?? [], file: file, line: line)
+  public init(_ content: Content, child: Fail? = nil) {
+    self.init(content, children: child.map { [$0] } ?? [])
   }
 
   public enum Content: CustomStringConvertible {
@@ -46,58 +44,40 @@ public struct Fail: Error, CustomStringConvertible {
 
   public var content: Content
   public var children: [Fail]
-  public var file: StaticString
-  public var line: UInt
 
-  public var description: String {
-    let fileName = URL(fileURLWithPath: file.description).lastPathComponent
-    let lines = [
-      [" *--> \(fileName):\(line)"],
-      (self.content.description + "\n")
-        .split(separator: "\n", omittingEmptySubsequences: false)
-        .map { " | \($0)" },
-      self.children.map { child in
-        let lines = child.description
-          .split(separator: "\n", omittingEmptySubsequences: false)
-
-        let formattedLines = lines
-          .enumerated()
-          .map { index, line in
-            let prefix = index == lines.count - 1 ? "-*-" : " | "
-            return prefix + line
-          }
-
-        return formattedLines
-          .joined(separator: "\n")
-      },
-      self.children.isEmpty ? ["-*-->"] : []
-    ]
-    .flatMap { $0 }
-
-    return lines.joined(separator: "\n")
+  public func fatalError(file: StaticString = #fileID, line: UInt = #line) -> Never {
+    print()
+    Swift.fatalError("\n\n" + String(loggable: self) + "\n", file: file, line: line)
   }
 
-  public func fatal() -> Never {
-    fatalError("\(self)", file: self.file, line: self.line)
-  }
-
-  public func failAssertion() {
-    assertionFailure("\(self)", file: self.file, line: self.line)
+  public func assertionFailure(file: StaticString = #fileID, line: UInt = #line) {
+    print()
+    Swift.assertionFailure("\n\n" + String(loggable: self) + "\n", file: file, line: line)
   }
 }
 
 public extension StringProtocol {
-  func fail(child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) -> Fail {
-    .init(.details(String(self)), child: child, file: file, line: line)
+  func fail(child: Fail? = nil) -> Fail {
+    .init(.details(String(self)), child: child)
   }
 }
 
 public extension Error {
-  func fail(child: Fail? = nil, file: StaticString = #fileID, line: UInt = #line) -> Fail {
-    Fail(.wrapped(self), child: child, file: file, line: line)
+  func fail(child: Fail? = nil) -> Fail {
+    Fail(.wrapped(self), child: child)
   }
 
-  func log(_ logLevel: OSLogType = .error) {
-    Library.log(logLevel, self)
+  func log(_ logLevel: OSLogType = .error, log: OSLog = .default) {
+    Library.log(logLevel, log: log, self)
+  }
+}
+
+extension Fail: CustomLoggable {
+  public var logMessage: String {
+    "\(self.content)"
+  }
+
+  public var logChildren: [Any] {
+    self.children
   }
 }
