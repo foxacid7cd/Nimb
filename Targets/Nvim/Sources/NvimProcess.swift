@@ -14,8 +14,8 @@ public class NvimProcess {
   @MainActor
   public init() {
     self.process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-    self.process.executableURL = .init(fileURLWithPath: "/bin/zsh")
-    self.process.arguments = ["-c", "nvim --embed"]
+    self.process.executableURL = Bundle.main.url(forResource: "nvim", withExtension: nil)
+    self.process.arguments = ["--embed"]
 
     let outputPipe = Pipe()
     self.process.standardOutput = outputPipe
