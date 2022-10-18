@@ -8,86 +8,78 @@
 
 import OSLog
 
-public func log(_ logLevel: OSLogType, log: OSLog = .default, file: StaticString = #fileID, line: UInt = #line, _ item: @autoclosure @escaping () -> Any) {
+public func log(_ logLevel: OSLogType, log: OSLog = .default, _ item: @autoclosure @escaping () -> Any, file: StaticString = #fileID, line: UInt = #line) {
   #if !DEBUG
-    guard logLevel != .debug else {
-      return
-    }
+    return
   #endif
 
-  let title = [
+  let header = [
     logLevel.name?.uppercased(),
     "\(file):\(line)"
   ]
   .compactMap { $0 }
   .joined(separator: " @ ")
 
-  print("")
-  os_log(logLevel, log: log, "\n :\n\(String(loggable: item(), title: title))")
+  let string = logLines(for: item(), header: header)
+    .joined(separator: "\n")
+
+  print()
+  os_log(logLevel, log: log, "\n |\n\(string)\n ")
 }
 
 public extension String {
-  init(loggable: Any, title: String? = nil) {
-    self = logLines(for: loggable, title: title)
+  init(loggable: Any, header: String? = nil) {
+    self = logLines(for: loggable, header: header)
       .joined(separator: "\n")
   }
 }
 
-private func logLines(for item: Any, title: String? = nil) -> [String] {
+private func logLines(for item: Any, header: String?) -> [String] {
   let loggable = item as? CustomLoggable
 
-  let title = [title, loggable?.logTitle]
-    .compactMap { $0 }
-    .joined(separator: " @ ")
   let message = loggable?.logMessage ?? "\(item)"
   let children = loggable?.logChildren ?? []
 
   var lines = [String]()
-  if !title.isEmpty {
-    lines.append("-> \(title)")
+  if let header {
+    lines.append("-> \(header)")
   }
 
   lines += message
     .trimmingCharacters(in: .whitespacesAndNewlines)
     .split(separator: "\n", omittingEmptySubsequences: false)
-    .map { " \($0.trimmingCharacters(in: .whitespaces))" }
+    .map { " " + $0 }
 
-  for child in children {
-    lines.append("")
-    lines += logLines(for: child)
-  }
-
-  var prefixedLines = [String]()
-  var verticalBar = true
-  for (index, line) in lines.enumerated() {
-    let isFirst = index == 0
-    let isLast = index == lines.count - 1
-
-    if index != 0, line.first == "-" {
-      verticalBar = false
+  lines = lines
+    .enumerated()
+    .map { index, line in
+      let isFirst = index == 0
+      let isLast = index == lines.count - 1
+      let prefix = isFirst || (isLast && children.isEmpty) ? "*" : "|"
+      return prefix + line
     }
 
-    let prefix: String = {
-      let first = isFirst ? "-" : " "
-      let second: String = {
-        if isFirst {
-          return "*"
-        } else if line.first == "-", !isLast {
-          return "*"
-        } else if isLast, children.isEmpty {
-          return "*"
-        } else if verticalBar {
-          return "|"
-        } else {
-          return " "
+  let childrenLines = children
+    .enumerated()
+    .flatMap { childIndex, child in
+      let isLastChild = childIndex == children.count - 1
+      var childLines = ["|"]
+      childLines += logLines(for: child, header: nil)
+        .enumerated()
+        .map { index, line in
+          let prefix = index == 0 ? "*" : isLastChild ? " " : "|"
+          return prefix + line
         }
-      }()
-      return first + second
-    }()
+      return childLines
+    }
 
-    prefixedLines.append(prefix + line)
-  }
-  return prefixedLines
+  return [lines, childrenLines]
+    .flatMap { $0 }
+    .enumerated()
+    .map { index, line in
+      let prefix = index == 0 && header == nil ? "-" : " "
+      return prefix + line
+    }
 }
 
 private extension OSLogType {

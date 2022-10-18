@@ -7,7 +7,6 @@
 //
 
 import AppKit
-import Combine
 
 class ViewController: NSViewController {
   init() {
@@ -32,11 +31,10 @@ class ViewController: NSViewController {
     super.viewDidLoad()
 
     Store.shared.notifications
-      .sink { [weak self] in self?.handle(notifications: $0) }
-      .store(in: &self.cancellables)
+      .subscribe(onNext: { [weak self] in self?.handle(notifications: $0) })
+      .disposed(by: self.associatedDisposeBag)
   }
 
-  private var cancellables = Set<AnyCancellable>()
   private var gridViews = [Int: GridView]()
 
   private func handle(notifications: [Store.Notification]) {
@@ -45,6 +43,7 @@ class ViewController: NSViewController {
       case let .gridCreated(id):
         let gridView = GridView(id: id)
         gridView.frame = self.view.bounds
+          .offsetBy(dx: 200, dy: 200)
         self.view.addSubview(gridView)
         self.gridViews[id] = gridView
         self.showCurrentGrid()
@@ -62,7 +61,7 @@ class ViewController: NSViewController {
         self.showCurrentGrid()
 
       default:
-        continue
+        break
       }
     }
   }

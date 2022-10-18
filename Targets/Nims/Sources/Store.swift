@@ -7,16 +7,14 @@
 //
 
 import AppKit
-import Combine
 import Library
+import RxSwift
 
 class Store {
   init() {
-    let notifications = PassthroughSubject<[Notification], Never>()
+    let notifications = PublishSubject<[Notification]>()
     self.notifications = notifications
-      .share()
-      .eraseToAnyPublisher()
-    self.publishNotifications = { notifications.send($0) }
+    self.publishNotifications = notifications.onNext(_:)
   }
 
   enum Notification {
@@ -40,7 +38,7 @@ class Store {
   @MainActor
   private(set) var state = State()
 
-  let notifications: AnyPublisher<[Notification], Never>
+  let notifications: Observable<[Notification]>
 
   @MainActor
   func mutateState(_ fn: (inout State) -> [Notification]) {
@@ -64,7 +62,7 @@ struct State {
 
   var grids = [Int: Grid<Cell?>]()
   var currentGridID: Int?
-  var cellSize = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular).makeCellSize(for: "A")
+  var cellSize = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!.makeCellSize(for: "A")
 
   var currentGrid: Grid<Cell?>? {
     self.currentGridID.flatMap { grids[$0] }

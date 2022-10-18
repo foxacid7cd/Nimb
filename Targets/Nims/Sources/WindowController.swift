@@ -18,13 +18,35 @@ class WindowController: NSWindowController {
       backing: .buffered,
       defer: true
     )
-    window.title = ProcessInfo.processInfo.processName
     window.contentViewController = viewController
     super.init(window: window)
+
+    self.updateWindowTitle()
+
+    Store.shared.notifications
+      .subscribe(onNext: { [weak self] in self?.handle(notifications: $0) })
+      .disposed(by: self.associatedDisposeBag)
   }
 
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  private func handle(notifications: [Store.Notification]) {
+    for notification in notifications {
+      switch notification {
+      case .currentGridChanged:
+        self.updateWindowTitle()
+
+      default:
+        continue
+      }
+    }
+  }
+
+  private func updateWindowTitle() {
+    guard let window else { return }
+    window.title = "Grid \(Store.state.currentGridID.logDescription)"
   }
 }

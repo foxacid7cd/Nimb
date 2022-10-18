@@ -43,3 +43,19 @@ public enum NvimNotification {
     }
   }
 }
+
+extension NvimNotification: CustomLoggable {
+  public var logMessage: String {
+    switch self {
+    case let .redraw(uiEvents):
+      return "Redraw \(uiEvents.count) event\(uiEvents.count == 1 ? "" : "s")"
+    }
+  }
+
+  public var logChildren: [Any] {
+    switch self {
+    case let .redraw(uiEvents):
+      return uiEvents
+    }
+  }
+}

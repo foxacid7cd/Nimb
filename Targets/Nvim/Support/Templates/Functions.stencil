@@ -13,7 +13,9 @@ public extension NvimProcess {
     
     {% if function.returnType and function.returnType != "Value" %}
     guard let value = response.value{{ function.obtainingReturnValue }} else {
-      "invalid return value type".fail().fatal()
+      "invalid return value type"
+        .fail()
+        .fatalError()
     }
     
     {% endif %}

@@ -5,8 +5,6 @@ public enum UIEvent {
   {% for uiEvent in uiEvents %}
   /// {{ uiEvent.description }}
   case {{ uiEvent.name }}({% if uiEvent.parametersType %}[UIEvents.{{ uiEvent.parametersType }}]{% else %}count: Int{% endif %})
-
-  
   {% endfor %}
 
   public init(method: String, parametersArray: [[MessagePackValue]]) throws {
@@ -27,6 +25,26 @@ public enum UIEvent {
       {% endfor %}
       default:
         throw "unknown UI event method \(method)".fail()
+    }
+  }
+  
+  public var method: String {
+    switch self {
+    {% for uiEvent in uiEvents %}
+    case .{{ uiEvent.name }}:
+      return "{{ uiEvent.originalName }}"
+    {% endfor %}
+    }
+  }
+}
+
+extension UIEvent: CustomLoggable {
+  public var logMessage: String {
+    switch self {
+    {% for uiEvent in uiEvents %}
+    case .{{ uiEvent.name }}:
+      return "{{ uiEvent.name }}"
+    {% endfor %}
     }
   }
 }

@@ -47,8 +47,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: 90,
-          height: 32,
+          width: 80,
+          height: 24,
           options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true]
         )
       } catch {
@@ -61,6 +61,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @MainActor
   private func handle(notification: NvimNotification) {
+    log(.info, "Received notification".loggable(notification))
+
     switch notification {
     case let .redraw(uiEvents):
       for uiEvent in uiEvents {
@@ -80,11 +82,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
               if state.currentGridID == nil {
                 state.currentGridID = model.grid
+                let id = state.currentGridID
+                log(.debug, "grid resize, new grid id \(id.logDescription)")
                 notifications.append(.currentGridChanged)
               }
             }
 
-            return models.map { .gridCreated(id: $0.grid) }
+            return notifications
           }
 
         case let .gridDestroy(models):
@@ -101,6 +105,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
               if state.currentGridID == model.grid {
                 state.currentGridID = state.grids.keys.first
+                let id = state.currentGridID
+                log(.debug, "current grid destroyed, new grid id \(id.logDescription)")
                 notifications.append(.currentGridChanged)
               }
             }
@@ -184,7 +190,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         default:
-          continue
+          break
         }
       }
     }

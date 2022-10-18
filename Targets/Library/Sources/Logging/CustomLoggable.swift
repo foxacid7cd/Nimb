@@ -7,16 +7,11 @@
 //
 
 public protocol CustomLoggable {
-  var logTitle: String? { get }
   var logMessage: String { get }
   var logChildren: [Any] { get }
 }
 
 public extension CustomLoggable {
-  var logTitle: String? {
-    nil
-  }
-
   var logMessage: String {
     "\(self)"
   }
@@ -26,18 +21,13 @@ public extension CustomLoggable {
   }
 }
 
-extension String: CustomLoggable {
-  public var logMessage: String {
-    var text = self.trimmingCharacters(in: .whitespacesAndNewlines)
+public extension String {
+  func loggable(_ children: Any...) -> CustomLoggable {
+    return Wrapper(logMessage: self, logChildren: children)
 
-    if let first = text.first, first.isLowercase {
-      text = first.uppercased() + text.dropFirst()
+    struct Wrapper: CustomLoggable {
+      var logMessage: String
+      var logChildren: [Any]
     }
-
-    if text.last != "." {
-      text += "."
-    }
-
-    return text
   }
 }

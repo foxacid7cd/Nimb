@@ -26,15 +26,7 @@ public struct Fail: Error {
     public var description: String {
       switch self {
       case let .details(details):
-        var text = details
-          .trimmingCharacters(in: .whitespacesAndNewlines)
-        if let first = text.first, first.isLowercase {
-          text = first.uppercased() + text.dropFirst()
-        }
-        if text.last != "." {
-          text += "."
-        }
-        return text
+        return details
 
       case let .wrapped(error):
         return String(describing: error)
@@ -74,7 +66,7 @@ public extension Error {
 
 extension Fail: CustomLoggable {
   public var logMessage: String {
-    "\(self.content)"
+    String(describing: self.content)
   }
 
   public var logChildren: [Any] {
