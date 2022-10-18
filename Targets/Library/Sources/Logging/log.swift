@@ -8,7 +8,13 @@
 
 import OSLog
 
-public func log(_ logLevel: OSLogType, log: OSLog = .default, file: StaticString = #fileID, line: UInt = #line, _ item: Any) {
+public func log(_ logLevel: OSLogType, log: OSLog = .default, file: StaticString = #fileID, line: UInt = #line, _ item: @autoclosure @escaping () -> Any) {
+  #if !DEBUG
+    guard logLevel != .debug else {
+      return
+    }
+  #endif
+
   let title = [
     logLevel.name?.uppercased(),
     "\(file):\(line)"
@@ -17,7 +23,7 @@ public func log(_ logLevel: OSLogType, log: OSLog = .default, file: StaticString
   .joined(separator: " @ ")
 
   print("")
-  os_log(logLevel, log: log, "\n :\n\(String(loggable: item, title: title))")
+  os_log(logLevel, log: log, "\n :\n\(String(loggable: item(), title: title))")
 }
 
 public extension String {
