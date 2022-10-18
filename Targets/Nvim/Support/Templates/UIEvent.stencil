@@ -40,11 +40,6 @@ public enum UIEvent {
 
 extension UIEvent: CustomLoggable {
   public var logMessage: String {
-    switch self {
-    {% for uiEvent in uiEvents %}
-    case .{{ uiEvent.name }}:
-      return "{{ uiEvent.name }}"
-    {% endfor %}
-    }
+    self.method
   }
 }

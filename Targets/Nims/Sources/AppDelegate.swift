@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let windowController = WindowController()
     self.windowController = windowController
-    windowController.showWindow(nil)
+    // windowController.showWindow(nil)
   }
 
   @IBOutlet private var mainMenu: NSMenu!
@@ -66,11 +66,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     switch notification {
     case let .redraw(uiEvents):
       for uiEvent in uiEvents {
-        switch uiEvent {
-        case let .gridResize(models):
-          Store.shared.mutateState { state in
-            var notifications = [Store.Notification]()
+        Store.changeState { state in
+          var notifications = [Store.Notification]()
 
+          switch uiEvent {
+          case let .gridResize(models):
             for model in models {
               let grid = Library.Grid<State.Cell?>(
                 repeating: nil,
@@ -88,13 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               }
             }
 
-            return notifications
-          }
-
-        case let .gridDestroy(models):
-          Store.shared.mutateState { state in
-            var notifications = [Store.Notification]()
-
+          case let .gridDestroy(models):
             for model in models {
               guard state.grids[model.grid] != nil else {
                 "grid_destroy for unexisting grid".fail().assertionFailure()
@@ -111,11 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               }
             }
 
-            return notifications
-          }
-
-        case let .gridLine(models):
-          Store.shared.mutateState { state in
+          case let .gridLine(models):
             var notifications = [Store.Notification]()
 
             var lastHlID: Int?
@@ -186,11 +176,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               )
             }
 
-            return notifications
+          case let .gridScroll(models):
+            for model in models {
+              state.change(\.grids[model.grid]) { grid in
+              }
+
+              var grid = state.grids[model.grid]
+
+              state.grids[model.grid] = grid
+            }
+
+          default:
+            break
           }
 
-        default:
-          break
+          return notifications
         }
       }
     }

@@ -48,6 +48,15 @@ private func logLines(for item: Any, header: String?) -> [String] {
   lines += message
     .trimmingCharacters(in: .whitespacesAndNewlines)
     .split(separator: "\n", omittingEmptySubsequences: false)
+    .map { line in
+      let lineCount = line.count
+      let dropCount = -min(0, 80 - lineCount)
+      var truncatedLine = line.dropLast(dropCount)
+      if dropCount != 0 {
+        truncatedLine += "..."
+      }
+      return truncatedLine
+    }
     .map { " " + $0 }
 
   lines = lines

@@ -41,9 +41,14 @@ class Store {
   let notifications: Observable<[Notification]>
 
   @MainActor
-  func mutateState(_ fn: (inout State) -> [Notification]) {
+  static func changeState<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> [Notification]) {
+    self.shared.changeState(keyPath, fn)
+  }
+
+  @MainActor
+  func changeState<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> [Notification]) {
     var state = self.state
-    let notifications = fn(&state)
+    let notifications = fn(&state[keyPath: keyPath])
     self.state = state
 
     Task {
@@ -72,8 +77,14 @@ struct State {
     let grid = self.grids[id]!
 
     return .init(
-      width: self.cellSize.width * CGFloat(grid.columnsCount),
-      height: self.cellSize.height * CGFloat(grid.rowsCount)
+      width: self.cellSize.width * CGFloat(grid.size.columnsCount),
+      height: self.cellSize.height * CGFloat(grid.size.rowsCount)
     )
+  }
+
+  mutating func change<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> Void) {
+    var state = self
+    fn(&state[keyPath: keyPath])
+    self = state
   }
 }
