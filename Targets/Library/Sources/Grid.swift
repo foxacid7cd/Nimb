@@ -14,16 +14,6 @@ public struct Grid<Element> {
     self.rows = .init(repeating: row, count: rowsCount)
   }
 
-  public struct Index {
-    public init(row: Int, column: Int) {
-      self.row = row
-      self.column = column
-    }
-
-    public var row: Int
-    public var column: Int
-  }
-
   public private(set) var rows: [[Element]]
 
   public var rowsCount: Int {
@@ -34,12 +24,12 @@ public struct Grid<Element> {
     self.rows[0].count
   }
 
-  public subscript(index: Index) -> Element {
+  public subscript(row: Int, column: Int) -> Element {
     get {
-      self.rows[index.row][index.column]
+      self.rows[row][column]
     }
     set(newValue) {
-      self.rows[index.row][index.column] = newValue
+      self.rows[row][column] = newValue
     }
   }
 }

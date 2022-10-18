@@ -20,16 +20,16 @@ class ViewController: NSViewController {
   }
 
   override func loadView() {
-    self.view = NSView()
+    self.view = NSView(
+      frame: .init(
+        origin: .zero,
+        size: .init(width: 1280, height: 960)
+      )
+    )
   }
 
   override func viewDidLoad() {
     super.viewDidLoad()
-
-    self.view.addConstraints([
-      self.view.widthAnchor.constraint(equalToConstant: 300),
-      self.view.heightAnchor.constraint(equalToConstant: 300)
-    ])
 
     Store.shared.notifications
       .sink { [weak self] in self?.handle(notifications: $0) }

@@ -160,7 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   guard row < grid.columnsCount else {
                     break
                   }
-                  grid[.init(row: row, column: column)] = .init(character: text.first, hlID: lastHlID)
+                  grid[row, column] = .init(character: text.first, hlID: lastHlID)
 
                   updatedCellsCount += 1
                 }

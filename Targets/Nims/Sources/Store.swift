@@ -33,6 +33,11 @@ class Store {
   static let shared = Store()
 
   @MainActor
+  static var state: State {
+    shared.state
+  }
+
+  @MainActor
   private(set) var state = State()
 
   let notifications: AnyPublisher<[Notification], Never>
@@ -55,11 +60,6 @@ struct State {
   struct Cell {
     var character: Character?
     var hlID: Int
-  }
-
-  @MainActor
-  static var shared: State {
-    Store.shared.state
   }
 
   var grids = [Int: Grid<Cell?>]()

@@ -19,9 +19,7 @@ class WindowController: NSWindowController {
       defer: true
     )
     window.title = ProcessInfo.processInfo.processName
-    window.setContentSize(.init(width: 1280, height: 960))
     window.contentViewController = viewController
-
     super.init(window: window)
   }
 

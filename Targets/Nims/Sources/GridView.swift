@@ -25,19 +25,18 @@ class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  @MainActor
   override public func draw(_: NSRect) {
     let context = NSGraphicsContext.current!
 
-    context.cgContext.saveGState()
-    defer { context.cgContext.restoreGState() }
+    context.saveGraphicsState()
+    defer { context.restoreGraphicsState() }
 
     var rects: UnsafePointer<NSRect>!
     var count = 0
-    getRectsBeingDrawn(&rects, count: &count)
+    self.getRectsBeingDrawn(&rects, count: &count)
 
     let grid = self.grid
-    let gridSize = Store.shared.state.gridSize(id: self.id)
+    let gridSize = Store.state.gridSize(id: self.id)
 
     for index in 0 ..< count {
       let rect = rects.advanced(by: index).pointee
@@ -45,73 +44,75 @@ class GridView: NSView {
 
       let gridIntersection = self.gridIntersection(with: rect)
 
-      var glyphs = [CGGlyph]()
-      var positions = [CGPoint]()
-
       for columnOffset in 0 ..< gridIntersection.width {
         for rowOffset in 0 ..< gridIntersection.height {
           let row = gridIntersection.row + rowOffset
           let column = gridIntersection.column + columnOffset
+          let cellRect = self.cellRect(row: row, column: column)
 
-          if
-            let cell = grid[.init(row: row, column: column)],
-            let rawCharacter = cell.character?.utf16.first {
-            let glyph: CGGlyph
-            if let cachedGlyph = self.cachedGlyphs[rawCharacter] {
-              glyph = cachedGlyph
+          if let cell = grid[row, column] {
+            let string = cell.character.map { String($0) } ?? " "
+            let attributedString = NSAttributedString(string: string, attributes: [.font: self.font, .foregroundColor: NSColor.green])
+            let line = CTLineCreateWithAttributedString(attributedString)
+            let glyphRuns = CTLineGetGlyphRuns(line) as! [CTRun]
+            for glyphRun in glyphRuns {
+              let glyphCount = CTRunGetGlyphCount(glyphRun)
+              let range = CFRange(location: 0, length: glyphCount)
+              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetGlyphs(glyphRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetPositions(glyphRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              // context.cgContext.textMatrix = CTRunGetTextMatrix(glyphRun)
+              /* context.cgContext.textPosition = self.cellOrigin(row: row, column: column)
+               context.cgContext.showGlyphs(glyphs, at: positions) */
 
-            } else {
-              var glyphs = [CGGlyph(0)]
-              CTFontGetGlyphsForCharacters(self.font, [rawCharacter], &glyphs, 1)
-              glyph = glyphs[0]
+              context.cgContext.setFillColor(.black)
+              context.cgContext.fill(cellRect)
+
+              print(glyphs, positions)
+              context.cgContext.textMatrix = .identity
+                // .scaledBy(x: 1, y: -1)
+                .translatedBy(x: cellRect.origin.x, y: cellRect.origin.y)
+              context.cgContext.setFillColor(.white)
+              context.cgContext.setAlpha(1)
+              context.cgContext.setFont(self.cgFont)
+              context.cgContext.setFontSize(13)
+              context.cgContext.setTextDrawingMode(.fill)
+              context.cgContext.showGlyphs(glyphs, at: positions)
+              // CTFontDrawGlyphs(cgFont, glyphs, positions, glyphCount, context.cgContext)
             }
-
-            let position = self.cellOrigin(row: row, column: column)
-
-            glyphs.append(glyph)
-            positions.append(position)
           }
         }
       }
-
-      context.cgContext.textMatrix = .identity
-      // context.cgContext.translateBy(x: 0, y: gridSize.height)
-      // context.cgContext.scaleBy(x: 1, y: -1)
-
-      log(.debug, "drawing \(glyphs.count) glyphs")
-
-      CTFontDrawGlyphs(
-        self.font,
-        glyphs,
-        positions,
-        glyphs.count,
-        context.cgContext
-      )
     }
+
+    context.cgContext.flush()
   }
 
   private let id: Int
   private var cancellables = Set<AnyCancellable>()
   private var cachedGlyphs = [UInt16: CGGlyph]()
   private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+  private lazy var cgFont = CTFontCopyGraphicsFont(font, nil)
 
   private var grid: Grid<State.Cell?> {
-    Store.shared.state.grids[self.id]!
+    Store.state.grids[self.id]!
   }
 
   private var gridFrame: CGRect {
-    .init(origin: .zero, size: Store.shared.state.gridSize(id: self.id))
-  }
-
-  private var cellSize: CGSize {
-    Store.shared.state.cellSize
+    .init(origin: .zero, size: Store.state.gridSize(id: self.id))
   }
 
   private func handle(notifications: [Store.Notification]) {
     for notification in notifications {
       switch notification {
       case let .gridUpdated(id, updates):
-        guard id == self.id else {
+        guard id == self.id
+        else {
           continue
         }
         switch updates {
@@ -132,17 +133,17 @@ class GridView: NSView {
 
     let intersection = gridFrame.intersection(rect)
 
-    let row = Int(floor(intersection.minY / self.cellSize.height))
-    let column = Int(floor(intersection.minX / self.cellSize.width))
+    let row = Int(floor(intersection.minY / Store.state.cellSize.height))
+    let column = Int(floor(intersection.minX / Store.state.cellSize.width))
 
     let width = min(
       grid.columnsCount,
-      Int(ceil(intersection.maxX / self.cellSize.width))
+      Int(ceil(intersection.maxX / Store.state.cellSize.width))
     ) - column
 
     let height = min(
       grid.rowsCount,
-      Int(ceil(intersection.maxY / self.cellSize.height))
+      Int(ceil(intersection.maxY / Store.state.cellSize.height))
     ) - row
 
     return (row, column, width, height)
@@ -157,14 +158,19 @@ class GridView: NSView {
   private func cellRect(row: Int, column: Int) -> CGRect {
     .init(
       origin: self.cellOrigin(row: row, column: column),
-      size: Store.shared.state.cellSize
+      size: Store.state.cellSize
     )
   }
 
   private func cellOrigin(row: Int, column: Int) -> CGPoint {
     .init(
-      x: Double(column) * Store.shared.state.cellSize.width,
-      y: Double(row) * Store.shared.state.cellSize.height
+      x: Double(column) * Store.state.cellSize.width,
+      y: Double(row) * Store.state.cellSize.height
     )
   }
+}
+
+private struct GlyphRun {
+  var glyphs: [CGGlyph]
+  var positions: [CGPoint]
 }
