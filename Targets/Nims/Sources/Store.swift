@@ -11,80 +11,66 @@ import Library
 import RxSwift
 
 class Store {
-  init() {
-    let notifications = PublishSubject<[Notification]>()
-    self.notifications = notifications
-    self.publishNotifications = notifications.onNext(_:)
-  }
-
-  enum Notification {
-    case gridCreated(id: Int)
-    case gridUpdated(id: Int, updates: GridUpdates)
-    case gridDestroyed(id: Int)
-    case currentGridChanged
-
-    enum GridUpdates {
-      case line(row: Int, columnStart: Int, cellsCount: Int)
-    }
-  }
-
   static let shared = Store()
 
-  @MainActor
-  static var state: State {
-    shared.state
-  }
+  private(set) lazy var stateDerivatives = StateDerivatives(store: self)
 
   @MainActor
   private(set) var state = State()
 
-  let notifications: Observable<[Notification]>
-
   @MainActor
-  static func changeState<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> [Notification]) {
-    self.shared.changeState(keyPath, fn)
+  func bind(to target: NSObject) -> ChangeBinder<StateChange> {
+    .init(target: target, store: self, changes: self.stateChangesSubject)
   }
 
   @MainActor
-  func changeState<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> [Notification]) {
-    var state = self.state
-    let notifications = fn(&state[keyPath: keyPath])
-    self.state = state
-
-    Task {
-      self.publishNotifications(notifications)
-    }
+  func dispatch(action: (inout State) -> [StateChange]) {
+    let stateChanges = action(&self.state)
+    self.stateChangesSubject.onNext(stateChanges)
   }
 
-  private let publishNotifications: ([Notification]) -> Void
+  private let stateChangesSubject = PublishSubject<[StateChange]>()
 }
 
-struct State {
-  struct Cell {
-    var character: Character?
-    var hlID: Int
+class StateDerivatives {
+  init(store: Store) {
+    self.store = store
   }
 
-  var grids = [Int: Grid<Cell?>]()
-  var currentGridID: Int?
-  var cellSize = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!.makeCellSize(for: "A")
-
-  var currentGrid: Grid<Cell?>? {
-    self.currentGridID.flatMap { grids[$0] }
+  struct Font {
+    var nsFont: NSFont
+    var cellSize: CGSize
   }
 
-  func gridSize(id: Int) -> CGSize {
-    let grid = self.grids[id]!
+  @MainActor
+  var font: Font {
+    if let (stateFont, font) = latestFontContext, stateFont == self.state.font {
+      return font
+    }
 
-    return .init(
-      width: self.cellSize.width * CGFloat(grid.size.columnsCount),
-      height: self.cellSize.height * CGFloat(grid.size.rowsCount)
+    let nsFont: NSFont = {
+      switch self.state.font {
+      case let .monospacedSystem(size, weight):
+        return .monospacedSystemFont(ofSize: size, weight: weight)
+
+      case let .custom(name, size):
+        return .init(name: name, size: size)!
+      }
+    }()
+    let font = Font(
+      nsFont: nsFont,
+      cellSize: nsFont.calculateCellSize(for: "@")
     )
+    self.latestFontContext = (self.state.font, font)
+
+    return font
   }
 
-  mutating func change<Value>(_ keyPath: WritableKeyPath<State, Value>, _ fn: (inout Value) -> Void) {
-    var state = self
-    fn(&state[keyPath: keyPath])
-    self = state
+  private var latestFontContext: (stateFont: State.Font, font: Font)?
+  private let store: Store
+
+  @MainActor
+  private var state: State {
+    self.store.state
   }
 }

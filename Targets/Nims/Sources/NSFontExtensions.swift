@@ -9,7 +9,7 @@
 import AppKit
 
 extension NSFont {
-  func makeCellSize(for character: Character) -> CGSize {
+  func calculateCellSize(for character: Character) -> CGSize {
     var glyphs = [CGGlyph(0)]
     var advances = CGSize.zero
     CTFontGetGlyphsForCharacters(self, [character.utf16.first!], &glyphs, 1)

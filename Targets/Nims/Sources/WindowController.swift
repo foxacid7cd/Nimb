@@ -9,8 +9,8 @@
 import AppKit
 
 class WindowController: NSWindowController {
-  init() {
-    let viewController = ViewController()
+  init(gridID: Int) {
+    self.gridID = gridID
 
     let window = NSWindow(
       contentRect: .init(),
@@ -18,14 +18,10 @@ class WindowController: NSWindowController {
       backing: .buffered,
       defer: true
     )
-    window.contentViewController = viewController
+    window.contentViewController = ViewController(gridID: gridID)
     super.init(window: window)
 
     self.updateWindowTitle()
-
-    Store.shared.notifications
-      .subscribe(onNext: { [weak self] in self?.handle(notifications: $0) })
-      .disposed(by: self.associatedDisposeBag)
   }
 
   @available(*, unavailable)
@@ -33,20 +29,16 @@ class WindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private func handle(notifications: [Store.Notification]) {
-    for notification in notifications {
-      switch notification {
-      case .currentGridChanged:
-        self.updateWindowTitle()
+  private let gridID: Int
 
-      default:
-        continue
-      }
-    }
+  private var grid: CellGrid {
+    Store.shared.state.grids[self.gridID]!
   }
 
   private func updateWindowTitle() {
     guard let window else { return }
-    window.title = "Grid \(Store.state.currentGridID.logDescription)"
+
+    let grid = self.grid
+    window.title = "Grid \(Store.shared.state.grids[self.gridID].logDescription)"
   }
 }

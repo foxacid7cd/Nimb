@@ -25,14 +25,19 @@ public struct Grid<Element> {
     self.rows = rows
   }
 
-  private init(size: GridSize, _ getElement: (_ index: GridPoint) -> Element) {
+  public init(size: GridSize, _ elementAtIndex: (GridPoint) -> Element) {
     self.init(
       size: size,
       rows: (0 ..< size.rowsCount)
         .map { row in
           (0 ..< size.columnsCount)
             .map { column in
-              getElement(.init(row: row, column: column))
+              elementAtIndex(
+                .init(
+                  row: row,
+                  column: column
+                )
+              )
             }
         }
     )

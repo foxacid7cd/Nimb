@@ -9,8 +9,16 @@
 import AppKit
 
 class ViewController: NSViewController {
-  init() {
+  init(gridID: Int) {
+    self.gridID = gridID
     super.init(nibName: nil, bundle: nil)
+    
+    self.stateChanges
+      .compactMap { $0.grid(id: gridID)?.size }
+      .bindFlat { [weak self] (store, size) in
+        self?.view.frame.size =
+          .init(width: size.columnsCount, height: size.rowsCount)
+      }
   }
 
   @available(*, unavailable)
@@ -19,57 +27,11 @@ class ViewController: NSViewController {
   }
 
   override func loadView() {
-    self.view = NSView(
-      frame: .init(
-        origin: .zero,
-        size: .init(width: 1280, height: 960)
-      )
+    self.view = GridView(
+      frame: .zero,
+      gridID: self.gridID
     )
   }
 
-  override func viewDidLoad() {
-    super.viewDidLoad()
-
-    Store.shared.notifications
-      .subscribe(onNext: { [weak self] in self?.handle(notifications: $0) })
-      .disposed(by: self.associatedDisposeBag)
-  }
-
-  private var gridViews = [Int: GridView]()
-
-  private func handle(notifications: [Store.Notification]) {
-    for notification in notifications {
-      switch notification {
-      case let .gridCreated(id):
-        let gridView = GridView(id: id)
-        gridView.frame = self.view.bounds
-          .offsetBy(dx: 200, dy: 200)
-        self.view.addSubview(gridView)
-        self.gridViews[id] = gridView
-        self.showCurrentGrid()
-
-      case let .gridDestroyed(id):
-        guard let gridView = gridViews[id] else {
-          assertionFailure()
-          continue
-        }
-        gridView.removeFromSuperview()
-        self.gridViews.removeValue(forKey: id)
-        self.showCurrentGrid()
-
-      case .currentGridChanged:
-        self.showCurrentGrid()
-
-      default:
-        break
-      }
-    }
-  }
-
-  private func showCurrentGrid() {
-    self.gridViews
-      .forEach { id, gridView in
-        gridView.isHidden = Store.shared.state.currentGridID != id
-      }
-  }
+  private let gridID: Int
 }

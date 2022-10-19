@@ -16,8 +16,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
     self.startNvimProcess()
 
-    let windowController = WindowController()
-    self.windowController = windowController
+    // let windowController = WindowController()
+    // self.windowController = windowController
     // windowController.showWindow(nil)
   }
 
@@ -66,131 +66,135 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     switch notification {
     case let .redraw(uiEvents):
       for uiEvent in uiEvents {
-        Store.changeState { state in
-          var notifications = [Store.Notification]()
-
-          switch uiEvent {
-          case let .gridResize(models):
-            for model in models {
-              let grid = Library.Grid<State.Cell?>(
+        switch uiEvent {
+        case let .gridResize(models):
+          for model in models {
+            Store.shared.dispatch { grid in
+              grid = Grid<State.Cell?>(
                 repeating: nil,
-                rowsCount: model.height,
-                columnsCount: model.width
+                size: .init(
+                  rowsCount: model.height,
+                  columnsCount: model.width
+                )
               )
-              state.grids[model.grid] = grid
-              notifications.append(.gridCreated(id: model.grid))
-
-              if state.currentGridID == nil {
-                state.currentGridID = model.grid
+              if Store.state.currentGridID == nil {
                 let id = state.currentGridID
                 log(.debug, "grid resize, new grid id \(id.logDescription)")
                 notifications.append(.currentGridChanged)
               }
+              return [.gridCreated(id: model.grid)]
             }
+            state.grids[model.grid] = grid
+            notifications.append(.gridCreated(id: model.grid))
 
-          case let .gridDestroy(models):
-            for model in models {
-              guard state.grids[model.grid] != nil else {
-                "grid_destroy for unexisting grid".fail().assertionFailure()
-                continue
-              }
-              state.grids.removeValue(forKey: model.grid)
-              notifications.append(.gridDestroyed(id: model.grid))
-
-              if state.currentGridID == model.grid {
-                state.currentGridID = state.grids.keys.first
-                let id = state.currentGridID
-                log(.debug, "current grid destroyed, new grid id \(id.logDescription)")
-                notifications.append(.currentGridChanged)
-              }
+            if state.currentGridID == nil {
+              state.currentGridID = model.grid
+              let id = state.currentGridID
+              log(.debug, "grid resize, new grid id \(id.logDescription)")
+              notifications.append(.currentGridChanged)
             }
-
-          case let .gridLine(models):
-            var notifications = [Store.Notification]()
-
-            var lastHlID: Int?
-            for model in models {
-              guard var grid = state.grids[model.grid] else {
-                "unexisting grid".fail().assertionFailure()
-                continue
-              }
-
-              var updatedCellsCount = 0
-              for messagePackValue in model.data {
-                guard var arrayValue = messagePackValue.arrayValue else {
-                  "cell data is not an array".fail().assertionFailure()
-                  continue
-                }
-
-                guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                  "expected cell text is not a string".fail().assertionFailure()
-                  continue
-                }
-
-                var repeatCount = 1
-
-                if !arrayValue.isEmpty {
-                  guard let hlID = arrayValue.removeFirst().uintValue else {
-                    "expected cell hl_id is not an unsigned integer".fail().assertionFailure()
-                    continue
-                  }
-                  lastHlID = Int(hlID)
-
-                  if !arrayValue.isEmpty {
-                    guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
-                      "expected cell repeat count is not an unsigned integer".fail().assertionFailure()
-                      continue
-                    }
-                    repeatCount = Int(parsedRepeatCount)
-                  }
-                }
-
-                guard let lastHlID else {
-                  "at least one hlID was expected to be parsed".fail().assertionFailure()
-                  continue
-                }
-
-                for repeatIndex in 0 ..< repeatCount {
-                  let row = model.row
-                  let column = model.colStart + Int(repeatIndex)
-                  guard row < grid.columnsCount else {
-                    break
-                  }
-                  grid[row, column] = .init(character: text.first, hlID: lastHlID)
-
-                  updatedCellsCount += 1
-                }
-              }
-
-              state.grids[model.grid] = grid
-
-              notifications.append(
-                .gridUpdated(
-                  id: model.grid,
-                  updates: .line(
-                    row: model.row,
-                    columnStart: model.colStart,
-                    cellsCount: updatedCellsCount
-                  )
-                )
-              )
-            }
-
-          case let .gridScroll(models):
-            for model in models {
-              state.change(\.grids[model.grid]) { grid in
-              }
-
-              var grid = state.grids[model.grid]
-
-              state.grids[model.grid] = grid
-            }
-
-          default:
-            break
           }
 
-          return notifications
+        case let .gridDestroy(models):
+          for model in models {
+            guard state.grids[model.grid] != nil else {
+              "grid_destroy for unexisting grid".fail().assertionFailure()
+              continue
+            }
+            state.grids.removeValue(forKey: model.grid)
+            notifications.append(.gridDestroyed(id: model.grid))
+
+            if state.currentGridID == model.grid {
+              state.currentGridID = state.grids.keys.first
+              let id = state.currentGridID
+              log(.debug, "current grid destroyed, new grid id \(id.logDescription)")
+              notifications.append(.currentGridChanged)
+            }
+          }
+
+        case let .gridLine(models):
+          var notifications = [Store.Notification]()
+
+          var lastHlID: Int?
+          for model in models {
+            guard var grid = state.grids[model.grid] else {
+              "unexisting grid".fail().assertionFailure()
+              continue
+            }
+
+            var updatedCellsCount = 0
+            for messagePackValue in model.data {
+              guard var arrayValue = messagePackValue.arrayValue else {
+                "cell data is not an array".fail().assertionFailure()
+                continue
+              }
+
+              guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
+                "expected cell text is not a string".fail().assertionFailure()
+                continue
+              }
+
+              var repeatCount = 1
+
+              if !arrayValue.isEmpty {
+                guard let hlID = arrayValue.removeFirst().uintValue else {
+                  "expected cell hl_id is not an unsigned integer".fail().assertionFailure()
+                  continue
+                }
+                lastHlID = Int(hlID)
+
+                if !arrayValue.isEmpty {
+                  guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
+                    "expected cell repeat count is not an unsigned integer".fail().assertionFailure()
+                    continue
+                  }
+                  repeatCount = Int(parsedRepeatCount)
+                }
+              }
+
+              guard let lastHlID else {
+                "at least one hlID was expected to be parsed".fail().assertionFailure()
+                continue
+              }
+
+              for repeatIndex in 0 ..< repeatCount {
+                let row = model.row
+                let column = model.colStart + Int(repeatIndex)
+                guard row < grid.columnsCount else {
+                  break
+                }
+                grid[row, column] = .init(character: text.first, hlID: lastHlID)
+
+                updatedCellsCount += 1
+              }
+            }
+
+            state.grids[model.grid] = grid
+
+            notifications.append(
+              .gridUpdated(
+                id: model.grid,
+                updates: .line(
+                  row: model.row,
+                  columnStart: model.colStart,
+                  cellsCount: updatedCellsCount
+                )
+              )
+            )
+          }
+
+        case let .gridScroll(models):
+          for model in models {
+            state.change(\.grids[model.grid]) { grid in
+            }
+
+            var grid = state.grids[model.grid]
+
+            state.grids[model.grid] = grid
+          }
+
+        default:
+          break
         }
       }
     }
