@@ -46,7 +46,6 @@ private func logLines(for item: Any, header: String?) -> [String] {
   }
 
   lines += message
-    .trimmingCharacters(in: .whitespacesAndNewlines)
     .split(separator: "\n", omittingEmptySubsequences: false)
     .map { line in
       let lineCount = line.count

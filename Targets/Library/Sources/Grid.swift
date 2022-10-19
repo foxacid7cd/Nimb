@@ -86,24 +86,6 @@ public struct Grid<Element> {
   private var rows: [[Element]]
 }
 
-extension Grid: CustomLoggable {
-  public var logMessage: String {
-    return "Grid(rows: \(self.size.rowsCount), columns: \(self.size.columnsCount))"
-  }
-
-  public var logChildren: [Any] {
-    let description = self.rows
-      .map { row in
-        row
-          .map { String(describing: $0) }
-          .joined()
-      }
-      .joined(separator: "\n")
-
-    return [description]
-  }
-}
-
 extension Grid: Equatable where Element: Equatable {}
 
 extension Grid: Hashable where Element: Hashable {}

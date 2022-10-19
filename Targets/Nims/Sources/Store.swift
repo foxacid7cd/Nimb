@@ -29,6 +29,14 @@ class Store {
     self.stateChangesSubject.onNext(stateChanges)
   }
 
+  @MainActor
+  func dispatch(action: (inout State) -> StateChange?) {
+    self.dispatch { state -> [StateChange] in
+      [action(&state)]
+        .compactMap { $0 }
+    }
+  }
+
   private let stateChangesSubject = PublishSubject<[StateChange]>()
 }
 

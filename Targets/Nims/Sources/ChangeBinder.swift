@@ -34,12 +34,21 @@ struct ChangeBinder<Change> {
     )
   }
 
+  func filter(_ isIncluded: @escaping ([Change]) -> Bool) -> ChangeBinder<Change> {
+    .init(
+      target: self.target,
+      store: self.store,
+      changes: self.changes
+        .filter(isIncluded)
+    )
+  }
+
   func bind(_ notify: @escaping (_ store: Store, _ changes: [Change]) -> Void) {
     self.changes
       .subscribe(onNext: { notify(store, $0) })
       .disposed(by: self.target.associatedDisposeBag)
   }
-  
+
   func bindFlat(_ notify: @escaping (_ store: Store, _ change: Change) -> Void) {
     self.bind { store, changes in
       changes.forEach { notify(store, $0) }
