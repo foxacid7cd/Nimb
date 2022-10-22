@@ -196,32 +196,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   updatedCellsCount = 0
                 }
 
-                for _ in 0 ..< repeatCount {
+                for repeatIndex in 0 ..< repeatCount {
                   let index = GridPoint(
                     row: model.row,
-                    column: model.colStart + updatedCellsCount
+                    column: model.colStart + updatedCellsCount + repeatIndex
                   )
                   state.grids[model.grid]![index] = Cell(text: text, hlID: latestHlID)
-
-                  updatedCellsCount += 1
                 }
-
+                
                 stateChanges.append(
-                  .grid(
-                    .init(
-                      id: model.grid,
-                      change: .row(
-                        .init(
-                          origin: .init(
-                            row: model.row,
-                            column: model.colStart + updatedCellsCount - repeatCount
-                          ),
-                          columnsCount: repeatCount
-                        )
-                      )
-                    )
-                  )
+                  .grid(.init(
+                    id: model.grid,
+                    change: .row(.init(
+                      origin: .init(
+                        row: model.row,
+                        column: model.colStart + updatedCellsCount
+                      ),
+                      columnsCount: repeatCount
+                    ))
+                  ))
                 )
+
+                updatedCellsCount += repeatCount
 
                 latestRow = model.row
               }
