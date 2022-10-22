@@ -64,21 +64,17 @@ public struct Grid<Element> {
     }
   }
 
-  public func subGrid(at rectangle: GridRectangle) -> Grid<Element> {
+  public func grid(at rectangle: GridRectangle) -> Grid<Element> {
     .init(size: rectangle.size) { index in
       self[index + rectangle.origin]
     }
   }
 
-  public mutating func set(_ subGrid: Grid, at origin: GridPoint) {
-    let subGridFrame = GridRectangle(origin: origin, size: subGrid.size)
-    precondition(subGridFrame.maxRow < self.frame.maxRow)
-    precondition(subGridFrame.maxColumn < self.frame.maxColumn)
-
-    for row in subGridFrame.minRow ... subGridFrame.maxRow {
-      for column in subGridFrame.minColumn ... subGridFrame.maxColumn {
+  public mutating func set(_ grid: Grid, at origin: GridPoint) {
+    for row in 0 ..< grid.size.rowsCount {
+      for column in 0 ..< grid.size.columnsCount {
         let index = GridPoint(row: row, column: column)
-        self[index] = subGrid[index - origin]
+        self[index + origin] = grid[index]
       }
     }
   }

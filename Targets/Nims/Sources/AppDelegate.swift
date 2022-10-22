@@ -239,12 +239,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 origin: .init(row: model.top, column: model.left),
                 size: .init(rowsCount: model.bot - model.top, columnsCount: model.right - model.left)
               )
-              [rectangle.origin.row, rectangle.origin.column, rectangle.size.rowsCount, rectangle.size.columnsCount]
-                .forEach {
-                  if $0 < 0 {
-                    assertionFailure("\(rectangle)")
-                  }
-                }
+              state.grids[model.grid]!.set(
+                state.grids[model.grid]!.grid(
+                  at: rectangle
+                ),
+                at: .init(
+                  row: rectangle.origin.row + model.rows,
+                  column: rectangle.origin.column + model.cols
+                )
+              )
 
               return nil
             }
