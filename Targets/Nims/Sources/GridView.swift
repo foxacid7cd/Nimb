@@ -7,39 +7,21 @@
 //
 
 import AppKit
+import CasePaths
 import Combine
 import Library
+import RxCocoa
+import RxSwift
 
 class GridView: NSView {
   init(frame: NSRect, gridID: Int) {
     self.gridID = gridID
     super.init(frame: frame)
 
-    self.stateChanges
-      .compactMap { $0.grid(id: gridID) }
-      .bindFlat { [weak self] store, model in
-        guard let self else { return }
-
-        switch model {
-        case let .row(rowChange):
-          let rect = self.geometry.cellsRect(
-            for: .init(
-              origin: rowChange.origin,
-              size: .init(
-                rowsCount: 1,
-                columnsCount: rowChange.columnsCount
-              )
-            )
-          )
-          self.setNeedsDisplay(rect)
-
-        case .clear:
-          self.setNeedsDisplay(self.bounds)
-
-        default:
-          break
-        }
-      }
+    self <~ self.stateChanges
+      .extract { (/StateChange.grid).extract(from: $0) }
+      .filter { $0.id == gridID }
+      .bind(with: self) { $0.handle(stateChange: $1.change) }
   }
 
   @available(*, unavailable)
@@ -47,6 +29,75 @@ class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  /* private var cachedGlyphs = [UInt16: CGGlyph]()
+   private let font = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!
+   private lazy var cgFont = CTFontCopyGraphicsFont(font, nil)
+
+   private lazy var queue = DispatchQueue(label: "foxacid7cd.Nims.glyphRunsCache.\(ObjectIdentifier(self))", qos: .userInteractive, attributes: .concurrent)
+   private var cachedGlyphRuns = [Character: [CTRun]]()
+
+   @MainActor
+   private var grid: CellGrid {
+     self.state.grids[self.gridID]!
+   }
+
+   private var cellSize: CGSize {
+     self.store.stateDerivatives.fontCalculation.cellSize
+   }
+
+   private func cache(glyphRuns: [CTRun], forKey key: Character) {
+     self.queue.async(flags: .barrier) {
+       self.cachedGlyphRuns[key] = glyphRuns
+     }
+   }
+
+   private func cachedGlyphRuns(forKey key: Character) -> [CTRun]? {
+     self.queue.sync {
+       cachedGlyphRuns[key]
+     }
+   }
+
+   private func gridIntersection(with rect: CGRect) -> (row: Int, column: Int, width: Int, height: Int) {
+     let grid = self.grid
+     let gridFrame = self.gridFrame
+
+     let intersection = gridFrame.intersection(rect)
+
+     let row = Int(floor(intersection.minY / Store.state.cellSize.height))
+     let column = Int(floor(intersection.minX / Store.state.cellSize.width))
+
+     let width = min(
+       grid.columnsCount,
+       Int(ceil(intersection.maxX / Store.state.cellSize.width))
+     ) - column
+
+     let height = min(
+       grid.rowsCount,
+       Int(ceil(intersection.maxY / Store.state.cellSize.height))
+     ) - row
+
+     return (row, column, width, height)
+   }
+
+   private func cellsRect(first: (row: Int, column: Int), second: (row: Int, column: Int)) -> CGRect {
+     let firstRect = self.cellRect(row: first.row, column: first.column)
+     let secondRect = self.cellRect(row: second.row, column: second.column)
+     return firstRect.union(secondRect)
+   }
+
+   private func cellRect(at index: GridPoint) -> CGRect {
+     .init(
+       origin: self.cellOrigin(at index),
+       size: Store.state.cellSize
+     )
+   }
+
+   private func cellOrigin(at index: GridPoint) -> CGPoint {
+     .init(
+       x: Double(index.column) * Store.state.cellSize.width,
+       y: Double(index.row) * Store.state.cellSize.height
+     )
+   } */
 //  override public func draw(_: NSRect) {
 //    let context = NSGraphicsContext.current!.cgContext
 //
@@ -121,131 +172,37 @@ class GridView: NSView {
 //    }
 //  }
 
-  private struct Geometry {
-    var store: Store
-
-    @MainActor
-    var cellSize: CGSize {
-      self.store.stateDerivatives.font.cellSize
-    }
-
-    @MainActor
-    func gridRectangle(cellsRect: CGRect) -> GridRectangle {
-      let origin = GridPoint(
-        row: Int(floor(cellsRect.minY / self.cellSize.height)),
-        column: Int(floor(cellsRect.minX / self.cellSize.width))
-      )
-      return .init(
-        origin: origin,
-        size: .init(
-          rowsCount: Int(ceil(cellsRect.maxY / self.cellSize.height)) - origin.row,
-          columnsCount: Int(ceil(cellsRect.maxX / self.cellSize.width)) - origin.column
-        )
-      )
-    }
-
-    @MainActor
-    func cellsRect(for gridRectangle: GridRectangle) -> CGRect {
-      self.cellRect(for: gridRectangle.origin)
-        .union(self.cellRect(for: .init(row: gridRectangle.maxRow, column: gridRectangle.maxColumn)))
-    }
-
-    @MainActor
-    func cellRect(for index: GridPoint) -> CGRect {
-      .init(
-        origin: self.cellOrigin(for: index),
-        size: self.cellSize
-      )
-    }
-
-    @MainActor
-    func cellOrigin(for index: GridPoint) -> CGPoint {
-      .init(
-        x: Double(index.column) * self.cellSize.width,
-        y: Double(index.row) * self.cellSize.height
-      )
-    }
-
-    @MainActor
-    private var state: State {
-      self.store.state
-    }
-  }
-
   private let gridID: Int
 
-  private var geometry: Geometry {
-    .init(store: self.store)
+  private var cellsGeometry: CellsGeometry {
+    .shared
   }
-  /* private var cachedGlyphs = [UInt16: CGGlyph]()
-   private let font = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!
-   private lazy var cgFont = CTFontCopyGraphicsFont(font, nil)
 
-   private lazy var queue = DispatchQueue(label: "foxacid7cd.Nims.glyphRunsCache.\(ObjectIdentifier(self))", qos: .userInteractive, attributes: .concurrent)
-   private var cachedGlyphRuns = [Character: [CTRun]]()
+  private var grid: CellGrid {
+    self.store.state.grids[self.gridID]!
+  }
 
-   @MainActor
-   private var grid: CellGrid {
-     self.state.grids[self.gridID]!
-   }
+  private func handle(stateChange: StateChange.Grid.Change) {
+    switch stateChange {
+    case let .row(rowChange):
+      let rect = self.cellsGeometry.cellsRect(
+        for: .init(
+          origin: rowChange.origin,
+          size: .init(
+            rowsCount: 1,
+            columnsCount: rowChange.columnsCount
+          )
+        )
+      )
+      self.setNeedsDisplay(rect)
 
-   private var cellSize: CGSize {
-     self.store.stateDerivatives.fontCalculation.cellSize
-   }
+    case .clear, .size:
+      self.setNeedsDisplay(self.bounds)
 
-   private func cache(glyphRuns: [CTRun], forKey key: Character) {
-     self.queue.async(flags: .barrier) {
-       self.cachedGlyphRuns[key] = glyphRuns
-     }
-   }
-
-   private func cachedGlyphRuns(forKey key: Character) -> [CTRun]? {
-     self.queue.sync {
-       cachedGlyphRuns[key]
-     }
-   }
-
-   private func gridIntersection(with rect: CGRect) -> (row: Int, column: Int, width: Int, height: Int) {
-     let grid = self.grid
-     let gridFrame = self.gridFrame
-
-     let intersection = gridFrame.intersection(rect)
-
-     let row = Int(floor(intersection.minY / Store.state.cellSize.height))
-     let column = Int(floor(intersection.minX / Store.state.cellSize.width))
-
-     let width = min(
-       grid.columnsCount,
-       Int(ceil(intersection.maxX / Store.state.cellSize.width))
-     ) - column
-
-     let height = min(
-       grid.rowsCount,
-       Int(ceil(intersection.maxY / Store.state.cellSize.height))
-     ) - row
-
-     return (row, column, width, height)
-   }
-
-   private func cellsRect(first: (row: Int, column: Int), second: (row: Int, column: Int)) -> CGRect {
-     let firstRect = self.cellRect(row: first.row, column: first.column)
-     let secondRect = self.cellRect(row: second.row, column: second.column)
-     return firstRect.union(secondRect)
-   }
-
-   private func cellRect(at index: GridPoint) -> CGRect {
-     .init(
-       origin: self.cellOrigin(at index),
-       size: Store.state.cellSize
-     )
-   }
-
-   private func cellOrigin(at index: GridPoint) -> CGPoint {
-     .init(
-       x: Double(index.column) * Store.state.cellSize.width,
-       y: Double(index.row) * Store.state.cellSize.height
-     )
-   } */
+    default:
+      break
+    }
+  }
 }
 
 private struct GlyphRun {

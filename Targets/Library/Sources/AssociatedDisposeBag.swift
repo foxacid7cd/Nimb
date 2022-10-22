@@ -22,3 +22,13 @@ public extension NSObject {
     }
   }
 }
+
+infix operator <~
+
+public func <~ (lhs: DisposeBag, rhs: Disposable) {
+  rhs.disposed(by: lhs)
+}
+
+public func <~ (lhs: NSObject, rhs: Disposable) {
+  lhs.associatedDisposeBag <~ rhs
+}

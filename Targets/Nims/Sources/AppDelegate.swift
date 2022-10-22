@@ -7,41 +7,19 @@
 //
 
 import AppKit
+import CasePaths
 import Library
 import Nvim
 import RxSwift
 
-@NSApplicationMain @MainActor
+@NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    Store.shared.bind(to: self)
-      .compactMap { $0.gridID }
-      .bindFlat { store, gridID in
-        guard let grid = store.state.grids[gridID] else { return }
-
-        let gridString = (0 ..< grid.size.rowsCount)
-          .map { row in
-            (0 ..< grid.size.columnsCount)
-              .map { column -> String in
-                let index = GridPoint(row: row, column: column)
-                guard let cell = grid[index] else {
-                  return " "
-                }
-                let text = grid[index]?.text
-                return grid[index]?.text ?? "."
-              }
-              // .map { "\($0.count)" }
-              .joined()
-          }
-          .joined(separator: "\n")
-
-        print(gridString)
-      }
+    self <~ self.store.stateChanges
+      .extract { (/StateChange.grid).extract(from: $0) }
+      .bind(with: self) { $0.handle(stateChange: $1) }
 
     self.startNvimProcess()
-    // let windowController = WindowController()
-    // self.windowController = windowController
-    // windowController.showWindow(nil)
   }
 
   @IBOutlet private var mainMenu: NSMenu!
@@ -49,9 +27,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private var windowController: WindowController?
   private let disposeBag = DisposeBag()
   private var nvimProcess: NvimProcess?
+  private var windowControllers = [Int: WindowController]()
 
   private var store: Store {
     .shared
+  }
+
+  private func handle(stateChange: StateChange.Grid) {
+    switch stateChange.change {
+    case .size:
+      if self.windowControllers[stateChange.id] == nil {
+        let windowController = WindowController(gridID: stateChange.id)
+        self.windowControllers[stateChange.id] = windowController
+        windowController.showWindow(nil)
+      }
+
+    case .destroy:
+      if let windowController = self.windowControllers[stateChange.id] {
+        windowController.window?.close()
+        self.windowControllers[stateChange.id] = nil
+
+      } else {
+        "Trying to destroy unregistered window controller"
+          .fail()
+          .assertionFailure()
+      }
+
+    default:
+      break
+    }
   }
 
   @MainActor
@@ -60,6 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     self.nvimProcess = nvimProcess
 
     nvimProcess.notifications
+      .observe(on: MainScheduler.instance)
       .subscribe(onNext: { [weak self] in self?.handle(notification: $0) })
       .disposed(by: self.disposeBag)
 
@@ -107,12 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               return .grid(
                 .init(
                   id: model.grid,
-                  change: .size(
-                    .init(
-                      rowsCount: model.height,
-                      columnsCount: model.width
-                    )
-                  )
+                  change: .size
                 )
               )
             }
@@ -164,7 +164,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let item = arrayValue.removeFirst()
                 let text: String
                 if let data = item.dataValue {
-                  text = String(data: data, encoding: .utf16)!
+                  text = String(data: data, encoding: .utf8)!
                 } else {
                   text = item.stringValue!
                 }

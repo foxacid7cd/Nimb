@@ -53,7 +53,8 @@ let project = Project(
         .external(name: "AsyncAlgorithms"),
         .external(name: "RxSwift"),
         .external(name: "RxCocoa"),
-        .external(name: "MessagePack")
+        .external(name: "MessagePack"),
+        .external(name: "CasePaths")
       ]
     )
   ],

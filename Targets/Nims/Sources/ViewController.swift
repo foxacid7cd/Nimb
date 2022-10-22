@@ -7,18 +7,15 @@
 //
 
 import AppKit
+import CasePaths
+import Library
+import RxCocoa
+import RxSwift
 
 class ViewController: NSViewController {
   init(gridID: Int) {
     self.gridID = gridID
     super.init(nibName: nil, bundle: nil)
-    
-    self.stateChanges
-      .compactMap { $0.grid(id: gridID)?.size }
-      .bindFlat { [weak self] (store, size) in
-        self?.view.frame.size =
-          .init(width: size.columnsCount, height: size.rowsCount)
-      }
   }
 
   @available(*, unavailable)
@@ -28,10 +25,43 @@ class ViewController: NSViewController {
 
   override func loadView() {
     self.view = GridView(
-      frame: .zero,
+      frame: self.gridCellsFrame,
       gridID: self.gridID
     )
   }
 
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    let gridID = self.gridID
+
+    self <~ self.store.stateChanges
+      .extract { (/StateChange.grid).extract(from: $0) }
+      .filter { $0.id == gridID }
+      .compactMap { (/StateChange.Grid.Change.size).extract(from: $0.change) }
+      .bind(with: self) { strongSelf, _ in
+        strongSelf.view.frame = strongSelf.gridCellsFrame
+      }
+  }
+
   private let gridID: Int
+
+  private var cellsGeometry: CellsGeometry {
+    .shared
+  }
+
+  private var grid: CellGrid {
+    self.store.state.grids[self.gridID]!
+  }
+
+  private var gridCellsSize: CGSize {
+    self.cellsGeometry.cellsSize(for: self.grid.size)
+  }
+
+  private var gridCellsFrame: CGRect {
+    .init(
+      origin: .zero,
+      size: self.gridCellsSize
+    )
+  }
 }

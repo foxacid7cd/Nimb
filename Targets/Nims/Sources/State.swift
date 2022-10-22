@@ -25,7 +25,7 @@ enum StateChange: Hashable {
 
   struct Grid: Hashable {
     enum Change: Hashable {
-      case size(GridSize)
+      case size
       case row(Row)
       case clear
       case destroy
@@ -33,13 +33,6 @@ enum StateChange: Hashable {
       struct Row: Hashable {
         var origin: GridPoint
         var columnsCount: Int
-      }
-
-      var size: GridSize? {
-        guard case let .size(model) = self else {
-          return nil
-        }
-        return model
       }
 
       var row: Row? {
@@ -68,13 +61,6 @@ enum StateChange: Hashable {
     var change: Change
   }
 
-  var gridID: Int? {
-    guard case let .grid(grid) = self else {
-      return nil
-    }
-    return grid.id
-  }
-
   var isFont: Bool {
     guard case .font = self else {
       return false
@@ -82,10 +68,13 @@ enum StateChange: Hashable {
     return true
   }
 
-  func grid(id: Int) -> Grid.Change? {
+  func grid(id: Int? = nil) -> Grid? {
     guard case let .grid(grid) = self else {
       return nil
     }
-    return grid.change
+    if let id, grid.id != id {
+      return nil
+    }
+    return grid
   }
 }

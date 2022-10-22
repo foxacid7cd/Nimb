@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import RxSwift
 
 extension NSResponder {
   var store: Store {
@@ -18,7 +19,7 @@ extension NSResponder {
     self.store.state
   }
 
-  var stateChanges: ChangeBinder<StateChange> {
-    self.store.bind(to: self)
+  var stateChanges: Observable<[StateChange]> {
+    self.store.stateChanges
   }
 }

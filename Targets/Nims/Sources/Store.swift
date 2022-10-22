@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import CasePaths
 import Library
 import RxSwift
 
@@ -18,9 +19,8 @@ class Store {
   @MainActor
   private(set) var state = State()
 
-  @MainActor
-  func bind(to target: NSObject) -> ChangeBinder<StateChange> {
-    .init(target: target, store: self, changes: self.stateChangesSubject)
+  var stateChanges: Observable<[StateChange]> {
+    self.stateChangesSubject
   }
 
   @MainActor
@@ -80,5 +80,13 @@ class StateDerivatives {
   @MainActor
   private var state: State {
     self.store.state
+  }
+}
+
+extension Observable where Element == [StateChange] {
+  func extract<T>(_ transform: @escaping (StateChange) -> T?) -> Observable<T> {
+    self.flatMap {
+      Observable<T>.from($0.compactMap(transform))
+    }
   }
 }
