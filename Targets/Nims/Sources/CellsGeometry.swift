@@ -27,13 +27,11 @@ final class CellsGeometry {
       row: Int(floor(cellsRect.minY / self.cellSize.height)),
       column: Int(floor(cellsRect.minX / self.cellSize.width))
     )
-    return .init(
-      origin: origin,
-      size: .init(
-        rowsCount: Int(ceil(cellsRect.maxY / self.cellSize.height)) - origin.row,
-        columnsCount: Int(ceil(cellsRect.maxX / self.cellSize.width)) - origin.column
-      )
+    let size = GridSize(
+      rowsCount: Int(ceil(cellsRect.maxY / self.cellSize.height)) - origin.row,
+      columnsCount: Int(ceil(cellsRect.maxX / self.cellSize.width)) - origin.column
     )
+    return .init(origin: origin, size: size)
   }
 
   @MainActor

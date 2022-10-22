@@ -70,6 +70,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     do {
       try nvimProcess.run()
+
     } catch {
       "failed running nvim process"
         .fail(child: error.fail())
@@ -79,9 +80,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: 90,
-          height: 32,
-          options: [.string(UIOption.extMultigrid.rawValue): true, .string(UIOption.extHlstate.rawValue): true]
+          width: 110,
+          height: 40,
+          options: [UIOption.extMultigrid.value: true, UIOption.extHlstate.value: true]
         )
       } catch {
         "failed to attach nvim UI"
@@ -138,6 +139,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           self.store.dispatch { (state: inout State) -> [StateChange] in
             var stateChanges = [StateChange]()
             var latestHlID: Int?
+            var latestRow: Int?
 
             for model in models {
               var updatedCellsCount = 0
@@ -150,28 +152,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   continue
                 }
 
-                /* guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                   "expected cell text is not a string"
-                     .fail()
-                     .log(.fault)
+                guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
+                  "expected cell text is not a string"
+                    .fail()
+                    .log(.fault)
 
-                   continue
-                 } */
-                guard !arrayValue.isEmpty else {
                   continue
                 }
-
-                let item = arrayValue.removeFirst()
-                let text: String
-                if let data = item.dataValue {
-                  text = String(data: data, encoding: .utf8)!
-                } else {
-                  text = item.stringValue!
-                }
-                // guard let data = item.dataValue else {
-                //  fatalError()
-                // }
-                // let text = String(data: data, encoding: .utf16)
 
                 var repeatCount = 1
 
@@ -205,17 +192,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   continue
                 }
 
-                for repeatIndex in 0 ..< repeatCount {
+                if latestRow != model.row {
+                  updatedCellsCount = 0
+                }
+
+                for _ in 0 ..< repeatCount {
                   let index = GridPoint(
                     row: model.row,
-                    column: model.colStart + Int(repeatIndex)
+                    column: model.colStart + updatedCellsCount
                   )
                   state.grids[model.grid]![index] = Cell(text: text, hlID: latestHlID)
 
                   updatedCellsCount += 1
                 }
 
-                stateChanges.append(.grid(.init(id: model.grid, change: .row(.init(origin: .init(row: model.row, column: model.colStart), columnsCount: updatedCellsCount)))))
+                stateChanges.append(
+                  .grid(
+                    .init(
+                      id: model.grid,
+                      change: .row(
+                        .init(
+                          origin: .init(
+                            row: model.row,
+                            column: model.colStart + updatedCellsCount - repeatCount
+                          ),
+                          columnsCount: repeatCount
+                        )
+                      )
+                    )
+                  )
+                )
+
+                latestRow = model.row
               }
             }
 
@@ -223,6 +231,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridScroll(models):
+          log(.debug, "Grid scroll: \(models.count)")
+
           for model in models {
             self.store.dispatch { state in
               let rectangle = GridRectangle(
@@ -241,6 +251,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridClear(models):
+          log(.debug, "Grid clear: \(models.count)")
+
           for model in models {
             self.store.dispatch { state in
               state.grids[model.grid]! = .init(
@@ -250,6 +262,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               return .grid(.init(id: model.grid, change: .clear))
             }
           }
+
+        case let .gridCursorGoto(models):
+          log(.info, "Grid cursor goto: \(models.count)")
 
         default:
           break

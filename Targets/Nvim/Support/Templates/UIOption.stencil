@@ -1,3 +1,9 @@
+import Library
+
 public enum UIOption: String { {% for uiOption in uiOptions %}
   case {{ uiOption.name }}{% if uiOption.name != uiOption.originalName %} = "{{ uiOption.originalName }}"{% endif %}{% endfor %}
+  
+  public var value: Value {
+    .string(self.rawValue)
+  }
 }
