@@ -15,7 +15,7 @@ struct State: Hashable {
     case custom(name: String, size: Double)
   }
 
-  var grids = [CellGrid?](repeating: nil, count: 10)
+  var grids = [CellGrid?](repeating: nil, count: 100)
   var font = Font.monospacedSystem(size: 13, weight: .regular)
 
   mutating func withMutableGrid(id: Int, _ body: (inout CellGrid) -> Void) {

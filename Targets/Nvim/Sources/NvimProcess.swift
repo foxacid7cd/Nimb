@@ -17,6 +17,17 @@ public class NvimProcess {
     self.process.executableURL = Bundle.main.url(forResource: "nvim", withExtension: nil)
     self.process.arguments = ["--embed"]
 
+    if let runtimeUrl = Bundle.main.url(forResource: "runtime", withExtension: nil) {
+      let environment = ["VIMRUNTIME": runtimeUrl.relativePath]
+      log(.info, "Nvim process environment: \(environment)")
+      self.process.environment = environment
+
+    } else {
+      "unable to locate nvim runtime"
+        .fail()
+        .assertionFailure()
+    }
+
     let outputPipe = Pipe()
     self.process.standardOutput = outputPipe
 

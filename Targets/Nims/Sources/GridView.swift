@@ -36,6 +36,8 @@ class GridView: NSView {
     context.saveGState()
     defer { context.restoreGState() }
 
+    let font = self.store.stateDerivatives.font.nsFont
+
     for rect in self.rectsBeingDrawn() {
       let gridRectangle = self.cellsGeometry.gridRectangle(cellsRect: rect)
         .intersection(.init(origin: .init(), size: self.grid.size))
@@ -47,9 +49,9 @@ class GridView: NSView {
             column: gridRectangle.origin.column + columnOffset
           )
 
-          let cellRect = self.cellsGeometry.cellRect(for: index)
-          context.setFillColor(.black)
-          context.fill(cellRect)
+          let cellRect = self.cellsGeometry.inverted(
+            rect: self.cellsGeometry.cellRect(for: index)
+          )
 
           let text = self.grid[index]?.text ?? " "
 
@@ -60,7 +62,7 @@ class GridView: NSView {
 
             let attributedString = NSAttributedString(
               string: text,
-              attributes: [.font: self.store.stateDerivatives.font.nsFont]
+              attributes: [.font: font]
             )
             let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
             let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 1))
@@ -81,20 +83,27 @@ class GridView: NSView {
               CTRunGetPositions(glyphRun, range, buffer.baseAddress!)
               initializedCount = glyphCount
             }
-            .map { CGPoint(x: $0.x + cellRect.origin.x, y: $0.y + cellRect.origin.y) }
-            // context.cgContext.textMatrix = CTRunGetTextMatrix(glyphRun)
-            /* context.cgContext.textPosition = self.cellOrigin(row: row, column: column)
-             context.cgContext.showGlyphs(glyphs, at: positions) */
+            .map {
+              CGPoint(
+                x: $0.x + cellRect.origin.x,
+                y: $0.y + cellRect.origin.y - font.descender
+              )
+            }
 
             context.saveGState()
             context.textMatrix = .identity
-            // .scaledBy(x: 1, y: -1)
-            // .translatedBy(x: cellRect.origin.x, y: cellRect.origin.y)
-            context.setFillColor(.white)
+
+            context.setFillColor(.init(red: 1, green: 0, blue: 1, alpha: 1))
             context.setTextDrawingMode(.fill)
-            CTFontDrawGlyphs(self.store.stateDerivatives.font.nsFont, glyphs, positions, glyphCount, context)
+            CTFontDrawGlyphs(
+              self.store.stateDerivatives.font.nsFont,
+              glyphs,
+              positions,
+              glyphCount,
+              context
+            )
+
             context.restoreGState()
-            // CTFontDrawGlyphs(cgFont, glyphs, positions, glyphCount, context.cgContext)
           }
         }
       }
@@ -120,32 +129,34 @@ class GridView: NSView {
   private func handle(stateChange: StateChange.Grid.Change) {
     switch stateChange {
     case let .row(rowChange):
-      let cellsRect = self.cellsGeometry.cellsRect(
-        for: .init(
-          origin: rowChange.origin,
-          size: .init(
-            rowsCount: 1,
-            columnsCount: rowChange.columnsCount
+      let cellsRect = self.cellsGeometry.inverted(
+        rect: self.cellsGeometry.cellsRect(
+          for: .init(
+            origin: .init(
+              row: rowChange.origin.row,
+              column: rowChange.origin.column
+            ),
+            size: .init(
+              rowsCount: 1,
+              columnsCount: rowChange.columnsCount
+            )
           )
         )
       )
+
       self.setNeedsDisplay(
-        cellsRect.insetBy(
-          dx: -self.cellsGeometry.cellSize.width / 2,
-          dy: -self.cellsGeometry.cellSize.height / 4
-        )
+        self.cellsGeometry.insetForDrawing(rect: cellsRect)
       )
 
     case let .scroll(scrollChange):
-      let cellsRect = CGRect(
-        origin: self.cellsGeometry.cellOrigin(for: scrollChange.toOrigin),
-        size: self.cellsGeometry.cellsSize(for: scrollChange.fromRectangle.size)
+      let cellsRect = self.cellsGeometry.inverted(
+        rect: CGRect(
+          origin: self.cellsGeometry.cellOrigin(for: scrollChange.toOrigin),
+          size: self.cellsGeometry.cellsSize(for: scrollChange.fromRectangle.size)
+        )
       )
       self.setNeedsDisplay(
-        cellsRect.insetBy(
-          dx: -self.cellsGeometry.cellSize.width / 2,
-          dy: -self.cellsGeometry.cellSize.height / 4
-        )
+        self.cellsGeometry.insetForDrawing(rect: cellsRect)
       )
 
     case .clear, .size:

@@ -21,22 +21,22 @@ public extension Target {
       platform: .macOS,
       product: {
         switch product {
-          case .app:
-            return .app
-          case .commandLineTool:
-            return .commandLineTool
-          case .library:
-            return .staticLibrary
+        case .app:
+          return .app
+        case .commandLineTool:
+          return .commandLineTool
+        case .library:
+          return .staticLibrary
         }
       }(),
       bundleId: "foxacid7cd.\(name)",
       deploymentTarget: .macOS(targetVersion: "12.3"),
       infoPlist: {
         switch product {
-          case let .app(infoPlist):
-            return infoPlist
-          default:
-            return .default
+        case let .app(infoPlist):
+          return infoPlist
+        default:
+          return .default
         }
       }(),
       sources: .init(
@@ -48,10 +48,13 @@ public extension Target {
       ),
       resources: {
         switch product {
-          case .app:
-            return ["Targets/\(name)/Resources/**"]
-          default:
-            return []
+        case .app:
+          return [
+            .glob(pattern: "Targets/\(name)/Resources/**"),
+            .folderReference(path: "Targets/\(name)/runtime")
+          ]
+        default:
+          return []
         }
       }(),
       scripts: scripts,

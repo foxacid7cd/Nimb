@@ -6,7 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import Foundation
+import AppKit
 import Library
 
 final class CellsGeometry {
@@ -22,22 +22,50 @@ final class CellsGeometry {
   @MainActor
   var gridCellsSize: CGSize {
     .init(
-      width: Double(self.grid.size.columnsCount) * self.cellSize.width,
-      height: Double(self.grid.size.rowsCount) * self.cellSize.height
+      width: self.gridCellsWidth,
+      height: self.gridCellsHeight
+    )
+  }
+
+  @MainActor
+  var gridCellsWidth: Double {
+    Double(self.grid.size.columnsCount) * self.cellSize.width
+  }
+
+  @MainActor
+  var gridCellsHeight: Double {
+    Double(self.grid.size.rowsCount) * self.cellSize.height
+  }
+
+  @MainActor
+  func insetForDrawing(rect: CGRect) -> CGRect {
+    let dx = -(self.font.boundingRectForFont.width - self.cellSize.width) / 2
+    let dy = -(self.font.boundingRectForFont.height - self.cellSize.height) / 2
+    return rect.insetBy(dx: dx, dy: dy)
+  }
+
+  @MainActor
+  func inverted(rect: CGRect) -> CGRect {
+    CGRect(
+      origin: .init(
+        x: rect.origin.x,
+        y: self.gridCellsHeight - rect.origin.y - rect.size.height
+      ),
+      size: rect.size
     )
   }
 
   @MainActor
   func gridRectangle(cellsRect: CGRect) -> GridRectangle {
     let origin = GridPoint(
-      row: self.grid.size.rowsCount - 1 - Int(floor(cellsRect.minY / self.cellSize.height)),
+      row: Int(floor(cellsRect.minY / self.cellSize.height)),
       column: Int(floor(cellsRect.minX / self.cellSize.width))
     )
     let size = GridSize(
-      rowsCount: Int(ceil(cellsRect.maxY / self.cellSize.height)) - origin.row,
+      rowsCount: Int(ceil(cellsRect.maxY - self.font.descender / self.cellSize.height)) - origin.row,
       columnsCount: Int(ceil(cellsRect.maxX / self.cellSize.width)) - origin.column
     )
-    return .init(origin: origin, size: size)
+    return GridRectangle(origin: origin, size: size)
   }
 
   @MainActor
@@ -68,7 +96,7 @@ final class CellsGeometry {
   func cellOrigin(for index: GridPoint) -> CGPoint {
     return .init(
       x: Double(index.column) * self.cellSize.width,
-      y: Double(self.grid.size.rowsCount - 1 - index.row) * self.cellSize.height
+      y: Double(index.row) * self.cellSize.height
     )
   }
 
@@ -86,5 +114,10 @@ final class CellsGeometry {
   @MainActor
   private var grid: CellGrid {
     self.state.grids[self.gridID]!
+  }
+
+  @MainActor
+  private var font: NSFont {
+    self.store.stateDerivatives.font.nsFont
   }
 }
