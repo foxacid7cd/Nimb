@@ -15,15 +15,18 @@ struct State: Hashable {
     case custom(name: String, size: Double)
   }
 
-  struct Window: Hashable {
-    var native: ExtendedTypes.Window
-    var frame: GridRectangle
-    var isHidden: Bool
-  }
-
   struct Grid: Hashable {
-    var window: Window?
-    var grid: CellGrid
+    struct Window: Hashable {
+      var frame: GridRectangle
+      var isHidden: Bool
+    }
+
+    var cellGrid: CellGrid
+    var windows: [ExtendedTypes.Window: Window]
+
+    mutating func withMutableWindow(ref: ExtendedTypes.Window, _ body: (inout Window?) -> Void) {
+      body(&self.windows[ref])
+    }
   }
 
   struct Cursor: Hashable {
@@ -43,6 +46,7 @@ struct State: Hashable {
 
 enum StateChange: Hashable {
   case grid(Grid)
+  case window(Window)
   case cursor(State.Cursor)
   case font
 
@@ -52,10 +56,6 @@ enum StateChange: Hashable {
       case row(Row)
       case rectangle(GridRectangle)
       case clear
-      case windowPosition
-      case windowExternalPosition
-      case windowHide
-      case windowClose
       case destroy
 
       struct Row: Hashable {
@@ -65,6 +65,19 @@ enum StateChange: Hashable {
     }
 
     var id: Int
+    var change: Change
+  }
+
+  struct Window: Hashable {
+    enum Change: Hashable {
+      case position
+      case externalPosition
+      case hide
+      case close
+    }
+
+    var gridID: Int
+    var ref: ExtendedTypes.Window
     var change: Change
   }
 }

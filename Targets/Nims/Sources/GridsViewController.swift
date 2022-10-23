@@ -13,7 +13,8 @@ import RxCocoa
 import RxSwift
 
 class GridsViewController: NSViewController {
-  init(glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+    self.gridID = gridID
     self.glyphRunsCache = glyphRunsCache
     super.init(nibName: nil, bundle: nil)
   }
@@ -29,6 +30,7 @@ class GridsViewController: NSViewController {
         origin: .zero,
         size: self.cellsGeometry.outerGridCellsSize
       ),
+      gridID: self.gridID,
       glyphRunsCache: self.glyphRunsCache
     )
   }
@@ -41,6 +43,7 @@ class GridsViewController: NSViewController {
       .bind(with: self) { $0.handle(stateChange: $1) }
   }
 
+  private let gridID: Int
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
   private let cellsGeometry = CellsGeometry()
 

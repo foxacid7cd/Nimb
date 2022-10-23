@@ -6,7 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-public struct Grid<Element> {
+public struct Grid<Element>: GridProtocol {
   public init(repeating element: Element, size: GridSize) {
     let rows = Array(
       repeating: Array(
@@ -44,33 +44,37 @@ public struct Grid<Element> {
     }
   }
 
-  public mutating func move(rectangle: GridRectangle, delta: GridPoint) -> GridRectangle {
-    let rowLowerBound = max(-min(0, delta.row), max(-delta.row, rectangle.origin.row - delta.row) + delta.row)
-    let rowUpperBound = -min(0, -min(self.size.rowsCount, min(rectangle.maxRow + delta.row, rectangle.maxRow))) - max(0, delta.row)
-
-    let columnLowerBound = max(-min(0, delta.column), max(-delta.column, rectangle.origin.column - delta.column) + delta.column)
-    let columnUpperBound = -min(0, -min(self.size.columnsCount, min(rectangle.maxColumn + delta.column, rectangle.maxColumn))) - max(0, delta.column)
-
-    let copy = self
-
-    for row in rowLowerBound ..< rowUpperBound {
-      for column in columnLowerBound ..< columnUpperBound {
-        let index = GridPoint(row: row, column: column)
-
-        self[index] = copy[index + delta]
-      }
-    }
+  public func subGrid(at rectangle: GridRectangle) -> SubGrid<Element> {
+    let rows = self.rows[rectangle.minRow ..< rectangle.maxRow].lazy
+      .map { $0[rectangle.minColumn ..< rectangle.maxColumn] }
 
     return .init(
-      origin: .init(
-        row: rowLowerBound,
-        column: columnLowerBound
-      ),
-      size: .init(
-        rowsCount: rowUpperBound - rowLowerBound,
-        columnsCount: columnUpperBound - columnLowerBound
-      )
+      size: rectangle.size,
+      rows: rows
     )
+  }
+
+  public mutating func put<T: GridProtocol>(grid: T, at origin: GridPoint) where T.Element == Element {
+    for gridRow in 0 ..< grid.size.rowsCount {
+      let row = origin.row + gridRow
+
+      guard row >= 0, row < self.size.rowsCount else {
+        continue
+      }
+
+      for gridColumn in 0 ..< self.size.columnsCount {
+        let column = origin.column + gridColumn
+
+        guard column >= 0, column < self.size.columnsCount else {
+          continue
+        }
+
+        let index = GridPoint(row: row, column: column)
+        let gridIndex = GridPoint(row: gridRow, column: gridColumn)
+
+        self[index] = grid[gridIndex]
+      }
+    }
   }
 
   private var rows: [[Element]]

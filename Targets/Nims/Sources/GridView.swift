@@ -10,6 +10,7 @@ import AppKit
 import CasePaths
 import Combine
 import Library
+import Nvim
 import RxCocoa
 import RxSwift
 
@@ -17,11 +18,11 @@ class GridView: NSView {
   init(
     frame: NSRect,
     gridID: Int,
-    cellsGeometry: CellsGeometry,
+    windowRef: ExtendedTypes.Window?,
     glyphRunsCache: Cache<Character, [GlyphRun]>
   ) {
     self.gridID = gridID
-    self.cellsGeometry = cellsGeometry
+    self.windowRef = windowRef
     self.glyphRunsCache = glyphRunsCache
     super.init(frame: frame)
 
@@ -63,11 +64,10 @@ class GridView: NSView {
       for columnOffset in 0 ..< gridRectangle.size.columnsCount {
         for rowOffset in 0 ..< gridRectangle.size.rowsCount {
           let index = GridPoint(
-            row: gridRectangle.origin.row + rowOffset,
+            row: self.grid.cellGrid.size.rowsCount - 1 - gridRectangle.origin.row - rowOffset,
             column: gridRectangle.origin.column + columnOffset
           )
-
-          let character = self.grid[index]?.character ?? " "
+          let character = self.grid.cellGrid[index]?.character ?? " "
 
           let glyphRuns: [GlyphRun] = {
             if let cachedGlyphRuns = self.glyphRunsCache[character] {
@@ -104,6 +104,7 @@ class GridView: NSView {
           }()
 
           let cellRect = self.cellsGeometry.cellRect(for: index)
+            .applying(self.upsideDownTransform)
 
           let isCursorCell = cursorIndex == index
           context.setFillColor(isCursorCell ? .white : .clear)
@@ -135,12 +136,22 @@ class GridView: NSView {
   }
 
   private let gridID: Int
-  private let cellsGeometry: CellsGeometry
+  private let windowRef: ExtendedTypes.Window?
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
 
+  private var cellsGeometry: CellsGeometry {
+    .shared
+  }
+
+  private var upsideDownTransform: CGAffineTransform {
+    .identity
+      .scaledBy(x: 1, y: -1)
+      .translatedBy(x: 0, y: -self.bounds.size.height)
+  }
+
   @MainActor
-  private var grid: CellGrid {
-    self.state.grids[self.gridID]!.grid
+  private var grid: State.Grid {
+    self.state.grids[self.gridID]!
   }
 
   private func handle(stateChange: StateChange.Grid.Change) {
@@ -158,16 +169,16 @@ class GridView: NSView {
       let rect = self.cellsGeometry.insetForDrawing(
         rect: cellsRect
       )
-      self.setNeedsDisplay(rect)
+      self.setNeedsDisplay(rect.applying(self.upsideDownTransform))
 
     case let .rectangle(rectangle):
       let rect = self.cellsGeometry.insetForDrawing(
         rect: self.cellsGeometry.cellsRect(for: rectangle)
       )
-      self.setNeedsDisplay(rect)
+      self.setNeedsDisplay(rect.applying(self.upsideDownTransform))
 
     case .clear, .size:
-      self.setNeedsDisplay(self.bounds)
+      self.setNeedsDisplay(self.bounds.applying(self.upsideDownTransform))
 
     default:
       break
@@ -181,6 +192,7 @@ class GridView: NSView {
           for: cursorIndex
         )
       )
+      .applying(self.upsideDownTransform)
     )
   }
 }

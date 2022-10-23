@@ -44,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         break
       }
 
-      let gridsWindowController = GridsWindowController(glyphRunsCache: self.glyphRunsCache)
+      let gridsWindowController = GridsWindowController(gridID: stateChange.id, glyphRunsCache: self.glyphRunsCache)
       self.gridsWindowController = gridsWindowController
 
       self <~ gridsWindowController.keyDown
@@ -53,13 +53,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
       gridsWindowController.showWindow(nil)
 
-    case .windowExternalPosition:
-      let gridWindowController = GridWindowController(
+    case .destroy:
+      guard self.gridsWindowController == nil else {
+        break
+      }
+
+      let gridsWindowController = GridsWindowController(
         gridID: stateChange.id,
-        cellsGeometry: .init(),
         glyphRunsCache: self.glyphRunsCache
       )
-      gridWindowController.showWindow(nil)
+      self.gridsWindowController = gridsWindowController
+
+      gridsWindowController.showWindow(nil)
 
     default:
       break
@@ -124,11 +129,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 columnsCount: model.width
               )
               state.grids[model.grid] = State.Grid(
-                window: nil,
-                grid: CellGrid(
-                  repeating: nil,
-                  size: size
-                )
+                cellGrid: .init(repeating: nil, size: size),
+                windows: .init()
               )
 
               return [
@@ -145,12 +147,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
           for model in models {
             self.store.dispatch { state in
-              if state.grids[model.grid] == nil {
-                "Trying to destroy unexisting grid"
-                  .fail()
-                  .assertionFailure()
-              }
-
               state.grids[model.grid] = nil
 
               return [
@@ -232,7 +228,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       row: model.row,
                       column: model.colStart + updatedCellsCount + repeatIndex
                     )
-                    grid!.grid[index] = Cell(
+                    grid!.cellGrid[index] = Cell(
                       character: character,
                       hlID: latestHlID
                     )
@@ -278,16 +274,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   row: model.top,
                   column: model.left
                 )
+                let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
 
-                let rectangle = grid!.grid.move(
-                  rectangle: .init(origin: fromOrigin, size: size),
-                  delta: .init(row: model.rows, column: model.cols)
+                grid!.cellGrid.put(
+                  grid: grid!.cellGrid.subGrid(at: .init(origin: fromOrigin, size: size)),
+                  at: toOrigin
+                )
+
+                let toRectangle = GridRectangle(
+                  origin: toOrigin,
+                  size: size
+                )
+                .intersection(
+                  .init(
+                    origin: .init(),
+                    size: size
+                  )
                 )
 
                 stateChanges.append(
                   .grid(.init(
                     id: model.grid,
-                    change: .rectangle(rectangle)
+                    change: .rectangle(toRectangle)
                   ))
                 )
               }
@@ -302,9 +310,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           for model in models {
             self.store.dispatch { state in
               state.withMutableGrid(id: model.grid) { grid in
-                grid!.grid = .init(
+                grid!.cellGrid = .init(
                   repeating: nil,
-                  size: grid!.grid.size
+                  size: grid!.cellGrid.size
                 )
               }
 
@@ -355,9 +363,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               log(.info, "win pos: \(model)")
 
               state.withMutableGrid(id: model.grid) { grid in
-                grid!.window = .init(
-                  native: model.win,
-                  frame: .init(
+                grid?.windows[model.win] = .init(
+                  frame: GridRectangle(
                     origin: .init(
                       row: model.startrow,
                       column: model.startcol
@@ -370,14 +377,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   isHidden: false
                 )
 
-                let frame = grid!.window!.frame
-                log(.info, "win pos window frame: \(frame)")
-
                 stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .windowPosition
-                  ))
+                  .window(.init(gridID: model.grid, ref: model.win, change: .position))
                 )
               }
             }
@@ -408,19 +409,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
-                grid!.window = .init(
-                  native: model.win,
-                  frame: .init(
-                    origin: .init(),
-                    size: grid!.grid.size
-                  ),
-                  isHidden: false
-                )
+                grid!.withMutableWindow(ref: model.win) { window in
+                  window = .init(frame: .init(), isHidden: true)
+                }
 
                 stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .windowExternalPosition
+                  .window(.init(
+                    gridID: model.grid,
+                    ref: model.win,
+                    change: .externalPosition
                   ))
                 )
               }
@@ -437,15 +434,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
-                grid!.window!.isHidden = true
+                grid = nil
 
-                stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .windowHide
-                  ))
-                )
+                "wip win hide: \(model)"
+                  .fail()
+                  .log(.fault)
               }
+
+              stateChanges.append(.grid(.init(id: model.grid, change: .size)))
             }
 
             return stateChanges
@@ -455,22 +451,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           log(.info, "Win close: \(models.count)")
 
           self.store.dispatch { state in
-            var stateChanges = [StateChange]()
-
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
-                grid?.window = nil
+                grid = nil
 
-                stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .windowClose
-                  ))
-                )
+                "wip win close: \(model)"
+                  .fail()
+                  .log(.fault)
               }
             }
 
-            return stateChanges
+            return []
           }
 
         default:

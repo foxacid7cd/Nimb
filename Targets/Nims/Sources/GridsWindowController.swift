@@ -11,8 +11,8 @@ import Library
 import RxSwift
 
 class GridsWindowController: NSWindowController {
-  init(glyphRunsCache: Cache<Character, [GlyphRun]>) {
-    let window = GridsWindow(glyphRunsCache: glyphRunsCache)
+  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+    let window = GridsWindow(gridID: gridID, glyphRunsCache: glyphRunsCache)
     self.keyDown = window.keyDown
     super.init(window: window)
   }

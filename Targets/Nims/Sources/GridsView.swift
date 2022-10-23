@@ -15,13 +15,22 @@ import RxCocoa
 import RxSwift
 
 class GridsView: NSView {
-  init(frame: NSRect, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(frame: NSRect, gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
     self.glyphRunsCache = glyphRunsCache
+    self.mainGridView = .init(
+      frame: frame,
+      gridID: gridID,
+      windowRef: nil,
+      glyphRunsCache: glyphRunsCache
+    )
     super.init(frame: frame)
 
     self <~ self.store.stateChanges
-      .extract { (/StateChange.grid).extract(from: $0) }
-      .bind(with: self) { $0.handle(stateChange: $1) }
+      .extract { (/StateChange.window).extract(from: $0) }
+      .bind(with: self) { $0.handleWindow(stateChange: $1) }
+
+    self.mainGridView.translatesAutoresizingMaskIntoConstraints = false
+    self.addSubview(self.mainGridView)
   }
 
   @available(*, unavailable)
@@ -30,42 +39,44 @@ class GridsView: NSView {
   }
 
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
-  private var gridViews = [(cellsGeometry: CellsGeometry, gridView: GridView)?](repeating: nil, count: 100)
+  private var mainGridView: GridView
+  private var windowGridViews = [ExtendedTypes.Window: GridView]()
 
-  private func handle(stateChange: StateChange.Grid) {
+  private var cellsGeometry: CellsGeometry {
+    .shared
+  }
+
+  private func handleWindow(stateChange: StateChange.Window) {
     switch stateChange.change {
-    case .windowPosition:
-      let window = self.state.grids[stateChange.id]!.window!
-      if let (cellsGeometry, gridView) = self.gridViews[stateChange.id] {
-        gridView.frame = cellsGeometry.cellsRect(for: window.frame)
-        gridView.isHidden = false
+    case .position:
+      if let gridView = self.windowGridViews[stateChange.ref] {
+        let window = self.state.grids[stateChange.gridID]!.windows[stateChange.ref]
+
+        gridView.frame = self.cellsGeometry.cellsRect(for: window!.frame)
 
       } else {
-        let cellsGeometry = CellsGeometry()
+        let windows = self.state.grids[stateChange.gridID]!.windows
+
         let gridView = GridView(
-          frame: cellsGeometry.cellsRect(for: window.frame),
-          gridID: stateChange.id,
-          cellsGeometry: cellsGeometry,
+          frame: self.cellsGeometry.cellsRect(
+            for: windows[stateChange.ref]!.frame
+          ),
+          gridID: stateChange.gridID,
+          windowRef: stateChange.ref,
           glyphRunsCache: self.glyphRunsCache
         )
-        self.gridViews[stateChange.id] = (cellsGeometry, gridView)
         gridView.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(gridView)
+
+        self.windowGridViews[stateChange.ref] = gridView
       }
 
-    case .windowHide:
-      if let (_, gridView) = self.gridViews[stateChange.id] {
-        gridView.isHidden = true
+    case .hide:
+      self.windowGridViews[stateChange.ref]!.isHidden = true
 
-      } else {
-        "Trying to hide unexisting window"
-          .fail()
-          .assertionFailure()
-      }
-
-    case .windowClose:
-      self.gridViews[stateChange.id]?.gridView.removeFromSuperview()
-      self.gridViews[stateChange.id] = nil
+    case .close:
+      self.windowGridViews[stateChange.ref]!.removeFromSuperview()
+      self.windowGridViews[stateChange.ref] = nil
 
     default:
       break

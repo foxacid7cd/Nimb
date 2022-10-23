@@ -9,7 +9,7 @@
 import Foundation
 
 public struct GridRectangle: Hashable {
-  public init(origin: GridPoint, size: GridSize) {
+  public init(origin: GridPoint = .init(), size: GridSize = .init()) {
     self.origin = origin
     self.size = size
   }

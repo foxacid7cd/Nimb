@@ -11,9 +11,8 @@ import CasePaths
 import Library
 
 class GridViewController: NSViewController {
-  init(gridID: Int, cellsGeometry: CellsGeometry, glyphRunCache: Cache<Character, [GlyphRun]>) {
+  init(gridID: Int, glyphRunCache: Cache<Character, [GlyphRun]>) {
     self.gridID = gridID
-    self.cellsGeometry = cellsGeometry
     self.glyphRunCache = glyphRunCache
     super.init(nibName: nil, bundle: nil)
   }
@@ -30,7 +29,7 @@ class GridViewController: NSViewController {
         size: self.cellsGeometry.outerGridCellsSize
       ),
       gridID: self.gridID,
-      cellsGeometry: self.cellsGeometry,
+      windowRef: nil,
       glyphRunsCache: self.glyphRunCache
     )
   }
@@ -47,8 +46,11 @@ class GridViewController: NSViewController {
   }
 
   private let gridID: Int
-  private let cellsGeometry: CellsGeometry
   private let glyphRunCache: Cache<Character, [GlyphRun]>
+
+  private var cellsGeometry: CellsGeometry {
+    .shared
+  }
 
   private func handle(stateChange: StateChange.Grid.Change) {
     switch stateChange {

@@ -11,6 +11,9 @@ import Library
 
 final class CellsGeometry {
   @MainActor
+  static let shared = CellsGeometry()
+
+  @MainActor
   var cellSize: CGSize {
     self.store.stateDerivatives.font.cellSize
   }
@@ -22,9 +25,10 @@ final class CellsGeometry {
 
   @MainActor
   func insetForDrawing(rect: CGRect) -> CGRect {
+    let font = self.store.stateDerivatives.font.nsFont
     return rect.insetBy(
-      dx: -(self.font.boundingRectForFont.width - self.cellSize.width) / 2,
-      dy: -(self.font.boundingRectForFont.height - self.cellSize.height) / 2
+      dx: -(font.boundingRectForFont.width - self.cellSize.width) / 2,
+      dy: -(font.boundingRectForFont.height - self.cellSize.height) / 2
     )
   }
 
@@ -67,7 +71,7 @@ final class CellsGeometry {
 
   @MainActor
   func cellOrigin(for index: GridPoint) -> CGPoint {
-    return .init(
+    .init(
       x: Double(index.column) * self.cellSize.width,
       y: Double(index.row) * self.cellSize.height
     )
@@ -80,10 +84,5 @@ final class CellsGeometry {
   @MainActor
   private var state: State {
     self.store.state
-  }
-
-  @MainActor
-  private var font: NSFont {
-    self.store.stateDerivatives.font.nsFont
   }
 }

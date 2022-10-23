@@ -11,10 +11,9 @@ import Library
 import RxSwift
 
 class GridWindowController: NSWindowController {
-  init(gridID: Int, cellsGeometry: CellsGeometry, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
     let window = GridWindow(
       gridID: gridID,
-      cellsGeometry: cellsGeometry,
       glyphRunsCache: glyphRunsCache
     )
     super.init(window: window)
