@@ -84,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       try nvimProcess.run()
 
     } catch {
-      "failed running nvim process"
+      "Failed running nvim process"
         .fail(child: error.fail())
         .log()
     }
@@ -100,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           ]
         )
       } catch {
-        "failed to attach nvim UI"
+        "Failed to attach nvim UI"
           .fail(child: error.fail())
           .assertionFailure()
       }
@@ -281,7 +281,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridClear(models):
-          log(.debug, "Grid clear: \(models.count)")
+          log(.info, "Grid clear: \(models.count)")
 
           for model in models {
             self.store.dispatch { state in
@@ -297,6 +297,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         case let .gridCursorGoto(models):
           log(.info, "Grid cursor goto: \(models.count)")
+
+        case let .winPos(models):
+          log(.info, "Win pos: \(models.count)")
+
+          self.store.dispatch { state in
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+              }
+            }
+
+            return []
+          }
 
         default:
           break

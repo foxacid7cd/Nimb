@@ -6,17 +6,22 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import AppKit
 import Library
+import Nvim
 
 struct State: Hashable {
   enum Font: Hashable {
-    case monospacedSystem(size: Double, weight: NSFont.Weight)
+    case monospacedSystem(size: Double, weight: Double)
     case custom(name: String, size: Double)
   }
 
+  struct Grid: Hashable {
+    var window: ExtendedTypes.Window?
+    var cellGrid: CellGrid
+  }
+
   var grids = [CellGrid?](repeating: nil, count: 100)
-  var font = Font.monospacedSystem(size: 13, weight: .regular)
+  var font = Font.monospacedSystem(size: 13, weight: 0)
 
   mutating func withMutableGrid(id: Int, _ body: (inout CellGrid) -> Void) {
     body(&self.grids[id]!)

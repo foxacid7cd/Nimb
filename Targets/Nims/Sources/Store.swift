@@ -59,7 +59,7 @@ class StateDerivatives {
     let nsFont: NSFont = {
       switch self.state.font {
       case let .monospacedSystem(size, weight):
-        return .monospacedSystemFont(ofSize: size, weight: weight)
+        return .monospacedSystemFont(ofSize: size, weight: .init(rawValue: weight))
 
       case let .custom(name, size):
         return .init(name: name, size: size)!

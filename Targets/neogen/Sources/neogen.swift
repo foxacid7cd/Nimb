@@ -143,21 +143,21 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
               let name = parameter.name.camelCased(capitalized: false)
               return [
                 "name": name,
-                "type": swiftType(types: apiInfo.types, nvimType: parameter.type),
-                "obtainingValue": obtainingReturnValue(types: apiInfo.types, nvimType: parameter.type, name: name)
+                "type": swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type),
+                "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: name)
               ]
             },
           "parametersInitializationSignature": function.parameters
-            .map { obtainingValue(types: apiInfo.types, nvimType: $0.type, name: $0.name.camelCased(capitalized: false)) }
+            .map { obtainingValue(extendedTypes: apiInfo.extendedTypes, nvimType: $0.type, name: $0.name.camelCased(capitalized: false)) }
             .joined(separator: ", "),
           "signature": {
             let formattedParameters = function.parameters
-              .map { "\($0.name.camelCased(capitalized: false)): \(swiftType(types: apiInfo.types, nvimType: $0.type))" }
+              .map { "\($0.name.camelCased(capitalized: false)): \(swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: $0.type))" }
               .joined(separator: ", ")
 
             return [
               "func \(function.name.camelCased(capitalized: false))(\(formattedParameters)) async throws",
-              function.returnType == "void" ? nil : swiftType(types: apiInfo.types, nvimType: function.returnType)
+              function.returnType == "void" ? nil : swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType)
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
@@ -177,8 +177,8 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           "isDeprecated": function.deprecatedSince != nil
         ]
         if function.returnType != "void" {
-          dictionary["returnType"] = swiftType(types: apiInfo.types, nvimType: function.returnType)
-          dictionary["obtainingReturnValue"] = obtainingReturnValue(types: apiInfo.types, nvimType: function.returnType, name: "response.value")
+          dictionary["returnType"] = swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType)
+          dictionary["obtainingReturnValue"] = obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType, name: "response.value")
         }
         return dictionary
       },
@@ -219,8 +219,8 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           let name = parameter.name.camelCased(capitalized: false)
           return [
             "name": name,
-            "type": swiftType(types: apiInfo.types, nvimType: parameter.type),
-            "obtainingValue": obtainingReturnValue(types: apiInfo.types, nvimType: parameter.type, name: "$0")
+            "type": swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type),
+            "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: "$0")
           ]
         }
     ]
@@ -238,7 +238,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
   dictionary["uiEventModels"] = uiEventModels
 
   var types = [[String: Any]]()
-  for (key, type) in apiInfo.types.sorted(by: { $0.value.id < $1.value.id }) {
+  for (key, type) in apiInfo.extendedTypes.sorted(by: { $0.value.id < $1.value.id }) {
     types.append([
       "name": key,
       "id": type.id,
@@ -273,9 +273,9 @@ extension StringProtocol {
   }
 }
 
-private func swiftType(types: [String: APIInfo.`Type`], nvimType: String) -> String {
-  if types[nvimType] != nil {
-    return nvimType.camelCased(capitalized: true)
+private func swiftType(extendedTypes: [String: APIInfo.ExtendedType], nvimType: String) -> String {
+  if extendedTypes[nvimType] != nil {
+    return "ExtendedTypes.\(nvimType.camelCased(capitalized: true))"
   }
 
   switch nvimType {
@@ -292,8 +292,8 @@ private func swiftType(types: [String: APIInfo.`Type`], nvimType: String) -> Str
   }
 }
 
-private func obtainingValue(types: [String: APIInfo.`Type`], nvimType: String, name: String) -> String {
-  if types[nvimType] != nil {
+private func obtainingValue(extendedTypes: [String: APIInfo.ExtendedType], nvimType: String, name: String) -> String {
+  if extendedTypes[nvimType] != nil {
     return "\(name).value"
   }
 
@@ -311,9 +311,9 @@ private func obtainingValue(types: [String: APIInfo.`Type`], nvimType: String, n
   }
 }
 
-private func obtainingReturnValue(types: [String: APIInfo.`Type`], nvimType: String, name: String) -> String {
-  if types[nvimType] != nil {
-    return "try? \(nvimType.camelCased(capitalized: true))(value: \(name))"
+private func obtainingReturnValue(extendedTypes: [String: APIInfo.ExtendedType], nvimType: String, name: String) -> String {
+  if extendedTypes[nvimType] != nil {
+    return "try? ExtendedTypes.\(nvimType.camelCased(capitalized: true))(value: \(name))"
   }
 
   switch nvimType {
@@ -345,7 +345,7 @@ private struct APIInfo: Decodable {
     case errorTypes = "error_types"
     case uiOptions = "ui_options"
     case functions
-    case types
+    case extendedTypes = "types"
     case uiEvents = "ui_events"
   }
 
@@ -367,7 +367,7 @@ private struct APIInfo: Decodable {
     var since: Int
   }
 
-  struct `Type`: Decodable {
+  struct ExtendedType: Decodable {
     var id: Int
     var prefix: String
   }
@@ -417,6 +417,6 @@ private struct APIInfo: Decodable {
   var errorTypes: [String: ErrorType]
   var uiOptions: [String]
   var functions: [Function]
-  var types: [String: Type]
+  var extendedTypes: [String: ExtendedType]
   var uiEvents: [UIEvent]
 }
