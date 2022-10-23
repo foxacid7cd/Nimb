@@ -21,21 +21,29 @@ public struct KeyPress {
   var modifierFlags: NSEvent.ModifierFlags
 
   func makeNvimKeyCode() -> String {
+    guard let unicodeScalar = self.characters.unicodeScalars.first else {
+      return self.characters
+    }
+
     let specialKey: String? = {
       if self.keyCode == kVK_Escape {
         return "Esc"
 
       } else {
-        return self.characters.utf16.first.flatMap { SpecialKeys[Int($0)] }
+        return SpecialKeys[Int(unicodeScalar.value)]
       }
     }()
+
     let modifier = self.modifierFlags.modifier
 
-    let components = [modifier, specialKey ?? self.characters]
-      .compactMap { $0 }
+    if let modifier, let specialKey {
+      return "<\(modifier)-\(specialKey)>"
 
-    if components.count > 1 {
-      return "<\(components.joined(separator: "-"))>"
+    } else if let modifier {
+      return "<\(modifier)-\(Character(unicodeScalar))>"
+
+    } else if let specialKey {
+      return "<\(specialKey)>"
 
     } else {
       return self.characters

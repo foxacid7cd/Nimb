@@ -84,7 +84,10 @@ public class NvimProcess {
   public func input(keyPress: KeyPress) {
     Task {
       do {
-        _ = try await self.nvimInput(keys: keyPress.makeNvimKeyCode())
+        let keyCode = keyPress.makeNvimKeyCode()
+        log(.info, "nvim input: \(keyCode)")
+
+        _ = try await self.nvimInput(keys: keyCode)
 
       } catch {
         "Failed nvim input"
