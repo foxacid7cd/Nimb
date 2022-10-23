@@ -22,9 +22,10 @@ final class CellsGeometry {
 
   @MainActor
   func insetForDrawing(rect: CGRect) -> CGRect {
-    let dx = -(self.font.boundingRectForFont.width - self.cellSize.width) / 2
-    let dy = -(self.font.boundingRectForFont.height - self.cellSize.height) / 2
-    return rect.insetBy(dx: dx, dy: dy)
+    return rect.insetBy(
+      dx: -(self.font.boundingRectForFont.width - self.cellSize.width) / 2,
+      dy: -(self.font.boundingRectForFont.height - self.cellSize.height) / 2
+    )
   }
 
   @MainActor

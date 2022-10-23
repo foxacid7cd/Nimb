@@ -31,7 +31,7 @@ struct State: Hashable {
     var index: GridPoint
   }
 
-  var outerGridSize = GridSize(rowsCount: 24, columnsCount: 80)
+  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 110)
   var grids = [Grid?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.monospacedSystem(size: 13, weight: 0)

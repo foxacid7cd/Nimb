@@ -148,25 +148,23 @@ class GridView: NSView {
     case let .row(rowChange):
       let cellsRect = self.cellsGeometry.cellsRect(
         for: .init(
-          origin: .init(
-            row: rowChange.origin.row,
-            column: rowChange.origin.column
-          ),
+          origin: rowChange.origin,
           size: .init(
             rowsCount: 1,
             columnsCount: rowChange.columnsCount
           )
         )
       )
-
-      let rect = self.cellsGeometry.insetForDrawing(rect: cellsRect)
+      let rect = self.cellsGeometry.insetForDrawing(
+        rect: cellsRect
+      )
       self.setNeedsDisplay(rect)
 
     case let .rectangle(rectangle):
-      let cellsRect = self.cellsGeometry.insetForDrawing(
+      let rect = self.cellsGeometry.insetForDrawing(
         rect: self.cellsGeometry.cellsRect(for: rectangle)
       )
-      self.setNeedsDisplay(cellsRect)
+      self.setNeedsDisplay(rect)
 
     case .clear, .size:
       self.setNeedsDisplay(self.bounds)
@@ -177,6 +175,12 @@ class GridView: NSView {
   }
 
   private func handle(cursorIndex: GridPoint) {
-    self.setNeedsDisplay(self.cellsGeometry.cellRect(for: cursorIndex))
+    self.setNeedsDisplay(
+      self.cellsGeometry.insetForDrawing(
+        rect: self.cellsGeometry.cellRect(
+          for: cursorIndex
+        )
+      )
+    )
   }
 }

@@ -64,7 +64,7 @@ class GridsView: NSView {
       }
 
     case .windowClose:
-      self.gridViews[stateChange.id]!.gridView.removeFromSuperview()
+      self.gridViews[stateChange.id]?.gridView.removeFromSuperview()
       self.gridViews[stateChange.id] = nil
 
     default:

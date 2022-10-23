@@ -18,7 +18,7 @@ public class NvimProcess {
     self.process.arguments = ["--embed"]
 
     if let runtimeUrl = Bundle.main.url(forResource: "runtime", withExtension: nil) {
-      let environment = ["VIMRUNTIME": runtimeUrl.relativePath, "XDG_CONFIG_HOME": "/Users/foxacid"]
+      let environment = ["VIMRUNTIME": runtimeUrl.relativePath]
       log(.info, "Nvim process environment: \(environment)")
       self.process.environment = environment
 
