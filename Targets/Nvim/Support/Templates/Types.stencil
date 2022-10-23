@@ -8,20 +8,6 @@ public struct {{ type.name }}: NvimType, Hashable {
   public init(opaqueData: Data) {
     self.opaqueData = opaqueData
   }
-  
-  public init(value: Value) throws {
-    guard let (id, data) = value.extendedValue else {
-      throw "Extended data value expected".fail()
-    }
-    guard id == Self.id else {
-      throw "Invalid extended data value id, expected \(Self.id), got \(id)".fail()
-    }
-    self.opaqueData = data
-  }
-  
-  public var value: Value {
-    .extended(Self.id, opaqueData)
-  }
 
   public static var id: Int8 {
     {{ type.id }}
@@ -34,6 +20,27 @@ public struct {{ type.name }}: NvimType, Hashable {
 {% endfor %}
 
 public protocol NvimType {
+  var opaqueData: Data { get }
+  init(opaqueData: Data)
+  
   static var id: Int8 { get }
   static var prefix: String { get }
+}
+
+public extension NvimType {
+  init(value: Value) throws {
+    guard let (id, data) = value.extendedValue else {
+      throw "Extended data value expected".fail()
+    }
+    
+    guard id == Self.id else {
+      throw "Invalid extended data value id, expected \(Self.id), got \(id)".fail()
+    }
+    
+    self.init(opaqueData: data)
+  }
+  
+  var value: Value {
+    .extended(Self.id, opaqueData)
+  }
 }

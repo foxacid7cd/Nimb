@@ -31,7 +31,7 @@ public enum UIEvents {
       }
       
       {% for parameter in model.parameters %}
-      let {{ parameter.name }} = try next("{{ parameter.type }} representing parameter {{ parameter.name }}", { $0{{ parameter.obtainingValue }} }){% endfor %}
+      let {{ parameter.name }} = try next("{{ parameter.type }} representing parameter {{ parameter.name }}", { {{ parameter.obtainingValue }} }){% endfor %}
       try finalize("UIEvents.{{ model.name }}")
       
       self = .init({% for parameter in model.parameters %}{{ parameter.name }}: {{ parameter.name }}{% if not forloop.last %}, {% endif %}{% endfor %})

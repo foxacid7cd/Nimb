@@ -140,23 +140,24 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           "originalName": function.name,
           "parameters": function.parameters
             .map { parameter in
-              [
-                "name": parameter.name.camelCased(capitalized: false),
-                "type": swiftType(nvimType: parameter.type),
-                "obtainingValue": obtainingReturnValue(nvimType: parameter.type)
+              let name = parameter.name.camelCased(capitalized: false)
+              return [
+                "name": name,
+                "type": swiftType(types: apiInfo.types, nvimType: parameter.type),
+                "obtainingValue": obtainingReturnValue(types: apiInfo.types, nvimType: parameter.type, name: name)
               ]
             },
           "parametersInitializationSignature": function.parameters
-            .map { obtainingValue(nvimType: $0.type, name: $0.name.camelCased(capitalized: false)) }
+            .map { obtainingValue(types: apiInfo.types, nvimType: $0.type, name: $0.name.camelCased(capitalized: false)) }
             .joined(separator: ", "),
           "signature": {
             let formattedParameters = function.parameters
-              .map { "\($0.name.camelCased(capitalized: false)): \(swiftType(nvimType: $0.type))" }
+              .map { "\($0.name.camelCased(capitalized: false)): \(swiftType(types: apiInfo.types, nvimType: $0.type))" }
               .joined(separator: ", ")
 
             return [
               "func \(function.name.camelCased(capitalized: false))(\(formattedParameters)) async throws",
-              function.returnType == "void" ? nil : swiftType(nvimType: function.returnType)
+              function.returnType == "void" ? nil : swiftType(types: apiInfo.types, nvimType: function.returnType)
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
@@ -176,8 +177,8 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           "isDeprecated": function.deprecatedSince != nil
         ]
         if function.returnType != "void" {
-          dictionary["returnType"] = swiftType(nvimType: function.returnType)
-          dictionary["obtainingReturnValue"] = obtainingReturnValue(nvimType: function.returnType)
+          dictionary["returnType"] = swiftType(types: apiInfo.types, nvimType: function.returnType)
+          dictionary["obtainingReturnValue"] = obtainingReturnValue(types: apiInfo.types, nvimType: function.returnType, name: "response.value")
         }
         return dictionary
       },
@@ -215,10 +216,11 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
       "originalName": uiEvent.name,
       "parameters": uiEvent.parameters
         .map { parameter in
-          [
-            "name": parameter.name.camelCased(capitalized: false),
-            "type": swiftType(nvimType: parameter.type),
-            "obtainingValue": obtainingReturnValue(nvimType: parameter.type)
+          let name = parameter.name.camelCased(capitalized: false)
+          return [
+            "name": name,
+            "type": swiftType(types: apiInfo.types, nvimType: parameter.type),
+            "obtainingValue": obtainingReturnValue(types: apiInfo.types, nvimType: parameter.type, name: "$0")
           ]
         }
     ]
@@ -271,7 +273,11 @@ extension StringProtocol {
   }
 }
 
-private func swiftType(nvimType: String) -> String {
+private func swiftType(types: [String: APIInfo.`Type`], nvimType: String) -> String {
+  if types[nvimType] != nil {
+    return nvimType.camelCased(capitalized: true)
+  }
+
   switch nvimType {
   case "Boolean":
     return "Bool"
@@ -286,7 +292,11 @@ private func swiftType(nvimType: String) -> String {
   }
 }
 
-private func obtainingValue(nvimType: String, name: String) -> String {
+private func obtainingValue(types: [String: APIInfo.`Type`], nvimType: String, name: String) -> String {
+  if types[nvimType] != nil {
+    return "\(name).value"
+  }
+
   switch nvimType {
   case "Boolean":
     return ".bool(\(name))"
@@ -301,18 +311,22 @@ private func obtainingValue(nvimType: String, name: String) -> String {
   }
 }
 
-private func obtainingReturnValue(nvimType: String) -> String {
+private func obtainingReturnValue(types: [String: APIInfo.`Type`], nvimType: String, name: String) -> String {
+  if types[nvimType] != nil {
+    return "try? \(nvimType.camelCased(capitalized: true))(value: \(name))"
+  }
+
   switch nvimType {
   case "Boolean":
-    return ".boolValue"
+    return name + ".boolValue"
   case "String":
-    return ".stringValue"
+    return name + ".stringValue"
   case "Integer":
-    return ".intValue"
+    return name + ".intValue"
   case "Array":
-    return ".arrayValue"
+    return name + ".arrayValue"
   default:
-    return ""
+    return name
   }
 }
 
