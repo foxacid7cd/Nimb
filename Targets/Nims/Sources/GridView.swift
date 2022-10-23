@@ -29,6 +29,11 @@ class GridView: NSView {
       .extract { (/StateChange.grid).extract(from: $0) }
       .filter { $0.id == gridID }
       .bind(with: self) { $0.handle(stateChange: $1.change) }
+
+    self <~ self.stateChanges
+      .extract { (/StateChange.cursor).extract(from: $0) }
+      .filter { $0.gridID == gridID }
+      .bind(with: self) { $0.handle(cursorIndex: $1.index) }
   }
 
   @available(*, unavailable)
@@ -44,9 +49,16 @@ class GridView: NSView {
 
     let font = self.store.stateDerivatives.font.nsFont
 
+    let cursorIndex: GridPoint?
+    if let cursor = self.state.cursor, cursor.gridID == self.gridID {
+      cursorIndex = cursor.index
+
+    } else {
+      cursorIndex = nil
+    }
+
     for rect in self.rectsBeingDrawn() {
       let gridRectangle = self.cellsGeometry.gridRectangle(cellsRect: rect)
-        .intersection(.init(origin: .init(), size: self.grid.size))
 
       for columnOffset in 0 ..< gridRectangle.size.columnsCount {
         for rowOffset in 0 ..< gridRectangle.size.rowsCount {
@@ -91,15 +103,17 @@ class GridView: NSView {
             return glyphRuns
           }()
 
-          let cellRect = self.cellsGeometry.inverted(
-            rect: self.cellsGeometry.cellRect(for: index)
-          )
+          let cellRect = self.cellsGeometry.cellRect(for: index)
+
+          let isCursorCell = cursorIndex == index
+          context.setFillColor(isCursorCell ? .white : .clear)
+          context.fill([cellRect])
 
           for glyphRun in glyphRuns {
             context.saveGState()
 
             context.textMatrix = .identity
-            context.setFillColor(.white)
+            context.setFillColor(isCursorCell ? .black : .white)
             context.setTextDrawingMode(.fill)
 
             CTFontDrawGlyphs(
@@ -126,23 +140,21 @@ class GridView: NSView {
 
   @MainActor
   private var grid: CellGrid {
-    self.state.grids[self.gridID]!
+    self.state.grids[self.gridID]!.grid
   }
 
   private func handle(stateChange: StateChange.Grid.Change) {
     switch stateChange {
     case let .row(rowChange):
-      let cellsRect = self.cellsGeometry.inverted(
-        rect: self.cellsGeometry.cellsRect(
-          for: .init(
-            origin: .init(
-              row: rowChange.origin.row,
-              column: rowChange.origin.column
-            ),
-            size: .init(
-              rowsCount: 1,
-              columnsCount: rowChange.columnsCount
-            )
+      let cellsRect = self.cellsGeometry.cellsRect(
+        for: .init(
+          origin: .init(
+            row: rowChange.origin.row,
+            column: rowChange.origin.column
+          ),
+          size: .init(
+            rowsCount: 1,
+            columnsCount: rowChange.columnsCount
           )
         )
       )
@@ -152,12 +164,8 @@ class GridView: NSView {
       )
 
     case let .rectangle(rectangle):
-      let cellsRect = self.cellsGeometry.inverted(
-        rect: self.cellsGeometry.cellsRect(for: rectangle)
-      )
-      self.setNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(rect: cellsRect)
-      )
+      let cellsRect = self.cellsGeometry.cellsRect(for: rectangle)
+      self.setNeedsDisplay(cellsRect)
 
     case .clear, .size:
       self.setNeedsDisplay(self.bounds)
@@ -165,5 +173,9 @@ class GridView: NSView {
     default:
       break
     }
+  }
+
+  private func handle(cursorIndex: GridPoint) {
+    self.setNeedsDisplay(self.cellsGeometry.cellRect(for: cursorIndex))
   }
 }

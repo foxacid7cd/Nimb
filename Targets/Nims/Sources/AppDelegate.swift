@@ -26,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @IBOutlet private var mainMenu: NSMenu!
 
   private let store = Store.shared
-  private var windowControllers = [Int: WindowController]()
+  private var gridsWindowController: GridsWindowController?
   private let glyphRunsCache = Cache<Character, [GlyphRun]>(
     dispatchQueue: .init(
       label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
@@ -36,32 +36,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private let inputSubject = PublishSubject<KeyPress>()
   private var nvimProcess: NvimProcess?
 
+  @MainActor
   private func handle(stateChange: StateChange.Grid) {
     switch stateChange.change {
     case .size:
-      if self.windowControllers[stateChange.id] == nil {
-        let windowController = WindowController(
-          gridID: stateChange.id,
-          glyphRunsCache: self.glyphRunsCache
-        )
-        self.windowControllers[stateChange.id] = windowController
-
-        windowController <~ windowController.keyDown
-          .map(KeyPress.init)
-          .bind(onNext: self.inputSubject.onNext(_:))
-
-        windowController.showWindow(nil)
+      guard self.gridsWindowController == nil else {
+        break
       }
 
-    case .destroy:
-      if let windowController = self.windowControllers.removeValue(forKey: stateChange.id) {
-        windowController.window?.close()
+      let gridsWindowController = GridsWindowController(glyphRunsCache: self.glyphRunsCache)
+      self.gridsWindowController = gridsWindowController
 
-      } else {
-        "Trying to destroy unregistered window controller"
-          .fail()
-          .assertionFailure()
-      }
+      self <~ gridsWindowController.keyDown
+        .map(KeyPress.init)
+        .bind(onNext: self.inputSubject.onNext(_:))
+
+      gridsWindowController.showWindow(nil)
+
+    case .windowExternalPosition:
+      let gridWindowController = GridWindowController(
+        gridID: stateChange.id,
+        cellsGeometry: .init(),
+        glyphRunsCache: self.glyphRunsCache
+      )
+      gridWindowController.showWindow(nil)
 
     default:
       break
@@ -92,11 +90,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: 160,
-          height: 56,
+          width: self.store.state.outerGridSize.columnsCount,
+          height: self.store.state.outerGridSize.rowsCount,
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true
+            // UIOption.extMessages.value: true
           ]
         )
       } catch {
@@ -117,18 +116,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           log(.info, "Grid resize: \(models.count)")
 
           for model in models {
+            log(.info, "grid resize: \(model)")
+
             self.store.dispatch { state in
-              state.grids[model.grid] = CellGrid(
-                repeating: nil,
-                size: .init(
-                  rowsCount: model.height,
-                  columnsCount: model.width
+              let size = GridSize(
+                rowsCount: model.height,
+                columnsCount: model.width
+              )
+              state.grids[model.grid] = State.Grid(
+                window: nil,
+                grid: CellGrid(
+                  repeating: nil,
+                  size: size
                 )
               )
-              return .grid(.init(
-                id: model.grid,
-                change: .size
-              ))
+
+              return [
+                .grid(.init(
+                  id: model.grid,
+                  change: .size
+                ))
+              ]
             }
           }
 
@@ -144,7 +152,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               }
 
               state.grids[model.grid] = nil
-              return .grid(.init(id: model.grid, change: .destroy))
+
+              return [
+                .grid(.init(
+                  id: model.grid,
+                  change: .destroy
+                ))
+              ]
             }
           }
 
@@ -218,7 +232,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       row: model.row,
                       column: model.colStart + updatedCellsCount + repeatIndex
                     )
-                    grid[index] = Cell(
+                    grid!.grid[index] = Cell(
                       character: character,
                       hlID: latestHlID
                     )
@@ -259,14 +273,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   rowsCount: model.bot - model.top,
                   columnsCount: model.right - model.left
                 )
+
                 let fromOrigin = GridPoint(
-                  row: model.bot,
+                  row: model.top,
                   column: model.left
                 )
                 let toOrigin = fromOrigin + GridPoint(row: model.rows, column: 0)
+
                 let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
                 let toRectangle = GridRectangle(origin: toOrigin, size: size)
-                grid.copy(fromRectangle: fromRectangle, toRectangle: toRectangle)
+                log(.info, "from: \(fromRectangle), to: \(toRectangle)")
+
+                grid!.grid.copy(
+                  fromRectangle: fromRectangle,
+                  toRectangle: toRectangle
+                )
 
                 stateChanges.append(
                   .grid(.init(
@@ -286,28 +307,174 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           for model in models {
             self.store.dispatch { state in
               state.withMutableGrid(id: model.grid) { grid in
-                grid = .init(
+                grid!.grid = .init(
                   repeating: nil,
-                  size: grid.size
+                  size: grid!.grid.size
                 )
               }
-              return .grid(.init(id: model.grid, change: .clear))
+
+              return [
+                .grid(.init(
+                  id: model.grid,
+                  change: .clear
+                ))
+              ]
             }
           }
 
         case let .gridCursorGoto(models):
           log(.info, "Grid cursor goto: \(models.count)")
 
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              if let previousCursor = state.cursor {
+                stateChanges.append(
+                  .cursor(previousCursor)
+                )
+              }
+
+              let cursor = State.Cursor(
+                gridID: model.grid,
+                index: .init(
+                  row: model.row,
+                  column: model.col
+                )
+              )
+              state.cursor = cursor
+
+              stateChanges.append(.cursor(cursor))
+            }
+
+            return stateChanges
+          }
+
         case let .winPos(models):
           log(.info, "Win pos: \(models.count)")
 
           self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
             for model in models {
+              log(.info, "win pos: \(model)")
               state.withMutableGrid(id: model.grid) { grid in
+                grid!.window = .init(
+                  native: model.win,
+                  frame: .init(
+                    origin: .init(
+                      row: model.startrow,
+                      column: model.startcol
+                    ),
+                    size: .init(
+                      rowsCount: model.height,
+                      columnsCount: model.width
+                    )
+                  ),
+                  isHidden: false
+                )
+
+                let frame = grid!.window!.frame
+                log(.info, "win pos window frame: \(frame)")
+
+                stateChanges.append(
+                  .grid(.init(
+                    id: model.grid,
+                    change: .windowPosition
+                  ))
+                )
               }
             }
 
-            return []
+            return stateChanges
+          }
+
+        case let .winFloatPos(models):
+          log(.info, "Win float pos: \(models.count)")
+
+//          self.store.dispatch { state in
+//            var stateChanges = [StateChange]()
+//
+//            for model in models {
+//              state.withMutableGrid(id: model.grid) { grid in
+//                model.anchorGrid
+//              }
+//            }
+//
+//            return stateChanges
+//          }
+
+        case let .winExternalPos(models):
+          log(.info, "Win external pos: \(models.count)")
+
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+                grid!.window = .init(
+                  native: model.win,
+                  frame: .init(
+                    origin: .init(),
+                    size: grid!.grid.size
+                  ),
+                  isHidden: false
+                )
+
+                stateChanges.append(
+                  .grid(.init(
+                    id: model.grid,
+                    change: .windowExternalPosition
+                  ))
+                )
+              }
+            }
+
+            return stateChanges
+          }
+
+        case let .winHide(models):
+          log(.info, "Win hide: \(models.count)")
+
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+                grid!.window!.isHidden = true
+
+                stateChanges.append(
+                  .grid(.init(
+                    id: model.grid,
+                    change: .windowHide
+                  ))
+                )
+              }
+            }
+
+            return stateChanges
+          }
+
+        case let .winClose(models):
+          log(.info, "Win close: \(models.count)")
+
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+                grid?.window = nil
+
+                stateChanges.append(
+                  .grid(.init(
+                    id: model.grid,
+                    change: .windowClose
+                  ))
+                )
+              }
+            }
+
+            return stateChanges
           }
 
         default:

@@ -18,12 +18,12 @@ public class NvimProcess {
     self.process.arguments = ["--embed"]
 
     if let runtimeUrl = Bundle.main.url(forResource: "runtime", withExtension: nil) {
-      let environment = ["VIMRUNTIME": runtimeUrl.relativePath]
+      let environment = ["VIMRUNTIME": runtimeUrl.relativePath, "XDG_CONFIG_HOME": "/Users/foxacid"]
       log(.info, "Nvim process environment: \(environment)")
       self.process.environment = environment
 
     } else {
-      "unable to locate nvim runtime"
+      "Unable to locate nvim runtime"
         .fail()
         .assertionFailure()
     }
@@ -48,7 +48,7 @@ public class NvimProcess {
         do {
           try inputPipe.fileHandleForWriting.write(contentsOf: data)
         } catch {
-          "failed writing to process standard input"
+          "Failed writing to process standard input"
             .fail(child: error.fail())
             .fatalError()
         }
@@ -57,7 +57,7 @@ public class NvimProcess {
     self.process.terminationHandler = { process in
       disposable.dispose()
 
-      "nvim process terminated with status \(process.terminationStatus), reason \(process.terminationReason)"
+      "Nvim process terminated with status \(process.terminationStatus), reason \(process.terminationReason)"
         .fail()
         .log(.info)
     }
@@ -70,7 +70,7 @@ public class NvimProcess {
           return try .init(notification: notification)
 
         } catch {
-          "failed parsing nvim notification"
+          "Failed parsing nvim notification"
             .fail(child: error.fail())
             .fatalError()
         }
@@ -87,7 +87,7 @@ public class NvimProcess {
         _ = try await self.nvimInput(keys: keyPress.makeNvimKeyCode())
 
       } catch {
-        "failed nvim input"
+        "Failed nvim input"
           .fail(child: error.fail())
           .assertionFailure()
       }

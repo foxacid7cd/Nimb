@@ -15,21 +15,35 @@ struct State: Hashable {
     case custom(name: String, size: Double)
   }
 
-  struct Grid: Hashable {
-    var window: ExtendedTypes.Window?
-    var cellGrid: CellGrid
+  struct Window: Hashable {
+    var native: ExtendedTypes.Window
+    var frame: GridRectangle
+    var isHidden: Bool
   }
 
-  var grids = [CellGrid?](repeating: nil, count: 100)
+  struct Grid: Hashable {
+    var window: Window?
+    var grid: CellGrid
+  }
+
+  struct Cursor: Hashable {
+    var gridID: Int
+    var index: GridPoint
+  }
+
+  var outerGridSize = GridSize(rowsCount: 24, columnsCount: 80)
+  var grids = [Grid?](repeating: nil, count: 100)
+  var cursor: Cursor?
   var font = Font.monospacedSystem(size: 13, weight: 0)
 
-  mutating func withMutableGrid(id: Int, _ body: (inout CellGrid) -> Void) {
-    body(&self.grids[id]!)
+  mutating func withMutableGrid(id: Int, _ body: (inout Grid?) -> Void) {
+    body(&self.grids[id])
   }
 }
 
 enum StateChange: Hashable {
   case grid(Grid)
+  case cursor(State.Cursor)
   case font
 
   struct Grid: Hashable {
@@ -38,6 +52,10 @@ enum StateChange: Hashable {
       case row(Row)
       case rectangle(GridRectangle)
       case clear
+      case windowPosition
+      case windowExternalPosition
+      case windowHide
+      case windowClose
       case destroy
 
       struct Row: Hashable {

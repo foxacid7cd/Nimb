@@ -51,10 +51,6 @@ public struct Grid<Element> {
     self.size.rowsCount == 0 || self.size.columnsCount == 0
   }
 
-  public var frame: GridRectangle {
-    .init(origin: .init(), size: self.size)
-  }
-
   public subscript(index: GridPoint) -> Element {
     get {
       self.rows[index.row][index.column]
