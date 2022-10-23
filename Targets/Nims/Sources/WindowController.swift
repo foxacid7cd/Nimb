@@ -28,24 +28,13 @@ class WindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  var charactersPressed: Observable<String> {
-    charactersPressedSubject
+  var keyDown: Observable<NSEvent> {
+    self.keyDownSubject
   }
 
   override func keyDown(with event: NSEvent) {
-    if let characters = event.characters {
-      self.charactersPressedSubject.onNext(characters)
-
-    } else {
-      super.keyDown(with: event)
-    }
+    self.keyDownSubject.onNext(event)
   }
 
-  override func keyUp(with event: NSEvent) {
-    if event.characters == nil {
-      super.keyUp(with: event)
-    }
-  }
-
-  private let charactersPressedSubject = PublishSubject<String>()
+  private let keyDownSubject = PublishSubject<NSEvent>()
 }

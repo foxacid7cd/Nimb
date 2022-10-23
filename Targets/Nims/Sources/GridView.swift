@@ -97,10 +97,11 @@ class GridView: NSView {
 
           for glyphRun in glyphRuns {
             context.saveGState()
-            context.textMatrix = .identity
 
+            context.textMatrix = .identity
             context.setFillColor(.white)
             context.setTextDrawingMode(.fill)
+
             CTFontDrawGlyphs(
               font,
               glyphRun.glyphs,
@@ -164,15 +165,5 @@ class GridView: NSView {
     default:
       break
     }
-  }
-}
-
-struct GlyphRun {
-  var glyphs: [CGGlyph]
-  var positions: [CGPoint]
-
-  func offsetPositions(dx: Double, dy: Double) -> [CGPoint] {
-    self.positions
-      .map { .init(x: $0.x + dx, y: $0.y + dy) }
   }
 }

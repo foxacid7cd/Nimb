@@ -10,6 +10,7 @@ import AppKit
 import CasePaths
 import Library
 import Nvim
+import RxCocoa
 import RxSwift
 
 @NSApplicationMain
@@ -47,8 +48,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.windowControllers[stateChange.id] = windowController
 
-        self <~ windowController.charactersPressed
-          .bind(with: self) { $0.handlePressed(characters: $1) }
+        windowController <~ windowController.keyDown
+          .map(KeyPress.init)
+          .bind(with: self) { $0.nvimProcess?.input(keyPress: $1) }
 
         windowController.showWindow(nil)
       }

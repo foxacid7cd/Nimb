@@ -81,6 +81,19 @@ public class NvimProcess {
     try self.process.run()
   }
 
+  public func input(keyPress: KeyPress) {
+    Task {
+      do {
+        _ = try await self.nvimInput(keys: keyPress.makeNvimKeyCode())
+
+      } catch {
+        "failed nvim input"
+          .fail(child: error.fail())
+          .assertionFailure()
+      }
+    }
+  }
+
   let rpc: RPC
 
   private let process = Process()
