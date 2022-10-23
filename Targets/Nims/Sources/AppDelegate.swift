@@ -39,13 +39,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       if self.windowControllers[stateChange.id] == nil {
         let windowController = WindowController(gridID: stateChange.id)
         self.windowControllers[stateChange.id] = windowController
+
+        self <~ windowController.charactersPressed
+          .bind(with: self) { $0.handlePressed(characters: $1) }
+
         windowController.showWindow(nil)
       }
 
     case .destroy:
-      if let windowController = self.windowControllers[stateChange.id] {
+      if let windowController = self.windowControllers.removeValue(forKey: stateChange.id) {
         windowController.window?.close()
-        self.windowControllers[stateChange.id] = nil
 
       } else {
         "Trying to destroy unregistered window controller"
@@ -55,6 +58,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     default:
       break
+    }
+  }
+
+  private func handlePressed(characters: String) {
+    guard let nvimProcess else { return }
+
+    Task {
+      do {
+        _ = try await nvimProcess.nvimInput(keys: characters)
+
+      } catch {
+        "failed nvim input"
+          .fail(child: error.fail())
+          .assertionFailure()
+      }
     }
   }
 
@@ -80,8 +98,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: 110,
-          height: 40,
+          width: 160,
+          height: 56,
           options: [UIOption.extMultigrid.value: true, UIOption.extHlstate.value: true]
         )
       } catch {
@@ -203,7 +221,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   )
                   state.grids[model.grid]![index] = Cell(text: text, hlID: latestHlID)
                 }
-                
+
                 stateChanges.append(
                   .grid(.init(
                     id: model.grid,
@@ -227,26 +245,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
         case let .gridScroll(models):
-          log(.debug, "Grid scroll: \(models.count)")
+          log(.info, "Grid scroll: \(models.count)")
 
-          for model in models {
-            self.store.dispatch { state in
-              let rectangle = GridRectangle(
-                origin: .init(row: model.top, column: model.left),
-                size: .init(rowsCount: model.bot - model.top, columnsCount: model.right - model.left)
-              )
-              state.grids[model.grid]!.set(
-                state.grids[model.grid]!.grid(
-                  at: rectangle
-                ),
-                at: .init(
-                  row: rectangle.origin.row + model.rows,
-                  column: rectangle.origin.column + model.cols
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+                let size = GridSize(
+                  rowsCount: model.bot - model.top,
+                  columnsCount: model.right - model.left
                 )
-              )
+                let fromOrigin = GridPoint(
+                  row: model.bot - size.rowsCount,
+                  column: model.left
+                )
+                let toOrigin = fromOrigin + GridPoint(row: model.rows, column: 0)
 
-              return nil
+                let fromRectangle = GridRectangle(
+                  origin: fromOrigin,
+                  size: size
+                )
+
+                let grid2 = grid.grid(at: fromRectangle)
+                print(grid)
+                print(grid2)
+                grid.set(grid2, toOrigin: toOrigin)
+                print(grid)
+
+                stateChanges.append(.grid(.init(id: model.grid, change: .clear)))
+//                stateChanges.append(
+//                  .grid(.init(
+//                    id: model.grid,
+//                    change: .scroll(.init(
+//                      fromRectangle: fromRectangle,
+//                      toOrigin: toOrigin
+//                    )))
+//                  )
+//                )
+              }
             }
+
+            return stateChanges
           }
 
         case let .gridClear(models):

@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import RxSwift
 
 class WindowController: NSWindowController {
   init(gridID: Int) {
@@ -25,4 +26,23 @@ class WindowController: NSWindowController {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  var charactersPressed: Observable<String> {
+    charactersPressedSubject
+  }
+
+  override func keyDown(with event: NSEvent) {
+    if let characters = event.characters, characters.firstIndex(of: "\r") != nil {
+      self.charactersPressedSubject.onNext(characters)
+
+    } else {
+      super.keyDown(with: event)
+    }
+  }
+
+  override func keyUp(with event: NSEvent) {
+    super.keyUp(with: event)
+  }
+
+  private let charactersPressedSubject = PublishSubject<String>()
 }

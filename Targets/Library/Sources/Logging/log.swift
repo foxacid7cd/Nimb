@@ -49,7 +49,7 @@ private func logLines(for item: Any, header: String?) -> [String] {
     .split(separator: "\n", omittingEmptySubsequences: false)
     .map { line in
       let lineCount = line.count
-      let dropCount = -min(0, 80 - lineCount)
+      let dropCount = -min(0, 160 - lineCount)
       var truncatedLine = line.dropLast(dropCount)
       if dropCount != 0 {
         truncatedLine += "..."

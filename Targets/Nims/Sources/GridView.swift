@@ -14,8 +14,9 @@ import RxCocoa
 import RxSwift
 
 class GridView: NSView {
-  init(frame: NSRect, gridID: Int) {
+  init(frame: NSRect, gridID: Int, cellsGeometry: CellsGeometry) {
     self.gridID = gridID
+    self.cellsGeometry = cellsGeometry
     super.init(frame: frame)
 
     self <~ self.stateChanges
@@ -47,6 +48,9 @@ class GridView: NSView {
           )
 
           let cellRect = self.cellsGeometry.cellRect(for: index)
+          context.setFillColor(.black)
+          context.fill(cellRect)
+
           let text = self.grid[index]?.text ?? " "
 
           let glyphRuns: [CTRun] = {
@@ -99,6 +103,8 @@ class GridView: NSView {
 
   private let gridID: Int
 
+  private let cellsGeometry: CellsGeometry
+
   // private var cachedGlyphs = [UInt16: CGGlyph]()
   // private let font = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!
   // private lazy var cgFont = CTFontCopyGraphicsFont(font, nil)
@@ -109,10 +115,6 @@ class GridView: NSView {
   @MainActor
   private var grid: CellGrid {
     self.state.grids[self.gridID]!
-  }
-
-  private var cellsGeometry: CellsGeometry {
-    .shared
   }
 
   private func handle(stateChange: StateChange.Grid.Change) {
@@ -126,6 +128,18 @@ class GridView: NSView {
             columnsCount: rowChange.columnsCount
           )
         )
+      )
+      self.setNeedsDisplay(
+        cellsRect.insetBy(
+          dx: -self.cellsGeometry.cellSize.width / 2,
+          dy: -self.cellsGeometry.cellSize.height / 4
+        )
+      )
+
+    case let .scroll(scrollChange):
+      let cellsRect = CGRect(
+        origin: self.cellsGeometry.cellOrigin(for: scrollChange.toOrigin),
+        size: self.cellsGeometry.cellsSize(for: scrollChange.fromRectangle.size)
       )
       self.setNeedsDisplay(
         cellsRect.insetBy(

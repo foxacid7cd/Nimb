@@ -17,6 +17,10 @@ struct State: Hashable {
 
   var grids = [CellGrid?](repeating: nil, count: 10)
   var font = Font.monospacedSystem(size: 13, weight: .regular)
+
+  mutating func withMutableGrid(id: Int, _ body: (inout CellGrid) -> Void) {
+    body(&self.grids[id]!)
+  }
 }
 
 enum StateChange: Hashable {
@@ -27,6 +31,7 @@ enum StateChange: Hashable {
     enum Change: Hashable {
       case size
       case row(Row)
+      case scroll(Scroll)
       case clear
       case destroy
 
@@ -35,46 +40,13 @@ enum StateChange: Hashable {
         var columnsCount: Int
       }
 
-      var row: Row? {
-        guard case let .row(model) = self else {
-          return nil
-        }
-        return model
-      }
-
-      var isClear: Bool {
-        guard case .clear = self else {
-          return false
-        }
-        return true
-      }
-
-      var isDestroy: Bool {
-        guard case .destroy = self else {
-          return false
-        }
-        return true
+      struct Scroll: Hashable {
+        var fromRectangle: GridRectangle
+        var toOrigin: GridPoint
       }
     }
 
     var id: Int
     var change: Change
-  }
-
-  var isFont: Bool {
-    guard case .font = self else {
-      return false
-    }
-    return true
-  }
-
-  func grid(id: Int? = nil) -> Grid? {
-    guard case let .grid(grid) = self else {
-      return nil
-    }
-    if let id, grid.id != id {
-      return nil
-    }
-    return grid
   }
 }

@@ -70,11 +70,20 @@ public struct Grid<Element> {
     }
   }
 
-  public mutating func set(_ grid: Grid, at origin: GridPoint) {
+  public mutating func set(_ grid: Grid, toOrigin origin: GridPoint) {
     for row in 0 ..< grid.size.rowsCount {
       for column in 0 ..< grid.size.columnsCount {
-        let index = GridPoint(row: row, column: column)
-        self[index + origin] = grid[index]
+        let fromIndex = GridPoint(row: row, column: column)
+        let toIndex = fromIndex + origin
+        guard
+          toIndex.row >= 0,
+          toIndex.column >= 0,
+          toIndex.row < self.size.rowsCount,
+          toIndex.column < self.size.columnsCount
+        else {
+          continue
+        }
+        self[toIndex] = grid[fromIndex]
       }
     }
   }

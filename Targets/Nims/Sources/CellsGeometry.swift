@@ -10,11 +10,9 @@ import Foundation
 import Library
 
 final class CellsGeometry {
-  init(store: Store) {
-    self.store = store
+  init(gridID: Int) {
+    self.gridID = gridID
   }
-
-  static let shared = CellsGeometry(store: .shared)
 
   @MainActor
   var cellSize: CGSize {
@@ -22,9 +20,17 @@ final class CellsGeometry {
   }
 
   @MainActor
+  var gridCellsSize: CGSize {
+    .init(
+      width: Double(self.grid.size.columnsCount) * self.cellSize.width,
+      height: Double(self.grid.size.rowsCount) * self.cellSize.height
+    )
+  }
+
+  @MainActor
   func gridRectangle(cellsRect: CGRect) -> GridRectangle {
     let origin = GridPoint(
-      row: Int(floor(cellsRect.minY / self.cellSize.height)),
+      row: self.grid.size.rowsCount - 1 - Int(floor(cellsRect.minY / self.cellSize.height)),
       column: Int(floor(cellsRect.minX / self.cellSize.width))
     )
     let size = GridSize(
@@ -60,16 +66,25 @@ final class CellsGeometry {
 
   @MainActor
   func cellOrigin(for index: GridPoint) -> CGPoint {
-    .init(
+    return .init(
       x: Double(index.column) * self.cellSize.width,
-      y: Double(index.row) * self.cellSize.height
+      y: Double(self.grid.size.rowsCount - 1 - index.row) * self.cellSize.height
     )
   }
 
-  private let store: Store
+  private let gridID: Int
+
+  private var store: Store {
+    .shared
+  }
 
   @MainActor
   private var state: State {
     self.store.state
+  }
+
+  @MainActor
+  private var grid: CellGrid {
+    self.state.grids[self.gridID]!
   }
 }

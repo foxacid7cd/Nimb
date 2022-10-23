@@ -15,6 +15,7 @@ import RxSwift
 class ViewController: NSViewController {
   init(gridID: Int) {
     self.gridID = gridID
+    self.cellsGeometry = CellsGeometry(gridID: gridID)
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -26,7 +27,8 @@ class ViewController: NSViewController {
   override func loadView() {
     self.view = GridView(
       frame: self.gridCellsFrame,
-      gridID: self.gridID
+      gridID: self.gridID,
+      cellsGeometry: self.cellsGeometry
     )
   }
 
@@ -45,10 +47,7 @@ class ViewController: NSViewController {
   }
 
   private let gridID: Int
-
-  private var cellsGeometry: CellsGeometry {
-    .shared
-  }
+  private let cellsGeometry: CellsGeometry
 
   private var grid: CellGrid {
     self.store.state.grids[self.gridID]!
