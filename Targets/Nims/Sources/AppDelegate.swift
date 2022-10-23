@@ -25,18 +25,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @IBOutlet private var mainMenu: NSMenu!
 
-  private var windowController: WindowController?
-  private let disposeBag = DisposeBag()
-  private var nvimProcess: NvimProcess?
+  private let store = Store.shared
   private var windowControllers = [Int: WindowController]()
-  private let glyphRunsCache = Cache<Character, [GlyphRun]>(dispatchQueue: .init(
-    label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
-    attributes: .concurrent
-  ))
-
-  private var store: Store {
-    .shared
-  }
+  private let glyphRunsCache = Cache<Character, [GlyphRun]>(
+    dispatchQueue: .init(
+      label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
+      attributes: .concurrent
+    )
+  )
+  private let inputSubject = PublishSubject<KeyPress>()
+  private var nvimProcess: NvimProcess?
 
   private func handle(stateChange: StateChange.Grid) {
     switch stateChange.change {
@@ -50,7 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         windowController <~ windowController.keyDown
           .map(KeyPress.init)
-          .bind(with: self) { $0.nvimProcess?.input(keyPress: $1) }
+          .bind(onNext: self.inputSubject.onNext(_:))
 
         windowController.showWindow(nil)
       }
@@ -70,30 +68,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
-  private func handlePressed(characters: String) {
-    guard let nvimProcess else { return }
-
-    Task {
-      do {
-        _ = try await nvimProcess.nvimInput(keys: characters)
-
-      } catch {
-        "failed nvim input"
-          .fail(child: error.fail())
-          .assertionFailure()
-      }
-    }
-  }
-
   @MainActor
   private func startNvimProcess() {
     let nvimProcess = NvimProcess()
     self.nvimProcess = nvimProcess
 
-    nvimProcess.notifications
+    self <~ nvimProcess.notifications
       .observe(on: MainScheduler.instance)
-      .subscribe(onNext: { [weak self] in self?.handle(notification: $0) })
-      .disposed(by: self.disposeBag)
+      .bind(with: self) { $0.handle(notification: $1) }
+
+    self <~ self.inputSubject
+      .bind(onNext: nvimProcess.input(keyPress:))
 
     do {
       try nvimProcess.run()
@@ -109,7 +94,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         try await nvimProcess.nvimUIAttach(
           width: 160,
           height: 56,
-          options: [UIOption.extMultigrid.value: true, UIOption.extHlstate.value: true]
+          options: [
+            UIOption.extMultigrid.value: true,
+            UIOption.extHlstate.value: true
+          ]
         )
       } catch {
         "failed to attach nvim UI"

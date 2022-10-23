@@ -12,20 +12,32 @@ import RxSwift
 
 class WindowController: NSWindowController {
   init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
-    let window = NSWindow(
-      contentRect: .init(),
-      styleMask: [.titled],
-      backing: .buffered,
-      defer: true
-    )
-    window.title = "Grid \(gridID)"
-    window.contentViewController = ViewController(gridID: gridID, glyphRunsCache: glyphRunsCache)
+    let window = Window(gridID: gridID, glyphRunsCache: glyphRunsCache)
+    self.keyDown = window.keyDown
     super.init(window: window)
   }
 
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  let keyDown: Observable<NSEvent>
+}
+
+private class Window: NSWindow {
+  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+    super.init(
+      contentRect: .init(),
+      styleMask: [.titled],
+      backing: .buffered,
+      defer: true
+    )
+    self.title = "Grid \(gridID)"
+    self.contentViewController = ViewController(
+      gridID: gridID,
+      glyphRunsCache: glyphRunsCache
+    )
   }
 
   var keyDown: Observable<NSEvent> {
