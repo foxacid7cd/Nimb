@@ -31,18 +31,13 @@ enum StateChange: Hashable {
     enum Change: Hashable {
       case size
       case row(Row)
-      case scroll(Scroll)
+      case rectangle(GridRectangle)
       case clear
       case destroy
 
       struct Row: Hashable {
         var origin: GridPoint
         var columnsCount: Int
-      }
-
-      struct Scroll: Hashable {
-        var fromRectangle: GridRectangle
-        var toOrigin: GridPoint
       }
     }
 

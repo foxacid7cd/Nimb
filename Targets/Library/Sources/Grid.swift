@@ -64,26 +64,19 @@ public struct Grid<Element> {
     }
   }
 
-  public func grid(at rectangle: GridRectangle) -> Grid<Element> {
-    .init(size: rectangle.size) { index in
-      self[index + rectangle.origin]
-    }
-  }
+  public mutating func copy(fromRectangle: GridRectangle, toRectangle: GridRectangle) {
+    let gridRectangle = GridRectangle(origin: .init(), size: self.size)
 
-  public mutating func set(_ grid: Grid, toOrigin origin: GridPoint) {
-    for row in 0 ..< grid.size.rowsCount {
-      for column in 0 ..< grid.size.columnsCount {
-        let fromIndex = GridPoint(row: row, column: column)
-        let toIndex = fromIndex + origin
-        guard
-          toIndex.row >= 0,
-          toIndex.column >= 0,
-          toIndex.row < self.size.rowsCount,
-          toIndex.column < self.size.columnsCount
-        else {
-          continue
-        }
-        self[toIndex] = grid[fromIndex]
+    let clampedFromRectangle = fromRectangle
+      .intersection(gridRectangle)
+
+    let clampedToRectangle = toRectangle
+      .intersection(gridRectangle)
+
+    for rowOffset in 0 ..< min(clampedFromRectangle.size.rowsCount, clampedToRectangle.size.rowsCount) {
+      for columnOffset in 0 ..< min(clampedFromRectangle.size.columnsCount, clampedToRectangle.size.columnsCount) {
+        let offset = GridPoint(row: rowOffset, column: columnOffset)
+        self[clampedToRectangle.origin + offset] = self[clampedFromRectangle.origin + offset]
       }
     }
   }

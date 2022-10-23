@@ -28,7 +28,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private let disposeBag = DisposeBag()
   private var nvimProcess: NvimProcess?
   private var windowControllers = [Int: WindowController]()
-  private let glyphRunsCache = Cache<Character, [GlyphRun]>()
+  private let glyphRunsCache = Cache<Character, [GlyphRun]>(dispatchQueue: .init(
+    label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
+    attributes: .concurrent
+  ))
 
   private var store: Store {
     .shared
@@ -267,26 +270,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   columnsCount: model.right - model.left
                 )
                 let fromOrigin = GridPoint(
-                  row: model.bot - size.rowsCount,
+                  row: model.bot,
                   column: model.left
                 )
                 let toOrigin = fromOrigin + GridPoint(row: model.rows, column: 0)
-
-                let fromRectangle = GridRectangle(
-                  origin: fromOrigin,
-                  size: size
-                )
-
-                let grid2 = grid.grid(at: fromRectangle)
-                grid.set(grid2, toOrigin: toOrigin)
+                let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
+                let toRectangle = GridRectangle(origin: toOrigin, size: size)
+                grid.copy(fromRectangle: fromRectangle, toRectangle: toRectangle)
 
                 stateChanges.append(
                   .grid(.init(
                     id: model.grid,
-                    change: .scroll(.init(
-                      fromRectangle: fromRectangle,
-                      toOrigin: toOrigin
-                    )))
+                    change: .rectangle(toRectangle))
                   )
                 )
               }

@@ -33,7 +33,7 @@ class WindowController: NSWindowController {
   }
 
   override func keyDown(with event: NSEvent) {
-    if let characters = event.characters, characters.firstIndex(of: "\r") != nil {
+    if let characters = event.characters {
       self.charactersPressedSubject.onNext(characters)
 
     } else {
@@ -42,7 +42,9 @@ class WindowController: NSWindowController {
   }
 
   override func keyUp(with event: NSEvent) {
-    super.keyUp(with: event)
+    if event.characters == nil {
+      super.keyUp(with: event)
+    }
   }
 
   private let charactersPressedSubject = PublishSubject<String>()

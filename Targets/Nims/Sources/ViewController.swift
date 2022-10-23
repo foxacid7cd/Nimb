@@ -30,7 +30,7 @@ class ViewController: NSViewController {
       frame: self.gridCellsFrame,
       gridID: self.gridID,
       cellsGeometry: self.cellsGeometry,
-      glyphRunsCache: .init()
+      glyphRunsCache: self.glyphRunsCache
     )
   }
 

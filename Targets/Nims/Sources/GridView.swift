@@ -64,7 +64,10 @@ class GridView: NSView {
 
             let attributedString = NSAttributedString(
               string: String(character),
-              attributes: [.font: font]
+              attributes: [
+                .font: font,
+                .ligature: 0
+              ]
             )
             let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
             let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 1))
@@ -96,7 +99,7 @@ class GridView: NSView {
             context.saveGState()
             context.textMatrix = .identity
 
-            context.setFillColor(.init(red: 1, green: 0, blue: 1, alpha: 1))
+            context.setFillColor(.white)
             context.setTextDrawingMode(.fill)
             CTFontDrawGlyphs(
               font,
@@ -119,13 +122,6 @@ class GridView: NSView {
   private let gridID: Int
   private let cellsGeometry: CellsGeometry
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
-
-  // private var cachedGlyphs = [UInt16: CGGlyph]()
-  // private let font = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!
-  // private lazy var cgFont = CTFontCopyGraphicsFont(font, nil)
-
-  // private lazy var queue = DispatchQueue(label: "foxacid7cd.Nims.glyphRunsCache.\(ObjectIdentifier(self))", qos: .userInteractive, attributes: .concurrent)
-  // private var cachedGlyphRuns = [Character: [CTRun]]()
 
   @MainActor
   private var grid: CellGrid {
@@ -154,12 +150,9 @@ class GridView: NSView {
         self.cellsGeometry.insetForDrawing(rect: cellsRect)
       )
 
-    case let .scroll(scrollChange):
+    case let .rectangle(rectangle):
       let cellsRect = self.cellsGeometry.inverted(
-        rect: CGRect(
-          origin: self.cellsGeometry.cellOrigin(for: scrollChange.toOrigin),
-          size: self.cellsGeometry.cellsSize(for: scrollChange.fromRectangle.size)
-        )
+        rect: self.cellsGeometry.cellsRect(for: rectangle)
       )
       self.setNeedsDisplay(
         self.cellsGeometry.insetForDrawing(rect: cellsRect)

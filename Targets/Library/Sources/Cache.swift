@@ -8,26 +8,24 @@
 
 import Foundation
 
-private let dispatchQueue = DispatchQueue(
-  label: "\(Bundle.main.bundleIdentifier!).\(#fileID)",
-  attributes: .concurrent
-)
-
 public class Cache<Key: Hashable, Value> {
-  public init() {}
+  public init(dispatchQueue: DispatchQueue) {
+    self.dispatchQueue = dispatchQueue
+  }
 
   public subscript(key: Key) -> Value? {
     get {
-      dispatchQueue.sync {
+      self.dispatchQueue.sync {
         self.dictionary[key]
       }
     }
     set(newValue) {
-      dispatchQueue.async(flags: .barrier) {
+      self.dispatchQueue.async(flags: .barrier) {
         self.dictionary[key] = newValue
       }
     }
   }
 
+  private let dispatchQueue: DispatchQueue
   private var dictionary = [Key: Value]()
 }
