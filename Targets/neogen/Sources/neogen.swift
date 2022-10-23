@@ -23,6 +23,7 @@ struct neogen: AsyncParsableCommand {
   private func formatSourceFiles(filePathes: Set<Path>) async throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+
     let formattedFilePathes = filePathes
       .map(\.string)
       .joined(separator: " ")
@@ -233,6 +234,16 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
   }
   dictionary["uiEvents"] = uiEvents
   dictionary["uiEventModels"] = uiEventModels
+
+  var types = [[String: Any]]()
+  for (key, type) in apiInfo.types.sorted(by: { $0.value.id < $1.value.id }) {
+    types.append([
+      "name": key,
+      "id": type.id,
+      "prefix": type.prefix
+    ])
+  }
+  dictionary["types"] = types
 
   return dictionary
 }
