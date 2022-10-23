@@ -9,7 +9,7 @@
 import Library
 
 struct Cell: Hashable {
-  var text: String
+  var character: Character?
   var hlID: Int
 }
 

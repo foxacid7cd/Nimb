@@ -7,10 +7,11 @@
 //
 
 import AppKit
+import Library
 import RxSwift
 
 class WindowController: NSWindowController {
-  init(gridID: Int) {
+  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
     let window = NSWindow(
       contentRect: .init(),
       styleMask: [.titled],
@@ -18,7 +19,7 @@ class WindowController: NSWindowController {
       defer: true
     )
     window.title = "Grid \(gridID)"
-    window.contentViewController = ViewController(gridID: gridID)
+    window.contentViewController = ViewController(gridID: gridID, glyphRunsCache: glyphRunsCache)
     super.init(window: window)
   }
 

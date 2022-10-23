@@ -14,9 +14,15 @@ import RxCocoa
 import RxSwift
 
 class GridView: NSView {
-  init(frame: NSRect, gridID: Int, cellsGeometry: CellsGeometry) {
+  init(
+    frame: NSRect,
+    gridID: Int,
+    cellsGeometry: CellsGeometry,
+    glyphRunsCache: Cache<Character, [GlyphRun]>
+  ) {
     self.gridID = gridID
     self.cellsGeometry = cellsGeometry
+    self.glyphRunsCache = glyphRunsCache
     super.init(frame: frame)
 
     self <~ self.stateChanges
@@ -49,57 +55,57 @@ class GridView: NSView {
             column: gridRectangle.origin.column + columnOffset
           )
 
-          let cellRect = self.cellsGeometry.inverted(
-            rect: self.cellsGeometry.cellRect(for: index)
-          )
+          let character = self.grid[index]?.character ?? " "
 
-          let text = self.grid[index]?.text ?? " "
-
-          let glyphRuns: [CTRun] = {
-            /* if let cachedGlyphRuns = self.cachedGlyphRuns(forKey: character) {
-               return cachedGlyphRuns
-             } */
+          let glyphRuns: [GlyphRun] = {
+            if let cachedGlyphRuns = self.glyphRunsCache[character] {
+              return cachedGlyphRuns
+            }
 
             let attributedString = NSAttributedString(
-              string: text,
+              string: String(character),
               attributes: [.font: font]
             )
             let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
             let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 1))
 
-            let glyphRuns = CTLineGetGlyphRuns(line) as! [CTRun]
-            // self.cache(glyphRuns: glyphRuns, forKey: character)
+            let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
+            let glyphRuns = ctRuns.map { ctRun in
+              let glyphCount = CTRunGetGlyphCount(ctRun)
+              let range = CFRange(location: 0, length: glyphCount)
+              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetPositions(ctRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              return GlyphRun(glyphs: glyphs, positions: positions)
+            }
+
+            self.glyphRunsCache[character] = glyphRuns
             return glyphRuns
           }()
 
-          for glyphRun in glyphRuns {
-            let glyphCount = CTRunGetGlyphCount(glyphRun)
-            let range = CFRange(location: 0, length: glyphCount)
-            let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-              CTRunGetGlyphs(glyphRun, range, buffer.baseAddress!)
-              initializedCount = glyphCount
-            }
-            let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-              CTRunGetPositions(glyphRun, range, buffer.baseAddress!)
-              initializedCount = glyphCount
-            }
-            .map {
-              CGPoint(
-                x: $0.x + cellRect.origin.x,
-                y: $0.y + cellRect.origin.y - font.descender
-              )
-            }
+          let cellRect = self.cellsGeometry.inverted(
+            rect: self.cellsGeometry.cellRect(for: index)
+          )
 
+          for glyphRun in glyphRuns {
             context.saveGState()
             context.textMatrix = .identity
 
             context.setFillColor(.init(red: 1, green: 0, blue: 1, alpha: 1))
             context.setTextDrawingMode(.fill)
             CTFontDrawGlyphs(
-              self.store.stateDerivatives.font.nsFont,
-              glyphs,
-              positions,
-              glyphCount,
+              font,
+              glyphRun.glyphs,
+              glyphRun.offsetPositions(
+                dx: cellRect.origin.x,
+                dy: cellRect.origin.y - font.descender
+              ),
+              glyphRun.glyphs.count,
               context
             )
 
@@ -111,8 +117,8 @@ class GridView: NSView {
   }
 
   private let gridID: Int
-
   private let cellsGeometry: CellsGeometry
+  private let glyphRunsCache: Cache<Character, [GlyphRun]>
 
   // private var cachedGlyphs = [UInt16: CGGlyph]()
   // private let font = NSFont(name: "BlexMonoNerdFontCompleteM-", size: 13)!
@@ -168,7 +174,12 @@ class GridView: NSView {
   }
 }
 
-private struct GlyphRun {
+struct GlyphRun {
   var glyphs: [CGGlyph]
   var positions: [CGPoint]
+
+  func offsetPositions(dx: Double, dy: Double) -> [CGPoint] {
+    self.positions
+      .map { .init(x: $0.x + dx, y: $0.y + dy) }
+  }
 }

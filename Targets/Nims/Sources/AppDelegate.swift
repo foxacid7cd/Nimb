@@ -28,6 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private let disposeBag = DisposeBag()
   private var nvimProcess: NvimProcess?
   private var windowControllers = [Int: WindowController]()
+  private let glyphRunsCache = Cache<Character, [GlyphRun]>()
 
   private var store: Store {
     .shared
@@ -37,7 +38,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     switch stateChange.change {
     case .size:
       if self.windowControllers[stateChange.id] == nil {
-        let windowController = WindowController(gridID: stateChange.id)
+        let windowController = WindowController(
+          gridID: stateChange.id,
+          glyphRunsCache: self.glyphRunsCache
+        )
         self.windowControllers[stateChange.id] = windowController
 
         self <~ windowController.charactersPressed
@@ -128,12 +132,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   columnsCount: model.width
                 )
               )
-              return .grid(
-                .init(
-                  id: model.grid,
-                  change: .size
-                )
-              )
+              return .grid(.init(
+                id: model.grid,
+                change: .size
+              ))
             }
           }
 
@@ -143,7 +145,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           for model in models {
             self.store.dispatch { state in
               if state.grids[model.grid] == nil {
-                log(.fault, "Trying destroy unexisting grid")
+                "Trying to destroy unexisting grid"
+                  .fail()
+                  .assertionFailure()
               }
 
               state.grids[model.grid] = nil
@@ -154,90 +158,96 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case let .gridLine(models):
           log(.info, "Grid line: \(models.count)")
 
-          self.store.dispatch { (state: inout State) -> [StateChange] in
+          self.store.dispatch { state in
             var stateChanges = [StateChange]()
             var latestHlID: Int?
             var latestRow: Int?
 
             for model in models {
-              var updatedCellsCount = 0
-              for messagePackValue in model.data {
-                guard var arrayValue = messagePackValue.arrayValue else {
-                  "cell data is not an array"
-                    .fail()
-                    .log(.fault)
-
-                  continue
-                }
-
-                guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                  "expected cell text is not a string"
-                    .fail()
-                    .log(.fault)
-
-                  continue
-                }
-
-                var repeatCount = 1
-
-                if !arrayValue.isEmpty {
-                  guard let hlID = arrayValue.removeFirst().uintValue else {
-                    "expected cell hl_id is not an unsigned integer"
+              state.withMutableGrid(id: model.grid) { grid in
+                var updatedCellsCount = 0
+                for messagePackValue in model.data {
+                  guard var arrayValue = messagePackValue.arrayValue else {
+                    "cell data is not an array"
                       .fail()
-                      .log(.fault)
+                      .assertionFailure()
 
                     continue
                   }
-                  latestHlID = Int(hlID)
+
+                  guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
+                    "expected cell text is not a string"
+                      .fail()
+                      .assertionFailure()
+
+                    continue
+                  }
+                  let character = text.first
+
+                  var repeatCount = 1
 
                   if !arrayValue.isEmpty {
-                    guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
-                      "expected cell repeat count is not an unsigned integer"
+                    guard let hlID = arrayValue.removeFirst().uintValue else {
+                      "expected cell hl_id is not an unsigned integer"
                         .fail()
-                        .log(.fault)
+                        .assertionFailure()
 
                       continue
                     }
-                    repeatCount = Int(parsedRepeatCount)
+                    latestHlID = Int(hlID)
+
+                    if !arrayValue.isEmpty {
+                      guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
+                        "expected cell repeat count is not an unsigned integer"
+                          .fail()
+                          .assertionFailure()
+
+                        continue
+                      }
+                      repeatCount = Int(parsedRepeatCount)
+                    }
                   }
-                }
 
-                guard let latestHlID else {
-                  "at least one hlID had to be parsed"
-                    .fail()
-                    .log(.fault)
+                  guard let latestHlID else {
+                    "at least one hlID had to be parsed"
+                      .fail()
+                      .assertionFailure()
 
-                  continue
-                }
+                    continue
+                  }
 
-                if latestRow != model.row {
-                  updatedCellsCount = 0
-                }
+                  if latestRow != model.row {
+                    updatedCellsCount = 0
+                  }
 
-                for repeatIndex in 0 ..< repeatCount {
-                  let index = GridPoint(
-                    row: model.row,
-                    column: model.colStart + updatedCellsCount + repeatIndex
-                  )
-                  state.grids[model.grid]![index] = Cell(text: text, hlID: latestHlID)
-                }
+                  for repeatIndex in 0 ..< repeatCount {
+                    let index = GridPoint(
+                      row: model.row,
+                      column: model.colStart + updatedCellsCount + repeatIndex
+                    )
+                    grid[index] = Cell(
+                      character: character,
+                      hlID: latestHlID
+                    )
+                  }
 
-                stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .row(.init(
-                      origin: .init(
-                        row: model.row,
-                        column: model.colStart + updatedCellsCount
-                      ),
-                      columnsCount: repeatCount
+                  stateChanges.append(
+                    .grid(.init(
+                      id: model.grid,
+                      change: .row(.init(
+                        origin: .init(
+                          row: model.row,
+                          column: model.colStart + updatedCellsCount
+                        ),
+                        columnsCount: repeatCount
+                      ))
                     ))
-                  ))
-                )
+                  )
 
-                updatedCellsCount += repeatCount
+                  updatedCellsCount += repeatCount
 
-                latestRow = model.row
+                  latestRow = model.row
+                }
               }
             }
 
@@ -268,21 +278,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
 
                 let grid2 = grid.grid(at: fromRectangle)
-                print(grid)
-                print(grid2)
                 grid.set(grid2, toOrigin: toOrigin)
-                print(grid)
 
-                stateChanges.append(.grid(.init(id: model.grid, change: .clear)))
-//                stateChanges.append(
-//                  .grid(.init(
-//                    id: model.grid,
-//                    change: .scroll(.init(
-//                      fromRectangle: fromRectangle,
-//                      toOrigin: toOrigin
-//                    )))
-//                  )
-//                )
+                stateChanges.append(
+                  .grid(.init(
+                    id: model.grid,
+                    change: .scroll(.init(
+                      fromRectangle: fromRectangle,
+                      toOrigin: toOrigin
+                    )))
+                  )
+                )
               }
             }
 
@@ -294,10 +300,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
           for model in models {
             self.store.dispatch { state in
-              state.grids[model.grid]! = .init(
-                repeating: nil,
-                size: state.grids[model.grid]!.size
-              )
+              state.withMutableGrid(id: model.grid) { grid in
+                grid = .init(
+                  repeating: nil,
+                  size: grid.size
+                )
+              }
               return .grid(.init(id: model.grid, change: .clear))
             }
           }
