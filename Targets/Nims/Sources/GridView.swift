@@ -159,12 +159,13 @@ class GridView: NSView {
         )
       )
 
-      self.setNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(rect: cellsRect)
-      )
+      let rect = self.cellsGeometry.insetForDrawing(rect: cellsRect)
+      self.setNeedsDisplay(rect)
 
     case let .rectangle(rectangle):
-      let cellsRect = self.cellsGeometry.cellsRect(for: rectangle)
+      let cellsRect = self.cellsGeometry.insetForDrawing(
+        rect: self.cellsGeometry.cellsRect(for: rectangle)
+      )
       self.setNeedsDisplay(cellsRect)
 
     case .clear, .size:

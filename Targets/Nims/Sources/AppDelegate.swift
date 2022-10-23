@@ -94,8 +94,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           height: self.store.state.outerGridSize.rowsCount,
           options: [
             UIOption.extMultigrid.value: true,
-            UIOption.extHlstate.value: true
-            // UIOption.extMessages.value: true
+            UIOption.extHlstate.value: true,
+            UIOption.extMessages.value: true
           ]
         )
       } catch {
@@ -278,22 +278,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   row: model.top,
                   column: model.left
                 )
-                let toOrigin = fromOrigin + GridPoint(row: model.rows, column: 0)
 
-                let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
-                let toRectangle = GridRectangle(origin: toOrigin, size: size)
-                log(.info, "from: \(fromRectangle), to: \(toRectangle)")
-
-                grid!.grid.copy(
-                  fromRectangle: fromRectangle,
-                  toRectangle: toRectangle
+                let rectangle = grid!.grid.move(
+                  rectangle: .init(origin: fromOrigin, size: size),
+                  delta: .init(row: model.rows, column: model.cols)
                 )
 
                 stateChanges.append(
                   .grid(.init(
                     id: model.grid,
-                    change: .rectangle(toRectangle))
-                  )
+                    change: .rectangle(rectangle)
+                  ))
                 )
               }
             }
@@ -358,6 +353,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             for model in models {
               log(.info, "win pos: \(model)")
+
               state.withMutableGrid(id: model.grid) { grid in
                 grid!.window = .init(
                   native: model.win,

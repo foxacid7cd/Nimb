@@ -60,21 +60,32 @@ public struct Grid<Element> {
     }
   }
 
-  public mutating func copy(fromRectangle: GridRectangle, toRectangle: GridRectangle) {
-    let gridRectangle = GridRectangle(origin: .init(), size: self.size)
+  public mutating func move(rectangle: GridRectangle, delta: GridPoint) -> GridRectangle {
+    let rowRange = max(-delta.row, rectangle.minRow) + delta.row ..< min(self.size.rowsCount, rectangle.maxRow - delta.row) + delta.row
+    let columnRange = max(-delta.column, rectangle.minColumn) + delta.column ..< min(self.size.columnsCount, rectangle.maxColumn - delta.column) + delta.column
 
-    let clampedFromRectangle = fromRectangle
-      .intersection(gridRectangle)
+    var copy = self
 
-    let clampedToRectangle = toRectangle
-      .intersection(gridRectangle)
+    for row in rowRange {
+      for column in columnRange {
+        let fromIndex = GridPoint(row: row, column: column)
 
-    for rowOffset in 0 ..< min(clampedFromRectangle.size.rowsCount, clampedToRectangle.size.rowsCount) {
-      for columnOffset in 0 ..< min(clampedFromRectangle.size.columnsCount, clampedToRectangle.size.columnsCount) {
-        let offset = GridPoint(row: rowOffset, column: columnOffset)
-        self[clampedToRectangle.origin + offset] = self[clampedFromRectangle.origin + offset]
+        copy[fromIndex - delta] = self[fromIndex]
       }
     }
+
+    self = copy
+
+    return .init(
+      origin: .init(
+        row: rowRange.lowerBound,
+        column: columnRange.lowerBound
+      ),
+      size: .init(
+        rowsCount: rowRange.upperBound - rowRange.lowerBound,
+        columnsCount: columnRange.upperBound - columnRange.lowerBound
+      )
+    )
   }
 
   private var rows: [[Element]]
