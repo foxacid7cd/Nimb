@@ -14,9 +14,9 @@ final class GridWindow: NSWindow {
   init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
     super.init(
       contentRect: .init(),
-      styleMask: [.titled],
+      styleMask: [.borderless],
       backing: .buffered,
-      defer: true
+      defer: false
     )
     self.contentViewController = GridViewController(
       gridID: gridID,

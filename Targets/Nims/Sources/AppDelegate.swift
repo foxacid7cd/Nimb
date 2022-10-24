@@ -18,7 +18,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
     self <~ self.store.stateChanges
       .extract { (/StateChange.grid).extract(from: $0) }
-      .bind(with: self) { $0.handle(stateChange: $1) }
+      .bind(with: self) { $0.handleGrid(stateChange: $1) }
+
+    self <~ self.store.stateChanges
+      .extract { (/StateChange.window).extract(from: $0) }
+      .bind(with: self) { $0.handleWindow(stateChange: $1) }
 
     self.startNvimProcess()
   }
@@ -26,45 +30,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @IBOutlet private var mainMenu: NSMenu!
 
   private let store = Store.shared
-  private var gridsWindowController: GridsWindowController?
+  private var gridsWindowControllers = [Int: GridsWindowController]()
   private let glyphRunsCache = Cache<Character, [GlyphRun]>(
     dispatchQueue: .init(
       label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
       attributes: .concurrent
     )
   )
+  private var windows = [Int: StateChange.Window]()
   private let inputSubject = PublishSubject<KeyPress>()
   private var nvimProcess: NvimProcess?
 
   @MainActor
-  private func handle(stateChange: StateChange.Grid) {
+  private func handleGrid(stateChange: StateChange.Grid) {
     switch stateChange.change {
     case .size:
-      guard self.gridsWindowController == nil else {
-        break
+      if let gridsWindowController = self.gridsWindowControllers[stateChange.id] {
+        gridsWindowController.showWindow(nil)
+
+      } else {
+        let gridsWindowController = GridsWindowController(
+          gridID: stateChange.id,
+          glyphRunsCache: self.glyphRunsCache
+        )
+        self.gridsWindowControllers[stateChange.id] = gridsWindowController
+
+        self <~ gridsWindowController.keyDown
+          .map(KeyPress.init)
+          .bind(onNext: self.inputSubject.onNext(_:))
+
+        gridsWindowController.showWindow(nil)
       }
-
-      let gridsWindowController = GridsWindowController(gridID: stateChange.id, glyphRunsCache: self.glyphRunsCache)
-      self.gridsWindowController = gridsWindowController
-
-      self <~ gridsWindowController.keyDown
-        .map(KeyPress.init)
-        .bind(onNext: self.inputSubject.onNext(_:))
-
-      gridsWindowController.showWindow(nil)
 
     case .destroy:
-      guard self.gridsWindowController == nil else {
-        break
-      }
+      self.gridsWindowControllers[stateChange.id]?.window?.close()
+      self.gridsWindowControllers[stateChange.id] = nil
 
-      let gridsWindowController = GridsWindowController(
-        gridID: stateChange.id,
-        glyphRunsCache: self.glyphRunsCache
-      )
-      self.gridsWindowController = gridsWindowController
+    default:
+      break
+    }
+  }
 
-      gridsWindowController.showWindow(nil)
+  @MainActor
+  private func handleWindow(stateChange: StateChange.Window) {
+    switch stateChange.change {
+    case .position:
+      self.gridsWindowControllers[stateChange.gridID]?.showWindow(nil)
 
     default:
       break
@@ -73,15 +84,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @MainActor
   private func startNvimProcess() {
-    let nvimProcess = NvimProcess()
+    let nvimProcess = NvimProcess(input: self.inputSubject)
     self.nvimProcess = nvimProcess
 
     self <~ nvimProcess.notifications
-      .observe(on: MainScheduler.instance)
-      .bind(with: self) { $0.handle(notification: $1) }
-
-    self <~ self.inputSubject
-      .bind(onNext: nvimProcess.input(keyPress:))
+      .bind(with: self) { strongSelf, notification in
+        Task {
+          await strongSelf.handle(notification: notification)
+        }
+      }
 
     do {
       try nvimProcess.run()
@@ -95,8 +106,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: self.store.state.outerGridSize.columnsCount,
-          height: self.store.state.outerGridSize.rowsCount,
+          width: 110,
+          height: 50,
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true,
@@ -112,7 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @MainActor
-  private func handle(notification: NvimNotification) {
+  private func handle(notification: NvimNotification) async {
     switch notification {
     case let .redraw(uiEvents):
       for uiEvent in uiEvents {
@@ -130,7 +141,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               )
               state.grids[model.grid] = State.Grid(
                 cellGrid: .init(repeating: nil, size: size),
-                windows: .init()
+                windows: .init(),
+                isHidden: false
               )
 
               return [
@@ -364,6 +376,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
               state.withMutableGrid(id: model.grid) { grid in
                 grid?.windows[model.win] = .init(
+                  size: .init(),
                   frame: GridRectangle(
                     origin: .init(
                       row: model.startrow,
@@ -389,17 +402,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case let .winFloatPos(models):
           log(.info, "Win float pos: \(models.count)")
 
-//          self.store.dispatch { state in
-//            var stateChanges = [StateChange]()
-//
-//            for model in models {
-//              state.withMutableGrid(id: model.grid) { grid in
-//                model.anchorGrid
-//              }
-//            }
-//
-//            return stateChanges
-//          }
+          self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
+            for model in models {
+              state.withMutableGrid(id: model.grid) { grid in
+                grid!.withMutableWindow(ref: model.win) { window in
+                  window = .init(size: .init(), frame: .init(), isHidden: false)
+
+                  window = State.Grid.Window(
+                    size: .init(),
+                    frame: .init(
+                      origin: .init(
+                        row: window!.frame.size.rowsCount - window!.frame.origin.row,
+                        column: window!.frame.size.columnsCount - window!.frame.origin.column
+                      ),
+                      size: .init(
+                        rowsCount: window!.frame.size.rowsCount,
+                        columnsCount: window!.frame.size.columnsCount
+                      )
+                    ),
+                    isHidden: false
+                  )
+                }
+
+                stateChanges.append(
+                  .window(.init(
+                    gridID: model.grid,
+                    ref: model.win,
+                    change: .floatPosition
+                  ))
+                )
+              }
+            }
+
+            return stateChanges
+          }
 
         case let .winExternalPos(models):
           log(.info, "Win external pos: \(models.count)")
@@ -410,7 +448,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
                 grid!.withMutableWindow(ref: model.win) { window in
-                  window = .init(frame: .init(), isHidden: true)
+                  window = .init(
+                    size: .init(rowsCount: 10, columnsCount: 20),
+                    frame: .init(origin: .init(), size: .init(rowsCount: 10, columnsCount: 20)),
+                    isHidden: false
+                  )
                 }
 
                 stateChanges.append(
@@ -435,13 +477,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
                 grid = nil
-
-                "wip win hide: \(model)"
-                  .fail()
-                  .log(.fault)
               }
 
-              stateChanges.append(.grid(.init(id: model.grid, change: .size)))
+              stateChanges.append(.window(.init(gridID: model.grid, ref: nil, change: .hide)))
             }
 
             return stateChanges
@@ -451,18 +489,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           log(.info, "Win close: \(models.count)")
 
           self.store.dispatch { state in
+            var stateChanges = [StateChange]()
+
             for model in models {
               state.withMutableGrid(id: model.grid) { grid in
                 grid = nil
-
-                "wip win close: \(model)"
-                  .fail()
-                  .log(.fault)
               }
+
+              stateChanges.append(.window(.init(gridID: model.grid, ref: nil, change: .close)))
             }
 
-            return []
+            return stateChanges
           }
+
+        case let .flush(count):
+          self.store.dispatch { _ in .init(repeating: StateChange.flush, count: count) }
 
         default:
           break

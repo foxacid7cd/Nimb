@@ -19,8 +19,8 @@ final class CellsGeometry {
   }
 
   @MainActor
-  var outerGridCellsSize: CGSize {
-    self.cellsSize(for: self.state.outerGridSize)
+  func gridCellsSize(grid: Grid<Cell?>) -> CGSize {
+    self.cellsSize(for: grid.size)
   }
 
   @MainActor

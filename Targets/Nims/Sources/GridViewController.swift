@@ -9,6 +9,7 @@
 import AppKit
 import CasePaths
 import Library
+import RxSwift
 
 class GridViewController: NSViewController {
   init(gridID: Int, glyphRunCache: Cache<Character, [GlyphRun]>) {
@@ -26,7 +27,7 @@ class GridViewController: NSViewController {
     self.view = GridView(
       frame: .init(
         origin: .zero,
-        size: self.cellsGeometry.outerGridCellsSize
+        size: self.cellsGeometry.cellSize
       ),
       gridID: self.gridID,
       windowRef: nil,
@@ -42,7 +43,7 @@ class GridViewController: NSViewController {
     self <~ self.store.stateChanges
       .extract { (/StateChange.grid).extract(from: $0) }
       .filter { $0.id == gridID }
-      .bind(with: self) { $0.handle(stateChange: $1.change) }
+      .bind(with: self) { $0.handleGrid(stateChange: $1.change) }
   }
 
   private let gridID: Int
@@ -52,13 +53,5 @@ class GridViewController: NSViewController {
     .shared
   }
 
-  private func handle(stateChange: StateChange.Grid.Change) {
-    switch stateChange {
-    case .size:
-      self.view.frame.size = self.cellsGeometry.outerGridCellsSize
-
-    default:
-      break
-    }
-  }
+  private func handleGrid(stateChange: StateChange.Grid.Change) {}
 }

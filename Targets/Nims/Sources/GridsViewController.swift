@@ -27,8 +27,10 @@ class GridsViewController: NSViewController {
   override func loadView() {
     self.view = GridsView(
       frame: .init(
-        origin: .zero,
-        size: self.cellsGeometry.outerGridCellsSize
+        origin: .init(),
+        size: self.grid.flatMap {
+          self.cellsGeometry.cellsSize(for: $0.cellGrid.size)
+        } ?? .init()
       ),
       gridID: self.gridID,
       glyphRunsCache: self.glyphRunsCache
@@ -45,14 +47,23 @@ class GridsViewController: NSViewController {
 
   private let gridID: Int
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
-  private let cellsGeometry = CellsGeometry()
+
+  private var cellsGeometry: CellsGeometry {
+    .shared
+  }
+
+  private var grid: State.Grid? {
+    self.state.grids[self.gridID]
+  }
 
   private func handle(stateChange: StateChange.Grid.Change) {
     switch stateChange {
     case .size:
       self.view.frame = .init(
-        origin: .zero,
-        size: self.cellsGeometry.outerGridCellsSize
+        origin: .init(),
+        size: self.grid.flatMap {
+          self.cellsGeometry.cellsSize(for: $0.cellGrid.size)
+        } ?? .init()
       )
 
     default:

@@ -18,6 +18,7 @@ class GridsWindow: NSWindow {
       backing: .buffered,
       defer: true
     )
+    self.title = "Grid \(gridID)"
     self.contentViewController = GridsViewController(
       gridID: gridID,
       glyphRunsCache: glyphRunsCache

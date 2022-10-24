@@ -47,36 +47,28 @@ class GridsView: NSView {
   }
 
   private func handleWindow(stateChange: StateChange.Window) {
+    guard let ref = stateChange.ref else {
+      return
+    }
+
     switch stateChange.change {
     case .position:
-      if let gridView = self.windowGridViews[stateChange.ref] {
-        let window = self.state.grids[stateChange.gridID]!.windows[stateChange.ref]
+      if let gridView = self.windowGridViews[ref] {
+        let window = self.state.grids[stateChange.gridID]!.windows[ref]
 
-        gridView.frame = self.cellsGeometry.cellsRect(for: window!.frame)
-
-      } else {
-        let windows = self.state.grids[stateChange.gridID]!.windows
-
-        let gridView = GridView(
-          frame: self.cellsGeometry.cellsRect(
-            for: windows[stateChange.ref]!.frame
-          ),
-          gridID: stateChange.gridID,
-          windowRef: stateChange.ref,
-          glyphRunsCache: self.glyphRunsCache
-        )
         gridView.translatesAutoresizingMaskIntoConstraints = false
+        gridView.frame = self.cellsGeometry.cellsRect(for: window!.frame)
         self.addSubview(gridView)
 
-        self.windowGridViews[stateChange.ref] = gridView
+        self.windowGridViews[ref] = gridView
       }
 
     case .hide:
-      self.windowGridViews[stateChange.ref]!.isHidden = true
+      self.windowGridViews[ref]!.isHidden = true
 
     case .close:
-      self.windowGridViews[stateChange.ref]!.removeFromSuperview()
-      self.windowGridViews[stateChange.ref] = nil
+      self.windowGridViews[ref]!.removeFromSuperview()
+      self.windowGridViews[ref] = nil
 
     default:
       break

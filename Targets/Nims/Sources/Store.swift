@@ -9,6 +9,7 @@
 import AppKit
 import CasePaths
 import Library
+import RxCocoa
 import RxSwift
 
 class Store {
@@ -19,6 +20,7 @@ class Store {
   @MainActor
   private(set) var state = State()
 
+  @MainActor
   var stateChanges: Observable<[StateChange]> {
     self.stateChangesSubject
   }
@@ -29,6 +31,7 @@ class Store {
     self.stateChangesSubject.onNext(stateChanges)
   }
 
+  @MainActor
   private let stateChangesSubject = PublishSubject<[StateChange]>()
 }
 

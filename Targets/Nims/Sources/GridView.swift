@@ -14,6 +14,8 @@ import Nvim
 import RxCocoa
 import RxSwift
 
+private let SerialDrawing = false
+
 class GridView: NSView {
   init(
     frame: NSRect,
@@ -35,6 +37,10 @@ class GridView: NSView {
       .extract { (/StateChange.cursor).extract(from: $0) }
       .filter { $0.gridID == gridID }
       .bind(with: self) { $0.handle(cursorIndex: $1.index) }
+
+    self <~ self.stateChanges
+      .extract { (/StateChange.flush).extract(from: $0) }
+      .bind(with: self) { view, _ in view.handleFlush() }
   }
 
   @available(*, unavailable)
@@ -48,6 +54,15 @@ class GridView: NSView {
     context.saveGState()
     defer { context.restoreGState() }
 
+    if self.synchronizeDrawingContext {
+      context.synchronize()
+      log(.info, "GridView drawing context synchronized")
+
+      self.barrierDispatchQueue.async(flags: .barrier) {
+        self.synchronizeDrawingContext = false
+      }
+    }
+
     let font = self.store.stateDerivatives.font.nsFont
 
     let cursorIndex: GridPoint?
@@ -58,16 +73,21 @@ class GridView: NSView {
       cursorIndex = nil
     }
 
+    guard let cellGrid = self.grid?.cellGrid else {
+      return
+    }
+
     for rect in self.rectsBeingDrawn() {
       let gridRectangle = self.cellsGeometry.gridRectangle(cellsRect: rect)
 
       for columnOffset in 0 ..< gridRectangle.size.columnsCount {
         for rowOffset in 0 ..< gridRectangle.size.rowsCount {
           let index = GridPoint(
-            row: self.grid.cellGrid.size.rowsCount - 1 - gridRectangle.origin.row - rowOffset,
-            column: gridRectangle.origin.column + columnOffset
+            row: max(0, min(cellGrid.size.rowsCount - 1, cellGrid.size.rowsCount - 1 - gridRectangle.origin.row - rowOffset)),
+            column: max(0, min(cellGrid.size.columnsCount - 1, gridRectangle.origin.column + columnOffset))
           )
-          let character = self.grid.cellGrid[index]?.character ?? " "
+
+          let character = cellGrid[index]?.character ?? " "
 
           let glyphRuns: [GlyphRun] = {
             if let cachedGlyphRuns = self.glyphRunsCache[character] {
@@ -138,6 +158,10 @@ class GridView: NSView {
   private let gridID: Int
   private let windowRef: ExtendedTypes.Window?
   private let glyphRunsCache: Cache<Character, [GlyphRun]>
+  private var needsDisplayBuffer = [CGRect]()
+
+  private let barrierDispatchQueue = DispatchQueue.global(qos: .default)
+  private var synchronizeDrawingContext = false
 
   private var cellsGeometry: CellsGeometry {
     .shared
@@ -150,8 +174,20 @@ class GridView: NSView {
   }
 
   @MainActor
-  private var grid: State.Grid {
-    self.state.grids[self.gridID]!
+  private var grid: State.Grid? {
+    self.state.grids[self.gridID]
+  }
+
+  @MainActor
+  private var gridWindow: State.Grid.Window? {
+    .init(
+      size: .init(),
+      frame: .init(
+        origin: .init(row: 0, column: 0),
+        size: self.grid?.cellGrid.size ?? .init()
+      ),
+      isHidden: false
+    )
   }
 
   private func handle(stateChange: StateChange.Grid.Change) {
@@ -166,19 +202,17 @@ class GridView: NSView {
           )
         )
       )
-      let rect = self.cellsGeometry.insetForDrawing(
-        rect: cellsRect
-      )
-      self.setNeedsDisplay(rect.applying(self.upsideDownTransform))
+      let rect = self.cellsGeometry.insetForDrawing(rect: cellsRect)
+      self.enqueueNeedsDisplay(rect: rect.applying(self.upsideDownTransform))
 
     case let .rectangle(rectangle):
       let rect = self.cellsGeometry.insetForDrawing(
         rect: self.cellsGeometry.cellsRect(for: rectangle)
       )
-      self.setNeedsDisplay(rect.applying(self.upsideDownTransform))
+      self.enqueueNeedsDisplay(rect: rect.applying(self.upsideDownTransform))
 
     case .clear, .size:
-      self.setNeedsDisplay(self.bounds.applying(self.upsideDownTransform))
+      self.enqueueNeedsDisplay(rect: self.bounds)
 
     default:
       break
@@ -186,13 +220,36 @@ class GridView: NSView {
   }
 
   private func handle(cursorIndex: GridPoint) {
-    self.setNeedsDisplay(
-      self.cellsGeometry.insetForDrawing(
-        rect: self.cellsGeometry.cellRect(
-          for: cursorIndex
-        )
+    let rect = self.cellsGeometry.insetForDrawing(
+      rect: self.cellsGeometry.cellRect(
+        for: cursorIndex
       )
-      .applying(self.upsideDownTransform)
     )
+    .applying(self.upsideDownTransform)
+
+    self.enqueueNeedsDisplay(rect: rect)
+  }
+
+  private func handleFlush() {
+    if SerialDrawing {
+      for rect in self.needsDisplayBuffer {
+        self.setNeedsDisplay(rect)
+      }
+
+      self.needsDisplayBuffer.removeAll(keepingCapacity: true)
+    }
+
+    self.barrierDispatchQueue.async(flags: .barrier) {
+      self.synchronizeDrawingContext = true
+    }
+  }
+
+  private func enqueueNeedsDisplay(rect: CGRect) {
+    if SerialDrawing {
+      self.needsDisplayBuffer.append(rect)
+
+    } else {
+      self.setNeedsDisplay(rect)
+    }
   }
 }

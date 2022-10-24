@@ -16,13 +16,27 @@ struct State: Hashable {
   }
 
   struct Grid: Hashable {
-    struct Window: Hashable {
+    init(cellGrid: CellGrid, windows: [ExtendedTypes.Window: Window], isHidden: Bool) {
+      self.cellGrid = cellGrid
+      self.windows = windows
+      self.isHidden = isHidden
+    }
+
+    struct Window: Hashable, GridProtocol {
+      typealias Element = Bool
+
+      var size: GridSize
       var frame: GridRectangle
       var isHidden: Bool
+
+      subscript(index: Library.GridPoint) -> Bool {
+        .init(false)
+      }
     }
 
     var cellGrid: CellGrid
     var windows: [ExtendedTypes.Window: Window]
+    var isHidden: Bool
 
     mutating func withMutableWindow(ref: ExtendedTypes.Window, _ body: (inout Window?) -> Void) {
       body(&self.windows[ref])
@@ -34,7 +48,6 @@ struct State: Hashable {
     var index: GridPoint
   }
 
-  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 110)
   var grids = [Grid?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.monospacedSystem(size: 13, weight: 0)
@@ -49,6 +62,7 @@ enum StateChange: Hashable {
   case window(Window)
   case cursor(State.Cursor)
   case font
+  case flush
 
   struct Grid: Hashable {
     enum Change: Hashable {
@@ -71,13 +85,14 @@ enum StateChange: Hashable {
   struct Window: Hashable {
     enum Change: Hashable {
       case position
+      case floatPosition
       case externalPosition
       case hide
       case close
     }
 
     var gridID: Int
-    var ref: ExtendedTypes.Window
+    var ref: ExtendedTypes.Window?
     var change: Change
   }
 }

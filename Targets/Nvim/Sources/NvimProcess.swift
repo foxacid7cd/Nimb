@@ -8,11 +8,12 @@
 
 import Foundation
 import Library
+import RxCocoa
 import RxSwift
 
 public class NvimProcess {
   @MainActor
-  public init() {
+  public init(input: Observable<KeyPress>) {
     self.process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     self.process.executableURL = Bundle.main.url(forResource: "nvim", withExtension: nil)
     self.process.arguments = ["--embed"]
@@ -47,6 +48,7 @@ public class NvimProcess {
       .subscribe(onNext: { data in
         do {
           try inputPipe.fileHandleForWriting.write(contentsOf: data)
+
         } catch {
           "Failed writing to process standard input"
             .fail(child: error.fail())
@@ -61,40 +63,45 @@ public class NvimProcess {
         .fail()
         .log(.info)
     }
-  }
 
-  public var notifications: Observable<NvimNotification> {
-    self.rpc.notifications
-      .map { notification in
-        do {
-          return try .init(notification: notification)
+    self.process <~ input
+      .map { $0.makeNvimKeyCode() }
+      .bind(with: self) { nvimProcess, keyCode in
+        Task {
+          do {
+            log(.debug, "nvim input: \(keyCode)")
 
-        } catch {
-          "Failed parsing nvim notification"
-            .fail(child: error.fail())
-            .fatalError()
+            _ = try await nvimProcess.nvimInput(keys: keyCode)
+
+          } catch {
+            "Failed nvim input"
+              .fail(child: error.fail())
+              .assertionFailure()
+          }
         }
       }
   }
 
-  public func run() throws {
-    try self.process.run()
+  public var notifications: Observable<NvimNotification> {
+    self.rpc.notifications
+      .flatMap { notification in
+        do {
+          return Observable.just(try NvimNotification(notification: notification))
+
+        } catch {
+          "Failed parsing nvim notification"
+            .fail(child: error.fail())
+            .assertionFailure()
+
+          return .empty()
+        }
+      }
+      .observe(on: MainScheduler.instance)
+      .share(replay: 1, scope: .forever)
   }
 
-  public func input(keyPress: KeyPress) {
-    Task {
-      do {
-        let keyCode = keyPress.makeNvimKeyCode()
-        log(.info, "nvim input: \(keyCode)")
-
-        _ = try await self.nvimInput(keys: keyCode)
-
-      } catch {
-        "Failed nvim input"
-          .fail(child: error.fail())
-          .assertionFailure()
-      }
-    }
+  public func run() throws {
+    try self.process.run()
   }
 
   let rpc: RPC
