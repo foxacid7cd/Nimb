@@ -14,12 +14,7 @@ extension NSResponder {
     .shared
   }
 
-  @MainActor
   var state: State {
     self.store.state
-  }
-
-  var stateChanges: Observable<[StateChange]> {
-    self.store.stateChanges
   }
 }

@@ -14,46 +14,20 @@ import RxCocoa
 import RxSwift
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    self <~ self.store.stateChanges
-      .extract { (/StateChange.grid).extract(from: $0) }
-      .bind(with: self) { $0.handleGrid(stateChange: $1) }
-
-    self <~ self.store.stateChanges
-      .extract { (/StateChange.window).extract(from: $0) }
-      .bind(with: self) { $0.handleWindow(stateChange: $1) }
-
+    self.listen()
     self.startNvimProcess()
   }
 
-  @IBOutlet private var mainMenu: NSMenu!
-
-  private let store = Store.shared
-  private var gridsWindowControllers = [Int: GridsWindowController]()
-  private let glyphRunsCache = Cache<Character, [GlyphRun]>(
-    dispatchQueue: .init(
-      label: "\(Bundle.main.bundleIdentifier!).glyphRunsCache",
-      attributes: .concurrent
-    )
-  )
-  private var windows = [Int: StateChange.Window]()
-  private let inputSubject = PublishSubject<KeyPress>()
-  private var nvimProcess: NvimProcess?
-
-  @MainActor
-  private func handleGrid(stateChange: StateChange.Grid) {
-    switch stateChange.change {
-    case .size:
-      if let gridsWindowController = self.gridsWindowControllers[stateChange.id] {
-        gridsWindowController.showWindow(nil)
-
-      } else {
+  func published(event: Event) {
+    switch event {
+    case .windowFrameChanged:
+      if self.gridsWindowController == nil {
         let gridsWindowController = GridsWindowController(
-          gridID: stateChange.id,
           glyphRunsCache: self.glyphRunsCache
         )
-        self.gridsWindowControllers[stateChange.id] = gridsWindowController
+        self.gridsWindowController = gridsWindowController
 
         self <~ gridsWindowController.keyDown
           .map(KeyPress.init)
@@ -62,25 +36,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         gridsWindowController.showWindow(nil)
       }
 
-    case .destroy:
-      self.gridsWindowControllers[stateChange.id]?.window?.close()
-      self.gridsWindowControllers[stateChange.id] = nil
-
     default:
       break
     }
   }
 
-  @MainActor
-  private func handleWindow(stateChange: StateChange.Window) {
-    switch stateChange.change {
-    case .position:
-      self.gridsWindowControllers[stateChange.gridID]?.showWindow(nil)
+  @IBOutlet private var mainMenu: NSMenu!
 
-    default:
-      break
-    }
-  }
+  private let glyphRunsCache = Cache<Character, [GlyphRun]>(
+    dispatchQueue: DispatchQueues.GlyphRunsCache
+  )
+  private let inputSubject = PublishSubject<KeyPress>()
+  private var nvimProcess: NvimProcess?
+  private var gridsWindowController: GridsWindowController?
 
   @MainActor
   private func startNvimProcess() {
@@ -88,9 +56,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     self.nvimProcess = nvimProcess
 
     self <~ nvimProcess.notifications
-      .bind(with: self) { strongSelf, notification in
-        Task {
-          await strongSelf.handle(notification: notification)
+      .bind(with: self) {
+        do {
+          try $0.handle(notification: $1)
+
+        } catch {
+          "nvim process notification failed"
+            .fail(child: error.fail())
+            .assertionFailure()
         }
       }
 
@@ -106,8 +79,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         try await nvimProcess.nvimUIAttach(
-          width: 110,
-          height: 50,
+          width: store.state.outerGridSize.columnsCount,
+          height: store.state.outerGridSize.rowsCount,
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true,
@@ -123,7 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @MainActor
-  private func handle(notification: NvimNotification) async {
+  private func handle(notification: NvimNotification) throws {
     switch notification {
     case let .redraw(uiEvents):
       for uiEvent in uiEvents {
@@ -134,381 +107,312 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           for model in models {
             log(.info, "grid resize: \(model)")
 
-            self.store.dispatch { state in
-              let size = GridSize(
-                rowsCount: model.height,
-                columnsCount: model.width
-              )
-              state.grids[model.grid] = State.Grid(
-                cellGrid: .init(repeating: nil, size: size),
-                windows: .init(),
-                isHidden: false
-              )
+            let gridSize = GridSize(
+              rowsCount: model.height,
+              columnsCount: model.width
+            )
 
-              return [
-                .grid(.init(
-                  id: model.grid,
-                  change: .size
-                ))
-              ]
+            if var window = self.store.state.windows[model.grid] {
+              window.grid.resize(to: gridSize, fillingEmptyWith: nil)
+              window.frame.size = .init(
+                rowsCount: min(gridSize.rowsCount, window.grid.size.rowsCount),
+                columnsCount: min(gridSize.columnsCount, window.grid.size.columnsCount)
+              )
+              self.store.state.windows[model.grid] = window
+
+            } else {
+              self.store.state.windows[model.grid] = State.Window(
+                grid: .init(repeating: nil, size: gridSize),
+                frame: .init(origin: .init(), size: gridSize),
+                isHidden: false,
+                ref: nil
+              )
             }
+
+            self.store.publish(
+              event: .windowFrameChanged(
+                gridID: model.grid
+              )
+            )
           }
 
         case let .gridDestroy(models):
           log(.info, "Grid destroy: \(models.count)")
 
           for model in models {
-            self.store.dispatch { state in
-              state.grids[model.grid] = nil
+            self.store.state.windows[model.grid] = nil
 
-              return [
-                .grid(.init(
-                  id: model.grid,
-                  change: .destroy
-                ))
-              ]
-            }
+            self.store.publish(event:
+              .windowClosed(gridID: model.grid)
+            )
           }
 
         case let .gridLine(models):
           log(.info, "Grid line: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
-            var latestHlID: Int?
-            var latestRow: Int?
+          var latestHlID: Int?
+          var latestRow: Int?
 
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                var updatedCellsCount = 0
-                for messagePackValue in model.data {
-                  guard var arrayValue = messagePackValue.arrayValue else {
-                    "cell data is not an array"
-                      .fail()
-                      .assertionFailure()
+          var events = [Event]()
 
-                    continue
+          for model in models {
+            var updatedCellsCount = 0
+
+            for messagePackValue in model.data {
+              guard var arrayValue = messagePackValue.arrayValue else {
+                throw "Cell data is not an array".fail()
+              }
+
+              guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
+                throw "Expected cell text is not a string".fail()
+              }
+              let character = text.first
+
+              var repeatCount = 1
+
+              if !arrayValue.isEmpty {
+                guard let hlID = arrayValue.removeFirst().uintValue else {
+                  throw "Expected cell hl_id is not an unsigned integer".fail()
+                }
+                latestHlID = Int(hlID)
+
+                if !arrayValue.isEmpty {
+                  guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
+                    throw "Expected cell repeat count is not an unsigned integer".fail()
                   }
-
-                  guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                    "expected cell text is not a string"
-                      .fail()
-                      .assertionFailure()
-
-                    continue
-                  }
-                  let character = text.first
-
-                  var repeatCount = 1
-
-                  if !arrayValue.isEmpty {
-                    guard let hlID = arrayValue.removeFirst().uintValue else {
-                      "expected cell hl_id is not an unsigned integer"
-                        .fail()
-                        .assertionFailure()
-
-                      continue
-                    }
-                    latestHlID = Int(hlID)
-
-                    if !arrayValue.isEmpty {
-                      guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
-                        "expected cell repeat count is not an unsigned integer"
-                          .fail()
-                          .assertionFailure()
-
-                        continue
-                      }
-                      repeatCount = Int(parsedRepeatCount)
-                    }
-                  }
-
-                  guard let latestHlID else {
-                    "at least one hlID had to be parsed"
-                      .fail()
-                      .assertionFailure()
-
-                    continue
-                  }
-
-                  if latestRow != model.row {
-                    updatedCellsCount = 0
-                  }
-
-                  for repeatIndex in 0 ..< repeatCount {
-                    let index = GridPoint(
-                      row: model.row,
-                      column: model.colStart + updatedCellsCount + repeatIndex
-                    )
-                    grid!.cellGrid[index] = Cell(
-                      character: character,
-                      hlID: latestHlID
-                    )
-                  }
-
-                  stateChanges.append(
-                    .grid(.init(
-                      id: model.grid,
-                      change: .row(.init(
-                        origin: .init(
-                          row: model.row,
-                          column: model.colStart + updatedCellsCount
-                        ),
-                        columnsCount: repeatCount
-                      ))
-                    ))
-                  )
-
-                  updatedCellsCount += repeatCount
-
-                  latestRow = model.row
+                  repeatCount = Int(parsedRepeatCount)
                 }
               }
-            }
 
-            return stateChanges
+              guard let latestHlID else {
+                throw "At least one hlID had to be parsed".fail()
+              }
+
+              if latestRow != model.row {
+                updatedCellsCount = 0
+              }
+
+              for repeatIndex in 0 ..< repeatCount {
+                let index = GridPoint(
+                  row: model.row,
+                  column: model.colStart + updatedCellsCount + repeatIndex
+                )
+                self.store.state.windows[model.grid]!.grid[index] = Cell(
+                  character: character,
+                  hlID: latestHlID
+                )
+              }
+
+              events.append(
+                .windowGridRowChanged(
+                  gridID: model.grid,
+                  origin: .init(
+                    row: model.row,
+                    column: model.colStart + updatedCellsCount
+                  ),
+                  columnsCount: repeatCount
+                )
+              )
+              updatedCellsCount += repeatCount
+
+              latestRow = model.row
+            }
           }
+
+          self.store.publish(events: events)
 
         case let .gridScroll(models):
           log(.info, "Grid scroll: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
+          for model in models {
+            let size = GridSize(
+              rowsCount: model.bot - model.top,
+              columnsCount: model.right - model.left
+            )
+            let fromOrigin = GridPoint(
+              row: model.top,
+              column: model.left
+            )
+            let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
 
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                let size = GridSize(
-                  rowsCount: model.bot - model.top,
-                  columnsCount: model.right - model.left
-                )
-
-                let fromOrigin = GridPoint(
-                  row: model.top,
-                  column: model.left
-                )
-                let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
-
-                grid!.cellGrid.put(
-                  grid: grid!.cellGrid.subGrid(at: .init(origin: fromOrigin, size: size)),
-                  at: toOrigin
-                )
-
-                let toRectangle = GridRectangle(
-                  origin: toOrigin,
-                  size: size
-                )
-                .intersection(
-                  .init(
-                    origin: .init(),
-                    size: size
-                  )
-                )
-
-                stateChanges.append(
-                  .grid(.init(
-                    id: model.grid,
-                    change: .rectangle(toRectangle)
-                  ))
-                )
-              }
+            self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
+              window.grid.put(
+                grid: window.grid.subGrid(
+                  at: .init(origin: fromOrigin, size: size)
+                ),
+                at: toOrigin
+              )
             }
 
-            return stateChanges
+            let toRectangle = GridRectangle(
+              origin: toOrigin,
+              size: size
+            )
+            .intersection(
+              .init(
+                origin: .init(),
+                size: size
+              )
+            )
+
+            self.store.publish(
+              event: .windowGridRectangleChanged(
+                gridID: model.grid,
+                rectangle: toRectangle
+              )
+            )
           }
 
         case let .gridClear(models):
           log(.info, "Grid clear: \(models.count)")
 
           for model in models {
-            self.store.dispatch { state in
-              state.withMutableGrid(id: model.grid) { grid in
-                grid!.cellGrid = .init(
-                  repeating: nil,
-                  size: grid!.cellGrid.size
-                )
-              }
-
-              return [
-                .grid(.init(
-                  id: model.grid,
-                  change: .clear
-                ))
-              ]
+            self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
+              window.grid = .init(
+                repeating: nil,
+                size: window.grid.size
+              )
             }
+
+            self.store.publish(
+              event: .windowGridCleared(gridID: model.grid)
+            )
           }
 
         case let .gridCursorGoto(models):
           log(.info, "Grid cursor goto: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
+          for model in models {
+            let previousCursor = self.store.state.cursor
 
-            for model in models {
-              if let previousCursor = state.cursor {
-                stateChanges.append(
-                  .cursor(previousCursor)
-                )
-              }
-
-              let cursor = State.Cursor(
-                gridID: model.grid,
-                index: .init(
-                  row: model.row,
-                  column: model.col
-                )
+            self.store.state.cursor = .init(
+              gridID: model.grid,
+              position: .init(
+                row: model.row,
+                column: model.col
               )
-              state.cursor = cursor
+            )
 
-              stateChanges.append(.cursor(cursor))
-            }
-
-            return stateChanges
+            self.store.publish(
+              event: .cursorMoved(
+                previousCursor: previousCursor
+              )
+            )
           }
 
         case let .winPos(models):
           log(.info, "Win pos: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
+          for model in models {
+            log(.info, "win pos: \(model)")
 
-            for model in models {
-              log(.info, "win pos: \(model)")
-
-              state.withMutableGrid(id: model.grid) { grid in
-                grid?.windows[model.win] = .init(
-                  size: .init(),
-                  frame: GridRectangle(
-                    origin: .init(
-                      row: model.startrow,
-                      column: model.startcol
-                    ),
-                    size: .init(
-                      rowsCount: model.height,
-                      columnsCount: model.width
-                    )
-                  ),
-                  isHidden: false
-                )
-
-                stateChanges.append(
-                  .window(.init(gridID: model.grid, ref: model.win, change: .position))
-                )
-              }
+            self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
+              window.frame = .init(
+                origin: .init(row: model.startrow, column: model.startcol),
+                size: .init(rowsCount: model.height, columnsCount: model.width)
+              )
+              window.ref = model.win
             }
 
-            return stateChanges
+            self.store.publish(
+              event: .windowFrameChanged(
+                gridID: model.grid
+              )
+            )
           }
 
         case let .winFloatPos(models):
           log(.info, "Win float pos: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
-
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                grid!.withMutableWindow(ref: model.win) { window in
-                  window = .init(size: .init(), frame: .init(), isHidden: false)
-
-                  window = State.Grid.Window(
-                    size: .init(),
-                    frame: .init(
-                      origin: .init(
-                        row: window!.frame.size.rowsCount - window!.frame.origin.row,
-                        column: window!.frame.size.columnsCount - window!.frame.origin.column
-                      ),
-                      size: .init(
-                        rowsCount: window!.frame.size.rowsCount,
-                        columnsCount: window!.frame.size.columnsCount
-                      )
-                    ),
-                    isHidden: false
-                  )
-                }
-
-                stateChanges.append(
-                  .window(.init(
-                    gridID: model.grid,
-                    ref: model.win,
-                    change: .floatPosition
-                  ))
-                )
-              }
-            }
-
-            return stateChanges
-          }
+//          for model in models {
+//            self.store.state.windows[model.grid] = .init(
+//              grid: .init(
+//                repeating: nil,
+//                size: self.store.state.outerGridSize
+//              ),
+//              origin: .init(),
+//              isHidden: true
+//            )
+//
+//            self.store.publish(
+//              event: .windowFrameChanged(gridID: model.grid)
+//            )
+//          }
 
         case let .winExternalPos(models):
           log(.info, "Win external pos: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
-
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                grid!.withMutableWindow(ref: model.win) { window in
-                  window = .init(
-                    size: .init(rowsCount: 10, columnsCount: 20),
-                    frame: .init(origin: .init(), size: .init(rowsCount: 10, columnsCount: 20)),
-                    isHidden: false
-                  )
-                }
-
-                stateChanges.append(
-                  .window(.init(
-                    gridID: model.grid,
-                    ref: model.win,
-                    change: .externalPosition
-                  ))
-                )
-              }
-            }
-
-            return stateChanges
-          }
+//          for model in models {
+//            self.store.state.windows[model.grid] = .init(
+//              grid: .init(
+//                repeating: nil,
+//                size: self.store.state.outerGridSize
+//              ),
+//              isHidden: true,
+//              frame: nil
+//            )
+//
+//            self.store.publish(
+//              event: .windowFrameChanged(gridID: model.grid)
+//            )
+//          }
 
         case let .winHide(models):
           log(.info, "Win hide: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
-
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                grid = nil
-              }
-
-              stateChanges.append(.window(.init(gridID: model.grid, ref: nil, change: .hide)))
+          for model in models {
+            self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
+              window.isHidden = true
             }
 
-            return stateChanges
+            self.store.publish(
+              event: .windowHid(gridID: model.grid)
+            )
           }
 
         case let .winClose(models):
           log(.info, "Win close: \(models.count)")
 
-          self.store.dispatch { state in
-            var stateChanges = [StateChange]()
+          for model in models {
+            self.store.state.windows[model.grid] = nil
 
-            for model in models {
-              state.withMutableGrid(id: model.grid) { grid in
-                grid = nil
-              }
-
-              stateChanges.append(.window(.init(gridID: model.grid, ref: nil, change: .close)))
-            }
-
-            return stateChanges
+            self.store.publish(event: .windowClosed(gridID: model.grid))
           }
 
-        case let .flush(count):
-          self.store.dispatch { _ in .init(repeating: StateChange.flush, count: count) }
+        case .flush:
+          self.store.publish(event: .flushRequested)
 
         default:
           break
         }
       }
     }
+  }
+}
+
+extension Reactive where Base: EventListener, Base: AnyObject {
+  func events(_ events: Observable<[Event]>) -> Disposable {
+    events.bind(with: base) { base, events in
+      for event in events {
+        base.published(event: event)
+      }
+    }
+  }
+}
+
+protocol EventListener {
+  func published(event: Event)
+}
+
+extension EventListener {
+  var store: Store {
+    .shared
+  }
+}
+
+extension EventListener where Self: NSObject {
+  func listen() {
+    self <~ Store.shared.events
+      .bind(to: self.rx.events(_:))
   }
 }

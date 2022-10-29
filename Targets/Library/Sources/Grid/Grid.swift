@@ -18,7 +18,26 @@ public struct Grid<Element>: GridProtocol {
     self.init(size: size, rows: rows)
   }
 
-  private init(size: GridSize, rows: [[Element]]) {
+  public init(size: GridSize, elementAtIndex: (GridPoint) -> Element) {
+    var rowsArray = [[Element]]()
+
+    for row in 0 ..< size.rowsCount {
+      var rowArray = [Element]()
+
+      for column in 0 ..< size.columnsCount {
+        rowArray.append(
+          elementAtIndex(.init(row: row, column: column))
+        )
+      }
+
+      rowsArray.append(rowArray)
+    }
+
+    self.size = size
+    self.rows = rowsArray
+  }
+
+  init(size: GridSize, rows: [[Element]]) {
     self.size = size
     self.rows = rows
   }
@@ -45,13 +64,7 @@ public struct Grid<Element>: GridProtocol {
   }
 
   public func subGrid(at rectangle: GridRectangle) -> SubGrid<Element> {
-    let rows = self.rows[rectangle.minRow ..< rectangle.maxRow].lazy
-      .map { $0[rectangle.minColumn ..< rectangle.maxColumn] }
-
-    return .init(
-      size: rectangle.size,
-      rows: rows
-    )
+    .init(grid: self, rectangle: rectangle)
   }
 
   public mutating func put<T: GridProtocol>(grid: T, at origin: GridPoint) where T.Element == Element {
@@ -62,7 +75,7 @@ public struct Grid<Element>: GridProtocol {
         continue
       }
 
-      for gridColumn in 0 ..< self.size.columnsCount {
+      for gridColumn in 0 ..< grid.size.columnsCount {
         let column = origin.column + gridColumn
 
         guard column >= 0, column < self.size.columnsCount else {
@@ -75,6 +88,17 @@ public struct Grid<Element>: GridProtocol {
         self[index] = grid[gridIndex]
       }
     }
+  }
+
+  public mutating func resize(to newSize: GridSize, fillingEmptyWith element: Element) {
+    let newGrid = Self(size: newSize) { index in
+      guard index.row < self.size.rowsCount, index.column < self.size.columnsCount else {
+        return element
+      }
+
+      return self[index]
+    }
+    self = newGrid
   }
 
   private var rows: [[Element]]

@@ -14,23 +14,12 @@ import Nvim
 import RxCocoa
 import RxSwift
 
-class GridsView: NSView {
-  init(frame: NSRect, gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+class GridsView: NSView, EventListener {
+  init(frame: NSRect, glyphRunsCache: Cache<Character, [GlyphRun]>) {
     self.glyphRunsCache = glyphRunsCache
-    self.mainGridView = .init(
-      frame: frame,
-      gridID: gridID,
-      windowRef: nil,
-      glyphRunsCache: glyphRunsCache
-    )
     super.init(frame: frame)
 
-    self <~ self.store.stateChanges
-      .extract { (/StateChange.window).extract(from: $0) }
-      .bind(with: self) { $0.handleWindow(stateChange: $1) }
-
-    self.mainGridView.translatesAutoresizingMaskIntoConstraints = false
-    self.addSubview(self.mainGridView)
+    self.listen()
   }
 
   @available(*, unavailable)
@@ -38,40 +27,56 @@ class GridsView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private let glyphRunsCache: Cache<Character, [GlyphRun]>
-  private var mainGridView: GridView
-  private var windowGridViews = [ExtendedTypes.Window: GridView]()
-
-  private var cellsGeometry: CellsGeometry {
-    .shared
-  }
-
-  private func handleWindow(stateChange: StateChange.Window) {
-    guard let ref = stateChange.ref else {
-      return
-    }
-
-    switch stateChange.change {
-    case .position:
-      if let gridView = self.windowGridViews[ref] {
-        let window = self.state.grids[stateChange.gridID]!.windows[ref]
-
-        gridView.translatesAutoresizingMaskIntoConstraints = false
-        gridView.frame = self.cellsGeometry.cellsRect(for: window!.frame)
-        self.addSubview(gridView)
-
-        self.windowGridViews[ref] = gridView
+  func published(event: Event) {
+    switch event {
+    case let .windowFrameChanged(gridID):
+      guard let window = self.state.windows[gridID] else {
+        break
       }
 
-    case .hide:
-      self.windowGridViews[ref]!.isHidden = true
+      let cellsFrame = self.cellsGeometry.upsideDownRect(
+        from: self.cellsGeometry.cellsRect(
+          for: window.frame
+        ),
+        parentViewHeight: self.bounds.height
+      )
 
-    case .close:
-      self.windowGridViews[ref]!.removeFromSuperview()
-      self.windowGridViews[ref] = nil
+      if let gridView = self.gridViews[gridID] {
+        gridView.frame = cellsFrame
+        gridView.isHidden = false
+
+      } else {
+        let gridView = GridView(
+          frame: cellsFrame,
+          gridID: gridID,
+          glyphRunsCache: self.glyphRunsCache
+        )
+        self.gridViews[gridID] = gridView
+        self.addSubview(gridView)
+      }
+
+    /* case let .floatingWindowFrameChanged(gridID):
+      self.gridViews[gridID]?.isHidden = true
+
+    case let .externalWindowFrameChanged(gridID):
+      self.gridViews[gridID]?.isHidden = true */
+
+    case let .windowHid(gridID):
+      self.gridViews[gridID]?.isHidden = true
+
+    case let .windowClosed(gridID):
+      self.gridViews[gridID]?.removeFromSuperview()
+      self.gridViews[gridID] = nil
 
     default:
       break
     }
+  }
+
+  private let glyphRunsCache: Cache<Character, [GlyphRun]>
+  private var gridViews = [Int: GridView]()
+
+  private var cellsGeometry: CellsGeometry {
+    .shared
   }
 }

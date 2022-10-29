@@ -13,26 +13,35 @@ import RxCocoa
 import RxSwift
 
 class Store {
+  private init() {
+    let eventsSubject = PublishSubject<[Event]>()
+    self.eventsSubject = eventsSubject
+
+    self.events = eventsSubject
+      .filter { !$0.isEmpty }
+      .do(onNext: { events in
+        log(.info, "Events published: \(events)")
+      })
+      .share(replay: 1, scope: .forever)
+  }
+
   static let shared = Store()
 
   private(set) lazy var stateDerivatives = StateDerivatives(store: self)
 
-  @MainActor
-  private(set) var state = State()
+  let events: Observable<[Event]>
 
-  @MainActor
-  var stateChanges: Observable<[StateChange]> {
-    self.stateChangesSubject
+  var state = State()
+
+  func publish(events: [Event]) {
+    self.eventsSubject.onNext(events)
   }
 
-  @MainActor
-  func dispatch(action: (inout State) -> [StateChange]) {
-    let stateChanges = action(&self.state)
-    self.stateChangesSubject.onNext(stateChanges)
+  func publish(event: Event) {
+    self.eventsSubject.onNext([event])
   }
 
-  @MainActor
-  private let stateChangesSubject = PublishSubject<[StateChange]>()
+  private var eventsSubject = PublishSubject<[Event]>()
 }
 
 class StateDerivatives {
@@ -45,9 +54,8 @@ class StateDerivatives {
     var cellSize: CGSize
   }
 
-  @MainActor
   var font: Font {
-    if let (stateFont, font) = latestFontContext, stateFont == self.state.font {
+    if let (stateFont, font) = DispatchQueues.StateDerivatives.sync(execute: { self.latestFontContext }), stateFont == self.state.font {
       return font
     }
 
@@ -64,7 +72,9 @@ class StateDerivatives {
       nsFont: nsFont,
       cellSize: nsFont.calculateCellSize(for: "@")
     )
-    self.latestFontContext = (self.state.font, font)
+    DispatchQueues.StateDerivatives.async(flags: .barrier) {
+      self.latestFontContext = (self.state.font, font)
+    }
 
     return font
   }
@@ -72,14 +82,13 @@ class StateDerivatives {
   private var latestFontContext: (stateFont: State.Font, font: Font)?
   private let store: Store
 
-  @MainActor
   private var state: State {
     self.store.state
   }
 }
 
-extension Observable where Element == [StateChange] {
-  func extract<T>(_ transform: @escaping (StateChange) -> T?) -> Observable<T> {
+extension Observable where Element == [Event] {
+  func extract<T>(_ transform: @escaping (Event) -> T?) -> Observable<T> {
     self.flatMap {
       Observable<T>.from($0.compactMap(transform))
     }

@@ -11,16 +11,14 @@ import Library
 import RxSwift
 
 class GridsWindow: NSWindow {
-  init(gridID: Int, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(glyphRunsCache: Cache<Character, [GlyphRun]>) {
     super.init(
       contentRect: .init(),
       styleMask: [.titled],
       backing: .buffered,
       defer: true
     )
-    self.title = "Grid \(gridID)"
     self.contentViewController = GridsViewController(
-      gridID: gridID,
       glyphRunsCache: glyphRunsCache
     )
   }

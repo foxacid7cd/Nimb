@@ -17,31 +17,24 @@ public struct GridRectangle: Hashable {
   public var origin: GridPoint
   public var size: GridSize
 
-  public var minRow: Int {
-    self.origin.row
+  public var rowsRange: Range<Int> {
+    self.origin.row ..< self.origin.row + self.size.rowsCount
   }
 
-  public var minColumn: Int {
-    self.origin.column
-  }
-
-  public var maxRow: Int {
-    self.origin.row + self.size.rowsCount
-  }
-
-  public var maxColumn: Int {
-    self.origin.column + self.size.columnsCount
+  public var columnsRange: Range<Int> {
+    self.origin.column ..< self.origin.column + self.size.columnsCount
   }
 
   public func intersection(_ r2: GridRectangle) -> GridRectangle {
-    .init(
+    let r1 = self
+    return .init(
       origin: .init(
-        row: min(r2.minRow, self.maxRow),
-        column: min(r2.minColumn, self.maxColumn)
+        row: max(r1.origin.row, r2.origin.row),
+        column: max(r1.origin.column, r2.origin.column)
       ),
       size: .init(
-        rowsCount: max(0, r2.maxRow - self.minRow),
-        columnsCount: max(0, r2.maxColumn - self.minColumn)
+        rowsCount: min(r1.origin.row + r1.size.rowsCount, r2.origin.row + r2.size.rowsCount) - max(r1.origin.row, r2.origin.row),
+        columnsCount: min(r1.origin.column + r1.size.columnsCount, r2.origin.column + r2.size.columnsCount) - max(r1.origin.column, r2.origin.column)
       )
     )
   }

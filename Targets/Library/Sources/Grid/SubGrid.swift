@@ -8,19 +8,28 @@
 
 import Foundation
 
-public struct SubGrid<Element>: GridProtocol {
-  init(size: GridSize, rows: Rows) {
-    self.size = size
-    self.rows = rows
+public class SubGrid<Element>: GridProtocol {
+  init(grid: Grid<Element>, rectangle: GridRectangle) {
+    self.grid = grid
+    self.rectangle = rectangle
   }
 
-  public typealias Rows = LazyMapSequence<ArraySlice<[Element]>, ArraySlice<Element>>
-
-  public let size: GridSize
+  public var size: GridSize {
+    self.rectangle.size
+  }
 
   public subscript(index: GridPoint) -> Element {
-    self.rows[index.row][index.column]
+    self.grid[index + self.rectangle.origin]
   }
 
-  private let rows: Rows
+  private let grid: Grid<Element>
+  private let rectangle: GridRectangle
+}
+
+public extension Grid {
+  init(_ subGrid: SubGrid<Element>) {
+    self.init(size: subGrid.size) { index in
+      subGrid[index]
+    }
+  }
 }

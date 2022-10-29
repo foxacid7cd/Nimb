@@ -10,20 +10,34 @@ import AppKit
 import Library
 
 final class CellsGeometry {
-  @MainActor
   static let shared = CellsGeometry()
 
-  @MainActor
+  var outerCellsSize: CGSize {
+    self.cellsSize(for: self.state.outerGridSize)
+  }
+
   var cellSize: CGSize {
     self.store.stateDerivatives.font.cellSize
   }
 
-  @MainActor
+  func upsideDownRect(from rect: CGRect, parentViewHeight: CGFloat) -> CGRect {
+    rect.applying(
+      self.upsideDownAffineTransform(
+        parentViewHeight: parentViewHeight
+      )
+    )
+  }
+
+  func upsideDownAffineTransform(parentViewHeight: CGFloat) -> CGAffineTransform {
+    .identity
+      .scaledBy(x: 1, y: -1)
+      .translatedBy(x: 0, y: -parentViewHeight)
+  }
+
   func gridCellsSize(grid: Grid<Cell?>) -> CGSize {
     self.cellsSize(for: grid.size)
   }
 
-  @MainActor
   func insetForDrawing(rect: CGRect) -> CGRect {
     let font = self.store.stateDerivatives.font.nsFont
     return rect.insetBy(
@@ -32,7 +46,6 @@ final class CellsGeometry {
     )
   }
 
-  @MainActor
   func gridRectangle(cellsRect: CGRect) -> GridRectangle {
     let origin = GridPoint(
       row: Int(floor(cellsRect.minY / self.cellSize.height)),
@@ -45,7 +58,6 @@ final class CellsGeometry {
     return GridRectangle(origin: origin, size: size)
   }
 
-  @MainActor
   func cellsRect(for gridRectangle: GridRectangle) -> CGRect {
     .init(
       origin: self.cellOrigin(for: gridRectangle.origin),
@@ -53,7 +65,6 @@ final class CellsGeometry {
     )
   }
 
-  @MainActor
   func cellsSize(for gridSize: GridSize) -> CGSize {
     .init(
       width: CGFloat(gridSize.columnsCount) * self.cellSize.width,
@@ -61,7 +72,6 @@ final class CellsGeometry {
     )
   }
 
-  @MainActor
   func cellRect(for index: GridPoint) -> CGRect {
     .init(
       origin: self.cellOrigin(for: index),
@@ -69,7 +79,6 @@ final class CellsGeometry {
     )
   }
 
-  @MainActor
   func cellOrigin(for index: GridPoint) -> CGPoint {
     .init(
       x: Double(index.column) * self.cellSize.width,
@@ -81,7 +90,6 @@ final class CellsGeometry {
     .shared
   }
 
-  @MainActor
   private var state: State {
     self.store.state
   }

@@ -15,84 +15,29 @@ struct State: Hashable {
     case custom(name: String, size: Double)
   }
 
-  struct Grid: Hashable {
-    init(cellGrid: CellGrid, windows: [ExtendedTypes.Window: Window], isHidden: Bool) {
-      self.cellGrid = cellGrid
-      self.windows = windows
-      self.isHidden = isHidden
-    }
-
-    struct Window: Hashable, GridProtocol {
-      typealias Element = Bool
-
-      var size: GridSize
-      var frame: GridRectangle
-      var isHidden: Bool
-
-      subscript(index: Library.GridPoint) -> Bool {
-        .init(false)
-      }
-    }
-
-    var cellGrid: CellGrid
-    var windows: [ExtendedTypes.Window: Window]
+  struct Window: Hashable {
+    var grid: CellGrid
+    var frame: GridRectangle
     var isHidden: Bool
 
-    mutating func withMutableWindow(ref: ExtendedTypes.Window, _ body: (inout Window?) -> Void) {
-      body(&self.windows[ref])
-    }
+    var ref: ExtendedTypes.Window?
   }
 
   struct Cursor: Hashable {
     var gridID: Int
-    var index: GridPoint
+    var position: GridPoint
   }
 
-  var grids = [Grid?](repeating: nil, count: 100)
+  var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.monospacedSystem(size: 13, weight: 0)
+  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 120)
 
-  mutating func withMutableGrid(id: Int, _ body: (inout Grid?) -> Void) {
-    body(&self.grids[id])
-  }
-}
-
-enum StateChange: Hashable {
-  case grid(Grid)
-  case window(Window)
-  case cursor(State.Cursor)
-  case font
-  case flush
-
-  struct Grid: Hashable {
-    enum Change: Hashable {
-      case size
-      case row(Row)
-      case rectangle(GridRectangle)
-      case clear
-      case destroy
-
-      struct Row: Hashable {
-        var origin: GridPoint
-        var columnsCount: Int
-      }
+  mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {
+    guard var window = self.windows[gridID] else {
+      return
     }
-
-    var id: Int
-    var change: Change
-  }
-
-  struct Window: Hashable {
-    enum Change: Hashable {
-      case position
-      case floatPosition
-      case externalPosition
-      case hide
-      case close
-    }
-
-    var gridID: Int
-    var ref: ExtendedTypes.Window?
-    var change: Change
+    body(&window)
+    self.windows[gridID] = window
   }
 }
