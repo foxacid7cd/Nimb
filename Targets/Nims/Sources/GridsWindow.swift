@@ -11,7 +11,7 @@ import Library
 import RxSwift
 
 class GridsWindow: NSWindow {
-  init(glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(glyphRunsCache: Cache<String, [GlyphRun]>) {
     super.init(
       contentRect: .init(),
       styleMask: [.titled],

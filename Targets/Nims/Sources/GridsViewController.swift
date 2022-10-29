@@ -13,7 +13,7 @@ import RxCocoa
 import RxSwift
 
 class GridsViewController: NSViewController, EventListener {
-  init(glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(glyphRunsCache: Cache<String, [GlyphRun]>) {
     self.glyphRunsCache = glyphRunsCache
     super.init(nibName: nil, bundle: nil)
   }
@@ -42,7 +42,7 @@ class GridsViewController: NSViewController, EventListener {
 
   func published(event: Event) {}
 
-  private let glyphRunsCache: Cache<Character, [GlyphRun]>
+  private let glyphRunsCache: Cache<String, [GlyphRun]>
 
   private var cellsGeometry: CellsGeometry {
     .shared

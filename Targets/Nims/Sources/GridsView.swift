@@ -15,7 +15,7 @@ import RxCocoa
 import RxSwift
 
 class GridsView: NSView, EventListener {
-  init(frame: NSRect, glyphRunsCache: Cache<Character, [GlyphRun]>) {
+  init(frame: NSRect, glyphRunsCache: Cache<String, [GlyphRun]>) {
     self.glyphRunsCache = glyphRunsCache
     super.init(frame: frame)
 
@@ -73,7 +73,7 @@ class GridsView: NSView, EventListener {
     }
   }
 
-  private let glyphRunsCache: Cache<Character, [GlyphRun]>
+  private let glyphRunsCache: Cache<String, [GlyphRun]>
   private var gridViews = [Int: GridView]()
 
   private var cellsGeometry: CellsGeometry {

@@ -43,7 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
   @IBOutlet private var mainMenu: NSMenu!
 
-  private let glyphRunsCache = Cache<Character, [GlyphRun]>(
+  private let glyphRunsCache = Cache<String, [GlyphRun]>(
     dispatchQueue: DispatchQueues.GlyphRunsCache
   )
   private let inputSubject = PublishSubject<KeyPress>()
@@ -123,7 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
             } else {
               self.store.state.windows[model.grid] = State.Window(
                 grid: .init(repeating: nil, size: gridSize),
-                frame: .init(origin: .init(), size: gridSize),
+                frame: .init(size: gridSize),
                 isHidden: false,
                 ref: nil
               )
@@ -165,6 +165,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
               guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
                 throw "Expected cell text is not a string".fail()
+              }
+              if text.count > 1 {
+                throw "Cell text \(text) has more than one character".fail()
               }
               let character = text.first
 
@@ -255,12 +258,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
               )
             )
 
-            self.store.publish(
-              event: .windowGridRectangleChanged(
-                gridID: model.grid,
-                rectangle: toRectangle
+            if let toRectangle {
+              self.store.publish(
+                event: .windowGridRectangleChanged(
+                  gridID: model.grid,
+                  rectangle: toRectangle
+                )
               )
-            )
+            }
           }
 
         case let .gridClear(models):

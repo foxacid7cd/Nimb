@@ -30,7 +30,7 @@ struct State: Hashable {
 
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
-  var font = Font.monospacedSystem(size: 13, weight: 0)
+  var font = Font.custom(name: "MesloLGS Nerd Font Mono", size: 13)
   var outerGridSize = GridSize(rowsCount: 40, columnsCount: 120)
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {

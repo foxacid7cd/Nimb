@@ -25,9 +25,9 @@ public struct GridRectangle: Hashable {
     self.origin.column ..< self.origin.column + self.size.columnsCount
   }
 
-  public func intersection(_ r2: GridRectangle) -> GridRectangle {
+  public func intersection(_ r2: GridRectangle) -> GridRectangle? {
     let r1 = self
-    return .init(
+    let rectangle = GridRectangle(
       origin: .init(
         row: max(r1.origin.row, r2.origin.row),
         column: max(r1.origin.column, r2.origin.column)
@@ -37,6 +37,10 @@ public struct GridRectangle: Hashable {
         columnsCount: min(r1.origin.column + r1.size.columnsCount, r2.origin.column + r2.size.columnsCount) - max(r1.origin.column, r2.origin.column)
       )
     )
+    guard rectangle.size.rowsCount > 0, rectangle.size.columnsCount > 0 else {
+      return nil
+    }
+    return rectangle
   }
 }
 
