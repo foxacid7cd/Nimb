@@ -14,8 +14,6 @@ enum Event: Hashable {
   case windowGridCleared(gridID: Int)
 
   case windowFrameChanged(gridID: Int)
-  case floatingWindowFrameChanged(gridID: Int)
-  case externalWindowFrameChanged(gridID: Int)
   case windowHid(gridID: Int)
   case windowClosed(gridID: Int)
 

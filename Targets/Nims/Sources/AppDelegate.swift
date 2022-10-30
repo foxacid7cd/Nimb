@@ -114,17 +114,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
             if var window = self.store.state.windows[model.grid] {
               window.grid.resize(to: gridSize, fillingEmptyWith: nil)
-              window.frame.size = .init(
-                rowsCount: min(gridSize.rowsCount, window.grid.size.rowsCount),
-                columnsCount: min(gridSize.columnsCount, window.grid.size.columnsCount)
-              )
               self.store.state.windows[model.grid] = window
 
             } else {
               self.store.state.windows[model.grid] = State.Window(
                 grid: .init(repeating: nil, size: gridSize),
-                frame: .init(size: gridSize),
+                origin: .init(),
+                anchor: .topLeft,
                 isHidden: false,
+                zIndex: 0,
                 ref: nil
               )
             }
@@ -312,10 +310,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
             log(.info, "win pos: \(model)")
 
             self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.frame = .init(
-                origin: .init(row: model.startrow, column: model.startcol),
-                size: .init(rowsCount: model.height, columnsCount: model.width)
+              window.grid.resize(
+                to: .init(rowsCount: model.height, columnsCount: model.width),
+                fillingEmptyWith: nil
               )
+              window.origin = .init(row: model.startrow, column: model.startcol)
+              window.isHidden = false
+              window.zIndex = 0
               window.ref = model.win
             }
 
@@ -329,38 +330,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
         case let .winFloatPos(models):
           log(.info, "Win float pos: \(models.count)")
 
-//          for model in models {
-//            self.store.state.windows[model.grid] = .init(
-//              grid: .init(
-//                repeating: nil,
-//                size: self.store.state.outerGridSize
-//              ),
-//              origin: .init(),
-//              isHidden: true
-//            )
-//
-//            self.store.publish(
-//              event: .windowFrameChanged(gridID: model.grid)
-//            )
-//          }
+          for model in models {
+            log(.info, "win float pos: \(model)")
+
+            let anchorWindow = self.store.state.windows[model.anchorGrid]!
+            let anchorPoint = anchorWindow.frame.origin + GridPoint(
+              row: Int(model.anchorRow.doubleValue!),
+              column: Int(model.anchorCol.doubleValue!)
+            )
+
+            self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
+              window.origin = anchorPoint
+              window.anchor = model.anchorValue
+              window.isHidden = false
+              window.ref = model.win
+              window.zIndex = model.zindex
+            }
+
+            self.store.publish(
+              event: .windowFrameChanged(gridID: model.grid)
+            )
+          }
 
         case let .winExternalPos(models):
           log(.info, "Win external pos: \(models.count)")
-
-//          for model in models {
-//            self.store.state.windows[model.grid] = .init(
-//              grid: .init(
-//                repeating: nil,
-//                size: self.store.state.outerGridSize
-//              ),
-//              isHidden: true,
-//              frame: nil
-//            )
-//
-//            self.store.publish(
-//              event: .windowFrameChanged(gridID: model.grid)
-//            )
-//          }
 
         case let .winHide(models):
           log(.info, "Win hide: \(models.count)")

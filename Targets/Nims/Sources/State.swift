@@ -17,10 +17,40 @@ struct State: Hashable {
 
   struct Window: Hashable {
     var grid: CellGrid
-    var frame: GridRectangle
+    var origin: GridPoint
+    var anchor: Anchor
     var isHidden: Bool
+    var zIndex: Int
 
     var ref: ExtendedTypes.Window?
+
+    var frame: GridRectangle {
+      let origin: GridPoint
+      switch self.anchor {
+      case .bottomLeft:
+        origin = .init(
+          row: self.origin.row - self.grid.size.rowsCount,
+          column: self.origin.column
+        )
+
+      case .bottomRight:
+        origin = .init(
+          row: self.origin.row - self.grid.size.rowsCount,
+          column: self.origin.column - self.grid.size.columnsCount
+        )
+
+      case .topLeft:
+        origin = self.origin
+
+      case .topRight:
+        origin = .init(
+          row: self.origin.row,
+          column: self.origin.column - self.grid.size.columnsCount
+        )
+      }
+
+      return .init(origin: origin, size: self.grid.size)
+    }
   }
 
   struct Cursor: Hashable {
@@ -30,7 +60,7 @@ struct State: Hashable {
 
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
-  var font = Font.custom(name: "MesloLGS Nerd Font Mono", size: 13)
+  var font = Font.custom(name: "JetBrainsMono Nerd Font Mono", size: 13)
   var outerGridSize = GridSize(rowsCount: 40, columnsCount: 120)
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {

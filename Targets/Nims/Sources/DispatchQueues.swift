@@ -10,7 +10,6 @@ import Foundation
 
 enum DispatchQueues {
   static let GlyphRunsCache = makeDispatchQueue("GlyphRunsCache", attributes: .concurrent)
-  static let State = makeDispatchQueue("State", attributes: .concurrent)
   static let StateDerivatives = makeDispatchQueue("StateDerivatives", attributes: .concurrent)
   static let SerialDrawing = makeDispatchQueue("SerialDrawing", attributes: .concurrent)
 }

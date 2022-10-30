@@ -46,9 +46,11 @@ class GridView: NSView, EventListener, CALayerDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
+  let gridID: Int
+
   override func layout() {
-    self.backgroundView.frame.size = self.frame.size
-    self.foregroundView.frame.size = self.frame.size
+    self.backgroundView.frame.size = bounds.size
+    self.foregroundView.frame.size = bounds.size
   }
 
   func published(event: Event) {
@@ -59,19 +61,17 @@ class GridView: NSView, EventListener, CALayerDelegate {
       }
 
       self.enqueueNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(
-          rect: self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellsRect(
-              for: .init(
-                origin: origin,
-                size: .init(
-                  rowsCount: 1,
-                  columnsCount: columnsCount
-                )
+        self.cellsGeometry.upsideDownRect(
+          from: self.cellsGeometry.cellsRect(
+            for: .init(
+              origin: origin,
+              size: .init(
+                rowsCount: 1,
+                columnsCount: columnsCount
               )
-            ),
-            parentViewHeight: self.bounds.height
-          )
+            )
+          ),
+          parentViewHeight: self.bounds.height
         )
       )
 
@@ -81,11 +81,9 @@ class GridView: NSView, EventListener, CALayerDelegate {
       }
 
       self.enqueueNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(
-          rect: self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellsRect(for: rectangle),
-            parentViewHeight: self.bounds.height
-          )
+        self.cellsGeometry.upsideDownRect(
+          from: self.cellsGeometry.cellsRect(for: rectangle),
+          parentViewHeight: self.bounds.height
         )
       )
 
@@ -99,26 +97,22 @@ class GridView: NSView, EventListener, CALayerDelegate {
     case let .cursorMoved(previousCursor):
       if let previousCursor, previousCursor.gridID == self.gridID {
         self.enqueueNeedsDisplay(
-          self.cellsGeometry.insetForDrawing(
-            rect: self.cellsGeometry.upsideDownRect(
-              from: self.cellsGeometry.cellRect(
-                for: previousCursor.position
-              ),
-              parentViewHeight: self.bounds.height
-            )
+          self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellRect(
+              for: previousCursor.position
+            ),
+            parentViewHeight: self.bounds.height
           )
         )
       }
 
       if let cursor = self.state.cursor, cursor.gridID == self.gridID {
         self.enqueueNeedsDisplay(
-          self.cellsGeometry.insetForDrawing(
-            rect: self.cellsGeometry.upsideDownRect(
-              from: self.cellsGeometry.cellRect(
-                for: cursor.position
-              ),
-              parentViewHeight: self.bounds.height
-            )
+          self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellRect(
+              for: cursor.position
+            ),
+            parentViewHeight: self.bounds.height
           )
         )
       }
@@ -127,7 +121,7 @@ class GridView: NSView, EventListener, CALayerDelegate {
       if SerialDrawing {
         for rect in self.needsDisplayBuffer {
           self.backgroundView.setNeedsDisplay(rect)
-          self.foregroundView.setNeedsDisplay(rect)
+          self.foregroundView.setNeedsDisplay(self.cellsGeometry.insetForDrawing(rect: rect))
         }
 
         self.needsDisplayBuffer.removeAll(keepingCapacity: true)
@@ -143,7 +137,6 @@ class GridView: NSView, EventListener, CALayerDelegate {
     }
   }
 
-  private let gridID: Int
   private let backgroundView: BackgroundView
   private let foregroundView: ForegroundView
   private var needsDisplayBuffer = [CGRect]()
@@ -166,7 +159,7 @@ class GridView: NSView, EventListener, CALayerDelegate {
 
     } else {
       self.backgroundView.setNeedsDisplay(rect)
-      self.foregroundView.setNeedsDisplay(rect)
+      self.foregroundView.setNeedsDisplay(self.cellsGeometry.insetForDrawing(rect: rect))
     }
   }
 }
@@ -199,7 +192,6 @@ private class ForegroundView: NSView {
     context.setShouldSubpixelQuantizeFonts(true)
 
     let font = self.store.stateDerivatives.font.nsFont
-    let grid = self.grid
 
     let cursorPosition: GridPoint?
     if let cursor = self.state.cursor, cursor.gridID == self.gridID {
@@ -215,95 +207,96 @@ private class ForegroundView: NSView {
           parentViewHeight: self.bounds.height
         )
       )
+      .intersection(.init(size: self.windowState.frame.size))
+
+      guard let gridRectangle else {
+        continue
+      }
 
       for row in gridRectangle.rowsRange {
-        let origin = GridPoint(row: row, column: gridRectangle.origin.column)
-        let characters = gridRectangle.columnsRange.map { grid[.init(row: row, column: $0)]?.character ?? " " }
-        let text = String(characters)
+        for column in gridRectangle.columnsRange {
+          let index = GridPoint(row: row, column: column)
+          let text = String(self.grid[index]?.character ?? " ")
 
-        let cellsRect = self.cellsGeometry.upsideDownRect(
-          from: self.cellsGeometry.cellsRect(
-            for: .init(
-              origin: origin,
-              size: .init(
-                rowsCount: 1,
-                columnsCount: gridRectangle.size.columnsCount
-              )
-            )
-          ),
-          parentViewHeight: self.bounds.height
-        )
-
-        let glyphRuns: [GlyphRun] = {
-          if let cachedGlyphRuns = self.glyphRunsCache[text] {
-            return cachedGlyphRuns
-          }
-
-          let attributedString = NSAttributedString(
-            string: text,
-            attributes: [
-              .font: font,
-              .ligature: 1
-            ]
-          )
-          let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
-          let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: text.count))
-
-          let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
-          let glyphRuns = ctRuns.map { ctRun in
-            let glyphCount = CTRunGetGlyphCount(ctRun)
-            let range = CFRange(location: 0, length: glyphCount)
-            let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-              CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
-              initializedCount = glyphCount
-            }
-            let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-              CTRunGetPositions(ctRun, range, buffer.baseAddress!)
-              initializedCount = glyphCount
-            }
-            return GlyphRun(glyphs: glyphs, positions: positions)
-          }
-
-          self.glyphRunsCache[text] = glyphRuns
-          return glyphRuns
-        }()
-
-        for glyphRun in glyphRuns {
-          context.saveGState()
-
-          context.textMatrix = .identity
-          context.setTextDrawingMode(.fill)
-          context.setFillColor(.white)
-
-          CTFontDrawGlyphs(
-            font,
-            glyphRun.glyphs,
-            glyphRun.offsetPositions(
-              dx: cellsRect.origin.x,
-              dy: cellsRect.origin.y - font.descender
-            ),
-            glyphRun.glyphs.count,
-            context
-          )
-
-          context.restoreGState()
-        }
-
-        if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
-          let cursorRect = self.cellsGeometry.upsideDownRect(
+          let cellRect = self.cellsGeometry.upsideDownRect(
             from: self.cellsGeometry.cellRect(
-              for: cursorPosition
+              for: index
             ),
             parentViewHeight: self.bounds.height
           )
 
-          context.saveGState()
+          let glyphRuns: [GlyphRun] = {
+            if let cachedGlyphRuns = self.glyphRunsCache[text] {
+              return cachedGlyphRuns
+            }
 
-          context.setBlendMode(.sourceIn)
-          context.setFillColor(.init(red: 1, green: 0, blue: 0, alpha: 1))
-          context.fill([cursorRect])
+            let attributedString = NSAttributedString(
+              string: text,
+              attributes: [.font: font]
+            )
+            let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+            let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 1))
 
-          context.restoreGState()
+            let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
+
+            let glyphRuns = ctRuns.map { ctRun in
+              let glyphCount = CTRunGetGlyphCount(ctRun)
+              let range = CFRange(location: 0, length: glyphCount)
+              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetPositions(ctRun, range, buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              return GlyphRun(
+                glyphs: glyphs,
+                positions: positions
+              )
+            }
+
+            self.glyphRunsCache[text] = glyphRuns
+            return glyphRuns
+          }()
+
+          for glyphRun in glyphRuns {
+            context.saveGState()
+
+            context.textMatrix = .identity
+            context.setTextDrawingMode(.fill)
+            context.setFillColor(.white)
+
+            CTFontDrawGlyphs(
+              font,
+              glyphRun.glyphs,
+              glyphRun.offsetPositions(
+                dx: cellRect.origin.x,
+                dy: cellRect.origin.y - font.descender
+              ),
+              glyphRun.glyphs.count,
+              context
+            )
+
+            context.restoreGState()
+          }
+
+          if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
+            let cursorRect = self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellRect(
+                for: cursorPosition
+              ),
+              parentViewHeight: self.bounds.height
+            )
+
+            context.saveGState()
+
+            context.setBlendMode(.sourceIn)
+            context.setFillColor(.init(red: 1, green: 0, blue: 0, alpha: 1))
+            context.fill([cursorRect])
+
+            context.restoreGState()
+          }
         }
       }
     }
@@ -372,7 +365,7 @@ private class BackgroundView: NSView {
           parentViewHeight: self.bounds.height
         )
       )
-      .intersection(.init(origin: .init(), size: grid.size))
+      .intersection(.init(size: grid.size))
 
       guard let gridRectangle else {
         continue

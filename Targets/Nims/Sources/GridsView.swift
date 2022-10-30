@@ -34,35 +34,40 @@ class GridsView: NSView, EventListener {
         break
       }
 
-      let cellsFrame = self.cellsGeometry.upsideDownRect(
+      let frame = self.cellsGeometry.upsideDownRect(
         from: self.cellsGeometry.cellsRect(
           for: window.frame
         ),
         parentViewHeight: self.bounds.height
       )
-
       if let gridView = self.gridViews[gridID] {
-        gridView.frame = cellsFrame
-        gridView.isHidden = false
+        gridView.frame = frame
+        gridView.isHidden = window.isHidden
 
       } else {
         let gridView = GridView(
-          frame: cellsFrame,
+          frame: frame,
           gridID: gridID,
           glyphRunsCache: self.glyphRunsCache
         )
         self.gridViews[gridID] = gridView
-        self.addSubview(gridView)
+        gridView.isHidden = window.isHidden
+
+        let relativeSubview = self.subviews
+          .map { self.state.windows[($0 as! GridView).gridID]!.zIndex }
+          .firstIndex(where: { $0 > window.zIndex })
+          .map { self.subviews[$0] }
+
+        if let relativeSubview {
+          self.addSubview(gridView, positioned: .below, relativeTo: relativeSubview)
+
+        } else {
+          self.addSubview(gridView)
+        }
       }
 
-    /* case let .floatingWindowFrameChanged(gridID):
-      self.gridViews[gridID]?.isHidden = true
-
-    case let .externalWindowFrameChanged(gridID):
-      self.gridViews[gridID]?.isHidden = true */
-
     case let .windowHid(gridID):
-      self.gridViews[gridID]?.isHidden = true
+      self.gridViews[gridID]?.isHidden = self.state.windows[gridID]!.isHidden
 
     case let .windowClosed(gridID):
       self.gridViews[gridID]?.removeFromSuperview()

@@ -11,16 +11,24 @@ import Carbon
 
 public struct KeyPress {
   public init(event: NSEvent) {
-    self.keyCode = Int(event.keyCode)
-    self.characters = event.charactersIgnoringModifiers?.lowercased() ?? ""
-    self.modifierFlags = event.modifierFlags
+    self.init(
+      keyCode: Int(event.keyCode),
+      characters: event.charactersIgnoringModifiers?.lowercased() ?? "",
+      modifierFlags: event.modifierFlags
+    )
   }
 
-  var keyCode: Int
-  var characters: String
-  var modifierFlags: NSEvent.ModifierFlags
+  public init(keyCode: Int, characters: String, modifierFlags: NSEvent.ModifierFlags) {
+    self.keyCode = keyCode
+    self.characters = characters
+    self.modifierFlags = modifierFlags
+  }
 
-  func makeNvimKeyCode() -> String {
+  public var keyCode: Int
+  public var characters: String
+  public var modifierFlags: NSEvent.ModifierFlags
+
+  public func makeNvimKeyCode() -> String {
     guard let unicodeScalar = self.characters.unicodeScalars.first else {
       return self.characters
     }
