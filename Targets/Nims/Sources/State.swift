@@ -116,6 +116,14 @@ struct State: Hashable {
       return self.defaultHighlight.reverse ? self.defaultHighlight.foregroundColor : self.defaultHighlight.backgroundColor
     }
   }
+
+  func cursorPosition(gridID: Int) -> GridPoint? {
+    guard let cursor, cursor.gridID == gridID else {
+      return nil
+    }
+
+    return cursor.position
+  }
 }
 
 extension State.Color {

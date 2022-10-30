@@ -19,9 +19,6 @@ class Store {
 
     self.events = eventsSubject
       .filter { !$0.isEmpty }
-      .do(onNext: { events in
-        log(.info, "Events published: \(events)")
-      })
       .share(replay: 1, scope: .forever)
   }
 

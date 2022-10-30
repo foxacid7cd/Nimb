@@ -12,7 +12,6 @@ enum DispatchQueues {
   static let GlyphRunsCache = makeDispatchQueue("GlyphRunsCache", attributes: .concurrent)
   static let CGColorCache = makeDispatchQueue("CGColorCache", attributes: .concurrent)
   static let StateDerivatives = makeDispatchQueue("StateDerivatives", attributes: .concurrent)
-  static let SerialDrawing = makeDispatchQueue("SerialDrawing", attributes: .concurrent)
 }
 
 private func makeDispatchQueue(
