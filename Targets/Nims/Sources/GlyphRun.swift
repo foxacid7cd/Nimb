@@ -6,13 +6,14 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import CoreGraphics
+import AppKit
 
-struct GlyphRun {
+struct GlyphRun: Equatable {
   var glyphs: [CGGlyph]
   var positions: [CGPoint]
+  var font: NSFont
 
-  func offsetPositions(dx: Double, dy: Double) -> [CGPoint] {
+  func positionsWithOffset(dx: Double, dy: Double) -> [CGPoint] {
     self.positions
       .map { .init(x: $0.x + dx, y: $0.y + dy) }
   }

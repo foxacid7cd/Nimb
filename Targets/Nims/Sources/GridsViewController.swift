@@ -13,9 +13,7 @@ import RxCocoa
 import RxSwift
 
 class GridsViewController: NSViewController, EventListener {
-  init(glyphRunsCache: Cache<String, [GlyphRun]>, cgColorCache: Cache<State.Color, CGColor>) {
-    self.glyphRunsCache = glyphRunsCache
-    self.cgColorCache = cgColorCache
+  init() {
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -31,9 +29,7 @@ class GridsViewController: NSViewController, EventListener {
         size: self.cellsGeometry.cellsSize(
           for: self.store.state.outerGridSize
         )
-      ),
-      glyphRunsCache: self.glyphRunsCache,
-      cgColorCache: self.cgColorCache
+      )
     )
   }
 
@@ -43,9 +39,6 @@ class GridsViewController: NSViewController, EventListener {
   }
 
   func published(event: Event) {}
-
-  private let glyphRunsCache: Cache<String, [GlyphRun]>
-  private let cgColorCache: Cache<State.Color, CGColor>
 
   private var cellsGeometry: CellsGeometry {
     .shared

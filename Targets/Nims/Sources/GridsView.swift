@@ -15,9 +15,7 @@ import RxCocoa
 import RxSwift
 
 class GridsView: NSView, EventListener {
-  init(frame: NSRect, glyphRunsCache: Cache<String, [GlyphRun]>, cgColorCache: Cache<State.Color, CGColor>) {
-    self.glyphRunsCache = glyphRunsCache
-    self.cgColorCache = cgColorCache
+  override init(frame: NSRect) {
     super.init(frame: frame)
 
     self.listen()
@@ -48,9 +46,7 @@ class GridsView: NSView, EventListener {
       } else {
         let gridView = GridView(
           frame: frame,
-          gridID: gridID,
-          glyphRunsCache: self.glyphRunsCache,
-          cgColorCache: self.cgColorCache
+          gridID: gridID
         )
         self.gridViews[gridID] = gridView
         gridView.isHidden = window.isHidden
@@ -80,8 +76,6 @@ class GridsView: NSView, EventListener {
     }
   }
 
-  private let glyphRunsCache: Cache<String, [GlyphRun]>
-  private let cgColorCache: Cache<State.Color, CGColor>
   private var gridViews = [Int: GridView]()
 
   private var cellsGeometry: CellsGeometry {

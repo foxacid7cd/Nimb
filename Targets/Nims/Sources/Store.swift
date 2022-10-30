@@ -49,6 +49,7 @@ class StateDerivatives {
   struct Font {
     var nsFont: NSFont
     var cellSize: CGSize
+    var glyphRunsCache: Cache<[Character], GlyphRun>
   }
 
   var font: Font {
@@ -67,7 +68,8 @@ class StateDerivatives {
     }()
     let font = Font(
       nsFont: nsFont,
-      cellSize: nsFont.calculateCellSize(for: "@")
+      cellSize: nsFont.calculateCellSize(for: "@"),
+      glyphRunsCache: .init(dispatchQueue: DispatchQueues.GlyphRunsCache)
     )
     DispatchQueues.StateDerivatives.async(flags: .barrier) {
       self.latestFontContext = (self.state.font, font)

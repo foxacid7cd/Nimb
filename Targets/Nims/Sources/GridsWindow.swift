@@ -11,17 +11,14 @@ import Library
 import RxSwift
 
 class GridsWindow: NSWindow {
-  init(glyphRunsCache: Cache<String, [GlyphRun]>, cgColorCache: Cache<State.Color, CGColor>) {
+  init() {
     super.init(
       contentRect: .init(),
       styleMask: [.titled],
       backing: .buffered,
       defer: true
     )
-    self.contentViewController = GridsViewController(
-      glyphRunsCache: glyphRunsCache,
-      cgColorCache: cgColorCache
-    )
+    self.contentViewController = GridsViewController()
   }
 
   var keyDown: Observable<NSEvent> {

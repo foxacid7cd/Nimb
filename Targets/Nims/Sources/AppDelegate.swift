@@ -24,10 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
     switch event {
     case .windowFrameChanged:
       if self.gridsWindowController == nil {
-        let gridsWindowController = GridsWindowController(
-          glyphRunsCache: self.glyphRunsCache,
-          cgColorCache: self.cgColorCache
-        )
+        let gridsWindowController = GridsWindowController()
         self.gridsWindowController = gridsWindowController
 
         self <~ gridsWindowController.keyDown
@@ -44,12 +41,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
   @IBOutlet private var mainMenu: NSMenu!
 
-  private let glyphRunsCache = Cache<String, [GlyphRun]>(
-    dispatchQueue: DispatchQueues.GlyphRunsCache
-  )
-  private let cgColorCache = Cache<State.Color, CGColor>(
-    dispatchQueue: DispatchQueues.CGColorCache
-  )
   private let inputSubject = PublishSubject<KeyPress>()
   private var nvimProcess: NvimProcess?
   private var gridsWindowController: GridsWindowController?
