@@ -20,13 +20,14 @@ class GridView: NSView, EventListener, CALayerDelegate {
   init(
     frame: NSRect,
     gridID: Int,
-    glyphRunsCache: Cache<String, [GlyphRun]>
+    glyphRunsCache: Cache<String, [GlyphRun]>,
+    cgColorCache: Cache<State.Color, CGColor>
   ) {
     self.gridID = gridID
 
     let subviewFrame = NSRect(origin: .init(), size: frame.size)
-    self.backgroundView = .init(frame: subviewFrame, gridID: gridID)
-    self.foregroundView = .init(frame: subviewFrame, gridID: gridID, glyphRunsCache: glyphRunsCache)
+    self.backgroundView = .init(frame: subviewFrame, gridID: gridID, cgColorCache: cgColorCache)
+    self.foregroundView = .init(frame: subviewFrame, gridID: gridID, glyphRunsCache: glyphRunsCache, cgColorCache: cgColorCache)
 
     super.init(frame: frame)
 
@@ -118,22 +119,31 @@ class GridView: NSView, EventListener, CALayerDelegate {
       }
 
     case .highlightChanged:
-      self.foregroundView.setNeedsDisplay(self.bounds)
-      self.backgroundView.setNeedsDisplay(self.bounds)
+      self.highlightChanged = true
 
     case .flushRequested:
-      if SerialDrawing {
-        for rect in self.needsDisplayBuffer {
-          self.backgroundView.setNeedsDisplay(rect)
-          self.foregroundView.setNeedsDisplay(self.cellsGeometry.insetForDrawing(rect: rect))
+      if self.highlightChanged {
+        self.backgroundView.setNeedsDisplay(self.bounds)
+        self.foregroundView.setNeedsDisplay(self.bounds)
+        self.highlightChanged = false
+        self.needsDisplayBuffer.removeAll(keepingCapacity: true)
+
+      } else {
+        if SerialDrawing {
+          for rect in self.needsDisplayBuffer {
+            self.backgroundView.setNeedsDisplay(rect)
+            self.foregroundView.setNeedsDisplay(
+              self.cellsGeometry.insetForDrawing(rect: rect)
+            )
+          }
+
+          self.needsDisplayBuffer.removeAll(keepingCapacity: true)
         }
 
-        self.needsDisplayBuffer.removeAll(keepingCapacity: true)
-      }
-
-      DispatchQueues.SerialDrawing.async(flags: .barrier) {
-        self.backgroundView.synchronizeDrawingContext = true
-        self.foregroundView.synchronizeDrawingContext = true
+        DispatchQueues.SerialDrawing.async(flags: .barrier) {
+          self.backgroundView.synchronizeDrawingContext = true
+          self.foregroundView.synchronizeDrawingContext = true
+        }
       }
 
     default:
@@ -144,6 +154,7 @@ class GridView: NSView, EventListener, CALayerDelegate {
   private let backgroundView: BackgroundView
   private let foregroundView: ForegroundView
   private var needsDisplayBuffer = [CGRect]()
+  private var highlightChanged = false
 
   private var windowState: State.Window {
     self.state.windows[self.gridID]!
@@ -163,7 +174,9 @@ class GridView: NSView, EventListener, CALayerDelegate {
 
     } else {
       self.backgroundView.setNeedsDisplay(rect)
-      self.foregroundView.setNeedsDisplay(self.cellsGeometry.insetForDrawing(rect: rect))
+      self.foregroundView.setNeedsDisplay(
+        self.cellsGeometry.insetForDrawing(rect: rect)
+      )
     }
   }
 }
@@ -172,10 +185,12 @@ private class ForegroundView: NSView {
   init(
     frame: NSRect,
     gridID: Int,
-    glyphRunsCache: Cache<String, [GlyphRun]>
+    glyphRunsCache: Cache<String, [GlyphRun]>,
+    cgColorCache: Cache<State.Color, CGColor>
   ) {
     self.gridID = gridID
     self.glyphRunsCache = glyphRunsCache
+    self.cgColorCache = cgColorCache
     super.init(frame: frame)
   }
 
@@ -218,91 +233,155 @@ private class ForegroundView: NSView {
       }
 
       for row in gridRectangle.rowsRange {
-        for column in gridRectangle.columnsRange {
-          let index = GridPoint(row: row, column: column)
-          let cell = self.grid[index]
-          let highlight = cell.flatMap { self.state.highlights[$0.hlID]?.normalized } ?? self.state.defaultHighlight
-          let text = String(cell?.character ?? " ")
-
-          let cellRect = self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellRect(
-              for: index
-            ),
-            parentViewHeight: self.bounds.height
-          )
-
-          let glyphRuns: [GlyphRun] = {
-            if let cachedGlyphRuns = self.glyphRunsCache[text] {
-              return cachedGlyphRuns
+        let characters = gridRectangle.columnsRange
+          .compactMap { column -> Character? in
+            guard let cell = self.grid[.init(row: row, column: column)] else {
+              return " "
             }
 
-            let attributedString = NSAttributedString(
-              string: text,
-              attributes: [.font: font]
-            )
-            let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
-            let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 1))
+            return cell.character
+          }
+        let text = String(characters)
 
-            let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
-
-            let glyphRuns = ctRuns.map { ctRun in
-              let glyphCount = CTRunGetGlyphCount(ctRun)
-              let range = CFRange(location: 0, length: glyphCount)
-              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
-                initializedCount = glyphCount
-              }
-              let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                CTRunGetPositions(ctRun, range, buffer.baseAddress!)
-                initializedCount = glyphCount
-              }
-              return GlyphRun(
-                glyphs: glyphs,
-                positions: positions
+        let origin = GridPoint(row: row, column: gridRectangle.origin.column)
+        let cellsRect = self.cellsGeometry.upsideDownRect(
+          from: self.cellsGeometry.cellsRect(
+            for: .init(
+              origin: origin,
+              size: .init(
+                rowsCount: 1,
+                columnsCount: gridRectangle.size.columnsCount
               )
-            }
-
-            self.glyphRunsCache[text] = glyphRuns
-            return glyphRuns
-          }()
-
-          for glyphRun in glyphRuns {
-            context.saveGState()
-
-            context.textMatrix = .identity
-            context.setTextDrawingMode(.fill)
-            context.setFillColor(highlight.foregroundColor?.cgColor ?? .clear)
-
-            CTFontDrawGlyphs(
-              font,
-              glyphRun.glyphs,
-              glyphRun.offsetPositions(
-                dx: cellRect.origin.x,
-                dy: cellRect.origin.y - font.descender
-              ),
-              glyphRun.glyphs.count,
-              context
             )
+          ),
+          parentViewHeight: self.bounds.height
+        )
 
-            context.restoreGState()
+        let glyphRuns: [GlyphRun] = {
+          if let cachedGlyphRuns = self.glyphRunsCache[text] {
+            return cachedGlyphRuns
           }
 
-          if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
-            let cursorRect = self.cellsGeometry.upsideDownRect(
-              from: self.cellsGeometry.cellRect(
-                for: cursorPosition
-              ),
-              parentViewHeight: self.bounds.height
-            )
+          let attributedString = NSAttributedString(
+            string: text,
+            attributes: [.font: font]
+          )
+          let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+          let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: text.count))
 
+          let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
+
+          let glyphRuns = ctRuns.map { ctRun in
+            let glyphCount = CTRunGetGlyphCount(ctRun)
+            let range = CFRange(location: 0, length: glyphCount)
+            let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+              CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
+              initializedCount = glyphCount
+            }
+            let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+              CTRunGetPositions(ctRun, range, buffer.baseAddress!)
+              initializedCount = glyphCount
+            }
+            return GlyphRun(
+              glyphs: glyphs,
+              positions: positions
+            )
+          }
+
+          self.glyphRunsCache[text] = glyphRuns
+          return glyphRuns
+        }()
+
+        for glyphRun in glyphRuns {
+          context.saveGState()
+
+          context.textMatrix = .identity
+          context.setTextDrawingMode(.fill)
+          context.setFillColor(.white)
+
+          CTFontDrawGlyphs(
+            font,
+            glyphRun.glyphs,
+            glyphRun.offsetPositions(
+              dx: cellsRect.origin.x,
+              dy: cellsRect.origin.y - font.descender
+            ),
+            glyphRun.glyphs.count,
+            context
+          )
+
+          context.restoreGState()
+        }
+
+        var latestHighlight: (rectangle: GridRectangle, id: Int?)?
+        func drawHighlight() {
+          guard let (rectangle, id) = latestHighlight else {
+            return
+          }
+
+          let highlight = id.flatMap { self.state.highlights[$0] } ?? self.state.defaultHighlight
+          if let color = highlight.reverse ? highlight.backgroundColor : highlight.foregroundColor {
             context.saveGState()
 
             context.setBlendMode(.sourceIn)
-            context.setFillColor(self.state.defaultHighlight.backgroundColor?.cgColor ?? .clear)
-            context.fill([cursorRect])
+            context.setFillColor(self.cgColor(for: color))
+
+            let rect = self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellsRect(for: rectangle),
+              parentViewHeight: self.bounds.height
+            )
+            context.fill([rect])
 
             context.restoreGState()
           }
+        }
+
+        for column in gridRectangle.columnsRange {
+          let index = GridPoint(row: row, column: column)
+          let cell = self.grid[index]
+
+          let hlID: Int?
+          if let cell, cell.character != " " {
+            hlID = cell.hlID
+          } else {
+            hlID = nil
+          }
+
+          if let (rectangle, id) = latestHighlight {
+            if id == hlID {
+              var newRectangle = rectangle
+              newRectangle.size.columnsCount += 1
+              latestHighlight = (newRectangle, id)
+              continue
+
+            } else {
+              drawHighlight()
+            }
+          }
+
+          let rectangle = GridRectangle(
+            origin: .init(row: row, column: column),
+            size: .init(rowsCount: 1, columnsCount: 1)
+          )
+          latestHighlight = (rectangle, hlID)
+        }
+
+        drawHighlight()
+
+        if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column), let color = self.state.defaultHighlight.backgroundColor {
+          context.saveGState()
+          context.setFillColor(self.cgColor(for: color))
+          context.setBlendMode(.sourceIn)
+
+          let rect = self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellRect(
+              for: cursorPosition
+            ),
+            parentViewHeight: self.bounds.height
+          )
+          context.fill([rect])
+
+          context.restoreGState()
         }
       }
     }
@@ -320,6 +399,7 @@ private class ForegroundView: NSView {
 
   private let gridID: Int
   private let glyphRunsCache: Cache<String, [GlyphRun]>
+  private let cgColorCache: Cache<State.Color, CGColor>
 
   private var windowState: State.Window {
     self.state.windows[self.gridID]!
@@ -332,14 +412,26 @@ private class ForegroundView: NSView {
   private var cellsGeometry: CellsGeometry {
     .shared
   }
+
+  private func cgColor(for color: State.Color) -> CGColor {
+    if let cachedCGColor = self.cgColorCache[color] {
+      return cachedCGColor
+    }
+
+    let cgColor = color.cgColor
+    self.cgColorCache[color] = cgColor
+    return cgColor
+  }
 }
 
 private class BackgroundView: NSView {
   init(
     frame: NSRect,
-    gridID: Int
+    gridID: Int,
+    cgColorCache: Cache<State.Color, CGColor>
   ) {
     self.gridID = gridID
+    self.cgColorCache = cgColorCache
     super.init(frame: frame)
   }
 
@@ -378,38 +470,70 @@ private class BackgroundView: NSView {
       }
 
       for row in gridRectangle.rowsRange {
-        for column in gridRectangle.columnsRange {
-          let index = GridPoint(row: row, column: column)
-          let highlight = self.grid[index].flatMap { self.state.highlights[$0.hlID]?.normalized } ?? self.state.defaultHighlight
-          let cellRect = self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellRect(
-              for: index
-            ),
-            parentViewHeight: self.bounds.height
-          )
+        var latestHighlight: (rectangle: GridRectangle, id: Int?)?
+        func drawHighlight() {
+          guard let (rectangle, id) = latestHighlight else {
+            return
+          }
 
           context.saveGState()
 
-          context.setFillColor(highlight.backgroundColor?.cgColor ?? .clear)
-          context.fill([cellRect])
+          let highlight = id.flatMap { self.state.highlights[$0] } ?? self.state.defaultHighlight
+          if let color = highlight.reverse ? highlight.foregroundColor : highlight.backgroundColor {
+            context.setFillColor(self.cgColor(for: color))
+          } else {
+            context.setFillColor(.clear)
+          }
+
+          let rect = self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellsRect(for: rectangle),
+            parentViewHeight: self.bounds.height
+          )
+          context.fill([rect])
 
           context.restoreGState()
+        }
 
-          if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
-            let cursorRect = self.cellsGeometry.upsideDownRect(
-              from: self.cellsGeometry.cellRect(
-                for: cursorPosition
-              ),
-              parentViewHeight: self.bounds.height
-            )
+        for column in gridRectangle.columnsRange {
+          let index = GridPoint(row: row, column: column)
+          let cell = self.grid[index]
+          let hlID = cell?.hlID
 
-            context.saveGState()
+          if let (rectangle, id) = latestHighlight {
+            if id == hlID {
+              var newRectangle = rectangle
+              newRectangle.size.columnsCount += 1
+              latestHighlight = (newRectangle, id)
+              continue
 
-            context.setFillColor(self.state.defaultHighlight.foregroundColor?.cgColor ?? .clear)
-            context.fill([cursorRect])
-
-            context.restoreGState()
+            } else {
+              drawHighlight()
+            }
           }
+
+          let rectangle = GridRectangle(
+            origin: .init(row: row, column: column),
+            size: .init(rowsCount: 1, columnsCount: 1)
+          )
+          latestHighlight = (rectangle, hlID)
+        }
+
+        drawHighlight()
+
+        if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column), let color = self.state.defaultHighlight.foregroundColor {
+          context.saveGState()
+
+          context.setFillColor(self.cgColor(for: color))
+
+          let rect = self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellRect(
+              for: cursorPosition
+            ),
+            parentViewHeight: self.bounds.height
+          )
+          context.fill([rect])
+
+          context.restoreGState()
         }
       }
     }
@@ -426,6 +550,7 @@ private class BackgroundView: NSView {
   var synchronizeDrawingContext = false
 
   private let gridID: Int
+  private let cgColorCache: Cache<State.Color, CGColor>
 
   private var windowState: State.Window {
     self.state.windows[self.gridID]!
@@ -437,5 +562,15 @@ private class BackgroundView: NSView {
 
   private var cellsGeometry: CellsGeometry {
     .shared
+  }
+
+  private func cgColor(for color: State.Color) -> CGColor {
+    if let cachedCGColor = self.cgColorCache[color] {
+      return cachedCGColor
+    }
+
+    let cgColor = color.cgColor
+    self.cgColorCache[color] = cgColor
+    return cgColor
   }
 }

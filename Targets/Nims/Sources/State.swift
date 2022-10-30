@@ -76,32 +76,13 @@ struct State: Hashable {
     var specialColor: Color?
     var reverse = false
     var blend = 0
-
-    var normalized: Highlight {
-      guard self.reverse else {
-        return self
-      }
-
-      var copy = self
-      copy.reverse = false
-
-      let backgroundColor = copy.foregroundColor
-      copy.foregroundColor = copy.backgroundColor
-      copy.backgroundColor = backgroundColor
-
-      let alphaMultiplier = Double(copy.blend) / 100.0
-      copy.backgroundColor?.multiplyAlpha(by: alphaMultiplier)
-      copy.blend = 0
-
-      return copy
-    }
   }
 
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.custom(name: "JetBrainsMono Nerd Font Mono", size: 13)
-  var outerGridSize = GridSize(rowsCount: 56, columnsCount: 200)
-  var highlights = [Int: Highlight]()
+  var outerGridSize = GridSize(rowsCount: 30, columnsCount: 100)
+  var highlights = [Highlight?](repeating: nil, count: 10000)
   var defaultHighlight = Highlight()
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {
@@ -116,6 +97,24 @@ struct State: Hashable {
     var highlight = self.highlights[id] ?? .init()
     body(&highlight)
     self.highlights[id] = highlight
+  }
+
+  func foregroundColor(for index: GridPoint, gridID: Int) -> Color? {
+    if let hlID = self.windows[gridID]?.grid[index]?.hlID, let highlight = self.highlights[hlID] {
+      return highlight.reverse ? highlight.backgroundColor : highlight.foregroundColor
+
+    } else {
+      return self.defaultHighlight.reverse ? self.defaultHighlight.backgroundColor : self.defaultHighlight.foregroundColor
+    }
+  }
+
+  func backgroundColor(for index: GridPoint, gridID: Int) -> Color? {
+    if let hlID = self.windows[gridID]?.grid[index]?.hlID, let highlight = self.highlights[hlID] {
+      return highlight.reverse ? highlight.foregroundColor : highlight.backgroundColor
+
+    } else {
+      return self.defaultHighlight.reverse ? self.defaultHighlight.foregroundColor : self.defaultHighlight.backgroundColor
+    }
   }
 }
 
