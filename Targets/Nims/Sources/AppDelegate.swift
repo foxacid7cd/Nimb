@@ -377,6 +377,48 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
             self.store.publish(event: .windowClosed(gridID: model.grid))
           }
 
+        case let .defaultColorsSet(models):
+          for model in models {
+            log(.info, "defaultColorsSet: \(model)")
+
+            self.store.state.defaultHighlight = .init(
+              foregroundColor: .init(hex: UInt(model.rgbFg), alpha: 1),
+              backgroundColor: .init(hex: UInt(model.rgbBg), alpha: 1),
+              specialColor: .init(hex: UInt(model.rgbSp), alpha: 1)
+            )
+          }
+
+          self.store.publish(event: .highlightChanged)
+
+        case let .hlAttrDefine(models):
+          for model in models {
+            log(.info, "hlAttrDefine: \(model)")
+
+            self.store.state.withMutableHighlight(id: model.id) { highlight in
+              if let hex = model.rgbAttrs[.string("foreground")]?.uintValue {
+                highlight.foregroundColor = .init(hex: hex, alpha: 1)
+              }
+
+              if let hex = model.rgbAttrs[.string("background")]?.uintValue {
+                highlight.backgroundColor = .init(hex: hex, alpha: 1)
+              }
+
+              if let hex = model.rgbAttrs[.string("special")]?.uintValue {
+                highlight.specialColor = .init(hex: hex, alpha: 1)
+              }
+
+              if let reverse = model.rgbAttrs[.string("reverse")]?.boolValue {
+                highlight.reverse = reverse
+              }
+
+              if let blend = model.rgbAttrs[.string("blend")]?.uintValue {
+                highlight.blend = Int(blend)
+              }
+            }
+          }
+
+          self.store.publish(event: .highlightChanged)
+
         case .flush:
           self.store.publish(event: .flushRequested)
 

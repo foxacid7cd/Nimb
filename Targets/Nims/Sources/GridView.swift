@@ -117,6 +117,10 @@ class GridView: NSView, EventListener, CALayerDelegate {
         )
       }
 
+    case .highlightChanged:
+      self.foregroundView.setNeedsDisplay(self.bounds)
+      self.backgroundView.setNeedsDisplay(self.bounds)
+
     case .flushRequested:
       if SerialDrawing {
         for rect in self.needsDisplayBuffer {
@@ -216,7 +220,9 @@ private class ForegroundView: NSView {
       for row in gridRectangle.rowsRange {
         for column in gridRectangle.columnsRange {
           let index = GridPoint(row: row, column: column)
-          let text = String(self.grid[index]?.character ?? " ")
+          let cell = self.grid[index]
+          let highlight = cell.flatMap { self.state.highlights[$0.hlID]?.normalized } ?? self.state.defaultHighlight
+          let text = String(cell?.character ?? " ")
 
           let cellRect = self.cellsGeometry.upsideDownRect(
             from: self.cellsGeometry.cellRect(
@@ -265,7 +271,7 @@ private class ForegroundView: NSView {
 
             context.textMatrix = .identity
             context.setTextDrawingMode(.fill)
-            context.setFillColor(.white)
+            context.setFillColor(highlight.foregroundColor?.cgColor ?? .clear)
 
             CTFontDrawGlyphs(
               font,
@@ -292,7 +298,7 @@ private class ForegroundView: NSView {
             context.saveGState()
 
             context.setBlendMode(.sourceIn)
-            context.setFillColor(.init(red: 1, green: 0, blue: 0, alpha: 1))
+            context.setFillColor(self.state.defaultHighlight.backgroundColor?.cgColor ?? .clear)
             context.fill([cursorRect])
 
             context.restoreGState()
@@ -372,43 +378,38 @@ private class BackgroundView: NSView {
       }
 
       for row in gridRectangle.rowsRange {
-        let cellsRect = self.cellsGeometry.upsideDownRect(
-          from: self.cellsGeometry.cellsRect(
-            for: .init(
-              origin: .init(
-                row: row,
-                column: gridRectangle.origin.column
-              ),
-              size: .init(
-                rowsCount: 1,
-                columnsCount: gridRectangle.size.columnsCount
-              )
-            )
-          ),
-          parentViewHeight: self.bounds.height
-        )
-
-        context.saveGState()
-
-        context.setFillColor(.black)
-        context.fill([cellsRect])
-
-        context.restoreGState()
-
-        if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
-          let cursorRect = self.cellsGeometry.upsideDownRect(
+        for column in gridRectangle.columnsRange {
+          let index = GridPoint(row: row, column: column)
+          let highlight = self.grid[index].flatMap { self.state.highlights[$0.hlID]?.normalized } ?? self.state.defaultHighlight
+          let cellRect = self.cellsGeometry.upsideDownRect(
             from: self.cellsGeometry.cellRect(
-              for: cursorPosition
+              for: index
             ),
             parentViewHeight: self.bounds.height
           )
 
           context.saveGState()
 
-          context.setFillColor(.white)
-          context.fill([cursorRect])
+          context.setFillColor(highlight.backgroundColor?.cgColor ?? .clear)
+          context.fill([cellRect])
 
           context.restoreGState()
+
+          if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column) {
+            let cursorRect = self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellRect(
+                for: cursorPosition
+              ),
+              parentViewHeight: self.bounds.height
+            )
+
+            context.saveGState()
+
+            context.setFillColor(self.state.defaultHighlight.foregroundColor?.cgColor ?? .clear)
+            context.fill([cursorRect])
+
+            context.restoreGState()
+          }
         }
       }
     }

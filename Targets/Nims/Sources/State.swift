@@ -6,6 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import CoreGraphics
 import Library
 import Nvim
 
@@ -58,10 +59,50 @@ struct State: Hashable {
     var position: GridPoint
   }
 
+  struct Color: Hashable {
+    var red: Double
+    var green: Double
+    var blue: Double
+    var alpha: Double
+
+    mutating func multiplyAlpha(by value: Double) {
+      self.alpha *= value
+    }
+  }
+
+  struct Highlight: Hashable {
+    var foregroundColor: Color?
+    var backgroundColor: Color?
+    var specialColor: Color?
+    var reverse = false
+    var blend = 0
+
+    var normalized: Highlight {
+      guard self.reverse else {
+        return self
+      }
+
+      var copy = self
+      copy.reverse = false
+
+      let backgroundColor = copy.foregroundColor
+      copy.foregroundColor = copy.backgroundColor
+      copy.backgroundColor = backgroundColor
+
+      let alphaMultiplier = Double(copy.blend) / 100.0
+      copy.backgroundColor?.multiplyAlpha(by: alphaMultiplier)
+      copy.blend = 0
+
+      return copy
+    }
+  }
+
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.custom(name: "JetBrainsMono Nerd Font Mono", size: 13)
-  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 120)
+  var outerGridSize = GridSize(rowsCount: 56, columnsCount: 200)
+  var highlights = [Int: Highlight]()
+  var defaultHighlight = Highlight()
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {
     guard var window = self.windows[gridID] else {
@@ -69,5 +110,26 @@ struct State: Hashable {
     }
     body(&window)
     self.windows[gridID] = window
+  }
+
+  mutating func withMutableHighlight(id: Int, _ body: (inout Highlight) -> Void) {
+    var highlight = self.highlights[id] ?? .init()
+    body(&highlight)
+    self.highlights[id] = highlight
+  }
+}
+
+extension State.Color {
+  init(hex: UInt, alpha: Double) {
+    self.init(
+      red: Double((hex & 0xFF0000) >> 16) / 255.0,
+      green: Double((hex & 0xFF00) >> 8) / 255.0,
+      blue: Double(hex & 0xFF) / 255.0,
+      alpha: alpha
+    )
+  }
+
+  var cgColor: CGColor {
+    .init(red: red, green: green, blue: blue, alpha: alpha)
   }
 }

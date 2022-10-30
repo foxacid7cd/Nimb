@@ -19,5 +19,6 @@ enum Event: Hashable {
 
   case cursorMoved(previousCursor: State.Cursor?)
   case fontChanged
+  case highlightChanged
   case flushRequested
 }
