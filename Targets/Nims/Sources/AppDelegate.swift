@@ -106,11 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
       for uiEvent in uiEvents {
         switch uiEvent {
         case let .gridResize(models):
-          log(.info, "Grid resize: \(models.count)")
-
           for model in models {
-            log(.info, "grid resize: \(model)")
-
             let gridSize = GridSize(
               rowsCount: model.height,
               columnsCount: model.width
@@ -139,8 +135,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .gridDestroy(models):
-          log(.info, "Grid destroy: \(models.count)")
-
           for model in models {
             self.store.state.windows[model.grid] = nil
 
@@ -150,8 +144,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .gridLine(models):
-          log(.info, "Grid line: \(models.count)")
-
           var latestHlID: Int?
           var latestRow: Int?
 
@@ -227,8 +219,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           self.store.publish(events: events)
 
         case let .gridScroll(models):
-          log(.info, "Grid scroll: \(models.count)")
-
           for model in models {
             let size = GridSize(
               rowsCount: model.bot - model.top,
@@ -260,8 +250,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .gridClear(models):
-          log(.info, "Grid clear: \(models.count)")
-
           for model in models {
             self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
               window.grid = .init(
@@ -276,8 +264,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .gridCursorGoto(models):
-          log(.info, "Grid cursor goto: \(models.count)")
-
           for model in models {
             let previousCursor = self.store.state.cursor
 
@@ -297,11 +283,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .winPos(models):
-          log(.info, "Win pos: \(models.count)")
-
           for model in models {
-            log(.info, "win pos: \(model)")
-
             self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
               window.grid.resize(
                 to: .init(rowsCount: model.height, columnsCount: model.width),
@@ -321,11 +303,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .winFloatPos(models):
-          log(.info, "Win float pos: \(models.count)")
-
           for model in models {
-            log(.info, "win float pos: \(model)")
-
             let anchorWindow = self.store.state.windows[model.anchorGrid]!
             let anchorPoint = anchorWindow.frame.origin + GridPoint(
               row: Int(model.anchorRow.doubleValue!),
@@ -349,8 +327,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           log(.info, "Win external pos: \(models.count)")
 
         case let .winHide(models):
-          log(.info, "Win hide: \(models.count)")
-
           for model in models {
             self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
               window.isHidden = true
@@ -362,8 +338,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
           }
 
         case let .winClose(models):
-          log(.info, "Win close: \(models.count)")
-
           for model in models {
             self.store.state.windows[model.grid] = nil
 
@@ -372,8 +346,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
         case let .defaultColorsSet(models):
           for model in models {
-            log(.info, "defaultColorsSet: \(model)")
-
             self.store.state.defaultHighlight = .init(
               foregroundColor: .init(hex: UInt(model.rgbFg), alpha: 1),
               backgroundColor: .init(hex: UInt(model.rgbBg), alpha: 1),
@@ -385,8 +357,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 
         case let .hlAttrDefine(models):
           for model in models {
-            log(.info, "hlAttrDefine: \(model)")
-
             self.store.state.withMutableHighlight(id: model.id) { highlight in
               if let hex = model.rgbAttrs[.string("foreground")]?.uintValue {
                 highlight.foregroundColor = .init(hex: hex, alpha: 1)

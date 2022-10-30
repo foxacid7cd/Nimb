@@ -69,8 +69,6 @@ public class NvimProcess {
       .bind(with: self) { nvimProcess, keyCode in
         Task {
           do {
-            log(.debug, "nvim input: \(keyCode)")
-
             _ = try await nvimProcess.nvimInput(keys: keyCode)
 
           } catch {
