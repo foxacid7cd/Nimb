@@ -238,36 +238,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
               row: model.top,
               column: model.left
             )
+            let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
             let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
 
             self.store.state.withMutableWindowIfExists(gridID: model.grid) { window in
               window.grid.put(
                 grid: window.grid.subGrid(
-                  at: .init(origin: fromOrigin, size: size)
+                  at: fromRectangle
                 ),
                 at: toOrigin
               )
             }
 
-            let toRectangle = GridRectangle(
-              origin: toOrigin,
-              size: size
-            )
-            .intersection(
-              .init(
-                origin: .init(),
-                size: size
+            self.store.publish(
+              event: .windowGridRectangleMoved(
+                gridID: model.grid,
+                rectangle: fromRectangle,
+                toOrigin: toOrigin
               )
             )
-
-            if let toRectangle {
-              self.store.publish(
-                event: .windowGridRectangleChanged(
-                  gridID: model.grid,
-                  rectangle: toRectangle
-                )
-              )
-            }
           }
 
         case let .gridClear(models):

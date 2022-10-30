@@ -69,7 +69,7 @@ class GridsView: NSView, EventListener {
       }
 
     case let .windowHid(gridID):
-      self.gridViews[gridID]?.isHidden = self.state.windows[gridID]!.isHidden
+      self.gridViews[gridID]?.isHidden = true
 
     case let .windowClosed(gridID):
       self.gridViews[gridID]?.removeFromSuperview()
