@@ -172,7 +172,7 @@ class GridView: NSView, EventListener, CALayerDelegate {
       self.highlightChanged = true
 
     case .flushRequested:
-      if self.drawingState == nil {
+      if self.drawingState == nil || self.highlightChanged {
         let state = self.state
         let window = state.windows[self.gridID]!
         let frame = window.frame
@@ -205,6 +205,8 @@ class GridView: NSView, EventListener, CALayerDelegate {
 
         self.backgroundView.setNeedsDisplay(self.bounds)
         self.foregroundView.setNeedsDisplay(self.bounds)
+
+        self.highlightChanged = false
 
       } else {
         self.backgroundView.drawingState = self.drawingState
@@ -305,7 +307,7 @@ private class ForegroundView: NSView {
         let startColumn = gridRectangle.origin.column
         let endColumn = gridRectangle.origin.column + gridRectangle.size.columnsCount - 1
 
-        guard endColumn < rowState.glyphRuns.indexes.count, startColumn < endColumn else {
+        guard endColumn < rowState.glyphRuns.indexes.count, endColumn < rowState.highlightRuns.indexes.count, startColumn < endColumn else {
           continue
         }
 
@@ -346,6 +348,38 @@ private class ForegroundView: NSView {
             glyphs.count,
             context
           )
+
+          context.restoreGState()
+        }
+
+        let startHighlightRunsIndex = rowState.highlightRuns.indexes[startColumn]
+        let endHighlightRunIndex = rowState.highlightRuns.indexes[endColumn]
+
+        for highlightRunIndex in startHighlightRunsIndex ... endHighlightRunIndex {
+          let highlightRun = rowState.highlightRuns.array[highlightRunIndex]
+
+          let originColumn = max(highlightRun.originColumn, gridRectangle.origin.column) - highlightRun.originColumn
+          let columnsCount = min(highlightRun.columnsCount, gridRectangle.size.columnsCount) - originColumn
+
+          guard columnsCount > 0 else {
+            continue
+          }
+
+          context.saveGState()
+
+          context.setBlendMode(.sourceIn)
+          context.setFillColor(highlightRun.foregroundColor?.cgColor ?? .white)
+
+          let rect = self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellsRect(
+              for: .init(
+                origin: .init(row: row, column: originColumn),
+                size: .init(rowsCount: 1, columnsCount: columnsCount)
+              )
+            ),
+            parentViewHeight: self.bounds.height
+          )
+          context.fill([rect])
 
           context.restoreGState()
         }
@@ -571,110 +605,75 @@ private class BackgroundView: NSView {
   }
 
   override public func draw(_: NSRect) {
-    /* let context = NSGraphicsContext.current!.cgContext
+    guard let drawingState, let context = NSGraphicsContext.current?.cgContext else {
+      return
+    }
 
-     context.saveGState()
-     defer { context.restoreGState() }
+    context.saveGState()
+    defer { context.restoreGState() }
 
-     let grid = self.grid
+    for rect in self.rectsBeingDrawn() {
+      let gridRectangle = self.cellsGeometry.gridRectangle(
+        cellsRect: self.cellsGeometry.upsideDownRect(
+          from: rect,
+          parentViewHeight: self.bounds.height
+        )
+      )
 
-     let cursorPosition: GridPoint?
-     if let cursor = self.state.cursor, cursor.gridID == self.gridID {
-       cursorPosition = cursor.position
+      for row in gridRectangle.rowsRange {
+        guard row < drawingState.size.rowsCount else {
+          continue
+        }
 
-     } else {
-       cursorPosition = nil
-     }
+        let rowState = drawingState.rows[row]
 
-     for rect in self.rectsBeingDrawn() {
-       let gridRectangle = self.cellsGeometry.gridRectangle(
-         cellsRect: self.cellsGeometry.upsideDownRect(
-           from: rect,
-           parentViewHeight: self.bounds.height
-         )
-       )
-       .intersection(.init(size: grid.size))
+        let startColumn = gridRectangle.origin.column
+        let endColumn = gridRectangle.origin.column + gridRectangle.size.columnsCount - 1
 
-       guard let gridRectangle else {
-         continue
-       }
+        guard endColumn < rowState.highlightRuns.indexes.count, startColumn < endColumn else {
+          continue
+        }
 
-       for row in gridRectangle.rowsRange {
-         var latestHighlight: (rectangle: GridRectangle, id: Int?)?
-         func drawHighlight() {
-           guard let (rectangle, id) = latestHighlight else {
-             return
-           }
+        let startHighlightRunsIndex = rowState.highlightRuns.indexes[startColumn]
+        let endHighlightRunIndex = rowState.highlightRuns.indexes[endColumn]
 
-           context.saveGState()
+        for highlightRunIndex in startHighlightRunsIndex ... endHighlightRunIndex {
+          let highlightRun = rowState.highlightRuns.array[highlightRunIndex]
 
-           let highlight = id.flatMap { self.state.highlights[$0] } ?? self.state.defaultHighlight
-           if let color = highlight.reverse ? highlight.foregroundColor : highlight.backgroundColor {
-             context.setFillColor(self.cgColor(for: color))
-           } else {
-             context.setFillColor(.clear)
-           }
+          let originColumn = max(highlightRun.originColumn, gridRectangle.origin.column) - highlightRun.originColumn
+          let columnsCount = min(highlightRun.columnsCount, gridRectangle.size.columnsCount) - originColumn
 
-           let rect = self.cellsGeometry.upsideDownRect(
-             from: self.cellsGeometry.cellsRect(for: rectangle),
-             parentViewHeight: self.bounds.height
-           )
-           context.fill([rect])
+          guard columnsCount > 0 else {
+            continue
+          }
 
-           context.restoreGState()
-         }
+          context.saveGState()
 
-         for column in gridRectangle.columnsRange {
-           let index = GridPoint(row: row, column: column)
-           let cell = self.grid[index]
-           let hlID = cell?.hlID
+          context.setFillColor(highlightRun.backgroundColor?.cgColor ?? .clear)
 
-           if let (rectangle, id) = latestHighlight {
-             if id == hlID {
-               var newRectangle = rectangle
-               newRectangle.size.columnsCount += 1
-               latestHighlight = (newRectangle, id)
-               continue
+          let rect = self.cellsGeometry.upsideDownRect(
+            from: self.cellsGeometry.cellsRect(
+              for: .init(
+                origin: .init(row: row, column: originColumn),
+                size: .init(rowsCount: 1, columnsCount: columnsCount)
+              )
+            ),
+            parentViewHeight: self.bounds.height
+          )
+          context.fill([rect])
 
-             } else {
-               drawHighlight()
-             }
-           }
+          context.restoreGState()
+        }
+      }
+    }
 
-           let rectangle = GridRectangle(
-             origin: .init(row: row, column: column),
-             size: .init(rowsCount: 1, columnsCount: 1)
-           )
-           latestHighlight = (rectangle, hlID)
-         }
+    if self.synchronizeDrawingContext {
+      context.synchronize()
 
-         drawHighlight()
-
-         if let cursorPosition, cursorPosition.row == row, gridRectangle.columnsRange.contains(cursorPosition.column), let color = self.state.defaultHighlight.foregroundColor {
-           context.saveGState()
-
-           context.setFillColor(self.cgColor(for: color))
-
-           let rect = self.cellsGeometry.upsideDownRect(
-             from: self.cellsGeometry.cellRect(
-               for: cursorPosition
-             ),
-             parentViewHeight: self.bounds.height
-           )
-           context.fill([rect])
-
-           context.restoreGState()
-         }
-       }
-     }
-
-     if self.synchronizeDrawingContext {
-       context.synchronize()
-
-       DispatchQueues.SerialDrawing.async(flags: .barrier) {
-         self.synchronizeDrawingContext = false
-       }
-     } */
+      DispatchQueues.SerialDrawing.async(flags: .barrier) {
+        self.synchronizeDrawingContext = false
+      }
+    }
   }
 
   var synchronizeDrawingContext = false
