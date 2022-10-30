@@ -8,12 +8,14 @@
 
 import AppKit
 import Library
+import Nvim
 import RxSwift
 
 class GridsWindowController: NSWindowController {
   init() {
     let window = GridsWindow()
     self.keyDown = window.keyDown
+    self.mouseInput = window.mouseInput
     super.init(window: window)
   }
 
@@ -23,4 +25,5 @@ class GridsWindowController: NSWindowController {
   }
 
   let keyDown: Observable<NSEvent>
+  let mouseInput: Observable<MouseInput>
 }

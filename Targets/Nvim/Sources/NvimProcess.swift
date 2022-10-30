@@ -13,10 +13,11 @@ import RxSwift
 
 public class NvimProcess {
   @MainActor
-  public init(input: Observable<KeyPress>) {
+  public init(input: Observable<KeyPress>, mouseInput: Observable<MouseInput>) {
     self.process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
     self.process.executableURL = Bundle.main.url(forResource: "nvim", withExtension: nil)
     self.process.arguments = ["--embed"]
+    self.process.qualityOfService = .userInitiated
 
     if let runtimeUrl = Bundle.main.url(forResource: "runtime", withExtension: nil) {
       let environment = ["VIMRUNTIME": runtimeUrl.relativePath]
@@ -78,6 +79,20 @@ public class NvimProcess {
           }
         }
       }
+
+    self.process <~ mouseInput
+      .bind(with: self) { nvimProcess, mouseInput in
+        Task {
+          do {
+            _ = try await nvimProcess.nvimInputMouse(button: mouseInput.event.nvimButton, action: mouseInput.event.nvimAction, modifier: "", grid: mouseInput.gridID, row: mouseInput.point.row, col: mouseInput.point.column)
+
+          } catch {
+            "Failed nvim input mouse"
+              .fail(child: error.fail())
+              .assertionFailure()
+          }
+        }
+      }
   }
 
   public var notifications: Observable<NvimNotification> {
@@ -94,7 +109,6 @@ public class NvimProcess {
           return .empty()
         }
       }
-      .observe(on: MainScheduler.instance)
       .share(replay: 1, scope: .forever)
   }
 

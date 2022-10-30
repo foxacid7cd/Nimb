@@ -33,24 +33,30 @@ class GridView: NSView, EventListener {
 
   let gridID: Int
 
+  override var isOpaque: Bool {
+    true
+  }
+
+  override var wantsDefaultClipping: Bool {
+    false
+  }
+
   override func draw(_: NSRect) {
-    guard let drawingState, let context = NSGraphicsContext.current?.cgContext else {
+    guard let context = NSGraphicsContext.current, let window = self.state.windows[self.gridID] else {
       return
     }
+
+    context.saveGraphicsState()
+    defer { context.restoreGraphicsState() }
+
+    let bounds = self.bounds
     let state = self.state
-
-    context.saveGState()
-    defer { context.restoreGState() }
-
-    context.setShouldAntialias(true)
-    context.setShouldSmoothFonts(true)
-    context.setShouldSubpixelPositionFonts(true)
-    context.setShouldSubpixelQuantizeFonts(true)
+    let fontDerivatives = self.store.stateDerivatives.font
 
     let rects = self.rectsBeingDrawn()
 
-    context.setFillColor(drawingState.backgroundColor)
-    context.fill(rects)
+    context.cgContext.setFillColor(state.defaultHighlight.backgroundColor?.cgColor ?? .clear)
+    context.cgContext.fill(rects)
 
     var drawRuns = [DrawRun]()
 
@@ -58,20 +64,21 @@ class GridView: NSView, EventListener {
       let rectangle = self.cellsGeometry.gridRectangle(
         cellsRect: self.cellsGeometry.upsideDownRect(
           from: rect,
-          parentViewHeight: self.bounds.height
+          parentViewHeight: bounds.height
         )
       )
 
       for row in rectangle.rowsRange {
         var glyphsInRowCount = 0
 
-        var latestHighlight: (characters: [Character], id: Int?)?
+        var latestHighlightCharacters = [Character]()
+        var latestHighlightId: Int?
         func createDrawRun() {
-          guard let (characters, id) = latestHighlight else {
+          guard let id = latestHighlightId else {
             return
           }
 
-          let highlight = id.flatMap { state.highlights[$0] } ?? state.defaultHighlight
+          let highlight = state.highlights[id] ?? state.defaultHighlight
           let foregroundColor = highlight.foregroundColor?.cgColor ?? .white
           let backgroundColor = highlight.backgroundColor?.cgColor ?? .clear
 
@@ -80,36 +87,36 @@ class GridView: NSView, EventListener {
 
           if highlight.bold {
             if highlight.italic {
-              font = drawingState.font.boldItalic
+              font = fontDerivatives.boldItalic
               fontIdentifier = "boldItalic"
 
             } else {
-              font = drawingState.font.bold
+              font = fontDerivatives.bold
               fontIdentifier = "bold"
             }
           } else {
             if highlight.italic {
-              font = drawingState.font.italic
+              font = fontDerivatives.italic
               fontIdentifier = "italic"
 
             } else {
-              font = drawingState.font.regular
+              font = fontDerivatives.regular
               fontIdentifier = "regular"
             }
           }
 
           var hasher = Hasher()
-          hasher.combine(characters)
+          hasher.combine(latestHighlightCharacters)
           hasher.combine(fontIdentifier)
           let glyphRunCacheKey = hasher.finalize()
 
-          let origin = GridPoint(row: row, column: glyphsInRowCount)
+          let origin = GridPoint(row: row, column: rectangle.origin.column + glyphsInRowCount)
 
           let drawRun: DrawRun
-          if let cachedGlyphRun = drawingState.glyphRunCache[glyphRunCacheKey] {
+          if let cachedGlyphRun = fontDerivatives.glyphRunCache[glyphRunCacheKey] {
             drawRun = DrawRun(
               origin: origin,
-              characters: characters,
+              characters: latestHighlightCharacters,
               glyphRun: cachedGlyphRun,
               foregroundColor: foregroundColor,
               backgroundColor: backgroundColor
@@ -118,12 +125,12 @@ class GridView: NSView, EventListener {
           } else {
             let newDrawRun = DrawRun.make(
               origin: origin,
-              characters: characters,
+              characters: latestHighlightCharacters,
               font: font,
               foregroundColor: foregroundColor,
               backgroundColor: backgroundColor
             )
-            drawingState.glyphRunCache[glyphRunCacheKey] = newDrawRun.glyphRun
+            fontDerivatives.glyphRunCache[glyphRunCacheKey] = newDrawRun.glyphRun
             drawRun = newDrawRun
           }
 
@@ -132,9 +139,13 @@ class GridView: NSView, EventListener {
           glyphsInRowCount += drawRun.glyphRun.glyphs.count
         }
 
-        for column in 0 ..< drawingState.grid.size.columnsCount {
+        for column in rectangle.columnsRange {
+          guard column < window.grid.size.columnsCount else {
+            continue
+          }
+
           let index = GridPoint(row: row, column: column)
-          let cell = drawingState.grid[index]
+          let cell = window.grid[index]
           let newCharacters: [Character]
           if let cell {
             if let cellCharacter = cell.character {
@@ -148,9 +159,9 @@ class GridView: NSView, EventListener {
             newCharacters = [" "]
           }
 
-          if let (characters, id) = latestHighlight {
+          if let id = latestHighlightId {
             if id == cell?.hlID {
-              latestHighlight = (characters + newCharacters, id)
+              latestHighlightCharacters += newCharacters
               continue
 
             } else {
@@ -158,7 +169,8 @@ class GridView: NSView, EventListener {
             }
           }
 
-          latestHighlight = (newCharacters, cell?.hlID)
+          latestHighlightId = cell?.hlID
+          latestHighlightCharacters = newCharacters
         }
 
         createDrawRun()
@@ -166,9 +178,7 @@ class GridView: NSView, EventListener {
     }
 
     for drawRun in drawRuns {
-      context.saveGState()
-
-      context.setFillColor(drawRun.backgroundColor)
+      context.cgContext.setFillColor(drawRun.backgroundColor)
 
       let rectangle = GridRectangle(
         origin: drawRun.origin,
@@ -178,13 +188,13 @@ class GridView: NSView, EventListener {
         from: self.cellsGeometry.cellsRect(
           for: rectangle
         ),
-        parentViewHeight: self.bounds.height
+        parentViewHeight: bounds.height
       )
-      context.fill([rect])
+      context.cgContext.fill([rect])
 
-      context.textMatrix = .identity
-      context.setTextDrawingMode(.fill)
-      context.setFillColor(drawRun.foregroundColor)
+      context.cgContext.textMatrix = .identity
+      context.cgContext.setTextDrawingMode(.fill)
+      context.cgContext.setFillColor(drawRun.foregroundColor)
 
       let glyphRun = drawRun.glyphRun
 
@@ -192,50 +202,45 @@ class GridView: NSView, EventListener {
         glyphRun.font,
         glyphRun.glyphs,
         glyphRun.positionsWithOffset(
-          dx: drawingState.cellSize.width * CGFloat(drawRun.origin.column),
-          dy: drawingState.cellSize.height * CGFloat(drawingState.grid.size.rowsCount - drawRun.origin.row) - drawRun.glyphRun.font.ascender
+          dx: fontDerivatives.cellSize.width * CGFloat(drawRun.origin.column),
+          dy: fontDerivatives.cellSize.height * CGFloat(window.grid.size.rowsCount - drawRun.origin.row) - drawRun.glyphRun.font.ascender
         ),
         glyphRun.glyphs.count,
-        context
+        context.cgContext
       )
-
-      context.restoreGState()
     }
 
-    if let cursor = drawingState.cursor {
-      context.setFillColor(cursor.foregroundColor)
-      context.setBlendMode(.exclusion)
+    if let cursorPosition = state.cursorPosition(gridID: self.gridID) {
+      context.cgContext.setFillColor(state.defaultHighlight.foregroundColor?.cgColor ?? .white)
+      context.cgContext.setBlendMode(.exclusion)
 
       let rect = self.cellsGeometry.upsideDownRect(
         from: self.cellsGeometry.cellRect(
-          for: cursor.position
+          for: cursorPosition
         ),
-        parentViewHeight: self.bounds.height
+        parentViewHeight: bounds.height
       )
-      context.fill([rect])
+      context.cgContext.fill([rect])
     }
   }
 
-  func published(event: Event) {
-    switch event {
-    case let .windowFrameChanged(gridID):
-      guard gridID == self.gridID else {
-        break
-      }
+  func published(events: [Event]) {
+    for event in events {
+      switch event {
+      case let .windowFrameChanged(gridID):
+        guard gridID == self.gridID else {
+          break
+        }
 
-      self.drawingState = nil
+        self.setNeedsDisplay(self.bounds)
 
-    case let .windowGridRowChanged(gridID, origin, columnsCount):
-      guard gridID == self.gridID, let window = self.state.windows[gridID], var drawingState else {
-        break
-      }
+      case let .windowGridRowChanged(gridID, origin, columnsCount):
+        guard gridID == self.gridID else {
+          break
+        }
 
-      drawingState.grid = window.grid
-      self.drawingState = drawingState
-
-      self.setNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(
-          rect: self.cellsGeometry.upsideDownRect(
+        self.setNeedsDisplay(
+          self.cellsGeometry.upsideDownRect(
             from: self.cellsGeometry.cellsRect(
               for: .init(
                 origin: origin,
@@ -248,119 +253,90 @@ class GridView: NSView, EventListener {
             parentViewHeight: self.bounds.height
           )
         )
-      )
 
-    case let .windowGridRectangleChanged(gridID, rectangle):
-      guard gridID == self.gridID, let window = self.state.windows[gridID], var drawingState else {
-        break
-      }
+      case let .windowGridRectangleChanged(gridID, rectangle):
+        guard gridID == self.gridID else {
+          break
+        }
 
-      drawingState.grid = window.grid
-      self.drawingState = drawingState
-
-      self.setNeedsDisplay(
-        self.cellsGeometry.insetForDrawing(
-          rect: self.cellsGeometry.upsideDownRect(
+        self.setNeedsDisplay(
+          self.cellsGeometry.upsideDownRect(
             from: self.cellsGeometry.cellsRect(for: rectangle),
             parentViewHeight: self.bounds.height
           )
         )
-      )
 
-    case let .windowGridRectangleMoved(gridID, rectangle, toOrigin):
-      guard gridID == self.gridID, let window = self.state.windows[gridID], var drawingState else {
-        break
-      }
+      case let .windowGridRectangleMoved(gridID, rectangle, toOrigin):
+        guard gridID == self.gridID, let window = self.state.windows[gridID] else {
+          break
+        }
 
-      drawingState.grid = window.grid
-      self.drawingState = drawingState
+        let toRectangle = GridRectangle(origin: toOrigin, size: rectangle.size)
+          .intersection(.init(size: window.grid.size))
 
-      let toRectangle = GridRectangle(origin: toOrigin, size: rectangle.size)
-        .intersection(.init(size: window.grid.size))
-
-      if let toRectangle {
-        self.setNeedsDisplay(
-          self.cellsGeometry.insetForDrawing(
-            rect: self.cellsGeometry.upsideDownRect(
+        if let toRectangle {
+          self.setNeedsDisplay(
+            self.cellsGeometry.upsideDownRect(
               from: self.cellsGeometry.cellsRect(
                 for: toRectangle
               ),
               parentViewHeight: self.bounds.height
             )
           )
-        )
-      }
+        }
 
-    case let .windowGridCleared(gridID):
-      guard gridID == self.gridID, let window = self.state.windows[gridID], var drawingState else {
-        break
-      }
-
-      drawingState.grid = window.grid
-      self.drawingState = drawingState
-
-      self.setNeedsDisplay(self.bounds)
-
-    case let .cursorMoved(previousCursor):
-      self.drawingState?.cursor = DrawingState.makeCursor(
-        gridID: self.gridID,
-        state: self.state
-      )
-
-      if let previousCursor, previousCursor.gridID == self.gridID {
-        self.setNeedsDisplay(
-          self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellRect(
-              for: previousCursor.position
-            ),
-            parentViewHeight: self.bounds.height
-          )
-        )
-      }
-
-      if let cursor = self.state.cursor, cursor.gridID == self.gridID {
-        self.setNeedsDisplay(
-          self.cellsGeometry.upsideDownRect(
-            from: self.cellsGeometry.cellRect(
-              for: cursor.position
-            ),
-            parentViewHeight: self.bounds.height
-          )
-        )
-      }
-
-    case .highlightChanged:
-      self.highlightChanged = true
-
-    case .flushRequested:
-      if self.drawingState == nil || self.highlightChanged {
-        let gridID = self.gridID
-        let state = self.state
-        guard let window = state.windows[self.gridID] else {
+      case let .windowGridCleared(gridID):
+        guard gridID == self.gridID else {
           break
         }
-        let font = self.store.stateDerivatives.font
-
-        self.drawingState = DrawingState(
-          grid: window.grid,
-          font: (font.regular, font.bold, font.italic, font.boldItalic),
-          cellSize: font.cellSize,
-          glyphRunCache: font.glyphRunsCache,
-          cursor: DrawingState.makeCursor(gridID: gridID, state: state),
-          backgroundColor: state.defaultHighlight.backgroundColor?.cgColor ?? .clear
-        )
 
         self.setNeedsDisplay(self.bounds)
-        self.highlightChanged = false
-      }
 
-    default:
-      break
+      case let .cursorMoved(previousCursor):
+        if let previousCursor, previousCursor.gridID == self.gridID {
+          self.setNeedsDisplay(
+            self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellRect(
+                for: previousCursor.position
+              ),
+              parentViewHeight: self.bounds.height
+            )
+          )
+        }
+
+        if let cursor = self.state.cursor, cursor.gridID == self.gridID {
+          self.setNeedsDisplay(
+            self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellRect(
+                for: cursor.position
+              ),
+              parentViewHeight: self.bounds.height
+            )
+          )
+        }
+
+      case .highlightChanged:
+        self.highlightChanged = true
+
+      case .flushRequested:
+        if self.highlightChanged {
+          self.highlightChanged = false
+
+          self.setNeedsDisplay(self.bounds)
+        }
+
+        DispatchQueues.GridViewSynchronization.async(flags: .barrier) {
+          self.needsSynchronization = true
+        }
+
+      default:
+        break
+      }
     }
   }
 
   private var highlightChanged = false
-  private var drawingState: DrawingState?
+  private var needsSynchronization = false
 
   private var windowState: State.Window? {
     self.state.windows[self.gridID]

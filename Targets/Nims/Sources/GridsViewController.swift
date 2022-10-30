@@ -38,7 +38,7 @@ class GridsViewController: NSViewController, EventListener {
     self.listen()
   }
 
-  func published(event: Event) {}
+  func published(events: [Event]) {}
 
   private var cellsGeometry: CellsGeometry {
     .shared

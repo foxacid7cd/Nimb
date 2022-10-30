@@ -53,11 +53,11 @@ class StateDerivatives {
     var boldItalic: NSFont
 
     var cellSize: CGSize
-    var glyphRunsCache: Cache<Int, GlyphRun>
+    var glyphRunCache: Cache<Int, GlyphRun>
   }
 
   var font: Font {
-    if let (stateFont, font) = DispatchQueues.StateDerivatives.sync(execute: { self.latestFontContext }), stateFont == self.state.font {
+    if let (stateFont, font) = self.latestFontContext, stateFont == self.state.font {
       return font
     }
 
@@ -84,7 +84,7 @@ class StateDerivatives {
       italic: italic,
       boldItalic: boldItalic,
       cellSize: regular.calculateCellSize(for: "@"),
-      glyphRunsCache: .init(dispatchQueue: DispatchQueues.GlyphRunsCache)
+      glyphRunCache: .init(dispatchQueue: DispatchQueues.GlyphRunCache)
     )
     DispatchQueues.StateDerivatives.async(flags: .barrier) {
       self.latestFontContext = (self.state.font, font)

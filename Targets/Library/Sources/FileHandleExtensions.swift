@@ -16,11 +16,16 @@ public extension FileHandle {
         let data = fileHandle.availableData
 
         guard !data.isEmpty else {
-          observer.onCompleted()
+          DispatchQueue.main.async {
+            observer.onCompleted()
+          }
+
           return
         }
 
-        observer.onNext(data)
+        DispatchQueue.main.async {
+          observer.onNext(data)
+        }
       }
 
       return Disposables.create {

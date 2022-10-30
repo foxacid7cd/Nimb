@@ -20,34 +20,40 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
     self.startNvimProcess()
   }
 
-  func published(event: Event) {
-    switch event {
-    case .windowFrameChanged:
-      if self.gridsWindowController == nil {
-        let gridsWindowController = GridsWindowController()
-        self.gridsWindowController = gridsWindowController
+  func published(events: [Event]) {
+    for event in events {
+      switch event {
+      case .windowFrameChanged:
+        if self.gridsWindowController == nil {
+          let gridsWindowController = GridsWindowController()
+          self.gridsWindowController = gridsWindowController
 
-        self <~ gridsWindowController.keyDown
-          .map(KeyPress.init)
-          .bind(onNext: self.inputSubject.onNext(_:))
+          self <~ gridsWindowController.keyDown
+            .map(KeyPress.init)
+            .bind(onNext: self.inputSubject.onNext(_:))
 
-        gridsWindowController.showWindow(nil)
+          self <~ gridsWindowController.mouseInput
+            .bind(onNext: self.mouseInputSubject.onNext(_:))
+
+          gridsWindowController.showWindow(nil)
+        }
+
+      default:
+        break
       }
-
-    default:
-      break
     }
   }
 
   @IBOutlet private var mainMenu: NSMenu!
 
   private let inputSubject = PublishSubject<KeyPress>()
+  private let mouseInputSubject = PublishSubject<MouseInput>()
   private var nvimProcess: NvimProcess?
   private var gridsWindowController: GridsWindowController?
 
   @MainActor
   private func startNvimProcess() {
-    let nvimProcess = NvimProcess(input: self.inputSubject)
+    let nvimProcess = NvimProcess(input: self.inputSubject, mouseInput: self.mouseInputSubject)
     self.nvimProcess = nvimProcess
 
     self <~ nvimProcess.notifications
@@ -395,15 +401,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
 extension Reactive where Base: EventListener, Base: AnyObject {
   func events(_ events: Observable<[Event]>) -> Disposable {
     events.bind(with: base) { base, events in
-      for event in events {
-        base.published(event: event)
-      }
+      base.published(events: events)
     }
   }
 }
 
 protocol EventListener {
-  func published(event: Event)
+  func published(events: [Event])
 }
 
 extension EventListener {
