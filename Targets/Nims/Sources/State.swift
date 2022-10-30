@@ -12,7 +12,7 @@ import Nvim
 
 struct State: Hashable {
   enum Font: Hashable {
-    case monospacedSystem(size: Double, weight: Double)
+    case monospacedSystem(size: Double)
     case custom(name: String, size: Double)
   }
 
@@ -76,12 +76,14 @@ struct State: Hashable {
     var specialColor: Color?
     var reverse = false
     var blend = 0
+    var italic = false
+    var bold = false
   }
 
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
-  var font = Font.custom(name: "JetBrainsMono Nerd Font Mono", size: 13)
-  var outerGridSize = GridSize(rowsCount: 30, columnsCount: 100)
+  var font = Font.custom(name: "MesloLGS NF", size: 13)
+  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 130)
   var highlights = [Highlight?](repeating: nil, count: 10000)
   var defaultHighlight = Highlight()
 

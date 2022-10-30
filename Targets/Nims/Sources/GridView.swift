@@ -75,10 +75,38 @@ class GridView: NSView, EventListener {
           let foregroundColor = highlight.foregroundColor?.cgColor ?? .white
           let backgroundColor = highlight.backgroundColor?.cgColor ?? .clear
 
+          let font: NSFont
+          let fontIdentifier: String
+
+          if highlight.bold {
+            if highlight.italic {
+              font = drawingState.font.boldItalic
+              fontIdentifier = "boldItalic"
+
+            } else {
+              font = drawingState.font.bold
+              fontIdentifier = "bold"
+            }
+          } else {
+            if highlight.italic {
+              font = drawingState.font.italic
+              fontIdentifier = "italic"
+
+            } else {
+              font = drawingState.font.regular
+              fontIdentifier = "regular"
+            }
+          }
+
+          var hasher = Hasher()
+          hasher.combine(characters)
+          hasher.combine(fontIdentifier)
+          let glyphRunCacheKey = hasher.finalize()
+
           let origin = GridPoint(row: row, column: glyphsInRowCount)
 
           let drawRun: DrawRun
-          if let cachedGlyphRun = drawingState.glyphRunCache[characters] {
+          if let cachedGlyphRun = drawingState.glyphRunCache[glyphRunCacheKey] {
             drawRun = DrawRun(
               origin: origin,
               characters: characters,
@@ -91,11 +119,11 @@ class GridView: NSView, EventListener {
             let newDrawRun = DrawRun.make(
               origin: origin,
               characters: characters,
-              font: drawingState.font,
+              font: font,
               foregroundColor: foregroundColor,
               backgroundColor: backgroundColor
             )
-            drawingState.glyphRunCache[characters] = newDrawRun.glyphRun
+            drawingState.glyphRunCache[glyphRunCacheKey] = newDrawRun.glyphRun
             drawRun = newDrawRun
           }
 
@@ -165,7 +193,7 @@ class GridView: NSView, EventListener {
         glyphRun.glyphs,
         glyphRun.positionsWithOffset(
           dx: drawingState.cellSize.width * CGFloat(drawRun.origin.column),
-          dy: drawingState.cellSize.height * CGFloat(drawingState.grid.size.rowsCount - drawRun.origin.row) - drawingState.font.ascender
+          dy: drawingState.cellSize.height * CGFloat(drawingState.grid.size.rowsCount - drawRun.origin.row) - drawRun.glyphRun.font.ascender
         ),
         glyphRun.glyphs.count,
         context
@@ -175,7 +203,7 @@ class GridView: NSView, EventListener {
     }
 
     if let cursor = drawingState.cursor {
-      context.setFillColor(.white)
+      context.setFillColor(cursor.foregroundColor)
       context.setBlendMode(.exclusion)
 
       let rect = self.cellsGeometry.upsideDownRect(
@@ -311,14 +339,13 @@ class GridView: NSView, EventListener {
         guard let window = state.windows[self.gridID] else {
           break
         }
-        let font = self.store.stateDerivatives.font.nsFont
-        let cellSize = self.store.stateDerivatives.font.cellSize
+        let font = self.store.stateDerivatives.font
 
         self.drawingState = DrawingState(
           grid: window.grid,
-          font: font,
-          cellSize: cellSize,
-          glyphRunCache: self.store.stateDerivatives.font.glyphRunsCache,
+          font: (font.regular, font.bold, font.italic, font.boldItalic),
+          cellSize: font.cellSize,
+          glyphRunCache: font.glyphRunsCache,
           cursor: DrawingState.makeCursor(gridID: gridID, state: state),
           backgroundColor: state.defaultHighlight.backgroundColor?.cgColor ?? .clear
         )
@@ -351,26 +378,24 @@ class GridView: NSView, EventListener {
 private struct DrawingState {
   struct Cursor {
     var position: GridPoint
-    var character: Character
-    var highlight: State.Highlight
+    var foregroundColor: CGColor
   }
 
   var grid: CellGrid
-  var font: NSFont
+  var font: (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont)
   var cellSize: CGSize
-  var glyphRunCache: Cache<[Character], GlyphRun>
+  var glyphRunCache: Cache<Int, GlyphRun>
   var cursor: Cursor?
   var backgroundColor: CGColor
 
   static func makeCursor(gridID: Int, state: State) -> Cursor? {
-    guard let position = state.cursorPosition(gridID: gridID), let window = state.windows[gridID] else {
+    guard let position = state.cursorPosition(gridID: gridID) else {
       return nil
     }
 
     return .init(
       position: position,
-      character: window.grid[position]?.character ?? " ",
-      highlight: state.defaultHighlight
+      foregroundColor: state.defaultHighlight.foregroundColor?.cgColor ?? .white
     )
   }
 }

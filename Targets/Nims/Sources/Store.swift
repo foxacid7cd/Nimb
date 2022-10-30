@@ -47,9 +47,13 @@ class StateDerivatives {
   }
 
   struct Font {
-    var nsFont: NSFont
+    var regular: NSFont
+    var bold: NSFont
+    var italic: NSFont
+    var boldItalic: NSFont
+
     var cellSize: CGSize
-    var glyphRunsCache: Cache<[Character], GlyphRun>
+    var glyphRunsCache: Cache<Int, GlyphRun>
   }
 
   var font: Font {
@@ -57,18 +61,29 @@ class StateDerivatives {
       return font
     }
 
-    let nsFont: NSFont = {
-      switch self.state.font {
-      case let .monospacedSystem(size, weight):
-        return .monospacedSystemFont(ofSize: size, weight: .init(rawValue: weight))
+    let regular: NSFont
+    let bold: NSFont
+    let italic: NSFont
+    let boldItalic: NSFont
+    switch self.state.font {
+    case let .monospacedSystem(size):
+      regular = .monospacedSystemFont(ofSize: size, weight: .regular)
+      bold = .monospacedSystemFont(ofSize: size, weight: .bold)
+      italic = .monospacedSystemFont(ofSize: size, weight: .regular)
+      boldItalic = .monospacedSystemFont(ofSize: size, weight: .bold)
 
-      case let .custom(name, size):
-        return .init(name: name, size: size)!
-      }
-    }()
+    case let .custom(name, size):
+      regular = .init(name: name, size: size)!
+      bold = NSFontManager.shared.convert(regular, toHaveTrait: .boldFontMask)
+      italic = NSFontManager.shared.convert(regular, toHaveTrait: .italicFontMask)
+      boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+    }
     let font = Font(
-      nsFont: nsFont,
-      cellSize: nsFont.calculateCellSize(for: "@"),
+      regular: regular,
+      bold: bold,
+      italic: italic,
+      boldItalic: boldItalic,
+      cellSize: regular.calculateCellSize(for: "@"),
       glyphRunsCache: .init(dispatchQueue: DispatchQueues.GlyphRunsCache)
     )
     DispatchQueues.StateDerivatives.async(flags: .barrier) {

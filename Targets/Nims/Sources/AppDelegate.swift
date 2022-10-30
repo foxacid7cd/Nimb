@@ -368,6 +368,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
               if let blend = model.rgbAttrs[.string("blend")]?.uintValue {
                 highlight.blend = Int(blend)
               }
+
+              if let italic = model.rgbAttrs[.string("italic")]?.boolValue {
+                highlight.italic = italic
+              }
+
+              if let bold = model.rgbAttrs[.string("bold")]?.boolValue {
+                highlight.bold = bold
+              }
             }
           }
 

@@ -39,7 +39,7 @@ final class CellsGeometry {
   }
 
   func insetForDrawing(rect: CGRect) -> CGRect {
-    let font = self.store.stateDerivatives.font.nsFont
+    let font = self.store.stateDerivatives.font.regular
     return rect.insetBy(
       dx: -(font.boundingRectForFont.width - self.cellSize.width) / 2,
       dy: -(font.boundingRectForFont.height - self.cellSize.height) / 2
