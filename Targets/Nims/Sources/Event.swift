@@ -13,13 +13,11 @@ enum Event: Hashable {
   case windowGridRectangleChanged(gridID: Int, rectangle: GridRectangle)
   case windowGridRectangleMoved(gridID: Int, rectangle: GridRectangle, toOrigin: GridPoint)
   case windowGridCleared(gridID: Int)
-
   case windowFrameChanged(gridID: Int)
   case windowHid(gridID: Int)
   case windowClosed(gridID: Int)
-
-  case cursorMoved(previousCursor: State.Cursor?)
+  case cursor(gridID: Int, position: GridPoint?)
   case fontChanged
   case highlightChanged
-  case flushRequested
+  case flushRequested(gridIDs: Set<Int>?)
 }

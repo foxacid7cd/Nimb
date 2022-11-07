@@ -6,10 +6,10 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import API
 import AppKit
 import Carbon
 import Library
-import API
 import RxSwift
 
 class GridsWindow: NSWindow {
@@ -24,12 +24,8 @@ class GridsWindow: NSWindow {
     self.acceptsMouseMovedEvents = true
   }
 
-  var keyDown: Observable<NSEvent> {
-    self.keyDownSubject
-  }
-
-  var mouseInput: Observable<MouseInput> {
-    self.mouseInputSubject
+  var input: Observable<Input> {
+    self.inputSubject
   }
 
   override var canBecomeKey: Bool {
@@ -37,7 +33,7 @@ class GridsWindow: NSWindow {
   }
 
   override func keyDown(with event: NSEvent) {
-    self.keyDownSubject.onNext(event)
+    self.inputSubject.onNext(.keyboard(.init(event: event)))
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -75,13 +71,12 @@ class GridsWindow: NSWindow {
   }
 
   override func scrollWheel(with event: NSEvent) {
-    if abs(event.scrollingDeltaY) > 5 {
+    if abs(event.scrollingDeltaY) > 4 {
       self.mouseInput(event, event: .wheel(action: event.scrollingDeltaY > 0 ? .up : .down))
     }
   }
 
-  private let keyDownSubject = PublishSubject<NSEvent>()
-  private let mouseInputSubject = PublishSubject<MouseInput>()
+  private let inputSubject = PublishSubject<Input>()
 
   private func mouseInput(_ nsEvent: NSEvent, event: MouseInput.Event) {
     let locationInWindow = nsEvent.locationInWindow
@@ -97,11 +92,13 @@ class GridsWindow: NSWindow {
         parentViewHeight: gridView.bounds.height
       )
     )
-    self.mouseInputSubject.onNext(
-      MouseInput(
-        event: event,
-        gridID: gridView.gridID,
-        point: rectangle.origin
+    self.inputSubject.onNext(
+      .mouse(
+        .init(
+          event: event,
+          gridID: gridView.gridID,
+          point: rectangle.origin
+        )
       )
     )
   }

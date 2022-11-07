@@ -6,9 +6,9 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import API
 import CoreGraphics
 import Library
-import API
 
 struct State: Hashable {
   enum Font: Hashable {
@@ -83,7 +83,7 @@ struct State: Hashable {
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.custom(name: "MesloLGS NF", size: 13)
-  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 130)
+  var outerGridSize = GridSize(rowsCount: 36, columnsCount: 120)
   var highlights = [Highlight?](repeating: nil, count: 10000)
   var defaultHighlight = Highlight()
 

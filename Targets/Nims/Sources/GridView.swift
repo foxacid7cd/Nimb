@@ -6,11 +6,11 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import API
 import AppKit
 import CasePaths
 import Combine
 import Library
-import API
 import RxCocoa
 import RxSwift
 
@@ -292,40 +292,49 @@ class GridView: NSView, EventListener {
 
         self.setNeedsDisplay(self.bounds)
 
-      case let .cursorMoved(previousCursor):
-        if let previousCursor, previousCursor.gridID == self.gridID {
+      case let .cursor(gridID, position):
+        guard gridID == self.gridID else {
+          break
+        }
+
+        if let position {
           self.setNeedsDisplay(
             self.cellsGeometry.upsideDownRect(
               from: self.cellsGeometry.cellRect(
-                for: previousCursor.position
+                for: position
+              ),
+              parentViewHeight: self.bounds.height
+            )
+          )
+
+        } else if let lastCursorPosition {
+          self.setNeedsDisplay(
+            self.cellsGeometry.upsideDownRect(
+              from: self.cellsGeometry.cellRect(
+                for: lastCursorPosition
               ),
               parentViewHeight: self.bounds.height
             )
           )
         }
 
-        if let cursor = self.state.cursor, cursor.gridID == self.gridID {
-          self.setNeedsDisplay(
-            self.cellsGeometry.upsideDownRect(
-              from: self.cellsGeometry.cellRect(
-                for: cursor.position
-              ),
-              parentViewHeight: self.bounds.height
-            )
-          )
+        lastCursorPosition = position
+
+      case .fontChanged, .highlightChanged:
+        self.appearanceChanged = true
+
+      case let .flushRequested(gridIDs):
+        guard gridIDs == nil || gridIDs?.contains(self.gridID) == true else {
+          break
         }
 
-      case .highlightChanged:
-        self.highlightChanged = true
-
-      case .flushRequested:
-        if self.highlightChanged {
-          self.highlightChanged = false
+        if self.appearanceChanged {
+          self.appearanceChanged = false
 
           self.setNeedsDisplay(self.bounds)
         }
 
-        DispatchQueues.GridViewSynchronization.async(flags: .barrier) {
+        DispatchQueues.GridViewSynchronization.dispatchQueue.async(flags: .barrier) {
           self.needsSynchronization = true
         }
 
@@ -335,8 +344,9 @@ class GridView: NSView, EventListener {
     }
   }
 
-  private var highlightChanged = false
+  private var appearanceChanged = false
   private var needsSynchronization = false
+  private var lastCursorPosition: GridPoint?
 
   private var windowState: State.Window? {
     self.state.windows[self.gridID]

@@ -18,7 +18,6 @@ class Store {
     self.eventsSubject = eventsSubject
 
     self.events = eventsSubject
-      .filter { !$0.isEmpty }
       .share(replay: 1, scope: .forever)
   }
 
@@ -84,9 +83,9 @@ class StateDerivatives {
       italic: italic,
       boldItalic: boldItalic,
       cellSize: regular.calculateCellSize(for: "@"),
-      glyphRunCache: .init(dispatchQueue: DispatchQueues.GlyphRunCache)
+      glyphRunCache: .init(dispatchQueue: DispatchQueues.GlyphRunCache.dispatchQueue)
     )
-    DispatchQueues.StateDerivatives.async(flags: .barrier) {
+    DispatchQueues.StateDerivatives.dispatchQueue.async(flags: .barrier) {
       self.latestFontContext = (self.state.font, font)
     }
 

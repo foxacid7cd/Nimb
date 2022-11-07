@@ -6,7 +6,6 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-import AppKit
 import Foundation
 import Library
 import MessagePack
@@ -15,8 +14,7 @@ import RxSwift
 import Socket
 
 public class NvimProcess {
-  @MainActor
-  public init(input: Observable<KeyPress>, mouseInput: Observable<MouseInput>, executableURL: URL, runtimeURL: URL) {
+  public init(input: Observable<Input>, executableURL: URL, runtimeURL: URL) {
     log(.info, "Nvim executable URL: \(executableURL.absoluteURL.relativePath)")
 
     let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "WXA9R8SW25.Nims")!
@@ -46,30 +44,20 @@ public class NvimProcess {
     }
 
     self.process <~ input
-      .map { $0.makeNvimKeyCode() }
-      .bind(with: self) { nvimProcess, keyCode in
+      .bind(with: self) { nvimProcess, input in
         Task {
           do {
-            _ = try await nvimProcess.nvimInput(keys: keyCode)
+            switch input {
+            case let .keyboard(keyPress):
+              _ = try await nvimProcess.nvimInput(keys: keyPress.makeNvimKeyCode())
+
+            case let .mouse(mouseInput):
+              _ = try await nvimProcess.nvimInputMouse(button: mouseInput.event.nvimButton, action: mouseInput.event.nvimAction, modifier: "", grid: mouseInput.gridID, row: mouseInput.point.row, col: mouseInput.point.column)
+            }
 
           } catch {
             nvimProcess.errorSubject.onNext(
               "Failed nvim input"
-                .fail(child: error.fail())
-            )
-          }
-        }
-      }
-
-    self.process <~ mouseInput
-      .bind(with: self) { nvimProcess, mouseInput in
-        Task {
-          do {
-            _ = try await nvimProcess.nvimInputMouse(button: mouseInput.event.nvimButton, action: mouseInput.event.nvimAction, modifier: "", grid: mouseInput.gridID, row: mouseInput.point.row, col: mouseInput.point.column)
-
-          } catch {
-            nvimProcess.errorSubject.onNext(
-              "Failed nvim input mouse"
                 .fail(child: error.fail())
             )
           }
@@ -172,7 +160,6 @@ public class NvimProcess {
       notifications,
       self.errorSubject.map { throw $0 }
     ])
-    .observe(on: MainScheduler.instance)
   }
 
   public func terminate() {
@@ -200,52 +187,50 @@ private extension Socket {
         let baseAddress = pointer.baseAddress!
         let rawBaseAddress = UnsafeMutableRawPointer(baseAddress)
 
-        DispatchQueue.global(qos: .userInitiated).async {
-          repeat {
+        repeat {
+          do {
+            let bytesCount = try self.read(
+              into: baseAddress.advanced(by: endIndex),
+              bufSize: bufferSize - endIndex,
+              truncate: false
+            )
+            endIndex += bytesCount
+
+            let data = Data(bytesNoCopy: pointer.baseAddress!, count: endIndex, deallocator: .none)
+            var subdata = Subdata(data: data)
+            var parsedValues = [Value]()
+
             do {
-              let bytesCount = try self.read(
-                into: baseAddress.advanced(by: endIndex),
-                bufSize: bufferSize - endIndex,
-                truncate: false
-              )
-              endIndex += bytesCount
-
-              let data = Data(bytesNoCopy: pointer.baseAddress!, count: endIndex, deallocator: .none)
-              var subdata = Subdata(data: data)
-              var parsedValues = [Value]()
-
-              do {
-                while true {
-                  let value: Value
-                  (value, subdata) = try MessagePack.unpack(subdata)
-                  parsedValues.append(value)
-                }
-
-              } catch MessagePackError.insufficientData {
-                observer.onNext(parsedValues)
-
-                let remainderAddress = baseAddress.advanced(
-                  by: endIndex - subdata.count
-                )
-                rawBaseAddress.copyMemory(
-                  from: remainderAddress,
-                  byteCount: subdata.count
-                )
-                endIndex = subdata.count
-
-              } catch {
-                throw "Failed parsing values"
-                  .fail(child: error.fail())
+              while true {
+                let value: Value
+                (value, subdata) = try MessagePack.unpack(subdata)
+                parsedValues.append(value)
               }
 
-            } catch {
-              observer.onError(
-                "Failed socket data read"
-                  .fail(child: error.fail())
+            } catch MessagePackError.insufficientData {
+              observer.onNext(parsedValues)
+
+              let remainderAddress = baseAddress.advanced(
+                by: endIndex - subdata.count
               )
+              rawBaseAddress.copyMemory(
+                from: remainderAddress,
+                byteCount: subdata.count
+              )
+              endIndex = subdata.count
+
+            } catch {
+              throw "Failed parsing values"
+                .fail(child: error.fail())
             }
-          } while !isCancelled
-        }
+
+          } catch {
+            observer.onError(
+              "Failed socket data read"
+                .fail(child: error.fail())
+            )
+          }
+        } while !isCancelled
       }
 
       return Disposables.create {
@@ -254,5 +239,6 @@ private extension Socket {
         isCancelled = true
       }
     }
+    .subscribe(on: SerialDispatchQueueScheduler(qos: .userInitiated))
   }
 }

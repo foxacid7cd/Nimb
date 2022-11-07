@@ -7,22 +7,27 @@
 //
 
 import Foundation
+import RxSwift
 
 enum DispatchQueues {
   static let GlyphRunCache = makeDispatchQueue("GlyphRunCache", attributes: .concurrent)
   static let StateDerivatives = makeDispatchQueue("StateDerivatives", attributes: .concurrent)
   static let GridViewSynchronization = makeDispatchQueue("GridViewSynchronization", attributes: .concurrent)
   static let GridViewDrawing = DispatchQueue.global(qos: .userInitiated)
+  static let Nvim = makeDispatchQueue("Nvim", qos: .userInitiated)
 }
 
 private func makeDispatchQueue(
   _ name: String,
   qos: DispatchQoS = .default,
   attributes: DispatchQueue.Attributes = []
-) -> DispatchQueue {
-  .init(
-    label: "\(Bundle.main.bundleIdentifier!).\(name)",
+) -> (dispatchQueue: DispatchQueue, scheduler: SerialDispatchQueueScheduler) {
+  let label = "\(Bundle.main.bundleIdentifier!).\(name)"
+  let dispatchQueue = DispatchQueue(
+    label: label,
     qos: qos,
     attributes: attributes
   )
+  let scheduler = SerialDispatchQueueScheduler(queue: dispatchQueue, internalSerialQueueName: "\(label).Scheduler")
+  return (dispatchQueue, scheduler)
 }

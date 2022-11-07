@@ -6,16 +6,15 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import API
 import AppKit
 import Library
-import API
 import RxSwift
 
 class GridsWindowController: NSWindowController {
   init() {
     let window = GridsWindow()
-    self.keyDown = window.keyDown
-    self.mouseInput = window.mouseInput
+    self.input = window.input
     super.init(window: window)
   }
 
@@ -24,6 +23,5 @@ class GridsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  let keyDown: Observable<NSEvent>
-  let mouseInput: Observable<MouseInput>
+  let input: Observable<Input>
 }
