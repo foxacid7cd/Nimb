@@ -83,7 +83,10 @@ class StateDerivatives {
       italic: italic,
       boldItalic: boldItalic,
       cellSize: regular.calculateCellSize(for: "@"),
-      glyphRunCache: .init(dispatchQueue: DispatchQueues.GlyphRunCache.dispatchQueue)
+      glyphRunCache: .init(
+        capacity: 4 * 1024,
+        dispatchQueue: DispatchQueues.GlyphRunCache.dispatchQueue
+      )
     )
     DispatchQueues.StateDerivatives.dispatchQueue.async(flags: .barrier) {
       self.latestFontContext = (self.state.font, font)

@@ -20,7 +20,7 @@ class GridsWindow: NSWindow {
       backing: .buffered,
       defer: true
     )
-    self.contentViewController = GridsViewController()
+    self.contentViewController = self.gridsViewController
     self.acceptsMouseMovedEvents = true
   }
 
@@ -30,6 +30,10 @@ class GridsWindow: NSWindow {
 
   override var canBecomeKey: Bool {
     true
+  }
+
+  func handle(event: Event) {
+    self.gridsViewController.handle(event: event)
   }
 
   override func keyDown(with event: NSEvent) {
@@ -71,11 +75,12 @@ class GridsWindow: NSWindow {
   }
 
   override func scrollWheel(with event: NSEvent) {
-    if abs(event.scrollingDeltaY) > 4 {
+    if abs(event.scrollingDeltaY) > 5 {
       self.mouseInput(event, event: .wheel(action: event.scrollingDeltaY > 0 ? .up : .down))
     }
   }
 
+  private lazy var gridsViewController = GridsViewController()
   private let inputSubject = PublishSubject<Input>()
 
   private func mouseInput(_ nsEvent: NSEvent, event: MouseInput.Event) {

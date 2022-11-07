@@ -13,9 +13,9 @@ import RxSwift
 
 class GridsWindowController: NSWindowController {
   init() {
-    let window = GridsWindow()
-    self.input = window.input
-    super.init(window: window)
+    let gridsWindow = GridsWindow()
+    self.gridsWindow = gridsWindow
+    super.init(window: gridsWindow)
   }
 
   @available(*, unavailable)
@@ -23,5 +23,13 @@ class GridsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  let input: Observable<Input>
+  var input: Observable<Input> {
+    self.gridsWindow.input
+  }
+
+  func handle(event: Event) {
+    self.gridsWindow.handle(event: event)
+  }
+
+  private let gridsWindow: GridsWindow
 }

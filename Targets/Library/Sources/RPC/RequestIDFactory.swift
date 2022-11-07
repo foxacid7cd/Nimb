@@ -7,6 +7,5 @@
 //
 
 public protocol RequestIDFactory {
-  @MainActor
   mutating func makeRequestID() -> UInt
 }

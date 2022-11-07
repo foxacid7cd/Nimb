@@ -14,125 +14,70 @@ import RxCocoa
 import RxSwift
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, EventListener {
+class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    self.listen()
     self.startNvimProcess()
+
+    self.gridsWindowController.showWindow(nil)
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {
     self.nvimProcess?.terminate()
   }
 
-  func published(events: [Event]) {
-    for event in events {
-      switch event {
-      case .windowFrameChanged:
-        if self.gridsWindowController == nil {
-          let gridsWindowController = GridsWindowController()
-          self.gridsWindowController = gridsWindowController
-
-          self <~ gridsWindowController.input
-            .bind(onNext: self.inputSubject.onNext(_:))
-
-          gridsWindowController.showWindow(nil)
-        }
-
-      default:
-        break
-      }
-    }
-  }
-
   @IBOutlet private var mainMenu: NSMenu!
 
-  private let inputSubject = PublishSubject<Input>()
   private var nvimProcess: NvimProcess?
-  private var gridsWindowController: GridsWindowController?
+  private lazy var gridsWindowController = GridsWindowController()
 
-  @MainActor
   private func startNvimProcess() {
     let nvimBundleURL = Bundle.main.url(forResource: "nvim", withExtension: "bundle")!
     let nvimBundle = Bundle(url: nvimBundleURL)!
 
-    let input = self.inputSubject
-      .throttle(.milliseconds(50), latest: true, scheduler: SerialDispatchQueueScheduler(qos: .userInteractive))
+    let input = self.gridsWindowController.input
+      .throttle(.milliseconds(40), latest: true, scheduler: MainScheduler.instance)
 
     let nvimProcess = NvimProcess(
       input: input,
       executableURL: nvimBundle.url(forAuxiliaryExecutable: "nvim")!,
-      runtimeURL: nvimBundle.resourceURL!.appendingPathComponent("runtime")
+      runtimeURL: nvimBundle.resourceURL!.appendingPathComponent("runtime"),
+      dispatchQueue: DispatchQueues.Nvim.dispatchQueue
     )
 
     self <~ nvimProcess.run()
-      .flatMap { Observable.from($0, scheduler: MainScheduler.instance) }
-      .map { try self.store.state.apply(notification: $0) }
-      /* .flatMap { notification -> Observable<Event> in
-         Observable.create { observer in
-           DispatchQueue.main.async {
-             observer.onNext(self.store.state)
-             observer.onCompleted()
-           }
-
-           return Disposables.create()
-         }
-         .flatMap { state in
-           var state = state
-           let events = try state.apply(notification: notification)
-           DispatchQueue.main.async {
-             self.store.state = state
-           }
-           return Observable.from(events)
-         }
-       } */
-      .buffer(timeSpan: .milliseconds(20), count: 200, scheduler: MainScheduler.instance)
-      .filter { !$0.isEmpty }
       .catch { error in
-        let alert = NSAlert()
-        alert.messageText = "Nvim process failed"
-        alert.informativeText = error.alertMessage
-        alert.addButton(withTitle: "Close")
-        alert.runModal()
+        DispatchQueue.main.async {
+          let alert = NSAlert()
+          alert.messageText = "Nvim process failed"
+          alert.informativeText = error.alertMessage
+          alert.addButton(withTitle: "Close")
+          alert.runModal()
 
-        NSApplication.shared.terminate(nil)
+          NSApplication.shared.terminate(nil)
+        }
 
         return .empty()
       }
-      .bind(onNext: { eventsBatches in
-        var allEvents = [Event]()
-        var flushedGridIDs: Set<Int>? = .init()
+      .flatMap { Observable.from($0) }
+      .scan(into: (state: State(), events: [Event]()), accumulator: { result, notification in
+        result.1 = try! result.0.apply(notification: notification)
+      })
+      .subscribe(onNext: { state, events in
+        DispatchQueue.main.async {
+          Store.shared.state = state
 
-        for (events, affectedGridIDs, hasFlush) in eventsBatches {
-          allEvents += events
-
-          if let affectedGridIDs {
-            if hasFlush {
-              flushedGridIDs?.formUnion(affectedGridIDs)
-            }
-
-          } else {
-            flushedGridIDs = nil
+          for event in events {
+            self.gridsWindowController.handle(event: event)
           }
         }
-
-        if let flushedGridIDs {
-          if !flushedGridIDs.isEmpty {
-            allEvents.append(.flushRequested(gridIDs: flushedGridIDs))
-          }
-
-        } else {
-          allEvents.append(.flushRequested(gridIDs: nil))
-        }
-
-        self.store.publish(events: allEvents)
       })
 
-    DispatchQueues.Nvim.dispatchQueue.asyncAfter(deadline: .now() + .milliseconds(200)) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
       Task {
         do {
           try await nvimProcess.nvimUIAttach(
-            width: self.store.state.outerGridSize.columnsCount,
-            height: self.store.state.outerGridSize.rowsCount,
+            width: Store.shared.state.outerGridSize.columnsCount,
+            height: Store.shared.state.outerGridSize.rowsCount,
             options: [
               UIOption.extMultigrid.value: true,
               UIOption.extHlstate.value: true,
@@ -191,10 +136,8 @@ private extension Error {
 }
 
 private extension State {
-  mutating func apply(notification: NvimNotification) throws -> (events: [Event], affectedGridIDs: Set<Int>?, hasFlush: Bool) {
+  mutating func apply(notification: NvimNotification) throws -> [Event] {
     var events = [Event]()
-    var affectedGridIDs: Set<Int>? = .init()
-    var hasFlush = false
 
     switch notification {
     case let .redraw(uiEvents):
@@ -223,11 +166,8 @@ private extension State {
             }
 
             events.append(
-              .windowFrameChanged(
-                gridID: model.grid
-              )
+              .grid(id: model.grid, model: .windowFrameChanged)
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .gridDestroy(models):
@@ -235,9 +175,8 @@ private extension State {
             self.windows[model.grid] = nil
 
             events.append(
-              .windowClosed(gridID: model.grid)
+              .grid(id: model.grid, model: .windowClosed)
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .gridLine(models):
@@ -296,16 +235,17 @@ private extension State {
               }
 
               events.append(
-                .windowGridRowChanged(
-                  gridID: model.grid,
-                  origin: .init(
-                    row: model.row,
-                    column: model.colStart + updatedCellsCount
-                  ),
-                  columnsCount: repeatCount
+                .grid(
+                  id: model.grid,
+                  model: .windowGridRowChanged(
+                    origin: .init(
+                      row: model.row,
+                      column: model.colStart + updatedCellsCount
+                    ),
+                    columnsCount: repeatCount
+                  )
                 )
               )
-              affectedGridIDs?.insert(model.grid)
               updatedCellsCount += repeatCount
 
               latestRow = model.row
@@ -335,13 +275,14 @@ private extension State {
             }
 
             events.append(
-              .windowGridRectangleMoved(
-                gridID: model.grid,
-                rectangle: fromRectangle,
-                toOrigin: toOrigin
+              .grid(
+                id: model.grid,
+                model: .windowGridRectangleMoved(
+                  rectangle: fromRectangle,
+                  toOrigin: toOrigin
+                )
               )
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .gridClear(models):
@@ -354,29 +295,26 @@ private extension State {
             }
 
             events.append(
-              .windowGridCleared(gridID: model.grid)
+              .grid(
+                id: model.grid,
+                model: .windowGridCleared
+              )
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .gridCursorGoto(models):
           for model in models {
-            if let previousCursor = self.cursor {
-              events.append(.cursor(gridID: previousCursor.gridID, position: nil))
-              affectedGridIDs?.insert(previousCursor.gridID)
-            }
+            let previousCursor = self.cursor
 
-            let cursor = State.Cursor(
+            self.cursor = State.Cursor(
               gridID: model.grid,
               position: .init(
                 row: model.row,
                 column: model.col
               )
             )
-            self.cursor = cursor
 
-            events.append(.cursor(gridID: cursor.gridID, position: cursor.position))
-            affectedGridIDs?.insert(model.grid)
+            events.append(.cursor(previousCusor: previousCursor))
           }
 
         case let .winPos(models):
@@ -393,11 +331,8 @@ private extension State {
             }
 
             events.append(
-              .windowFrameChanged(
-                gridID: model.grid
-              )
+              .grid(id: model.grid, model: .windowFrameChanged)
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .winFloatPos(models):
@@ -417,9 +352,8 @@ private extension State {
             }
 
             events.append(
-              .windowFrameChanged(gridID: model.grid)
+              .grid(id: model.grid, model: .windowFrameChanged)
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .winExternalPos(models):
@@ -432,17 +366,17 @@ private extension State {
             }
 
             events.append(
-              .windowHid(gridID: model.grid)
+              .grid(id: model.grid, model: .windowHid)
             )
-            affectedGridIDs?.insert(model.grid)
           }
 
         case let .winClose(models):
           for model in models {
             self.windows[model.grid] = nil
 
-            events.append(.windowClosed(gridID: model.grid))
-            affectedGridIDs?.insert(model.grid)
+            events.append(
+              .grid(id: model.grid, model: .windowClosed)
+            )
           }
 
         case let .defaultColorsSet(models):
@@ -454,8 +388,7 @@ private extension State {
             )
           }
 
-          events.append(.highlightChanged)
-          affectedGridIDs = nil
+          events.append(.appearanceChanged)
 
         case let .hlAttrDefine(models):
           for model in models {
@@ -490,11 +423,10 @@ private extension State {
             }
           }
 
-          events.append(.highlightChanged)
-          affectedGridIDs = nil
+          events.append(.appearanceChanged)
 
         case .flush:
-          hasFlush = true
+          events.append(.flushRequested)
 
         default:
           break
@@ -502,6 +434,6 @@ private extension State {
       }
     }
 
-    return (events, affectedGridIDs, hasFlush)
+    return events
   }
 }

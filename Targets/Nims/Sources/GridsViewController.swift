@@ -12,7 +12,7 @@ import Library
 import RxCocoa
 import RxSwift
 
-class GridsViewController: NSViewController, EventListener {
+class GridsViewController: NSViewController {
   init() {
     super.init(nibName: nil, bundle: nil)
   }
@@ -23,22 +23,21 @@ class GridsViewController: NSViewController, EventListener {
   }
 
   override func loadView() {
-    self.view = GridsView(
-      frame: CGRect(
-        origin: .zero,
-        size: self.cellsGeometry.cellsSize(
-          for: self.store.state.outerGridSize
-        )
+    self.view = self.gridView
+  }
+
+  func handle(event: Event) {
+    self.gridView.handle(event: event)
+  }
+
+  private lazy var gridView = GridsView(
+    frame: CGRect(
+      origin: .zero,
+      size: self.cellsGeometry.cellsSize(
+        for: self.store.state.outerGridSize
       )
     )
-  }
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    self.listen()
-  }
-
-  func published(events: [Event]) {}
+  )
 
   private var cellsGeometry: CellsGeometry {
     .shared

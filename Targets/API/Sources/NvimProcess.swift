@@ -14,7 +14,9 @@ import RxSwift
 import Socket
 
 public class NvimProcess {
-  public init(input: Observable<Input>, executableURL: URL, runtimeURL: URL) {
+  public init(input: Observable<Input>, executableURL: URL, runtimeURL: URL, dispatchQueue: DispatchQueue) {
+    self.dispatchQueue = dispatchQueue
+
     log(.info, "Nvim executable URL: \(executableURL.absoluteURL.relativePath)")
 
     let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "WXA9R8SW25.Nims")!
@@ -91,18 +93,21 @@ public class NvimProcess {
         return socket
       }
       .flatMap { socket -> Observable<Socket> in
-        .deferred {
-          do {
-            try socket.connect(
-              to: self.unixSocketFileURL.absoluteURL.relativePath
-            )
-            return .just(socket)
+        Observable.create { observer in
+          DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+            do {
+              try socket.connect(
+                to: self.unixSocketFileURL.absoluteURL.relativePath
+              )
+              observer.onNext(socket)
 
-          } catch {
-            return .error(error)
+            } catch {
+              observer.onError(error)
+            }
           }
+
+          return Disposables.create()
         }
-        .delaySubscription(.milliseconds(100), scheduler: SerialDispatchQueueScheduler(qos: .userInitiated))
         .retry(3)
         .catch { error in
           self.errorSubject.onNext(error)
@@ -113,8 +118,7 @@ public class NvimProcess {
         self.rpc.outputMessages
           .flatMap { messages -> Observable<Void> in
             for message in messages {
-              let data = message.value.data
-              try socket.write(from: data)
+              try! socket.write(from: message.value.data)
             }
 
             return .empty()
@@ -126,7 +130,7 @@ public class NvimProcess {
           .subscribe()
           .disposed(by: self.disposeBag)
 
-        return socket.unpack()
+        return socket.unpack(dispatchQueue: self.dispatchQueue)
       }
 
     values
@@ -173,10 +177,11 @@ public class NvimProcess {
   private let disposeBag = DisposeBag()
   private let rpcInputSubject = PublishSubject<[Message]>()
   private let errorSubject = PublishSubject<Error>()
+  private let dispatchQueue: DispatchQueue
 }
 
 private extension Socket {
-  func unpack() -> Observable<[Value]> {
+  func unpack(dispatchQueue: DispatchQueue) -> Observable<[Value]> {
     .create { observer in
       let bufferSize = self.readBufferSize * 4
 
@@ -187,50 +192,52 @@ private extension Socket {
         let baseAddress = pointer.baseAddress!
         let rawBaseAddress = UnsafeMutableRawPointer(baseAddress)
 
-        repeat {
-          do {
-            let bytesCount = try self.read(
-              into: baseAddress.advanced(by: endIndex),
-              bufSize: bufferSize - endIndex,
-              truncate: false
-            )
-            endIndex += bytesCount
-
-            let data = Data(bytesNoCopy: pointer.baseAddress!, count: endIndex, deallocator: .none)
-            var subdata = Subdata(data: data)
-            var parsedValues = [Value]()
-
+        dispatchQueue.async {
+          repeat {
             do {
-              while true {
-                let value: Value
-                (value, subdata) = try MessagePack.unpack(subdata)
-                parsedValues.append(value)
+              let bytesCount = try self.read(
+                into: baseAddress.advanced(by: endIndex),
+                bufSize: bufferSize - endIndex,
+                truncate: false
+              )
+              endIndex += bytesCount
+
+              let data = Data(bytesNoCopy: pointer.baseAddress!, count: endIndex, deallocator: .none)
+              var subdata = Subdata(data: data)
+              var parsedValues = [Value]()
+
+              do {
+                while true {
+                  let value: Value
+                  (value, subdata) = try MessagePack.unpack(subdata)
+                  parsedValues.append(value)
+                }
+
+              } catch MessagePackError.insufficientData {
+                observer.onNext(parsedValues)
+
+                let remainderAddress = baseAddress.advanced(
+                  by: endIndex - subdata.count
+                )
+                rawBaseAddress.copyMemory(
+                  from: remainderAddress,
+                  byteCount: subdata.count
+                )
+                endIndex = subdata.count
+
+              } catch {
+                throw "Failed parsing values"
+                  .fail(child: error.fail())
               }
 
-            } catch MessagePackError.insufficientData {
-              observer.onNext(parsedValues)
-
-              let remainderAddress = baseAddress.advanced(
-                by: endIndex - subdata.count
-              )
-              rawBaseAddress.copyMemory(
-                from: remainderAddress,
-                byteCount: subdata.count
-              )
-              endIndex = subdata.count
-
             } catch {
-              throw "Failed parsing values"
-                .fail(child: error.fail())
+              observer.onError(
+                "Failed socket data read"
+                  .fail(child: error.fail())
+              )
             }
-
-          } catch {
-            observer.onError(
-              "Failed socket data read"
-                .fail(child: error.fail())
-            )
-          }
-        } while !isCancelled
+          } while !isCancelled
+        }
       }
 
       return Disposables.create {
@@ -239,6 +246,5 @@ private extension Socket {
         isCancelled = true
       }
     }
-    .subscribe(on: SerialDispatchQueueScheduler(qos: .userInitiated))
   }
 }

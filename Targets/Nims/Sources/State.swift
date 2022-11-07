@@ -83,7 +83,7 @@ struct State: Hashable {
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
   var font = Font.custom(name: "MesloLGS NF", size: 13)
-  var outerGridSize = GridSize(rowsCount: 36, columnsCount: 120)
+  var outerGridSize = GridSize(rowsCount: 24, columnsCount: 80)
   var highlights = [Highlight?](repeating: nil, count: 10000)
   var defaultHighlight = Highlight()
 

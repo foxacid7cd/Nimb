@@ -12,9 +12,8 @@ import RxSwift
 enum DispatchQueues {
   static let GlyphRunCache = makeDispatchQueue("GlyphRunCache", attributes: .concurrent)
   static let StateDerivatives = makeDispatchQueue("StateDerivatives", attributes: .concurrent)
-  static let GridViewSynchronization = makeDispatchQueue("GridViewSynchronization", attributes: .concurrent)
-  static let GridViewDrawing = DispatchQueue.global(qos: .userInitiated)
-  static let Nvim = makeDispatchQueue("Nvim", qos: .userInitiated)
+  static let GridViewSynchronization = makeDispatchQueue("GridViewSynchronization", qos: .userInitiated, attributes: .concurrent)
+  static let Nvim = makeDispatchQueue("Nvim", qos: .default)
 }
 
 private func makeDispatchQueue(

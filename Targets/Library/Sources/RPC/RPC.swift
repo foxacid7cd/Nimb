@@ -50,7 +50,7 @@ public class RPC {
   public let outputMessages: Observable<[Message]>
   public let notifications: Observable<[Notification]>
 
-  @MainActor @discardableResult
+  @discardableResult
   public func request(_ model: Request) async -> Response {
     let id = self.requestIDFactory.makeRequestID()
 
