@@ -1,0 +1,32 @@
+import Library
+
+public extension NvimProcess {
+  {% for function in functions %}
+  /// {{ function.description }}{% if function.isDeprecated %}
+  @available(*, deprecated){% endif %}
+  func {{ function.name }}({% for parameter in function.parameters %}{{ parameter.name }}: {{ parameter.type }}{% if not forloop.last %}, {% endif %}{% endfor %}) async throws {% if function.returnType %} -> {{ function.returnType }} {% endif %} {
+    let response = await rpc.request(.init(method: "{{ function.originalName }}", parameters: [{{ function.parametersInitializationSignature }}]))
+    
+    guard response.isSuccess else {
+      throw response.value
+    }
+    
+    {% if function.returnType and function.returnType != "Value" %}
+    guard let value = {{ function.obtainingReturnValue }} else {
+      "invalid return value type"
+        .fail()
+        .fatalError()
+    }
+    
+    {% endif %}
+    {% if function.returnType %}
+    return {% if function.returnType == "Value" %}response.{% endif %}value
+    {% endif %}
+    {% if not forloop.last %}
+    
+    {% endif %}
+  }
+  {% if not forloop.last %}
+  {% endif %}
+  {% endfor %}
+}

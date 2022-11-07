@@ -10,7 +10,7 @@ import AppKit
 import CasePaths
 import Combine
 import Library
-import Nvim
+import API
 import RxCocoa
 import RxSwift
 

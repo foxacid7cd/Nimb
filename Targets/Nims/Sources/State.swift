@@ -8,7 +8,7 @@
 
 import CoreGraphics
 import Library
-import Nvim
+import API
 
 struct State: Hashable {
   enum Font: Hashable {

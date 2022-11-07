@@ -9,7 +9,7 @@
 import AppKit
 import Carbon
 import Library
-import Nvim
+import API
 import RxSwift
 
 class GridsWindow: NSWindow {

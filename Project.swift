@@ -23,13 +23,14 @@ let project = Project(
           ]
         )
       ),
+      scripts: [],
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Nvim")
+        .target(name: "API")
       ]
     ),
     .nimsTarget(
-      name: "Nvim",
+      name: "API",
       product: .library,
       dependencies: [
         .target(name: "Library")
@@ -54,8 +55,15 @@ let project = Project(
         .external(name: "RxSwift"),
         .external(name: "RxCocoa"),
         .external(name: "MessagePack"),
-        .external(name: "CasePaths")
+        .external(name: "CasePaths"),
+        .external(name: "Socket")
       ]
+    ),
+    .nimsTarget(
+      name: "nvim",
+      product: .nvim,
+      scripts: [],
+      dependencies: []
     )
   ],
   schemes: [
@@ -91,5 +99,9 @@ let project = Project(
       profileAction: nil,
       analyzeAction: nil
     )
+  ],
+  additionalFiles: [
+    .folderReference(path: "Entitlements"),
+    .folderReference(path: "Scripts")
   ]
 )

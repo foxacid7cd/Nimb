@@ -13,7 +13,7 @@ public enum Message {
 
   public init(value: Value) throws {
     guard let arrayValue = value.arrayValue else {
-      throw "message expected to be created from array value".fail()
+      throw "message expected to be created from array value, got \(value)".fail()
     }
 
     var previousPosition: Int?

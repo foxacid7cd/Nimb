@@ -1,0 +1,45 @@
+import MessagePack
+import Library
+
+public enum UIEvent {
+  {% for uiEvent in uiEvents %}
+  /// {{ uiEvent.description }}
+  case {{ uiEvent.name }}({% if uiEvent.parametersType %}[UIEvents.{{ uiEvent.parametersType }}]{% else %}count: Int{% endif %})
+  {% endfor %}
+
+  public init(method: String, parametersArray: [[MessagePackValue]]) throws {
+    switch method {
+      {% for uiEvent in uiEvents %}
+      case "{{ uiEvent.originalName }}":
+        {% if uiEvent.parametersType %}var children = [UIEvents.{{ uiEvent.parametersType }}]()
+        
+        for parameters in parametersArray {
+          let child = try UIEvents.{{ uiEvent.parametersType }}(parameters: parameters)
+          
+          children.append(child)
+        }
+        
+        self = .{{ uiEvent.name }}(children)
+      {% else %}self = .{{ uiEvent.name }}(count: parametersArray.count){% endif %}
+        
+      {% endfor %}
+      default:
+        throw "unknown UI event method \(method)".fail()
+    }
+  }
+  
+  public var method: String {
+    switch self {
+    {% for uiEvent in uiEvents %}
+    case .{{ uiEvent.name }}:
+      return "{{ uiEvent.originalName }}"
+    {% endfor %}
+    }
+  }
+}
+
+extension UIEvent: CustomLoggable {
+  public var logMessage: String {
+    self.method
+  }
+}

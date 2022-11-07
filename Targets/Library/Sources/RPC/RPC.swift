@@ -12,47 +12,60 @@ import RxSwift
 public class RPC {
   public init(
     requestIDFactory: RequestIDFactory = Stepper(),
-    inputMessages: Observable<Message>
+    inputMessages: Observable<[Message]>
   ) {
     self.requestIDFactory = requestIDFactory
 
-    let outputMessages = PublishSubject<Message>()
+    let outputMessages = PublishSubject<[Message]>()
     self.outputMessages = outputMessages
-    self.sendMessage = outputMessages.onNext(_:)
+    self.sendMessages = outputMessages.onNext(_:)
 
     self.inputResponses = inputMessages
-      .compactMap { message in
-        guard case let .response(id, model) = message else {
-          return nil
-        }
+      .map { messages in
+        messages
+          .compactMap { message in
+            guard case let .response(id, model) = message else {
+              return nil
+            }
 
-        return (id, model)
+            return (id, model)
+          }
       }
+      .filter { !$0.isEmpty }
 
     self.notifications = inputMessages
-      .compactMap { message in
-        guard case let .notification(model) = message else {
-          return nil
-        }
+      .map { messages in
+        messages
+          .compactMap { message in
+            guard case let .notification(model) = message else {
+              return nil
+            }
 
-        return model
+            return model
+          }
       }
+      .filter { !$0.isEmpty }
   }
 
-  public let outputMessages: Observable<Message>
-  public let notifications: Observable<Notification>
+  public let outputMessages: Observable<[Message]>
+  public let notifications: Observable<[Notification]>
 
   @MainActor @discardableResult
   public func request(_ model: Request) async -> Response {
     let id = self.requestIDFactory.makeRequestID()
 
     let response: Single<Response> = self.inputResponses
-      .filter { $0.id == id }
-      .map { $0.model }
+      .flatMap { inputResponses in
+        for inputResponse in inputResponses where inputResponse.id == id {
+          return Observable.just(inputResponse.model)
+        }
+
+        return .empty()
+      }
       .replay(1)
       .asSingle()
 
-    self.sendMessage(.request(id: id, model: model))
+    self.sendMessages([.request(id: id, model: model)])
 
     do {
       return try await response.value
@@ -60,11 +73,13 @@ public class RPC {
     } catch {
       "awaiting for response message failed"
         .fail(child: error.fail())
-        .fatalError()
+        .assertionFailure()
+
+      return .init(isSuccess: false, value: .nil)
     }
   }
 
   private var requestIDFactory: RequestIDFactory
-  private let sendMessage: (Message) -> Void
-  private let inputResponses: Observable<(id: UInt, model: Response)>
+  private let sendMessages: ([Message]) -> Void
+  private let inputResponses: Observable<[(id: UInt, model: Response)]>
 }

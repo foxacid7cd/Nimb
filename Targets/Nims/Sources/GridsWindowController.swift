@@ -8,7 +8,7 @@
 
 import AppKit
 import Library
-import Nvim
+import API
 import RxSwift
 
 class GridsWindowController: NSWindowController {
