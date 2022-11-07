@@ -19,7 +19,7 @@ struct DrawRun: Equatable {
   static func make(origin: GridPoint, characters: [Character], font: NSFont, foregroundColor: CGColor, backgroundColor: CGColor) -> DrawRun {
     let attributedString = NSAttributedString(
       string: String(characters),
-      attributes: [.font: font]
+      attributes: [.font: font, .ligature: 0]
     )
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: characters.count))

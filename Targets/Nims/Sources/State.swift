@@ -7,6 +7,7 @@
 //
 
 import API
+import AppKit
 import CoreGraphics
 import Library
 
@@ -82,8 +83,8 @@ struct State: Hashable {
 
   var windows = [Window?](repeating: nil, count: 100)
   var cursor: Cursor?
-  var font = Font.custom(name: "MesloLGS NF", size: 13)
-  var outerGridSize = GridSize(rowsCount: 24, columnsCount: 80)
+  var font = Font.custom(name: "BlexMono Nerd Font Mono", size: 13)
+  var outerGridSize = GridSize(rowsCount: 40, columnsCount: 150)
   var highlights = [Highlight?](repeating: nil, count: 10000)
   var defaultHighlight = Highlight()
 

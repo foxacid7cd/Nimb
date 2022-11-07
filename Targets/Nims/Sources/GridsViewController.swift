@@ -13,7 +13,9 @@ import RxCocoa
 import RxSwift
 
 class GridsViewController: NSViewController {
-  init() {
+  @MainActor
+  init(state: State) {
+    self.state = state
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -23,23 +25,28 @@ class GridsViewController: NSViewController {
   }
 
   override func loadView() {
-    self.view = self.gridView
+    self.view = self.gridsView
   }
 
-  func handle(event: Event) {
-    self.gridView.handle(event: event)
+  @MainActor
+  func handle(state: State, events: [Event]) async {
+    self.state = state
+
+    await self.gridsView.handle(state: state, events: events)
   }
 
-  private lazy var gridView = GridsView(
+  @MainActor
+  private var state: State
+
+  @MainActor
+  private lazy var gridsView = GridsView(
     frame: CGRect(
       origin: .zero,
-      size: self.cellsGeometry.cellsSize(
-        for: self.store.state.outerGridSize
+      size: CellsGeometry.cellsSize(
+        for: self.state.outerGridSize,
+        cellSize: StateDerivatives.shared.font(state: self.state).cellSize
       )
-    )
+    ),
+    state: self.state
   )
-
-  private var cellsGeometry: CellsGeometry {
-    .shared
-  }
 }

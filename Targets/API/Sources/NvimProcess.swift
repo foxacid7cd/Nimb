@@ -94,7 +94,7 @@ public class NvimProcess {
       }
       .flatMap { socket -> Observable<Socket> in
         Observable.create { observer in
-          DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+          DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + .milliseconds(100)) {
             do {
               try socket.connect(
                 to: self.unixSocketFileURL.absoluteURL.relativePath
@@ -183,67 +183,68 @@ public class NvimProcess {
 private extension Socket {
   func unpack(dispatchQueue: DispatchQueue) -> Observable<[Value]> {
     .create { observer in
-      let bufferSize = self.readBufferSize * 4
+      let task = Task {
+        let bufferSize = self.readBufferSize * 4
 
-      var isCancelled = false
-      var endIndex = 0
+        var endIndex = 0
+        var buffer = Data(repeating: 0, count: bufferSize)
 
-      withUnsafeTemporaryAllocation(of: CChar.self, capacity: bufferSize) { pointer in
-        let baseAddress = pointer.baseAddress!
-        let rawBaseAddress = UnsafeMutableRawPointer(baseAddress)
+        repeat {
+          do {
+            let data = try await self.read(dispatchQueue: dispatchQueue)
+            buffer.replaceSubrange(endIndex ..< endIndex + data.count, with: data)
+            endIndex += data.count
 
-        dispatchQueue.async {
-          repeat {
+            var subdata = Subdata(data: buffer, startIndex: 0, endIndex: endIndex)
+            var parsedValues = [Value]()
+
             do {
-              let bytesCount = try self.read(
-                into: baseAddress.advanced(by: endIndex),
-                bufSize: bufferSize - endIndex,
-                truncate: false
-              )
-              endIndex += bytesCount
-
-              let data = Data(bytesNoCopy: pointer.baseAddress!, count: endIndex, deallocator: .none)
-              var subdata = Subdata(data: data)
-              var parsedValues = [Value]()
-
-              do {
-                while true {
-                  let value: Value
-                  (value, subdata) = try MessagePack.unpack(subdata)
-                  parsedValues.append(value)
-                }
-
-              } catch MessagePackError.insufficientData {
-                observer.onNext(parsedValues)
-
-                let remainderAddress = baseAddress.advanced(
-                  by: endIndex - subdata.count
-                )
-                rawBaseAddress.copyMemory(
-                  from: remainderAddress,
-                  byteCount: subdata.count
-                )
-                endIndex = subdata.count
-
-              } catch {
-                throw "Failed parsing values"
-                  .fail(child: error.fail())
+              while true {
+                let value: Value
+                (value, subdata) = try MessagePack.unpack(subdata)
+                parsedValues.append(value)
               }
 
+            } catch MessagePackError.insufficientData {
+              observer.onNext(parsedValues)
+
+              let remainder = subdata.data
+              buffer.replaceSubrange(0 ..< remainder.count, with: remainder)
+              endIndex = remainder.count
+
             } catch {
-              observer.onError(
-                "Failed socket data read"
-                  .fail(child: error.fail())
-              )
+              throw "Failed parsing values"
+                .fail(child: error.fail())
             }
-          } while !isCancelled
-        }
+
+          } catch {
+            observer.onError(
+              "Failed socket data read"
+                .fail(child: error.fail())
+            )
+          }
+        } while !Task.isCancelled
       }
 
       return Disposables.create {
         self.close()
 
-        isCancelled = true
+        task.cancel()
+      }
+    }
+  }
+
+  func read(dispatchQueue: DispatchQueue) async throws -> Data {
+    try await withCheckedThrowingContinuation { continuation in
+      dispatchQueue.async {
+        do {
+          var data = Data()
+          try self.read(into: &data)
+          continuation.resume(returning: data)
+
+        } catch {
+          continuation.resume(throwing: error)
+        }
       }
     }
   }

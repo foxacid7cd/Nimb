@@ -23,8 +23,6 @@ class Store {
 
   static let shared = Store()
 
-  private(set) lazy var stateDerivatives = StateDerivatives(store: self)
-
   let events: Observable<[Event]>
 
   var state = State()
@@ -41,10 +39,6 @@ class Store {
 }
 
 class StateDerivatives {
-  init(store: Store) {
-    self.store = store
-  }
-
   struct Font {
     var regular: NSFont
     var bold: NSFont
@@ -55,52 +49,49 @@ class StateDerivatives {
     var glyphRunCache: Cache<Int, GlyphRun>
   }
 
-  var font: Font {
-    if let (stateFont, font) = self.latestFontContext, stateFont == self.state.font {
+  static let shared = StateDerivatives()
+
+  @MainActor
+  func font(state: State) -> Font {
+    if let cachedFont = self.cachedFonts[state.font] {
+      return cachedFont
+
+    } else {
+      let regular: NSFont
+      let bold: NSFont
+      let italic: NSFont
+      let boldItalic: NSFont
+
+      switch state.font {
+      case let .monospacedSystem(size):
+        regular = .monospacedSystemFont(ofSize: size, weight: .regular)
+        bold = .monospacedSystemFont(ofSize: size, weight: .bold)
+        italic = .monospacedSystemFont(ofSize: size, weight: .regular)
+        boldItalic = .monospacedSystemFont(ofSize: size, weight: .bold)
+
+      case let .custom(name, size):
+        regular = .init(name: name, size: size)!
+        bold = NSFontManager.shared.convert(regular, toHaveTrait: .boldFontMask)
+        italic = NSFontManager.shared.convert(regular, toHaveTrait: .italicFontMask)
+        boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+      }
+
+      let font = Font(
+        regular: regular,
+        bold: bold,
+        italic: italic,
+        boldItalic: boldItalic,
+        cellSize: regular.calculateCellSize(for: "@"),
+        glyphRunCache: .init(capacity: 4 * 1024)
+      )
+
+      self.cachedFonts[state.font] = font
       return font
     }
-
-    let regular: NSFont
-    let bold: NSFont
-    let italic: NSFont
-    let boldItalic: NSFont
-    switch self.state.font {
-    case let .monospacedSystem(size):
-      regular = .monospacedSystemFont(ofSize: size, weight: .regular)
-      bold = .monospacedSystemFont(ofSize: size, weight: .bold)
-      italic = .monospacedSystemFont(ofSize: size, weight: .regular)
-      boldItalic = .monospacedSystemFont(ofSize: size, weight: .bold)
-
-    case let .custom(name, size):
-      regular = .init(name: name, size: size)!
-      bold = NSFontManager.shared.convert(regular, toHaveTrait: .boldFontMask)
-      italic = NSFontManager.shared.convert(regular, toHaveTrait: .italicFontMask)
-      boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
-    }
-    let font = Font(
-      regular: regular,
-      bold: bold,
-      italic: italic,
-      boldItalic: boldItalic,
-      cellSize: regular.calculateCellSize(for: "@"),
-      glyphRunCache: .init(
-        capacity: 4 * 1024,
-        dispatchQueue: DispatchQueues.GlyphRunCache.dispatchQueue
-      )
-    )
-    DispatchQueues.StateDerivatives.dispatchQueue.async(flags: .barrier) {
-      self.latestFontContext = (self.state.font, font)
-    }
-
-    return font
   }
 
-  private var latestFontContext: (stateFont: State.Font, font: Font)?
-  private let store: Store
-
-  private var state: State {
-    self.store.state
-  }
+  @MainActor
+  private var cachedFonts = [State.Font: Font]()
 }
 
 extension Observable where Element == [Event] {

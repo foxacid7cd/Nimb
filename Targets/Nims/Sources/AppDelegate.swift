@@ -17,8 +17,6 @@ import RxSwift
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
     self.startNvimProcess()
-
-    self.gridsWindowController.showWindow(nil)
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {
@@ -28,13 +26,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @IBOutlet private var mainMenu: NSMenu!
 
   private var nvimProcess: NvimProcess?
-  private lazy var gridsWindowController = GridsWindowController()
+  private var gridsWindowController: GridsWindowController?
+  private let inputSubject = PublishSubject<Input>()
+  @MainActor
+  private var state = State()
+  private var changeStateTask: Task<Void, Never>?
 
   private func startNvimProcess() {
     let nvimBundleURL = Bundle.main.url(forResource: "nvim", withExtension: "bundle")!
     let nvimBundle = Bundle(url: nvimBundleURL)!
 
-    let input = self.gridsWindowController.input
+    let input = self.inputSubject
       .throttle(.milliseconds(40), latest: true, scheduler: MainScheduler.instance)
 
     let nvimProcess = NvimProcess(
@@ -46,76 +48,163 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     self <~ nvimProcess.run()
       .catch { error in
-        DispatchQueue.main.async {
-          let alert = NSAlert()
-          alert.messageText = "Nvim process failed"
-          alert.informativeText = error.alertMessage
-          alert.addButton(withTitle: "Close")
-          alert.runModal()
-
-          NSApplication.shared.terminate(nil)
+        Task {
+          await self.terminate(
+            with: "Nvim process run failed"
+              .fail(child: error.fail())
+          )
         }
 
         return .empty()
       }
-      .flatMap { Observable.from($0) }
-      .scan(into: (state: State(), events: [Event]()), accumulator: { result, notification in
-        result.1 = try! result.0.apply(notification: notification)
-      })
-      .subscribe(onNext: { state, events in
-        DispatchQueue.main.async {
-          Store.shared.state = state
-
-          for event in events {
-            self.gridsWindowController.handle(event: event)
-          }
+      .bind(with: self) { appDelegate, notifications in
+        Task {
+          await appDelegate.handle(notifications: notifications)
         }
-      })
+      }
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
-      Task {
-        do {
-          try await nvimProcess.nvimUIAttach(
-            width: Store.shared.state.outerGridSize.columnsCount,
-            height: Store.shared.state.outerGridSize.rowsCount,
-            options: [
-              UIOption.extMultigrid.value: true,
-              UIOption.extHlstate.value: true,
-              UIOption.extMessages.value: true
-            ]
-          )
-        } catch {
-          "Failed to attach nvim UI"
-            .fail(child: error.fail())
-            .assertionFailure()
-        }
+    /* self <~ nvimProcess.run()
+     .catch { error in
+       DispatchQueue.main.async {}
+
+       return .empty()
+     }
+     .scan(into: initialState, accumulator: { result, notifications in
+       var events = [Event]()
+
+       for notification in notifications {
+         events += try result.0.apply(notification: notification)
+       }
+
+       result.1 = events
+     })
+     .startWith(initialState)
+     .subscribe(onNext: { state, events in
+       Task {
+         if let gridsWindowController = self.gridsWindowController {
+           await gridsWindowController.handle(state: state, events: events)
+
+         } else {
+           let gridsWindowController = await GridsWindowController(state: state)
+           self.gridsWindowController = gridsWindowController
+
+           await gridsWindowController.handle(state: state, events: events)
+
+           let input = await gridsWindowController.input
+           self <~ input
+             .bind(to: self.inputSubject)
+
+           await gridsWindowController.showWindow(nil)
+         }
+       }
+     }) */
+
+    Task.detached(priority: .background) {
+      if #available(macOS 13.0, *) {
+        try await Task.sleep(for: .seconds(1))
+      }
+
+      do {
+        try await nvimProcess.nvimUIAttach(
+          width: Store.shared.state.outerGridSize.columnsCount,
+          height: Store.shared.state.outerGridSize.rowsCount,
+          options: [
+            UIOption.extMultigrid.value: true,
+            UIOption.extHlstate.value: true,
+            UIOption.extMessages.value: true
+          ]
+        )
+
+      } catch {
+        "Failed to attach nvim UI"
+          .fail(child: error.fail())
+          .assertionFailure()
       }
     }
   }
-}
 
-extension Reactive where Base: EventListener, Base: AnyObject {
-  func events(_ events: Observable<[Event]>) -> Disposable {
-    events.bind(with: base) { base, events in
-      base.published(events: events)
+  @MainActor
+  private func handle(notifications: [NvimNotification]) {
+    var currentBatch = [UIEvent]()
+
+    for notification in notifications {
+      switch notification {
+      case let .redraw(uiEvents):
+        for uiEvent in uiEvents {
+          currentBatch.append(uiEvent)
+
+          switch uiEvent {
+          case .flush:
+            if !currentBatch.isEmpty {
+              self.changeState(with: currentBatch)
+              currentBatch = []
+            }
+
+          default:
+            break
+          }
+        }
+      }
+    }
+
+    if !currentBatch.isEmpty {
+      self.changeState(with: currentBatch)
     }
   }
-}
 
-protocol EventListener {
-  func published(events: [Event])
-}
+  @MainActor
+  private func changeState(with uiEvents: [UIEvent]) {
+    let previousTask = self.changeStateTask
 
-extension EventListener {
-  var store: Store {
-    .shared
+    self.changeStateTask = Task(priority: .high) {
+      await previousTask?.value
+
+      var events = [Event]()
+
+      for uiEvent in uiEvents {
+        do {
+          events += try await Task { try self.state.apply(uiEvent: uiEvent) }
+            .value
+
+        } catch {
+          self.terminate(
+            with: "Change state error"
+              .fail(child: error.fail())
+          )
+        }
+      }
+
+      await self.handle(state: self.state, events: events)
+    }
   }
-}
 
-extension EventListener where Self: NSObject {
-  func listen() {
-    self <~ Store.shared.events
-      .bind(to: self.rx.events(_:))
+  @MainActor
+  private func handle(state: State, events: [Event]) async {
+    if let gridsWindowController = self.gridsWindowController {
+      await gridsWindowController.handle(state: state, events: events)
+
+    } else {
+      let gridsWindowController = GridsWindowController(state: state)
+      self.gridsWindowController = gridsWindowController
+
+      await gridsWindowController.handle(state: state, events: events)
+
+      self <~ gridsWindowController.input
+        .bind(to: self.inputSubject)
+
+      gridsWindowController.showWindow(nil)
+    }
+  }
+
+  @MainActor
+  private func terminate(with error: Error) {
+    let alert = NSAlert()
+    alert.messageText = "Nvim process failed"
+    alert.informativeText = error.alertMessage
+    alert.addButton(withTitle: "Close")
+    alert.runModal()
+
+    NSApplication.shared.terminate(nil)
   }
 }
 
@@ -136,302 +225,297 @@ private extension Error {
 }
 
 private extension State {
-  mutating func apply(notification: NvimNotification) throws -> [Event] {
+  mutating func apply(uiEvent: UIEvent) throws -> [Event] {
     var events = [Event]()
 
-    switch notification {
-    case let .redraw(uiEvents):
-      for uiEvent in uiEvents {
-        switch uiEvent {
-        case let .gridResize(models):
-          for model in models {
-            let gridSize = GridSize(
-              rowsCount: model.height,
-              columnsCount: model.width
-            )
+    switch uiEvent {
+    case let .gridResize(models):
+      for model in models {
+        let gridSize = GridSize(
+          rowsCount: model.height,
+          columnsCount: model.width
+        )
 
-            if var window = self.windows[model.grid] {
-              window.grid.resize(to: gridSize, fillingEmptyWith: nil)
-              self.windows[model.grid] = window
+        if var window = self.windows[model.grid] {
+          window.grid.resize(to: gridSize, fillingEmptyWith: nil)
+          self.windows[model.grid] = window
 
-            } else {
-              self.windows[model.grid] = State.Window(
-                grid: .init(repeating: nil, size: gridSize),
-                origin: .init(),
-                anchor: .topLeft,
-                isHidden: false,
-                zIndex: 0,
-                ref: nil
-              )
+        } else {
+          self.windows[model.grid] = State.Window(
+            grid: .init(repeating: nil, size: gridSize),
+            origin: .init(),
+            anchor: .topLeft,
+            isHidden: false,
+            zIndex: 0,
+            ref: nil
+          )
+        }
+
+        events.append(
+          .grid(id: model.grid, model: .windowFrameChanged)
+        )
+      }
+
+    case let .gridDestroy(models):
+      for model in models {
+        self.windows[model.grid] = nil
+
+        events.append(
+          .grid(id: model.grid, model: .windowClosed)
+        )
+      }
+
+    case let .gridLine(models):
+      var latestHlID: Int?
+      var latestRow: Int?
+
+      for model in models {
+        var updatedCellsCount = 0
+
+        for messagePackValue in model.data {
+          guard var arrayValue = messagePackValue.arrayValue else {
+            throw "Cell data is not an array".fail()
+          }
+
+          guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
+            throw "Expected cell text is not a string".fail()
+          }
+          if text.count > 1 {
+            throw "Cell text \(text) has more than one character".fail()
+          }
+          let character = text.first
+
+          var repeatCount = 1
+
+          if !arrayValue.isEmpty {
+            guard let hlID = arrayValue.removeFirst().uintValue else {
+              throw "Expected cell hl_id is not an unsigned integer".fail()
             }
+            latestHlID = Int(hlID)
 
-            events.append(
-              .grid(id: model.grid, model: .windowFrameChanged)
+            if !arrayValue.isEmpty {
+              guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
+                throw "Expected cell repeat count is not an unsigned integer".fail()
+              }
+              repeatCount = Int(parsedRepeatCount)
+            }
+          }
+
+          guard let latestHlID else {
+            throw "At least one hlID had to be parsed".fail()
+          }
+
+          if latestRow != model.row {
+            updatedCellsCount = 0
+          }
+
+          for repeatIndex in 0 ..< repeatCount {
+            let index = GridPoint(
+              row: model.row,
+              column: model.colStart + updatedCellsCount + repeatIndex
+            )
+            self.windows[model.grid]?.grid[index] = Cell(
+              character: character,
+              hlID: latestHlID
             )
           }
 
-        case let .gridDestroy(models):
-          for model in models {
-            self.windows[model.grid] = nil
-
-            events.append(
-              .grid(id: model.grid, model: .windowClosed)
-            )
-          }
-
-        case let .gridLine(models):
-          var latestHlID: Int?
-          var latestRow: Int?
-
-          for model in models {
-            var updatedCellsCount = 0
-
-            for messagePackValue in model.data {
-              guard var arrayValue = messagePackValue.arrayValue else {
-                throw "Cell data is not an array".fail()
-              }
-
-              guard !arrayValue.isEmpty, let text = arrayValue.removeFirst().stringValue else {
-                throw "Expected cell text is not a string".fail()
-              }
-              if text.count > 1 {
-                throw "Cell text \(text) has more than one character".fail()
-              }
-              let character = text.first
-
-              var repeatCount = 1
-
-              if !arrayValue.isEmpty {
-                guard let hlID = arrayValue.removeFirst().uintValue else {
-                  throw "Expected cell hl_id is not an unsigned integer".fail()
-                }
-                latestHlID = Int(hlID)
-
-                if !arrayValue.isEmpty {
-                  guard let parsedRepeatCount = arrayValue.removeFirst().uintValue else {
-                    throw "Expected cell repeat count is not an unsigned integer".fail()
-                  }
-                  repeatCount = Int(parsedRepeatCount)
-                }
-              }
-
-              guard let latestHlID else {
-                throw "At least one hlID had to be parsed".fail()
-              }
-
-              if latestRow != model.row {
-                updatedCellsCount = 0
-              }
-
-              for repeatIndex in 0 ..< repeatCount {
-                let index = GridPoint(
+          events.append(
+            .grid(
+              id: model.grid,
+              model: .windowGridRowChanged(
+                origin: .init(
                   row: model.row,
-                  column: model.colStart + updatedCellsCount + repeatIndex
-                )
-                self.windows[model.grid]?.grid[index] = Cell(
-                  character: character,
-                  hlID: latestHlID
-                )
-              }
-
-              events.append(
-                .grid(
-                  id: model.grid,
-                  model: .windowGridRowChanged(
-                    origin: .init(
-                      row: model.row,
-                      column: model.colStart + updatedCellsCount
-                    ),
-                    columnsCount: repeatCount
-                  )
-                )
-              )
-              updatedCellsCount += repeatCount
-
-              latestRow = model.row
-            }
-          }
-
-        case let .gridScroll(models):
-          for model in models {
-            let size = GridSize(
-              rowsCount: model.bot - model.top,
-              columnsCount: model.right - model.left
-            )
-            let fromOrigin = GridPoint(
-              row: model.top,
-              column: model.left
-            )
-            let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
-            let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
-
-            self.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.grid.put(
-                grid: window.grid.subGrid(
-                  at: fromRectangle
+                  column: model.colStart + updatedCellsCount
                 ),
-                at: toOrigin
-              )
-            }
-
-            events.append(
-              .grid(
-                id: model.grid,
-                model: .windowGridRectangleMoved(
-                  rectangle: fromRectangle,
-                  toOrigin: toOrigin
-                )
+                columnsCount: repeatCount
               )
             )
-          }
+          )
+          updatedCellsCount += repeatCount
 
-        case let .gridClear(models):
-          for model in models {
-            self.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.grid = .init(
-                repeating: nil,
-                size: window.grid.size
-              )
-            }
-
-            events.append(
-              .grid(
-                id: model.grid,
-                model: .windowGridCleared
-              )
-            )
-          }
-
-        case let .gridCursorGoto(models):
-          for model in models {
-            let previousCursor = self.cursor
-
-            self.cursor = State.Cursor(
-              gridID: model.grid,
-              position: .init(
-                row: model.row,
-                column: model.col
-              )
-            )
-
-            events.append(.cursor(previousCusor: previousCursor))
-          }
-
-        case let .winPos(models):
-          for model in models {
-            self.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.grid.resize(
-                to: .init(rowsCount: model.height, columnsCount: model.width),
-                fillingEmptyWith: nil
-              )
-              window.origin = .init(row: model.startrow, column: model.startcol)
-              window.isHidden = false
-              window.zIndex = 0
-              window.ref = model.win
-            }
-
-            events.append(
-              .grid(id: model.grid, model: .windowFrameChanged)
-            )
-          }
-
-        case let .winFloatPos(models):
-          for model in models {
-            let anchorWindow = self.windows[model.anchorGrid]!
-            let anchorPoint = anchorWindow.frame.origin + GridPoint(
-              row: Int(model.anchorRow.doubleValue!),
-              column: Int(model.anchorCol.doubleValue!)
-            )
-
-            self.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.origin = anchorPoint
-              window.anchor = model.anchorValue
-              window.isHidden = false
-              window.ref = model.win
-              window.zIndex = model.zindex
-            }
-
-            events.append(
-              .grid(id: model.grid, model: .windowFrameChanged)
-            )
-          }
-
-        case let .winExternalPos(models):
-          log(.info, "Win external pos: \(models.count)")
-
-        case let .winHide(models):
-          for model in models {
-            self.withMutableWindowIfExists(gridID: model.grid) { window in
-              window.isHidden = true
-            }
-
-            events.append(
-              .grid(id: model.grid, model: .windowHid)
-            )
-          }
-
-        case let .winClose(models):
-          for model in models {
-            self.windows[model.grid] = nil
-
-            events.append(
-              .grid(id: model.grid, model: .windowClosed)
-            )
-          }
-
-        case let .defaultColorsSet(models):
-          for model in models {
-            self.defaultHighlight = .init(
-              foregroundColor: .init(hex: UInt(model.rgbFg), alpha: 1),
-              backgroundColor: .init(hex: UInt(model.rgbBg), alpha: 1),
-              specialColor: .init(hex: UInt(model.rgbSp), alpha: 1)
-            )
-          }
-
-          events.append(.appearanceChanged)
-
-        case let .hlAttrDefine(models):
-          for model in models {
-            self.withMutableHighlight(id: model.id) { highlight in
-              if let hex = model.rgbAttrs[.string("foreground")]?.uintValue {
-                highlight.foregroundColor = .init(hex: hex, alpha: 1)
-              }
-
-              if let hex = model.rgbAttrs[.string("background")]?.uintValue {
-                highlight.backgroundColor = .init(hex: hex, alpha: 1)
-              }
-
-              if let hex = model.rgbAttrs[.string("special")]?.uintValue {
-                highlight.specialColor = .init(hex: hex, alpha: 1)
-              }
-
-              if let reverse = model.rgbAttrs[.string("reverse")]?.boolValue {
-                highlight.reverse = reverse
-              }
-
-              if let blend = model.rgbAttrs[.string("blend")]?.uintValue {
-                highlight.blend = Int(blend)
-              }
-
-              if let italic = model.rgbAttrs[.string("italic")]?.boolValue {
-                highlight.italic = italic
-              }
-
-              if let bold = model.rgbAttrs[.string("bold")]?.boolValue {
-                highlight.bold = bold
-              }
-            }
-          }
-
-          events.append(.appearanceChanged)
-
-        case .flush:
-          events.append(.flushRequested)
-
-        default:
-          break
+          latestRow = model.row
         }
       }
+
+    case let .gridScroll(models):
+      for model in models {
+        let size = GridSize(
+          rowsCount: model.bot - model.top,
+          columnsCount: model.right - model.left
+        )
+        let fromOrigin = GridPoint(
+          row: model.top,
+          column: model.left
+        )
+        let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
+        let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
+
+        self.withMutableWindowIfExists(gridID: model.grid) { window in
+          window.grid.put(
+            grid: window.grid.subGrid(
+              at: fromRectangle
+            ),
+            at: toOrigin
+          )
+        }
+
+        events.append(
+          .grid(
+            id: model.grid,
+            model: .windowGridRectangleMoved(
+              rectangle: fromRectangle,
+              toOrigin: toOrigin
+            )
+          )
+        )
+      }
+
+    case let .gridClear(models):
+      for model in models {
+        self.withMutableWindowIfExists(gridID: model.grid) { window in
+          window.grid = .init(
+            repeating: nil,
+            size: window.grid.size
+          )
+        }
+
+        events.append(
+          .grid(
+            id: model.grid,
+            model: .windowGridCleared
+          )
+        )
+      }
+
+    case let .gridCursorGoto(models):
+      for model in models {
+        let previousCursor = self.cursor
+
+        self.cursor = State.Cursor(
+          gridID: model.grid,
+          position: .init(
+            row: model.row,
+            column: model.col
+          )
+        )
+
+        events.append(.cursor(previousCusor: previousCursor))
+      }
+
+    case let .winPos(models):
+      for model in models {
+        self.withMutableWindowIfExists(gridID: model.grid) { window in
+          window.grid.resize(
+            to: .init(rowsCount: model.height, columnsCount: model.width),
+            fillingEmptyWith: nil
+          )
+          window.origin = .init(row: model.startrow, column: model.startcol)
+          window.isHidden = false
+          window.zIndex = 0
+          window.ref = model.win
+        }
+
+        events.append(
+          .grid(id: model.grid, model: .windowFrameChanged)
+        )
+      }
+
+    case let .winFloatPos(models):
+      for model in models {
+        let anchorWindow = self.windows[model.anchorGrid]!
+        let anchorPoint = anchorWindow.frame.origin + GridPoint(
+          row: Int(model.anchorRow.doubleValue!),
+          column: Int(model.anchorCol.doubleValue!)
+        )
+
+        self.withMutableWindowIfExists(gridID: model.grid) { window in
+          window.origin = anchorPoint
+          window.anchor = model.anchorValue
+          window.isHidden = false
+          window.ref = model.win
+          window.zIndex = model.zindex
+        }
+
+        events.append(
+          .grid(id: model.grid, model: .windowFrameChanged)
+        )
+      }
+
+    case let .winExternalPos(models):
+      log(.info, "Win external pos: \(models.count)")
+
+    case let .winHide(models):
+      for model in models {
+        self.withMutableWindowIfExists(gridID: model.grid) { window in
+          window.isHidden = true
+        }
+
+        events.append(
+          .grid(id: model.grid, model: .windowHid)
+        )
+      }
+
+    case let .winClose(models):
+      for model in models {
+        self.windows[model.grid] = nil
+
+        events.append(
+          .grid(id: model.grid, model: .windowClosed)
+        )
+      }
+
+    case let .defaultColorsSet(models):
+      for model in models {
+        self.defaultHighlight = .init(
+          foregroundColor: .init(hex: UInt(model.rgbFg), alpha: 1),
+          backgroundColor: .init(hex: UInt(model.rgbBg), alpha: 1),
+          specialColor: .init(hex: UInt(model.rgbSp), alpha: 1)
+        )
+      }
+
+      events.append(.appearanceChanged)
+
+    case let .hlAttrDefine(models):
+      for model in models {
+        self.withMutableHighlight(id: model.id) { highlight in
+          if let hex = model.rgbAttrs[.string("foreground")]?.uintValue {
+            highlight.foregroundColor = .init(hex: hex, alpha: 1)
+          }
+
+          if let hex = model.rgbAttrs[.string("background")]?.uintValue {
+            highlight.backgroundColor = .init(hex: hex, alpha: 1)
+          }
+
+          if let hex = model.rgbAttrs[.string("special")]?.uintValue {
+            highlight.specialColor = .init(hex: hex, alpha: 1)
+          }
+
+          if let reverse = model.rgbAttrs[.string("reverse")]?.boolValue {
+            highlight.reverse = reverse
+          }
+
+          if let blend = model.rgbAttrs[.string("blend")]?.uintValue {
+            highlight.blend = Int(blend)
+          }
+
+          if let italic = model.rgbAttrs[.string("italic")]?.boolValue {
+            highlight.italic = italic
+          }
+
+          if let bold = model.rgbAttrs[.string("bold")]?.boolValue {
+            highlight.bold = bold
+          }
+        }
+      }
+
+      events.append(.appearanceChanged)
+
+    case .flush:
+      events.append(.flushRequested)
+
+    default:
+      break
     }
 
     return events

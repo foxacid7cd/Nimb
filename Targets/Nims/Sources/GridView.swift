@@ -15,14 +15,17 @@ import RxCocoa
 import RxSwift
 
 class GridView: NSView {
+  @MainActor
   init(
     frame: NSRect,
+    state: State,
     gridID: Int
   ) {
+    self.state = state
     self.gridID = gridID
     super.init(frame: frame)
 
-    self.canDrawConcurrently = true
+    // self.canDrawConcurrently = true
   }
 
   @available(*, unavailable)
@@ -32,22 +35,24 @@ class GridView: NSView {
 
   let gridID: Int
 
+  @MainActor
+  var state: State
+
   override var isOpaque: Bool {
     true
   }
 
   override func draw(_: NSRect) {
-    guard let context = NSGraphicsContext.current else {
+    let state = self.state
+    let fontDerivatives = StateDerivatives.shared.font(state: state)
+    let cellSize = fontDerivatives.cellSize
+
+    guard let context = NSGraphicsContext.current, let window = state.windows[self.gridID] else {
       return
     }
 
     context.saveGraphicsState()
     defer { context.restoreGraphicsState() }
-
-    let bounds = self.bounds
-    let state = self.state
-    let window = state.windows[self.gridID]!
-    let fontDerivatives = self.store.stateDerivatives.font
 
     let rects = self.rectsBeingDrawn()
 
@@ -57,15 +62,19 @@ class GridView: NSView {
     var drawRuns = [DrawRun]()
 
     for rect in rects {
-      let rectangle = self.cellsGeometry.gridRectangle(
-        cellsRect: self.cellsGeometry.upsideDownRect(
+      let rectangle = CellsGeometry.gridRectangle(
+        cellsRect: CellsGeometry.upsideDownRect(
           from: rect,
-          parentViewHeight: bounds.height
-        )
+          parentViewHeight: self.bounds.height
+        ),
+        cellSize: cellSize
       )
+      .intersection(.init(origin: .init(), size: self.state.outerGridSize))
+
+      guard let rectangle else { continue }
 
       for row in rectangle.rowsRange {
-        guard row < window.grid.size.rowsCount else {
+        guard row < window.frame.size.rowsCount else {
           continue
         }
 
@@ -140,7 +149,7 @@ class GridView: NSView {
         }
 
         for column in rectangle.columnsRange {
-          guard column < window.grid.size.columnsCount else {
+          guard column < window.frame.size.columnsCount else {
             continue
           }
 
@@ -184,11 +193,9 @@ class GridView: NSView {
         origin: drawRun.origin,
         size: .init(rowsCount: 1, columnsCount: drawRun.glyphRun.glyphs.count)
       )
-      let rect = self.cellsGeometry.upsideDownRect(
-        from: self.cellsGeometry.cellsRect(
-          for: rectangle
-        ),
-        parentViewHeight: bounds.height
+      let rect = CellsGeometry.upsideDownRect(
+        from: CellsGeometry.cellsRect(for: rectangle, cellSize: cellSize),
+        parentViewHeight: self.bounds.height
       )
       context.cgContext.fill([rect])
 
@@ -202,8 +209,8 @@ class GridView: NSView {
         glyphRun.font,
         glyphRun.glyphs,
         glyphRun.positionsWithOffset(
-          dx: fontDerivatives.cellSize.width * CGFloat(drawRun.origin.column),
-          dy: fontDerivatives.cellSize.height * CGFloat(window.grid.size.rowsCount - drawRun.origin.row) - drawRun.glyphRun.font.ascender
+          dx: cellSize.width * Double(drawRun.origin.column),
+          dy: cellSize.height * Double(window.frame.size.rowsCount - drawRun.origin.row) - drawRun.glyphRun.font.ascender
         ),
         glyphRun.glyphs.count,
         context.cgContext
@@ -214,58 +221,69 @@ class GridView: NSView {
       context.cgContext.setFillColor(state.defaultHighlight.foregroundColor?.cgColor ?? .white)
       context.cgContext.setBlendMode(.exclusion)
 
-      let rect = self.cellsGeometry.upsideDownRect(
-        from: self.cellsGeometry.cellRect(
-          for: cursorPosition
+      let rect = CellsGeometry.upsideDownRect(
+        from: CellsGeometry.cellRect(
+          for: cursorPosition,
+          cellSize: cellSize
         ),
-        parentViewHeight: bounds.height
+        parentViewHeight: self.bounds.height
       )
       context.cgContext.fill([rect])
     }
 
     if self.needsSynchronization {
-      DispatchQueues.GridViewSynchronization.dispatchQueue.async(flags: .barrier) {
-        self.needsSynchronization = false
-      }
+      self.needsSynchronization = false
 
-      context.cgContext.flush()
+      context.flushGraphics()
     }
   }
 
+  @MainActor
   func setNeedsDrawing(_ rectangle: GridRectangle? = nil) {
     if let rectangle {
-      self.setNeedsDisplay(
-        self.cellsGeometry.upsideDownRect(
-          from: self.cellsGeometry.cellsRect(
-            for: rectangle
-          ),
-          parentViewHeight: self.bounds.height
+      self.needsDrawingBuffer?.append(rectangle)
+//      self.setNeedsDisplay(
+//        CellsGeometry.upsideDownRect(
+//          from: CellsGeometry.cellsRect(
+//            for: rectangle,
+//            cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+//          ),
+//          parentViewHeight: self.bounds.height
+//        )
+//      )
+
+    } else {
+      self.needsDrawingBuffer = nil
+      // self.setNeedsDisplay(self.bounds)
+    }
+  }
+
+  @MainActor
+  func flushIfNeeded() {
+    guard !Task.isCancelled else { return }
+
+    if let needsDrawingBuffer {
+      for rectangle in needsDrawingBuffer {
+        self.setNeedsDisplay(
+          CellsGeometry.upsideDownRect(
+            from: CellsGeometry.cellsRect(
+              for: rectangle,
+              cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+            ),
+            parentViewHeight: self.bounds.height
+          )
         )
-      )
+      }
 
     } else {
       self.setNeedsDisplay(self.bounds)
     }
+
+    self.needsDrawingBuffer = []
+    self.needsSynchronization = true
   }
 
-  func flushIfNeeded() {
-    DispatchQueues.GridViewSynchronization.dispatchQueue.async(flags: .barrier) {
-      self.needsSynchronization = true
-    }
-  }
-
+  @MainActor
+  private var needsDrawingBuffer: [GridRectangle]? = []
   private var needsSynchronization = false
-  private var lastCursorPosition: GridPoint?
-
-  private var windowState: State.Window {
-    self.state.windows[self.gridID]!
-  }
-
-  private var grid: Grid<Cell?> {
-    self.windowState.grid
-  }
-
-  private var cellsGeometry: CellsGeometry {
-    .shared
-  }
 }

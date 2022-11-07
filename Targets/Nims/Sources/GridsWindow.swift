@@ -13,14 +13,19 @@ import Library
 import RxSwift
 
 class GridsWindow: NSWindow {
-  init() {
+  init(state: State) {
+    self.state = state
+
+    let gridsViewController = GridsViewController(state: state)
+    self.gridsViewController = gridsViewController
+
     super.init(
       contentRect: .init(),
       styleMask: [.titled],
       backing: .buffered,
       defer: true
     )
-    self.contentViewController = self.gridsViewController
+    self.contentViewController = gridsViewController
     self.acceptsMouseMovedEvents = true
   }
 
@@ -32,8 +37,11 @@ class GridsWindow: NSWindow {
     true
   }
 
-  func handle(event: Event) {
-    self.gridsViewController.handle(event: event)
+  @MainActor
+  func handle(state: State, events: [Event]) async {
+    self.state = state
+
+    await self.gridsViewController.handle(state: state, events: events)
   }
 
   override func keyDown(with event: NSEvent) {
@@ -80,7 +88,11 @@ class GridsWindow: NSWindow {
     }
   }
 
-  private lazy var gridsViewController = GridsViewController()
+  @MainActor
+  private var state: State
+
+  private let gridsViewController: GridsViewController
+
   private let inputSubject = PublishSubject<Input>()
 
   private func mouseInput(_ nsEvent: NSEvent, event: MouseInput.Event) {
@@ -91,11 +103,12 @@ class GridsWindow: NSWindow {
     }
 
     let locationInView = contentView.convert(locationInWindow, to: gridView)
-    let rectangle = CellsGeometry.shared.gridRectangle(
-      cellsRect: CellsGeometry.shared.upsideDownRect(
+    let rectangle = CellsGeometry.gridRectangle(
+      cellsRect: CellsGeometry.upsideDownRect(
         from: .init(origin: locationInView, size: .zero),
         parentViewHeight: gridView.bounds.height
-      )
+      ),
+      cellSize: StateDerivatives.shared.font(state: self.state).cellSize
     )
     self.inputSubject.onNext(
       .mouse(

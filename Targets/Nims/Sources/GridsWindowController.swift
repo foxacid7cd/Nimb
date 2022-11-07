@@ -12,9 +12,11 @@ import Library
 import RxSwift
 
 class GridsWindowController: NSWindowController {
-  init() {
-    let gridsWindow = GridsWindow()
+  @MainActor
+  init(state: State) {
+    let gridsWindow = GridsWindow(state: state)
     self.gridsWindow = gridsWindow
+
     super.init(window: gridsWindow)
   }
 
@@ -27,8 +29,9 @@ class GridsWindowController: NSWindowController {
     self.gridsWindow.input
   }
 
-  func handle(event: Event) {
-    self.gridsWindow.handle(event: event)
+  @MainActor
+  func handle(state: State, events: [Event]) async {
+    await self.gridsWindow.handle(state: state, events: events)
   }
 
   private let gridsWindow: GridsWindow

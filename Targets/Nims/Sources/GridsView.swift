@@ -15,11 +15,15 @@ import RxCocoa
 import RxSwift
 
 class GridsView: NSView {
-  override init(frame: CGRect) {
+  @MainActor
+  init(frame: CGRect, state: State) {
+    self.state = state
     super.init(frame: frame)
 
-    for (id, window) in self.state.windows.enumerated() where window != nil {
-      self.insertGridView(id: id)
+    for (id, window) in state.windows.enumerated() {
+      guard let window else { continue }
+
+      self.insertGridView(id: id, window: window)
     }
   }
 
@@ -28,94 +32,123 @@ class GridsView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func handle(event: Event) {
-    switch event {
-    case let .grid(id, model):
-      switch model {
-      case .windowFrameChanged:
-        if let gridView = self.gridViews[id] {
-          gridView.frame = self.gridViewFrame(id: id)
-          gridView.isHidden = self.state.windows[id]!.isHidden
-          gridView.setNeedsDrawing()
+  @MainActor
+  func handle(state: State, events: [Event]) async {
+    let previousTask = self.handleTask
 
-        } else {
-          self.insertGridView(id: id)
-        }
+    self.handleTask = Task {
+      await previousTask?.value
 
-      case .windowHid:
-        self.gridViews[id]?.isHidden = true
-
-      case .windowClosed:
-        self.gridViews[id]?.removeFromSuperview()
-        self.gridViews[id] = nil
-        self.gridIDs.remove(id)
-
-      case .windowGridCleared:
-        self.gridViews[id]?.setNeedsDrawing()
-
-      case let .windowGridRowChanged(origin, columnsCount):
-        self.gridViews[id]?.setNeedsDrawing(
-          .init(origin: origin, size: .init(rowsCount: 1, columnsCount: columnsCount))
-        )
-
-      case let .windowGridRectangleChanged(rectangle):
-        self.gridViews[id]?.setNeedsDrawing(rectangle)
-
-      case let .windowGridRectangleMoved(rectangle, toOrigin):
-        let window = self.state.windows[id]!
-
-        let toRectangle = GridRectangle(origin: toOrigin, size: rectangle.size)
-          .intersection(.init(size: window.grid.size))
-
-        if let toRectangle {
-          self.gridViews[id]?.setNeedsDrawing(toRectangle)
-        }
-      }
-
-    case let .cursor(previousCusor):
-      if let previousCusor {
-        handle(cursor: previousCusor)
-      }
-
-      if let cursor = self.state.cursor {
-        handle(cursor: cursor)
-      }
-
-      func handle(cursor: State.Cursor) {
-        self.gridViews[cursor.gridID]?.setNeedsDrawing(
-          .init(origin: cursor.position, size: .init(rowsCount: 1, columnsCount: 1))
-        )
-      }
-
-    case .appearanceChanged:
-      self.gridViews.forEach { $0?.setNeedsDrawing() }
-
-    case .flushRequested:
+      self.state = state
       for gridID in self.gridIDs {
-        self.gridViews[gridID]?.flushIfNeeded()
+        self.gridViews[gridID]?.state = state
+      }
+
+      for event in events {
+        guard !Task.isCancelled else {
+          break
+        }
+
+        switch event {
+        case let .grid(id, model):
+          switch model {
+          case .windowFrameChanged:
+            guard let window = state.windows[id] else { break }
+
+            if let gridView = self.gridViews[id] {
+              gridView.frame = self.rect(for: window.frame)
+              gridView.isHidden = window.isHidden
+              gridView.setNeedsDrawing()
+
+            } else {
+              self.insertGridView(id: id, window: window)
+            }
+
+          case .windowHid:
+            self.gridViews[id]?.isHidden = true
+
+          case .windowClosed:
+            self.gridViews[id]?.removeFromSuperview()
+            self.gridViews[id] = nil
+            self.gridIDs.remove(id)
+
+          case .windowGridCleared:
+            self.gridViews[id]?.setNeedsDrawing()
+
+          case let .windowGridRowChanged(origin, columnsCount):
+            self.gridViews[id]?.setNeedsDrawing(
+              .init(origin: origin, size: .init(rowsCount: 1, columnsCount: columnsCount))
+            )
+
+          case let .windowGridRectangleChanged(rectangle):
+            self.gridViews[id]?.setNeedsDrawing(rectangle)
+
+          case let .windowGridRectangleMoved(rectangle, toOrigin):
+            guard let window = state.windows[id] else {
+              break
+            }
+
+            let toRectangle = GridRectangle(origin: toOrigin, size: rectangle.size)
+              .intersection(.init(size: window.frame.size))
+
+            if let toRectangle {
+              self.gridViews[id]?.setNeedsDrawing(toRectangle)
+            }
+          }
+
+        case let .cursor(previousCusor):
+          if let previousCusor {
+            handle(cursor: previousCusor)
+          }
+
+          if let cursor = self.state.cursor {
+            handle(cursor: cursor)
+          }
+
+          @MainActor
+          func handle(cursor: State.Cursor) {
+            self.gridViews[cursor.gridID]?.setNeedsDrawing(
+              .init(origin: cursor.position, size: .init(rowsCount: 1, columnsCount: 1))
+            )
+          }
+
+        case .appearanceChanged:
+          for gridID in self.gridIDs {
+            self.gridViews[gridID]?.setNeedsDrawing()
+          }
+
+        case .flushRequested:
+          for gridID in self.gridIDs {
+            self.gridViews[gridID]?.flushIfNeeded()
+          }
+        }
       }
     }
   }
 
+  @MainActor
+  private var handleTask: Task<Void, Never>?
+  @MainActor
   private var gridViews = [GridView?](repeating: nil, count: 1000)
+  @MainActor
   private var gridIDs = Set<Int>()
+  @MainActor
+  private var state: State
 
-  private var cellsGeometry: CellsGeometry {
-    .shared
-  }
-
-  private func insertGridView(id: Int) {
+  @MainActor
+  private func insertGridView(id: Int, window: State.Window) {
     let gridView = GridView(
-      frame: self.gridViewFrame(id: id),
+      frame: self.rect(for: window.frame),
+      state: self.state,
       gridID: id
     )
     self.gridViews[id] = gridView
     self.gridIDs.insert(id)
-    gridView.isHidden = self.state.windows[id]!.isHidden
+    gridView.isHidden = window.isHidden
 
     let relativeSubview = self.subviews
       .map { self.state.windows[($0 as! GridView).gridID]!.zIndex }
-      .firstIndex(where: { $0 > self.state.windows[id]!.zIndex })
+      .firstIndex(where: { $0 > window.zIndex })
       .map { self.subviews[$0] }
 
     if let relativeSubview {
@@ -126,10 +159,12 @@ class GridsView: NSView {
     }
   }
 
-  private func gridViewFrame(id: Int) -> CGRect {
-    self.cellsGeometry.upsideDownRect(
-      from: self.cellsGeometry.cellsRect(
-        for: self.state.windows[id]!.frame
+  @MainActor
+  private func rect(for rectangle: GridRectangle) -> CGRect {
+    return CellsGeometry.upsideDownRect(
+      from: CellsGeometry.cellsRect(
+        for: rectangle,
+        cellSize: StateDerivatives.shared.font(state: self.state).cellSize
       ),
       parentViewHeight: self.bounds.height
     )

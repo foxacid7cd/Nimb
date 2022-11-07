@@ -10,31 +10,29 @@ import Collections
 import Foundation
 
 public class Cache<Key: Hashable, Value> {
-  public init(capacity: Int, dispatchQueue: DispatchQueue) {
+  public init(capacity: Int) {
     self.capacity = capacity
-    self.dispatchQueue = dispatchQueue
   }
 
+  @MainActor
   public func set(value: Value, forKey key: Key) {
-    self.dispatchQueue.async(flags: .barrier) {
-      if self.keys.count == self.capacity {
-        let oldKey = self.keys.removeFirst()
-        self.dictionary[oldKey] = nil
-      }
-
-      self.keys.append(key)
-      self.dictionary[key] = value
+    if self.keys.count == self.capacity {
+      let oldKey = self.keys.removeFirst()
+      self.dictionary[oldKey] = nil
     }
+
+    self.keys.append(key)
+    self.dictionary[key] = value
   }
 
+  @MainActor
   public func value(forKey key: Key) -> Value? {
-    self.dispatchQueue.sync {
-      self.dictionary[key]
-    }
+    self.dictionary[key]
   }
 
   private let capacity: Int
-  private let dispatchQueue: DispatchQueue
+  @MainActor
   private var dictionary = [Key: Value]()
+  @MainActor
   private var keys = Deque<Key>()
 }
