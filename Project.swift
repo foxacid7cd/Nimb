@@ -56,7 +56,8 @@ let project = Project(
         .external(name: "RxCocoa"),
         .external(name: "MessagePack"),
         .external(name: "CasePaths"),
-        .external(name: "Socket")
+        .external(name: "Socket"),
+        .external(name: "PersistentCollections")
       ]
     ),
     .nimsTarget(

@@ -11,6 +11,7 @@ import AppKit
 import CasePaths
 import Combine
 import Library
+import PersistentCollections
 import RxCocoa
 import RxSwift
 
@@ -20,9 +21,7 @@ class GridsView: NSView {
     self.state = state
     super.init(frame: frame)
 
-    for (id, window) in state.windows.enumerated() {
-      guard let window else { continue }
-
+    for (id, window) in state.windows {
       self.insertGridView(id: id, window: window)
     }
   }
@@ -40,8 +39,8 @@ class GridsView: NSView {
       await previousTask?.value
 
       self.state = state
-      for gridID in self.gridIDs {
-        self.gridViews[gridID]?.state = state
+      for gridView in self.gridViews.values {
+        gridView.state = state
       }
 
       for event in events {
@@ -68,9 +67,8 @@ class GridsView: NSView {
             self.gridViews[id]?.isHidden = true
 
           case .windowClosed:
-            self.gridViews[id]?.removeFromSuperview()
-            self.gridViews[id] = nil
-            self.gridIDs.remove(id)
+            let gridView = self.gridViews.removeValue(forKey: id)
+            gridView?.removeFromSuperview()
 
           case .windowGridCleared:
             self.gridViews[id]?.setNeedsDrawing()
@@ -113,13 +111,13 @@ class GridsView: NSView {
           }
 
         case .appearanceChanged:
-          for gridID in self.gridIDs {
-            self.gridViews[gridID]?.setNeedsDrawing()
+          for gridView in self.gridViews.values {
+            gridView.setNeedsDrawing()
           }
 
         case .flushRequested:
-          for gridID in self.gridIDs {
-            self.gridViews[gridID]?.flushIfNeeded()
+          for gridView in self.gridViews.values {
+            gridView.flushIfNeeded()
           }
         }
       }
@@ -129,9 +127,7 @@ class GridsView: NSView {
   @MainActor
   private var handleTask: Task<Void, Never>?
   @MainActor
-  private var gridViews = [GridView?](repeating: nil, count: 1000)
-  @MainActor
-  private var gridIDs = Set<Int>()
+  private var gridViews = PersistentDictionary<Int, GridView>()
   @MainActor
   private var state: State
 
@@ -143,7 +139,6 @@ class GridsView: NSView {
       gridID: id
     )
     self.gridViews[id] = gridView
-    self.gridIDs.insert(id)
     gridView.isHidden = window.isHidden
 
     let relativeSubview = self.subviews
@@ -164,7 +159,7 @@ class GridsView: NSView {
     return CellsGeometry.upsideDownRect(
       from: CellsGeometry.cellsRect(
         for: rectangle,
-        cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+        cellSize: self.state.fontDerivatives.cellSize
       ),
       parentViewHeight: self.bounds.height
     )

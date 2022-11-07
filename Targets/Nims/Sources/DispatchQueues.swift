@@ -10,9 +10,6 @@ import Foundation
 import RxSwift
 
 enum DispatchQueues {
-  static let GlyphRunCache = makeDispatchQueue("GlyphRunCache", attributes: .concurrent)
-  static let StateDerivatives = makeDispatchQueue("StateDerivatives", attributes: .concurrent)
-  static let GridViewSynchronization = makeDispatchQueue("GridViewSynchronization", qos: .userInitiated, attributes: .concurrent)
   static let Nvim = makeDispatchQueue("Nvim", qos: .userInitiated)
 }
 

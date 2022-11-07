@@ -24,14 +24,6 @@ enum CellsGeometry {
       .translatedBy(x: 0, y: -parentViewHeight)
   }
 
-//  func insetForDrawing(rect: CGRect) -> CGRect {
-//    let font = self.store.stateDerivatives.font.regular
-//    return rect.insetBy(
-//      dx: -(font.boundingRectForFont.width - self.cellSize.width) / 2,
-//      dy: -(font.boundingRectForFont.height - self.cellSize.height) / 2
-//    )
-//  }
-
   static func gridRectangle(cellsRect: CGRect, cellSize: CGSize) -> GridRectangle {
     let origin = GridPoint(
       row: Int(floor(cellsRect.minY / cellSize.height)),
@@ -69,6 +61,13 @@ enum CellsGeometry {
     .init(
       x: Double(index.column) * cellSize.width,
       y: Double(index.row) * cellSize.height
+    )
+  }
+
+  static func insetForDrawing(rect: CGRect, cellSize: CGSize, boundingRectForFont: CGRect) -> CGRect {
+    rect.insetBy(
+      dx: -(boundingRectForFont.width - cellSize.width) / 2,
+      dy: -(boundingRectForFont.height - cellSize.height) / 2
     )
   }
 }

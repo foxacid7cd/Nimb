@@ -9,7 +9,8 @@ let dependencies = Dependencies(
     .remote(url: "https://github.com/apple/swift-async-algorithms", requirement: .branch("main")),
     .remote(url: "https://github.com/ReactiveX/RxSwift", requirement: .upToNextMajor(from: "6.5.0")),
     .remote(url: "https://github.com/pointfreeco/swift-case-paths", requirement: .upToNextMajor(from: "0.1.0")),
-    .remote(url: "https://github.com/Kitura/BlueSocket", requirement: .upToNextMajor(from: "2.0.2"))
+    .remote(url: "https://github.com/Kitura/BlueSocket", requirement: .upToNextMajor(from: "2.0.2")),
+    .remote(url: "https://github.com/apple/swift-collections", requirement: .branch("main"))
   ],
   platforms: [.macOS]
 )

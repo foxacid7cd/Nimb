@@ -8,6 +8,7 @@
 
 import Collections
 import Foundation
+import PersistentCollections
 
 public class Cache<Key: Hashable, Value> {
   public init(capacity: Int) {
@@ -32,7 +33,7 @@ public class Cache<Key: Hashable, Value> {
 
   private let capacity: Int
   @MainActor
-  private var dictionary = [Key: Value]()
+  private var dictionary = PersistentDictionary<Key, Value>()
   @MainActor
   private var keys = Deque<Key>()
 }

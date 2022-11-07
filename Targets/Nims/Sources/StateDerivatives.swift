@@ -1,5 +1,5 @@
 //
-//  Store.swift
+//  StateDerivatives.swift
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 15.10.2022.
@@ -11,32 +11,6 @@ import CasePaths
 import Library
 import RxCocoa
 import RxSwift
-
-class Store {
-  private init() {
-    let eventsSubject = PublishSubject<[Event]>()
-    self.eventsSubject = eventsSubject
-
-    self.events = eventsSubject
-      .share(replay: 1, scope: .forever)
-  }
-
-  static let shared = Store()
-
-  let events: Observable<[Event]>
-
-  var state = State()
-
-  func publish(events: [Event]) {
-    self.eventsSubject.onNext(events)
-  }
-
-  func publish(event: Event) {
-    self.eventsSubject.onNext([event])
-  }
-
-  private var eventsSubject = PublishSubject<[Event]>()
-}
 
 class StateDerivatives {
   struct Font {
@@ -94,10 +68,9 @@ class StateDerivatives {
   private var cachedFonts = [State.Font: Font]()
 }
 
-extension Observable where Element == [Event] {
-  func extract<T>(_ transform: @escaping (Event) -> T?) -> Observable<T> {
-    self.flatMap {
-      Observable<T>.from($0.compactMap(transform))
-    }
+extension State {
+  @MainActor
+  var fontDerivatives: StateDerivatives.Font {
+    StateDerivatives.shared.font(state: self)
   }
 }

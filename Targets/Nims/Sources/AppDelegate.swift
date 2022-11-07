@@ -36,11 +36,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let nvimBundleURL = Bundle.main.url(forResource: "nvim", withExtension: "bundle")!
     let nvimBundle = Bundle(url: nvimBundleURL)!
 
-    let input = self.inputSubject
-      .throttle(.milliseconds(40), latest: true, scheduler: MainScheduler.instance)
-
     let nvimProcess = NvimProcess(
-      input: input,
+      input: self.inputSubject,
       executableURL: nvimBundle.url(forAuxiliaryExecutable: "nvim")!,
       runtimeURL: nvimBundle.resourceURL!.appendingPathComponent("runtime"),
       dispatchQueue: DispatchQueues.Nvim.dispatchQueue
@@ -63,42 +60,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
       }
 
-    /* self <~ nvimProcess.run()
-     .catch { error in
-       DispatchQueue.main.async {}
-
-       return .empty()
-     }
-     .scan(into: initialState, accumulator: { result, notifications in
-       var events = [Event]()
-
-       for notification in notifications {
-         events += try result.0.apply(notification: notification)
-       }
-
-       result.1 = events
-     })
-     .startWith(initialState)
-     .subscribe(onNext: { state, events in
-       Task {
-         if let gridsWindowController = self.gridsWindowController {
-           await gridsWindowController.handle(state: state, events: events)
-
-         } else {
-           let gridsWindowController = await GridsWindowController(state: state)
-           self.gridsWindowController = gridsWindowController
-
-           await gridsWindowController.handle(state: state, events: events)
-
-           let input = await gridsWindowController.input
-           self <~ input
-             .bind(to: self.inputSubject)
-
-           await gridsWindowController.showWindow(nil)
-         }
-       }
-     }) */
-
     Task.detached(priority: .background) {
       if #available(macOS 13.0, *) {
         try await Task.sleep(for: .seconds(1))
@@ -106,8 +67,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
       do {
         try await nvimProcess.nvimUIAttach(
-          width: Store.shared.state.outerGridSize.columnsCount,
-          height: Store.shared.state.outerGridSize.rowsCount,
+          width: self.state.outerGridSize.columnsCount,
+          height: self.state.outerGridSize.rowsCount,
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true,

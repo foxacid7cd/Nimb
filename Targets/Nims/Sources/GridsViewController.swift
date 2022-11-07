@@ -44,7 +44,7 @@ class GridsViewController: NSViewController {
       origin: .zero,
       size: CellsGeometry.cellsSize(
         for: self.state.outerGridSize,
-        cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+        cellSize: self.state.fontDerivatives.cellSize
       )
     ),
     state: self.state

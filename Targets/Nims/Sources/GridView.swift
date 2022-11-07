@@ -25,7 +25,7 @@ class GridView: NSView {
     self.gridID = gridID
     super.init(frame: frame)
 
-    // self.canDrawConcurrently = true
+    self.canDrawConcurrently = true
   }
 
   @available(*, unavailable)
@@ -264,13 +264,19 @@ class GridView: NSView {
 
     if let needsDrawingBuffer {
       for rectangle in needsDrawingBuffer {
+        let fontDerivatives = self.state.fontDerivatives
+
         self.setNeedsDisplay(
-          CellsGeometry.upsideDownRect(
-            from: CellsGeometry.cellsRect(
-              for: rectangle,
-              cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+          CellsGeometry.insetForDrawing(
+            rect: CellsGeometry.upsideDownRect(
+              from: CellsGeometry.cellsRect(
+                for: rectangle,
+                cellSize: fontDerivatives.cellSize
+              ),
+              parentViewHeight: self.bounds.height
             ),
-            parentViewHeight: self.bounds.height
+            cellSize: fontDerivatives.cellSize,
+            boundingRectForFont: fontDerivatives.regular.boundingRectForFont
           )
         )
       }

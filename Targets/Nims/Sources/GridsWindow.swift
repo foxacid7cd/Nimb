@@ -27,6 +27,18 @@ class GridsWindow: NSWindow {
     )
     self.contentViewController = gridsViewController
     self.acceptsMouseMovedEvents = true
+
+    self <~ self.mouseMovedSubject
+      .throttle(.milliseconds(50), scheduler: MainScheduler.instance)
+      .bind(with: self) { $0.mouseInput($1, event: .move) }
+
+    self <~ self.scrollWheelSubject
+      .throttle(.milliseconds(50), scheduler: MainScheduler.instance)
+      .bind(with: self) { strongSelf, event in
+        guard abs(event.scrollingDeltaY) > 5 else { return }
+
+        strongSelf.mouseInput(event, event: .wheel(action: event.scrollingDeltaY > 0 ? .up : .down))
+      }
   }
 
   var input: Observable<Input> {
@@ -49,8 +61,6 @@ class GridsWindow: NSWindow {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard event.clickCount >= 1 else { return }
-
     self.mouseInput(event, event: .button(.left, action: .press))
   }
 
@@ -58,13 +68,15 @@ class GridsWindow: NSWindow {
     self.mouseInput(event, event: .button(.left, action: .drag))
   }
 
+  override func mouseUp(with event: NSEvent) {
+    self.mouseInput(event, event: .button(.left, action: .release))
+  }
+
   override func mouseMoved(with event: NSEvent) {
-    self.mouseInput(event, event: .move)
+    self.mouseMovedSubject.onNext(event)
   }
 
   override func rightMouseDown(with event: NSEvent) {
-    guard event.clickCount >= 1 else { return }
-
     self.mouseInput(event, event: .button(.right, action: .press))
   }
 
@@ -72,9 +84,11 @@ class GridsWindow: NSWindow {
     self.mouseInput(event, event: .button(.right, action: .drag))
   }
 
-  override func otherMouseDown(with event: NSEvent) {
-    guard event.clickCount >= 1 else { return }
+  override func rightMouseUp(with event: NSEvent) {
+    self.mouseInput(event, event: .button(.right, action: .release))
+  }
 
+  override func otherMouseDown(with event: NSEvent) {
     self.mouseInput(event, event: .button(.middle, action: .press))
   }
 
@@ -82,17 +96,19 @@ class GridsWindow: NSWindow {
     self.mouseInput(event, event: .button(.middle, action: .drag))
   }
 
+  override func otherMouseUp(with event: NSEvent) {
+    self.mouseInput(event, event: .button(.middle, action: .release))
+  }
+
   override func scrollWheel(with event: NSEvent) {
-    if abs(event.scrollingDeltaY) > 5 {
-      self.mouseInput(event, event: .wheel(action: event.scrollingDeltaY > 0 ? .up : .down))
-    }
+    self.scrollWheelSubject.onNext(event)
   }
 
   @MainActor
   private var state: State
-
   private let gridsViewController: GridsViewController
-
+  private let mouseMovedSubject = PublishSubject<NSEvent>()
+  private let scrollWheelSubject = PublishSubject<NSEvent>()
   private let inputSubject = PublishSubject<Input>()
 
   private func mouseInput(_ nsEvent: NSEvent, event: MouseInput.Event) {
@@ -108,7 +124,7 @@ class GridsWindow: NSWindow {
         from: .init(origin: locationInView, size: .zero),
         parentViewHeight: gridView.bounds.height
       ),
-      cellSize: StateDerivatives.shared.font(state: self.state).cellSize
+      cellSize: self.state.fontDerivatives.cellSize
     )
     self.inputSubject.onNext(
       .mouse(

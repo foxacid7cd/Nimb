@@ -10,6 +10,7 @@ import API
 import AppKit
 import CoreGraphics
 import Library
+import PersistentCollections
 
 struct State: Hashable {
   enum Font: Hashable {
@@ -81,11 +82,11 @@ struct State: Hashable {
     var bold = false
   }
 
-  var windows = [Window?](repeating: nil, count: 100)
+  var windows = PersistentDictionary<Int, Window>()
   var cursor: Cursor?
-  var font = Font.custom(name: "BlexMono Nerd Font Mono", size: 13)
+  var font = Font.custom(name: "FiraCode Nerd Font Mono", size: 13)
   var outerGridSize = GridSize(rowsCount: 40, columnsCount: 150)
-  var highlights = [Highlight?](repeating: nil, count: 10000)
+  var highlights = PersistentDictionary<Int, Highlight>()
   var defaultHighlight = Highlight()
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {
