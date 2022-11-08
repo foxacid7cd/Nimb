@@ -37,30 +37,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let nvimBundle = Bundle(url: nvimBundleURL)!
 
     let nvimProcess = NvimProcess(
-      input: self.inputSubject,
       executableURL: nvimBundle.url(forAuxiliaryExecutable: "nvim")!,
-      runtimeURL: nvimBundle.resourceURL!.appendingPathComponent("runtime"),
-      dispatchQueue: DispatchQueues.Nvim.dispatchQueue
+      runtimeURL: nvimBundle.resourceURL!.appendingPathComponent("runtime")
     )
+    self.nvimProcess = nvimProcess
 
-    self <~ nvimProcess.run()
-      .catch { error in
-        Task {
-          await self.terminate(
-            with: "Nvim process run failed"
-              .fail(child: error.fail())
-          )
+    Task {
+      do {
+        for try await notifications in nvimProcess.notifications {
+          await self.handle(notifications: notifications)
         }
 
-        return .empty()
+      } catch {
+        await self.terminate(
+          with: "Failed receiving notifications"
+            .fail(child: error.fail())
+        )
       }
-      .bind(with: self) { appDelegate, notifications in
-        Task {
-          await appDelegate.handle(notifications: notifications)
-        }
-      }
+    }
 
-    Task.detached(priority: .background) {
+    Task {
+      for try await error in nvimProcess.error {
+        await self.terminate(
+          with: "Nvim process emmited error"
+            .fail(child: error.fail())
+        )
+      }
+    }
+
+    nvimProcess.run()
+
+    Task {
       if #available(macOS 13.0, *) {
         try await Task.sleep(for: .seconds(1))
       }
@@ -151,7 +158,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       await gridsWindowController.handle(state: state, events: events)
 
       self <~ gridsWindowController.input
-        .bind(to: self.inputSubject)
+        .bind(with: self) { $0.nvimProcess?.register(input: $1) }
 
       gridsWindowController.showWindow(nil)
     }

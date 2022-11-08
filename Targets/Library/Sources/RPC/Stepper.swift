@@ -6,10 +6,10 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-public struct Stepper {
+public actor Stepper {
   public init() {}
 
-  public mutating func next() -> UInt {
+  public func next() -> UInt {
     let step = self.step.map { $0 + 1 } ?? 0
     self.step = step
 
@@ -17,11 +17,4 @@ public struct Stepper {
   }
 
   private var step: UInt?
-}
-
-extension Stepper: RequestIDFactory {
-  @MainActor
-  public mutating func makeRequestID() -> UInt {
-    self.next()
-  }
 }

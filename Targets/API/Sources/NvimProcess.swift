@@ -6,26 +6,28 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import AsyncAlgorithms
 import Foundation
 import Library
 import MessagePack
-import RxCocoa
-import RxSwift
 import Socket
 
 public class NvimProcess {
-  public init(input: Observable<Input>, executableURL: URL, runtimeURL: URL, dispatchQueue: DispatchQueue) {
-    self.dispatchQueue = dispatchQueue
-
+  public init(executableURL: URL, runtimeURL: URL) {
     log(.info, "Nvim executable URL: \(executableURL.absoluteURL.relativePath)")
+
+    let errorChannel = AsyncChannel<Error>()
+    self.errorChannel = errorChannel
 
     let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "WXA9R8SW25.Nims")!
     self.unixSocketFileURL = containerURL.appendingPathComponent("\(UUID().uuidString).nvim", isDirectory: false)
 
-    self.process.executableURL = executableURL
-    self.process.arguments = ["--listen", self.unixSocketFileURL.absoluteURL.relativePath, "--headless"]
+    let process = Process()
+    self.process = process
 
-    self.process.standardOutput = Pipe()
+    process.executableURL = executableURL
+    process.arguments = ["--listen", self.unixSocketFileURL.absoluteURL.relativePath, "--headless"]
+    process.standardOutput = Pipe()
 
     log(.info, "Nvim process arguments: \(self.process.arguments!)")
 
@@ -33,157 +35,181 @@ public class NvimProcess {
     environment["VIMRUNTIME"] = runtimeURL.absoluteURL.relativePath
     environment["PATH"] = ProcessInfo.processInfo.environment["PATH"]
     log(.info, "Nvim process environment: \(environment)")
-    self.process.environment = environment
+    process.environment = environment
 
-    let rpc = RPC(inputMessages: self.rpcInputSubject)
-    self.rpc = rpc
+    let terminationChannel = AsyncChannel<(Int32, Process.TerminationReason)>()
+    process.terminationHandler = { process in
+      let status = process.terminationStatus
+      let reason = process.terminationReason
 
-    self.process.terminationHandler = { [weak self] process in
-      self?.errorSubject.onNext(
-        "Nvim process terminated with status \(process.terminationStatus), reason \(process.terminationReason)"
-          .fail()
-      )
+      Task {
+        await terminationChannel.send((status, reason))
+      }
     }
 
-    self.process <~ input
-      .bind(with: self) { nvimProcess, input in
-        Task {
-          do {
-            switch input {
-            case let .keyboard(keyPress):
-              _ = try await nvimProcess.nvimInput(keys: keyPress.makeNvimKeyCode())
-
-            case let .mouse(mouseInput):
-              _ = try await nvimProcess.nvimInputMouse(button: mouseInput.event.nvimButton, action: mouseInput.event.nvimAction, modifier: "", grid: mouseInput.gridID, row: mouseInput.point.row, col: mouseInput.point.column)
-            }
-
-          } catch {
-            nvimProcess.errorSubject.onNext(
-              "Failed nvim input"
-                .fail(child: error.fail())
-            )
-          }
-        }
+    Task {
+      for await (status, reason) in terminationChannel {
+        await errorChannel.send(
+          "Nvim process terminated with status \(status), reason \(reason)"
+            .fail()
+        )
       }
+    }
   }
 
-  public func run() -> Observable<[NvimNotification]> {
-    let runningProcess = Observable<Process>.create { observer in
+  public enum Event {
+    case running
+  }
+
+  public var notifications: AnyAsyncSequence<[NvimNotification]> {
+    self.rpc.notifications
+      .map { try $0.map { try NvimNotification(notification: $0) } }
+      .eraseToAnyAsyncSequence()
+  }
+
+  public var error: AnyAsyncSequence<Error> {
+    self.errorChannel.eraseToAnyAsyncSequence()
+  }
+
+  public func register(input: Input) {
+    Task.detached { @MainActor in
+      do {
+        switch input {
+        case let .keyboard(keyPress):
+          _ = try await self.nvimInput(
+            keys: keyPress.makeNvimKeyCode()
+          )
+
+        case let .mouse(mouseInput):
+          _ = try await self.nvimInputMouse(
+            button: mouseInput.event.nvimButton,
+            action: mouseInput.event.nvimAction,
+            modifier: "",
+            grid: mouseInput.gridID,
+            row: mouseInput.point.row,
+            col: mouseInput.point.column
+          )
+        }
+
+      } catch {
+        await self.errorChannel.send(
+          "NvimProcess input failed"
+            .fail(child: error.fail())
+        )
+      }
+    }
+  }
+
+  public func run() {
+    Task {
       do {
         try self.process.run()
 
-        observer.onNext(self.process)
+        let socket = try await self.createSocket()
+        self.setup(socket: socket)
 
       } catch {
-        observer.onError(
+        await self.errorChannel.send(
           "failed running nvim process"
             .fail(child: error.fail())
         )
       }
-
-      return Disposables.create {
-        self.process.terminate()
-      }
     }
-
-    let values = runningProcess
-      .map { _ -> Socket in
-        let socket = try! Socket.create(family: .unix, type: .stream, proto: .unix)
-        socket.readBufferSize = 16 * 1024 * 1024
-        return socket
-      }
-      .flatMap { socket -> Observable<Socket> in
-        Observable.create { observer in
-          DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + .milliseconds(100)) {
-            do {
-              try socket.connect(
-                to: self.unixSocketFileURL.absoluteURL.relativePath
-              )
-              observer.onNext(socket)
-
-            } catch {
-              observer.onError(error)
-            }
-          }
-
-          return Disposables.create()
-        }
-        .retry(3)
-        .catch { error in
-          self.errorSubject.onNext(error)
-          return .empty()
-        }
-      }
-      .flatMap { socket -> Observable<[Value]> in
-        self.rpc.outputMessages
-          .flatMap { messages -> Observable<Void> in
-            for message in messages {
-              try! socket.write(from: message.value.data)
-            }
-
-            return .empty()
-          }
-          .catch { [weak self] error in
-            self?.errorSubject.onNext(error)
-            return .empty()
-          }
-          .subscribe()
-          .disposed(by: self.disposeBag)
-
-        return socket.unpack(dispatchQueue: self.dispatchQueue)
-      }
-
-    values
-      .map { values in
-        try values.map { try Message(value: $0) }
-      }
-      .catch { [weak self] error in
-        self?.errorSubject.onNext(error)
-        return .empty()
-      }
-      .bind(onNext: self.rpcInputSubject.onNext)
-      .disposed(by: self.disposeBag)
-
-    let notifications = self.rpc.notifications
-      .flatMap { notifications in
-        do {
-          return Observable.just(
-            try notifications
-              .map { try NvimNotification(notification: $0) }
-          )
-
-        } catch {
-          return Observable.error(
-            "Failed parsing nvim notification"
-              .fail(child: error.fail())
-          )
-        }
-      }
-
-    return Observable.merge([
-      notifications,
-      self.errorSubject.map { throw $0 }
-    ])
   }
 
   public func terminate() {
     self.process.terminate()
   }
 
-  let rpc: RPC
+  static let dispatchQueue = DispatchQueue(
+    label: "\(Bundle.main.bundleIdentifier!).\(NvimProcess.self)",
+    qos: .default
+  )
 
-  private let process = Process()
+  let rpc = RPC()
+
+  private let process: Process
   private let unixSocketFileURL: URL
-  private let disposeBag = DisposeBag()
-  private let rpcInputSubject = PublishSubject<[Message]>()
-  private let errorSubject = PublishSubject<Error>()
-  private let dispatchQueue: DispatchQueue
+  private let errorChannel: AsyncChannel<Error>
+  private var inputTask: Task<Void, Never>?
+  private var outputTask: Task<Void, Never>?
+
+  private func setup(socket: Socket) {
+    self.inputTask = Task {
+      do {
+        for try await values in socket.unpack() {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          let messages = try values.map { try Message(value: $0) }
+          await self.rpc.send(inputMessages: messages)
+        }
+
+      } catch {
+        await self.errorChannel.send(
+          "Error unpacking socket"
+            .fail(child: error.fail())
+        )
+      }
+    }
+
+    self.outputTask = Task {
+      do {
+        for try await messages in self.rpc.outputMessages {
+          for message in messages {
+            guard !Task.isCancelled else {
+              return
+            }
+
+            let data = message.value.data
+            try socket.write(from: data)
+          }
+        }
+
+      } catch {
+        await self.errorChannel.send(
+          "Error sending messages"
+            .fail(child: error.fail())
+        )
+      }
+    }
+  }
+
+  private func createSocket() async throws -> Socket {
+    try await withCheckedThrowingContinuation { continuation in
+      Task {
+        let tries = 3
+
+        for i in 0 ..< tries {
+          do {
+            try await Task.sleep(nanoseconds: NSEC_PER_SEC / 10)
+
+            let socket = try Socket.create(family: .unix, type: .stream, proto: .unix)
+            socket.readBufferSize = 4 * 1024 * 1024
+            try socket.connect(to: self.unixSocketFileURL.absoluteURL.relativePath)
+
+            continuation.resume(returning: socket)
+            break
+
+          } catch {
+            if i == tries - 1 {
+              continuation.resume(
+                throwing: "Failed connecting to socket"
+                  .fail(child: error.fail())
+              )
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 private extension Socket {
-  func unpack(dispatchQueue: DispatchQueue) -> Observable<[Value]> {
-    .create { observer in
-      let task = Task {
+  func unpack() -> AsyncThrowingStream<[Value], Swift.Error> {
+    .init { continuation in
+      let task = Task.detached {
         let bufferSize = self.readBufferSize * 4
 
         var endIndex = 0
@@ -191,7 +217,7 @@ private extension Socket {
 
         repeat {
           do {
-            let data = try await self.read(dispatchQueue: dispatchQueue)
+            let data = try await self.read()
             buffer.replaceSubrange(endIndex ..< endIndex + data.count, with: data)
             endIndex += data.count
 
@@ -206,37 +232,37 @@ private extension Socket {
               }
 
             } catch MessagePackError.insufficientData {
-              observer.onNext(parsedValues)
+              continuation.yield(parsedValues)
 
               let remainder = subdata.data
               buffer.replaceSubrange(0 ..< remainder.count, with: remainder)
               endIndex = remainder.count
 
             } catch {
-              throw "Failed parsing values"
+              let fail = "Failed parsing values"
                 .fail(child: error.fail())
+
+              continuation.finish(throwing: fail)
             }
 
           } catch {
-            observer.onError(
-              "Failed socket data read"
+            continuation.finish(
+              throwing: "Failed socket data read"
                 .fail(child: error.fail())
             )
           }
         } while !Task.isCancelled
       }
 
-      return Disposables.create {
-        self.close()
-
+      continuation.onTermination = { _ in
         task.cancel()
       }
     }
   }
 
-  func read(dispatchQueue: DispatchQueue) async throws -> Data {
+  func read() async throws -> Data {
     try await withCheckedThrowingContinuation { continuation in
-      dispatchQueue.async {
+      NvimProcess.dispatchQueue.async {
         do {
           var data = Data()
           try self.read(into: &data)
@@ -248,4 +274,6 @@ private extension Socket {
       }
     }
   }
+
+  func send(input: Input) async {}
 }

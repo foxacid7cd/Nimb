@@ -6,80 +6,100 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+import AsyncAlgorithms
 import Foundation
 import RxSwift
 
 public class RPC {
-  public init(
-    requestIDFactory: RequestIDFactory = Stepper(),
-    inputMessages: Observable<[Message]>
-  ) {
-    self.requestIDFactory = requestIDFactory
+  public init() {
+    let notificationsChannel = AsyncChannel<[Notification]>()
+    self.notifications = notificationsChannel.eraseToAnyAsyncSequence()
 
-    let outputMessages = PublishSubject<[Message]>()
-    self.outputMessages = outputMessages
-    self.sendMessages = outputMessages.onNext(_:)
+    Task {
+      var notificationsBuffer = [Notification]()
 
-    self.inputResponses = inputMessages
-      .map { messages in
-        messages
-          .compactMap { message in
-            guard case let .response(id, model) = message else {
-              return nil
+      for await inputMessages in inputMessagesChannel {
+        for inputMessage in inputMessages {
+          switch inputMessage {
+          case let .response(id, model):
+            if let handler = await self.unregisterInputResponseHandler(requestID: id) {
+              handler(model)
             }
 
-            return (id, model)
+          case let .notification(model):
+            notificationsBuffer.append(model)
+
+          case .request:
+            break
           }
-      }
-      .filter { !$0.isEmpty }
-
-    self.notifications = inputMessages
-      .map { messages in
-        messages
-          .compactMap { message in
-            guard case let .notification(model) = message else {
-              return nil
-            }
-
-            return model
-          }
-      }
-      .filter { !$0.isEmpty }
-  }
-
-  public let outputMessages: Observable<[Message]>
-  public let notifications: Observable<[Notification]>
-
-  @discardableResult
-  public func request(_ model: Request) async -> Response {
-    let id = self.requestIDFactory.makeRequestID()
-
-    let response: Single<Response> = self.inputResponses
-      .flatMap { inputResponses in
-        for inputResponse in inputResponses where inputResponse.id == id {
-          return Observable.just(inputResponse.model)
         }
 
-        return .empty()
+        if !notificationsBuffer.isEmpty {
+          await notificationsChannel.send(notificationsBuffer)
+
+          notificationsBuffer.removeAll(keepingCapacity: true)
+        }
       }
-      .replay(1)
-      .asSingle()
-
-    self.sendMessages([.request(id: id, model: model)])
-
-    do {
-      return try await response.value
-
-    } catch {
-      "awaiting for response message failed"
-        .fail(child: error.fail())
-        .assertionFailure()
-
-      return .init(isSuccess: false, value: .nil)
     }
   }
 
-  private var requestIDFactory: RequestIDFactory
-  private let sendMessages: ([Message]) -> Void
-  private let inputResponses: Observable<[(id: UInt, model: Response)]>
+  public let notifications: AnyAsyncSequence<[Notification]>
+
+  public var outputMessages: AnyAsyncSequence<[Message]> {
+    self.outputMessagesChannel
+      .eraseToAnyAsyncSequence()
+  }
+
+  @discardableResult
+  public func request(_ model: Request) async -> Response {
+    let id = await self.stepper.next()
+
+    let channel = AsyncChannel<Response>()
+
+    await self.register(
+      inputResponseHandler: { response in
+        Task { await channel.send(response) }
+      },
+      requestID: id
+    )
+
+    Task {
+      await self.outputMessagesChannel.send(
+        [.request(id: id, model: model)]
+      )
+    }
+
+    for await response in channel {
+      return response
+    }
+
+    "Request without response"
+      .fail()
+      .fatalError()
+  }
+
+  public func send(inputMessages: [Message]) async {
+    await self.inputMessagesChannel.send(inputMessages)
+  }
+
+  private let stepper = Stepper()
+  @MainActor
+  private var inputResponseHandlers = [UInt: @Sendable (Response) -> Void]()
+  private let inputMessagesChannel = AsyncChannel<[Message]>()
+  private let outputMessagesChannel = AsyncChannel<[Message]>()
+
+  @MainActor
+  private func register(inputResponseHandler: (@Sendable (Response) -> Void)?, requestID: UInt) {
+    if let inputResponseHandler {
+      self.inputResponseHandlers[requestID] = inputResponseHandler
+
+    } else {
+      self.inputResponseHandlers.removeValue(forKey: requestID)
+    }
+  }
+
+  @MainActor
+  private func unregisterInputResponseHandler(requestID: UInt) -> (@Sendable (Response) -> Void)? {
+    self.inputResponseHandlers.removeValue(forKey: requestID)
+  }
 }
