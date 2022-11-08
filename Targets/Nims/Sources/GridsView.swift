@@ -81,13 +81,16 @@ class GridsView: NSView {
           case let .windowGridRectangleChanged(rectangle):
             self.gridViews[id]?.setNeedsDrawing(rectangle)
 
-          case let .windowGridRectangleMoved(rectangle, toOrigin):
+          case let .windowGridRowsMoved(originRow, rowsCount, delta):
             guard let window = state.windows[id] else {
               break
             }
 
-            let toRectangle = GridRectangle(origin: toOrigin, size: rectangle.size)
-              .intersection(.init(size: window.frame.size))
+            let toRectangle = GridRectangle(
+              origin: .init(row: originRow - delta, column: 0),
+              size: .init(rowsCount: rowsCount, columnsCount: window.grid.size.columnsCount)
+            )
+            .intersection(.init(origin: .init(), size: window.grid.size))
 
             if let toRectangle {
               self.gridViews[id]?.setNeedsDrawing(toRectangle)

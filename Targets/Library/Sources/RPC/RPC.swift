@@ -58,7 +58,10 @@ public class RPC {
 
     await self.register(
       inputResponseHandler: { response in
-        Task { await channel.send(response) }
+        Task {
+          await channel.send(response)
+          channel.finish()
+        }
       },
       requestID: id
     )

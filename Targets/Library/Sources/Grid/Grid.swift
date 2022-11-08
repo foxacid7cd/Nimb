@@ -6,7 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-public struct Grid<Element>: GridProtocol {
+public struct Grid<Element> {
   public init(repeating element: Element, size: GridSize) {
     let rows = Array(
       repeating: Array(
@@ -63,30 +63,17 @@ public struct Grid<Element>: GridProtocol {
     }
   }
 
-  public func subGrid(at rectangle: GridRectangle) -> SubGrid<Element> {
-    .init(grid: self, rectangle: rectangle)
-  }
+  public mutating func moveRows(originRow: Int, rowsCount: Int, delta: Int) {
+    let copy = self
 
-  public mutating func put<T: GridProtocol>(grid: T, at origin: GridPoint) where T.Element == Element {
-    for gridRow in 0 ..< grid.size.rowsCount {
-      let row = origin.row + gridRow
+    for row in originRow ..< originRow + rowsCount {
+      let newRow = row - delta
 
-      guard row >= 0, row < self.size.rowsCount else {
+      guard newRow >= 0, newRow < self.size.rowsCount else {
         continue
       }
 
-      for gridColumn in 0 ..< grid.size.columnsCount {
-        let column = origin.column + gridColumn
-
-        guard column >= 0, column < self.size.columnsCount else {
-          continue
-        }
-
-        let index = GridPoint(row: row, column: column)
-        let gridIndex = GridPoint(row: gridRow, column: gridColumn)
-
-        self[index] = grid[gridIndex]
-      }
+      self.rows[newRow] = copy.rows[row]
     }
   }
 

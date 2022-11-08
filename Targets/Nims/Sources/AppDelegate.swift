@@ -68,9 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     nvimProcess.run()
 
     Task {
-      if #available(macOS 13.0, *) {
-        try await Task.sleep(for: .seconds(1))
-      }
+      try await Task.sleep(nanoseconds: NSEC_PER_SEC)
 
       do {
         try await nvimProcess.nvimUIAttach(
@@ -308,32 +306,31 @@ private extension State {
 
     case let .gridScroll(models):
       for model in models {
-        let size = GridSize(
-          rowsCount: model.bot - model.top,
-          columnsCount: model.right - model.left
-        )
-        let fromOrigin = GridPoint(
-          row: model.top,
-          column: model.left
-        )
-        let fromRectangle = GridRectangle(origin: fromOrigin, size: size)
-        let toOrigin = fromOrigin - GridPoint(row: model.rows, column: model.cols)
+        let originRow = model.top
+        let rowsCount = model.bot - model.top
+        let delta = model.rows
 
         self.withMutableWindowIfExists(gridID: model.grid) { window in
-          window.grid.put(
-            grid: window.grid.subGrid(
-              at: fromRectangle
-            ),
-            at: toOrigin
+          guard model.right - model.left == window.grid.size.columnsCount else {
+            "Full width vertical scroll expected, but got something different"
+              .fail()
+              .fatalError()
+          }
+
+          window.grid.moveRows(
+            originRow: originRow,
+            rowsCount: rowsCount,
+            delta: delta
           )
         }
 
         events.append(
           .grid(
             id: model.grid,
-            model: .windowGridRectangleMoved(
-              rectangle: fromRectangle,
-              toOrigin: toOrigin
+            model: .windowGridRowsMoved(
+              originRow: originRow,
+              rowsCount: rowsCount,
+              delta: delta
             )
           )
         )

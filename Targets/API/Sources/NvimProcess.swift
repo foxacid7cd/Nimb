@@ -57,8 +57,9 @@ public class NvimProcess {
     }
   }
 
-  public enum Event {
-    case running
+  deinit {
+    self.inputTask?.cancel()
+    self.outputTask?.cancel()
   }
 
   public var notifications: AnyAsyncSequence<[NvimNotification]> {
@@ -72,7 +73,7 @@ public class NvimProcess {
   }
 
   public func register(input: Input) {
-    Task.detached { @MainActor in
+    Task {
       do {
         switch input {
         case let .keyboard(keyPress):
@@ -123,7 +124,7 @@ public class NvimProcess {
 
   static let dispatchQueue = DispatchQueue(
     label: "\(Bundle.main.bundleIdentifier!).\(NvimProcess.self)",
-    qos: .default
+    qos: .userInteractive
   )
 
   let rpc = RPC()
@@ -209,7 +210,7 @@ public class NvimProcess {
 private extension Socket {
   func unpack() -> AsyncThrowingStream<[Value], Swift.Error> {
     .init { continuation in
-      let task = Task.detached {
+      let task = Task {
         let bufferSize = self.readBufferSize * 4
 
         var endIndex = 0
@@ -274,6 +275,4 @@ private extension Socket {
       }
     }
   }
-
-  func send(input: Input) async {}
 }

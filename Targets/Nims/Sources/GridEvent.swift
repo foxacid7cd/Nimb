@@ -18,7 +18,7 @@ enum Event: Hashable {
 enum GridEvent: Hashable {
   case windowGridRowChanged(origin: GridPoint, columnsCount: Int)
   case windowGridRectangleChanged(rectangle: GridRectangle)
-  case windowGridRectangleMoved(rectangle: GridRectangle, toOrigin: GridPoint)
+  case windowGridRowsMoved(originRow: Int, rowsCount: Int, delta: Int)
   case windowGridCleared
   case windowFrameChanged
   case windowHid
