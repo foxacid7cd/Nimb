@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-               BuildableName = "nvim.bundle"
-               BlueprintName = "nvim"
+               BlueprintIdentifier = "685E7C41291AC99800DBC6A7"
+               BuildableName = "Agent.xpc"
+               BlueprintName = "Agent"
                ReferencedContainer = "container:Nims.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,8 +26,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      disableMainThreadChecker = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
    </TestAction>
@@ -41,15 +40,6 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-            BuildableName = "nvim.bundle"
-            BlueprintName = "nvim"
-            ReferencedContainer = "container:Nims.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -60,9 +50,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-            BuildableName = "nvim.bundle"
-            BlueprintName = "nvim"
+            BlueprintIdentifier = "685E7C41291AC99800DBC6A7"
+            BuildableName = "Agent.xpc"
+            BlueprintName = "Agent"
             ReferencedContainer = "container:Nims.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

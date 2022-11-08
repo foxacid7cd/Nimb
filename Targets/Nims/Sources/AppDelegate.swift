@@ -18,22 +18,15 @@ import XPC
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
     // self.startNvimProcess()
-    
-    let connection = xpc_connection_create("foxacid7cd.Nims.Agent", .main)
-    
+
+    let connection = xpc_connection_create("\(Bundle.main.bundleIdentifier!).Agent", .main)
+    self.xpcConnection = connection
+
     xpc_connection_set_event_handler(connection) { object in
-      let typeName = String(cString: xpc_type_get_name(xpc_get_type(object)))
-      log(.info, "Received xpc object with type name: \(typeName)")
+      log(.info, "Received xpc object: \(object)")
     }
-    
+
     xpc_connection_activate(connection)
-    
-    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-      let dictionary = xpc_dictionary_create_empty()
-      xpc_dictionary_set_string(dictionary, "Hello", "World")
-      
-      xpc_connection_send_message(connection, dictionary)
-    }
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {
@@ -48,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   // @MainActor
   // private var state = State()
   private var changeStateTask: Task<State, Never>?
+  private var xpcConnection: xpc_connection_t?
 
   @MainActor
   private func startNvimProcess() {

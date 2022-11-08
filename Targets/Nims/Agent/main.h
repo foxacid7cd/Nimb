@@ -11,5 +11,6 @@
 
 #include <stdio.h>
 #include <xpc/xpc.h>
+#include <libNims.h>
 
 #endif /* main_h */

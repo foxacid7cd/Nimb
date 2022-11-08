@@ -1,5 +1,7 @@
 
-#ifndef Header_h
-#define Header_h
+#ifndef libNims_h
+#define libNims_h
 
-#endif /* Header_h */
+void start_nvim(void);
+
+#endif /* libNims_h */

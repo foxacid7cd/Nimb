@@ -50,6 +50,19 @@
 		611B34CB3C24113625C66B3F /* RxCocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C99C15304466700B78C88BB /* RxCocoa.framework */; };
 		67686101D631AC10CE93B6FE /* Stepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CE35F38B8F1A320BA9CEAF /* Stepper.swift */; };
 		67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536BA5EE068D6061D6C7D266 /* GridsView.swift */; };
+		68316F1F291B0A9B0013E203 /* libiconv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68316F1E291B0A9A0013E203 /* libiconv.a */; };
+		6850413F291AE5D400FAB667 /* libNims in Frameworks */ = {isa = PBXBuildFile; productRef = 6850413E291AE5D400FAB667 /* libNims */; };
+		68504140291AEC9400FAB667 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
+		68504141291AECA500FAB667 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
+		6850414F291AF4FD00FAB667 /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504149291AF4EB00FAB667 /* libluajit-5.1.a */; };
+		68504150291AF4FE00FAB667 /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504148291AF4EB00FAB667 /* libluv.a */; };
+		68504151291AF4FE00FAB667 /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414C291AF4EB00FAB667 /* libmsgpackc.a */; };
+		68504152291AF4FE00FAB667 /* libtermkey.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414E291AF4EB00FAB667 /* libtermkey.a */; };
+		68504153291AF4FE00FAB667 /* libtree-sitter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504147291AF4EB00FAB667 /* libtree-sitter.a */; };
+		68504154291AF4FE00FAB667 /* libunibilium.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414B291AF4EB00FAB667 /* libunibilium.a */; };
+		68504155291AF4FE00FAB667 /* libuv_a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504146291AF4EB00FAB667 /* libuv_a.a */; };
+		68504156291AF4FE00FAB667 /* libvterm.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414A291AF4EB00FAB667 /* libvterm.a */; };
+		6850415A291B086C00FAB667 /* libintl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504159291B086200FAB667 /* libintl.a */; };
 		685B4243291AC11A000E2CBC /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		685B4245291AC137000E2CBC /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		685E7C4D291AC99800DBC6A7 /* Agent.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 685E7C42291AC99800DBC6A7 /* Agent.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -63,7 +76,7 @@
 		7600458C80C1F7B81B0BA67A /* libLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D1EBF4037A0BE2B2CC2081 /* libLibrary.a */; };
 		777EADE35C29A043FD9C8482 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF9CCE6F66879D3C3B49A589 /* Grid.swift */; };
 		7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FEAC33927480CAC138A580 /* CellsGeometry.swift */; };
-		82CB33235573D39F5DBB131C /* nvim in Copy nvim */ = {isa = PBXBuildFile; fileRef = E3035843B5878EBB45D808A5 /* nvim */; };
+		82CB33235573D39F5DBB131C /* nvim in Copy nvim */ = {isa = PBXBuildFile; fileRef = E3035843B5878EBB45D808A5 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		84EE2C8D02E2406CBCC1D88C /* GlyphRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5A4149F9B56A5824E04AC9 /* GlyphRun.swift */; };
 		85B38BB6BB875FA6D62D63E1 /* CustomLoggable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A5AB2D1810662E2DB982BF /* CustomLoggable.swift */; };
 		864E9D84F9554E8A92D77C4E /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C828DD7D9945195C2B85DB95 /* GridLayer.swift */; };
@@ -295,6 +308,23 @@
 		626DB1C2702B7D3DC4A7A023 /* runtime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = runtime; sourceTree = "<group>"; };
 		628E45D9032C4FA60957D59F /* Nims-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Nims-Info.plist"; sourceTree = "<group>"; };
 		6354D6956854ED2A4FAF0070 /* neogen */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; path = neogen; sourceTree = BUILT_PRODUCTS_DIR; };
+		68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.4.0.tbd; path = usr/lib/libiconv.2.4.0.tbd; sourceTree = SDKROOT; };
+		68316F1E291B0A9A0013E203 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiconv.a; path = Targets/libNims/.deps/usr/lib/libiconv.a; sourceTree = "<group>"; };
+		68504142291AF38500FAB667 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = Targets/libNims/build/lib/libnvim.a; sourceTree = "<group>"; };
+		68504144291AF4EB00FAB667 /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = Targets/libNims/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
+		68504145291AF4EB00FAB667 /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = Targets/libNims/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
+		68504146291AF4EB00FAB667 /* libuv_a.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libuv_a.a; path = Targets/libNims/.deps/usr/lib/libuv_a.a; sourceTree = "<group>"; };
+		68504147291AF4EB00FAB667 /* libtree-sitter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libtree-sitter.a"; path = "Targets/libNims/.deps/usr/lib/libtree-sitter.a"; sourceTree = "<group>"; };
+		68504148291AF4EB00FAB667 /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluv.a; path = Targets/libNims/.deps/usr/lib/libluv.a; sourceTree = "<group>"; };
+		68504149291AF4EB00FAB667 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "Targets/libNims/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
+		6850414A291AF4EB00FAB667 /* libvterm.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvterm.a; path = Targets/libNims/.deps/usr/lib/libvterm.a; sourceTree = "<group>"; };
+		6850414B291AF4EB00FAB667 /* libunibilium.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libunibilium.a; path = Targets/libNims/.deps/usr/lib/libunibilium.a; sourceTree = "<group>"; };
+		6850414C291AF4EB00FAB667 /* libmsgpackc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmsgpackc.a; path = Targets/libNims/.deps/usr/lib/libmsgpackc.a; sourceTree = "<group>"; };
+		6850414D291AF4EB00FAB667 /* libvterm.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libvterm.la; path = Targets/libNims/.deps/usr/lib/libvterm.la; sourceTree = "<group>"; };
+		6850414E291AF4EB00FAB667 /* libtermkey.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtermkey.a; path = Targets/libNims/.deps/usr/lib/libtermkey.a; sourceTree = "<group>"; };
+		68504157291AF52B00FAB667 /* libintl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libintl.a; path = ../../../../../../opt/local/lib/libintl.a; sourceTree = "<group>"; };
+		68504159291B086200FAB667 /* libintl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libintl.a; path = Targets/libNims/.deps/usr/lib/libintl.a; sourceTree = "<group>"; };
+		6850415B291B08AF00FAB667 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		685E7C3D291AC86800DBC6A7 /* libNims */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = libNims; sourceTree = "<group>"; };
@@ -361,6 +391,19 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68504155291AF4FE00FAB667 /* libuv_a.a in Frameworks */,
+				68504152291AF4FE00FAB667 /* libtermkey.a in Frameworks */,
+				6850415A291B086C00FAB667 /* libintl.a in Frameworks */,
+				68504151291AF4FE00FAB667 /* libmsgpackc.a in Frameworks */,
+				68504156291AF4FE00FAB667 /* libvterm.a in Frameworks */,
+				6850413F291AE5D400FAB667 /* libNims in Frameworks */,
+				68504140291AEC9400FAB667 /* CoreServices.framework in Frameworks */,
+				68504150291AF4FE00FAB667 /* libluv.a in Frameworks */,
+				68504154291AF4FE00FAB667 /* libunibilium.a in Frameworks */,
+				68504141291AECA500FAB667 /* CoreFoundation.framework in Frameworks */,
+				68316F1F291B0A9B0013E203 /* libiconv.a in Frameworks */,
+				68504153291AF4FE00FAB667 /* libtree-sitter.a in Frameworks */,
+				6850414F291AF4FD00FAB667 /* libluajit-5.1.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -526,6 +569,23 @@
 		685B4241291AC11A000E2CBC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				68316F1E291B0A9A0013E203 /* libiconv.a */,
+				68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */,
+				6850415B291B08AF00FAB667 /* libiconv.tbd */,
+				68504157291AF52B00FAB667 /* libintl.a */,
+				68504159291B086200FAB667 /* libintl.a */,
+				68504149291AF4EB00FAB667 /* libluajit-5.1.a */,
+				68504148291AF4EB00FAB667 /* libluv.a */,
+				6850414C291AF4EB00FAB667 /* libmsgpackc.a */,
+				6850414E291AF4EB00FAB667 /* libtermkey.a */,
+				68504144291AF4EB00FAB667 /* libtermkey.la */,
+				68504147291AF4EB00FAB667 /* libtree-sitter.a */,
+				6850414B291AF4EB00FAB667 /* libunibilium.a */,
+				68504145291AF4EB00FAB667 /* libunibilium.la */,
+				68504146291AF4EB00FAB667 /* libuv_a.a */,
+				6850414A291AF4EB00FAB667 /* libvterm.a */,
+				6850414D291AF4EB00FAB667 /* libvterm.la */,
+				68504142291AF38500FAB667 /* libnvim.a */,
 				685B4244291AC137000E2CBC /* CoreServices.framework */,
 				685B4242291AC11A000E2CBC /* CoreFoundation.framework */,
 			);
@@ -852,6 +912,9 @@
 			dependencies = (
 			);
 			name = Agent;
+			packageProductDependencies = (
+				6850413E291AE5D400FAB667 /* libNims */,
+			);
 			productName = Agent;
 			productReference = 685E7C42291AC99800DBC6A7 /* Agent.xpc */;
 			productType = "com.apple.product-type.xpc-service";
@@ -863,6 +926,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1410;
+				LastUpgradeCheck = 1410;
 				ORGANIZATIONNAME = foxacid7cd;
 				TargetAttributes = {
 					685E7C41291AC99800DBC6A7 = {
@@ -1234,7 +1298,7 @@
 		685E7C4F291AC99800DBC6A7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1242,13 +1306,26 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"${PROJECT_DIR}/Targets/libNims/src",
+					"${PROJECT_DIR}/Targets/libNims/.deps/usr/include",
+					"${PROJECT_DIR}/Targets/libNims/build/src/nvim/auto/",
+					"${PROJECT_DIR}/Targets/libNims/build/cmake.config",
+					"${PROJECT_DIR}/Targets/libNims/build/include",
+				);
 				INFOPLIST_FILE = Targets/Nims/Agent/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Agent;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
+				LIBRARY_SEARCH_PATHS = (
+					Targets/libNims/.deps/usr/lib/,
+					Targets/libNims/build/lib,
+					"$(PROJECT_DIR)/Targets/libNims/.deps/usr/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
+				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.Agent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1263,7 +1340,7 @@
 		685E7C50291AC99800DBC6A7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1271,12 +1348,25 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"${PROJECT_DIR}/Targets/libNims/src",
+					"${PROJECT_DIR}/Targets/libNims/.deps/usr/include",
+					"${PROJECT_DIR}/Targets/libNims/build/src/nvim/auto/",
+					"${PROJECT_DIR}/Targets/libNims/build/cmake.config",
+					"${PROJECT_DIR}/Targets/libNims/build/include",
+				);
 				INFOPLIST_FILE = Targets/Nims/Agent/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Agent;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
+				LIBRARY_SEARCH_PATHS = (
+					Targets/libNims/.deps/usr/lib/,
+					Targets/libNims/build/lib,
+					"$(PROJECT_DIR)/Targets/libNims/.deps/usr/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
+				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.Agent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1368,6 +1458,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					"INCLUDE_GENERATED_DECLARATIONS=1",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -1490,6 +1581,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6850413E291AE5D400FAB667 /* libNims */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = libNims;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D75C4ECC87BBEA370AB98AD7 /* Project object */;
 }

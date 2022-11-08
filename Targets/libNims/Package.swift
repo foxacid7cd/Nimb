@@ -7,6 +7,7 @@ let package = Package(
   products: [
     .library(
       name: "libNims",
+      type: .static,
       targets: ["libNims"]
     )
   ],
@@ -16,11 +17,11 @@ let package = Package(
       cSettings: [
         .unsafeFlags(["-fno-modules"]),
         .define("INCLUDE_GENERATED_DECLARATIONS", to: "1"),
-        .headerSearchPath("src"),
-        .headerSearchPath("build/include"),
-        .headerSearchPath(".deps/usr/include"),
-        .headerSearchPath("build/cmake.config"),
-        .headerSearchPath("build/src/nvim/auto/")
+        .headerSearchPath("../../src"),
+        .headerSearchPath("../../build/include"),
+        .headerSearchPath("../../.deps/usr/include"),
+        .headerSearchPath("../../build/cmake.config"),
+        .headerSearchPath("../../build/src/nvim/auto/")
       ],
       linkerSettings: [
         .linkedFramework("CoreServices"),
@@ -31,13 +32,13 @@ let package = Package(
         .linkedLibrary("pthread"),
         .linkedLibrary("iconv"),
         .unsafeFlags([
-          "build/lib/libnvim.a",
-          ".deps/usr/lib/libmsgpackc.a",
-          ".deps/usr/lib/libluv.a",
-          ".deps/usr/lib/libuv_a.a",
-          ".deps/usr/lib/libvterm.a",
-          ".deps/usr/lib/libluajit-5.1.a",
-          ".deps/usr/lib/libtree-sitter.a"
+          "Targets/libNims/build/lib/libnvim.a",
+          "Targets/libNims/.deps/usr/lib/libmsgpackc.a",
+          "Targets/libNims/.deps/usr/lib/libluv.a",
+          "Targets/libNims/.deps/usr/lib/libuv_a.a",
+          "Targets/libNims/.deps/usr/lib/libvterm.a",
+          "Targets/libNims/.deps/usr/lib/libluajit-5.1.a",
+          "Targets/libNims/.deps/usr/lib/libtree-sitter.a"
         ])
       ]
     )
