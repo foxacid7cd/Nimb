@@ -21,8 +21,10 @@ class GridsView: NSView {
     self.state = state
     super.init(frame: frame)
 
+    self.wantsLayer = true
+
     for (id, window) in state.windows {
-      self.insertGridView(id: id, window: window)
+      self.insertGridLayer(id: id, window: window)
     }
   }
 
@@ -39,8 +41,10 @@ class GridsView: NSView {
       await previousTask?.value
 
       self.state = state
-      for gridView in self.gridViews.values {
-        gridView.state = state
+      for gridLayer in self.gridLayers.values {
+        guard let previousViewState = gridLayer.viewState, let window = state.windows[previousViewState.id] else { continue }
+
+        gridLayer.viewState = .init(id: previousViewState.id, state: state, window: window, fontDerivatives: state.fontDerivatives)
       }
 
       for event in events {
@@ -54,47 +58,60 @@ class GridsView: NSView {
           case .windowFrameChanged:
             guard let window = state.windows[id] else { break }
 
-            if let gridView = self.gridViews[id] {
-              gridView.frame = self.rect(for: window.frame)
-              gridView.isHidden = window.isHidden
-              gridView.setNeedsDrawing()
+            if let gridLayer = self.gridLayers[id] {
+              gridLayer.viewState = .init(id: id, state: state, window: window, fontDerivatives: state.fontDerivatives)
+              gridLayer.frame = self.rect(for: window.frame)
+              gridLayer.isHidden = window.isHidden
+              gridLayer.zPosition = CGFloat(window.zIndex)
 
             } else {
-              self.insertGridView(id: id, window: window)
+              self.insertGridLayer(id: id, window: window)
             }
 
           case .windowHid:
-            self.gridViews[id]?.isHidden = true
+            self.gridLayers[id]?.isHidden = true
 
           case .windowClosed:
-            let gridView = self.gridViews.removeValue(forKey: id)
-            gridView?.removeFromSuperview()
+            let gridLayer = self.gridLayers.removeValue(forKey: id)
+            gridLayer?.removeFromSuperlayer()
 
           case .windowGridCleared:
-            self.gridViews[id]?.setNeedsDrawing()
+            guard let window = state.windows[id], let gridLayer = self.gridLayers[id] else {
+              break
+            }
+
+            gridLayer.setNeedsDrawing(.init(size: window.grid.size))
 
           case let .windowGridRowChanged(origin, columnsCount):
-            self.gridViews[id]?.setNeedsDrawing(
+            self.gridLayers[id]?.setNeedsDrawing(
               .init(origin: origin, size: .init(rowsCount: 1, columnsCount: columnsCount))
             )
 
           case let .windowGridRectangleChanged(rectangle):
-            self.gridViews[id]?.setNeedsDrawing(rectangle)
+            self.gridLayers[id]?.setNeedsDrawing(rectangle)
 
           case let .windowGridRowsMoved(originRow, rowsCount, delta):
-            guard let window = state.windows[id] else {
+            guard let window = state.windows[id], let gridLayer = self.gridLayers[id] else {
               break
             }
 
-            let toRectangle = GridRectangle(
+            let rectangle = GridRectangle(
               origin: .init(row: originRow - delta, column: 0),
               size: .init(rowsCount: rowsCount, columnsCount: window.grid.size.columnsCount)
             )
             .intersection(.init(origin: .init(), size: window.grid.size))
+            guard let rectangle else { break }
 
-            if let toRectangle {
-              self.gridViews[id]?.setNeedsDrawing(toRectangle)
-            }
+            gridLayer.setNeedsDrawing(rectangle)
+//            gridView.enque(
+//              drawingRequest: .copy(
+//                from: .init(
+//                  origin: .init(row: originRow, column: 0),
+//                  size: .init(rowsCount: rowsCount, columnsCount: window.grid.size.columnsCount)
+//                ),
+//                originDelta: .init(row: delta, column: 0)
+//              )
+//            )
           }
 
         case let .cursor(previousCusor):
@@ -108,19 +125,20 @@ class GridsView: NSView {
 
           @MainActor
           func handle(cursor: State.Cursor) {
-            self.gridViews[cursor.gridID]?.setNeedsDrawing(
-              .init(origin: cursor.position, size: .init(rowsCount: 1, columnsCount: 1))
+            self.gridLayers[cursor.gridID]?.setNeedsDrawing(
+              .init(
+                origin: cursor.position,
+                size: .init(rowsCount: 1, columnsCount: 1)
+              )
             )
           }
 
         case .appearanceChanged:
-          for gridView in self.gridViews.values {
-            gridView.setNeedsDrawing()
-          }
+          break
 
         case .flushRequested:
-          for gridView in self.gridViews.values {
-            gridView.flushIfNeeded()
+          for gridLayer in self.gridLayers.values {
+            // gridView.flush()
           }
         }
       }
@@ -130,31 +148,31 @@ class GridsView: NSView {
   @MainActor
   private var handleTask: Task<Void, Never>?
   @MainActor
-  private var gridViews = PersistentDictionary<Int, GridView>()
+  private var gridLayers = PersistentDictionary<Int, GridLayer>()
   @MainActor
   private var state: State
 
   @MainActor
-  private func insertGridView(id: Int, window: State.Window) {
-    let gridView = GridView(
-      frame: self.rect(for: window.frame),
-      state: self.state,
-      gridID: id
-    )
-    self.gridViews[id] = gridView
-    gridView.isHidden = window.isHidden
+  private func insertGridLayer(id: Int, window: State.Window) {
+    let gridLayer = GridLayer(layer: self.layer!)
+    gridLayer.viewState = .init(id: id, state: self.state, window: window, fontDerivatives: self.state.fontDerivatives)
+    gridLayer.delegate = self
+    self.gridLayers[id] = gridLayer
+    gridLayer.isHidden = window.isHidden
+    gridLayer.zPosition = CGFloat(window.zIndex)
+    self.layer?.addSublayer(gridLayer)
 
-    let relativeSubview = self.subviews
-      .map { self.state.windows[($0 as! GridView).gridID]!.zIndex }
-      .firstIndex(where: { $0 > window.zIndex })
-      .map { self.subviews[$0] }
-
-    if let relativeSubview {
-      self.addSubview(gridView, positioned: .below, relativeTo: relativeSubview)
-
-    } else {
-      self.addSubview(gridView)
-    }
+//    let relativeSubview = self.subviews
+//      .map { self.state.windows[($0 as! GridView).gridID]!.zIndex }
+//      .firstIndex(where: { $0 > window.zIndex })
+//      .map { self.subviews[$0] }
+//
+//    if let relativeSubview {
+//      self.addSubview(gridView, positioned: .below, relativeTo: relativeSubview)
+//
+//    } else {
+//      self.addSubview(gridView)
+//    }
   }
 
   @MainActor
@@ -166,5 +184,16 @@ class GridsView: NSView {
       ),
       parentViewHeight: self.bounds.height
     )
+  }
+}
+
+extension GridsView: CALayerDelegate {
+  func layerWillDraw(_ layer: CALayer) {
+    let scaleFactor = self.window?.backingScaleFactor ?? 1
+    layer.contentsScale = scaleFactor
+    layer.contentsGravity = .center
+    layer.needsDisplayOnBoundsChange = true
+    layer.allowsEdgeAntialiasing = true
+    layer.drawsAsynchronously = false
   }
 }

@@ -31,6 +31,12 @@ public class Cache<Key: Hashable, Value> {
     self.dictionary[key]
   }
 
+  @MainActor
+  public func removeAll() {
+    self.dictionary = .init()
+    self.keys = .init()
+  }
+
   private let capacity: Int
   @MainActor
   private var dictionary = PersistentDictionary<Key, Value>()

@@ -20,7 +20,7 @@ class StateDerivatives {
     var boldItalic: NSFont
 
     var cellSize: CGSize
-    var glyphRunCache: Cache<Int, GlyphRun>
+    var glyphRunCache: Cache<String, GlyphRun>
   }
 
   static let shared = StateDerivatives()

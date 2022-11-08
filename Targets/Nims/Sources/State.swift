@@ -84,7 +84,7 @@ struct State: Hashable {
 
   var windows = PersistentDictionary<Int, Window>()
   var cursor: Cursor?
-  var font = Font.custom(name: "FiraCode Nerd Font Mono", size: 13)
+  var font = Font.custom(name: "MesloLGS NF", size: 13)
   var outerGridSize = GridSize(rowsCount: 40, columnsCount: 150)
   var highlights = PersistentDictionary<Int, Highlight>()
   var defaultHighlight = Highlight()

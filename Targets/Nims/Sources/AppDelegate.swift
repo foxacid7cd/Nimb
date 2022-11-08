@@ -28,10 +28,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private var nvimProcess: NvimProcess?
   private var gridsWindowController: GridsWindowController?
   private let inputSubject = PublishSubject<Input>()
-  @MainActor
-  private var state = State()
-  private var changeStateTask: Task<Void, Never>?
+  // @MainActor
+  // private var state = State()
+  private var changeStateTask: Task<State, Never>?
 
+  @MainActor
   private func startNvimProcess() {
     let nvimBundleURL = Bundle.main.url(forResource: "nvim", withExtension: "bundle")!
     let nvimBundle = Bundle(url: nvimBundleURL)!
@@ -45,11 +46,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         for try await notifications in nvimProcess.notifications {
-          await self.handle(notifications: notifications)
+          self.handle(notifications: notifications)
         }
 
       } catch {
-        await self.terminate(
+        self.terminate(
           with: "Failed receiving notifications"
             .fail(child: error.fail())
         )
@@ -58,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       for try await error in nvimProcess.error {
-        await self.terminate(
+        self.terminate(
           with: "Nvim process emmited error"
             .fail(child: error.fail())
         )
@@ -72,8 +73,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
       do {
         try await nvimProcess.nvimUIAttach(
-          width: self.state.outerGridSize.columnsCount,
-          height: self.state.outerGridSize.rowsCount,
+          width: 150,
+          height: 40,
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true,
@@ -122,15 +123,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private func changeState(with uiEvents: [UIEvent]) {
     let previousTask = self.changeStateTask
 
-    self.changeStateTask = Task(priority: .high) {
-      await previousTask?.value
+    self.changeStateTask = Task<State, Never> {
+      var state = await previousTask?.value ?? State()
 
       var events = [Event]()
 
       for uiEvent in uiEvents {
         do {
-          events += try await Task { try self.state.apply(uiEvent: uiEvent) }
-            .value
+          let (newState, newEvents) = try await Task {
+            var state = state
+            let events = try state.apply(uiEvent: uiEvent)
+            return (state, events)
+          }
+          .value
+
+          state = newState
+          events += newEvents
 
         } catch {
           self.terminate(
@@ -140,7 +148,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
       }
 
-      await self.handle(state: self.state, events: events)
+      await self.handle(state: state, events: events)
+
+      let appearanceChanged = events.contains(where: { event in
+        switch event {
+        case .appearanceChanged:
+          return true
+
+        default:
+          return false
+        }
+      })
+      if appearanceChanged {
+        state.fontDerivatives.glyphRunCache.removeAll()
+      }
+
+      return state
     }
   }
 
@@ -152,8 +175,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       let gridsWindowController = GridsWindowController(state: state)
       self.gridsWindowController = gridsWindowController
-
-      await gridsWindowController.handle(state: state, events: events)
 
       self <~ gridsWindowController.input
         .bind(with: self) { $0.nvimProcess?.register(input: $1) }
