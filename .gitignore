@@ -71,3 +71,6 @@ Tuist/Dependencies
 
 ## Generated source files
 /Targets/**/Generated
+
+.build/
+build/

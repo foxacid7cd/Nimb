@@ -12,11 +12,28 @@ import CasePaths
 import Library
 import RxCocoa
 import RxSwift
+import XPC
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    self.startNvimProcess()
+    // self.startNvimProcess()
+    
+    let connection = xpc_connection_create("foxacid7cd.Nims.Agent", .main)
+    
+    xpc_connection_set_event_handler(connection) { object in
+      let typeName = String(cString: xpc_type_get_name(xpc_get_type(object)))
+      log(.info, "Received xpc object with type name: \(typeName)")
+    }
+    
+    xpc_connection_activate(connection)
+    
+    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+      let dictionary = xpc_dictionary_create_empty()
+      xpc_dictionary_set_string(dictionary, "Hello", "World")
+      
+      xpc_connection_send_message(connection, dictionary)
+    }
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {
