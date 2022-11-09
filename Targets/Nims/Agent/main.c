@@ -17,20 +17,21 @@ void handle_connection(xpc_connection_t connection)
     
     if (type == XPC_TYPE_ERROR) {
       const char *description = xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION);
-      
       printf("XPC error: %s\n", description);
-      
-    } else if (type == XPC_TYPE_DICTIONARY) {
-      xpc_object_t data = xpc_dictionary_get_array(object, AGENT_MESSAGE_DATA_KEY);
-      
-      int64_t message_id = xpc_array_get_int64(data, 0);
-      
-      printf("XPC received message with id: %llu\n", message_id);
-      
-    } else {
-      printf("Dictionary XPC object expected, but got %s\n", xpc_type_get_name(type));
+  
+      return;
     }
+    
+    xpc_object_t data = xpc_array_create_empty();
+    xpc_array_append_value(data, xpc_bool_create(true));
+    
+    xpc_object_t reply_message = xpc_dictionary_create_reply(object);
+    xpc_dictionary_set_value(reply_message, AGENT_MESSAGE_DATA_KEY, data);
+    
+    xpc_connection_send_message(connection, reply_message);
   });
+  
+  xpc_connection_activate(connection);
 }
 
 int main(int argc, char **argv)

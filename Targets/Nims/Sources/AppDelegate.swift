@@ -16,7 +16,7 @@ import RxSwift
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    let connection = xpc_connection_create("\(Bundle.main.bundleIdentifier!).Agent", .main)
+    let connection = xpc_connection_create("\(Bundle.main.bundleIdentifier!).Agent", nil)
     self.xpcConnection = connection
 
     xpc_connection_set_event_handler(connection) { object in
@@ -41,6 +41,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     xpc_connection_activate(connection)
+
+    xpc_connection_send_message_with_reply(connection, xpc_dictionary_create_empty(), nil) { object in
+      let type = xpc_get_type(object)
+
+      if type == XPC_TYPE_ERROR {
+        let errorDescription = String(
+          cString: xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION)!
+        )
+
+        log(.error, "XPC send message reply error: \(errorDescription)")
+        return
+      }
+
+      let data = xpc_dictionary_get_array(object, AGENT_MESSAGE_DATA_KEY)!
+
+      let isSuccess = xpc_array_get_bool(data, 0)
+      if isSuccess {
+        log(.info, "XPC send message reply success")
+      }
+    }
 
     /* for index in 0 ..< 10000 {
        let data = xpc_array_create_empty()
