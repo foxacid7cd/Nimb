@@ -2,26 +2,38 @@
 //  main.c
 //  Agent
 //
-//  Created by Yevhenii Matviienko on 08.11.2022.
+//  Created by Yevhenii Matviienko on 09.11.2022.
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#include "main.h"
+#include <xpc/xpc.h>
+#include <nvim_main.h>
+#include "AgentLibrary.h"
 
-static void new_connection_handler(xpc_connection_t connection)
+void handle_connection(xpc_connection_t connection)
 {
   xpc_connection_set_event_handler(connection, ^(xpc_object_t object) {
     xpc_type_t type = xpc_get_type(object);
-    const char *name = xpc_type_get_name(type);
-    printf("Received xpc object with name: %s", name);
+    
+    if (type == XPC_TYPE_ERROR) {
+      const char *description = xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION);
+      
+      printf("XPC error: %s\n", description);
+      
+    } else if (type == XPC_TYPE_DICTIONARY) {
+      xpc_object_t data = xpc_dictionary_get_array(object, AGENT_MESSAGE_DATA_KEY);
+      
+      int64_t message_id = xpc_array_get_int64(data, 0);
+      
+      printf("XPC received message with id: %llu\n", message_id);
+      
+    } else {
+      printf("Dictionary XPC object expected, but got %s\n", xpc_type_get_name(type));
+    }
   });
-  
-  xpc_connection_resume(connection);
 }
 
-int main(int argc, const char **argv)
-{
-  start_nvim();
-  
-  xpc_main(new_connection_handler);
+int main(int argc, char **argv)
+{  
+  xpc_main(handle_connection);
 }

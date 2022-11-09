@@ -2,7 +2,7 @@
 #include <uv.h>
 #include "libNims.h"
 
-extern int nvim_main(int argc, const char **argv);
+extern int nvim_main(int argc, const char * const *argv);
 
 static uv_thread_t nvim_thread;
 
@@ -10,8 +10,7 @@ void nvim_thread_entry(void* arg)
 {
   const char *argv[2];
   argv[0] = "nvim";
-  argv[1] = "-Es";
-  
+  argv[1] = "-E";
   nvim_main(2, argv);
 }
 

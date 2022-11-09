@@ -12,21 +12,45 @@ import CasePaths
 import Library
 import RxCocoa
 import RxSwift
-import XPC
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
-    // self.startNvimProcess()
-
     let connection = xpc_connection_create("\(Bundle.main.bundleIdentifier!).Agent", .main)
     self.xpcConnection = connection
 
     xpc_connection_set_event_handler(connection) { object in
-      log(.info, "Received xpc object: \(object)")
+      let type = xpc_get_type(object)
+
+      if type == XPC_TYPE_ERROR {
+        let errorDescription = String(
+          cString: xpc_dictionary_get_string(object, XPC_ERROR_KEY_DESCRIPTION)!
+        )
+
+        log(.error, "XPC error: \(errorDescription)")
+        return
+      }
+
+      let data = xpc_dictionary_get_array(object, AGENT_MESSAGE_DATA_KEY)!
+      let rawMessageType = xpc_array_get_int64(data, 0)
+      let messageType = agent_message_type_t(rawValue: rawMessageType)
+
+      if messageType == AgentNvimReady {
+        log(.info, "Agent nvim ready")
+      }
     }
 
     xpc_connection_activate(connection)
+
+    /* for index in 0 ..< 10000 {
+       let data = xpc_array_create_empty()
+       xpc_array_append_value(data, xpc_int64_create(Int64(index)))
+
+       let message = xpc_dictionary_create_empty()
+       xpc_dictionary_set_value(message, AGENT_MESSAGE_DATA_KEY, data)
+
+       xpc_connection_send_message(connection, message)
+     } */
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {

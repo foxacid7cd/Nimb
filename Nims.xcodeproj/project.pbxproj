@@ -50,24 +50,27 @@
 		611B34CB3C24113625C66B3F /* RxCocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C99C15304466700B78C88BB /* RxCocoa.framework */; };
 		67686101D631AC10CE93B6FE /* Stepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CE35F38B8F1A320BA9CEAF /* Stepper.swift */; };
 		67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536BA5EE068D6061D6C7D266 /* GridsView.swift */; };
-		68316F1F291B0A9B0013E203 /* libiconv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68316F1E291B0A9A0013E203 /* libiconv.a */; };
-		6850413F291AE5D400FAB667 /* libNims in Frameworks */ = {isa = PBXBuildFile; productRef = 6850413E291AE5D400FAB667 /* libNims */; };
-		68504140291AEC9400FAB667 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
-		68504141291AECA500FAB667 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
-		6850414F291AF4FD00FAB667 /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504149291AF4EB00FAB667 /* libluajit-5.1.a */; };
-		68504150291AF4FE00FAB667 /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504148291AF4EB00FAB667 /* libluv.a */; };
-		68504151291AF4FE00FAB667 /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414C291AF4EB00FAB667 /* libmsgpackc.a */; };
-		68504152291AF4FE00FAB667 /* libtermkey.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414E291AF4EB00FAB667 /* libtermkey.a */; };
-		68504153291AF4FE00FAB667 /* libtree-sitter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504147291AF4EB00FAB667 /* libtree-sitter.a */; };
-		68504154291AF4FE00FAB667 /* libunibilium.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414B291AF4EB00FAB667 /* libunibilium.a */; };
-		68504155291AF4FE00FAB667 /* libuv_a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504146291AF4EB00FAB667 /* libuv_a.a */; };
-		68504156291AF4FE00FAB667 /* libvterm.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6850414A291AF4EB00FAB667 /* libvterm.a */; };
-		6850415A291B086C00FAB667 /* libintl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68504159291B086200FAB667 /* libintl.a */; };
+		68291044291BB9F200540729 /* AgentLibrary.h in Headers */ = {isa = PBXBuildFile; fileRef = 68291043291BB9F200540729 /* AgentLibrary.h */; };
+		6829104A291BBC0C00540729 /* libAgentLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68291041291BB9F200540729 /* libAgentLibrary.a */; };
+		6829104D291BBC2200540729 /* libAgentLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68291041291BB9F200540729 /* libAgentLibrary.a */; };
+		68317083291B32D10013E203 /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317077291B32D10013E203 /* libluv.a */; };
+		68317084291B32D10013E203 /* libtree-sitter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317078291B32D10013E203 /* libtree-sitter.a */; };
+		68317085291B32D10013E203 /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317079291B32D10013E203 /* libmsgpackc.a */; };
+		68317086291B32D10013E203 /* libunibilium.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6831707A291B32D10013E203 /* libunibilium.a */; };
+		68317088291B32D10013E203 /* libvterm.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6831707C291B32D10013E203 /* libvterm.a */; };
+		68317089291B32D10013E203 /* libtermkey.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6831707D291B32D10013E203 /* libtermkey.a */; };
+		6831708A291B32D10013E203 /* libnvim.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6831707E291B32D10013E203 /* libnvim.a */; };
+		6831708D291B32D10013E203 /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317081291B32D10013E203 /* libluajit-5.1.a */; };
+		6831708E291B32D10013E203 /* libuv_a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317082291B32D10013E203 /* libuv_a.a */; };
+		68317090291B331A0013E203 /* libiconv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6831708F291B331A0013E203 /* libiconv.a */; };
+		68317092291B33390013E203 /* libintl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68317091291B33390013E203 /* libintl.a */; };
+		68317095291B4B730013E203 /* libLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D1EBF4037A0BE2B2CC2081 /* libLibrary.a */; };
+		683170BB291B92130013E203 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 683170BA291B92130013E203 /* main.c */; };
+		6856AF44291BBCF500BBFE5A /* AgentLibrary.c in Sources */ = {isa = PBXBuildFile; fileRef = 6856AF43291BBCF500BBFE5A /* AgentLibrary.c */; };
 		685B4243291AC11A000E2CBC /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		685B4245291AC137000E2CBC /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		685E7C4D291AC99800DBC6A7 /* Agent.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 685E7C42291AC99800DBC6A7 /* Agent.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		68B826EEB04B2537C5BE6776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7950387AF384F810966D94 /* Input.swift */; };
-		68BA2F60291ACB8B00C76C3B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 68BA2F5F291ACB8B00C76C3B /* main.c */; };
 		69325C8F9C764F23F64B56ED /* RxSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ABC92E711DDCFE81020E447E /* RxSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6B64EA903F7BB7E504A4D350 /* RPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34644E961425334246F0B2E4 /* RPC.swift */; };
 		6E8EBEEFC93C07BE0CE944B7 /* RxCocoa.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6C99C15304466700B78C88BB /* RxCocoa.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -134,6 +137,27 @@
 			remoteInfo = Library;
 		};
 		5CE36EB3E4C0AA7AFF9C0D0B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 45E8C540FA7E2724D16885EC;
+			remoteInfo = Library;
+		};
+		6829104B291BBC0C00540729 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68291040291BB9F200540729;
+			remoteInfo = AgentLibrary;
+		};
+		6829104E291BBC2200540729 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68291040291BB9F200540729;
+			remoteInfo = AgentLibrary;
+		};
+		68317096291B4B730013E203 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
 			proxyType = 1;
@@ -308,8 +332,153 @@
 		626DB1C2702B7D3DC4A7A023 /* runtime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = runtime; sourceTree = "<group>"; };
 		628E45D9032C4FA60957D59F /* Nims-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Nims-Info.plist"; sourceTree = "<group>"; };
 		6354D6956854ED2A4FAF0070 /* neogen */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; path = neogen; sourceTree = BUILT_PRODUCTS_DIR; };
+		68291041291BB9F200540729 /* libAgentLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAgentLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		68291043291BB9F200540729 /* AgentLibrary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AgentLibrary.h; sourceTree = "<group>"; };
 		68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.4.0.tbd; path = usr/lib/libiconv.2.4.0.tbd; sourceTree = SDKROOT; };
 		68316F1E291B0A9A0013E203 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiconv.a; path = Targets/libNims/.deps/usr/lib/libiconv.a; sourceTree = "<group>"; };
+		68316FDD291B245A0013E203 /* cmake_install.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		68316FE3291B245A0013E203 /* vimballPlugin.vim */ = {isa = PBXFileReference; lastKnownFileType = text; path = vimballPlugin.vim; sourceTree = "<group>"; };
+		68316FE5291B245A0013E203 /* vimball.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = vimball.txt; sourceTree = "<group>"; };
+		68316FE7291B245A0013E203 /* vimball.vim */ = {isa = PBXFileReference; lastKnownFileType = text; path = vimball.vim; sourceTree = "<group>"; };
+		68316FEA291B245A0013E203 /* matchit.vim */ = {isa = PBXFileReference; lastKnownFileType = text; path = matchit.vim; sourceTree = "<group>"; };
+		68316FEC291B245A0013E203 /* matchit.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = matchit.txt; sourceTree = "<group>"; };
+		68316FEE291B245A0013E203 /* matchit.vim */ = {isa = PBXFileReference; lastKnownFileType = text; path = matchit.vim; sourceTree = "<group>"; };
+		68316FF0291B245A0013E203 /* cmdline.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmdline.txt; sourceTree = "<group>"; };
+		68316FF1291B245A0013E203 /* gui.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = gui.txt; sourceTree = "<group>"; };
+		68316FF2291B245A0013E203 /* change.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = change.txt; sourceTree = "<group>"; };
+		68316FF3291B245A0013E203 /* usr_02.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_02.txt; sourceTree = "<group>"; };
+		68316FF4291B245A0013E203 /* map.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = map.txt; sourceTree = "<group>"; };
+		68316FF5291B245A0013E203 /* usr_03.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_03.txt; sourceTree = "<group>"; };
+		68316FF6291B245A0013E203 /* arabic.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = arabic.txt; sourceTree = "<group>"; };
+		68316FF7291B245A0013E203 /* pi_spec.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_spec.txt; sourceTree = "<group>"; };
+		68316FF8291B245A0013E203 /* term.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = term.txt; sourceTree = "<group>"; };
+		68316FF9291B245A0013E203 /* usr_29.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_29.txt; sourceTree = "<group>"; };
+		68316FFA291B245A0013E203 /* usr_01.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_01.txt; sourceTree = "<group>"; };
+		68316FFB291B245A0013E203 /* vim_diff.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = vim_diff.txt; sourceTree = "<group>"; };
+		68316FFC291B245A0013E203 /* usr_28.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_28.txt; sourceTree = "<group>"; };
+		68316FFD291B245A0013E203 /* userfunc.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = userfunc.txt; sourceTree = "<group>"; };
+		68316FFE291B245A0013E203 /* usr_toc.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_toc.txt; sourceTree = "<group>"; };
+		68316FFF291B245A0013E203 /* various.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = various.txt; sourceTree = "<group>"; };
+		68317000291B245A0013E203 /* repeat.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = repeat.txt; sourceTree = "<group>"; };
+		68317001291B245A0013E203 /* usr_10.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_10.txt; sourceTree = "<group>"; };
+		68317002291B245A0013E203 /* usr_04.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_04.txt; sourceTree = "<group>"; };
+		68317003291B245A0013E203 /* pi_zip.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_zip.txt; sourceTree = "<group>"; };
+		68317004291B245A0013E203 /* remote.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = remote.txt; sourceTree = "<group>"; };
+		68317005291B245A0013E203 /* usr_05.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_05.txt; sourceTree = "<group>"; };
+		68317006291B245A0013E203 /* usr_11.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_11.txt; sourceTree = "<group>"; };
+		68317007291B245A0013E203 /* fold.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = fold.txt; sourceTree = "<group>"; };
+		68317008291B245A0013E203 /* intro.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = intro.txt; sourceTree = "<group>"; };
+		68317009291B245A0013E203 /* lsp.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = lsp.txt; sourceTree = "<group>"; };
+		6831700A291B245A0013E203 /* sign.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = sign.txt; sourceTree = "<group>"; };
+		6831700B291B245A0013E203 /* usr_07.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_07.txt; sourceTree = "<group>"; };
+		6831700C291B245A0013E203 /* pi_tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_tutor.txt; sourceTree = "<group>"; };
+		6831700D291B245A0013E203 /* usr_12.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_12.txt; sourceTree = "<group>"; };
+		6831700E291B245A0013E203 /* usr_06.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_06.txt; sourceTree = "<group>"; };
+		6831700F291B245A0013E203 /* pattern.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pattern.txt; sourceTree = "<group>"; };
+		68317010291B245A0013E203 /* remote_plugin.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = remote_plugin.txt; sourceTree = "<group>"; };
+		68317011291B245A0013E203 /* nvim_terminal_emulator.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = nvim_terminal_emulator.txt; sourceTree = "<group>"; };
+		68317012291B245A0013E203 /* debug.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = debug.txt; sourceTree = "<group>"; };
+		68317013291B245A0013E203 /* nvim.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = nvim.txt; sourceTree = "<group>"; };
+		68317014291B245A0013E203 /* mlang.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = mlang.txt; sourceTree = "<group>"; };
+		68317015291B245A0013E203 /* editing.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = editing.txt; sourceTree = "<group>"; };
+		68317016291B245A0013E203 /* lua.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = lua.txt; sourceTree = "<group>"; };
+		68317017291B245A0013E203 /* news.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = news.txt; sourceTree = "<group>"; };
+		68317018291B245A0013E203 /* syntax.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = syntax.txt; sourceTree = "<group>"; };
+		68317019291B245A0013E203 /* luaref.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = luaref.txt; sourceTree = "<group>"; };
+		6831701A291B245A0013E203 /* tabpage.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tabpage.txt; sourceTree = "<group>"; };
+		6831701B291B245A0013E203 /* pi_paren.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_paren.txt; sourceTree = "<group>"; };
+		6831701C291B245A0013E203 /* insert.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = insert.txt; sourceTree = "<group>"; };
+		6831701D291B245A0013E203 /* ft_rust.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ft_rust.txt; sourceTree = "<group>"; };
+		6831701E291B245A0013E203 /* indent.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = indent.txt; sourceTree = "<group>"; };
+		6831701F291B245A0013E203 /* builtin.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = builtin.txt; sourceTree = "<group>"; };
+		68317020291B245A0013E203 /* pi_tar.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_tar.txt; sourceTree = "<group>"; };
+		68317021291B245A0013E203 /* testing.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = testing.txt; sourceTree = "<group>"; };
+		68317022291B245A0013E203 /* vi_diff.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = vi_diff.txt; sourceTree = "<group>"; };
+		68317023291B245A0013E203 /* diagnostic.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = diagnostic.txt; sourceTree = "<group>"; };
+		68317024291B245A0013E203 /* support.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = support.txt; sourceTree = "<group>"; };
+		68317025291B245A0013E203 /* pi_netrw.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_netrw.txt; sourceTree = "<group>"; };
+		68317026291B245A0013E203 /* pi_msgpack.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_msgpack.txt; sourceTree = "<group>"; };
+		68317027291B245A0013E203 /* index.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = index.txt; sourceTree = "<group>"; };
+		68317028291B245A0013E203 /* russian.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = russian.txt; sourceTree = "<group>"; };
+		68317029291B245A0013E203 /* diff.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = diff.txt; sourceTree = "<group>"; };
+		6831702A291B245A0013E203 /* starting.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = starting.txt; sourceTree = "<group>"; };
+		6831702B291B245A0013E203 /* eval.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = eval.txt; sourceTree = "<group>"; };
+		6831702C291B245A0013E203 /* recover.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = recover.txt; sourceTree = "<group>"; };
+		6831702D291B245A0013E203 /* spell.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = spell.txt; sourceTree = "<group>"; };
+		6831702E291B245A0013E203 /* windows.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = windows.txt; sourceTree = "<group>"; };
+		6831702F291B245A0013E203 /* pi_health.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_health.txt; sourceTree = "<group>"; };
+		68317030291B245A0013E203 /* usr_40.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_40.txt; sourceTree = "<group>"; };
+		68317031291B245A0013E203 /* api.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = api.txt; sourceTree = "<group>"; };
+		68317032291B245A0013E203 /* usr_41.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_41.txt; sourceTree = "<group>"; };
+		68317033291B245A0013E203 /* usr_43.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_43.txt; sourceTree = "<group>"; };
+		68317034291B245A0013E203 /* ft_ada.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ft_ada.txt; sourceTree = "<group>"; };
+		68317035291B245A0013E203 /* ui.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ui.txt; sourceTree = "<group>"; };
+		68317036291B245A0013E203 /* usr_42.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_42.txt; sourceTree = "<group>"; };
+		68317037291B245A0013E203 /* treesitter.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = treesitter.txt; sourceTree = "<group>"; };
+		68317038291B245A0013E203 /* provider.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = provider.txt; sourceTree = "<group>"; };
+		68317039291B245A0013E203 /* message.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = message.txt; sourceTree = "<group>"; };
+		6831703A291B245A0013E203 /* autocmd.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = autocmd.txt; sourceTree = "<group>"; };
+		6831703B291B245A0013E203 /* scroll.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = scroll.txt; sourceTree = "<group>"; };
+		6831703C291B245A0013E203 /* dev_style.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = dev_style.txt; sourceTree = "<group>"; };
+		6831703D291B245A0013E203 /* filetype.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = filetype.txt; sourceTree = "<group>"; };
+		6831703E291B245A0013E203 /* ft_ps1.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ft_ps1.txt; sourceTree = "<group>"; };
+		6831703F291B245A0013E203 /* deprecated.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = deprecated.txt; sourceTree = "<group>"; };
+		68317040291B245A0013E203 /* usr_45.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_45.txt; sourceTree = "<group>"; };
+		68317041291B245A0013E203 /* helphelp.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = helphelp.txt; sourceTree = "<group>"; };
+		68317042291B245A0013E203 /* usr_44.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_44.txt; sourceTree = "<group>"; };
+		68317043291B245A0013E203 /* job_control.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = job_control.txt; sourceTree = "<group>"; };
+		68317044291B245A0013E203 /* tagsrch.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tagsrch.txt; sourceTree = "<group>"; };
+		68317045291B245A0013E203 /* quickref.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = quickref.txt; sourceTree = "<group>"; };
+		68317046291B245A0013E203 /* usr_23.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_23.txt; sourceTree = "<group>"; };
+		68317047291B245A0013E203 /* rileft.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = rileft.txt; sourceTree = "<group>"; };
+		68317048291B245A0013E203 /* usr_22.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_22.txt; sourceTree = "<group>"; };
+		68317049291B245A0013E203 /* mbyte.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = mbyte.txt; sourceTree = "<group>"; };
+		6831704A291B245A0013E203 /* print.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = print.txt; sourceTree = "<group>"; };
+		6831704B291B245A0013E203 /* help.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = help.txt; sourceTree = "<group>"; };
+		6831704C291B245A0013E203 /* channel.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = channel.txt; sourceTree = "<group>"; };
+		6831704D291B245A0013E203 /* usr_08.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_08.txt; sourceTree = "<group>"; };
+		6831704E291B245A0013E203 /* ft_raku.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ft_raku.txt; sourceTree = "<group>"; };
+		6831704F291B245A0013E203 /* usr_20.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_20.txt; sourceTree = "<group>"; };
+		68317050291B245A0013E203 /* usr_21.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_21.txt; sourceTree = "<group>"; };
+		68317051291B245A0013E203 /* visual.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = visual.txt; sourceTree = "<group>"; };
+		68317052291B245A0013E203 /* usr_09.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_09.txt; sourceTree = "<group>"; };
+		68317053291B245A0013E203 /* quickfix.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = quickfix.txt; sourceTree = "<group>"; };
+		68317054291B245A0013E203 /* lsp-extension.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lsp-extension.txt"; sourceTree = "<group>"; };
+		68317055291B245A0013E203 /* tips.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tips.txt; sourceTree = "<group>"; };
+		68317056291B245A0013E203 /* if_pyth.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = if_pyth.txt; sourceTree = "<group>"; };
+		68317057291B245A0013E203 /* usr_31.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_31.txt; sourceTree = "<group>"; };
+		68317058291B245A0013E203 /* usr_25.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_25.txt; sourceTree = "<group>"; };
+		68317059291B245A0013E203 /* undo.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = undo.txt; sourceTree = "<group>"; };
+		6831705A291B245A0013E203 /* usr_24.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_24.txt; sourceTree = "<group>"; };
+		6831705B291B245A0013E203 /* usr_30.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_30.txt; sourceTree = "<group>"; };
+		6831705C291B245A0013E203 /* luvref.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = luvref.txt; sourceTree = "<group>"; };
+		6831705D291B245A0013E203 /* develop.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = develop.txt; sourceTree = "<group>"; };
+		6831705E291B245A0013E203 /* uganda.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = uganda.txt; sourceTree = "<group>"; };
+		6831705F291B245A0013E203 /* hebrew.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = hebrew.txt; sourceTree = "<group>"; };
+		68317060291B245A0013E203 /* motion.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = motion.txt; sourceTree = "<group>"; };
+		68317061291B245A0013E203 /* pi_gzip.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = pi_gzip.txt; sourceTree = "<group>"; };
+		68317062291B245A0013E203 /* ft_sql.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ft_sql.txt; sourceTree = "<group>"; };
+		68317063291B245A0013E203 /* usr_26.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_26.txt; sourceTree = "<group>"; };
+		68317064291B245A0013E203 /* digraph.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = digraph.txt; sourceTree = "<group>"; };
+		68317065291B245A0013E203 /* usr_32.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_32.txt; sourceTree = "<group>"; };
+		68317066291B245A0013E203 /* if_ruby.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = if_ruby.txt; sourceTree = "<group>"; };
+		68317067291B245A0013E203 /* usr_27.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = usr_27.txt; sourceTree = "<group>"; };
+		68317068291B245A0013E203 /* if_perl.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = if_perl.txt; sourceTree = "<group>"; };
+		68317069291B245A0013E203 /* options.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = options.txt; sourceTree = "<group>"; };
+		6831706C291B245A0013E203 /* generated.vim */ = {isa = PBXFileReference; lastKnownFileType = text; path = generated.vim; sourceTree = "<group>"; };
+		68317073291B2B4F0013E203 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		68317077291B32D10013E203 /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluv.a; sourceTree = "<group>"; };
+		68317078291B32D10013E203 /* libtree-sitter.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libtree-sitter.a"; sourceTree = "<group>"; };
+		68317079291B32D10013E203 /* libmsgpackc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmsgpackc.a; sourceTree = "<group>"; };
+		6831707A291B32D10013E203 /* libunibilium.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libunibilium.a; sourceTree = "<group>"; };
+		6831707C291B32D10013E203 /* libvterm.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libvterm.a; sourceTree = "<group>"; };
+		6831707D291B32D10013E203 /* libtermkey.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libtermkey.a; sourceTree = "<group>"; };
+		6831707E291B32D10013E203 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libnvim.a; sourceTree = "<group>"; };
+		68317081291B32D10013E203 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libluajit-5.1.a"; sourceTree = "<group>"; };
+		68317082291B32D10013E203 /* libuv_a.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libuv_a.a; sourceTree = "<group>"; };
+		6831708F291B331A0013E203 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiconv.a; sourceTree = "<group>"; };
+		68317091291B33390013E203 /* libintl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libintl.a; sourceTree = "<group>"; };
+		683170BA291B92130013E203 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		68504142291AF38500FAB667 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = Targets/libNims/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68504144291AF4EB00FAB667 /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = Targets/libNims/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		68504145291AF4EB00FAB667 /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = Targets/libNims/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
@@ -325,13 +494,12 @@
 		68504157291AF52B00FAB667 /* libintl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libintl.a; path = ../../../../../../opt/local/lib/libintl.a; sourceTree = "<group>"; };
 		68504159291B086200FAB667 /* libintl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libintl.a; path = Targets/libNims/.deps/usr/lib/libintl.a; sourceTree = "<group>"; };
 		6850415B291B08AF00FAB667 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
+		6856AF43291BBCF500BBFE5A /* AgentLibrary.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = AgentLibrary.c; sourceTree = "<group>"; };
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		685E7C3D291AC86800DBC6A7 /* libNims */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = libNims; sourceTree = "<group>"; };
 		685E7C42291AC99800DBC6A7 /* Agent.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = Agent.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		685E7C4A291AC99800DBC6A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		68BA2F5E291ACB8B00C76C3B /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
-		68BA2F5F291ACB8B00C76C3B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		68FAE7A5291AB72F00D56ACB /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
 		694A3BCA248B90DC46551BAA /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
 		6C99C15304466700B78C88BB /* RxCocoa.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RxCocoa.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -387,23 +555,30 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6829103F291BB9F200540729 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		685E7C3F291AC99800DBC6A7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68504155291AF4FE00FAB667 /* libuv_a.a in Frameworks */,
-				68504152291AF4FE00FAB667 /* libtermkey.a in Frameworks */,
-				6850415A291B086C00FAB667 /* libintl.a in Frameworks */,
-				68504151291AF4FE00FAB667 /* libmsgpackc.a in Frameworks */,
-				68504156291AF4FE00FAB667 /* libvterm.a in Frameworks */,
-				6850413F291AE5D400FAB667 /* libNims in Frameworks */,
-				68504140291AEC9400FAB667 /* CoreServices.framework in Frameworks */,
-				68504150291AF4FE00FAB667 /* libluv.a in Frameworks */,
-				68504154291AF4FE00FAB667 /* libunibilium.a in Frameworks */,
-				68504141291AECA500FAB667 /* CoreFoundation.framework in Frameworks */,
-				68316F1F291B0A9B0013E203 /* libiconv.a in Frameworks */,
-				68504153291AF4FE00FAB667 /* libtree-sitter.a in Frameworks */,
-				6850414F291AF4FD00FAB667 /* libluajit-5.1.a in Frameworks */,
+				6831708A291B32D10013E203 /* libnvim.a in Frameworks */,
+				68317090291B331A0013E203 /* libiconv.a in Frameworks */,
+				68317085291B32D10013E203 /* libmsgpackc.a in Frameworks */,
+				6831708E291B32D10013E203 /* libuv_a.a in Frameworks */,
+				68317089291B32D10013E203 /* libtermkey.a in Frameworks */,
+				6829104A291BBC0C00540729 /* libAgentLibrary.a in Frameworks */,
+				68317088291B32D10013E203 /* libvterm.a in Frameworks */,
+				68317084291B32D10013E203 /* libtree-sitter.a in Frameworks */,
+				68317086291B32D10013E203 /* libunibilium.a in Frameworks */,
+				68317092291B33390013E203 /* libintl.a in Frameworks */,
+				68317083291B32D10013E203 /* libluv.a in Frameworks */,
+				6831708D291B32D10013E203 /* libluajit-5.1.a in Frameworks */,
+				68317095291B4B730013E203 /* libLibrary.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +601,7 @@
 				0D01370E4EFDEA5A6D15A63F /* PersistentCollections.framework in Frameworks */,
 				611B34CB3C24113625C66B3F /* RxCocoa.framework in Frameworks */,
 				BA171B2F20375FCE3A4F76A9 /* RxSwift.framework in Frameworks */,
+				6829104D291BBC2200540729 /* libAgentLibrary.a in Frameworks */,
 				44392E82398CCD1AF14B9899 /* Socket.framework in Frameworks */,
 				C6077AF1FDB0844FEA614F7D /* SortedCollections.framework in Frameworks */,
 				00FB0E2A73663353B937245F /* _CollectionsUtilities.framework in Frameworks */,
@@ -566,6 +742,316 @@
 			usesTabs = 0;
 			wrapsLines = 1;
 		};
+		68291042291BB9F200540729 /* AgentLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				6856AF45291BBDB000BBFE5A /* include */,
+				6856AF46291BBE4100BBFE5A /* src */,
+			);
+			path = AgentLibrary;
+			sourceTree = "<group>";
+		};
+		68316F20291B245A0013E203 /* libnvim */ = {
+			isa = PBXGroup;
+			children = (
+				68317076291B32D10013E203 /* lib */,
+				68317073291B2B4F0013E203 /* include */,
+				68316FDB291B245A0013E203 /* runtime */,
+			);
+			path = libnvim;
+			sourceTree = "<group>";
+		};
+		68316FDB291B245A0013E203 /* runtime */ = {
+			isa = PBXGroup;
+			children = (
+				68316FDC291B245A0013E203 /* CMakeFiles */,
+				68316FDD291B245A0013E203 /* cmake_install.cmake */,
+				68316FDE291B245A0013E203 /* pack */,
+				68316FEF291B245A0013E203 /* doc */,
+				6831706A291B245A0013E203 /* syntax */,
+			);
+			path = runtime;
+			sourceTree = "<group>";
+		};
+		68316FDC291B245A0013E203 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = CMakeFiles;
+			sourceTree = "<group>";
+		};
+		68316FDE291B245A0013E203 /* pack */ = {
+			isa = PBXGroup;
+			children = (
+				68316FDF291B245A0013E203 /* dist */,
+			);
+			path = pack;
+			sourceTree = "<group>";
+		};
+		68316FDF291B245A0013E203 /* dist */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE0291B245A0013E203 /* opt */,
+			);
+			path = dist;
+			sourceTree = "<group>";
+		};
+		68316FE0291B245A0013E203 /* opt */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE1291B245A0013E203 /* vimball */,
+				68316FE8291B245A0013E203 /* matchit */,
+			);
+			path = opt;
+			sourceTree = "<group>";
+		};
+		68316FE1291B245A0013E203 /* vimball */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE2291B245A0013E203 /* plugin */,
+				68316FE4291B245A0013E203 /* doc */,
+				68316FE6291B245A0013E203 /* autoload */,
+			);
+			path = vimball;
+			sourceTree = "<group>";
+		};
+		68316FE2291B245A0013E203 /* plugin */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE3291B245A0013E203 /* vimballPlugin.vim */,
+			);
+			path = plugin;
+			sourceTree = "<group>";
+		};
+		68316FE4291B245A0013E203 /* doc */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE5291B245A0013E203 /* vimball.txt */,
+			);
+			path = doc;
+			sourceTree = "<group>";
+		};
+		68316FE6291B245A0013E203 /* autoload */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE7291B245A0013E203 /* vimball.vim */,
+			);
+			path = autoload;
+			sourceTree = "<group>";
+		};
+		68316FE8291B245A0013E203 /* matchit */ = {
+			isa = PBXGroup;
+			children = (
+				68316FE9291B245A0013E203 /* plugin */,
+				68316FEB291B245A0013E203 /* doc */,
+				68316FED291B245A0013E203 /* autoload */,
+			);
+			path = matchit;
+			sourceTree = "<group>";
+		};
+		68316FE9291B245A0013E203 /* plugin */ = {
+			isa = PBXGroup;
+			children = (
+				68316FEA291B245A0013E203 /* matchit.vim */,
+			);
+			path = plugin;
+			sourceTree = "<group>";
+		};
+		68316FEB291B245A0013E203 /* doc */ = {
+			isa = PBXGroup;
+			children = (
+				68316FEC291B245A0013E203 /* matchit.txt */,
+			);
+			path = doc;
+			sourceTree = "<group>";
+		};
+		68316FED291B245A0013E203 /* autoload */ = {
+			isa = PBXGroup;
+			children = (
+				68316FEE291B245A0013E203 /* matchit.vim */,
+			);
+			path = autoload;
+			sourceTree = "<group>";
+		};
+		68316FEF291B245A0013E203 /* doc */ = {
+			isa = PBXGroup;
+			children = (
+				68316FF0291B245A0013E203 /* cmdline.txt */,
+				68316FF1291B245A0013E203 /* gui.txt */,
+				68316FF2291B245A0013E203 /* change.txt */,
+				68316FF3291B245A0013E203 /* usr_02.txt */,
+				68316FF4291B245A0013E203 /* map.txt */,
+				68316FF5291B245A0013E203 /* usr_03.txt */,
+				68316FF6291B245A0013E203 /* arabic.txt */,
+				68316FF7291B245A0013E203 /* pi_spec.txt */,
+				68316FF8291B245A0013E203 /* term.txt */,
+				68316FF9291B245A0013E203 /* usr_29.txt */,
+				68316FFA291B245A0013E203 /* usr_01.txt */,
+				68316FFB291B245A0013E203 /* vim_diff.txt */,
+				68316FFC291B245A0013E203 /* usr_28.txt */,
+				68316FFD291B245A0013E203 /* userfunc.txt */,
+				68316FFE291B245A0013E203 /* usr_toc.txt */,
+				68316FFF291B245A0013E203 /* various.txt */,
+				68317000291B245A0013E203 /* repeat.txt */,
+				68317001291B245A0013E203 /* usr_10.txt */,
+				68317002291B245A0013E203 /* usr_04.txt */,
+				68317003291B245A0013E203 /* pi_zip.txt */,
+				68317004291B245A0013E203 /* remote.txt */,
+				68317005291B245A0013E203 /* usr_05.txt */,
+				68317006291B245A0013E203 /* usr_11.txt */,
+				68317007291B245A0013E203 /* fold.txt */,
+				68317008291B245A0013E203 /* intro.txt */,
+				68317009291B245A0013E203 /* lsp.txt */,
+				6831700A291B245A0013E203 /* sign.txt */,
+				6831700B291B245A0013E203 /* usr_07.txt */,
+				6831700C291B245A0013E203 /* pi_tutor.txt */,
+				6831700D291B245A0013E203 /* usr_12.txt */,
+				6831700E291B245A0013E203 /* usr_06.txt */,
+				6831700F291B245A0013E203 /* pattern.txt */,
+				68317010291B245A0013E203 /* remote_plugin.txt */,
+				68317011291B245A0013E203 /* nvim_terminal_emulator.txt */,
+				68317012291B245A0013E203 /* debug.txt */,
+				68317013291B245A0013E203 /* nvim.txt */,
+				68317014291B245A0013E203 /* mlang.txt */,
+				68317015291B245A0013E203 /* editing.txt */,
+				68317016291B245A0013E203 /* lua.txt */,
+				68317017291B245A0013E203 /* news.txt */,
+				68317018291B245A0013E203 /* syntax.txt */,
+				68317019291B245A0013E203 /* luaref.txt */,
+				6831701A291B245A0013E203 /* tabpage.txt */,
+				6831701B291B245A0013E203 /* pi_paren.txt */,
+				6831701C291B245A0013E203 /* insert.txt */,
+				6831701D291B245A0013E203 /* ft_rust.txt */,
+				6831701E291B245A0013E203 /* indent.txt */,
+				6831701F291B245A0013E203 /* builtin.txt */,
+				68317020291B245A0013E203 /* pi_tar.txt */,
+				68317021291B245A0013E203 /* testing.txt */,
+				68317022291B245A0013E203 /* vi_diff.txt */,
+				68317023291B245A0013E203 /* diagnostic.txt */,
+				68317024291B245A0013E203 /* support.txt */,
+				68317025291B245A0013E203 /* pi_netrw.txt */,
+				68317026291B245A0013E203 /* pi_msgpack.txt */,
+				68317027291B245A0013E203 /* index.txt */,
+				68317028291B245A0013E203 /* russian.txt */,
+				68317029291B245A0013E203 /* diff.txt */,
+				6831702A291B245A0013E203 /* starting.txt */,
+				6831702B291B245A0013E203 /* eval.txt */,
+				6831702C291B245A0013E203 /* recover.txt */,
+				6831702D291B245A0013E203 /* spell.txt */,
+				6831702E291B245A0013E203 /* windows.txt */,
+				6831702F291B245A0013E203 /* pi_health.txt */,
+				68317030291B245A0013E203 /* usr_40.txt */,
+				68317031291B245A0013E203 /* api.txt */,
+				68317032291B245A0013E203 /* usr_41.txt */,
+				68317033291B245A0013E203 /* usr_43.txt */,
+				68317034291B245A0013E203 /* ft_ada.txt */,
+				68317035291B245A0013E203 /* ui.txt */,
+				68317036291B245A0013E203 /* usr_42.txt */,
+				68317037291B245A0013E203 /* treesitter.txt */,
+				68317038291B245A0013E203 /* provider.txt */,
+				68317039291B245A0013E203 /* message.txt */,
+				6831703A291B245A0013E203 /* autocmd.txt */,
+				6831703B291B245A0013E203 /* scroll.txt */,
+				6831703C291B245A0013E203 /* dev_style.txt */,
+				6831703D291B245A0013E203 /* filetype.txt */,
+				6831703E291B245A0013E203 /* ft_ps1.txt */,
+				6831703F291B245A0013E203 /* deprecated.txt */,
+				68317040291B245A0013E203 /* usr_45.txt */,
+				68317041291B245A0013E203 /* helphelp.txt */,
+				68317042291B245A0013E203 /* usr_44.txt */,
+				68317043291B245A0013E203 /* job_control.txt */,
+				68317044291B245A0013E203 /* tagsrch.txt */,
+				68317045291B245A0013E203 /* quickref.txt */,
+				68317046291B245A0013E203 /* usr_23.txt */,
+				68317047291B245A0013E203 /* rileft.txt */,
+				68317048291B245A0013E203 /* usr_22.txt */,
+				68317049291B245A0013E203 /* mbyte.txt */,
+				6831704A291B245A0013E203 /* print.txt */,
+				6831704B291B245A0013E203 /* help.txt */,
+				6831704C291B245A0013E203 /* channel.txt */,
+				6831704D291B245A0013E203 /* usr_08.txt */,
+				6831704E291B245A0013E203 /* ft_raku.txt */,
+				6831704F291B245A0013E203 /* usr_20.txt */,
+				68317050291B245A0013E203 /* usr_21.txt */,
+				68317051291B245A0013E203 /* visual.txt */,
+				68317052291B245A0013E203 /* usr_09.txt */,
+				68317053291B245A0013E203 /* quickfix.txt */,
+				68317054291B245A0013E203 /* lsp-extension.txt */,
+				68317055291B245A0013E203 /* tips.txt */,
+				68317056291B245A0013E203 /* if_pyth.txt */,
+				68317057291B245A0013E203 /* usr_31.txt */,
+				68317058291B245A0013E203 /* usr_25.txt */,
+				68317059291B245A0013E203 /* undo.txt */,
+				6831705A291B245A0013E203 /* usr_24.txt */,
+				6831705B291B245A0013E203 /* usr_30.txt */,
+				6831705C291B245A0013E203 /* luvref.txt */,
+				6831705D291B245A0013E203 /* develop.txt */,
+				6831705E291B245A0013E203 /* uganda.txt */,
+				6831705F291B245A0013E203 /* hebrew.txt */,
+				68317060291B245A0013E203 /* motion.txt */,
+				68317061291B245A0013E203 /* pi_gzip.txt */,
+				68317062291B245A0013E203 /* ft_sql.txt */,
+				68317063291B245A0013E203 /* usr_26.txt */,
+				68317064291B245A0013E203 /* digraph.txt */,
+				68317065291B245A0013E203 /* usr_32.txt */,
+				68317066291B245A0013E203 /* if_ruby.txt */,
+				68317067291B245A0013E203 /* usr_27.txt */,
+				68317068291B245A0013E203 /* if_perl.txt */,
+				68317069291B245A0013E203 /* options.txt */,
+			);
+			path = doc;
+			sourceTree = "<group>";
+		};
+		6831706A291B245A0013E203 /* syntax */ = {
+			isa = PBXGroup;
+			children = (
+				6831706B291B245A0013E203 /* vim */,
+			);
+			path = syntax;
+			sourceTree = "<group>";
+		};
+		6831706B291B245A0013E203 /* vim */ = {
+			isa = PBXGroup;
+			children = (
+				6831706C291B245A0013E203 /* generated.vim */,
+			);
+			path = vim;
+			sourceTree = "<group>";
+		};
+		68317076291B32D10013E203 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				68317077291B32D10013E203 /* libluv.a */,
+				68317078291B32D10013E203 /* libtree-sitter.a */,
+				68317079291B32D10013E203 /* libmsgpackc.a */,
+				6831707A291B32D10013E203 /* libunibilium.a */,
+				6831707C291B32D10013E203 /* libvterm.a */,
+				6831707D291B32D10013E203 /* libtermkey.a */,
+				6831707E291B32D10013E203 /* libnvim.a */,
+				68317081291B32D10013E203 /* libluajit-5.1.a */,
+				68317082291B32D10013E203 /* libuv_a.a */,
+				6831708F291B331A0013E203 /* libiconv.a */,
+				68317091291B33390013E203 /* libintl.a */,
+			);
+			path = lib;
+			sourceTree = "<group>";
+		};
+		6856AF45291BBDB000BBFE5A /* include */ = {
+			isa = PBXGroup;
+			children = (
+				68291043291BB9F200540729 /* AgentLibrary.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		6856AF46291BBE4100BBFE5A /* src */ = {
+			isa = PBXGroup;
+			children = (
+				6856AF43291BBCF500BBFE5A /* AgentLibrary.c */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
 		685B4241291AC11A000E2CBC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -596,8 +1082,7 @@
 			isa = PBXGroup;
 			children = (
 				685E7C4A291AC99800DBC6A7 /* Info.plist */,
-				68BA2F5E291ACB8B00C76C3B /* main.h */,
-				68BA2F5F291ACB8B00C76C3B /* main.c */,
+				683170BA291B92130013E203 /* main.c */,
 			);
 			path = Agent;
 			sourceTree = "<group>";
@@ -605,6 +1090,7 @@
 		73A721EF62F82CF666CDA622 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				68316F20291B245A0013E203 /* libnvim */,
 				7BB41C3C0E0913C33408A0A6 /* Derived */,
 				EF0E9C8DD116A87B02C75C67 /* Targets */,
 				159E68F3BA0529995BDA3A3B /* Entitlements */,
@@ -643,6 +1129,7 @@
 		801802CBB53AE19010EC0219 /* Nims */ = {
 			isa = PBXGroup;
 			children = (
+				68291042291BB9F200540729 /* AgentLibrary */,
 				685E7C43291AC99800DBC6A7 /* Agent */,
 				2E506D2EE2D6B8623EEE2564 /* Resources */,
 				D426A83483E2950B0D87E52A /* Sources */,
@@ -722,6 +1209,7 @@
 				47F8C8371856AD37219BDED9 /* SortedCollections.framework */,
 				CBB629D6A351D5E20DA47D7E /* Stencil.framework */,
 				685E7C42291AC99800DBC6A7 /* Agent.xpc */,
+				68291041291BB9F200540729 /* libAgentLibrary.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -795,6 +1283,17 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		6829103D291BB9F200540729 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68291044291BB9F200540729 /* AgentLibrary.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		1C463259E300F75AA26CF68D /* nvim */ = {
@@ -891,6 +1390,7 @@
 				D5974C5621F70EB0023737A0 /* PBXTargetDependency */,
 				007C9C43A994C78717E5269D /* PBXTargetDependency */,
 				685E7C4C291AC99800DBC6A7 /* PBXTargetDependency */,
+				6829104F291BBC2200540729 /* PBXTargetDependency */,
 			);
 			name = Nims;
 			packageProductDependencies = (
@@ -898,6 +1398,23 @@
 			productName = Nims;
 			productReference = 8705E078D63E3DAE3FE697ED /* Nims.app */;
 			productType = "com.apple.product-type.application";
+		};
+		68291040291BB9F200540729 /* AgentLibrary */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68291047291BB9F200540729 /* Build configuration list for PBXNativeTarget "AgentLibrary" */;
+			buildPhases = (
+				6829103D291BB9F200540729 /* Headers */,
+				6829103E291BB9F200540729 /* Sources */,
+				6829103F291BB9F200540729 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgentLibrary;
+			productName = AgentLibrary;
+			productReference = 68291041291BB9F200540729 /* libAgentLibrary.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 		685E7C41291AC99800DBC6A7 /* Agent */ = {
 			isa = PBXNativeTarget;
@@ -910,10 +1427,11 @@
 			buildRules = (
 			);
 			dependencies = (
+				68317097291B4B730013E203 /* PBXTargetDependency */,
+				6829104C291BBC0C00540729 /* PBXTargetDependency */,
 			);
 			name = Agent;
 			packageProductDependencies = (
-				6850413E291AE5D400FAB667 /* libNims */,
 			);
 			productName = Agent;
 			productReference = 685E7C42291AC99800DBC6A7 /* Agent.xpc */;
@@ -929,8 +1447,12 @@
 				LastUpgradeCheck = 1410;
 				ORGANIZATIONNAME = foxacid7cd;
 				TargetAttributes = {
+					68291040291BB9F200540729 = {
+						CreatedOnToolsVersion = 14.1;
+					};
 					685E7C41291AC99800DBC6A7 = {
 						CreatedOnToolsVersion = 14.1;
+						LastSwiftMigration = 1410;
 					};
 				};
 			};
@@ -953,6 +1475,7 @@
 				45E8C540FA7E2724D16885EC /* Library */,
 				1C463259E300F75AA26CF68D /* nvim */,
 				685E7C41291AC99800DBC6A7 /* Agent */,
+				68291040291BB9F200540729 /* AgentLibrary */,
 			);
 		};
 /* End PBXProject section */
@@ -1038,11 +1561,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6829103E291BB9F200540729 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6856AF44291BBCF500BBFE5A /* AgentLibrary.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		685E7C3E291AC99800DBC6A7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68BA2F60291ACB8B00C76C3B /* main.c in Sources */,
+				683170BB291B92130013E203 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1111,6 +1642,21 @@
 			target = 45E8C540FA7E2724D16885EC /* Library */;
 			targetProxy = 5CE36EB3E4C0AA7AFF9C0D0B /* PBXContainerItemProxy */;
 		};
+		6829104C291BBC0C00540729 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68291040291BB9F200540729 /* AgentLibrary */;
+			targetProxy = 6829104B291BBC0C00540729 /* PBXContainerItemProxy */;
+		};
+		6829104F291BBC2200540729 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68291040291BB9F200540729 /* AgentLibrary */;
+			targetProxy = 6829104E291BBC2200540729 /* PBXContainerItemProxy */;
+		};
+		68317097291B4B730013E203 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 45E8C540FA7E2724D16885EC /* Library */;
+			targetProxy = 68317096291B4B730013E203 /* PBXContainerItemProxy */;
+		};
 		685E7C4C291AC99800DBC6A7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 685E7C41291AC99800DBC6A7 /* Agent */;
@@ -1137,7 +1683,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1208,7 +1756,7 @@
 				LIBRARY_SEARCH_PATHS = "";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Sources/Nims-Bridging-Header.h";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1295,31 +1843,75 @@
 			};
 			name = Debug;
 		};
+		68291048291BB9F200540729 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
+				EXECUTABLE_PREFIX = lib;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		68291049291BB9F200540729 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 		685E7C4F291AC99800DBC6A7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"${PROJECT_DIR}/Targets/libNims/src",
-					"${PROJECT_DIR}/Targets/libNims/.deps/usr/include",
-					"${PROJECT_DIR}/Targets/libNims/build/src/nvim/auto/",
-					"${PROJECT_DIR}/Targets/libNims/build/cmake.config",
-					"${PROJECT_DIR}/Targets/libNims/build/include",
+					"${PROJECT_DIR}/libnvim/include/deps",
+					"${PROJECT_DIR}/libnvim/include/src",
+					"${PROJECT_DIR}/libnvim/include/generated",
+					"${PROJECT_DIR}/libnvim/include/cmake",
+					"${PROJECT_DIR}/libnvim/include/custom",
+					"${PROJECT_DIR}/libnvim/include/auto",
 				);
 				INFOPLIST_FILE = Targets/Nims/Agent/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Agent;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = (
-					Targets/libNims/.deps/usr/lib/,
-					Targets/libNims/build/lib,
-					"$(PROJECT_DIR)/Targets/libNims/.deps/usr/lib",
+					"$(inherited)",
+					"$(PROJECT_DIR)/libnvim",
+					"$(PROJECT_DIR)/libnvim/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
@@ -1332,6 +1924,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Targets/Nims/Agent/Agent-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1343,25 +1936,32 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"${PROJECT_DIR}/Targets/libNims/src",
-					"${PROJECT_DIR}/Targets/libNims/.deps/usr/include",
-					"${PROJECT_DIR}/Targets/libNims/build/src/nvim/auto/",
-					"${PROJECT_DIR}/Targets/libNims/build/cmake.config",
-					"${PROJECT_DIR}/Targets/libNims/build/include",
+					"${PROJECT_DIR}/libnvim/include/deps",
+					"${PROJECT_DIR}/libnvim/include/src",
+					"${PROJECT_DIR}/libnvim/include/generated",
+					"${PROJECT_DIR}/libnvim/include/cmake",
+					"${PROJECT_DIR}/libnvim/include/custom",
+					"${PROJECT_DIR}/libnvim/include/auto",
 				);
 				INFOPLIST_FILE = Targets/Nims/Agent/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Agent;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = (
-					Targets/libNims/.deps/usr/lib/,
-					Targets/libNims/build/lib,
-					"$(PROJECT_DIR)/Targets/libNims/.deps/usr/lib",
+					"$(inherited)",
+					"$(PROJECT_DIR)/libnvim",
+					"$(PROJECT_DIR)/libnvim/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
@@ -1373,6 +1973,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Targets/Nims/Agent/Agent-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1471,7 +2072,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Sources/Nims-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -1481,7 +2082,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1535,6 +2138,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		68291047291BB9F200540729 /* Build configuration list for PBXNativeTarget "AgentLibrary" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68291048291BB9F200540729 /* Debug */,
+				68291049291BB9F200540729 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		685E7C4E291AC99800DBC6A7 /* Build configuration list for PBXNativeTarget "Agent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1581,13 +2193,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		6850413E291AE5D400FAB667 /* libNims */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = libNims;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D75C4ECC87BBEA370AB98AD7 /* Project object */;
 }
