@@ -19,4 +19,8 @@ typedef enum : int64_t {
   AgentGridLineChanged
 } agent_message_type_t;
 
+typedef enum : int32_t {
+  AgentInputMessageTypeRun
+} agent_input_message_type_t;
+
 #endif /* AgentLibrary_h */
