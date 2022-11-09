@@ -67,9 +67,11 @@
 		68317095291B4B730013E203 /* libLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D1EBF4037A0BE2B2CC2081 /* libLibrary.a */; };
 		683170BB291B92130013E203 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 683170BA291B92130013E203 /* main.c */; };
 		6856AF44291BBCF500BBFE5A /* AgentLibrary.c in Sources */ = {isa = PBXBuildFile; fileRef = 6856AF43291BBCF500BBFE5A /* AgentLibrary.c */; };
-		685B4243291AC11A000E2CBC /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
-		685B4245291AC137000E2CBC /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		685E7C4D291AC99800DBC6A7 /* Agent.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 685E7C42291AC99800DBC6A7 /* Agent.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
+		686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
+		686C2B6B291BE7AA00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
+		686C2B6C291BE7B000D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		68B826EEB04B2537C5BE6776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7950387AF384F810966D94 /* Input.swift */; };
 		69325C8F9C764F23F64B56ED /* RxSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ABC92E711DDCFE81020E447E /* RxSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6B64EA903F7BB7E504A4D350 /* RPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34644E961425334246F0B2E4 /* RPC.swift */; };
@@ -500,6 +502,8 @@
 		685E7C3D291AC86800DBC6A7 /* libNims */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = libNims; sourceTree = "<group>"; };
 		685E7C42291AC99800DBC6A7 /* Agent.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = Agent.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		685E7C4A291AC99800DBC6A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		686C2B65291BE48900D0E397 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
+		686C2B66291BE59F00D0E397 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		68FAE7A5291AB72F00D56ACB /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
 		694A3BCA248B90DC46551BAA /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
 		6C99C15304466700B78C88BB /* RxCocoa.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RxCocoa.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -566,6 +570,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				686C2B6C291BE7B000D0E397 /* CoreServices.framework in Frameworks */,
+				686C2B6B291BE7AA00D0E397 /* CoreFoundation.framework in Frameworks */,
 				6831708A291B32D10013E203 /* libnvim.a in Frameworks */,
 				68317090291B331A0013E203 /* libiconv.a in Frameworks */,
 				68317085291B32D10013E203 /* libmsgpackc.a in Frameworks */,
@@ -586,10 +592,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */,
+				686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */,
 				B17958F237F3E866CABC291D /* libAPI.a in Frameworks */,
 				E24DD29BEDB080BBC8DB40C6 /* AsyncAlgorithms.framework in Frameworks */,
-				685B4243291AC11A000E2CBC /* CoreFoundation.framework in Frameworks */,
-				685B4245291AC137000E2CBC /* CoreServices.framework in Frameworks */,
 				F84269494585C3CF5A6C31A6 /* BitCollections.framework in Frameworks */,
 				DDD05ECFDAACCD19A641E0BE /* CasePaths.framework in Frameworks */,
 				9FADDBF7AC1F48485C1E21BE /* Collections.framework in Frameworks */,
@@ -1055,6 +1061,7 @@
 		685B4241291AC11A000E2CBC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				686C2B66291BE59F00D0E397 /* Cocoa.framework */,
 				68316F1E291B0A9A0013E203 /* libiconv.a */,
 				68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */,
 				6850415B291B08AF00FAB667 /* libiconv.tbd */,
@@ -1082,6 +1089,7 @@
 			isa = PBXGroup;
 			children = (
 				685E7C4A291AC99800DBC6A7 /* Info.plist */,
+				686C2B65291BE48900D0E397 /* main.h */,
 				683170BA291B92130013E203 /* main.c */,
 			);
 			path = Agent;
@@ -1710,7 +1718,7 @@
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -1744,7 +1752,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -1883,7 +1891,7 @@
 		685E7C4F291AC99800DBC6A7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -1933,7 +1941,7 @@
 		685E7C50291AC99800DBC6A7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -2018,7 +2026,7 @@
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -2052,7 +2060,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;

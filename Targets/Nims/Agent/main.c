@@ -8,7 +8,12 @@
 
 #include <xpc/xpc.h>
 #include <nvim_main.h>
+#include <nvim/ui_bridge.h>
+#include <uv.h>
 #include "AgentLibrary.h"
+#include "main.h"
+
+uv_thread_t nvim_thread;
 
 void handle_connection(xpc_connection_t connection)
 {
@@ -34,7 +39,18 @@ void handle_connection(xpc_connection_t connection)
   xpc_connection_activate(connection);
 }
 
+void nvim_thread_entry(void *arg)
+{
+  char *nvim_arguments[2];
+  nvim_arguments[0] = "nvim";
+  nvim_arguments[1] = "--headless";
+  
+  nvim_main(2, nvim_arguments);
+}
+
 int main(int argc, char **argv)
-{  
+{
+  uv_thread_create(&nvim_thread, nvim_thread_entry, NULL);
+  
   xpc_main(handle_connection);
 }
