@@ -8,7 +8,6 @@
 
 import API
 import AppKit
-import CasePaths
 import Combine
 import DequeModule
 import Library

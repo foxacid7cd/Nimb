@@ -7,7 +7,6 @@ let package = Package(
   products: [
     .library(
       name: "libNims",
-      type: .static,
       targets: ["libNims"]
     )
   ],
@@ -43,5 +42,5 @@ let package = Package(
       ]
     )
   ],
-  cLanguageStandard: .gnu11
+  cLanguageStandard: .c11
 )

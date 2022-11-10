@@ -8,7 +8,6 @@
 
 import API
 import AppKit
-import CasePaths
 import Library
 import RxCocoa
 import RxSwift
@@ -42,7 +41,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     xpc_connection_activate(connection)
 
-    xpc_connection_send_message_with_reply(connection, xpc_dictionary_create_empty(), nil) { object in
+    let data = xpc_array_create_empty()
+    xpc_array_append_value(data, xpc_int64_create(Int64(AgentInputMessageTypeStart.rawValue)))
+    xpc_array_append_value(data, xpc_int64_create(80))
+    xpc_array_append_value(data, xpc_int64_create(24))
+
+    let message = xpc_dictionary_create_empty()
+    xpc_dictionary_set_value(message, AGENT_MESSAGE_DATA_KEY, data)
+
+    xpc_connection_send_message_with_reply(connection, message, nil) { object in
       let type = xpc_get_type(object)
 
       if type == XPC_TYPE_ERROR {
@@ -61,16 +68,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         log(.info, "XPC send message reply success")
       }
     }
-
-    /* for index in 0 ..< 10000 {
-       let data = xpc_array_create_empty()
-       xpc_array_append_value(data, xpc_int64_create(Int64(index)))
-
-       let message = xpc_dictionary_create_empty()
-       xpc_dictionary_set_value(message, AGENT_MESSAGE_DATA_KEY, data)
-
-       xpc_connection_send_message(connection, message)
-     } */
   }
 
   func applicationWillTerminate(_ notification: AppKit.Notification) {

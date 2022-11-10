@@ -7,7 +7,6 @@
 //
 
 import AppKit
-import CasePaths
 import Library
 import RxCocoa
 import RxSwift
