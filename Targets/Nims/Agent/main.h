@@ -11,4 +11,16 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
+typedef struct {
+  UIBridgeData *bridge;
+  Loop *loop;
+  
+  bool stop;
+  
+  int init_width;
+  int init_height;
+} agent_bridge_data_t;
+
+extern agent_bridge_data_t agent_bridge_data;
+
 #endif /* main_h */

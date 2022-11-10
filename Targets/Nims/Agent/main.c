@@ -7,27 +7,28 @@
 //
 
 #include <xpc/xpc.h>
-#include <nvim_main.h>
+#include <nvim/event/loop.h>
 #include <nvim/ui_bridge.h>
 #include <nvim/ui.h>
 #include <uv.h>
 #include "AgentLibrary.h"
 #include "main.h"
 
-int init_width;
-int init_height;
+extern Loop main_loop;
 
-CFMessagePortRef local_message_port;
+extern int nvim_main(int argc, char **argv);
+
+agent_bridge_data_t agent_bridge_data;
 
 uv_thread_t nvim_thread;
 
 void nvim_thread_entry(void *arg)
 {
-  char *nvim_arguments[2];
+  char *nvim_arguments[1];
   nvim_arguments[0] = "nvim";
-  nvim_arguments[1] = "--headless";
+  //nvim_arguments[1] = "--headless";
   
-  nvim_main(2, nvim_arguments);
+  nvim_main(1, nvim_arguments);
 }
 
 void handle_mode_info_set(UI *ui, bool enabled, Array cursor_styles)
@@ -122,14 +123,76 @@ void handle_wildmenu_hide(UI *ui)
 
 static void agent_ui_main(UIBridgeData *bridge, UI *ui)
 {
+  Loop loop;
+  loop_init(&loop, NULL);
   
+  ui->data = &agent_bridge_data;
+  agent_bridge_data.bridge = bridge;
+  agent_bridge_data.loop = &loop;
+  
+  agent_bridge_data.stop = false;
+  CONTINUE(bridge);
+  
+  while (!agent_bridge_data.stop) {
+    loop_poll_events(&loop, -1);
+  }
+  
+  ui_bridge_stopped(bridge);
+  loop_close(&loop, false);
 }
 
 static void agent_ui_scheduler(Event event, void *d)
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    event.handler((void **) event.argv);
-  });
+  UI *ui = d;
+  agent_bridge_data_t *data = ui->data;
+  loop_schedule_fast(data->loop, event);
+}
+
+void ui_builtin_start(void)
+{
+  UI *ui = malloc(sizeof(UI));
+  
+  memset(ui->ui_ext, 0, sizeof(ui->ui_ext));
+  ui->ui_ext[kUIMultigrid] = true;
+  ui->ui_ext[kUIMessages] = true;
+  ui->ui_ext[kUICmdline] = true;
+  
+  ui->rgb = true;
+  ui->width = agent_bridge_data.init_width;
+  ui->height = agent_bridge_data.init_height;
+  
+  ui->mode_info_set = handle_mode_info_set;
+  ui->update_menu = handle_update_menu;
+  ui->busy_start = handle_busy_start;
+  ui->busy_stop = handle_busy_stop;
+  ui->mouse_on = handle_mouse_on;
+  ui->mouse_off = handle_mouse_off;
+  ui->mode_change = handle_mode_change;
+  ui->bell = handle_bell;
+  ui->visual_bell = handle_visual_bell;
+  ui->flush = handle_flush;
+  ui->suspend = handle_suspend;
+  ui->set_title = handle_set_title;
+  ui->set_icon = handle_set_icon;
+  ui->screenshot = handle_screenshot;
+  ui->option_set = handle_option_set;
+  ui->stop = handle_stop;
+  ui->default_colors_set = handle_default_colors_set;
+  ui->hl_attr_define = handle_hl_attr_define;
+  ui->hl_group_set = handle_hl_group_set;
+  ui->grid_resize = handle_grid_resize;
+  ui->grid_clear = handle_grid_clear;
+  ui->grid_cursor_goto = handle_grid_cursor_goto;
+  ui->grid_scroll = handle_grid_scroll;
+  ui->raw_line = handle_raw_line;
+  ui->event = handle_event;
+  ui->msg_set_pos = handle_msg_set_pos;
+  ui->win_viewport = handle_win_viewport;
+  ui->wildmenu_show = handle_wildmenu_show;
+  ui->wildmenu_select = handle_wildmenu_select;
+  ui->wildmenu_hide = handle_wildmenu_hide;
+  
+  ui_bridge_attach(ui, agent_ui_main, agent_ui_scheduler);
 }
 
 void handle_input_message_data(xpc_object_t data)
@@ -138,54 +201,10 @@ void handle_input_message_data(xpc_object_t data)
   
   switch (message_type) {
     case AgentInputMessageTypeStart: {
-      init_width = (int) xpc_array_get_int64(data, 1);
-      init_height = (int) xpc_array_get_int64(data, 2);
+      agent_bridge_data.init_width = (int) xpc_array_get_int64(data, 1);
+      agent_bridge_data.init_height = (int) xpc_array_get_int64(data, 2);
       
       uv_thread_create(&nvim_thread, nvim_thread_entry, NULL);
-      
-      UI *ui = malloc(sizeof(UI));
-      
-      memset(ui->ui_ext, 0, sizeof(ui->ui_ext));
-      ui->ui_ext[kUIMultigrid] = true;
-      ui->ui_ext[kUIMessages] = true;
-      ui->ui_ext[kUICmdline] = true;
-      
-      ui->rgb = true;
-      ui->width = init_width;
-      ui->height = init_height;
-      
-      ui->mode_info_set = handle_mode_info_set;
-      ui->update_menu = handle_update_menu;
-      ui->busy_start = handle_busy_start;
-      ui->busy_stop = handle_busy_stop;
-      ui->mouse_on = handle_mouse_on;
-      ui->mouse_off = handle_mouse_off;
-      ui->mode_change = handle_mode_change;
-      ui->bell = handle_bell;
-      ui->visual_bell = handle_visual_bell;
-      ui->flush = handle_flush;
-      ui->suspend = handle_suspend;
-      ui->set_title = handle_set_title;
-      ui->set_icon = handle_set_icon;
-      ui->screenshot = handle_screenshot;
-      ui->option_set = handle_option_set;
-      ui->stop = handle_stop;
-      ui->default_colors_set = handle_default_colors_set;
-      ui->hl_attr_define = handle_hl_attr_define;
-      ui->hl_group_set = handle_hl_group_set;
-      ui->grid_resize = handle_grid_resize;
-      ui->grid_clear = handle_grid_clear;
-      ui->grid_cursor_goto = handle_grid_cursor_goto;
-      ui->grid_scroll = handle_grid_scroll;
-      ui->raw_line = handle_raw_line;
-      ui->event = handle_event;
-      ui->msg_set_pos = handle_msg_set_pos;
-      ui->win_viewport = handle_win_viewport;
-      ui->wildmenu_show = handle_wildmenu_show;
-      ui->wildmenu_select = handle_wildmenu_select;
-      ui->wildmenu_hide = handle_wildmenu_hide;
-      
-      ui_bridge_attach(ui, agent_ui_main, agent_ui_scheduler);
     }
       
     default:
