@@ -59,8 +59,21 @@
 		68316845291CF2A500D9923A /* SortedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 68316844291CF2A500D9923A /* SortedCollections */; };
 		68317095291B4B730013E203 /* libLibrary.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D1EBF4037A0BE2B2CC2081 /* libLibrary.a */; };
 		683170BB291B92130013E203 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 683170BA291B92130013E203 /* main.c */; };
+		683D0C31291D4AC100B9A86F /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED23D291CFE2600528C30 /* libluajit-5.1.a */; };
+		683D0C32291D4AC100B9A86F /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED255291D02BA00528C30 /* libluv.a */; };
+		683D0C33291D4AC100B9A86F /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED23E291CFE2600528C30 /* libmsgpackc.a */; };
+		683D0C35291D4AC100B9A86F /* libtree-sitter.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED240291CFE2600528C30 /* libtree-sitter.a */; };
+		683D0C37291D4AC100B9A86F /* libuv_a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED242291CFE2600528C30 /* libuv_a.a */; };
+		683D0C38291D4AC100B9A86F /* libvterm.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED243291CFE2600528C30 /* libvterm.a */; };
+		683D0C39291D4AF800B9A86F /* libnvim.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68AED23B291CFD9C00528C30 /* libnvim.a */; };
+		683D0C3F291D4E8300B9A86F /* libiconv.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C3E291D4E8300B9A86F /* libiconv.2.dylib */; };
+		683D0C40291D4E8300B9A86F /* libiconv.2.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C3E291D4E8300B9A86F /* libiconv.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		683D0C42291D4E8E00B9A86F /* libintl.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C41291D4E8E00B9A86F /* libintl.8.dylib */; };
+		683D0C43291D4E8E00B9A86F /* libintl.8.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C41291D4E8E00B9A86F /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		683D0C45291D51DE00B9A86F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C44291D51DE00B9A86F /* main.m */; };
+		683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C4A291D732700B9A86F /* AppDelegate.m */; };
+		683D0C4D291D77F000B9A86F /* nims_ui.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C4C291D77F000B9A86F /* nims_ui.m */; };
 		6856AF44291BBCF500BBFE5A /* AgentLibrary.c in Sources */ = {isa = PBXBuildFile; fileRef = 6856AF43291BBCF500BBFE5A /* AgentLibrary.c */; };
-		685E7C4D291AC99800DBC6A7 /* Agent.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 685E7C42291AC99800DBC6A7 /* Agent.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		686C2B6B291BE7AA00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
@@ -144,13 +157,6 @@
 			remoteGlobalIDString = 68291040291BB9F200540729;
 			remoteInfo = AgentLibrary;
 		};
-		685E7C4B291AC99800DBC6A7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 685E7C41291AC99800DBC6A7;
-			remoteInfo = Agent;
-		};
 		A3ADE63AF4E78157309DF774 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D75C4ECC87BBEA370AB98AD7 /* Project object */;
@@ -188,17 +194,6 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		685E7C51291AC99800DBC6A7 /* Embed XPC Services */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/XPCServices";
-			dstSubfolderSpec = 16;
-			files = (
-				685E7C4D291AC99800DBC6A7 /* Agent.xpc in Embed XPC Services */,
-			);
-			name = "Embed XPC Services";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		68AED24F291CFF3800528C30 /* Embed Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -217,6 +212,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				683D0C40291D4E8300B9A86F /* libiconv.2.dylib in Embed Frameworks */,
+				683D0C43291D4E8E00B9A86F /* libintl.8.dylib in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -270,6 +267,13 @@
 		68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.4.0.tbd; path = usr/lib/libiconv.2.4.0.tbd; sourceTree = SDKROOT; };
 		68316F1E291B0A9A0013E203 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiconv.a; path = Targets/libNims/.deps/usr/lib/libiconv.a; sourceTree = "<group>"; };
 		683170BA291B92130013E203 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		683D0C3A291D4C1A00B9A86F /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
+		683D0C3E291D4E8300B9A86F /* libiconv.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.2.dylib; path = ../../../../../../opt/homebrew/lib/libiconv.2.dylib; sourceTree = "<group>"; };
+		683D0C41291D4E8E00B9A86F /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/lib/libintl.8.dylib; sourceTree = "<group>"; };
+		683D0C44291D51DE00B9A86F /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		683D0C4A291D732700B9A86F /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		683D0C4C291D77F000B9A86F /* nims_ui.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = nims_ui.m; sourceTree = "<group>"; };
+		683D0C4E291D788000B9A86F /* nims_ui.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nims_ui.h; sourceTree = "<group>"; };
 		68504142291AF38500FAB667 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = Targets/libNims/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68504144291AF4EB00FAB667 /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = Targets/libNims/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		68504145291AF4EB00FAB667 /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = Targets/libNims/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
@@ -307,7 +311,6 @@
 		68AED253291D005700528C30 /* luv.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = luv.so; path = "../../../../../../opt/homebrew/Cellar/luv/1.44.2-1/lib/lua/5.1/luv.so"; sourceTree = "<group>"; };
 		68AED254291D00C100528C30 /* luv.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = luv.so; path = neovim/.deps/usr/lib/lua/5.1/luv.so; sourceTree = "<group>"; };
 		68AED255291D02BA00528C30 /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluv.a; path = neovim/.deps/usr/lib/libluv.a; sourceTree = "<group>"; };
-		68FAE7A5291AB72F00D56ACB /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
 		694A3BCA248B90DC46551BAA /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
 		6C99C15304466700B78C88BB /* RxCocoa.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RxCocoa.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D6A8F46542E9063BBEAD3DF /* AssociatedDisposeBag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssociatedDisposeBag.swift; sourceTree = "<group>"; };
@@ -402,6 +405,7 @@
 			files = (
 				686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */,
 				686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */,
+				683D0C37291D4AC100B9A86F /* libuv_a.a in Frameworks */,
 				6831683D291CF2A500D9923A /* DequeModule in Frameworks */,
 				68316841291CF2A500D9923A /* OrderedCollections in Frameworks */,
 				6831683F291CF2A500D9923A /* HeapModule in Frameworks */,
@@ -410,11 +414,19 @@
 				6831683B291CF2A500D9923A /* Collections in Frameworks */,
 				68316837291CF29600D9923A /* RxCocoa in Frameworks */,
 				68316839291CF2A400D9923A /* BitCollections in Frameworks */,
+				683D0C3F291D4E8300B9A86F /* libiconv.2.dylib in Frameworks */,
 				68316843291CF2A500D9923A /* PersistentCollections in Frameworks */,
 				68AED239291CF39500528C30 /* MessagePack in Frameworks */,
+				683D0C33291D4AC100B9A86F /* libmsgpackc.a in Frameworks */,
 				E7E3154E2270904446550867 /* libLibrary.a in Frameworks */,
+				683D0C42291D4E8E00B9A86F /* libintl.8.dylib in Frameworks */,
+				683D0C35291D4AC100B9A86F /* libtree-sitter.a in Frameworks */,
+				683D0C39291D4AF800B9A86F /* libnvim.a in Frameworks */,
 				6829104D291BBC2200540729 /* libAgentLibrary.a in Frameworks */,
 				68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */,
+				683D0C32291D4AC100B9A86F /* libluv.a in Frameworks */,
+				683D0C38291D4AC100B9A86F /* libvterm.a in Frameworks */,
+				683D0C31291D4AC100B9A86F /* libluajit-5.1.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -553,6 +565,14 @@
 			path = AgentLibrary;
 			sourceTree = "<group>";
 		};
+		683D0C46291D58B900B9A86F /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				683D0C3A291D4C1A00B9A86F /* Nims-Bridging-Header.h */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
 		6856AF45291BBDB000BBFE5A /* include */ = {
 			isa = PBXGroup;
 			children = (
@@ -572,6 +592,8 @@
 		685B4241291AC11A000E2CBC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				683D0C41291D4E8E00B9A86F /* libintl.8.dylib */,
+				683D0C3E291D4E8300B9A86F /* libiconv.2.dylib */,
 				68AED253291D005700528C30 /* luv.so */,
 				68AED250291CFFFF00528C30 /* libiconv.2.dylib */,
 				68AED24C291CFF3700528C30 /* libintl.8.dylib */,
@@ -666,6 +688,7 @@
 				685E7C43291AC99800DBC6A7 /* Agent */,
 				2E506D2EE2D6B8623EEE2564 /* Resources */,
 				D426A83483E2950B0D87E52A /* Sources */,
+				683D0C46291D58B900B9A86F /* Support */,
 			);
 			path = Nims;
 			sourceTree = "<group>";
@@ -757,7 +780,6 @@
 				C828DD7D9945195C2B85DB95 /* GridLayer.swift */,
 				536BA5EE068D6061D6C7D266 /* GridsView.swift */,
 				9521886E7C59F31764229CDD /* GridsViewController.swift */,
-				68FAE7A5291AB72F00D56ACB /* Nims-Bridging-Header.h */,
 				949D552282D553C23A8D97E2 /* GridsWindow.swift */,
 				80889C948996F9B12D35D60A /* GridsWindowController.swift */,
 				8C636301B79EC7414ADA6607 /* GridView.swift */,
@@ -765,6 +787,10 @@
 				694A3BCA248B90DC46551BAA /* NSView.swift */,
 				8533CAFD566D47327DBE174C /* State.swift */,
 				CC82E43F62D24C12C9077955 /* StateDerivatives.swift */,
+				683D0C44291D51DE00B9A86F /* main.m */,
+				683D0C4A291D732700B9A86F /* AppDelegate.m */,
+				683D0C4E291D788000B9A86F /* nims_ui.h */,
+				683D0C4C291D77F000B9A86F /* nims_ui.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -905,14 +931,12 @@
 				AF16378219898CB5C1BB21C6 /* Resources */,
 				A98C8062C0DD71F5CEA81BEC /* Embed Frameworks */,
 				790500E47F16FC185C5FE4B9 /* Frameworks */,
-				685E7C51291AC99800DBC6A7 /* Embed XPC Services */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				D5974C5621F70EB0023737A0 /* PBXTargetDependency */,
 				007C9C43A994C78717E5269D /* PBXTargetDependency */,
-				685E7C4C291AC99800DBC6A7 /* PBXTargetDependency */,
 				6829104F291BBC2200540729 /* PBXTargetDependency */,
 			);
 			name = Nims;
@@ -986,6 +1010,9 @@
 				LastUpgradeCheck = 1410;
 				ORGANIZATIONNAME = foxacid7cd;
 				TargetAttributes = {
+					6479299BC3EE16467A260183 = {
+						LastSwiftMigration = 1410;
+					};
 					68291040291BB9F200540729 = {
 						CreatedOnToolsVersion = 14.1;
 					};
@@ -1114,6 +1141,9 @@
 				2A174C502DB85D01B8A3E764 /* TuistBundle+Nims.swift in Sources */,
 				997B001A70045F2AF1F0FAA7 /* AppDelegate.swift in Sources */,
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
+				683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */,
+				683D0C4D291D77F000B9A86F /* nims_ui.m in Sources */,
+				683D0C45291D51DE00B9A86F /* main.m in Sources */,
 				7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */,
 				E7F94A0CD6D70DD1E9BD5209 /* DrawRun.swift in Sources */,
 				84EE2C8D02E2406CBCC1D88C /* GlyphRun.swift in Sources */,
@@ -1176,11 +1206,6 @@
 			isa = PBXTargetDependency;
 			target = 68291040291BB9F200540729 /* AgentLibrary */;
 			targetProxy = 6829104E291BBC2200540729 /* PBXContainerItemProxy */;
-		};
-		685E7C4C291AC99800DBC6A7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 685E7C41291AC99800DBC6A7 /* Agent */;
-			targetProxy = 685E7C4B291AC99800DBC6A7 /* PBXContainerItemProxy */;
 		};
 		68A4BB71291C807A00625799 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1277,16 +1302,33 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
+				HEADER_SEARCH_PATHS = (
+					"${PROJECT_DIR}/neovim/.deps/usr/include",
+					"${PROJECT_DIR}/neovim/src",
+					"${PROJECT_DIR}/neovim/build/include",
+					"${PROJECT_DIR}/neovim/build/cmake.config",
+					"${PROJECT_DIR}/neovim/build/src/nvim/auto",
+					/opt/homebrew/include,
+				);
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/neovim/build/lib",
+					"$(PROJECT_DIR)/neovim/.deps/usr/lib",
+					/opt/homebrew/Cellar/gettext/0.21.1/lib,
+					/opt/homebrew/Cellar/libiconv/1.17/lib,
+					/opt/homebrew/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
@@ -1294,6 +1336,7 @@
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Support/Nims-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1352,7 +1395,6 @@
 				LIBRARY_SEARCH_PATHS = "";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Sources/Nims-Bridging-Header.h";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1639,7 +1681,6 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Sources/Nims-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -1647,22 +1688,40 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
+				HEADER_SEARCH_PATHS = (
+					"${PROJECT_DIR}/neovim/.deps/usr/include",
+					"${PROJECT_DIR}/neovim/src",
+					"${PROJECT_DIR}/neovim/build/include",
+					"${PROJECT_DIR}/neovim/build/cmake.config",
+					"${PROJECT_DIR}/neovim/build/src/nvim/auto",
+					/opt/homebrew/include,
+				);
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/neovim/build/lib",
+					"$(PROJECT_DIR)/neovim/.deps/usr/lib",
+					/opt/homebrew/Cellar/gettext/0.21.1/lib,
+					/opt/homebrew/Cellar/libiconv/1.17/lib,
+					/opt/homebrew/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = Nims;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OBJC_BRIDGING_HEADER = "${PROJECT_DIR}/Targets/Nims/Support/Nims-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				SWIFT_VERSION = 5.0;
 			};

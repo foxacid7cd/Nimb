@@ -19,8 +19,8 @@ typedef struct {
   
   int init_width;
   int init_height;
-} agent_bridge_data_t;
+} nims_ui_bridge_dat;
 
-extern agent_bridge_data_t agent_bridge_data;
+extern nims_ui_bridge_dat nims_ui_data;
 
 #endif /* main_h */
