@@ -22,6 +22,8 @@ agent_bridge_data_t agent_bridge_data;
 
 uv_thread_t nvim_thread;
 
+xpc_connection_t active_xpc_connection;
+
 void nvim_thread_entry(void *arg)
 {
   char *nvim_arguments[1];
@@ -214,6 +216,12 @@ void handle_input_message_data(xpc_object_t data)
 
 void handle_connection(xpc_connection_t connection)
 {
+  if (active_xpc_connection != NULL) {
+    return xpc_connection_cancel(connection);
+  }
+  
+  active_xpc_connection = connection;
+  
   xpc_connection_set_event_handler(connection, ^(xpc_object_t object) {
     xpc_type_t type = xpc_get_type(object);
     

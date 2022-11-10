@@ -288,7 +288,6 @@
 		6856AF43291BBCF500BBFE5A /* AgentLibrary.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = AgentLibrary.c; sourceTree = "<group>"; };
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
-		685E7C3D291AC86800DBC6A7 /* libNims */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = libNims; sourceTree = "<group>"; };
 		685E7C42291AC99800DBC6A7 /* Agent.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = Agent.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		685E7C4A291AC99800DBC6A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		686C2B65291BE48900D0E397 /* main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
@@ -796,7 +795,6 @@
 		EF0E9C8DD116A87B02C75C67 /* Targets */ = {
 			isa = PBXGroup;
 			children = (
-				685E7C3D291AC86800DBC6A7 /* libNims */,
 				21F73A5C47842DE037A54CA8 /* API */,
 				61F49B88231ECF394D1B53F5 /* Library */,
 				C66079F54940A3AECCA084DC /* neogen */,
