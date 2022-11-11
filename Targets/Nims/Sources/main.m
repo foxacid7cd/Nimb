@@ -8,14 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-extern int nvim_main(int argc, char **argv);
-
 int main(int argc, char **argv)
 {
-  NSThread *nvimThread = [[NSThread alloc] initWithBlock:^{
-    nvim_main(1, argv);
-  }];
-  [nvimThread start];
-  
   return NSApplicationMain(argc, (const char**) argv);
 }
