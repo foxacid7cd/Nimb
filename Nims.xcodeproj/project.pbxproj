@@ -83,6 +83,7 @@
 		687FEC6E291E04490065CE9F /* libiconv.2.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 683D0C3E291D4E8300B9A86F /* libiconv.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		687FEC6F291E04530065CE9F /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		687FEC70291E04580065CE9F /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
+		687FEC76291E13480065CE9F /* nims_ui.c in Sources */ = {isa = PBXBuildFile; fileRef = 687FEC75291E13480065CE9F /* nims_ui.c */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
 		68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED236291CF38800528C30 /* AsyncAlgorithms */; };
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
@@ -304,6 +305,8 @@
 		687FEC5F291E04150065CE9F /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = neovim/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		687FEC60291E04150065CE9F /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = neovim/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
 		687FEC61291E04150065CE9F /* libvterm.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libvterm.la; path = neovim/.deps/usr/lib/libvterm.la; sourceTree = "<group>"; };
+		687FEC73291E0DF20065CE9F /* nvimd_defs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nvimd_defs.h; sourceTree = "<group>"; };
+		687FEC75291E13480065CE9F /* nims_ui.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = nims_ui.c; sourceTree = "<group>"; };
 		68AED23A291CFC5900528C30 /* neovim */ = {isa = PBXFileReference; lastKnownFileType = folder; path = neovim; sourceTree = "<group>"; };
 		68AED23B291CFD9C00528C30 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = neovim/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68AED23D291CFE2600528C30 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "neovim/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
@@ -596,10 +599,28 @@
 		687FEC4C291DF7790065CE9F /* nvimd */ = {
 			isa = PBXGroup;
 			children = (
-				687FEC5B291DF7C30065CE9F /* main.c */,
+				687FEC72291E0DC70065CE9F /* include */,
+				687FEC71291E0DA10065CE9F /* src */,
 				687FEC53291DF7790065CE9F /* Info.plist */,
 			);
 			path = nvimd;
+			sourceTree = "<group>";
+		};
+		687FEC71291E0DA10065CE9F /* src */ = {
+			isa = PBXGroup;
+			children = (
+				687FEC5B291DF7C30065CE9F /* main.c */,
+				687FEC75291E13480065CE9F /* nims_ui.c */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		687FEC72291E0DC70065CE9F /* include */ = {
+			isa = PBXGroup;
+			children = (
+				687FEC73291E0DF20065CE9F /* nvimd_defs.h */,
+			);
+			path = include;
 			sourceTree = "<group>";
 		};
 		73A721EF62F82CF666CDA622 /* Project */ = {
@@ -1046,6 +1067,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				687FEC5D291DF7C30065CE9F /* main.c in Sources */,
+				687FEC76291E13480065CE9F /* nims_ui.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1228,6 +1250,7 @@
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
+				HEADER_SEARCH_PATHS = Targets/nvimd/include;
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1399,6 +1422,7 @@
 					"${PROJECT_DIR}/neovim/build/cmake.config",
 					"${PROJECT_DIR}/neovim/build/src/nvim/auto",
 					/opt/homebrew/include,
+					Targets/nvimd/include,
 				);
 				INFOPLIST_FILE = Targets/nvimd/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = nvimd;
@@ -1444,6 +1468,7 @@
 					"${PROJECT_DIR}/neovim/build/cmake.config",
 					"${PROJECT_DIR}/neovim/build/src/nvim/auto",
 					/opt/homebrew/include,
+					Targets/nvimd/include,
 				);
 				INFOPLIST_FILE = Targets/nvimd/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = nvimd;
@@ -1560,6 +1585,7 @@
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
+				HEADER_SEARCH_PATHS = Targets/nvimd/include;
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

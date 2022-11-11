@@ -8,6 +8,8 @@
 
 #include <xpc/xpc.h>
 #include <uv.h>
+#include <nvim/globals.h>
+#include "nvimd_defs.h"
 
 extern int nvim_main(int argc, char **argv);
 
@@ -40,9 +42,9 @@ void handle_connection(xpc_connection_t connection)
       return;
     }
     
-    int64_t message_type = xpc_dictionary_get_int64(object, "type");
+    int64_t message_type = xpc_dictionary_get_int64(object, NVIMD_MESSAGE_KEY_TYPE);
     switch (message_type) {
-      case 0: {
+      case NvimdMessageTypeStart: {
         uv_thread_create(&nvim_thread, nvim_thread_main, NULL);
       }
         

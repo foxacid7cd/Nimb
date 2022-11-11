@@ -6,6 +6,8 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+#include "nvimd_defs.h"
+
 #import <Cocoa/Cocoa.h>
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
@@ -31,9 +33,9 @@
       return;
     }
     
-    int64_t message_type = xpc_dictionary_get_int64(object, "type");
+    int64_t message_type = xpc_dictionary_get_int64(object, NVIMD_MESSAGE_KEY_TYPE);
     switch (message_type) {
-      case 0:
+      case NvimdMessageTypeStart:
         NSLog(@"Started!");
         
       default:
@@ -44,7 +46,7 @@
   xpc_connection_activate(connection);
   
   xpc_object_t message = xpc_dictionary_create_empty();
-  xpc_dictionary_set_int64(message, "type", 0);
+  xpc_dictionary_set_int64(message, "type", NvimdMessageTypeStart);
   xpc_connection_send_message(connection, message);
 }
 
