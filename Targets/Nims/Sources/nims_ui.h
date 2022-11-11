@@ -6,9 +6,10 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#ifndef nims_ui_h
-#define nims_ui_h
+#import "NvimUI.h"
 
-void nims_ui_attach(int width, int height);
+NS_ASSUME_NONNULL_BEGIN
 
-#endif /* nims_ui_h */
+void nims_ui_start(NvimUI *object);
+
+NS_ASSUME_NONNULL_END

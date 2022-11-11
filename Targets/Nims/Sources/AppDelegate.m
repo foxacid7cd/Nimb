@@ -6,8 +6,6 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#include "nims_ui.h"
-
 #import <Cocoa/Cocoa.h>
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
@@ -17,8 +15,6 @@
 @implementation AppDelegate
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification
-{
-  nims_ui_attach(80, 24);
-}
+{}
 
 @end

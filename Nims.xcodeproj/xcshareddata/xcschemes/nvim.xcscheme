@@ -14,8 +14,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-               BuildableName = "nvim.bundle"
+               BlueprintIdentifier = "683D0C4F291D877200B9A86F"
+               BuildableName = "nvim"
                BlueprintName = "nvim"
                ReferencedContainer = "container:Nims.xcodeproj">
             </BuildableReference>
@@ -44,8 +44,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-            BuildableName = "nvim.bundle"
+            BlueprintIdentifier = "683D0C4F291D877200B9A86F"
+            BuildableName = "nvim"
             BlueprintName = "nvim"
             ReferencedContainer = "container:Nims.xcodeproj">
          </BuildableReference>
@@ -60,8 +60,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "1C463259E300F75AA26CF68D"
-            BuildableName = "nvim.bundle"
+            BlueprintIdentifier = "683D0C4F291D877200B9A86F"
+            BuildableName = "nvim"
             BlueprintName = "nvim"
             ReferencedContainer = "container:Nims.xcodeproj">
          </BuildableReference>
