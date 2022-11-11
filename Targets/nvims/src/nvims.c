@@ -11,6 +11,7 @@
 
 extern int nvim_main(int argc, char **argv);
 
+nvims_ui_t nvims_ui;
 uv_thread_t nvim_thread;
 
 void nvim_thread_main(void *arg)
@@ -19,7 +20,8 @@ void nvim_thread_main(void *arg)
   nvim_main(1, &nvim_arg);
 }
 
-void nvims_start(void)
+void nvims_start(nvims_ui_t arg)
 {
+  nvims_ui = arg;
   uv_thread_create(&nvim_thread, nvim_thread_main, NULL);
 }

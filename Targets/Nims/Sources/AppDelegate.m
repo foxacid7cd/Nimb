@@ -32,7 +32,9 @@
 }
 
 - (void) start_nvim {
-  nvims_ui.mode_info_set = ^(_Bool enabled, void *cursor_styles) {
+  nvims_ui_t nvims_ui;
+  
+  nvims_ui.mode_info_set = ^(_Bool enabled, nvim_array_t cursor_styles) {
     NSLog(@"nvims_ui.mode_info_set");
   };
   
@@ -92,7 +94,7 @@
     NSLog(@"nvims_ui.screenshot %@", NS_STRING(path));
   };
   
-  nvims_ui.option_set = ^(nvim_string_t name, void *value) {
+  nvims_ui.option_set = ^(nvim_string_t name, nvim_object_t value) {
     NSLog(@"nvims_ui.option_set %@", NS_STRING(name));
   };
   
@@ -104,11 +106,11 @@
     NSLog(@"nvims_ui.default_colors_set");
   };
   
-  nvims_ui.hl_attr_define = ^(int64_t id, nvim_hl_attrs_t rgb_attrs, nvim_hl_attrs_t cterm_attrs, void *info) {
+  nvims_ui.hl_attr_define = ^(int64_t _id, nvim_hl_attrs_t rgb_attrs, nvim_hl_attrs_t cterm_attrs, nvim_array_t info) {
     NSLog(@"nvims_ui.hl_attr_define");
   };
   
-  nvims_ui.hl_group_set = ^(nvim_string_t name, int64_t id) {
+  nvims_ui.hl_group_set = ^(nvim_string_t name, int64_t _id) {
     NSLog(@"nvims_ui.hl_group_set %@", NS_STRING(name));
   };
   
@@ -128,11 +130,11 @@
       NSLog(@"nvims_ui.grid_scroll");
   };
   
-  nvims_ui.raw_line = ^(int64_t grid, int64_t row, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const void * chunk, const int32_t * attrs) {
+  nvims_ui.raw_line = ^(int64_t grid, int64_t row, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
       NSLog(@"nvims_ui.raw_line");
   };
   
-  nvims_ui.event = ^(char *name, void *args) {
+  nvims_ui.event = ^(char *name, nvim_array_t args) {
     NSLog(@"nvims_ui.event %s", name);
   };
   
@@ -144,7 +146,7 @@
     NSLog(@"nvims_ui.win_viewport");
   };
   
-  nvims_ui.wildmenu_show = ^(void *items) {
+  nvims_ui.wildmenu_show = ^(nvim_array_t items) {
     NSLog(@"nvims_ui.wildmenu_show");
   };
   
@@ -156,7 +158,7 @@
     NSLog(@"nvims_ui.wildmenu_hide");
   };
   
-  nvims_start();
+  nvims_start(nvims_ui);
 }
 
 @end

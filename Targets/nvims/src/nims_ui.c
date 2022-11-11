@@ -13,13 +13,16 @@
 #include <nvim/ugrid.h>
 #include "nvims.h"
 
+extern nvims_ui_t nvims_ui;
+
 typedef struct {
   UIBridgeData *bridge;
   Loop *loop;
 } NimsUIData;
 
 #define STRING(arg) *(nvim_string_t *)&arg
-#define ARRAY(arg) (void *)&arg
+#define OBJECT(arg) *(nvim_object_t *)&arg
+#define ARRAY(arg) *(nvim_array_t *)&arg
 #define HL_ATTRS(arg) *(nvim_hl_attrs_t *)&arg
 
 void nims_ui_mode_info_set(UI *ui, bool enabled, Array cursor_styles)
@@ -94,7 +97,7 @@ void nims_ui_screenshot(UI *ui, String path)
 
 void nims_ui_option_set(UI *ui, String name, Object value)
 {
-  nvims_ui.option_set(STRING(name), (void *)&value);
+  nvims_ui.option_set(STRING(name), OBJECT(value));
 }
 
 void nims_ui_stop(UI *ui)
@@ -137,7 +140,7 @@ void nims_ui_grid_scroll(UI *ui, Integer grid, Integer top, Integer bot, Integer
   nvims_ui.grid_scroll(grid, top, bot, left, right, rows, cols);
 }
 
-void nims_ui_raw_line(UI *ui, Integer grid, Integer row, Integer startcol, Integer endcol, Integer clearcol, Integer clearattr, LineFlags flags, const schar_T * chunk, const sattr_T * attrs)
+void nims_ui_raw_line(UI *ui, Integer grid, Integer row, Integer startcol, Integer endcol, Integer clearcol, Integer clearattr, LineFlags flags, const schar_T *chunk, const sattr_T *attrs)
 {
   nvims_ui.raw_line(grid, row, startcol, endcol, clearcol, clearattr, flags, chunk, attrs);
 }
@@ -205,6 +208,10 @@ void nims_ui_start(void)
   ui->ui_ext[kUIMultigrid] = true;
   ui->ui_ext[kUIMessages] = true;
   ui->ui_ext[kUICmdline] = true;
+  ui->ui_ext[kUIWildmenu] = true;
+  ui->ui_ext[kUIPopupmenu] = true;
+  ui->ui_ext[kUITabline] = true;
+  ui->ui_ext[kUIHlState] = true;
   
   ui->rgb = true;
   
