@@ -277,6 +277,7 @@
 		688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIGrid.m; sourceTree = "<group>"; };
 		688E2DE1291F6BE00095A3F1 /* NimsUIGridRow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIGridRow.h; sourceTree = "<group>"; };
 		688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIGridRow.m; sourceTree = "<group>"; };
+		688E2DE4291F85C30095A3F1 /* Grid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Grid.h; sourceTree = "<group>"; };
 		68AED23A291CFC5900528C30 /* neovim */ = {isa = PBXFileReference; lastKnownFileType = folder; path = neovim; sourceTree = "<group>"; };
 		68AED23B291CFD9C00528C30 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = neovim/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68AED23D291CFE2600528C30 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "neovim/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
@@ -746,6 +747,7 @@
 				688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */,
 				688E2DE1291F6BE00095A3F1 /* NimsUIGridRow.h */,
 				688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */,
+				688E2DE4291F85C30095A3F1 /* Grid.h */,
 			);
 			path = Sources;
 			sourceTree = "<group>";

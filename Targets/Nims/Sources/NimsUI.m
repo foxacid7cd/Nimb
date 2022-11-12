@@ -19,13 +19,15 @@
   NSMutableDictionary<NSNumber *, NimsUIGrid *> *grids;
 }
 
-- (instancetype)initWithMainWindow:(MainWindow *)mainWindow {
+- (instancetype)initWithMainWindow:(MainWindow *)mainWindow
+{
   self->mainWindow = mainWindow;
   self->grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
   return [super init];
 }
 
-- (void)start {
+- (void)start
+{
   nvims_ui_t nvims_ui;
   
   nvims_ui.mode_info_set = ^(_Bool enabled, nvim_array_t cursor_styles) {
@@ -113,6 +115,8 @@
       grid = [[NimsUIGrid alloc] initWithID:_id];
       [self->grids setValue:grid forKey:_id];
     }
+    
+    [grid setSize:GridMakeSize(cols, rows)];
   };
   
   nvims_ui.grid_clear = ^(int64_t grid) {
