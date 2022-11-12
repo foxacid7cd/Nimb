@@ -60,11 +60,11 @@
 		683D0C43291D4E8E00B9A86F /* libintl.8.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C41291D4E8E00B9A86F /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		683D0C45291D51DE00B9A86F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C44291D51DE00B9A86F /* main.m */; };
 		683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C4A291D732700B9A86F /* AppDelegate.m */; };
-		683D0C57291DC18800B9A86F /* NvimWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C56291DC18800B9A86F /* NvimWindow.m */; };
-		683D0C5A291DC34800B9A86F /* NvimUIData.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C59291DC34800B9A86F /* NvimUIData.m */; };
-		683D0C5D291DC4D700B9A86F /* NvimUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C5C291DC4D700B9A86F /* NvimUI.m */; };
 		686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
+		687B370E291EE80C000733DC /* MainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B370D291EE80C000733DC /* MainView.m */; };
+		687B3712291EF25D000733DC /* NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3711291EF25D000733DC /* NimsUI.m */; };
+		687B3715291EF2EB000733DC /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3714291EF2EB000733DC /* MainWindow.m */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
 		68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED236291CF38800528C30 /* AsyncAlgorithms */; };
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
@@ -244,12 +244,6 @@
 		683D0C41291D4E8E00B9A86F /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/lib/libintl.8.dylib; sourceTree = "<group>"; };
 		683D0C44291D51DE00B9A86F /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		683D0C4A291D732700B9A86F /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		683D0C55291DC18800B9A86F /* NvimWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NvimWindow.h; sourceTree = "<group>"; };
-		683D0C56291DC18800B9A86F /* NvimWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NvimWindow.m; sourceTree = "<group>"; };
-		683D0C58291DC34800B9A86F /* NvimUIData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NvimUIData.h; sourceTree = "<group>"; };
-		683D0C59291DC34800B9A86F /* NvimUIData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NvimUIData.m; sourceTree = "<group>"; };
-		683D0C5B291DC4D700B9A86F /* NvimUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NvimUI.h; sourceTree = "<group>"; };
-		683D0C5C291DC4D700B9A86F /* NvimUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NvimUI.m; sourceTree = "<group>"; };
 		68504142291AF38500FAB667 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = Targets/libNims/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68504144291AF4EB00FAB667 /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = Targets/libNims/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		68504145291AF4EB00FAB667 /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = Targets/libNims/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
@@ -268,6 +262,12 @@
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		686C2B66291BE59F00D0E397 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		687B370C291EE80C000733DC /* MainView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainView.h; sourceTree = "<group>"; };
+		687B370D291EE80C000733DC /* MainView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainView.m; sourceTree = "<group>"; };
+		687B3710291EF25D000733DC /* NimsUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUI.h; sourceTree = "<group>"; };
+		687B3711291EF25D000733DC /* NimsUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUI.m; sourceTree = "<group>"; };
+		687B3713291EF2EB000733DC /* MainWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainWindow.h; sourceTree = "<group>"; };
+		687B3714291EF2EB000733DC /* MainWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
 		687FEC5F291E04150065CE9F /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = neovim/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		687FEC60291E04150065CE9F /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = neovim/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
 		687FEC61291E04150065CE9F /* libvterm.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libvterm.la; path = neovim/.deps/usr/lib/libvterm.la; sourceTree = "<group>"; };
@@ -552,6 +552,29 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		687B370F291EED59000733DC /* New Group */ = {
+			isa = PBXGroup;
+			children = (
+				C1D9AA53F25B9ADB7C78B85C /* AppDelegate.swift */,
+				93D8B73DC45F5647E47B15A6 /* Cell.swift */,
+				C8FEAC33927480CAC138A580 /* CellsGeometry.swift */,
+				02638CE1AD944A6DC8E6B23B /* DrawRun.swift */,
+				8C5A4149F9B56A5824E04AC9 /* GlyphRun.swift */,
+				42079566687A99BF48A6DA7B /* GridEvent.swift */,
+				C828DD7D9945195C2B85DB95 /* GridLayer.swift */,
+				536BA5EE068D6061D6C7D266 /* GridsView.swift */,
+				9521886E7C59F31764229CDD /* GridsViewController.swift */,
+				949D552282D553C23A8D97E2 /* GridsWindow.swift */,
+				80889C948996F9B12D35D60A /* GridsWindowController.swift */,
+				8C636301B79EC7414ADA6607 /* GridView.swift */,
+				3834B3B02838ACDEBC26DB87 /* NSFontExtensions.swift */,
+				694A3BCA248B90DC46551BAA /* NSView.swift */,
+				8533CAFD566D47327DBE174C /* State.swift */,
+				CC82E43F62D24C12C9077955 /* StateDerivatives.swift */,
+			);
+			path = "New Group";
+			sourceTree = "<group>";
+		};
 		68EB25CB291E639600C49F29 /* nvims */ = {
 			isa = PBXGroup;
 			children = (
@@ -703,31 +726,16 @@
 		D426A83483E2950B0D87E52A /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				C1D9AA53F25B9ADB7C78B85C /* AppDelegate.swift */,
-				93D8B73DC45F5647E47B15A6 /* Cell.swift */,
-				C8FEAC33927480CAC138A580 /* CellsGeometry.swift */,
-				02638CE1AD944A6DC8E6B23B /* DrawRun.swift */,
-				8C5A4149F9B56A5824E04AC9 /* GlyphRun.swift */,
-				42079566687A99BF48A6DA7B /* GridEvent.swift */,
-				C828DD7D9945195C2B85DB95 /* GridLayer.swift */,
-				536BA5EE068D6061D6C7D266 /* GridsView.swift */,
-				9521886E7C59F31764229CDD /* GridsViewController.swift */,
-				949D552282D553C23A8D97E2 /* GridsWindow.swift */,
-				80889C948996F9B12D35D60A /* GridsWindowController.swift */,
-				8C636301B79EC7414ADA6607 /* GridView.swift */,
-				3834B3B02838ACDEBC26DB87 /* NSFontExtensions.swift */,
-				694A3BCA248B90DC46551BAA /* NSView.swift */,
-				8533CAFD566D47327DBE174C /* State.swift */,
-				CC82E43F62D24C12C9077955 /* StateDerivatives.swift */,
+				687B370F291EED59000733DC /* New Group */,
 				683D0C3A291D4C1A00B9A86F /* BridgingHeader.h */,
 				683D0C44291D51DE00B9A86F /* main.m */,
 				683D0C4A291D732700B9A86F /* AppDelegate.m */,
-				683D0C55291DC18800B9A86F /* NvimWindow.h */,
-				683D0C56291DC18800B9A86F /* NvimWindow.m */,
-				683D0C58291DC34800B9A86F /* NvimUIData.h */,
-				683D0C59291DC34800B9A86F /* NvimUIData.m */,
-				683D0C5B291DC4D700B9A86F /* NvimUI.h */,
-				683D0C5C291DC4D700B9A86F /* NvimUI.m */,
+				687B3713291EF2EB000733DC /* MainWindow.h */,
+				687B3714291EF2EB000733DC /* MainWindow.m */,
+				687B370C291EE80C000733DC /* MainView.h */,
+				687B370D291EE80C000733DC /* MainView.m */,
+				687B3710291EF25D000733DC /* NimsUI.h */,
+				687B3711291EF25D000733DC /* NimsUI.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1035,22 +1043,22 @@
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
 				683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */,
 				683D0C45291D51DE00B9A86F /* main.m in Sources */,
-				683D0C57291DC18800B9A86F /* NvimWindow.m in Sources */,
 				7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */,
 				E7F94A0CD6D70DD1E9BD5209 /* DrawRun.swift in Sources */,
 				84EE2C8D02E2406CBCC1D88C /* GlyphRun.swift in Sources */,
+				687B3712291EF25D000733DC /* NimsUI.m in Sources */,
 				1CEC48BF005FFE646CB4FE91 /* GridEvent.swift in Sources */,
 				864E9D84F9554E8A92D77C4E /* GridLayer.swift in Sources */,
 				C444E3985131498C8C52D21F /* GridView.swift in Sources */,
-				683D0C5A291DC34800B9A86F /* NvimUIData.m in Sources */,
 				67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */,
 				07C97DD64D1768616AB5EE44 /* GridsViewController.swift in Sources */,
 				30488A27829485C8CFCE8769 /* GridsWindow.swift in Sources */,
+				687B370E291EE80C000733DC /* MainView.m in Sources */,
+				687B3715291EF2EB000733DC /* MainWindow.m in Sources */,
 				01F67E4F28DDFA2056A3DE7A /* GridsWindowController.swift in Sources */,
 				24C4F376FF50AFDAA5AF1C38 /* NSFontExtensions.swift in Sources */,
 				52F8409B461CE2641DD36478 /* NSView.swift in Sources */,
 				73F4E76FA06B1E0304F48A95 /* State.swift in Sources */,
-				683D0C5D291DC4D700B9A86F /* NvimUI.m in Sources */,
 				3B16E2D8D36D863B9AFDF472 /* StateDerivatives.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

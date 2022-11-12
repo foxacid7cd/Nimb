@@ -1,22 +1,16 @@
 //
-//  NvimWindow.h
+//  MainView.h
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 11.11.2022.
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-
-typedef struct {
-  int top, bottom, left, right;
-} Rectangle;
+#import <Cocoa/Cocoa.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NvimWindow : NSObject {
-  int grid;
-}
+@interface MainView : NSView
 
 @end
 
