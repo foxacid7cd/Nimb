@@ -9,28 +9,27 @@
 #import <Quartz/Quartz.h>
 #import "MainView.h"
 
-@implementation MainView {
-  NSMutableAttributedString *attributedString;
-}
+@implementation MainView
 
-- (instancetype)initWithFont: (NSFont *)font {
-  self->attributedString = [[NSMutableAttributedString alloc] initWithString:@"hello world" attributes:@{
-    NSFontAttributeName: font,
-    NSForegroundColorAttributeName: [NSColor whiteColor],
-    NSBackgroundColorAttributeName: [NSColor blackColor],
-    NSLigatureAttributeName: @2,
-  }];
+- (instancetype)init {
+//  self->attributedString = [[NSMutableAttributedString alloc] initWithString:@"hello world" attributes:@{
+//    NSFontAttributeName: font,
+//    NSForegroundColorAttributeName: [NSColor whiteColor],
+//    NSBackgroundColorAttributeName: [NSColor blackColor],
+//    NSLigatureAttributeName: @2,
+//  }];
   
   self = [super initWithFrame:NSZeroRect];
+  
   [self setWantsLayer:true];
   
-  [NSTimer scheduledTimerWithTimeInterval:0.5 repeats:true block:^(NSTimer * _Nonnull timer) {
-    [self->attributedString beginEditing];
-    
-    [self->attributedString endEditing];
-    
-    [(CATextLayer *)[self layer] setString:self->attributedString];
-  }];
+//  [NSTimer scheduledTimerWithTimeInterval:0.5 repeats:true block:^(NSTimer * _Nonnull timer) {
+//    [self->attributedString beginEditing];
+//
+//    [self->attributedString endEditing];
+//
+//    [(CATextLayer *)[self layer] setString:self->attributedString];
+//  }];
   
   return self;
 }

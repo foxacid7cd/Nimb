@@ -7,12 +7,15 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "MainWindow.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUI : NSObject
 
-- (void) start;
+- (instancetype)initWithMainWindow:(MainWindow *)mainWindow;
+
+- (void)start;
 
 @end
 

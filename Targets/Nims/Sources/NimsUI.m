@@ -7,13 +7,25 @@
 //
 
 #import "nvims.h"
+#import "NimsUIGrid.h"
 #import "NimsUI.h"
 
 #define NS_STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
 
-@implementation NimsUI
+#define GRIDS_CAPACITY 128
 
-- (void) start {
+@implementation NimsUI {
+  MainWindow *mainWindow;
+  NSMutableDictionary<NSNumber *, NimsUIGrid *> *grids;
+}
+
+- (instancetype)initWithMainWindow:(MainWindow *)mainWindow {
+  self->mainWindow = mainWindow;
+  self->grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
+  return [super init];
+}
+
+- (void)start {
   nvims_ui_t nvims_ui;
   
   nvims_ui.mode_info_set = ^(_Bool enabled, nvim_array_t cursor_styles) {
@@ -93,8 +105,14 @@
     NSLog(@"nvims_ui.hl_group_set %@", NS_STRING(name));
   };
   
-  nvims_ui.grid_resize = ^(int64_t grid, int64_t rows, int64_t cols) {
-    NSLog(@"nvims_ui.grid_resize %lli %lli %lli", grid, rows, cols);
+  nvims_ui.grid_resize = ^(int64_t cID, int64_t rows, int64_t cols) {
+    id _id = [NSNumber numberWithInteger:cID];
+    
+    NimsUIGrid *grid = [self->grids objectForKey:_id];
+    if (grid == nil) {
+      grid = [[NimsUIGrid alloc] initWithID:_id];
+      [self->grids setValue:grid forKey:_id];
+    }
   };
   
   nvims_ui.grid_clear = ^(int64_t grid) {
