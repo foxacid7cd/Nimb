@@ -6,14 +6,14 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import <Cocoa/Cocoa.h>
 #import "Grid.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGrid : NSObject
 
-- (instancetype)initWithID:(NSNumber *)_id;
+- (instancetype)initWithID:(NSNumber *)_id andFont:(NSFont *)font;
 
 - (NSNumber *)_id;
 

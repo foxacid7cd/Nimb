@@ -6,14 +6,11 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-#import "MainWindow.h"
+#import <QuartzCore/QuartzCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NimsUI : NSObject
-
-- (instancetype)initWithMainWindow:(MainWindow *)mainWindow;
+@interface NimsUI : NSObject <CALayerDelegate>
 
 - (void)start;
 

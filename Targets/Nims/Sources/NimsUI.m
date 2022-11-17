@@ -14,20 +14,52 @@
 
 #define GRIDS_CAPACITY 128
 
+static void *ViewLayerBoundsContext = &ViewLayerBoundsContext;
+
 @implementation NimsUI {
-  MainWindow *mainWindow;
-  NSMutableDictionary<NSNumber *, NimsUIGrid *> *grids;
+  NSFont *_font;
+  NSMutableDictionary<NSNumber *, NimsUIGrid *> *_grids;
+  CALayer *_layer;
+  NSWindow *_window;
 }
 
-- (instancetype)initWithMainWindow:(MainWindow *)mainWindow
-{
-  self->mainWindow = mainWindow;
-  self->grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
+- (instancetype)init {
+  self->_font = [NSFont monospacedSystemFontOfSize:13 weight:NSFontWeightRegular];
+  self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
   return [super init];
 }
 
-- (void)start
-{
+- (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)ctx {
+  CGContextSetFillColorWithColor(ctx, [[NSColor blackColor] CGColor]);
+  CGContextFillRect(ctx, CGContextGetClipBoundingBox(ctx));
+}
+
+- (void)layerWillDraw:(CALayer *)layer {
+  NSLog(@"layerWillDraw");
+}
+
+- (void)start {
+  CALayer *layer = [[CALayer alloc] init];
+  [layer setDelegate:self];
+  self->_layer = layer;
+  
+  id view = [[NSView alloc] initWithFrame:NSZeroRect];
+  [view setWantsLayer:true];
+  
+  [[view layer] addObserver:self
+                 forKeyPath:@"bounds"
+                    options:NSKeyValueObservingOptionNew
+                    context:ViewLayerBoundsContext];
+  [[view layer] addSublayer:layer];
+  
+  id window = [[NSWindow alloc] initWithContentRect:NSMakeRect(100, 100, 640, 480)
+                                          styleMask:NSWindowStyleMaskTitled
+                                            backing:NSBackingStoreBuffered
+                                              defer:false];
+  [window setContentView:view];
+  [window orderFront:nil];
+  self->_window = window;
+  
   nvims_ui_t nvims_ui;
   
   nvims_ui.mode_info_set = ^(_Bool enabled, nvim_array_t cursor_styles) {
@@ -110,13 +142,13 @@
   nvims_ui.grid_resize = ^(int64_t cID, int64_t rows, int64_t cols) {
     id _id = [NSNumber numberWithInteger:cID];
     
-    NimsUIGrid *grid = [self->grids objectForKey:_id];
+    NimsUIGrid *grid = [self->_grids objectForKey:_id];
     if (grid == nil) {
-      grid = [[NimsUIGrid alloc] initWithID:_id];
-      [self->grids setValue:grid forKey:_id];
+      grid = [[NimsUIGrid alloc] initWithID:_id andFont:self->_font];
+      [self->_grids setValue:grid forKey:_id];
     }
     
-    [grid setSize:GridMakeSize(cols, rows)];
+    [grid setSize:GridSizeMake(cols, rows)];
   };
   
   nvims_ui.grid_clear = ^(int64_t grid) {
@@ -160,6 +192,18 @@
   };
   
   nvims_start(nvims_ui);
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+  if (context == ViewLayerBoundsContext) {
+    CGRect bounds = [(CALayer *)object bounds];
+    [self->_layer setFrame:bounds];
+    [self->_layer setNeedsDisplay];
+    
+  } else {
+    [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+  }
 }
 
 @end

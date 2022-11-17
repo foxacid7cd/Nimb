@@ -10,34 +10,37 @@
 #import "NimsUIGrid.h"
 
 @implementation NimsUIGrid {
-  NSNumber *_id;
-  GridSize size;
-  NSMutableArray<NimsUIGridRow *> *rows;
+  NSNumber *__id;
+  NSFont *_font;
+  GridSize _size;
+  NSMutableArray<NimsUIGridRow *> *_rows;
+  CALayer *_layer;
 }
 
-- (instancetype)initWithID:(NSNumber *)_id
+- (instancetype)initWithID:(NSNumber *)_id andFont:(NSFont *)font
 {
-  self->_id = _id;
-  rows = [[NSArray array] mutableCopy];
+  self->__id = _id;
+  self->_font = font;
+  self->_rows = [[NSArray array] mutableCopy];
+  self->_layer = [[CALayer alloc] init];
   return [super init];
 }
 
-- (NSNumber *)_id
-{
-  return self->_id;
+- (NSNumber *)_id {
+  return self->__id;
 }
 
 - (void)setSize:(GridSize)size
 {
-  self->size = size;
+  self->_size = size;
   
-  int64_t rowsNeededCount = MAX(0, size.height - [self->rows count]);
-  for (int64_t i = 0; i < rowsNeededCount; i++) {
-    id row = [[NimsUIGridRow alloc] init];
-    [self->rows addObject:row];
+  int64_t additionalRowsNeededCount = MAX(0, size.height - [self->_rows count]);
+  for (int64_t i = 0; i < additionalRowsNeededCount; i++) {
+    id row = [[NimsUIGridRow alloc] initWithFont:self->_font];
+    [self->_rows addObject:row];
   }
   
-  NSLog(@"NimsUIGrid rows %lu", (unsigned long)[rows count]);
+  NSLog(@"NimsUIGrid rows %lu", (unsigned long)[_rows count]);
 }
 
 @end

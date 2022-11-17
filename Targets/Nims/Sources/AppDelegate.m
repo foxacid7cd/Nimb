@@ -6,32 +6,21 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-
 #import <Cocoa/Cocoa.h>
-#import "MainWindow.h"
 #import "NimsUI.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
-{
-  MainWindow *mainWindow;
-  NimsUI *nimsUI;
+@interface AppDelegate : NSObject <NSApplicationDelegate> {
+  NimsUI *_nimsUI;
 }
 
 @end
 
 @implementation AppDelegate
 
-- (instancetype)init {
-  id mainWindow = [[MainWindow alloc] init];
-  self->mainWindow = mainWindow;
-  self->nimsUI = [[NimsUI alloc] initWithMainWindow:mainWindow];
-  return [super init];
-}
-
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-  
-  [self->nimsUI start];
-  [self->mainWindow orderFront:NULL];
+  id nimsUI = [[NimsUI alloc] init];
+  [nimsUI start];
+  self->_nimsUI = nimsUI;
 }
 
 @end

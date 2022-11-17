@@ -62,9 +62,7 @@
 		683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C4A291D732700B9A86F /* AppDelegate.m */; };
 		686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
-		687B370E291EE80C000733DC /* MainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B370D291EE80C000733DC /* MainView.m */; };
 		687B3712291EF25D000733DC /* NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3711291EF25D000733DC /* NimsUI.m */; };
-		687B3715291EF2EB000733DC /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3714291EF2EB000733DC /* MainWindow.m */; };
 		688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */; };
 		688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
@@ -264,12 +262,8 @@
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		686C2B66291BE59F00D0E397 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		687B370C291EE80C000733DC /* MainView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainView.h; sourceTree = "<group>"; };
-		687B370D291EE80C000733DC /* MainView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainView.m; sourceTree = "<group>"; };
 		687B3710291EF25D000733DC /* NimsUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUI.h; sourceTree = "<group>"; };
 		687B3711291EF25D000733DC /* NimsUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUI.m; sourceTree = "<group>"; };
-		687B3713291EF2EB000733DC /* MainWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainWindow.h; sourceTree = "<group>"; };
-		687B3714291EF2EB000733DC /* MainWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
 		687FEC5F291E04150065CE9F /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = neovim/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		687FEC60291E04150065CE9F /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = neovim/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
 		687FEC61291E04150065CE9F /* libvterm.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libvterm.la; path = neovim/.deps/usr/lib/libvterm.la; sourceTree = "<group>"; };
@@ -737,10 +731,6 @@
 				683D0C3A291D4C1A00B9A86F /* BridgingHeader.h */,
 				683D0C44291D51DE00B9A86F /* main.m */,
 				683D0C4A291D732700B9A86F /* AppDelegate.m */,
-				687B3713291EF2EB000733DC /* MainWindow.h */,
-				687B3714291EF2EB000733DC /* MainWindow.m */,
-				687B370C291EE80C000733DC /* MainView.h */,
-				687B370D291EE80C000733DC /* MainView.m */,
 				687B3710291EF25D000733DC /* NimsUI.h */,
 				687B3711291EF25D000733DC /* NimsUI.m */,
 				688E2DDE291F3EBB0095A3F1 /* NimsUIGrid.h */,
@@ -1065,8 +1055,6 @@
 				67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */,
 				07C97DD64D1768616AB5EE44 /* GridsViewController.swift in Sources */,
 				30488A27829485C8CFCE8769 /* GridsWindow.swift in Sources */,
-				687B370E291EE80C000733DC /* MainView.m in Sources */,
-				687B3715291EF2EB000733DC /* MainWindow.m in Sources */,
 				688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */,
 				01F67E4F28DDFA2056A3DE7A /* GridsWindowController.swift in Sources */,
 				24C4F376FF50AFDAA5AF1C38 /* NSFontExtensions.swift in Sources */,
