@@ -70,6 +70,7 @@
 		688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */; };
 		689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225129275D9A00A10348 /* HighlightAttributes.m */; };
 		689B225529275E2300A10348 /* NimsUIHighlights.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225429275E2300A10348 /* NimsUIHighlights.m */; };
+		689B225B2927B60200A10348 /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225A2927B60200A10348 /* MainWindow.m */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
 		68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED236291CF38800528C30 /* AsyncAlgorithms */; };
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
@@ -288,6 +289,8 @@
 		689B225129275D9A00A10348 /* HighlightAttributes.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HighlightAttributes.m; sourceTree = "<group>"; };
 		689B225329275E2300A10348 /* NimsUIHighlights.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIHighlights.h; sourceTree = "<group>"; };
 		689B225429275E2300A10348 /* NimsUIHighlights.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIHighlights.m; sourceTree = "<group>"; };
+		689B22592927B60200A10348 /* MainWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainWindow.h; sourceTree = "<group>"; };
+		689B225A2927B60200A10348 /* MainWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
 		68AED23A291CFC5900528C30 /* neovim */ = {isa = PBXFileReference; lastKnownFileType = folder; path = neovim; sourceTree = "<group>"; };
 		68AED23B291CFD9C00528C30 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = neovim/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68AED23D291CFE2600528C30 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "neovim/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
@@ -757,6 +760,8 @@
 				688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */,
 				68247C8C292696C600867937 /* NimsFont.h */,
 				68247C8D292696C600867937 /* NimsFont.m */,
+				689B22592927B60200A10348 /* MainWindow.h */,
+				689B225A2927B60200A10348 /* MainWindow.m */,
 				68247C8F2926B48500867937 /* MainLayer.h */,
 				68247C902926B48500867937 /* MainLayer.m */,
 				68247C962926DC8C00867937 /* MainGridLayer.h */,
@@ -1071,6 +1076,7 @@
 				689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */,
 				68247C8E292696C600867937 /* NimsFont.m in Sources */,
 				997B001A70045F2AF1F0FAA7 /* AppDelegate.swift in Sources */,
+				689B225B2927B60200A10348 /* MainWindow.m in Sources */,
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
 				683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */,
 				68247C912926B48500867937 /* MainLayer.m in Sources */,

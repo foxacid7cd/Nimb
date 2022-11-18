@@ -138,5 +138,7 @@ typedef struct {
 } nvims_ui_t;
 
 void nvims_start(nvims_ui_t nvims_ui);
+int64_t nvims_input(nvim_string_t keys);
+void nvims_input_mouse(nvim_string_t button, nvim_string_t action, nvim_string_t modifier, int64_t grid, int64_t row, int64_t col);
 
 #endif /* nvims_h */

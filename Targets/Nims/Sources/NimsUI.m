@@ -12,6 +12,7 @@
 #import "NimsUIHighlights.h"
 #import "NimsFont.h"
 #import "MainLayer.h"
+#import "MainWindow.h"
 
 #define STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
 
@@ -26,7 +27,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   
   NSMutableDictionary<NSNumber *, NimsUIGrid *> *_grids;
   MainLayer *_mainLayer;
-  NSWindow *_window;
+  MainWindow *_mainWindow;
   
   NSMutableSet<NSNumber *> *_idsOfGridsWithChangedFrame;
   NSMutableDictionary<NSNumber *, NSMutableSet<NSNumber *> *> *_ysOfGridsWithChangedText;
@@ -60,12 +61,13 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
                                     0,
                                     self->_outerGridSize.width * cellSize.width,
                                     self->_outerGridSize.height * cellSize.height);
-    id window = [[NSWindow alloc] initWithContentRect:contentRect
-                                            styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
-                                              backing:NSBackingStoreBuffered
-                                                defer:true];
-    [window setContentView:mainView];
-    self->_window = window;
+    id mainWindow = [[MainWindow alloc] initWithContentRect:contentRect
+                                                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
+                                                    backing:NSBackingStoreBuffered
+                                                      defer:true];
+    [mainWindow setContentView:mainView];
+    [mainWindow setCellSize:[self->_font cellSize]];
+    self->_mainWindow = mainWindow;
     
     self->_idsOfGridsWithChangedFrame = [[NSSet set] mutableCopy];
     self->_ysOfGridsWithChangedText = [@{} mutableCopy];
@@ -159,7 +161,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         [CATransaction commit];
         
         if (!self->_windowInitiallyOrderedFront) {
-          [self->_window orderFront:nil];
+          [self->_mainWindow orderFront:nil];
           
           self->_windowInitiallyOrderedFront = true;
         }
@@ -177,7 +179,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       NSString *title = STRING(cTitle);
       
       dispatch_sync(dispatch_get_main_queue(), ^{
-        [self->_window setTitle:title];
+        [self->_mainWindow setTitle:title];
       });
     };
     
