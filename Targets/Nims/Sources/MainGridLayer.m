@@ -9,6 +9,7 @@
 #import "MainGridLayer.h"
 
 @implementation MainGridLayer {
+  NimsUIHighlights *_highlights;
   NSArray<NSValue *> *_rowFrames;
   NSMutableArray<CATextLayer *> *_rowLayers;
 }
@@ -44,7 +45,6 @@
 {
   CATextLayer *rowLayer = [self->_rowLayers objectAtIndex:y];
   [rowLayer setString:rowAttributedString];
-  [rowLayer setNeedsDisplay];
 }
 
 - (void)updateRowLayerFrames

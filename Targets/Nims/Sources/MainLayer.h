@@ -9,12 +9,14 @@
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 #import "NimsFont.h"
+#import "NimsUIHighlights.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MainLayer : CALayer
 
 - (void)setFrame:(CGRect)frame andRowFrames:(NSArray<NSValue *> *)rowFrames forGridWithID:(NSNumber *)gridID;
+- (void)setBackgroundColor:(NSColor *)color forGridWithID:(NSNumber *)gridID;
 - (void)setRowAttributedString:(NSAttributedString *)rowAttributedString atY:(int64_t)y forGridWithID:(NSNumber *)gridID;
 
 @end

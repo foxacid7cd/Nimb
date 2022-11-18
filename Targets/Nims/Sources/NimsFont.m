@@ -20,7 +20,7 @@
   self->_font = font;
   
   unichar *characters = malloc(sizeof(unichar));
-  [@"A" getCharacters:characters];
+  [@"M" getCharacters:characters];
   
   CGGlyph *glyphs = malloc(sizeof(CGGlyph));
   CGSize *advances = malloc(sizeof(CGSize));
@@ -44,9 +44,7 @@
   
   id paragraphStyle = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
   [paragraphStyle setLineSpacing:leading];
-  [paragraphStyle setMinimumLineHeight:height];
-  [paragraphStyle setMaximumLineHeight:height];
-  self->_paragraphStyle = [paragraphStyle copy];
+  self->_paragraphStyle = paragraphStyle;
   
   return [super init];
 }

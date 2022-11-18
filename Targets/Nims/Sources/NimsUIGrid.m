@@ -9,6 +9,7 @@
 #import "NimsUIGrid.h"
 
 @implementation NimsUIGrid {
+  NimsUIHighlights *_highlights;
   NimsFont *_font;
   GridRect _frame;
   GridSize _outerGridSize;
@@ -16,10 +17,11 @@
   CGRect _layerFrame;
 }
 
-- (instancetype)initWithFont:(NimsFont *)font frame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize
+- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights font:(NimsFont *)font frame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize
 {
   self = [super init];
   if (self != nil) {
+    self->_highlights = highlights;
     self->_font = font;
     self->_frame = frame;
     self->_outerGridSize = outerGridSize;
@@ -54,6 +56,13 @@
   [self updateLayerFrame];
 }
 
+- (void)highlightsUpdated
+{
+  for (NimsUIGridRow *row in self->_rows) {
+    [row highlightsUpdated];
+  }
+}
+
 - (GridRect)frame
 {
   return self->_frame;
@@ -62,6 +71,11 @@
 - (CGRect)layerFrame
 {
   return self->_layerFrame;
+}
+
+- (NSColor *)backgroundColor
+{
+  return [[self->_highlights defaultAttributes] rgbBackgroundColor];
 }
 
 - (NSArray<NimsUIGridRow *> *)rows
@@ -73,9 +87,10 @@
 {
   int64_t additionalRowsNeededCount = MAX(0, self->_frame.size.height - [self->_rows count]);
   for (int64_t i = 0; i < additionalRowsNeededCount; i++) {
-    id row = [[NimsUIGridRow alloc] initWithFont:self->_font
-                                        gridSize:self->_frame.size
-                                        andIndex:[self->_rows count]];
+    id row = [[NimsUIGridRow alloc] initWithHighlights:self->_highlights
+                                                  font:self->_font
+                                              gridSize:self->_frame.size
+                                              andIndex:[self->_rows count]];
     [self->_rows addObject:row];
   }
 }

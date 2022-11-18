@@ -8,6 +8,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "NimsFont.h"
+#import "NimsUIHighlights.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

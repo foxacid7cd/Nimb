@@ -13,6 +13,7 @@
   NSMutableDictionary<NSNumber *, MainGridLayer *> *_gridLayers;
 }
 
+
 - (instancetype)init
 {
   self = [super init];
@@ -46,6 +47,12 @@
   }
   
   [gridLayer setFrame:frame];
+}
+
+- (void)setBackgroundColor:(NSColor *)color forGridWithID:(NSNumber *)gridID
+{
+  MainGridLayer *gridLayer = [self->_gridLayers objectForKey:gridID];
+  [gridLayer setBackgroundColor:[color CGColor]];
 }
 
 - (void)setRowAttributedString:(NSAttributedString *)rowAttributedString atY:(int64_t)y forGridWithID:(NSNumber *)gridID

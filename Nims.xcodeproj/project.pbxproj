@@ -68,6 +68,8 @@
 		687B3712291EF25D000733DC /* NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3711291EF25D000733DC /* NimsUI.m */; };
 		688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */; };
 		688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */; };
+		689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225129275D9A00A10348 /* HighlightAttributes.m */; };
+		689B225529275E2300A10348 /* NimsUIHighlights.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225429275E2300A10348 /* NimsUIHighlights.m */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
 		68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED236291CF38800528C30 /* AsyncAlgorithms */; };
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
@@ -282,6 +284,10 @@
 		688E2DE1291F6BE00095A3F1 /* NimsUIGridRow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIGridRow.h; sourceTree = "<group>"; };
 		688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIGridRow.m; sourceTree = "<group>"; };
 		688E2DE4291F85C30095A3F1 /* Grid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Grid.h; sourceTree = "<group>"; };
+		689B225029275D9A00A10348 /* HighlightAttributes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HighlightAttributes.h; sourceTree = "<group>"; };
+		689B225129275D9A00A10348 /* HighlightAttributes.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HighlightAttributes.m; sourceTree = "<group>"; };
+		689B225329275E2300A10348 /* NimsUIHighlights.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIHighlights.h; sourceTree = "<group>"; };
+		689B225429275E2300A10348 /* NimsUIHighlights.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIHighlights.m; sourceTree = "<group>"; };
 		68AED23A291CFC5900528C30 /* neovim */ = {isa = PBXFileReference; lastKnownFileType = folder; path = neovim; sourceTree = "<group>"; };
 		68AED23B291CFD9C00528C30 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = neovim/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68AED23D291CFE2600528C30 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "neovim/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
@@ -755,6 +761,10 @@
 				68247C902926B48500867937 /* MainLayer.m */,
 				68247C962926DC8C00867937 /* MainGridLayer.h */,
 				68247C972926DC8C00867937 /* MainGridLayer.m */,
+				689B225329275E2300A10348 /* NimsUIHighlights.h */,
+				689B225429275E2300A10348 /* NimsUIHighlights.m */,
+				689B225029275D9A00A10348 /* HighlightAttributes.h */,
+				689B225129275D9A00A10348 /* HighlightAttributes.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1058,6 +1068,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A174C502DB85D01B8A3E764 /* TuistBundle+Nims.swift in Sources */,
+				689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */,
 				68247C8E292696C600867937 /* NimsFont.m in Sources */,
 				997B001A70045F2AF1F0FAA7 /* AppDelegate.swift in Sources */,
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
@@ -1074,6 +1085,7 @@
 				67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */,
 				07C97DD64D1768616AB5EE44 /* GridsViewController.swift in Sources */,
 				30488A27829485C8CFCE8769 /* GridsWindow.swift in Sources */,
+				689B225529275E2300A10348 /* NimsUIHighlights.m in Sources */,
 				688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */,
 				01F67E4F28DDFA2056A3DE7A /* GridsWindowController.swift in Sources */,
 				24C4F376FF50AFDAA5AF1C38 /* NSFontExtensions.swift in Sources */,

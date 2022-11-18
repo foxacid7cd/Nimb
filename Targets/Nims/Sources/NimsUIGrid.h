@@ -11,16 +11,22 @@
 #import "Grid.h"
 #import "NimsFont.h"
 #import "NimsUIGridRow.h"
+#import "NimsUIHighlights.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGrid : NSObject
 
-- (instancetype)initWithFont:(NimsFont *)font frame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
+                              font:(NimsFont *)font
+                             frame:(GridRect)frame
+                  andOuterGridSize:(GridSize)outerGridSize;
 - (void)setFont:(NimsFont *)font;
 - (void)setFrame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (void)highlightsUpdated;
 - (GridRect)frame;
 - (CGRect)layerFrame;
+- (NSColor *)backgroundColor;
 - (NSArray<NimsUIGridRow *> *)rows;
 
 @end

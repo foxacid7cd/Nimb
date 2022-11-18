@@ -9,6 +9,7 @@
 #import "nvims.h"
 #import "NimsUIGrid.h"
 #import "NimsUI.h"
+#import "NimsUIHighlights.h"
 #import "NimsFont.h"
 #import "MainLayer.h"
 
@@ -21,6 +22,8 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 @implementation NimsUI {
   GridSize _outerGridSize;
   NimsFont *_font;
+  NimsUIHighlights *_highlights;
+  
   NSMutableDictionary<NSNumber *, NimsUIGrid *> *_grids;
   MainLayer *_mainLayer;
   NSWindow *_window;
@@ -28,6 +31,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   NSMutableSet<NSNumber *> *_idsOfGridsWithChangedFrame;
   NSMutableDictionary<NSNumber *, NSMutableSet<NSNumber *> *> *_ysOfGridsWithChangedText;
   BOOL _windowInitiallyOrderedFront;
+  BOOL _highlightsUpdated;
   
   nvims_ui_t _nvims_ui;
 }
@@ -40,6 +44,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     
     self->_font = [[NimsFont alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
+    self->_highlights = [[NimsUIHighlights alloc] init];
     
     id mainLayer = [[MainLayer alloc] init];
     [mainLayer setContentsScale:[[NSScreen mainScreen] backingScaleFactor]];
@@ -100,31 +105,54 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         [CATransaction begin];
         [CATransaction setDisableActions:true];
         
-        for (NSNumber *gridID in self->_idsOfGridsWithChangedFrame) {
-          NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+        if (self->_highlightsUpdated) {
+          [self->_grids enumerateKeysAndObjectsUsingBlock:^(NSNumber *gridID, NimsUIGrid *grid, BOOL *stop) {
+            [self->_mainLayer setBackgroundColor:[grid backgroundColor] forGridWithID:gridID];
+            
+            NSMutableArray<NSValue *> *rowFrames = [@[] mutableCopy];
+            for (NimsUIGridRow *row in [grid rows]) {
+              NSValue *value = [NSValue valueWithRect:[row layerFrame]];
+              [rowFrames addObject:value];
+            }
+            
+            [self->_mainLayer setFrame:[grid layerFrame]
+                          andRowFrames:[rowFrames copy]
+                         forGridWithID:gridID];
+            
+            [[grid rows] enumerateObjectsUsingBlock:^(NimsUIGridRow *row, NSUInteger index, BOOL *stop) {
+              [self->_mainLayer setRowAttributedString:[row attributedString]
+                                                   atY:index
+                                         forGridWithID:gridID];
+            }];
+          }];
           
-          NSMutableArray<NSValue *> *rowFrames = [@[] mutableCopy];
-          for (NimsUIGridRow *row in [grid rows]) {
-            NSValue *value = [NSValue valueWithRect:[row layerFrame]];
-            [rowFrames addObject:value];
+        } else {
+          for (NSNumber *gridID in self->_idsOfGridsWithChangedFrame) {
+            NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+            
+            NSMutableArray<NSValue *> *rowFrames = [@[] mutableCopy];
+            for (NimsUIGridRow *row in [grid rows]) {
+              NSValue *value = [NSValue valueWithRect:[row layerFrame]];
+              [rowFrames addObject:value];
+            }
+            
+            [self->_mainLayer setFrame:[grid layerFrame]
+                          andRowFrames:[rowFrames copy]
+                         forGridWithID:gridID];
           }
           
-          [self->_mainLayer setFrame:[grid layerFrame]
-                        andRowFrames:[rowFrames copy]
-                       forGridWithID:gridID];
+          [self->_ysOfGridsWithChangedText enumerateKeysAndObjectsUsingBlock:^(NSNumber *gridID, NSMutableSet<NSNumber *> *ys, BOOL *stop) {
+            NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+            
+            for (NSNumber *yNumber in ys) {
+              int64_t y = [yNumber longLongValue];
+              NimsUIGridRow *row = [[grid rows] objectAtIndex:y];
+              [self->_mainLayer setRowAttributedString:[row attributedString]
+                                                   atY:y
+                                         forGridWithID:gridID];
+            }
+          }];
         }
-        
-        [self->_ysOfGridsWithChangedText enumerateKeysAndObjectsUsingBlock:^(NSNumber *gridID, NSMutableSet<NSNumber *> *ys, BOOL * _Nonnull stop) {
-          NimsUIGrid *grid = [self->_grids objectForKey:gridID];
-          
-          for (NSNumber *yNumber in ys) {
-            int64_t y = [yNumber longLongValue];
-            NimsUIGridRow *row = [[grid rows] objectAtIndex:y];
-            [self->_mainLayer setRowAttributedString:[row attributedString]
-                                                 atY:y
-                                       forGridWithID:gridID];
-          }
-        }];
         
         [CATransaction commit];
         
@@ -133,10 +161,11 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           
           self->_windowInitiallyOrderedFront = true;
         }
+        
+        [self->_idsOfGridsWithChangedFrame removeAllObjects];
+        [self->_ysOfGridsWithChangedText removeAllObjects];
+        self->_highlightsUpdated = false;
       });
-      
-      [self->_idsOfGridsWithChangedFrame removeAllObjects];
-      [self->_ysOfGridsWithChangedText removeAllObjects];
     };
     
     self->_nvims_ui.suspend = ^() {
@@ -157,21 +186,40 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     };
     
     self->_nvims_ui.option_set = ^(nvim_string_t name, nvim_object_t value) {
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        NSLog(@"option_set %@", STRING(name));
-      });
     };
     
     self->_nvims_ui.stop = ^() {
     };
     
     self->_nvims_ui.default_colors_set = ^(int64_t rgb_fg, int64_t rgb_bg, int64_t rgb_sp, int64_t cterm_fg, int64_t cterm_bg) {
+      self->_highlightsUpdated = true;
+      
+      HighlightAttributes *attributes = [[HighlightAttributes alloc] initWithFlags:0
+                                                                      rgbForegound:(int32_t)rgb_fg
+                                                                     rgbBackground:(int32_t)rgb_bg
+                                                                        rgbSpecial:(int32_t)rgb_sp
+                                                                   ctermForeground:(int32_t)cterm_fg
+                                                                   ctermBackground:(int32_t)cterm_bg
+                                                                             blend:100];
+      [self->_highlights setDefaultAttributes:attributes];
     };
     
     self->_nvims_ui.hl_attr_define = ^(int64_t _id, nvim_hl_attrs_t rgb_attrs, nvim_hl_attrs_t cterm_attrs, nvim_array_t info) {
+      self->_highlightsUpdated = true;
+      
+      HighlightAttributes *attributes = [[HighlightAttributes alloc] initWithFlags:rgb_attrs.rgb_ae_attr
+                                                                      rgbForegound:rgb_attrs.rgb_fg_color
+                                                                     rgbBackground:rgb_attrs.rgb_bg_color
+                                                                        rgbSpecial:rgb_attrs.rgb_sp_color
+                                                                   ctermForeground:rgb_attrs.cterm_fg_color
+                                                                   ctermBackground:rgb_attrs.cterm_bg_color
+                                                                             blend:rgb_attrs.hl_blend];
+      [self->_highlights setAttributes:attributes forID:_id];
     };
     
-    self->_nvims_ui.hl_group_set = ^(nvim_string_t name, int64_t _id) {
+    self->_nvims_ui.hl_group_set = ^(nvim_string_t cName, int64_t _id) {
+      id name = [NSString stringWithCString:cName.data encoding:NSUTF8StringEncoding];
+      [self->_highlights setName:name forID:_id];
     };
     
     self->_nvims_ui.grid_resize = ^(int64_t cID, int64_t width, int64_t height) {
@@ -180,9 +228,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       
       NimsUIGrid *grid = [self->_grids objectForKey:_id];
       if (grid == nil) {
-        grid = [[NimsUIGrid alloc] initWithFont:self->_font
-                                          frame:GridRectMake(GridPointZero, size)
-                               andOuterGridSize:self->_outerGridSize];
+        grid = [[NimsUIGrid alloc] initWithHighlights:self->_highlights
+                                                 font:self->_font
+                                                frame:GridRectMake(GridPointZero, size)
+                                     andOuterGridSize:self->_outerGridSize];
         [self->_grids setObject:grid forKey:_id];
         
       } else {
@@ -221,7 +270,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     self->_nvims_ui.grid_scroll = ^(int64_t grid, int64_t top, int64_t bot, int64_t left, int64_t right, int64_t rows, int64_t cols) {
     };
     
-    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t row, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
+    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t y, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
       id gridID = [NSNumber numberWithInteger:cGridID];
       
       NimsUIGrid *grid = [self->_grids objectForKey:gridID];
@@ -230,22 +279,48 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         return;
       }
       
-      NSMutableString *changedText = [NSMutableString stringWithCapacity:endcol - startcol];
-      for (int64_t i = startcol; i < endcol; i++) {
-        NSString *string = [NSString stringWithCString:chunk[i - startcol] encoding:NSUTF8StringEncoding];
-        if (string != nil) {
-          [changedText appendString: string];
+      NimsUIGridRow *row = [[grid rows] objectAtIndex:y];
+      
+      int64_t length = endcol - startcol;
+      int64_t x = startcol;
+      
+      NSMutableString *changedText = [[NSString stringWithCString:chunk[0] encoding:NSUTF8StringEncoding] mutableCopy];
+      int64_t highlightID = attrs[0];
+      int64_t currentHighlightLength = [changedText length];
+      
+      for (int64_t i = 1; i < length; i++) {
+        NSString *string = [NSString stringWithCString:chunk[i] encoding:NSUTF8StringEncoding];
+        if (attrs[i] == highlightID) {
+          [changedText appendString:string];
+          currentHighlightLength += [string length];
+          
+        } else {
+          [row applyChangedText:changedText
+                withHighlightID:highlightID
+                    startingAtX:x];
+          
+          [changedText setString:string];
+          highlightID = attrs[i];
+          
+          x += currentHighlightLength;
+          currentHighlightLength = [string length];
         }
       }
-      [[[grid rows] objectAtIndex:row] applyChangedText:changedText
-                                            startingAtX:startcol];
+      [row applyChangedText:changedText
+            withHighlightID:highlightID
+                startingAtX:x];
+      
+      if (clearcol > endcol) {
+        id clearString = [@"" stringByPaddingToLength:clearcol - endcol withString:@" " startingAtIndex:0];
+        [row applyChangedText:clearString withHighlightID:clearattr startingAtX:endcol];
+      }
       
       NSMutableSet<NSNumber *> *ys = [self->_ysOfGridsWithChangedText objectForKey:gridID];
       if (ys == nil) {
         ys = [[NSSet set] mutableCopy];
         [self->_ysOfGridsWithChangedText setObject:ys forKey:gridID];
       }
-      [ys addObject:[NSNumber numberWithLongLong:row]];
+      [ys addObject:[NSNumber numberWithLongLong:y]];
     };
     
     self->_nvims_ui.event = ^(char *cName, nvim_array_t args) {
