@@ -26,6 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSColor *)ctermForegroundColor;
 - (NSColor *)ctermBackgroundColor;
 
+- (BOOL)isBold;
+- (BOOL)isItalic;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -13,7 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NimsFont : NSObject
 
 - (instancetype)initWithFont:(NSFont *)font;
-- (NSFont *)font;
+- (NSFont *)regular;
+- (NSFont *)bold;
+- (NSFont *)italic;
+- (NSFont *)boldItalic;
 - (CGSize)cellSize;
 - (NSParagraphStyle *)paragraphStyle;
 

@@ -100,4 +100,14 @@
                          alpha:alpha];
 }
 
+- (BOOL)isBold
+{
+  return (self->_flags & NvimHlAttrFlagsBold) != 0;
+}
+
+- (BOOL)isItalic
+{
+  return (self->_flags & NvimHlAttrFlagsItalic) != 0;
+}
+
 @end

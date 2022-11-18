@@ -107,6 +107,8 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         
         if (self->_highlightsUpdated) {
           [self->_grids enumerateKeysAndObjectsUsingBlock:^(NSNumber *gridID, NimsUIGrid *grid, BOOL *stop) {
+            [grid highlightsUpdated];
+            
             [self->_mainLayer setBackgroundColor:[grid backgroundColor] forGridWithID:gridID];
             
             NSMutableArray<NSValue *> *rowFrames = [@[] mutableCopy];

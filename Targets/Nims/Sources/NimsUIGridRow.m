@@ -73,11 +73,30 @@
   if (highlightAttributes == nil) {
     highlightAttributes = [self->_highlights defaultAttributes];
   }
+  
+  NSFont *font;
+  if ([highlightAttributes isBold]) {
+    if ([highlightAttributes isItalic]) {
+      font = [self->_font boldItalic];
+      
+    } else {
+      font = [self->_font bold];
+    }
+    
+  } else {
+    if ([highlightAttributes isItalic]) {
+      font = [self->_font italic];
+      
+    } else {
+      font = [self->_font regular];
+    }
+  }
+  
   id attributes = @{
     [NimsUIGridRow highlightIDAttriubuteName]:[NSNumber numberWithLongLong:highlightID],
-    NSFontAttributeName:[self->_font font],
+    NSFontAttributeName:font,
     NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-    NSLigatureAttributeName:[NSNumber numberWithInt:0],
+    NSLigatureAttributeName:[NSNumber numberWithInt:2],
     NSForegroundColorAttributeName: [highlightAttributes rgbForegroundColor],
     NSBackgroundColorAttributeName: [highlightAttributes rgbBackgroundColor]
   };
@@ -99,16 +118,24 @@
 {
   NSRange range = NSMakeRange(0, [self->_attributedString length]);
   [self->_attributedString enumerateAttributesInRange:range options:0 usingBlock:^(NSDictionary<NSAttributedStringKey, id> *attrs, NSRange range, BOOL *stop) {
+    id newAttrs = [NSMutableDictionary dictionaryWithDictionary:attrs];
+    BOOL highlightAttributesSet = false;
+    
     NSNumber *highlightID = [attrs objectForKey:[NimsUIGridRow highlightIDAttriubuteName]];
     if (highlightID != nil) {
       HighlightAttributes *newAttributes = [self->_highlights attributesForID:[highlightID longLongValue]];
       if (newAttributes != nil) {
-        id newAttrs = [NSMutableDictionary dictionaryWithDictionary:attrs];
         [newAttrs setObject:[newAttributes rgbForegroundColor] forKey:NSForegroundColorAttributeName];
         [newAttrs setObject:[newAttributes rgbBackgroundColor] forKey:NSBackgroundColorAttributeName];
-        [self->_attributedString setAttributes:newAttrs range:range];
+        highlightAttributesSet = true;
       }
     }
+    
+    if (!highlightAttributesSet) {
+      [newAttrs setObject:[[self->_highlights defaultAttributes] rgbForegroundColor] forKey:NSForegroundColorAttributeName];
+      [newAttrs setObject:[[self->_highlights defaultAttributes] rgbBackgroundColor] forKey:NSBackgroundColorAttributeName];
+    }
+    [self->_attributedString setAttributes:newAttrs range:range];
   }];
 }
 
@@ -139,9 +166,11 @@
                                             withString:@" "
                                        startingAtIndex:0];
     id attributes = @{
-      NSFontAttributeName:[self->_font font],
+      NSFontAttributeName:[self->_font regular],
+      NSForegroundColorAttributeName:[[self->_highlights defaultAttributes] rgbForegroundColor],
+      NSBackgroundColorAttributeName:[[self->_highlights defaultAttributes] rgbBackgroundColor],
       NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-      NSLigatureAttributeName:[NSNumber numberWithInt:0]
+      NSLigatureAttributeName:[NSNumber numberWithInt:2]
     };
     id additionalAttributedString = [[NSAttributedString alloc] initWithString:additionalString
                                                                     attributes:attributes];

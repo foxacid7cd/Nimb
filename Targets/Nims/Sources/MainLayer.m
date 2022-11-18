@@ -13,7 +13,6 @@
   NSMutableDictionary<NSNumber *, MainGridLayer *> *_gridLayers;
 }
 
-
 - (instancetype)init
 {
   self = [super init];
