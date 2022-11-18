@@ -52,6 +52,13 @@
             ReferencedContainer = "container:Nims.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "VIMRUNTIME"
+            value = "/opt/homebrew/Cellar/neovim/HEAD-ef1d291/share/nvim/runtime"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

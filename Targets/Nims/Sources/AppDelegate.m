@@ -6,18 +6,15 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
 #import "NimsUI.h"
+#import "AppDelegate.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate> {
+@implementation AppDelegate {
   NimsUI *_nimsUI;
 }
 
-@end
-
-@implementation AppDelegate
-
-- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
+{
   id nimsUI = [[NimsUI alloc] init];
   [nimsUI start];
   self->_nimsUI = nimsUI;

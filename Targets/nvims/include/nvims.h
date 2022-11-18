@@ -103,6 +103,8 @@ typedef struct {
 } nvim_hl_attrs_t;
 
 typedef struct {
+  int width;
+  int height;
   void (^mode_info_set)(_Bool enabled, nvim_array_t cursor_styles);
   void (^update_menu)(void);
   void (^busy_start)(void);

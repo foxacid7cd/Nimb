@@ -10,47 +10,102 @@
 #import "NimsUIGridRow.h"
 
 @implementation NimsUIGridRow {
-  int64_t _width;
+  NimsFont *_font;
+  GridSize _gridSize;
+  NSInteger _index;
   NSMutableAttributedString *_attributedString;
-  CATextLayer *_layer;
+  CGRect _layerFrame;
 }
 
-- (instancetype)initWithFont:(NSFont *)font
+- (instancetype)initWithFont:(NimsFont *)font gridSize:(GridSize)gridSize andIndex:(NSInteger)index
+{
+  self = [super init];
+  if (self != nil) {
+    self->_font = font;
+    self->_gridSize = gridSize;
+    self->_index = index;
+    self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
+    
+    [self updateLayerFrame];
+    [self updateAttributedString];
+  }
+  return self;
+}
+
+- (void)setFont:(NimsFont *)font
 {
   self->_font = font;
   self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
-  self->_layer = [[CATextLayer alloc] init];
-  [self->_layer setString:self->_attributedString];
-  return [super init];
+  [self updateLayerFrame];
+  [self updateAttributedString];
 }
 
-- (void)setWidth:(int64_t)width
+- (void)setGridSize:(GridSize)gridSize
 {
-  self->_width = width;
-  
-  int64_t additionalStringLength = MAX(0, width - [self->_attributedString length]);
+  self->_gridSize = gridSize;
+  [self updateLayerFrame];
+  [self updateAttributedString];
+}
+
+- (void)setIndex:(NSInteger)index
+{
+  self->_index = index;
+  [self updateLayerFrame];
+}
+
+- (void)applyChangedText:(NSString *)text startingAtX:(int64_t)x
+{
+  id attributes = @{
+    NSFontAttributeName:[self->_font font],
+    NSForegroundColorAttributeName:[NSColor whiteColor]
+  };
+  NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:text
+                                                                         attributes:attributes];
+  [self->_attributedString replaceCharactersInRange:NSMakeRange(x, [text length])
+                               withAttributedString:attributedString];
+}
+
+- (void)clearText
+{
+  self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
+  [self updateAttributedString];
+}
+
+- (CGRect)layerFrame
+{
+  return self->_layerFrame;
+}
+
+- (NSAttributedString *)attributedString
+{
+  return self->_attributedString;
+}
+
+- (void)updateLayerFrame
+{
+  CGSize cellSize = [self->_font cellSize];
+  self->_layerFrame = CGRectMake(0,
+                                 cellSize.height * (self->_gridSize.height - self->_index - 1),
+                                 cellSize.width * self->_gridSize.width,
+                                 cellSize.height);
+}
+
+- (void)updateAttributedString
+{
+  int64_t additionalStringLength = MAX(0, self->_gridSize.width - [self->_attributedString length]);
   if (additionalStringLength > 0) {
     id additionalString = [@"" stringByPaddingToLength:additionalStringLength
                                             withString:@" "
                                        startingAtIndex:0];
     
     id attributes = @{
-      NSFontAttributeName:self->_font,
-      NSForegroundColorAttributeName: [NSColor whiteColor],
-      NSBackgroundColorAttributeName: [NSColor blackColor]
+      NSFontAttributeName:[self->_font font]
     };
     id additionalAttributedString = [[NSAttributedString alloc] initWithString:additionalString
                                                                     attributes:attributes];
     
-    [self->_attributedString beginEditing];
     [self->_attributedString appendAttributedString:additionalAttributedString];
-    [self->_attributedString endEditing];
-    [self->_layer setString:self->_attributedString];
   }
-}
-
-- (CALayer *)layer {
-  return self->_layer;
 }
 
 @end

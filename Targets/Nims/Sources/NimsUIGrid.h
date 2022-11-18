@@ -6,18 +6,21 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
+#import "nvims.h"
 #import "Grid.h"
+#import "NimsFont.h"
+#import "NimsUIGridRow.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGrid : NSObject
 
-- (instancetype)initWithID:(NSNumber *)_id andFont:(NSFont *)font;
-
-- (NSNumber *)_id;
-
-- (void)setSize:(GridSize)size;
+- (instancetype)initWithFont:(NimsFont *)font frame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (void)setFont:(NimsFont *)font;
+- (void)setFrame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (CGRect)layerFrame;
+- (NSArray<NimsUIGridRow *> *)rows;
 
 @end
 

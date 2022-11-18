@@ -36,6 +36,11 @@ NS_INLINE GridPoint GridPointMake(int64_t x, int64_t y)
   return p;
 }
 
+NS_INLINE _Bool GridPointEqualToGridPoint(GridPoint p1, GridPoint p2)
+{
+  return p1.x == p2.x && p1.y == p2.y;
+}
+
 NS_INLINE GridSize GridSizeMake(int64_t width, int64_t height)
 {
   GridSize s;
@@ -44,12 +49,22 @@ NS_INLINE GridSize GridSizeMake(int64_t width, int64_t height)
   return s;
 }
 
+NS_INLINE _Bool GridSizeEqualToGridSize(GridSize s1, GridSize s2)
+{
+  return s1.width == s2.width && s1.height == s2.height;
+}
+
 NS_INLINE GridRect GridRectMake(GridPoint origin, GridSize size)
 {
   GridRect r;
   r.origin = origin;
   r.size = size;
   return r;
+}
+
+NS_INLINE _Bool GridRectEqualToGridRect(GridRect r1, GridRect r2)
+{
+  return GridPointEqualToGridPoint(r1.origin, r2.origin) && GridSizeEqualToGridSize(r1.size, r2.size);
 }
 
 #define GridPointZero GridPointMake(0, 0)

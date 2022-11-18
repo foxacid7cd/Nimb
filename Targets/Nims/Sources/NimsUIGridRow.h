@@ -7,17 +7,22 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <QuartzCore/QuartzCore.h>
+#import "NimsFont.h"
+#import "Grid.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGridRow : NSObject
 
-- (instancetype)initWithFont:(NSFont *)font;
-
-@property (nonatomic, strong) NSFont *font;
-
-- (void)setWidth:(int64_t)width;
-- (CALayer *)layer;
+- (instancetype)initWithFont:(NimsFont *)font gridSize:(GridSize)gridSize andIndex:(NSInteger)index;
+- (void)setFont:(NimsFont *)font;
+- (void)setGridSize:(GridSize)gridSize;
+- (void)setIndex:(NSInteger)index;
+- (void)applyChangedText:(NSString *)text startingAtX:(int64_t)x;
+- (void)clearText;
+- (CGRect)layerFrame;
+- (NSAttributedString *)attributedString;
 
 @end
 

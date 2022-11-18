@@ -10,7 +10,6 @@
 #include <dispatch/base.h>
 #include <nvim/ui.h>
 #include <nvim/ui_bridge.h>
-#include <nvim/ugrid.h>
 #include "nvims.h"
 
 extern nvims_ui_t nvims_ui;
@@ -203,18 +202,19 @@ static void nims_ui_main(UIBridgeData *bridge, UI *ui)
 void nims_ui_start(void)
 {
   UI *ui = xcalloc(1, sizeof(UI));
-  
+
   memset(ui->ui_ext, 0, sizeof(ui->ui_ext));
+  ui->ui_ext[kUIHlState] = true;
   ui->ui_ext[kUIMultigrid] = true;
-  ui->ui_ext[kUIMessages] = true;
   ui->ui_ext[kUICmdline] = true;
+  ui->ui_ext[kUIMessages] = true;
   ui->ui_ext[kUIWildmenu] = true;
   ui->ui_ext[kUIPopupmenu] = true;
-  ui->ui_ext[kUITabline] = true;
-  ui->ui_ext[kUIHlState] = true;
-  
+
   ui->rgb = true;
-  
+  ui->width = nvims_ui.width;
+  ui->height = nvims_ui.height;
+
   ui->mode_info_set = nims_ui_mode_info_set;
   ui->update_menu = nims_ui_update_menu;
   ui->busy_start = nims_ui_busy_start;
@@ -245,6 +245,6 @@ void nims_ui_start(void)
   ui->wildmenu_show = nims_ui_wildmenu_show;
   ui->wildmenu_select = nims_ui_wildmenu_select;
   ui->wildmenu_hide = nims_ui_wildmenu_hide;
-  
+
   ui_bridge_attach(ui, nims_ui_main, nims_ui_scheduler);
 }

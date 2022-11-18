@@ -39,6 +39,9 @@
 		5A917E19AECDDFBEAD715BBD /* HeapModule.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A5963D35AFBE144179796C2 /* HeapModule.framework */; };
 		67686101D631AC10CE93B6FE /* Stepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CE35F38B8F1A320BA9CEAF /* Stepper.swift */; };
 		67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536BA5EE068D6061D6C7D266 /* GridsView.swift */; };
+		68247C8E292696C600867937 /* NimsFont.m in Sources */ = {isa = PBXBuildFile; fileRef = 68247C8D292696C600867937 /* NimsFont.m */; };
+		68247C912926B48500867937 /* MainLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 68247C902926B48500867937 /* MainLayer.m */; };
+		68247C982926DC8C00867937 /* MainGridLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 68247C972926DC8C00867937 /* MainGridLayer.m */; };
 		68316837291CF29600D9923A /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 68316836291CF29600D9923A /* RxCocoa */; };
 		68316839291CF2A400D9923A /* BitCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 68316838291CF2A400D9923A /* BitCollections */; };
 		6831683B291CF2A500D9923A /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 6831683A291CF2A500D9923A /* Collections */; };
@@ -237,6 +240,13 @@
 		607350FDFDE9B1A4267AED39 /* nvim-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "nvim-Info.plist"; sourceTree = "<group>"; };
 		628E45D9032C4FA60957D59F /* Nims-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Nims-Info.plist"; sourceTree = "<group>"; };
 		6354D6956854ED2A4FAF0070 /* neogen */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = neogen; sourceTree = BUILT_PRODUCTS_DIR; };
+		68247C8C292696C600867937 /* NimsFont.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsFont.h; sourceTree = "<group>"; };
+		68247C8D292696C600867937 /* NimsFont.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsFont.m; sourceTree = "<group>"; };
+		68247C8F2926B48500867937 /* MainLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainLayer.h; sourceTree = "<group>"; };
+		68247C902926B48500867937 /* MainLayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainLayer.m; sourceTree = "<group>"; };
+		68247C962926DC8C00867937 /* MainGridLayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainGridLayer.h; sourceTree = "<group>"; };
+		68247C972926DC8C00867937 /* MainGridLayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainGridLayer.m; sourceTree = "<group>"; };
+		68247C992926E0E700867937 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		68316F1C291B0A430013E203 /* libiconv.2.4.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.4.0.tbd; path = usr/lib/libiconv.2.4.0.tbd; sourceTree = SDKROOT; };
 		68316F1E291B0A9A0013E203 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiconv.a; path = Targets/libNims/.deps/usr/lib/libiconv.a; sourceTree = "<group>"; };
 		683D0C3A291D4C1A00B9A86F /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
@@ -730,14 +740,21 @@
 				687B370F291EED59000733DC /* New Group */,
 				683D0C3A291D4C1A00B9A86F /* BridgingHeader.h */,
 				683D0C44291D51DE00B9A86F /* main.m */,
+				68247C992926E0E700867937 /* AppDelegate.h */,
 				683D0C4A291D732700B9A86F /* AppDelegate.m */,
+				688E2DE4291F85C30095A3F1 /* Grid.h */,
 				687B3710291EF25D000733DC /* NimsUI.h */,
 				687B3711291EF25D000733DC /* NimsUI.m */,
 				688E2DDE291F3EBB0095A3F1 /* NimsUIGrid.h */,
 				688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */,
 				688E2DE1291F6BE00095A3F1 /* NimsUIGridRow.h */,
 				688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */,
-				688E2DE4291F85C30095A3F1 /* Grid.h */,
+				68247C8C292696C600867937 /* NimsFont.h */,
+				68247C8D292696C600867937 /* NimsFont.m */,
+				68247C8F2926B48500867937 /* MainLayer.h */,
+				68247C902926B48500867937 /* MainLayer.m */,
+				68247C962926DC8C00867937 /* MainGridLayer.h */,
+				68247C972926DC8C00867937 /* MainGridLayer.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1041,9 +1058,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A174C502DB85D01B8A3E764 /* TuistBundle+Nims.swift in Sources */,
+				68247C8E292696C600867937 /* NimsFont.m in Sources */,
 				997B001A70045F2AF1F0FAA7 /* AppDelegate.swift in Sources */,
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
 				683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */,
+				68247C912926B48500867937 /* MainLayer.m in Sources */,
 				683D0C45291D51DE00B9A86F /* main.m in Sources */,
 				7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */,
 				E7F94A0CD6D70DD1E9BD5209 /* DrawRun.swift in Sources */,
@@ -1061,6 +1080,7 @@
 				52F8409B461CE2641DD36478 /* NSView.swift in Sources */,
 				688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */,
 				73F4E76FA06B1E0304F48A95 /* State.swift in Sources */,
+				68247C982926DC8C00867937 /* MainGridLayer.m in Sources */,
 				3B16E2D8D36D863B9AFDF472 /* StateDerivatives.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
