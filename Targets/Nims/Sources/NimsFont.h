@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithFont:(NSFont *)font;
 - (NSFont *)font;
 - (CGSize)cellSize;
+- (NSParagraphStyle *)paragraphStyle;
 
 @end
 

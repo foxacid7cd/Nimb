@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithFont:(NimsFont *)font frame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
 - (void)setFont:(NimsFont *)font;
 - (void)setFrame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (GridRect)frame;
 - (CGRect)layerFrame;
 - (NSArray<NimsUIGridRow *> *)rows;
 

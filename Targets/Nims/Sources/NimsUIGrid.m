@@ -23,7 +23,7 @@
     self->_font = font;
     self->_frame = frame;
     self->_outerGridSize = outerGridSize;
-    self->_rows = [[NSArray array] mutableCopy];
+    self->_rows = [@[] mutableCopy];
     
     [self addAdditionalRowsIfNeeded];
     [self updateLayerFrame];
@@ -52,6 +52,11 @@
   
   [self addAdditionalRowsIfNeeded];
   [self updateLayerFrame];
+}
+
+- (GridRect)frame
+{
+  return self->_frame;
 }
 
 - (CGRect)layerFrame

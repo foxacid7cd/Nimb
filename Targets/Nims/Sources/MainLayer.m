@@ -37,6 +37,7 @@
   if (gridLayer == nil) {
     gridLayer = [[MainGridLayer alloc] initWithRowFrames:rowFrames];
     [gridLayer setContentsScale:[self contentsScale]];
+    [gridLayer setZPosition:[gridID longLongValue]];
     [self addSublayer:gridLayer];
     [self->_gridLayers setObject:gridLayer forKey:gridID];
     

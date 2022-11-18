@@ -11,6 +11,7 @@
 
 @implementation NimsUIGridRow {
   NimsFont *_font;
+  NSParagraphStyle *_paragraphStyle;
   GridSize _gridSize;
   NSInteger _index;
   NSMutableAttributedString *_attributedString;
@@ -36,6 +37,7 @@
 {
   self->_font = font;
   self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
+  
   [self updateLayerFrame];
   [self updateAttributedString];
 }
@@ -43,6 +45,7 @@
 - (void)setGridSize:(GridSize)gridSize
 {
   self->_gridSize = gridSize;
+  
   [self updateLayerFrame];
   [self updateAttributedString];
 }
@@ -50,6 +53,7 @@
 - (void)setIndex:(NSInteger)index
 {
   self->_index = index;
+  
   [self updateLayerFrame];
 }
 
@@ -57,10 +61,14 @@
 {
   id attributes = @{
     NSFontAttributeName:[self->_font font],
-    NSForegroundColorAttributeName:[NSColor whiteColor]
+    NSForegroundColorAttributeName:[NSColor whiteColor],
+    NSBackgroundColorAttributeName:[NSColor blackColor],
+    NSParagraphStyleAttributeName:[self->_font paragraphStyle],
+    NSLigatureAttributeName: [NSNumber numberWithInt:2]
   };
   NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:text
                                                                          attributes:attributes];
+  
   [self->_attributedString replaceCharactersInRange:NSMakeRange(x, [text length])
                                withAttributedString:attributedString];
 }
@@ -68,6 +76,7 @@
 - (void)clearText
 {
   self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
+  
   [self updateAttributedString];
 }
 
@@ -97,9 +106,11 @@
     id additionalString = [@"" stringByPaddingToLength:additionalStringLength
                                             withString:@" "
                                        startingAtIndex:0];
-    
     id attributes = @{
-      NSFontAttributeName:[self->_font font]
+      NSFontAttributeName:[self->_font font],
+      NSBackgroundColorAttributeName:[NSColor blackColor],
+      NSParagraphStyleAttributeName: [self->_font paragraphStyle],
+      NSLigatureAttributeName: [NSNumber numberWithInt:2]
     };
     id additionalAttributedString = [[NSAttributedString alloc] initWithString:additionalString
                                                                     attributes:attributes];

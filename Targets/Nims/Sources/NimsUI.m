@@ -38,7 +38,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   if (self != nil) {
     self->_outerGridSize = GridSizeMake(110, 40);
     
-    self->_font = [[NimsFont alloc] initWithFont:[NSFont fontWithName:@"BlexMono Nerd Font Mono" size:13]];
+    self->_font = [[NimsFont alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
     
     id mainLayer = [[MainLayer alloc] init];
@@ -126,13 +126,13 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           }
         }];
         
+        [CATransaction commit];
+        
         if (!self->_windowInitiallyOrderedFront) {
           [self->_window orderFront:nil];
           
           self->_windowInitiallyOrderedFront = true;
         }
-        
-        [CATransaction commit];
       });
       
       [self->_idsOfGridsWithChangedFrame removeAllObjects];
@@ -176,16 +176,18 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     
     self->_nvims_ui.grid_resize = ^(int64_t cID, int64_t width, int64_t height) {
       id _id = [NSNumber numberWithLongLong:cID];
-      GridRect frame = GridRectMake(GridPointZero, GridSizeMake(width, height));
+      GridSize size = GridSizeMake(width, height);
       
       NimsUIGrid *grid = [self->_grids objectForKey:_id];
       if (grid == nil) {
         grid = [[NimsUIGrid alloc] initWithFont:self->_font
-                                          frame:frame
+                                          frame:GridRectMake(GridPointZero, size)
                                andOuterGridSize:self->_outerGridSize];
         [self->_grids setObject:grid forKey:_id];
         
       } else {
+        GridPoint origin = [grid frame].origin;
+        GridRect frame = GridRectMake(origin, size);
         [grid setFrame:frame andOuterGridSize:self->_outerGridSize];
       }
       

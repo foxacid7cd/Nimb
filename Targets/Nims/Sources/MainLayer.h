@@ -6,6 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+#import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 #import "NimsFont.h"
 
