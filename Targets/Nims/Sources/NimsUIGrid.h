@@ -13,16 +13,29 @@
 #import "NimsUIGridRow.h"
 #import "NimsUIHighlights.h"
 
+typedef enum : int64_t {
+  NimsUIGridAnchorTopLeft = 0,
+  NimsUIGridAnchorTopRight,
+  NimsUIGridAnchorBottomLeft,
+  NimsUIGridAnchorBottomRight
+} NimsUIGridAnchor;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGrid : NSObject
 
 - (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
                               font:(NimsFont *)font
-                             frame:(GridRect)frame
+                            origin:(GridPoint)origin
+                              size:(GridSize)size
                   andOuterGridSize:(GridSize)outerGridSize;
 - (void)setFont:(NimsFont *)font;
-- (void)setFrame:(GridRect)frame andOuterGridSize:(GridSize)outerGridSize;
+- (void)setOrigin:(GridPoint)origin;
+- (GridPoint)origin;
+- (void)setSize:(GridSize)size;
+- (GridSize)size;
+- (void)setOuterGridSize:(GridSize)outerGridSize;
+- (void)setNvimAnchor:(nvim_string_t)anchor;
 - (void)highlightsUpdated;
 - (GridRect)frame;
 - (CGRect)layerFrame;

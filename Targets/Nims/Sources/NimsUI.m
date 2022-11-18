@@ -233,15 +233,14 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       NimsUIGrid *grid = [self->_grids objectForKey:_id];
       if (grid == nil) {
         grid = [[NimsUIGrid alloc] initWithHighlights:self->_highlights
-                                                 font:self->_font
-                                                frame:GridRectMake(GridPointZero, size)
-                                     andOuterGridSize:self->_outerGridSize];
+                                                  font:self->_font
+                                                origin:GridPointZero
+                                                  size:size
+                                      andOuterGridSize:self->_outerGridSize];
         [self->_grids setObject:grid forKey:_id];
         
       } else {
-        GridPoint origin = [grid frame].origin;
-        GridRect frame = GridRectMake(origin, size);
-        [grid setFrame:frame andOuterGridSize:self->_outerGridSize];
+        [grid setSize:size];
       }
       
       [self->_idsOfGridsWithChangedFrame addObject:_id];
@@ -336,12 +335,33 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         
         int64_t start_row = args.items[2].data.integer;
         int64_t start_col = args.items[3].data.integer;
+        [grid setOrigin:GridPointMake(start_col, start_row)];
+        
         int64_t width = args.items[4].data.integer;
         int64_t height = args.items[5].data.integer;
-        GridRect frame = GridRectMake(GridPointMake(start_col, start_row),
-                                      GridSizeMake(width, height));
+        [grid setSize:GridSizeMake(width, height)];
         
-        [grid setFrame:frame andOuterGridSize:self->_outerGridSize];
+        [self->_idsOfGridsWithChangedFrame addObject:gridID];
+        
+      } else if ([name isEqualToString:@"win_float_pos"]) {
+        int64_t cGridID = args.items[0].data.integer;
+        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
+        NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+        
+        nvim_string_t anchor = args.items[2].data.string;
+        [grid setNvimAnchor:anchor];
+        
+        int64_t cAnchorGridID = args.items[3].data.integer;
+        NSNumber *anchorGridID = [NSNumber numberWithLongLong:cAnchorGridID];
+        NimsUIGrid *anchorGrid = [self->_grids objectForKey:anchorGridID];
+        
+        int64_t anchor_row = floor(args.items[4].data.floating);
+        int64_t anchor_col = floor(args.items[5].data.floating);
+        GridPoint anchorOrigin = [anchorGrid origin];
+        [grid setOrigin:GridPointMake(anchorOrigin.x + anchor_col,
+                                      anchorOrigin.y + anchor_row)];
+        
+        [self->_idsOfGridsWithChangedFrame addObject:gridID];
         
       } else {
         NSLog(@"Unknown nvims_ui.event with name: %@", name);

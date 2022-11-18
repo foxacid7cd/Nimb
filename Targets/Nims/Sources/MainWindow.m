@@ -318,7 +318,6 @@
   
   GridPoint point = GridPointMake(floor(upsideDownLocation.x / cellSize.width),
                                   floor(upsideDownLocation.y / cellSize.height));
-  NSLog(@"%lli %lli", point.x, point.y);
 }
 
 @end
