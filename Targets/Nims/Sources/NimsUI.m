@@ -11,7 +11,6 @@
 #import "NimsUI.h"
 #import "NimsUIHighlights.h"
 #import "NimsFont.h"
-#import "MainLayer.h"
 #import "MainWindow.h"
 
 #define STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
@@ -50,7 +49,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 {
   self = [super init];
   if (self != nil) {
-    self->_outerGridSize = GridSizeMake(110, 40);
+    self->_outerGridSize = GridSizeMake(80, 24);
     
     self->_font = [[NimsFont alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
@@ -137,14 +136,6 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           [self->_removedLayers removeAllObjects];
         }
         
-        if (self->_highlightsUpdated) {
-          for (id grid in [self->_grids allValues]) {
-            [grid highlightsUpdated];
-          }
-          
-          self->_highlightsUpdated = false;
-        }
-        
         for (id gridID in self->_changedGridIDs) {
           id grid = [self->_grids objectForKey:gridID];
           [grid flush];
@@ -160,6 +151,14 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           [self->_cursorLayer setFrame:self->_cursorLayerFrame];
           
           self->_cursorLayerFrameChanged = false;
+        }
+        
+        if (self->_highlightsUpdated) {
+          for (id grid in [self->_grids allValues]) {
+            [grid highlightsUpdated];
+          }
+          
+          self->_highlightsUpdated = false;
         }
         
         [CATransaction commit];
@@ -304,10 +303,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           currentHighlightLength += [string length];
           
         } else {
-          [grid applyChangedText:changedText
-                 withHighlightID:highlightID
-                     startingAtX:x
-                            forY:y];
+          [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
           
           [changedText setString:string];
           
@@ -318,19 +314,16 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
           currentHighlightLength = [string length];
         }
       }
-      [grid applyChangedText:changedText
-             withHighlightID:highlightID
-                 startingAtX:x
-                        forY:y];
+      [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
       
       if (clearcol > endcol) {
-        id clearString = [@"" stringByPaddingToLength:clearcol - endcol
+        id clearString = [@"" stringByPaddingToLength:clearcol - endcol - 1
                                            withString:@" "
                                       startingAtIndex:0];
-        [grid applyChangedText:clearString
-               withHighlightID:[NSNumber numberWithLongLong:clearattr]
-                   startingAtX:endcol
-                          forY:y];
+        [grid setString:clearString
+        withHighlightID:[NSNumber numberWithLongLong:clearattr]
+                atIndex:x
+              forRowAtY:y];
       }
       
       [self->_changedGridIDs addObject:gridID];

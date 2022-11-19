@@ -38,7 +38,6 @@
     self->_size = size;
     self->_outerGridSize = outerGridSize;
     self->_rows = [@[] mutableCopy];
-    self->_layer = [[CALayer alloc] init];
     self->_changedYs = [[NSSet set] mutableCopy];
     
     [self addAdditionalRowsIfNeeded];
@@ -151,13 +150,13 @@
   }];
 }
 
-- (void)applyChangedText:(NSString *)text
-         withHighlightID:(NSNumber *)highlightID
-             startingAtX:(int64_t)x
-                    forY:(int64_t)y
+- (void)setString:(NSString *)string
+  withHighlightID:(NSNumber *)highlightID
+          atIndex:(NSInteger)index
+        forRowAtY:(NSInteger)y;
 {
   id row = [self->_rows objectAtIndex:y];
-  [row applyChangedText:text withHighlightID:highlightID startingAtX:x];
+  [row setString:string withHighlightID:highlightID atIndex:index];
   
   [self->_changedYs addObject:[NSNumber numberWithLongLong:y]];
 }
@@ -245,21 +244,29 @@
 
 - (void)flush
 {
-  [self->_layer setFrame:self->_layerFrame];
-  [self->_layer setZPosition:self->_zPosition];
-  [self->_layer setContentsScale:self->_contentsScale];
-  [self->_layer setHidden:self->_isHidden];
-
-  for (id y in self->_changedYs) {
-    id row = [self->_rows objectAtIndex:[y longLongValue]];
-    [row flush];
-    
-    if ([[row layer] superlayer] == nil) {
-      [self->_layer addSublayer:[row layer]];
-    }
+  id layer = self->_layer;
+  if (layer == nil) {
+    layer = [CALayer layer];
+    self->_layer = layer;
   }
   
-  [self->_changedYs removeAllObjects];
+  [layer setFrame:self->_layerFrame];
+  [layer setZPosition:self->_zPosition];
+  [layer setContentsScale:self->_contentsScale];
+  [layer setHidden:self->_isHidden];
+
+  if ([self->_changedYs count] > 0) {
+    for (id y in self->_changedYs) {
+      id row = [self->_rows objectAtIndex:[y longLongValue]];
+      [row flush];
+      
+      if ([[row layer] superlayer] == nil) {
+        [layer addSublayer:[row layer]];
+      }
+    }
+    
+    [self->_changedYs removeAllObjects];
+  }
 }
 
 - (CALayer *)layer

@@ -42,12 +42,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isHidden;
 - (void)highlightsUpdated;
 - (void)clearText;
-- (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x forY:(int64_t)y;
+- (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSInteger)index forRowAtY:(NSInteger)y;
 - (void)setContentsScale:(CGFloat)contentsScale;
 - (void)scrollGrid:(GridRect)rect delta:(GridPoint)delta;
 - (void)flush;
 - (CALayer *)layer;
-- (GridRect)frame;
 
 @end
 

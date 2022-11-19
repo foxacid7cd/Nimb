@@ -52,6 +52,7 @@
   
   id paragraphStyle = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
   [paragraphStyle setLineSpacing:leading];
+  [paragraphStyle setAllowsDefaultTighteningForTruncation:false];
   self->_paragraphStyle = paragraphStyle;
   
   return [super init];

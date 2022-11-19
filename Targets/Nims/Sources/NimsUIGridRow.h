@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setFont:(NimsFont *)font;
 - (void)setGridSize:(GridSize)gridSize;
 - (void)setIndex:(NSInteger)index;
-- (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x;
+- (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index;
 - (void)clearText;
 - (void)highlightsUpdated;
 - (void)setContentsScale:(CGFloat)contentsScale;

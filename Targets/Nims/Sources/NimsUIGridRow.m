@@ -8,16 +8,18 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "NimsUIGridRow.h"
+#import "NimsUIGridRowLayer.h"
 
 @implementation NimsUIGridRow {
   NimsUIHighlights *_highlights;
   NimsFont *_font;
   GridSize _gridSize;
   NSInteger _index;
-  NSMutableAttributedString *_attributedString;
   CGRect _layerFrame;
-  CATextLayer *_textLayer;
   CGFloat _contentsScale;
+  NSMutableArray *_stringUpdates;
+  
+  NimsUIGridRowLayer *_layer;
 }
 
 + (NSAttributedStringKey)highlightIDAttriubuteName
@@ -36,11 +38,9 @@
     self->_font = font;
     self->_gridSize = gridSize;
     self->_index = index;
-    self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
-    self->_textLayer = [[CATextLayer alloc] init];
+    self->_stringUpdates = [@[] mutableCopy];
     
     [self updateLayerFrame];
-    [self updateAttributedString];
   }
   return self;
 }
@@ -48,18 +48,16 @@
 - (void)setFont:(NimsFont *)font
 {
   self->_font = font;
-  self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
   
   [self updateLayerFrame];
-  [self updateAttributedString];
 }
 
 - (void)setGridSize:(GridSize)gridSize
 {
   self->_gridSize = gridSize;
+  [self->_layer setGridWidth:gridSize.width];
   
   [self updateLayerFrame];
-  [self updateAttributedString];
 }
 
 - (void)setIndex:(NSInteger)index
@@ -69,56 +67,23 @@
   [self updateLayerFrame];
 }
 
-- (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x
+- (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index;
 {
-  id attributes = @{
-    [NimsUIGridRow highlightIDAttriubuteName]:highlightID,
-    NSFontAttributeName:[self->_highlights pickFont:self->_font forHighlightID:highlightID],
-    NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-    NSLigatureAttributeName:[NSNumber numberWithInt:0],
-    NSForegroundColorAttributeName: [self->_highlights foregroundColorForHighlightID:highlightID],
-    NSBackgroundColorAttributeName: [self->_highlights backgroundColorForHighlightID:highlightID]
-  };
-  NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:text
-                                                                         attributes:attributes];
+  id update = [NSArray arrayWithObjects:@"setString", string, highlightID, [NSNumber numberWithUnsignedLong:index], nil];
   
-  [self->_attributedString replaceCharactersInRange:NSMakeRange(x, [text length])
-                               withAttributedString:attributedString];
+  [self->_stringUpdates addObject:update];
 }
 
 - (void)clearText
 {
-  self->_attributedString = [[NSMutableAttributedString alloc] initWithString:@""];
+  id update = [NSArray arrayWithObjects:@"clearText", nil];
   
-  [self updateAttributedString];
+  [self->_stringUpdates addObject:update];
 }
 
 - (void)highlightsUpdated
 {
-  NSRange range = NSMakeRange(0, [self->_attributedString length]);
-  [self->_attributedString enumerateAttributesInRange:range options:0 usingBlock:^(NSDictionary<NSAttributedStringKey, id> *attrs, NSRange range, BOOL *stop) {
-    id newAttrs = [NSMutableDictionary dictionaryWithDictionary:attrs];
-    BOOL highlightAttributesSet = false;
-    
-    NSNumber *highlightID = [attrs objectForKey:[NimsUIGridRow highlightIDAttriubuteName]];
-    if (highlightID != nil) {
-      [newAttrs setObject:[self->_highlights foregroundColorForHighlightID:highlightID]
-                   forKey:NSForegroundColorAttributeName];
-      [newAttrs setObject:[self->_highlights backgroundColorForHighlightID:highlightID]
-                   forKey:NSBackgroundColorAttributeName];
-      highlightAttributesSet = true;
-    }
-    
-    if (!highlightAttributesSet) {
-      [newAttrs setObject:[self->_highlights defaultRGBForegroundColor]
-                   forKey:NSForegroundColorAttributeName];
-      [newAttrs setObject:[self->_highlights defaultRGBBackgroundColor]
-                   forKey:NSBackgroundColorAttributeName];
-    }
-    
-    [self->_attributedString setAttributes:newAttrs range:range];
-  }];
-  [self->_textLayer setString:self->_attributedString];
+  [self->_layer highlightsUpdated];
 }
 
 - (void)setContentsScale:(CGFloat)contentsScale
@@ -128,14 +93,38 @@
 
 - (void)flush
 {
-  [self->_textLayer setFrame:self->_layerFrame];
-  [self->_textLayer setString:self->_attributedString];
-  [self->_textLayer setContentsScale:self->_contentsScale];
+  id layer = self->_layer;
+  if (layer == nil) {
+    layer = [[NimsUIGridRowLayer alloc] initWithHighlights:self->_highlights
+                                                      font:self->_font
+                                                 gridWidth:self->_gridSize.width];
+    self->_layer = layer;
+  }
+  
+  [layer setFrame:self->_layerFrame];
+  [layer setContentsScale:self->_contentsScale];
+  
+  if ([self->_stringUpdates count] > 0) {
+    for (id update in self->_stringUpdates) {
+      NSString *typeString = [update objectAtIndex:0];
+      
+      if ([typeString isEqualToString:@"setString"]) {
+        [layer setString:[update objectAtIndex:1]
+         withHighlightID:[update objectAtIndex:2]
+                 atIndex:[[update objectAtIndex:3] unsignedIntValue]];
+        
+      } else if ([typeString isEqualToString:@"clearText"]) {
+        [layer clearText];
+      }
+    }
+    
+    [self->_stringUpdates removeAllObjects];
+  }
 }
 
 - (CALayer *)layer
 {
-  return self->_textLayer;
+  return self->_layer;
 }
 
 - (void)updateLayerFrame
@@ -145,27 +134,6 @@
                                  cellSize.height * (self->_gridSize.height - self->_index - 1),
                                  cellSize.width * self->_gridSize.width,
                                  cellSize.height);
-}
-
-- (void)updateAttributedString
-{
-  int64_t additionalStringLength = MAX(0, self->_gridSize.width - [self->_attributedString length]);
-  if (additionalStringLength > 0) {
-    id additionalString = [@"" stringByPaddingToLength:additionalStringLength
-                                            withString:@" "
-                                       startingAtIndex:0];
-    id attributes = @{
-      NSFontAttributeName:[self->_font regular],
-      NSForegroundColorAttributeName:[self->_highlights defaultRGBForegroundColor],
-      NSBackgroundColorAttributeName:[self->_highlights defaultRGBBackgroundColor],
-      NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-      NSLigatureAttributeName:[NSNumber numberWithInt:0]
-    };
-    id additionalAttributedString = [[NSAttributedString alloc] initWithString:additionalString
-                                                                    attributes:attributes];
-    
-    [self->_attributedString appendAttributedString:additionalAttributedString];
-  }
 }
 
 @end

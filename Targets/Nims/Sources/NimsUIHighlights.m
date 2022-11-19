@@ -62,7 +62,7 @@
 {
   int64_t index = [highlightID longLongValue];
   
-  if (index >= [self->_attributes count]) {
+  if (index == 0 || index >= [self->_attributes count]) {
     return [self defaultRGBForegroundColor];
   }
   
@@ -87,7 +87,7 @@
 {
   int64_t index = [highlightID longLongValue];
   
-  if (index >= [self->_attributes count]) {
+  if (index == 0 || index >= [self->_attributes count]) {
     return [self defaultRGBBackgroundColor];
   }
   
@@ -112,7 +112,7 @@
 {
   int64_t index = [highlightID longLongValue];
   
-  if (index >= [self->_attributes count]) {
+  if (index == 0 || index >= [self->_attributes count]) {
     return [self defaultRGBSpecialColor];
   }
   
@@ -129,7 +129,8 @@
 - (NSFont *)pickFont:(NimsFont *)font forHighlightID:(NSNumber *)highlightID
 {
   int64_t index = [highlightID longLongValue];
-  if (index >= [self->_attributes count]) {
+  
+  if (index == 0 || index >= [self->_attributes count]) {
     return [font regular];
   }
   

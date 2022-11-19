@@ -9,7 +9,6 @@
 #import <Carbon/Carbon.h>
 #import "nvims.h"
 #import "Grid.h"
-#import "MainGridLayer.h"
 #import "MainWindow.h"
 
 @implementation MainWindow {
@@ -351,34 +350,34 @@
 
 - (void)handleEvent:(NSEvent *)event
 {
-  CGSize cellSize = self->_cellSize;
-  if (CGSizeEqualToSize(cellSize, CGSizeZero)) {
-    return;
-  }
-  
-  CGPoint locationInWindow = [event locationInWindow];
-  
-  NSView *contentView = [self contentView];
-  if (contentView == nil) {
-    return;
-  }
-  
-  CALayer *layer = [[contentView layer] hitTest:locationInWindow];
-  if (layer == nil) {
-    return;
-  }
-  
-  while (![layer isMemberOfClass:[MainGridLayer class]] && [layer superlayer] != nil) {
-    layer = [layer superlayer];
-  }
-  
-  CGPoint locationInGridLayer = [[contentView layer] convertPoint:locationInWindow
-                                                          toLayer:layer];
-  CGPoint upsideDownLocation = CGPointMake(locationInGridLayer.x,
-                                           [layer bounds].size.height - locationInGridLayer.y);
-  
-  GridPoint point = GridPointMake(floor(upsideDownLocation.x / cellSize.width),
-                                  floor(upsideDownLocation.y / cellSize.height));
+//  CGSize cellSize = self->_cellSize;
+//  if (CGSizeEqualToSize(cellSize, CGSizeZero)) {
+//    return;
+//  }
+//
+//  CGPoint locationInWindow = [event locationInWindow];
+//
+//  NSView *contentView = [self contentView];
+//  if (contentView == nil) {
+//    return;
+//  }
+//
+//  CALayer *layer = [[contentView layer] hitTest:locationInWindow];
+//  if (layer == nil) {
+//    return;
+//  }
+//
+//  while (![layer isMemberOfClass:[MainGridLayer class]] && [layer superlayer] != nil) {
+//    layer = [layer superlayer];
+//  }
+//
+//  CGPoint locationInGridLayer = [[contentView layer] convertPoint:locationInWindow
+//                                                          toLayer:layer];
+//  CGPoint upsideDownLocation = CGPointMake(locationInGridLayer.x,
+//                                           [layer bounds].size.height - locationInGridLayer.y);
+//
+//  GridPoint point = GridPointMake(floor(upsideDownLocation.x / cellSize.width),
+//                                  floor(upsideDownLocation.y / cellSize.height));
 }
 
 @end
