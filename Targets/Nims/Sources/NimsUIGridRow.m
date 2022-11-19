@@ -11,8 +11,7 @@
 #import "NimsUIGridRowLayer.h"
 
 @implementation NimsUIGridRow {
-  NimsUIHighlights *_highlights;
-  NimsFont *_font;
+  NimsAppearance *_appearance;
   GridSize _gridSize;
   NSInteger _index;
   CGRect _layerFrame;
@@ -22,20 +21,13 @@
   NimsUIGridRowLayer *_layer;
 }
 
-+ (NSAttributedStringKey)highlightIDAttriubuteName
-{
-  return @"NimsUIGridRow.highlightIDKey";
-}
-
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
-                              font:(NimsFont *)font
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
                           gridSize:(GridSize)gridSize
                           andIndex:(NSInteger)index
 {
   self = [super init];
   if (self != nil) {
-    self->_highlights = highlights;
-    self->_font = font;
+    self->_appearance = appearance;
     self->_gridSize = gridSize;
     self->_index = index;
     self->_stringUpdates = [@[] mutableCopy];
@@ -43,13 +35,6 @@
     [self updateLayerFrame];
   }
   return self;
-}
-
-- (void)setFont:(NimsFont *)font
-{
-  self->_font = font;
-  
-  [self updateLayerFrame];
 }
 
 - (void)setGridSize:(GridSize)gridSize
@@ -84,6 +69,8 @@
 - (void)highlightsUpdated
 {
   [self->_layer highlightsUpdated];
+  
+  [self updateLayerFrame];
 }
 
 - (void)setContentsScale:(CGFloat)contentsScale
@@ -95,8 +82,7 @@
 {
   id layer = self->_layer;
   if (layer == nil) {
-    layer = [[NimsUIGridRowLayer alloc] initWithHighlights:self->_highlights
-                                                      font:self->_font
+    layer = [[NimsUIGridRowLayer alloc] initWithAppearance:self->_appearance
                                                  gridWidth:self->_gridSize.width];
     self->_layer = layer;
   }
@@ -129,7 +115,7 @@
 
 - (void)updateLayerFrame
 {
-  CGSize cellSize = [self->_font cellSize];
+  CGSize cellSize = [self->_appearance cellSize];
   self->_layerFrame = CGRectMake(0,
                                  cellSize.height * (self->_gridSize.height - self->_index - 1),
                                  cellSize.width * self->_gridSize.width,

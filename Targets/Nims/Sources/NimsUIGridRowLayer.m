@@ -10,29 +10,27 @@
 #import "NimsUIGridRowLayer.h"
 
 @implementation NimsUIGridRowLayer {
-  NimsUIHighlights *_highlights;
-  NimsFont *_font;
+  NimsAppearance *_appearance;
   NSInteger _gridWidth;
   NimsUIGridRowTextStorage *_textStorage;
   NSLayoutManager *_layoutManager;
   NSTextContainer *_textContainer;
 }
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
-                              font:(NimsFont *)font
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
                          gridWidth:(NSInteger)gridWidth
 {
   self = [super init];
   if (self != nil) {
-    self->_highlights = highlights;
-    self->_font = font;
+    self->_appearance = appearance;
     
     [self setGridWidth:gridWidth];
     
-    id textStorage = [[NimsUIGridRowTextStorage alloc] initWithHighlights:highlights
-                                                                     font:font
+    id textStorage = [[NimsUIGridRowTextStorage alloc] initWithAppearance:appearance
                                                                 gridWidth:gridWidth];
     id layoutManager = [[NSLayoutManager alloc] init];
+    [layoutManager setUsesFontLeading:false];
+    
     id textContainer = [[NSTextContainer alloc] init];
     
     [textContainer setMaximumNumberOfLines:1];
@@ -55,7 +53,7 @@
 {
   [self->_textStorage setGridWidth:gridWidth];
   
-  CGSize cellSize = [self->_font cellSize];
+  CGSize cellSize = [self->_appearance cellSize];
   [self->_textContainer setSize:NSMakeSize(gridWidth * cellSize.width,
                                            cellSize.height)];
 }

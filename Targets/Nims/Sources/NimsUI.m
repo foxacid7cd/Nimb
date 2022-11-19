@@ -9,8 +9,7 @@
 #import "nvims.h"
 #import "NimsUIGrid.h"
 #import "NimsUI.h"
-#import "NimsUIHighlights.h"
-#import "NimsFont.h"
+#import "NimsAppearance.h"
 #import "MainWindow.h"
 
 #define STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
@@ -21,8 +20,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 
 @implementation NimsUI {
   GridSize _outerGridSize;
-  NimsFont *_font;
-  NimsUIHighlights *_highlights;
+  NimsAppearance *_appearance;
   
   CGFloat _plainGridsZPositionCounter;
   CGFloat _windowGridsZPositionCounter;
@@ -51,9 +49,8 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   if (self != nil) {
     self->_outerGridSize = GridSizeMake(80, 24);
     
-    self->_font = [[NimsFont alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
-    self->_highlights = [[NimsUIHighlights alloc] init];
+    self->_appearance = [[NimsAppearance alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
     
     self->_plainGridsZPositionCounter = 0;
     self->_windowGridsZPositionCounter = 1000;
@@ -68,7 +65,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     [mainView setWantsLayer:true];
     [mainView setLayer:layer];
     
-    CGSize cellSize = [self->_font cellSize];
+    CGSize cellSize = [self->_appearance cellSize];
     CGRect contentRect = CGRectMake(0,
                                     0,
                                     self->_outerGridSize.width * cellSize.width,
@@ -78,7 +75,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
                                                     backing:NSBackingStoreBuffered
                                                       defer:true];
     [mainWindow setContentView:mainView];
-    [mainWindow setCellSize:[self->_font cellSize]];
+    [mainWindow setCellSize:[self->_appearance cellSize]];
     [mainWindow makeMainWindow];
     [mainWindow makeKeyAndOrderFront:nil];
     self->_mainWindow = mainWindow;
@@ -186,7 +183,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     self->_nvims_ui.default_colors_set = ^(int64_t rgb_fg, int64_t rgb_bg, int64_t rgb_sp, int64_t cterm_fg, int64_t cterm_bg) {
       self->_highlightsUpdated = true;
       
-      [self->_highlights applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
+      [self->_appearance applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
                                                   rgb_bg:(int32_t)rgb_bg
                                                   rgb_sp:(int32_t)rgb_sp];
     };
@@ -195,7 +192,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       self->_highlightsUpdated = true;
       
       id highlightID = [NSNumber numberWithLongLong:hlID];
-      [self->_highlights applyAttrDefineForHighlightID:highlightID
+      [self->_appearance applyAttrDefineForHighlightID:highlightID
                                              rgb_attrs:rgb_attrs];
     };
     
@@ -208,8 +205,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       
       NimsUIGrid *grid = [self->_grids objectForKey:_id];
       if (grid == nil) {
-        grid = [[NimsUIGrid alloc] initWithHighlights:self->_highlights
-                                                 font:self->_font
+        grid = [[NimsUIGrid alloc] initWithAppearance:self->_appearance
                                                origin:GridPointZero
                                                  size:size
                                      andOuterGridSize:self->_outerGridSize];
@@ -243,7 +239,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       self->_cursorGridID = grid;
       self->_cursorPosition = GridPointMake(col, row);
       
-      CGSize cellSize = [self->_font cellSize];
+      CGSize cellSize = [self->_appearance cellSize];
       
       id cursorGridIDNumber = [NSNumber numberWithLongLong:self->_cursorGridID];
       id cursorGrid = [self->_grids objectForKey:cursorGridIDNumber];

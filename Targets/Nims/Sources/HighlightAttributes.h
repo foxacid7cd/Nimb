@@ -8,7 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 #import "nvims.h"
-#import "NimsFont.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,8 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSColor *)rgbForegroundColor;
 - (NSColor *)rgbBackgroundColor;
 - (NSColor *)rgbSpecialColor;
-
-- (NSFont *)pickFont:(NimsFont *)font;
 
 - (BOOL)isInversed;
 - (BOOL)isBold;

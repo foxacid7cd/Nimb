@@ -1,5 +1,5 @@
 //
-//  NimsUIHighlights.h
+//  NimsAppearance.h
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 18.11.2022.
@@ -11,7 +11,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NimsUIHighlights : NSObject
+@interface NimsAppearance : NSObject
+
++ (NSNumber *)defaultHighlightID;
+
+- (instancetype)initWithFont:(NSFont *)font;
+
+- (void)setFont:(NSFont *)font;
+- (CGSize)cellSize;
 
 - (void)applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
                                  rgb_bg:(int32_t)rgb_bg
@@ -20,15 +27,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applyAttrDefineForHighlightID:(NSNumber *)highlightID
                             rgb_attrs:(nvim_hl_attrs_t)rgb_attrs;
 
+- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightWithID:(NSNumber *)highlightID;
+
+- (NSFont *)fontForHighlightID:(NSNumber *)highlightID;
+
 - (NSColor *)foregroundColorForHighlightID:(NSNumber *)highlightID;
 - (NSColor *)backgroundColorForHighlightID:(NSNumber *)highlightID;
 - (NSColor *)specialColorForHighlightID:(NSNumber *)highlightID;
-
-- (NSFont *)pickFont:(NimsFont *)font forHighlightID:(NSNumber *)highlightID;
-
-- (NSColor *)defaultRGBForegroundColor;
-- (NSColor *)defaultRGBBackgroundColor;
-- (NSColor *)defaultRGBSpecialColor;
 
 @end
 

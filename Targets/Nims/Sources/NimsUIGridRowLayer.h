@@ -7,16 +7,14 @@
 //
 
 #import <QuartzCore/QuartzCore.h>
-#import "NimsUIHighlights.h"
-#import "NimsFont.h"
+#import "NimsAppearance.h"
 #import "NimsUIGridRowTextStorage.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGridRowLayer : CALayer
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
-                              font:(NimsFont *)font
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
                          gridWidth:(NSInteger)gridWidth;
 
 - (void)setGridWidth:(NSInteger)gridWidth;

@@ -99,26 +99,6 @@
   return self->_rgbSpecialColor;
 }
 
-- (NSFont *)pickFont:(NimsFont *)font
-{
-  if ([self isBold]) {
-    if ([self isItalic]) {
-      return [font boldItalic];
-      
-    } else {
-      return [font bold];
-    }
-    
-  } else {
-    if ([self isItalic]) {
-      return [font italic];
-      
-    } else {
-      return [font regular];
-    }
-  }
-}
-
 - (BOOL)isInversed
 {
   return (self->_flags & NvimHlAttrFlagsInverse) != 0;

@@ -1,5 +1,5 @@
 //
-//  NimsUIHighlights.m
+//  NimsAppearance.m
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 18.11.2022.
@@ -7,20 +7,33 @@
 //
 
 #import "NSColor+NimsUI.h"
-#import "NimsUIHighlights.h"
+#import "NSAttributedString+NimsUI.h"
+#import "NimsAppearance.h"
 
-@implementation NimsUIHighlights {
+@implementation NimsAppearance {
+  NSFont *_regularFont;
+  
   NSMutableArray<HighlightAttributes *> *_attributes;
   int32_t _default_rgb_fg;
   int32_t _default_rgb_bg;
   int32_t _default_rgb_sp;
+ 
+  CGSize _cellSize;
+  NSFont *_boldFont;
+  NSFont *_italicFont;
+  NSFont *_boldItalicFont;
   
   NSColor *_defaultRGBForegroundColor;
   NSColor *_defaultRGBBackgroundColor;
   NSColor *_defaultRGBSpecialColor;
 }
 
-- (instancetype)init
++ (NSNumber *)defaultHighlightID
+{
+  return [NSNumber numberWithInt:0];
+}
+
+- (instancetype)initWithFont:(NSFont *)font
 {
   self = [super init];
   if (self != nil) {
@@ -28,8 +41,23 @@
     self->_default_rgb_fg = -1;
     self->_default_rgb_bg = -1;
     self->_default_rgb_sp = -1;
+    
+    [self setFont:font];
   }
   return self;
+}
+
+- (void)setFont:(NSFont *)font
+{
+  self->_regularFont = font;
+  
+  [self updateCellSize];
+  [self updateFontVariants];
+}
+
+- (CGSize)cellSize
+{
+  return self->_cellSize;
 }
 
 - (void)applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
@@ -56,6 +84,45 @@
   
   id attributes = [self->_attributes objectAtIndex:[highlightID longLongValue]];
   [attributes applyAttrDefineWithRGBAttrs:rgb_attrs];
+}
+
+- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightWithID:(NSNumber *)highlightID;
+{
+  return @{
+    HighlightIDAttributeName:highlightID,
+    NSFontAttributeName:[self fontForHighlightID:highlightID],
+    NSForegroundColorAttributeName:[self foregroundColorForHighlightID:highlightID],
+    NSBackgroundColorAttributeName:[self backgroundColorForHighlightID:highlightID],
+    NSLigatureAttributeName:[NSNumber numberWithInt:2]
+  };
+}
+
+- (NSFont *)fontForHighlightID:(NSNumber *)highlightID
+{
+  int64_t index = [highlightID longLongValue];
+  
+  if (index == 0 || index >= [self->_attributes count]) {
+    return self->_regularFont;
+  }
+  
+  id attributes = [self->_attributes objectAtIndex:index];
+  
+  if ([attributes isBold]) {
+    if ([attributes isItalic]) {
+      return self->_boldItalicFont;
+      
+    } else {
+      return self->_boldFont;
+    }
+    
+  } else {
+    if ([attributes isItalic]) {
+      return self->_italicFont;
+      
+    } else {
+      return self->_regularFont;
+    }
+  }
 }
 
 - (NSColor *)foregroundColorForHighlightID:(NSNumber *)highlightID
@@ -126,17 +193,6 @@
   return color;
 }
 
-- (NSFont *)pickFont:(NimsFont *)font forHighlightID:(NSNumber *)highlightID
-{
-  int64_t index = [highlightID longLongValue];
-  
-  if (index == 0 || index >= [self->_attributes count]) {
-    return [font regular];
-  }
-  
-  return [[self->_attributes objectAtIndex:index] pickFont:font];
-}
-
 - (NSColor *)defaultRGBForegroundColor
 {
   if (self->_default_rgb_fg < 0) {
@@ -180,6 +236,41 @@
   }
   
   return color;
+}
+
+- (void)updateCellSize
+{
+  unichar *characters = malloc(sizeof(unichar));
+  [@"M" getCharacters:characters];
+  
+  CGGlyph *glyphs = malloc(sizeof(CGGlyph));
+  CGSize *advances = malloc(sizeof(CGSize));
+  
+  CTFontRef ctFont = (__bridge CTFontRef)self->_regularFont;
+  CTFontGetGlyphsForCharacters(ctFont, characters, glyphs, 1);
+  CTFontGetAdvancesForGlyphs(ctFont, kCTFontOrientationHorizontal, glyphs, advances, 1);
+  double width = advances[0].width;
+  
+  double ascent = CTFontGetAscent(ctFont);
+  double descent = CTFontGetDescent(ctFont);
+  double leading = CTFontGetLeading(ctFont);
+  double height = ascent + descent + leading;
+  
+  free(characters);
+  free(glyphs);
+  free(advances);
+  
+  CGSize cellSize = CGSizeMake(width, height);
+  self->_cellSize = cellSize;
+}
+
+- (void)updateFontVariants
+{
+  id fontManager = [NSFontManager sharedFontManager];
+  
+  self->_boldFont = [fontManager convertFont:self->_regularFont toHaveTrait:NSFontBoldTrait];
+  self->_italicFont = [fontManager convertFont:self->_regularFont toHaveTrait:NSFontItalicTrait];
+  self->_boldItalicFont = [fontManager convertFont:self->_boldFont toHaveTrait:NSFontItalicTrait];
 }
 
 @end

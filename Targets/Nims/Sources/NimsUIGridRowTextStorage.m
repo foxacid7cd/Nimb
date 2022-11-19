@@ -10,17 +10,15 @@
 #import "NimsUIGridRowTextStorage.h"
 
 @implementation NimsUIGridRowTextStorage {
-  NimsUIHighlights* _highlights;
-  NimsFont *_font;
+  NimsAppearance* _appearance;
   NSMutableAttributedString *_backingStore;
 }
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights font:(NimsFont *)font gridWidth:(NSInteger)gridWidth;
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance gridWidth:(NSInteger)gridWidth
 {
   self = [super init];
   if (self != nil) {
-    self->_highlights = highlights;
-    self->_font = font;
+    self->_appearance = appearance;
     self->_backingStore = [[NSMutableAttributedString alloc] init];
     
     [self setGridWidth:gridWidth];
@@ -37,15 +35,9 @@
     id additionalString = [@"" stringByPaddingToLength:delta
                                             withString:@" "
                                        startingAtIndex:0];
-    id attributes = @{
-      HighlightIDAttributeName:[NSNumber numberWithLongLong:0],
-      NSFontAttributeName:[self->_font regular],
-      NSForegroundColorAttributeName:[self->_highlights defaultRGBForegroundColor],
-      NSBackgroundColorAttributeName:[self->_highlights defaultRGBBackgroundColor],
-      NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-      NSLigatureAttributeName:[NSNumber numberWithInt:2]
-    };
-    id attributedString = [[NSAttributedString alloc] initWithString:additionalString attributes:attributes];
+    id attributes = [self->_appearance stringAttributesForHighlightWithID:[NimsAppearance defaultHighlightID]];
+    id attributedString = [[NSAttributedString alloc] initWithString:additionalString
+                                                          attributes:attributes];
     [self->_backingStore appendAttributedString:attributedString];
     
     [self edited:NSTextStorageEditedCharacters | NSTextStorageEditedAttributes
@@ -65,16 +57,10 @@
 - (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index
 {
   NSRange range = NSMakeRange(index, [string length]);
-  id attributes = @{
-    HighlightIDAttributeName:highlightID,
-    NSFontAttributeName:[self->_highlights pickFont:self->_font forHighlightID:highlightID],
-    NSForegroundColorAttributeName:[self->_highlights foregroundColorForHighlightID:highlightID],
-    NSBackgroundColorAttributeName:[self->_highlights backgroundColorForHighlightID:highlightID],
-    NSParagraphStyleAttributeName:[self->_font paragraphStyle],
-    NSLigatureAttributeName:[NSNumber numberWithInt:2]
-  };
-  [self->_backingStore replaceCharactersInRange:range withString:string];
-  [self->_backingStore setAttributes:attributes range:range];
+  [self->_backingStore replaceCharactersInRange:range
+                                     withString:string];
+  [self->_backingStore setAttributes:[self->_appearance stringAttributesForHighlightWithID:highlightID]
+                               range:range];
   
   [self edited:NSTextStorageEditedCharacters | NSTextStorageEditedAttributes
          range:range
@@ -83,13 +69,18 @@ changeInLength:0];
 
 - (void)clearText
 {
-  [self beginEditing];
+  NSRange range = NSMakeRange(0, [self->_backingStore length]);
+  id clearString = [@"" stringByPaddingToLength:range.length
+                                     withString:@" "
+                                startingAtIndex:0];
+  id attributes = [self->_appearance stringAttributesForHighlightWithID:[NimsAppearance defaultHighlightID]];
+  id attributedString = [[NSAttributedString alloc] initWithString:clearString
+                                                        attributes:attributes];
+  [self->_backingStore setAttributedString:attributedString];
   
-  NSUInteger length = [self->_backingStore length];
-  [self setGridWidth:0];
-  [self setGridWidth:length];
-  
-  [self endEditing];
+  [self edited:NSTextStorageEditedCharacters | NSTextStorageEditedAttributes
+         range:range
+changeInLength:0];
 }
 
 - (void)highlightsUpdated
@@ -97,12 +88,8 @@ changeInLength:0];
   [self->_backingStore enumerateAttributesInRange:NSMakeRange(0, [self->_backingStore length]) options:0 usingBlock:^(NSDictionary<NSAttributedStringKey, id> *attrs, NSRange range, BOOL *stop) {
     NSNumber *highlightID = [attrs objectForKey:HighlightIDAttributeName];
     
-    NSMutableDictionary<NSAttributedStringKey, id> *newAttrs = [attrs mutableCopy];
-    [newAttrs setObject:[self->_highlights pickFont:self->_font forHighlightID:highlightID] forKey:NSFontAttributeName];
-    [newAttrs setObject:[self->_highlights foregroundColorForHighlightID:highlightID] forKey:NSForegroundColorAttributeName];
-    [newAttrs setObject:[self->_highlights backgroundColorForHighlightID:highlightID] forKey:NSBackgroundColorAttributeName];
-    
-    [self->_backingStore setAttributes:newAttrs range:range];
+    [self->_backingStore setAttributes:[self->_appearance stringAttributesForHighlightWithID:highlightID]
+                                 range:range];
   }];
   
   [self edited:NSTextStorageEditedAttributes
@@ -137,7 +124,5 @@ changeInLength:([string length] - range.length)];
          range:range
 changeInLength:0];
 }
-
-
 
 @end

@@ -8,19 +8,16 @@
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
-#import "NimsFont.h"
 #import "Grid.h"
-#import "NimsUIHighlights.h"
+#import "NimsAppearance.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGridRow : NSObject
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
-                              font:(NimsFont *)font
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
                           gridSize:(GridSize)gridSize
                           andIndex:(NSInteger)index;
-- (void)setFont:(NimsFont *)font;
 - (void)setGridSize:(GridSize)gridSize;
 - (void)setIndex:(NSInteger)index;
 - (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index;

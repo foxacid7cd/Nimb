@@ -9,9 +9,8 @@
 #import <Foundation/Foundation.h>
 #import "nvims.h"
 #import "Grid.h"
-#import "NimsFont.h"
 #import "NimsUIGridRow.h"
-#import "NimsUIHighlights.h"
+#import "NimsAppearance.h"
 
 typedef enum : int64_t {
   NimsUIGridAnchorTopLeft = 0,
@@ -24,12 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGrid : NSObject
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
-                              font:(NimsFont *)font
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
                             origin:(GridPoint)origin
                               size:(GridSize)size
                   andOuterGridSize:(GridSize)outerGridSize;
-- (void)setFont:(NimsFont *)font;
 - (void)setOrigin:(GridPoint)origin;
 - (GridPoint)origin;
 - (void)setSize:(GridSize)size;

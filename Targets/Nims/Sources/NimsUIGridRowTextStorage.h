@@ -7,13 +7,13 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "NimsUIHighlights.h"
+#import "NimsAppearance.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIGridRowTextStorage : NSTextStorage
 
-- (instancetype)initWithHighlights:(NimsUIHighlights *)highlights font:(NimsFont *)font gridWidth:(NSInteger)gridWidth;
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance gridWidth:(NSInteger)gridWidth;
 - (void)setGridWidth:(NSInteger)gridWidth;
 - (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index;
 - (void)clearText;
