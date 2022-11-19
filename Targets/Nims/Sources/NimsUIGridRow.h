@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x;
 - (void)clearText;
 - (void)highlightsUpdated;
+- (void)setContentsScale:(CGFloat)contentsScale;
 - (void)flush;
 - (CALayer *)layer;
 

@@ -117,7 +117,6 @@
       return [font regular];
     }
   }
-
 }
 
 - (BOOL)isInversed

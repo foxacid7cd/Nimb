@@ -34,6 +34,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   MainWindow *_mainWindow;
   
   NSMutableSet<NSNumber *> *_changedGridIDs;
+  NSMutableArray<CALayer *> *_removedLayers;
   BOOL _highlightsUpdated;
   
   int64_t _cursorGridID;
@@ -84,6 +85,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     self->_mainWindow = mainWindow;
     
     self->_changedGridIDs = [[NSSet set] mutableCopy];
+    self->_removedLayers = [@[] mutableCopy];
     
     id cursorLayer = [[CALayer alloc] init];
     [cursorLayer setBackgroundColor:[[NSColor whiteColor] CGColor]];
@@ -125,15 +127,23 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     self->_nvims_ui.flush = ^() {
       dispatch_sync(dispatch_get_main_queue(), ^{
         [CATransaction begin];
-        [CATransaction setAnimationDuration:0.2];
+        [CATransaction setDisableActions:true];
+       
+        if ([self->_removedLayers count] > 0) {
+          for (id layer in self->_removedLayers) {
+            [layer removeFromSuperlayer];
+          }
+          
+          [self->_removedLayers removeAllObjects];
+        }
         
         if (self->_highlightsUpdated) {
           for (id grid in [self->_grids allValues]) {
             [grid highlightsUpdated];
           }
+          
+          self->_highlightsUpdated = false;
         }
-        
-        self->_highlightsUpdated = false;
         
         for (id gridID in self->_changedGridIDs) {
           id grid = [self->_grids objectForKey:gridID];
@@ -204,7 +214,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
                                                origin:GridPointZero
                                                  size:size
                                      andOuterGridSize:self->_outerGridSize];
-        
+        [grid setContentsScale:[[NSScreen mainScreen] backingScaleFactor]];
         [grid setZPosition:self->_plainGridsZPositionCounter];
         self->_plainGridsZPositionCounter += 0.1;
         
@@ -225,10 +235,9 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       NimsUIGrid *grid = [self->_grids objectForKey:gridID];
       if (grid != nil) {
         [grid clearText];
-        return;
+        
+        [self->_changedGridIDs addObject:gridID];
       }
-      
-      [self->_changedGridIDs addObject:gridID];
     };
     
     self->_nvims_ui.grid_cursor_goto = ^(int64_t grid, int64_t row, int64_t col) {
@@ -252,15 +261,31 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       };
     };
     
-    self->_nvims_ui.grid_scroll = ^(int64_t grid, int64_t top, int64_t bot, int64_t left, int64_t right, int64_t rows, int64_t cols) {
-    };
-    
-    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t y, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
-      id gridID = [NSNumber numberWithInteger:cGridID];
+    self->_nvims_ui.grid_scroll = ^(int64_t cGridID, int64_t top, int64_t bot, int64_t left, int64_t right, int64_t rows, int64_t cols) {
+      id gridID = [NSNumber numberWithLongLong:cGridID];
       
       NimsUIGrid *grid = [self->_grids objectForKey:gridID];
       if (grid == nil) {
-        NSLog(@"nvims_ui.raw_line called for unexisting grid with id: %@", gridID);
+        return;
+      }
+      
+      int64_t width = right - left;
+      int64_t height = bot - top;
+      GridRect rect = GridRectMake(GridPointMake(left, top),
+                                   GridSizeMake(width, height));
+      
+      GridPoint delta = GridPointMake(cols, rows);
+      
+      [grid scrollGrid:rect delta:delta];
+      
+      [self->_changedGridIDs addObject:gridID];
+    };
+    
+    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t y, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
+      id gridID = [NSNumber numberWithLongLong:cGridID];
+      
+      NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+      if (grid == nil) {
         return;
       }
       
@@ -363,9 +388,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
         id grid = [self->_grids objectForKey:gridID];
         if (grid != nil) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            [[grid layer] removeFromSuperlayer];
-          });
+          [self->_removedLayers addObject:[grid layer]];
           [self->_grids removeObjectForKey:gridID];
         }
         
@@ -374,9 +397,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
         id grid = [self->_grids objectForKey:gridID];
         if (grid != nil) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            [[grid layer] removeFromSuperlayer];
-          });
+          [self->_removedLayers addObject:[grid layer]];
           [self->_grids removeObjectForKey:gridID];
         }
         

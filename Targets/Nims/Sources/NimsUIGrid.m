@@ -21,6 +21,7 @@
   CALayer *_layer;
   NSMutableSet<NSNumber *> *_changedYs;
   CGRect _layerFrame;
+  CGFloat _contentsScale;
 }
 
 - (instancetype)initWithHighlights:(NimsUIHighlights *)highlights
@@ -124,11 +125,9 @@
   return self->_zPosition;
 }
 
-- (void)setHidden:(BOOL)isHidden
+- (void)setHidden:(BOOL)hidden
 {
-  self->_isHidden = isHidden;
-  
-  [self->_layer setHidden:isHidden];
+  self->_isHidden = hidden;
 }
 
 - (BOOL)isHidden
@@ -194,8 +193,63 @@
   return GridRectMake(origin, self->_size);
 }
 
+- (void)setContentsScale:(CGFloat)contentsScale
+{
+  self->_contentsScale = contentsScale;
+  
+  for (id row in self->_rows) {
+    [row setContentsScale:contentsScale];
+  }
+}
+
+- (void)scrollGrid:(GridRect)rect delta:(GridPoint)delta
+{
+  if (self->_size.width != rect.size.width || delta.x != 0) {
+    NSLog(@"Unsupported scroll grid setup");
+    return;
+  }
+  
+  if (delta.y > 0) {
+    int64_t overflow = MAX(0, rect.origin.y + rect.size.height + delta.y - self->_size.height);
+    
+    for (int64_t y = rect.origin.y; y < rect.origin.y + rect.size.height - overflow - 1; y++) {
+      id dstRow = [self->_rows objectAtIndex:y + delta.y];
+      
+      id srcRow = [self->_rows objectAtIndex:y];
+      [self->_rows replaceObjectAtIndex:y + delta.y withObject:srcRow];
+      [srcRow setIndex:y + delta.y];
+      
+      [self->_rows replaceObjectAtIndex:y withObject:dstRow];
+      [dstRow setIndex:y];
+      
+      [self->_changedYs addObject:[NSNumber numberWithLongLong:y]];
+    }
+    
+  } else {
+    int64_t overflow = MAX(0, -(rect.origin.y + delta.y));
+    
+    for (int64_t y = rect.origin.y + rect.size.height - 1; y >= rect.origin.y + overflow; y--) {
+      id dstRow = [self->_rows objectAtIndex:y + delta.y];
+      
+      id srcRow = [self->_rows objectAtIndex:y];
+      [self->_rows replaceObjectAtIndex:y + delta.y withObject:srcRow];
+      [srcRow setIndex:y + delta.y];
+      
+      [self->_rows replaceObjectAtIndex:y withObject:dstRow];
+      [dstRow setIndex:y];
+      
+      [self->_changedYs addObject:[NSNumber numberWithLongLong:y]];
+    }
+  }
+}
+
 - (void)flush
 {
+  [self->_layer setFrame:self->_layerFrame];
+  [self->_layer setZPosition:self->_zPosition];
+  [self->_layer setContentsScale:self->_contentsScale];
+  [self->_layer setHidden:self->_isHidden];
+
   for (id y in self->_changedYs) {
     id row = [self->_rows objectAtIndex:[y longLongValue]];
     [row flush];
@@ -204,9 +258,6 @@
       [self->_layer addSublayer:[row layer]];
     }
   }
-  
-  [self->_layer setFrame:self->_layerFrame];
-  [self->_layer setZPosition:self->_zPosition];
   
   [self->_changedYs removeAllObjects];
 }

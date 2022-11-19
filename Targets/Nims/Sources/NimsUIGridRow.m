@@ -17,6 +17,7 @@
   NSMutableAttributedString *_attributedString;
   CGRect _layerFrame;
   CATextLayer *_textLayer;
+  CGFloat _contentsScale;
 }
 
 + (NSAttributedStringKey)highlightIDAttriubuteName
@@ -117,12 +118,19 @@
     
     [self->_attributedString setAttributes:newAttrs range:range];
   }];
+  [self->_textLayer setString:self->_attributedString];
+}
+
+- (void)setContentsScale:(CGFloat)contentsScale
+{
+  self->_contentsScale = contentsScale;
 }
 
 - (void)flush
 {
   [self->_textLayer setFrame:self->_layerFrame];
   [self->_textLayer setString:self->_attributedString];
+  [self->_textLayer setContentsScale:self->_contentsScale];
 }
 
 - (CALayer *)layer

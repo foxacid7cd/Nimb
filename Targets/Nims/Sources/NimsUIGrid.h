@@ -38,11 +38,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setNvimAnchor:(nvim_string_t)anchor;
 - (void)setZPosition:(CGFloat)zPosition;
 - (CGFloat)zPosition;
-- (void)setHidden:(BOOL)isHidden;
+- (void)setHidden:(BOOL)hidden;
 - (BOOL)isHidden;
 - (void)highlightsUpdated;
 - (void)clearText;
 - (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x forY:(int64_t)y;
+- (void)setContentsScale:(CGFloat)contentsScale;
+- (void)scrollGrid:(GridRect)rect delta:(GridPoint)delta;
 - (void)flush;
 - (CALayer *)layer;
 - (GridRect)frame;
