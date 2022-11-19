@@ -8,24 +8,20 @@
 
 #import <Cocoa/Cocoa.h>
 #import "nvims.h"
+#import "NimsFont.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface HighlightAttributes : NSObject
 
-- (instancetype)initWithFlags:(nvim_hl_attr_flags_t)flags
-                 rgbForegound:(nvim_rgb_value_t)rgbForeground
-                rgbBackground:(nvim_rgb_value_t)rgbBackground
-                   rgbSpecial:(nvim_rgb_value_t)rgbSpecial
-              ctermForeground:(int)ctermForeground
-              ctermBackground:(int)ctermBackground
-                        blend:(int)blend;
+- (void)applyAttrDefineWithRGBAttrs:(nvim_hl_attrs_t)rgb_attrs;
 - (NSColor *)rgbForegroundColor;
 - (NSColor *)rgbBackgroundColor;
 - (NSColor *)rgbSpecialColor;
-- (NSColor *)ctermForegroundColor;
-- (NSColor *)ctermBackgroundColor;
 
+- (NSFont *)pickFont:(NimsFont *)font;
+
+- (BOOL)isInversed;
 - (BOOL)isBold;
 - (BOOL)isItalic;
 

@@ -71,6 +71,7 @@
 		689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225129275D9A00A10348 /* HighlightAttributes.m */; };
 		689B225529275E2300A10348 /* NimsUIHighlights.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225429275E2300A10348 /* NimsUIHighlights.m */; };
 		689B225B2927B60200A10348 /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225A2927B60200A10348 /* MainWindow.m */; };
+		689B2271292808CF00A10348 /* NSColor+NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B2270292808CF00A10348 /* NSColor+NimsUI.m */; };
 		68A4BB51291C7F9900625799 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 68A4BB50291C7F9900625799 /* RxSwift */; };
 		68AED237291CF38800528C30 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED236291CF38800528C30 /* AsyncAlgorithms */; };
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
@@ -291,6 +292,8 @@
 		689B225429275E2300A10348 /* NimsUIHighlights.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIHighlights.m; sourceTree = "<group>"; };
 		689B22592927B60200A10348 /* MainWindow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainWindow.h; sourceTree = "<group>"; };
 		689B225A2927B60200A10348 /* MainWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
+		689B226F292808CF00A10348 /* NSColor+NimsUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSColor+NimsUI.h"; sourceTree = "<group>"; };
+		689B2270292808CF00A10348 /* NSColor+NimsUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSColor+NimsUI.m"; sourceTree = "<group>"; };
 		68AED23A291CFC5900528C30 /* neovim */ = {isa = PBXFileReference; lastKnownFileType = folder; path = neovim; sourceTree = "<group>"; };
 		68AED23B291CFD9C00528C30 /* libnvim.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnvim.a; path = neovim/build/lib/libnvim.a; sourceTree = "<group>"; };
 		68AED23D291CFE2600528C30 /* libluajit-5.1.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libluajit-5.1.a"; path = "neovim/.deps/usr/lib/libluajit-5.1.a"; sourceTree = "<group>"; };
@@ -770,6 +773,8 @@
 				689B225429275E2300A10348 /* NimsUIHighlights.m */,
 				689B225029275D9A00A10348 /* HighlightAttributes.h */,
 				689B225129275D9A00A10348 /* HighlightAttributes.m */,
+				689B226F292808CF00A10348 /* NSColor+NimsUI.h */,
+				689B2270292808CF00A10348 /* NSColor+NimsUI.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1082,6 +1087,7 @@
 				68247C912926B48500867937 /* MainLayer.m in Sources */,
 				683D0C45291D51DE00B9A86F /* main.m in Sources */,
 				7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */,
+				689B2271292808CF00A10348 /* NSColor+NimsUI.m in Sources */,
 				E7F94A0CD6D70DD1E9BD5209 /* DrawRun.swift in Sources */,
 				84EE2C8D02E2406CBCC1D88C /* GlyphRun.swift in Sources */,
 				687B3712291EF25D000733DC /* NimsUI.m in Sources */,
@@ -1247,7 +1253,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
@@ -1544,7 +1550,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;

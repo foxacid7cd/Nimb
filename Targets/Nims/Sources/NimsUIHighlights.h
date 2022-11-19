@@ -13,11 +13,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsUIHighlights : NSObject
 
-- (void)setDefaultAttributes:(HighlightAttributes *)defaultAttributes;
-- (HighlightAttributes *)defaultAttributes;
-- (void)setAttributes:(HighlightAttributes *)attributes forID:(int64_t)_id;
-- (HighlightAttributes *)attributesForID:(int64_t)_id;
-- (void)setName:(NSString *)name forID:(int64_t)_id;
+- (void)applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
+                                 rgb_bg:(int32_t)rgb_bg
+                                 rgb_sp:(int32_t)rgb_sp;
+
+- (void)applyAttrDefineForHighlightID:(NSNumber *)highlightID
+                            rgb_attrs:(nvim_hl_attrs_t)rgb_attrs;
+
+- (NSColor *)foregroundColorForHighlightID:(NSNumber *)highlightID;
+- (NSColor *)backgroundColorForHighlightID:(NSNumber *)highlightID;
+- (NSColor *)specialColorForHighlightID:(NSNumber *)highlightID;
+
+- (NSFont *)pickFont:(NimsFont *)font forHighlightID:(NSNumber *)highlightID;
+
+- (NSColor *)defaultRGBForegroundColor;
+- (NSColor *)defaultRGBBackgroundColor;
+- (NSColor *)defaultRGBSpecialColor;
 
 @end
 

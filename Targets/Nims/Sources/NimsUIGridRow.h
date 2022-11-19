@@ -23,11 +23,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setFont:(NimsFont *)font;
 - (void)setGridSize:(GridSize)gridSize;
 - (void)setIndex:(NSInteger)index;
-- (void)applyChangedText:(NSString *)text withHighlightID:(int64_t)highlightID startingAtX:(int64_t)x;
+- (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x;
 - (void)clearText;
 - (void)highlightsUpdated;
-- (CGRect)layerFrame;
-- (NSAttributedString *)attributedString;
+- (void)flush;
+- (CALayer *)layer;
 
 @end
 

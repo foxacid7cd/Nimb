@@ -55,7 +55,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "VIMRUNTIME"
-            value = "/opt/homebrew/Cellar/neovim/HEAD-ef1d291/share/nvim/runtime"
+            value = "/opt/homebrew/Cellar/neovim/HEAD-db40701/share/nvim/runtime"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

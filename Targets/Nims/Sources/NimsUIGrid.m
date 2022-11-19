@@ -15,7 +15,11 @@
   GridSize _size;
   NimsUIGridAnchor _anchor;
   GridSize _outerGridSize;
+  CGFloat _zPosition;
+  BOOL _isHidden;
   NSMutableArray<NimsUIGridRow *> *_rows;
+  CALayer *_layer;
+  NSMutableSet<NSNumber *> *_changedYs;
   CGRect _layerFrame;
 }
 
@@ -33,6 +37,8 @@
     self->_size = size;
     self->_outerGridSize = outerGridSize;
     self->_rows = [@[] mutableCopy];
+    self->_layer = [[CALayer alloc] init];
+    self->_changedYs = [[NSSet set] mutableCopy];
     
     [self addAdditionalRowsIfNeeded];
     [self updateLayerFrame];
@@ -108,11 +114,53 @@
   }
 }
 
+- (void)setZPosition:(CGFloat)zPosition
+{
+  self->_zPosition = zPosition;
+}
+
+- (CGFloat)zPosition
+{
+  return self->_zPosition;
+}
+
+- (void)setHidden:(BOOL)isHidden
+{
+  self->_isHidden = isHidden;
+  
+  [self->_layer setHidden:isHidden];
+}
+
+- (BOOL)isHidden
+{
+  return self->_isHidden;
+}
+
 - (void)highlightsUpdated
 {
   for (NimsUIGridRow *row in self->_rows) {
     [row highlightsUpdated];
   }
+}
+
+- (void)clearText
+{
+  [self->_rows enumerateObjectsUsingBlock:^(NimsUIGridRow *row, NSUInteger index, BOOL *stop) {
+    [row clearText];
+    
+    [self->_changedYs addObject:[NSNumber numberWithUnsignedLong:index]];
+  }];
+}
+
+- (void)applyChangedText:(NSString *)text
+         withHighlightID:(NSNumber *)highlightID
+             startingAtX:(int64_t)x
+                    forY:(int64_t)y
+{
+  id row = [self->_rows objectAtIndex:y];
+  [row applyChangedText:text withHighlightID:highlightID startingAtX:x];
+  
+  [self->_changedYs addObject:[NSNumber numberWithLongLong:y]];
 }
 
 - (GridRect)frame
@@ -146,30 +194,40 @@
   return GridRectMake(origin, self->_size);
 }
 
-- (CGRect)layerFrame
+- (void)flush
 {
-  return self->_layerFrame;
+  for (id y in self->_changedYs) {
+    id row = [self->_rows objectAtIndex:[y longLongValue]];
+    [row flush];
+    
+    if ([[row layer] superlayer] == nil) {
+      [self->_layer addSublayer:[row layer]];
+    }
+  }
+  
+  [self->_layer setFrame:self->_layerFrame];
+  [self->_layer setZPosition:self->_zPosition];
+  
+  [self->_changedYs removeAllObjects];
 }
 
-- (NSColor *)backgroundColor
+- (CALayer *)layer
 {
-  return [[self->_highlights defaultAttributes] rgbBackgroundColor];
-}
-
-- (NSArray<NimsUIGridRow *> *)rows
-{
-  return self->_rows;
+  return self->_layer;
 }
 
 - (void)addAdditionalRowsIfNeeded
 {
-  int64_t additionalRowsNeededCount = MAX(0, self->_size.height - [self->_rows count]);
+  int64_t initialRowsCount = [self->_rows count];
+  int64_t additionalRowsNeededCount = MAX(0, self->_size.height - initialRowsCount);
   for (int64_t i = 0; i < additionalRowsNeededCount; i++) {
     id row = [[NimsUIGridRow alloc] initWithHighlights:self->_highlights
                                                   font:self->_font
                                               gridSize:self->_size
-                                              andIndex:[self->_rows count]];
+                                              andIndex:initialRowsCount + i];
     [self->_rows addObject:row];
+    
+    [self->_changedYs addObject:[NSNumber numberWithLongLong:initialRowsCount + i]];
   }
 }
 

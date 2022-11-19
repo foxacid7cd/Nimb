@@ -212,6 +212,7 @@ void nims_ui_start(void)
   ui->ui_ext[kUIPopupmenu] = true;
 
   ui->rgb = true;
+  ui->override = true;
   ui->width = nvims_ui.width;
   ui->height = nvims_ui.height;
 

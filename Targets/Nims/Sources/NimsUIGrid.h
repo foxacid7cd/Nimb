@@ -36,11 +36,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (GridSize)size;
 - (void)setOuterGridSize:(GridSize)outerGridSize;
 - (void)setNvimAnchor:(nvim_string_t)anchor;
+- (void)setZPosition:(CGFloat)zPosition;
+- (CGFloat)zPosition;
+- (void)setHidden:(BOOL)isHidden;
+- (BOOL)isHidden;
 - (void)highlightsUpdated;
+- (void)clearText;
+- (void)applyChangedText:(NSString *)text withHighlightID:(NSNumber *)highlightID startingAtX:(int64_t)x forY:(int64_t)y;
+- (void)flush;
+- (CALayer *)layer;
 - (GridRect)frame;
-- (CGRect)layerFrame;
-- (NSColor *)backgroundColor;
-- (NSArray<NimsUIGridRow *> *)rows;
 
 @end
 

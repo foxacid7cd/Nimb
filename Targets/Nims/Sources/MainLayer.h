@@ -15,9 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface MainLayer : CALayer
 
-- (void)setFrame:(CGRect)frame andRowFrames:(NSArray<NSValue *> *)rowFrames forGridWithID:(NSNumber *)gridID;
-- (void)setBackgroundColor:(NSColor *)color forGridWithID:(NSNumber *)gridID;
+- (void)setFrame:(CGRect)frame rowFrames:(NSArray<NSValue *> *)rowFrames forGridWithID:(nonnull NSNumber *)gridID;
+- (void)setZPosition:(CGFloat)zPosition forGridWithID:(NSNumber *)gridID;
+- (void)setHidden:(BOOL)hidden forGridWithID:(NSNumber *)gridID;
 - (void)setRowAttributedString:(NSAttributedString *)rowAttributedString atY:(int64_t)y forGridWithID:(NSNumber *)gridID;
+- (void)destroyGridWithID:(NSNumber *)_id;
+- (void)setCursorRect:(CGRect)cursorRect;
 
 @end
 

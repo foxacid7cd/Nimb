@@ -8,8 +8,10 @@
 
 #include <uv.h>
 #include <nvim/api/vim.h>
+#include <nvim/main.h>
 #include "nvims.h"
 
+extern Loop main_loop;
 extern int nvim_main(int argc, char **argv);
 
 nvims_ui_t nvims_ui;
@@ -29,18 +31,13 @@ void nvims_start(nvims_ui_t arg)
 
 int64_t nvims_input(nvim_string_t keys)
 {
-  String nvim_keys = { .data = keys.data, .size = keys.size };
-  return nvim_input(nvim_keys);
+  return nvim_input(*(String *)&keys);
 }
 
 void nvims_input_mouse(nvim_string_t button, nvim_string_t action, nvim_string_t modifier, int64_t grid, int64_t row, int64_t col)
 {
-  String nvim_button = { .data = button.data, .size = button.size };
-  String nvim_action = { .data = action.data, .size = action.size };
-  String nvim_modifier = { .data = modifier.data, .size = modifier.size };
-  
   Error err;
-  nvim_input_mouse(nvim_button, nvim_action, nvim_modifier, grid, row, col, &err);
+  nvim_input_mouse(*(String *)&button, *(String *)&action, *(String *)&modifier, grid, row, col, &err);
   if (err.type != kErrorTypeNone) {
     printf("nvims_input_mouse error: %s\n", err.msg);
   }

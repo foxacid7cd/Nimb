@@ -6,11 +6,13 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+#import <CoreImage/CoreImage.h>
 #import "MainGridLayer.h"
 #import "MainLayer.h"
 
 @implementation MainLayer {
   NSMutableDictionary<NSNumber *, MainGridLayer *> *_gridLayers;
+  CALayer *_cursorLayer;
 }
 
 - (instancetype)init
@@ -18,6 +20,13 @@
   self = [super init];
   if (self != nil) {
     self->_gridLayers = [@{} mutableCopy];
+    
+    id cursorLayer = [[CALayer alloc] init];
+    [cursorLayer setBackgroundColor:[[NSColor whiteColor] CGColor]];
+    [cursorLayer setZPosition:3000];
+    [cursorLayer setCompositingFilter:@"differenceBlendMode"];
+    [self addSublayer:cursorLayer];
+    self->_cursorLayer = cursorLayer;
   }
   return self;
 }
@@ -29,15 +38,15 @@
   for (MainGridLayer *gridLayer in [self->_gridLayers allValues]) {
     [gridLayer setContentsScale:contentsScale];
   }
+  [self->_cursorLayer setContentsScale:contentsScale];
 }
 
-- (void)setFrame:(CGRect)frame andRowFrames:(nonnull NSArray<NSValue *> *)rowFrames forGridWithID:(NSNumber *)gridID
+- (void)setFrame:(CGRect)frame rowFrames:(NSArray<NSValue *> *)rowFrames forGridWithID:(nonnull NSNumber *)gridID
 {
-  MainGridLayer *gridLayer = [self->_gridLayers objectForKey:gridID];
+  id gridLayer = [self->_gridLayers objectForKey:gridID];
   if (gridLayer == nil) {
     gridLayer = [[MainGridLayer alloc] initWithRowFrames:rowFrames];
     [gridLayer setContentsScale:[self contentsScale]];
-    [gridLayer setZPosition:[gridID longLongValue]];
     [self addSublayer:gridLayer];
     [self->_gridLayers setObject:gridLayer forKey:gridID];
     
@@ -48,10 +57,20 @@
   [gridLayer setFrame:frame];
 }
 
-- (void)setBackgroundColor:(NSColor *)color forGridWithID:(NSNumber *)gridID
+- (void)setZPosition:(CGFloat)zPosition forGridWithID:(NSNumber *)gridID
 {
-  MainGridLayer *gridLayer = [self->_gridLayers objectForKey:gridID];
-  [gridLayer setBackgroundColor:[color CGColor]];
+  id gridLayer = [self->_gridLayers objectForKey:gridID];
+  if (gridLayer != nil) {
+    [gridLayer setZPosition:zPosition];
+  }
+}
+
+- (void)setHidden:(BOOL)hidden forGridWithID:(NSNumber *)gridID
+{
+  id gridLayer = [self->_gridLayers objectForKey:gridID];
+  if (gridLayer != nil) {
+    [gridLayer setHidden:hidden];
+  }
 }
 
 - (void)setRowAttributedString:(NSAttributedString *)rowAttributedString atY:(int64_t)y forGridWithID:(NSNumber *)gridID
@@ -63,6 +82,20 @@
   }
   
   [gridLayer setRowAttributedString:rowAttributedString atY:y];
+}
+
+- (void)destroyGridWithID:(NSNumber *)_id
+{
+  id gridLayer = [self->_gridLayers objectForKey:_id];
+  if (gridLayer != nil) {
+    [gridLayer removeFromSuperlayer];
+    [self->_gridLayers removeObjectForKey:_id];
+  }
+}
+
+- (void)setCursorRect:(CGRect)cursorRect
+{
+  [self->_cursorLayer setFrame:cursorRect];
 }
 
 @end
