@@ -26,16 +26,18 @@
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
                             origin:(GridPoint)origin
                               size:(GridSize)size
-                  andOuterGridSize:(GridSize)outerGridSize
+                     outerGridSize:(GridSize)outerGridSize
+                         zPosition:(CGFloat)zPosition
 {
   self = [super init];
   if (self != nil) {
-    self->_appearance = appearance;
-    self->_origin = origin;
-    self->_size = size;
-    self->_outerGridSize = outerGridSize;
-    self->_rows = [@[] mutableCopy];
-    self->_changedYs = [[NSSet set] mutableCopy];
+    _appearance = appearance;
+    _origin = origin;
+    _size = size;
+    _outerGridSize = outerGridSize;
+    _rows = [@[] mutableCopy];
+    _changedYs = [[NSSet set] mutableCopy];
+    _zPosition = zPosition;
     
     [self addAdditionalRowsIfNeeded];
     [self updateLayerFrame];

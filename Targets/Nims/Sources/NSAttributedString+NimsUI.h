@@ -14,8 +14,6 @@ extern NSAttributedStringKey HighlightIDAttributeName;
 
 @interface NSAttributedString (NimsUI)
 
-
-
 @end
 
 NS_ASSUME_NONNULL_END

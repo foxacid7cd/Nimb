@@ -40,6 +40,8 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   BOOL _cursorLayerFrameChanged;
   CALayer *_cursorLayer;
   
+  NSOperationQueue *_operationQueue;
+  
   nvims_ui_t _nvims_ui;
 }
 
@@ -89,6 +91,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     [cursorLayer setCompositingFilter:@"differenceBlendMode"];
     [layer addSublayer:cursorLayer];
     self->_cursorLayer = cursorLayer;
+    
+    id operationQueue = [[NSOperationQueue alloc] init];
+    [operationQueue setMaxConcurrentOperationCount:1];
+    self->_operationQueue = operationQueue;
     
     self->_nvims_ui.width = (int)self->_outerGridSize.width;
     self->_nvims_ui.height = (int)self->_outerGridSize.height;
@@ -208,9 +214,9 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
         grid = [[NimsUIGrid alloc] initWithAppearance:self->_appearance
                                                origin:GridPointZero
                                                  size:size
-                                     andOuterGridSize:self->_outerGridSize];
+                                        outerGridSize:self->_outerGridSize
+                                            zPosition:self->_plainGridsZPositionCounter];
         [grid setContentsScale:[[NSScreen mainScreen] backingScaleFactor]];
-        [grid setZPosition:self->_plainGridsZPositionCounter];
         self->_plainGridsZPositionCounter += 0.1;
         
         [self->_grids setObject:grid forKey:_id];

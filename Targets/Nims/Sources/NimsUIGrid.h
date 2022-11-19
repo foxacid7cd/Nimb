@@ -26,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
                             origin:(GridPoint)origin
                               size:(GridSize)size
-                  andOuterGridSize:(GridSize)outerGridSize;
+                     outerGridSize:(GridSize)outerGridSize
+                         zPosition:(CGFloat)zPosition;
 - (void)setOrigin:(GridPoint)origin;
 - (GridPoint)origin;
 - (void)setSize:(GridSize)size;

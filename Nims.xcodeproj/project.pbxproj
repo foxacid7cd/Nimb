@@ -76,6 +76,9 @@
 		68AED239291CF39500528C30 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68AED238291CF39500528C30 /* MessagePack */; };
 		68B826EEB04B2537C5BE6776 /* Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7950387AF384F810966D94 /* Input.swift */; };
 		68C0BB8929290B3300857306 /* NSAttributedString+NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0BB8829290B3300857306 /* NSAttributedString+NimsUI.m */; };
+		68C0BB8D2929376C00857306 /* NIUIGridResizeOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0BB8C2929376C00857306 /* NIUIGridResizeOperation.m */; };
+		68C0BB9029293E1D00857306 /* NIUIContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0BB8F29293E1D00857306 /* NIUIContext.m */; };
+		68C0BB932929468300857306 /* NSValue+Grid.m in Sources */ = {isa = PBXBuildFile; fileRef = 68C0BB922929468300857306 /* NSValue+Grid.m */; };
 		68EB25D0291E64D800C49F29 /* nims_ui.c in Sources */ = {isa = PBXBuildFile; fileRef = 68EB25CF291E64D800C49F29 /* nims_ui.c */; };
 		68EB25D2291E65A600C49F29 /* nvims.c in Sources */ = {isa = PBXBuildFile; fileRef = 68EB25D1291E65A600C49F29 /* nvims.c */; };
 		68EB25D3291E671100C49F29 /* libnvims.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68EB25C7291E633400C49F29 /* libnvims.a */; };
@@ -309,6 +312,12 @@
 		68AED255291D02BA00528C30 /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluv.a; path = neovim/.deps/usr/lib/libluv.a; sourceTree = "<group>"; };
 		68C0BB8729290B3300857306 /* NSAttributedString+NimsUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSAttributedString+NimsUI.h"; sourceTree = "<group>"; };
 		68C0BB8829290B3300857306 /* NSAttributedString+NimsUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSAttributedString+NimsUI.m"; sourceTree = "<group>"; };
+		68C0BB8B2929376C00857306 /* NIUIGridResizeOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIGridResizeOperation.h; sourceTree = "<group>"; };
+		68C0BB8C2929376C00857306 /* NIUIGridResizeOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIGridResizeOperation.m; sourceTree = "<group>"; };
+		68C0BB8E29293E1D00857306 /* NIUIContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIContext.h; sourceTree = "<group>"; };
+		68C0BB8F29293E1D00857306 /* NIUIContext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIContext.m; sourceTree = "<group>"; };
+		68C0BB912929468300857306 /* NSValue+Grid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSValue+Grid.h"; sourceTree = "<group>"; };
+		68C0BB922929468300857306 /* NSValue+Grid.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSValue+Grid.m"; sourceTree = "<group>"; };
 		68EB25C7291E633400C49F29 /* libnvims.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnvims.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		68EB25CD291E641500C49F29 /* nvims.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = nvims.h; sourceTree = "<group>"; };
 		68EB25CF291E64D800C49F29 /* nims_ui.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = nims_ui.c; sourceTree = "<group>"; };
@@ -598,6 +607,17 @@
 			path = "New Group";
 			sourceTree = "<group>";
 		};
+		68C0BB8A2929370400857306 /* Operations */ = {
+			isa = PBXGroup;
+			children = (
+				68C0BB8E29293E1D00857306 /* NIUIContext.h */,
+				68C0BB8F29293E1D00857306 /* NIUIContext.m */,
+				68C0BB8B2929376C00857306 /* NIUIGridResizeOperation.h */,
+				68C0BB8C2929376C00857306 /* NIUIGridResizeOperation.m */,
+			);
+			path = Operations;
+			sourceTree = "<group>";
+		};
 		68EB25CB291E639600C49F29 /* nvims */ = {
 			isa = PBXGroup;
 			children = (
@@ -755,6 +775,7 @@
 				68247C992926E0E700867937 /* AppDelegate.h */,
 				683D0C4A291D732700B9A86F /* AppDelegate.m */,
 				688E2DE4291F85C30095A3F1 /* Grid.h */,
+				68C0BB8A2929370400857306 /* Operations */,
 				687B3710291EF25D000733DC /* NimsUI.h */,
 				687B3711291EF25D000733DC /* NimsUI.m */,
 				688E2DDE291F3EBB0095A3F1 /* NimsUIGrid.h */,
@@ -775,6 +796,8 @@
 				689B2270292808CF00A10348 /* NSColor+NimsUI.m */,
 				68C0BB8729290B3300857306 /* NSAttributedString+NimsUI.h */,
 				68C0BB8829290B3300857306 /* NSAttributedString+NimsUI.m */,
+				68C0BB912929468300857306 /* NSValue+Grid.h */,
+				68C0BB922929468300857306 /* NSValue+Grid.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1077,12 +1100,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68C0BB8D2929376C00857306 /* NIUIGridResizeOperation.m in Sources */,
 				2A174C502DB85D01B8A3E764 /* TuistBundle+Nims.swift in Sources */,
 				689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */,
 				997B001A70045F2AF1F0FAA7 /* AppDelegate.swift in Sources */,
 				689B225B2927B60200A10348 /* MainWindow.m in Sources */,
 				4BA79E1B1F98FE97B08A273C /* Cell.swift in Sources */,
 				683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */,
+				68C0BB9029293E1D00857306 /* NIUIContext.m in Sources */,
 				683D0C45291D51DE00B9A86F /* main.m in Sources */,
 				7F302ED0799D1F75E036E4B2 /* CellsGeometry.swift in Sources */,
 				689B2271292808CF00A10348 /* NSColor+NimsUI.m in Sources */,
@@ -1099,6 +1124,7 @@
 				684603C42928A21200107724 /* NimsUIGridRowLayer.m in Sources */,
 				689B225529275E2300A10348 /* NimsAppearance.m in Sources */,
 				688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */,
+				68C0BB932929468300857306 /* NSValue+Grid.m in Sources */,
 				684603C72928AFEA00107724 /* NimsUIGridRowTextStorage.m in Sources */,
 				01F67E4F28DDFA2056A3DE7A /* GridsWindowController.swift in Sources */,
 				24C4F376FF50AFDAA5AF1C38 /* NSFontExtensions.swift in Sources */,
