@@ -1314,6 +1314,10 @@
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"INCLUDE_GENERATED_DECLARATIONS=1",
+				);
 				HEADER_SEARCH_PATHS = Targets/nvimd/include;
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1328,7 +1332,7 @@
 					/opt/homebrew/Cellar/libiconv/1.17/lib,
 					/opt/homebrew/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = Nims;
 				SDKROOT = macosx;
@@ -1625,7 +1629,7 @@
 					/opt/homebrew/Cellar/libiconv/1.17/lib,
 					/opt/homebrew/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = Nims;
 				SDKROOT = macosx;

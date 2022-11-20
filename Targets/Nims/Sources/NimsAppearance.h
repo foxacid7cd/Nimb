@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applyAttrDefineForHighlightID:(NSNumber *)highlightID
                             rgb_attrs:(nvim_hl_attrs_t)rgb_attrs;
 
-- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightWithID:(NSNumber *)highlightID;
+- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightID:(NSNumber *)highlightID;
 
 - (NSFont *)fontForHighlightID:(NSNumber *)highlightID;
 

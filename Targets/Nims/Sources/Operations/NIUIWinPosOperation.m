@@ -12,19 +12,21 @@
 @implementation NIUIWinPosOperation {
   NSNumber *_gridID;
   NSNumber *_windowRef;
-  NIGridRect _gridFrame;
+  NIGridRect _frame;
 }
 
 - (instancetype)initWithGridID:(NSNumber *)gridID
                      windowRef:(NSNumber *)windowRef
-                     gridFrame:(NIGridRect)gridFrame;
+                         frame:(NIGridRect)frame
 {
   self = [super init];
+
   if (self != nil) {
     _gridID = gridID;
     _windowRef = windowRef;
-    _gridFrame = gridFrame;
+    _frame = frame;
   }
+
   return self;
 }
 

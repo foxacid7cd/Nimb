@@ -8,7 +8,7 @@
 
 #import "NIUIWinFloatPosOperation.h"
 
-@implementation NIUIWinFloatPosOperation {
+@implementation NIUIWinFloatPosOperation{
   NSNumber *_gridID;
   NSNumber *_windowRef;
   NIUIFloatAnchor _anchor;
@@ -20,9 +20,10 @@
                      windowRef:(NSNumber *)windowRef
                         anchor:(NIUIFloatAnchor)anchor
                   anchorGridID:(NSNumber *)anchorGridID
-                anchorPosition:(NIGridPoint)anchorPosition;
+                anchorPosition:(NIGridPoint)anchorPosition
 {
   self = [super init];
+
   if (self != nil) {
     _gridID = gridID;
     _windowRef = windowRef;
@@ -30,6 +31,7 @@
     _anchorGridID = anchorGridID;
     _anchorPosition = anchorPosition;
   }
+
   return self;
 }
 

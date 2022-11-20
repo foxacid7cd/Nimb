@@ -9,7 +9,7 @@
 #import "NimsUIGrid.h"
 #import "NIUIGridResizeOperation.h"
 
-@implementation NIUIGridResizeOperation {
+@implementation NIUIGridResizeOperation{
   NIUIContext *_context;
   NSNumber *_gridID;
   NIGridSize _size;
@@ -20,24 +20,30 @@
                            size:(NIGridSize)size
 {
   self = [super init];
+
   if (self != nil) {
     _context = context;
     _gridID = gridID;
     _size = size;
   }
+
   return self;
 }
 
 - (void)main
 {
   NIUIGrid *grid = [_context gridForID:_gridID];
+
   if (grid == nil) {
-    grid = [[NIUIGrid alloc] initWithSize:_size];
+    grid = [[NIUIGrid alloc] initWithAppearance:[_context appearance]
+                                        andSize:_size];
     [_context setGrid:grid forID:_gridID];
-    
   } else {
     [grid setSize:_size];
   }
+
+  [[grid view] setFrame:[[_context view] bounds]];
+  [[_context view] addSubview:[grid view]];
 }
 
 @end

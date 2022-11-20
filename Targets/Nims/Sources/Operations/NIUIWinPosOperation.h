@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithGridID:(NSNumber *)gridID
                      windowRef:(NSNumber *)windowRef
-                     gridFrame:(NIGridRect)gridFrame;
+                         frame:(NIGridRect)frame;
 
 @end
 

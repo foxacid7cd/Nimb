@@ -8,7 +8,7 @@
 
 #import "NIUIRawLineOperation.h"
 
-@implementation NIUIRawLineOperation {
+@implementation NIUIRawLineOperation{
   NIUIContext *_context;
   NSNumber *_gridID;
   NSInteger _gridY;
@@ -33,7 +33,8 @@
                      attributes:(const nvim_sattr_t *)attributes
 {
   self = [super init];
-  if (self != nil) {
+
+  if (self) {
     _context = context;
     _gridID = gridID;
     _gridY = gridY;
@@ -42,17 +43,18 @@
     _clearGridX = clearGridX;
     _clearAttribute = clearAttribute;
     _flags = flags;
-    
+
     NSInteger length = endGridX - startGridX;
-    
+
     size_t chunkSize = sizeof(nvim_schar_t) * length;
     _chunk = malloc(chunkSize);
-    memcpy(&_chunk, &chunk, chunkSize);
-    
+    memcpy(_chunk, &chunk, chunkSize);
+
     size_t attributesSize = sizeof(nvim_sattr_t) * length;
     _attributes = malloc(attributesSize);
-    memcpy(&_attributes, &attributes, attributesSize);
+    memcpy(_attributes, &attributes, attributesSize);
   }
+
   return self;
 }
 
@@ -65,18 +67,17 @@
 - (void)main
 {
   NIUIGrid *grid = [_context gridForID:_gridID];
-  if (grid == nil) {
-    return;
+
+  if (grid) {
+    [grid applyRawLineAtGridY:_gridY
+                   startGridX:_startGridX
+                     endGridX:_endGridX
+                   clearGridX:_clearGridX
+               clearAttribute:_clearAttribute
+                        flags:_flags
+                        chunk:_chunk
+                   attributes:_attributes];
   }
- 
-  [grid applyRawLineAtGridY:_gridY
-                 startGridX:_startGridX
-                   endGridX:_endGridX
-                 clearGridX:_clearGridX
-             clearAttribute:_clearAttribute
-                      flags:_flags
-                      chunk:_chunk
-                 attributes:_attributes];
 }
 
 @end

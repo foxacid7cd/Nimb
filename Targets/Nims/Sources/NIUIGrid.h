@@ -10,10 +10,12 @@
 #import <Quartz/Quartz.h>
 #import "Grid.h"
 #import "nvims.h"
+#import "NimsAppearance.h"
 
 @interface NIUIGrid : NSObject
 
-- (instancetype)initWithSize:(NIGridSize)size;
+- (instancetype)initWithAppearance:(NimsAppearance *)appearance
+                           andSize:(NIGridSize)size;
 
 @property (nonatomic) NIGridSize size;
 
@@ -25,5 +27,11 @@
                       flags:(NSInteger)flags
                       chunk:(nvim_schar_t *)chunk
                  attributes:(nvim_sattr_t *)attributes;
+
+- (void)applyWinPosWithWindowRef:(NSNumber *)windowRef
+                           frame:(NIGridRect)frame
+                       zPosition:(CGFloat)zPosition;
+
+@property (readonly) NSView *view;
 
 @end

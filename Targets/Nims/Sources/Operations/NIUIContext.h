@@ -6,7 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+@import Foundation;
 #import "NimsAppearance.h"
 #import "NIUIGrid.h"
 
@@ -15,15 +15,17 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NIUIContext : NSObject
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                     outerGridSize:(NIGridSize)outerGridSize;
+                     outerGridSize:(NIGridSize)outerGridSize
+                              view:(NSView *)view;
 
 @property (readonly) NimsAppearance *appearance;
 @property (readonly) NIGridSize outerGridSize;
+@property (readonly) NSView *view;
 
 - (CGFloat)nextWindowZPosition;
 - (CGFloat)nextFloatingWindowZPosition;
 
-- (NIUIGrid * _Nullable)gridForID:(NSNumber *)gridID;
+- (NIUIGrid *_Nullable)gridForID:(NSNumber *)gridID;
 - (void)setGrid:(NIUIGrid *)grid forID:(NSNumber *)gridID;
 - (void)removeGridForID:(NSNumber *)gridID;
 
