@@ -7,26 +7,25 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "NimsUIGrid.h"
+#import "NimsAppearance.h"
+#import "NIUIGrid.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NIUIContext : NSObject
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                     outerGridSize:(NSValue *)outerGridSize;
+                     outerGridSize:(NIGridSize)outerGridSize;
 
-- (NimsAppearance *)appearance;
-- (GridSize)outerGridSize;
+@property (readonly) NimsAppearance *appearance;
+@property (readonly) NIGridSize outerGridSize;
 
-- (CGFloat)nextGridZPosition;
 - (CGFloat)nextWindowZPosition;
 - (CGFloat)nextFloatingWindowZPosition;
 
-- (void)markDirtyGridWithID:(NSNumber *)gridID;
-
-- (NimsUIGrid * _Nullable)gridWithID:(NSNumber *)gridID;
-- (void)setGrid:(NimsUIGrid *)grid forID:(NSNumber *)gridID;
+- (NIUIGrid * _Nullable)gridForID:(NSNumber *)gridID;
+- (void)setGrid:(NIUIGrid *)grid forID:(NSNumber *)gridID;
+- (void)removeGridForID:(NSNumber *)gridID;
 
 @end
 

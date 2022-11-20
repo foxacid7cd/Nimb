@@ -10,41 +10,41 @@
 
 @implementation NSValue (Grid)
 
-+ (instancetype)valueWithGridPoint:(GridPoint)gridPoint
++ (instancetype)valueWithGridPoint:(NIGridPoint)gridPoint
 {
   return [NSValue valueWithBytes:&gridPoint
-                        objCType:@encode(GridPoint)];
+                        objCType:@encode(NIGridPoint)];
 }
 
-- (GridPoint)gridPointValue
+- (NIGridPoint)gridPointValue
 {
-  GridPoint gridPoint;
+  NIGridPoint gridPoint;
   [self getValue:&gridPoint];
   return gridPoint;
 }
 
-+ (instancetype)valueWithGridSize:(GridSize)gridSize
++ (instancetype)valueWithGridSize:(NIGridSize)gridSize
 {
   return [NSValue valueWithBytes:&gridSize
-                        objCType:@encode(GridSize)];
+                        objCType:@encode(NIGridSize)];
 }
 
-- (GridSize)gridSizeValue
+- (NIGridSize)gridSizeValue
 {
-  GridSize gridSize;
+  NIGridSize gridSize;
   [self getValue:&gridSize];
   return gridSize;
 }
 
-+ (instancetype)valueWithGridRect:(GridRect)gridRect
++ (instancetype)valueWithGridRect:(NIGridRect)gridRect
 {
   return [NSValue valueWithBytes:&gridRect
-                        objCType:@encode(GridRect)];
+                        objCType:@encode(NIGridRect)];
 }
 
-- (GridRect)gridRectValue
+- (NIGridRect)gridRectValue
 {
-  GridRect gridRect;
+  NIGridRect gridRect;
   [self getValue:&gridRect];
   return gridRect;
 }

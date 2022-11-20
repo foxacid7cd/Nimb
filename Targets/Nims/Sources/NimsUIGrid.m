@@ -10,10 +10,10 @@
 
 @implementation NimsUIGrid {
   NimsAppearance *_appearance;
-  GridPoint _origin;
-  GridSize _size;
+  NIGridPoint _origin;
+  NIGridSize _size;
   NimsUIGridAnchor _anchor;
-  GridSize _outerGridSize;
+  NIGridSize _outerGridSize;
   CGFloat _zPosition;
   BOOL _isHidden;
   NSMutableArray<NimsUIGridRow *> *_rows;
@@ -24,9 +24,9 @@
 }
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                            origin:(GridPoint)origin
-                              size:(GridSize)size
-                     outerGridSize:(GridSize)outerGridSize
+                            origin:(NIGridPoint)origin
+                              size:(NIGridSize)size
+                     outerGridSize:(NIGridSize)outerGridSize
                          zPosition:(CGFloat)zPosition
 {
   self = [super init];
@@ -45,19 +45,19 @@
   return self;
 }
 
-- (void)setOrigin:(GridPoint)origin
+- (void)setOrigin:(NIGridPoint)origin
 {
   self->_origin = origin;
   
   [self updateLayerFrame];
 }
 
-- (GridPoint)origin
+- (NIGridPoint)origin
 {
   return self->_origin;
 }
 
-- (void)setSize:(GridSize)size
+- (void)setSize:(NIGridSize)size
 {
   self->_size = size;
   
@@ -69,12 +69,12 @@
   [self updateLayerFrame];
 }
 
-- (GridSize)size
+- (NIGridSize)size
 {
   return self->_size;
 }
 
-- (void)setOuterGridSize:(GridSize)outerGridSize
+- (void)setOuterGridSize:(NIGridSize)outerGridSize
 {
   self->_outerGridSize = outerGridSize;
   
@@ -149,26 +149,26 @@
   [self->_changedYs addObject:[NSNumber numberWithLongLong:y]];
 }
 
-- (GridRect)frame
+- (NIGridRect)frame
 {
-  GridPoint origin;
+  NIGridPoint origin;
   switch (self->_anchor) {
     case NimsUIGridAnchorTopLeft:
       origin = self->_origin;
       break;
       
     case NimsUIGridAnchorTopRight:
-      origin = GridPointMake(self->_origin.x - self->_size.width,
+      origin = NIGridPointMake(self->_origin.x - self->_size.width,
                              self->_origin.y);
       break;
       
     case NimsUIGridAnchorBottomLeft:
-      origin = GridPointMake(self->_origin.x,
+      origin = NIGridPointMake(self->_origin.x,
                              self->_origin.y - self->_size.height);
       break;
       
     case NimsUIGridAnchorBottomRight:
-      origin = GridPointMake(self->_origin.x - self->_size.width,
+      origin = NIGridPointMake(self->_origin.x - self->_size.width,
                              self->_origin.y - self->_size.height);
       break;
       
@@ -177,7 +177,7 @@
       break;
   }
   
-  return GridRectMake(origin, self->_size);
+  return NIGridRectMake(origin, self->_size);
 }
 
 - (void)setContentsScale:(CGFloat)contentsScale
@@ -189,7 +189,7 @@
   }
 }
 
-- (void)scrollGrid:(GridRect)rect delta:(GridPoint)delta
+- (void)scrollGrid:(NIGridRect)rect delta:(NIGridPoint)delta
 {
   if (self->_size.width != rect.size.width || delta.x != 0) {
     NSLog(@"Unsupported scroll grid setup");
@@ -279,7 +279,7 @@
 - (void)updateLayerFrame
 {
   CGSize cellSize = [self->_appearance cellSize];
-  GridRect frame = [self frame];
+  NIGridRect frame = [self frame];
   
   self->_layerFrame = CGRectMake(cellSize.width * frame.origin.x,
                                  cellSize.height * (self->_outerGridSize.height - frame.origin.y - frame.size.height),

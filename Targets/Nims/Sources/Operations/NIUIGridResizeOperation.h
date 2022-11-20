@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithContext:(NIUIContext *)context
                          gridID:(NSNumber *)gridID
-                           size:(GridSize)size;
+                           size:(NIGridSize)size;
 
 @end
 

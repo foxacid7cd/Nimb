@@ -16,9 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NimsUIGridRow : NSObject
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                          gridSize:(GridSize)gridSize
+                          gridSize:(NIGridSize)gridSize
                           andIndex:(NSInteger)index;
-- (void)setGridSize:(GridSize)gridSize;
+- (void)setGridSize:(NIGridSize)gridSize;
 - (void)setIndex:(NSInteger)index;
 - (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index;
 - (void)clearText;

@@ -24,15 +24,15 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NimsUIGrid : NSObject
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                            origin:(GridPoint)origin
-                              size:(GridSize)size
-                     outerGridSize:(GridSize)outerGridSize
+                            origin:(NIGridPoint)origin
+                              size:(NIGridSize)size
+                     outerGridSize:(NIGridSize)outerGridSize
                          zPosition:(CGFloat)zPosition;
-- (void)setOrigin:(GridPoint)origin;
-- (GridPoint)origin;
-- (void)setSize:(GridSize)size;
-- (GridSize)size;
-- (void)setOuterGridSize:(GridSize)outerGridSize;
+- (void)setOrigin:(NIGridPoint)origin;
+- (NIGridPoint)origin;
+- (void)setSize:(NIGridSize)size;
+- (NIGridSize)size;
+- (void)setOuterGridSize:(NIGridSize)outerGridSize;
 - (void)setNvimAnchor:(nvim_string_t)anchor;
 - (void)setZPosition:(CGFloat)zPosition;
 - (CGFloat)zPosition;
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)clearText;
 - (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSInteger)index forRowAtY:(NSInteger)y;
 - (void)setContentsScale:(CGFloat)contentsScale;
-- (void)scrollGrid:(GridRect)rect delta:(GridPoint)delta;
+- (void)scrollGrid:(NIGridRect)rect delta:(NIGridPoint)delta;
 - (void)flush;
 - (CALayer *)layer;
 

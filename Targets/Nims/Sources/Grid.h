@@ -10,65 +10,65 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-struct GridPoint {
-  int64_t x;
-  int64_t y;
+struct NIGridPoint {
+  NSInteger x;
+  NSInteger y;
 };
-typedef struct GridPoint GridPoint;
+typedef struct NIGridPoint NIGridPoint;
 
-struct GridSize {
-  int64_t width;
-  int64_t height;
+struct NIGridSize {
+  NSInteger width;
+  NSInteger height;
 };
-typedef struct GridSize GridSize;
+typedef struct NIGridSize NIGridSize;
 
-struct GridRect {
-  GridPoint origin;
-  GridSize size;
+struct NIGridRect {
+  NIGridPoint origin;
+  NIGridSize size;
 };
-typedef struct GridRect GridRect;
+typedef struct NIGridRect NIGridRect;
 
-NS_INLINE GridPoint GridPointMake(int64_t x, int64_t y)
+NS_INLINE NIGridPoint NIGridPointMake(NSInteger x, NSInteger y)
 {
-  GridPoint p;
+  NIGridPoint p;
   p.x = x;
   p.y = y;
   return p;
 }
 
-NS_INLINE _Bool GridPointEqualToGridPoint(GridPoint p1, GridPoint p2)
+NS_INLINE _Bool NIGridPointEqualToGridPoint(NIGridPoint p1, NIGridPoint p2)
 {
   return p1.x == p2.x && p1.y == p2.y;
 }
 
-NS_INLINE GridSize GridSizeMake(int64_t width, int64_t height)
+NS_INLINE NIGridSize NIGridSizeMake(NSInteger width, NSInteger height)
 {
-  GridSize s;
+  NIGridSize s;
   s.width = width;
   s.height = height;
   return s;
 }
 
-NS_INLINE _Bool GridSizeEqualToGridSize(GridSize s1, GridSize s2)
+NS_INLINE _Bool NIGridSizeEqualToGridSize(NIGridSize s1, NIGridSize s2)
 {
   return s1.width == s2.width && s1.height == s2.height;
 }
 
-NS_INLINE GridRect GridRectMake(GridPoint origin, GridSize size)
+NS_INLINE NIGridRect NIGridRectMake(NIGridPoint origin, NIGridSize size)
 {
-  GridRect r;
+  NIGridRect r;
   r.origin = origin;
   r.size = size;
   return r;
 }
 
-NS_INLINE _Bool GridRectEqualToGridRect(GridRect r1, GridRect r2)
+NS_INLINE _Bool NIGridRectEqualToGridRect(NIGridRect r1, NIGridRect r2)
 {
-  return GridPointEqualToGridPoint(r1.origin, r2.origin) && GridSizeEqualToGridSize(r1.size, r2.size);
+  return NIGridPointEqualToGridPoint(r1.origin, r2.origin) && NIGridSizeEqualToGridSize(r1.size, r2.size);
 }
 
-#define GridPointZero GridPointMake(0, 0)
-#define GridSizeZero GridSizeMake(0, 0)
-#define GridRectZero GridRectMake(GridPointMake(0, 0), GridSizeMake(0, 0))
+#define NIGridPointZero NIGridPointMake(0, 0)
+#define NIGridSizeZero NIGridSizeMake(0, 0)
+#define NIGridRectZero NIGridRectMake(NIGridPointMake(0, 0), NIGridSizeMake(0, 0));
 
 NS_ASSUME_NONNULL_END

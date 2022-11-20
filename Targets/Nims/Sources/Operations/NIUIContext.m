@@ -10,50 +10,26 @@
 #import "NIUIContext.h"
 
 @implementation NIUIContext {
-  NimsAppearance *_appearance;
-  GridSize _outerGridSize;
-  
-  CGFloat _gridZPositionCounter;
   CGFloat _windowZPositionCounter;
   CGFloat _floatingWindowZPositionCounter;
   
-  NSMutableSet *_changedGridIDs;
-  NSMutableDictionary<NSNumber *, NimsUIGrid *> *_grids;
+  NSMutableArray<id> *_grids;
 }
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                     outerGridSize:(nonnull NSValue *)outerGridSize
+                     outerGridSize:(NIGridSize)outerGridSize
 {
   self = [super init];
   if (self != nil) {
     _appearance = appearance;
-    _outerGridSize = [outerGridSize gridSizeValue];
+    _outerGridSize = outerGridSize;
     
-    _gridZPositionCounter = 0;
-    _windowZPositionCounter = 1000;
-    _floatingWindowZPositionCounter = 2000;
+    _windowZPositionCounter = 10000;
+    _floatingWindowZPositionCounter = 20000;
     
-    _changedGridIDs = [[NSSet set] mutableCopy];
     _grids = [@[] mutableCopy];
   }
   return self;
-}
-
-- (NimsAppearance *)appearance
-{
-  return _appearance;
-}
-
-- (GridSize)outerGridSize
-{
-  return _outerGridSize;
-}
-
-- (CGFloat)nextGridZPosition
-{
-  CGFloat value = _gridZPositionCounter;
-  _gridZPositionCounter += 0.01;
-  return value;
 }
 
 - (CGFloat)nextWindowZPosition
@@ -70,19 +46,38 @@
   return value;
 }
 
-- (void)markDirtyGridWithID:(NSNumber *)gridID
+- (NIUIGrid *)gridForID:(NSNumber *)gridID
 {
-  [_changedGridIDs addObject:gridID];
+  NSInteger index = [gridID integerValue];
+  
+  if (index >= [_grids count]) {
+    return nil;
+  }
+  
+  return [_grids objectAtIndex:index];
 }
 
-- (NimsUIGrid *)gridWithID:(NSNumber *)gridID
+- (void)setGrid:(NIUIGrid *)grid forID:(NSNumber *)gridID
 {
-  return [_grids objectForKey:gridID];
+  NSInteger index = [gridID integerValue];
+  
+  NSInteger additionalArrayElementsNeededCount = MAX(0, index - [_grids count] + 1);
+  for (NSInteger i = 0; i < additionalArrayElementsNeededCount; i++) {
+    [_grids addObject:[NSNull null]];
+  }
+  
+  [_grids setObject:grid atIndexedSubscript:index];
 }
 
-- (void)setGrid:(NimsUIGrid *)grid forID:(NSNumber *)gridID
+- (void)removeGridForID:(NSNumber *)gridID
 {
-  [_grids setObject:grid forKey:gridID];
+  NSInteger index = [gridID integerValue];
+  
+  if (index >= [_grids count]) {
+    return;
+  }
+  
+  [_grids setObject:[NSNull null] atIndexedSubscript:index];
 }
 
 @end

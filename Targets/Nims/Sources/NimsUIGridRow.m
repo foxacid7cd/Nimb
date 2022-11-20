@@ -12,7 +12,7 @@
 
 @implementation NimsUIGridRow {
   NimsAppearance *_appearance;
-  GridSize _gridSize;
+  NIGridSize _gridSize;
   NSInteger _index;
   CGRect _layerFrame;
   CGFloat _contentsScale;
@@ -22,7 +22,7 @@
 }
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                          gridSize:(GridSize)gridSize
+                          gridSize:(NIGridSize)gridSize
                           andIndex:(NSInteger)index
 {
   self = [super init];
@@ -37,7 +37,7 @@
   return self;
 }
 
-- (void)setGridSize:(GridSize)gridSize
+- (void)setGridSize:(NIGridSize)gridSize
 {
   self->_gridSize = gridSize;
   [self->_layer setGridWidth:gridSize.width];

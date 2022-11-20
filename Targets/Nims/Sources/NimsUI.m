@@ -11,6 +11,10 @@
 #import "NimsUI.h"
 #import "NimsAppearance.h"
 #import "MainWindow.h"
+#import "NIUIGridResizeOperation.h"
+#import "NIUIRawLineOperation.h"
+#import "NIUIWinPosOperation.h"
+#import "NIUIWinFloatPosOperation.h"
 
 #define STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
 
@@ -19,7 +23,7 @@
 static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 
 @implementation NimsUI {
-  GridSize _outerGridSize;
+  NIGridSize _outerGridSize;
   NimsAppearance *_appearance;
   
   CGFloat _plainGridsZPositionCounter;
@@ -35,12 +39,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   BOOL _highlightsUpdated;
   
   int64_t _cursorGridID;
-  GridPoint _cursorPosition;
+  NIGridPoint _cursorPosition;
   CGRect _cursorLayerFrame;
   BOOL _cursorLayerFrameChanged;
   CALayer *_cursorLayer;
-  
-  NSOperationQueue *_operationQueue;
   
   nvims_ui_t _nvims_ui;
 }
@@ -49,7 +51,7 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 {
   self = [super init];
   if (self != nil) {
-    self->_outerGridSize = GridSizeMake(80, 24);
+    self->_outerGridSize = NIGridSizeMake(80, 24);
     
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
     self->_appearance = [[NimsAppearance alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
@@ -92,9 +94,9 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     [layer addSublayer:cursorLayer];
     self->_cursorLayer = cursorLayer;
     
-    id operationQueue = [[NSOperationQueue alloc] init];
-    [operationQueue setMaxConcurrentOperationCount:1];
-    self->_operationQueue = operationQueue;
+    id operationQueue = [NSOperationQueue mainQueue];
+    id context = [[NIUIContext alloc] initWithAppearance:_appearance
+                                           outerGridSize:_outerGridSize];
     
     self->_nvims_ui.width = (int)self->_outerGridSize.width;
     self->_nvims_ui.height = (int)self->_outerGridSize.height;
@@ -206,28 +208,32 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     };
     
     self->_nvims_ui.grid_resize = ^(int64_t cID, int64_t width, int64_t height) {
-      id _id = [NSNumber numberWithLongLong:cID];
-      GridSize size = GridSizeMake(width, height);
-      
-      NimsUIGrid *grid = [self->_grids objectForKey:_id];
-      if (grid == nil) {
-        grid = [[NimsUIGrid alloc] initWithAppearance:self->_appearance
-                                               origin:GridPointZero
-                                                 size:size
-                                        outerGridSize:self->_outerGridSize
-                                            zPosition:self->_plainGridsZPositionCounter];
-        [grid setContentsScale:[[NSScreen mainScreen] backingScaleFactor]];
-        self->_plainGridsZPositionCounter += 0.1;
-        
-        [self->_grids setObject:grid forKey:_id];
-        
-      } else {
-        [grid setSize:size];
-      }
-      
-      [grid setHidden:false];
-      
-      [self->_changedGridIDs addObject:_id];
+      id operation = [[NIUIGridResizeOperation alloc] initWithContext:context
+                                                               gridID:[NSNumber numberWithInteger:cID]
+                                                                 size:NIGridSizeMake(width, height)];
+      [operationQueue addOperation:operation];
+//      id _id = [NSNumber numberWithLongLong:cID];
+//      NIGridSize size = NIGridSizeMake(width, height);
+//
+//      NimsUIGrid *grid = [self->_grids objectForKey:_id];
+//      if (grid == nil) {
+//        grid = [[NimsUIGrid alloc] initWithAppearance:self->_appearance
+//                                               origin:NIGridPointZero
+//                                                 size:size
+//                                        outerGridSize:self->_outerGridSize
+//                                            zPosition:self->_plainGridsZPositionCounter];
+//        [grid setContentsScale:[[NSScreen mainScreen] backingScaleFactor]];
+//        self->_plainGridsZPositionCounter += 0.1;
+//
+//        [self->_grids setObject:grid forKey:_id];
+//
+//      } else {
+//        [grid setSize:size];
+//      }
+//
+//      [grid setHidden:false];
+//
+//      [self->_changedGridIDs addObject:_id];
     };
     
     self->_nvims_ui.grid_clear = ^(int64_t cGridID) {
@@ -243,15 +249,15 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     
     self->_nvims_ui.grid_cursor_goto = ^(int64_t grid, int64_t row, int64_t col) {
       self->_cursorGridID = grid;
-      self->_cursorPosition = GridPointMake(col, row);
+      self->_cursorPosition = NIGridPointMake(col, row);
       
       CGSize cellSize = [self->_appearance cellSize];
       
       id cursorGridIDNumber = [NSNumber numberWithLongLong:self->_cursorGridID];
       id cursorGrid = [self->_grids objectForKey:cursorGridIDNumber];
       if (cursorGrid != nil) {
-        GridPoint cursorOffset = [cursorGrid origin];
-        GridPoint cursorPosition = GridPointMake(self->_cursorPosition.x + cursorOffset.x,
+        NIGridPoint cursorOffset = [cursorGrid origin];
+        NIGridPoint cursorPosition = NIGridPointMake(self->_cursorPosition.x + cursorOffset.x,
                                                  self->_cursorPosition.y + cursorOffset.y);
         
         self->_cursorLayerFrame = CGRectMake(cellSize.width * cursorPosition.x,
@@ -272,111 +278,142 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       
       int64_t width = right - left;
       int64_t height = bot - top;
-      GridRect rect = GridRectMake(GridPointMake(left, top),
-                                   GridSizeMake(width, height));
+      NIGridRect rect = NIGridRectMake(NIGridPointMake(left, top),
+                                   NIGridSizeMake(width, height));
       
-      GridPoint delta = GridPointMake(cols, rows);
+      NIGridPoint delta = NIGridPointMake(cols, rows);
       
       [grid scrollGrid:rect delta:delta];
       
       [self->_changedGridIDs addObject:gridID];
     };
     
-    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t y, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
-      id gridID = [NSNumber numberWithLongLong:cGridID];
-      
-      NimsUIGrid *grid = [self->_grids objectForKey:gridID];
-      if (grid == nil) {
-        return;
-      }
-      
-      int64_t length = endcol - startcol;
-      int64_t x = startcol;
-      
-      NSMutableString *changedText = [[NSString stringWithCString:chunk[0] encoding:NSUTF8StringEncoding] mutableCopy];
-      int64_t hlID = attrs[0];
-      NSNumber *highlightID = [NSNumber numberWithLongLong:hlID];
-      int64_t currentHighlightLength = [changedText length];
-      
-      for (int64_t i = 1; i < length; i++) {
-        NSString *string = [NSString stringWithCString:chunk[i] encoding:NSUTF8StringEncoding];
-        if (attrs[i] == hlID) {
-          [changedText appendString:string];
-          currentHighlightLength += [string length];
-          
-        } else {
-          [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
-          
-          [changedText setString:string];
-          
-          hlID = attrs[i];
-          highlightID = [NSNumber numberWithLongLong:hlID];
-          
-          x += currentHighlightLength;
-          currentHighlightLength = [string length];
-        }
-      }
-      [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
-      
-      if (clearcol > endcol) {
-        id clearString = [@"" stringByPaddingToLength:clearcol - endcol - 1
-                                           withString:@" "
-                                      startingAtIndex:0];
-        [grid setString:clearString
-        withHighlightID:[NSNumber numberWithLongLong:clearattr]
-                atIndex:x
-              forRowAtY:y];
-      }
-      
-      [self->_changedGridIDs addObject:gridID];
+    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t gridY, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
+      id operation = [[NIUIRawLineOperation alloc] initWithContext:context
+                                                            gridID:[NSNumber numberWithInteger:cGridID]
+                                                             gridY:gridY
+                                                        startGridX:startcol
+                                                          endGridX:endcol
+                                                        clearGridX:clearcol
+                                                    clearAttribute:[NSNumber numberWithInteger:clearattr]
+                                                             flags:flags
+                                                             chunk:chunk
+                                                        attributes:attrs];
+      [operationQueue addOperation:operation];
+//      id gridID = [NSNumber numberWithLongLong:cGridID];
+//
+//
+//      NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+//      if (grid == nil) {
+//        return;
+//      }
+//
+//      int64_t length = endcol - startcol;
+//      int64_t x = startcol;
+//
+//      NSMutableString *changedText = [[NSString stringWithCString:chunk[0] encoding:NSUTF8StringEncoding] mutableCopy];
+//      int64_t hlID = attrs[0];
+//      NSNumber *highlightID = [NSNumber numberWithLongLong:hlID];
+//      int64_t currentHighlightLength = [changedText length];
+//
+//      for (int64_t i = 1; i < length; i++) {
+//        NSString *string = [NSString stringWithCString:chunk[i] encoding:NSUTF8StringEncoding];
+//        if (attrs[i] == hlID) {
+//          [changedText appendString:string];
+//          currentHighlightLength += [string length];
+//
+//        } else {
+//          [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
+//
+//          [changedText setString:string];
+//
+//          hlID = attrs[i];
+//          highlightID = [NSNumber numberWithLongLong:hlID];
+//
+//          x += currentHighlightLength;
+//          currentHighlightLength = [string length];
+//        }
+//      }
+//      [grid setString:changedText withHighlightID:highlightID atIndex:x forRowAtY:y];
+//
+//      if (clearcol > endcol) {
+//        id clearString = [@"" stringByPaddingToLength:clearcol - endcol - 1
+//                                           withString:@" "
+//                                      startingAtIndex:0];
+//        [grid setString:clearString
+//        withHighlightID:[NSNumber numberWithLongLong:clearattr]
+//                atIndex:x
+//              forRowAtY:y];
+//      }
+//
+//      [self->_changedGridIDs addObject:gridID];
     };
     
     self->_nvims_ui.event = ^(char *cName, nvim_array_t args) {
       NSString *name = [NSString stringWithCString:cName encoding:NSUTF8StringEncoding];
       if ([name isEqualToString:@"win_pos"]) {
-        int64_t cGridID = args.items[0].data.integer;
-        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
-        NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+        id gridID = [NSNumber numberWithInteger:args.items[0].data.integer];
+        id windowRef = [NSNumber numberWithInteger: args.items[1].data.luaref];
+        NIGridRect gridFrame = NIGridRectMake(NIGridPointMake(args.items[3].data.integer,
+                                                              args.items[2].data.integer),
+                                              NIGridSizeMake(args.items[4].data.integer,
+                                                             args.items[5].data.integer));
         
-        int64_t start_row = args.items[2].data.integer;
-        int64_t start_col = args.items[3].data.integer;
-        [grid setOrigin:GridPointMake(start_col, start_row)];
+        id operation = [[NIUIWinPosOperation alloc] initWithGridID:gridID
+                                                         windowRef:windowRef
+                                                         gridFrame:gridFrame];
+        [operationQueue addOperation:operation];
         
-        int64_t width = args.items[4].data.integer;
-        int64_t height = args.items[5].data.integer;
-        [grid setSize:GridSizeMake(width, height)];
-        
-        [grid setZPosition:self->_windowGridsZPositionCounter];
-        self->_windowGridsZPositionCounter += 0.1;
-        
-        [grid setHidden:false];
-        
-        [self->_changedGridIDs addObject:gridID];
+//        int64_t cGridID = args.items[0].data.integer;
+//        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
+//        NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+//
+//        int64_t start_row = args.items[2].data.integer;
+//        int64_t start_col = args.items[3].data.integer;
+//        [grid setOrigin:NIGridPointMake(start_col, start_row)];
+//
+//        int64_t width = args.items[4].data.integer;
+//        int64_t height = args.items[5].data.integer;
+//        [grid setSize:NIGridSizeMake(width, height)];
+//
+//        [grid setZPosition:self->_windowGridsZPositionCounter];
+//        self->_windowGridsZPositionCounter += 0.1;
+//
+//        [grid setHidden:false];
+//
+//        [self->_changedGridIDs addObject:gridID];
         
       } else if ([name isEqualToString:@"win_float_pos"]) {
-        int64_t cGridID = args.items[0].data.integer;
-        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
-        NimsUIGrid *grid = [self->_grids objectForKey:gridID];
+        NSNumber *gridID = [NSNumber numberWithInteger:args.items[0].data.integer];
         
-        nvim_string_t anchor = args.items[2].data.string;
-        [grid setNvimAnchor:anchor];
+        id windowRef = [NSNumber numberWithInteger: args.items[1].data.luaref];
+        
+        NIUIFloatAnchor anchor = NIUIFloatAnchorMakeFromNvimArgument(args.items[2].data.string);
         
         int64_t cAnchorGridID = args.items[3].data.integer;
         NSNumber *anchorGridID = [NSNumber numberWithLongLong:cAnchorGridID];
-        NimsUIGrid *anchorGrid = [self->_grids objectForKey:anchorGridID];
         
         int64_t anchor_row = floor(args.items[4].data.floating);
         int64_t anchor_col = floor(args.items[5].data.floating);
-        GridPoint anchorOrigin = [anchorGrid origin];
-        [grid setOrigin:GridPointMake(anchorOrigin.x + anchor_col,
-                                      anchorOrigin.y + anchor_row)];
-        
-        [grid setZPosition:self->_floatingWindowGridsZPositionCounter];
-        self->_floatingWindowGridsZPositionCounter += 0.1;
-        
-        [grid setHidden:false];
-        
-        [self->_changedGridIDs addObject:gridID];
+        NIGridPoint anchorPosition = NIGridPointMake(anchor_col, anchor_row);
+
+        id operation = [[NIUIWinFloatPosOperation alloc] initWithGridID:gridID
+                                                              windowRef:windowRef
+                                                                 anchor:anchor
+                                                           anchorGridID:anchorGridID
+                                                         anchorPosition:anchorPosition];
+        [operationQueue addOperation:operation];
+//
+//
+//        [grid setOrigin:NIGridPointMake(anchorOrigin.x + anchor_col,
+//                                      anchorOrigin.y + anchor_row)];
+//
+//        [grid setZPosition:self->_floatingWindowGridsZPositionCounter];
+//        self->_floatingWindowGridsZPositionCounter += 0.1;
+//
+//        [grid setHidden:false];
+//
+//        [self->_changedGridIDs addObject:gridID];
         
       } else if ([name isEqualToString:@"win_close"]) {
         int64_t cGridID = args.items[0].data.integer;

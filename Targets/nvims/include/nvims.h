@@ -13,6 +13,7 @@
 
 #define MAX_MCO 6
 typedef char nvim_schar_t[(MAX_MCO + 1) * 4 + 1];
+
 typedef int nvim_sattr_t;
 
 struct nvim_string {
@@ -140,5 +141,10 @@ typedef struct {
 void nvims_start(nvims_ui_t nvims_ui);
 int64_t nvims_input(nvim_string_t keys);
 void nvims_input_mouse(nvim_string_t button, nvim_string_t action, nvim_string_t modifier, int64_t grid, int64_t row, int64_t col);
+
+typedef struct {
+  char data[sizeof(nvim_schar_t) + 1];
+  nvim_sattr_t attr;
+} nvim_grid_cell_t;
 
 #endif /* nvims_h */

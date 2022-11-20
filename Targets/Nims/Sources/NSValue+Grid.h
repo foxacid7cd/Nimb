@@ -13,14 +13,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NSValue (Grid)
 
-+ (instancetype)valueWithGridPoint:(GridPoint)gridPoint;
-- (GridPoint)gridPointValue;
++ (instancetype)valueWithGridPoint:(NIGridPoint)gridPoint;
+@property (readonly) NIGridPoint gridPointValue;
 
-+ (instancetype)valueWithGridSize:(GridSize)gridSize;
-- (GridSize)gridSizeValue;
++ (instancetype)valueWithGridSize:(NIGridSize)gridSize;
+@property (readonly) NIGridSize gridSizeValue;
 
-+ (instancetype)valueWithGridRect:(GridRect)gridRect;
-- (GridRect)gridRectValue;
++ (instancetype)valueWithGridRect:(NIGridRect)gridRect;
+@property (readonly) NIGridRect gridRectValue;
 
 @end
 
