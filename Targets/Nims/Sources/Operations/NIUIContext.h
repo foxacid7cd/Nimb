@@ -16,18 +16,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
                      outerGridSize:(NIGridSize)outerGridSize
-                              view:(NSView *)view;
+                         mainLayer:(CALayer *)mainLayer;
 
 @property (readonly) NimsAppearance *appearance;
 @property (readonly) NIGridSize outerGridSize;
-@property (readonly) NSView *view;
+@property (readonly) CALayer *mainLayer;
 
 - (CGFloat)nextWindowZPosition;
 - (CGFloat)nextFloatingWindowZPosition;
 
-- (NIUIGrid *_Nullable)gridForID:(NSNumber *)gridID;
-- (void)setGrid:(NIUIGrid *)grid forID:(NSNumber *)gridID;
-- (void)removeGridForID:(NSNumber *)gridID;
+- (NIUIGrid *_Nullable)gridForID:(NSUInteger)gridID;
+- (void)setGrid:(NIUIGrid *)grid forID:(NSUInteger)gridID;
+- (void)removeGridForID:(NSUInteger)gridID;
 
 @end
 

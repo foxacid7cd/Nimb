@@ -6,6 +6,7 @@
 //  Copyright © 2022 foxacid7cd. All rights reserved.
 //
 
+#import "nvims.h"
 #import "NimsAppearance.h"
 #import "NSAttributedString+NimsUI.h"
 #import "NSColor+NimsUI.h"
@@ -75,39 +76,34 @@
   self->_defaultRGBSpecialColor = nil;
 }
 
-- (void)applyAttrDefineForHighlightID:(NSNumber *)highlightID
+- (void)applyAttrDefineForHighlightID:(NSUInteger)highlightID
                             rgb_attrs:(nvim_hl_attrs_t)rgb_attrs
 {
-  int64_t additionalAttributesNeededCount = MAX(0, [highlightID longLongValue] - [self->_attributes count] + 1);
+  int64_t additionalAttributesNeededCount = MAX(0, highlightID - [self->_attributes count] + 1);
 
   for (int64_t i = 0; i < additionalAttributesNeededCount; i++) {
     id attributes = [[HighlightAttributes alloc] init];
     [self->_attributes addObject:attributes];
   }
-
-  id attributes = [self->_attributes objectAtIndex:[highlightID longLongValue]];
-  [attributes applyAttrDefineWithRGBAttrs:rgb_attrs];
 }
 
-- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightID:(NSNumber *)highlightID; {
+- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightID:(NSUInteger)highlightID; {
   return @{
-    HighlightIDAttributeName: highlightID,
+    HighlightIDAttributeName: [NSNumber numberWithUnsignedInteger:highlightID],
     NSFontAttributeName: [self fontForHighlightID:highlightID],
     NSForegroundColorAttributeName: [self foregroundColorForHighlightID:highlightID],
-    NSBackgroundColorAttributeName: [self backgroundColorForHighlightID:highlightID],
+    NSBackgroundColorAttributeName: [NSColor systemCyanColor],
     NSLigatureAttributeName: [NSNumber numberWithInt:2]
   };
 }
 
-- (NSFont *)fontForHighlightID:(NSNumber *)highlightID
+- (NSFont *)fontForHighlightID:(NSUInteger)highlightID
 {
-  int64_t index = [highlightID longLongValue];
-
-  if (index == 0 || index >= [self->_attributes count]) {
+  if (highlightID == 0 || highlightID >= [self->_attributes count]) {
     return self->_regularFont;
   }
 
-  id attributes = [self->_attributes objectAtIndex:index];
+  id attributes = [self->_attributes objectAtIndex:highlightID];
 
   if ([attributes isBold]) {
     if ([attributes isItalic]) {
@@ -124,15 +120,13 @@
   }
 }
 
-- (NSColor *)foregroundColorForHighlightID:(NSNumber *)highlightID
+- (NSColor *)foregroundColorForHighlightID:(NSUInteger)highlightID
 {
-  int64_t index = [highlightID longLongValue];
-
-  if (index == 0 || index >= [self->_attributes count]) {
+  if (highlightID == 0 || highlightID >= [self->_attributes count]) {
     return [self defaultRGBForegroundColor];
   }
 
-  id attributes = [self->_attributes objectAtIndex:index];
+  id attributes = self->_attributes[highlightID];
 
   NSColor *color;
 
@@ -149,15 +143,13 @@
   return color;
 }
 
-- (NSColor *)backgroundColorForHighlightID:(NSNumber *)highlightID
+- (NSColor *)backgroundColorForHighlightID:(NSUInteger)highlightID
 {
-  int64_t index = [highlightID longLongValue];
-
-  if (index == 0 || index >= [self->_attributes count]) {
+  if (highlightID == 0 || highlightID >= [self->_attributes count]) {
     return [self defaultRGBBackgroundColor];
   }
 
-  id attributes = [self->_attributes objectAtIndex:index];
+  id attributes = self->_attributes[highlightID];
 
   NSColor *color;
 
@@ -174,15 +166,13 @@
   return color;
 }
 
-- (NSColor *)specialColorForHighlightID:(NSNumber *)highlightID
+- (NSColor *)specialColorForHighlightID:(NSUInteger)highlightID
 {
-  int64_t index = [highlightID longLongValue];
-
-  if (index == 0 || index >= [self->_attributes count]) {
+  if (highlightID == 0 || highlightID >= [self->_attributes count]) {
     return [self defaultRGBSpecialColor];
   }
 
-  id attributes = [self->_attributes objectAtIndex:index];
+  id attributes = self->_attributes[highlightID];
 
   id color = [attributes rgbSpecialColor];
 

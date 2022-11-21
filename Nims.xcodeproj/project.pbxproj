@@ -60,15 +60,20 @@
 		683D0C43291D4E8E00B9A86F /* libintl.8.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 683D0C41291D4E8E00B9A86F /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		683D0C45291D51DE00B9A86F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C44291D51DE00B9A86F /* main.m */; };
 		683D0C4B291D732700B9A86F /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 683D0C4A291D732700B9A86F /* AppDelegate.m */; };
+		684516AE292AEF4E0093CEBB /* NIUIWinCloseOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 684516AD292AEF4E0093CEBB /* NIUIWinCloseOperation.m */; };
+		684516B1292B0F550093CEBB /* NIUIGridDestroyOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 684516B0292B0F550093CEBB /* NIUIGridDestroyOperation.m */; };
+		684516B4292B0FC10093CEBB /* NIUIWinHideOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 684516B3292B0FC10093CEBB /* NIUIWinHideOperation.m */; };
 		6845D95A2929C5BC005B61A1 /* NIUIWinPosOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6845D9592929C5BC005B61A1 /* NIUIWinPosOperation.m */; };
 		6845D95D2929CC55005B61A1 /* NIUIWinFloatPosOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6845D95C2929CC55005B61A1 /* NIUIWinFloatPosOperation.m */; };
 		6845D9602929D449005B61A1 /* NIUIFloatAnchor.m in Sources */ = {isa = PBXBuildFile; fileRef = 6845D95F2929D449005B61A1 /* NIUIFloatAnchor.m */; };
 		6845D9632929D8C9005B61A1 /* NIUIGrid.m in Sources */ = {isa = PBXBuildFile; fileRef = 6845D9622929D8C9005B61A1 /* NIUIGrid.m */; };
 		684603C42928A21200107724 /* NimsUIGridRowLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 684603C32928A21200107724 /* NimsUIGridRowLayer.m */; };
 		684603C72928AFEA00107724 /* NimsUIGridRowTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 684603C62928AFEA00107724 /* NimsUIGridRowTextStorage.m */; };
+		6865D5A1292B3E5D00B0E16F /* NIUIGridRow.m in Sources */ = {isa = PBXBuildFile; fileRef = 6865D5A0292B3E5D00B0E16F /* NIUIGridRow.m */; };
 		686C2B69291BE79C00D0E397 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4242291AC11A000E2CBC /* CoreFoundation.framework */; };
 		686C2B6A291BE7A100D0E397 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 685B4244291AC137000E2CBC /* CoreServices.framework */; };
 		687B3712291EF25D000733DC /* NimsUI.m in Sources */ = {isa = PBXBuildFile; fileRef = 687B3711291EF25D000733DC /* NimsUI.m */; };
+		6887B561292B609500802366 /* NIUIGridClearOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 6887B560292B609500802366 /* NIUIGridClearOperation.m */; };
 		688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */; };
 		688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */ = {isa = PBXBuildFile; fileRef = 688E2DE2291F6BE00095A3F1 /* NimsUIGridRow.m */; };
 		689B225229275D9A00A10348 /* HighlightAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = 689B225129275D9A00A10348 /* HighlightAttributes.m */; };
@@ -260,6 +265,13 @@
 		683D0C41291D4E8E00B9A86F /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/lib/libintl.8.dylib; sourceTree = "<group>"; };
 		683D0C44291D51DE00B9A86F /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		683D0C4A291D732700B9A86F /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		6841EABB292B97A200747265 /* remote_ui_grid_line */ = {isa = PBXFileReference; lastKnownFileType = text; path = remote_ui_grid_line; sourceTree = "<group>"; };
+		684516AC292AEF4E0093CEBB /* NIUIWinCloseOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIWinCloseOperation.h; sourceTree = "<group>"; };
+		684516AD292AEF4E0093CEBB /* NIUIWinCloseOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIWinCloseOperation.m; sourceTree = "<group>"; };
+		684516AF292B0F550093CEBB /* NIUIGridDestroyOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIGridDestroyOperation.h; sourceTree = "<group>"; };
+		684516B0292B0F550093CEBB /* NIUIGridDestroyOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIGridDestroyOperation.m; sourceTree = "<group>"; };
+		684516B2292B0FC10093CEBB /* NIUIWinHideOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIWinHideOperation.h; sourceTree = "<group>"; };
+		684516B3292B0FC10093CEBB /* NIUIWinHideOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIWinHideOperation.m; sourceTree = "<group>"; };
 		6845D9582929C5BC005B61A1 /* NIUIWinPosOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIWinPosOperation.h; sourceTree = "<group>"; };
 		6845D9592929C5BC005B61A1 /* NIUIWinPosOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIWinPosOperation.m; sourceTree = "<group>"; };
 		6845D95B2929CC55005B61A1 /* NIUIWinFloatPosOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIWinFloatPosOperation.h; sourceTree = "<group>"; };
@@ -289,12 +301,16 @@
 		6850415B291B08AF00FAB667 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		685B4242291AC11A000E2CBC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		685B4244291AC137000E2CBC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		6865D59F292B3E5D00B0E16F /* NIUIGridRow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIGridRow.h; sourceTree = "<group>"; };
+		6865D5A0292B3E5D00B0E16F /* NIUIGridRow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIGridRow.m; sourceTree = "<group>"; };
 		686C2B66291BE59F00D0E397 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		687B3710291EF25D000733DC /* NimsUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUI.h; sourceTree = "<group>"; };
 		687B3711291EF25D000733DC /* NimsUI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUI.m; sourceTree = "<group>"; };
 		687FEC5F291E04150065CE9F /* libtermkey.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libtermkey.la; path = neovim/.deps/usr/lib/libtermkey.la; sourceTree = "<group>"; };
 		687FEC60291E04150065CE9F /* libunibilium.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libunibilium.la; path = neovim/.deps/usr/lib/libunibilium.la; sourceTree = "<group>"; };
 		687FEC61291E04150065CE9F /* libvterm.la */ = {isa = PBXFileReference; lastKnownFileType = text; name = libvterm.la; path = neovim/.deps/usr/lib/libvterm.la; sourceTree = "<group>"; };
+		6887B55F292B609500802366 /* NIUIGridClearOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NIUIGridClearOperation.h; sourceTree = "<group>"; };
+		6887B560292B609500802366 /* NIUIGridClearOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NIUIGridClearOperation.m; sourceTree = "<group>"; };
 		688E2DDE291F3EBB0095A3F1 /* NimsUIGrid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIGrid.h; sourceTree = "<group>"; };
 		688E2DDF291F3EBB0095A3F1 /* NimsUIGrid.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NimsUIGrid.m; sourceTree = "<group>"; };
 		688E2DE1291F6BE00095A3F1 /* NimsUIGridRow.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NimsUIGridRow.h; sourceTree = "<group>"; };
@@ -635,6 +651,14 @@
 				6845D9592929C5BC005B61A1 /* NIUIWinPosOperation.m */,
 				6845D95B2929CC55005B61A1 /* NIUIWinFloatPosOperation.h */,
 				6845D95C2929CC55005B61A1 /* NIUIWinFloatPosOperation.m */,
+				684516B2292B0FC10093CEBB /* NIUIWinHideOperation.h */,
+				684516B3292B0FC10093CEBB /* NIUIWinHideOperation.m */,
+				684516AC292AEF4E0093CEBB /* NIUIWinCloseOperation.h */,
+				684516AD292AEF4E0093CEBB /* NIUIWinCloseOperation.m */,
+				684516AF292B0F550093CEBB /* NIUIGridDestroyOperation.h */,
+				684516B0292B0F550093CEBB /* NIUIGridDestroyOperation.m */,
+				6887B55F292B609500802366 /* NIUIGridClearOperation.h */,
+				6887B560292B609500802366 /* NIUIGridClearOperation.m */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -821,8 +845,11 @@
 				68C0BB922929468300857306 /* NSValue+Grid.m */,
 				6845D95E2929D449005B61A1 /* NIUIFloatAnchor.h */,
 				6845D95F2929D449005B61A1 /* NIUIFloatAnchor.m */,
+				6841EABB292B97A200747265 /* remote_ui_grid_line */,
 				6845D9612929D8C9005B61A1 /* NIUIGrid.h */,
 				6845D9622929D8C9005B61A1 /* NIUIGrid.m */,
+				6865D59F292B3E5D00B0E16F /* NIUIGridRow.h */,
+				6865D5A0292B3E5D00B0E16F /* NIUIGridRow.m */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1141,27 +1168,32 @@
 				84EE2C8D02E2406CBCC1D88C /* GlyphRun.swift in Sources */,
 				6845D9602929D449005B61A1 /* NIUIFloatAnchor.m in Sources */,
 				687B3712291EF25D000733DC /* NimsUI.m in Sources */,
+				684516B1292B0F550093CEBB /* NIUIGridDestroyOperation.m in Sources */,
 				1CEC48BF005FFE646CB4FE91 /* GridEvent.swift in Sources */,
 				6845D95A2929C5BC005B61A1 /* NIUIWinPosOperation.m in Sources */,
 				864E9D84F9554E8A92D77C4E /* GridLayer.swift in Sources */,
 				C444E3985131498C8C52D21F /* GridView.swift in Sources */,
 				67864DA16087F1CC90E9A16E /* GridsView.swift in Sources */,
 				07C97DD64D1768616AB5EE44 /* GridsViewController.swift in Sources */,
+				684516B4292B0FC10093CEBB /* NIUIWinHideOperation.m in Sources */,
 				30488A27829485C8CFCE8769 /* GridsWindow.swift in Sources */,
 				684603C42928A21200107724 /* NimsUIGridRowLayer.m in Sources */,
 				689B225529275E2300A10348 /* NimsAppearance.m in Sources */,
 				688E2DE0291F3EBB0095A3F1 /* NimsUIGrid.m in Sources */,
 				6845D95D2929CC55005B61A1 /* NIUIWinFloatPosOperation.m in Sources */,
 				68C0BB932929468300857306 /* NSValue+Grid.m in Sources */,
+				684516AE292AEF4E0093CEBB /* NIUIWinCloseOperation.m in Sources */,
 				684603C72928AFEA00107724 /* NimsUIGridRowTextStorage.m in Sources */,
 				01F67E4F28DDFA2056A3DE7A /* GridsWindowController.swift in Sources */,
 				24C4F376FF50AFDAA5AF1C38 /* NSFontExtensions.swift in Sources */,
 				52F8409B461CE2641DD36478 /* NSView.swift in Sources */,
 				688E2DE3291F6BE00095A3F1 /* NimsUIGridRow.m in Sources */,
+				6887B561292B609500802366 /* NIUIGridClearOperation.m in Sources */,
 				68C0BB9629294F5800857306 /* NIUIRawLineOperation.m in Sources */,
 				73F4E76FA06B1E0304F48A95 /* State.swift in Sources */,
 				6845D9632929D8C9005B61A1 /* NIUIGrid.m in Sources */,
 				3B16E2D8D36D863B9AFDF472 /* StateDerivatives.swift in Sources */,
+				6865D5A1292B3E5D00B0E16F /* NIUIGridRow.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

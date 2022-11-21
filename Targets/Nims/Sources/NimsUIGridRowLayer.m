@@ -58,10 +58,7 @@
                                            cellSize.height)];
 }
 
-- (void)setString:(NSString *)string withHighlightID:(NSNumber *)highlightID atIndex:(NSUInteger)index
-{
-  [self->_textStorage setString:string withHighlightID:highlightID atIndex:index];
-}
+
 
 - (void)clearText
 {

@@ -175,7 +175,7 @@ void nims_ui_start(void) {
   ui->ui_ext[kUIHlState] = true;
   ui->ui_ext[kUIMultigrid] = true;
   ui->ui_ext[kUICmdline] = true;
-//i->ui_ext[kUIMessages] = true;
+  ui->ui_ext[kUIMessages] = true;
   ui->ui_ext[kUIWildmenu] = true;
   ui->ui_ext[kUIPopupmenu] = true;
 

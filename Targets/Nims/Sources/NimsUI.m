@@ -11,9 +11,13 @@
 #import "NimsAppearance.h"
 #import "NimsUI.h"
 #import "NimsUIGrid.h"
+#import "NIUIGridClearOperation.h"
+#import "NIUIGridDestroyOperation.h"
 #import "NIUIGridResizeOperation.h"
 #import "NIUIRawLineOperation.h"
+#import "NIUIWinCloseOperation.h"
 #import "NIUIWinFloatPosOperation.h"
+#import "NIUIWinHideOperation.h"
 #import "NIUIWinPosOperation.h"
 
 #define STRING(arg) [[NSString alloc] initWithBytes:arg.data length:arg.size encoding:NSUTF8StringEncoding]
@@ -52,10 +56,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
   self = [super init];
 
   if (self != nil) {
-    self->_outerGridSize = NIGridSizeMake(80, 24);
+    self->_outerGridSize = NIGridSizeMake(120, 40);
 
     self->_grids = [[NSMutableDictionary alloc] initWithCapacity:GRIDS_CAPACITY];
-    self->_appearance = [[NimsAppearance alloc] initWithFont:[NSFont fontWithName:@"MesloLGS NF" size:13]];
+    self->_appearance = [[NimsAppearance alloc] initWithFont:[NSFont fontWithName:@"BlexMono Nerd Font Mono" size:13]];
 
     self->_plainGridsZPositionCounter = 0;
     self->_windowGridsZPositionCounter = 1000;
@@ -67,13 +71,21 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
                                     self->_outerGridSize.width * cellSize.width,
                                     self->_outerGridSize.height * cellSize.height);
 
+    id mainLayer = [[CALayer alloc] init];
+
+    id mainView = [[NSView alloc] initWithFrame:contentRect];
+    [mainView setLayer:mainLayer];
+    [mainView setWantsLayer:true];
+
     _view = [[NSView alloc] initWithFrame:contentRect];
+    [_view setTranslatesAutoresizingMaskIntoConstraints:false];
+    [mainView addSubview:_view];
 
     id mainWindow = [[MainWindow alloc] initWithContentRect:contentRect
-                                                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
+                                                  styleMask:NSWindowStyleMaskTitled
                                                     backing:NSBackingStoreBuffered
                                                       defer:true];
-    [mainWindow setContentView:_view];
+    [mainWindow setContentView:mainView];
     [mainWindow setCellSize:[_appearance cellSize]];
     [mainWindow makeMainWindow];
     [mainWindow makeKeyAndOrderFront:nil];
@@ -89,10 +101,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 //    [layer addSublayer:cursorLayer];
     self->_cursorLayer = cursorLayer;
 
-    id operationQueue = [NSOperationQueue mainQueue];
+    NSOperationQueue *operationQueue = [NSOperationQueue mainQueue];
     id context = [[NIUIContext alloc] initWithAppearance:_appearance
                                            outerGridSize:_outerGridSize
-                                                    view:_view];
+                                               mainLayer:mainLayer];
 
     self->_nvims_ui.width = (int)self->_outerGridSize.width;
     self->_nvims_ui.height = (int)self->_outerGridSize.height;
@@ -185,27 +197,26 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
     };
 
     self->_nvims_ui.default_colors_set = ^(int64_t rgb_fg, int64_t rgb_bg, int64_t rgb_sp, int64_t cterm_fg, int64_t cterm_bg) {
-//      self->_highlightsUpdated = true;
-//
-//      [self->_appearance applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
-//                                                  rgb_bg:(int32_t)rgb_bg
-//                                                  rgb_sp:(int32_t)rgb_sp];
+      self->_highlightsUpdated = true;
+
+      [self->_appearance applyDefaultColorsSetWithRGB_fg:(int32_t)rgb_fg
+                                                  rgb_bg:(int32_t)rgb_bg
+                                                  rgb_sp:(int32_t)rgb_sp];
     };
 
     self->_nvims_ui.hl_attr_define = ^(int64_t hlID, nvim_hl_attrs_t rgb_attrs, nvim_hl_attrs_t cterm_attrs, nvim_array_t info) {
-//      self->_highlightsUpdated = true;
-//
-//      id highlightID = [NSNumber numberWithLongLong:hlID];
-//      [self->_appearance applyAttrDefineForHighlightID:highlightID
-//                                             rgb_attrs:rgb_attrs];
+      self->_highlightsUpdated = true;
+
+      [self->_appearance applyAttrDefineForHighlightID:hlID
+                                             rgb_attrs:rgb_attrs];
     };
 
     self->_nvims_ui.hl_group_set = ^(nvim_string_t cName, int64_t _id) {
     };
 
-    self->_nvims_ui.grid_resize = ^(int64_t cID, int64_t width, int64_t height) {
+    self->_nvims_ui.grid_resize = ^(int64_t gridID, int64_t width, int64_t height) {
       id operation = [[NIUIGridResizeOperation alloc] initWithContext:context
-                                                               gridID:[NSNumber numberWithInteger:cID]
+                                                               gridID:gridID
                                                                  size:NIGridSizeMake(width, height)];
       [operationQueue addOperation:operation];
 //      id _id = [NSNumber numberWithLongLong:cID];
@@ -241,6 +252,8 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 //
 //        [self->_changedGridIDs addObject:gridID];
 //      }
+      id operation = [[NIUIGridClearOperation alloc] init];
+      [operationQueue addOperation:operation];
     };
 
     self->_nvims_ui.grid_cursor_goto = ^(int64_t grid, int64_t row, int64_t col) {
@@ -284,14 +297,14 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 //      [self->_changedGridIDs addObject:gridID];
     };
 
-    self->_nvims_ui.raw_line = ^(int64_t cGridID, int64_t gridY, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
+    self->_nvims_ui.raw_line = ^(int64_t gridID, int64_t gridY, int64_t startcol, int64_t endcol, int64_t clearcol, int64_t clearattr, int64_t flags, const nvim_schar_t *chunk, const nvim_sattr_t *attrs) {
       id operation = [[NIUIRawLineOperation alloc] initWithContext:context
-                                                            gridID:[NSNumber numberWithInteger:cGridID]
+                                                            gridID:gridID
                                                              gridY:gridY
                                                         startGridX:startcol
                                                           endGridX:endcol
                                                         clearGridX:clearcol
-                                                    clearAttribute:[NSNumber numberWithInteger:clearattr]
+                                                    clearAttribute:clearattr
                                                              flags:flags
                                                              chunk:chunk
                                                         attributes:attrs];
@@ -349,16 +362,17 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
       NSString *name = [NSString stringWithCString:cName encoding:NSUTF8StringEncoding];
 
       if ([name isEqualToString:@"win_pos"]) {
-        id gridID = [NSNumber numberWithInteger:args.items[0].data.integer];
+        NSUInteger gridID = args.items[0].data.integer;
         id windowRef = [NSNumber numberWithInteger:args.items[1].data.luaref];
         NIGridRect frame = NIGridRectMake(NIGridPointMake(args.items[3].data.integer,
                                                           args.items[2].data.integer),
                                           NIGridSizeMake(args.items[4].data.integer,
                                                          args.items[5].data.integer));
 
-        id operation = [[NIUIWinPosOperation alloc] initWithGridID:gridID
-                                                         windowRef:windowRef
-                                                             frame:frame];
+        id operation = [[NIUIWinPosOperation alloc] initWithContext:context
+                                                             gridID:gridID
+                                                          windowRef:windowRef
+                                                              frame:frame];
         [operationQueue addOperation:operation];
 
 //        int64_t cGridID = args.items[0].data.integer;
@@ -399,18 +413,10 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
                                                            anchorGridID:anchorGridID
                                                          anchorPosition:anchorPosition];
         [operationQueue addOperation:operation];
-//
-//
-//        [grid setOrigin:NIGridPointMake(anchorOrigin.x + anchor_col,
-//                                      anchorOrigin.y + anchor_row)];
-//
-//        [grid setZPosition:self->_floatingWindowGridsZPositionCounter];
-//        self->_floatingWindowGridsZPositionCounter += 0.1;
-//
-//        [grid setHidden:false];
-//
-//        [self->_changedGridIDs addObject:gridID];
       } else if ([name isEqualToString:@"win_close"]) {
+        id operation = [[NIUIWinCloseOperation alloc] initWithContext:context
+                                                            andGridID:args.items[0].data.integer];
+        [operationQueue addOperation:operation];
 //        int64_t cGridID = args.items[0].data.integer;
 //        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
 //        id grid = [self->_grids objectForKey:gridID];
@@ -419,6 +425,9 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 //          [self->_grids removeObjectForKey:gridID];
 //        }
       } else if ([name isEqualToString:@"grid_destroy"]) {
+        id operation = [[NIUIGridDestroyOperation alloc] initWithContext:context
+                                                               andGridID:args.items[0].data.integer];
+        [operationQueue addOperation:operation];
 //        int64_t cGridID = args.items[0].data.integer;
 //        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
 //        id grid = [self->_grids objectForKey:gridID];
@@ -427,6 +436,9 @@ static void *ViewLayerContentsScaleContext = &ViewLayerContentsScaleContext;
 //          [self->_grids removeObjectForKey:gridID];
 //        }
       } else if ([name isEqualToString:@"win_hide"]) {
+        id operation = [[NIUIWinHideOperation alloc] initWithContext:context
+                                                           andGridID:args.items[0].data.integer];
+        [operationQueue addOperation:operation];
 //        int64_t cGridID = args.items[0].data.integer;
 //        NSNumber *gridID = [NSNumber numberWithLongLong:cGridID];
 //        id grid = [self->_grids objectForKey:gridID];

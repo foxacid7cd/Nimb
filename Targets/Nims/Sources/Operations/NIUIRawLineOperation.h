@@ -12,12 +12,12 @@
 @interface NIUIRawLineOperation : NSOperation
 
 - (instancetype)initWithContext:(NIUIContext *)context
-                         gridID:(NSNumber *)gridID
+                         gridID:(NSUInteger)gridID
                           gridY:(NSInteger)gridY
                      startGridX:(NSInteger)startGridX
                        endGridX:(NSInteger)endGridX
                      clearGridX:(NSInteger)clearGridX
-                 clearAttribute:(NSNumber *)clearAttribute
+                 clearAttribute:(NSUInteger)clearAttribute
                           flags:(NSInteger)flags
                           chunk:(const nvim_schar_t *)chunk
                      attributes:(const nvim_sattr_t *)attributes;

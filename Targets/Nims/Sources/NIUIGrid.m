@@ -7,203 +7,315 @@
 //
 
 #import "NIUIGrid.h"
+#import "NIUIGridRow.h"
 
 @implementation NIUIGrid {
   NimsAppearance *_appearance;
+  CALayer *_superlayer;
 
-  NSTextStorage *_textStorage;
-  NSLayoutManager *_layoutManager;
-  NSTextContainer *_textContainer;
-  NSTextView *_textView;
+  CALayer *_layer;
+  NSMutableArray<NIUIGridRow *> *_rows;
+  NSMutableArray<NSMutableAttributedString *> *_attributedStrings;
 
-  nvim_grid_cell_t **_rows;
-
-  NSNumber *_windowRef;
-  NIGridRect _frame;
-  CGFloat _zPosition;
+  NSValue *_windowRef;
+  NIGridRect _windowFrame;
 }
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                           andSize:(NIGridSize)size
+                        superlayer:(CALayer *)superlayer
 {
   self = [super init];
 
   if (self) {
     _appearance = appearance;
+    _superlayer = superlayer;
 
-    _textStorage = [[NSTextStorage alloc] init];
-    _layoutManager = [[NSLayoutManager alloc] init];
-    [_textStorage addLayoutManager:_layoutManager];
-    _textContainer = [[NSTextContainer alloc] init];
-    [_textContainer setLineFragmentPadding:0];
-    [_textContainer setLineBreakMode:NSLineBreakByCharWrapping];
-    [_textContainer setWidthTracksTextView:true];
-    [_textContainer setHeightTracksTextView:true];
-    [_layoutManager addTextContainer:_textContainer];
-    _textView = [[NSTextView alloc] initWithFrame:NSZeroRect
-                                    textContainer:_textContainer];
-    [_textView setEditable:false];
-    [_textView setSelectable:false];
+    _layer = [[CALayer alloc] init];
+    [_layer setMasksToBounds:true];
+    [_superlayer addSublayer:_layer];
 
-    [self setSize:size];
+    _rows = [@[] mutableCopy];
+    _attributedStrings = [@[] mutableCopy];
+
+//    _layoutManager = [[NSLayoutManager alloc] init];
+//    [_layoutManager setUsesFontLeading:false];
+//
+//    _textStorage = [[NSTextStorage alloc] init];
+//    [_textStorage addLayoutManager:_layoutManager];
+//
+//    _textContainer = [[NSTextContainer alloc] init];
+//    [_textContainer setLineFragmentPadding:0];
+//    [_textContainer setLineBreakMode:NSLineBreakByCharWrapping];
+//    [_textContainer setWidthTracksTextView:true];
+//    [_textContainer setHeightTracksTextView:true];
+//    [_layoutManager addTextContainer:_textContainer];
+
+//    _textView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+//    [_textView setEditable:false];
+//    [_textView setSelectable:false];
+//    [_textView setTranslatesAutoresizingMaskIntoConstraints:false];
+//    [_textView setBackgroundColor:[NSColor clearColor]];
+//    [_textView setHidden:true];
+//
+//    [[_textView layoutManager] setUsesFontLeading:false];
+//
+//    [[_textView textContainer] setLineFragmentPadding:0];
+//    [[_textView textContainer] setLineBreakMode:NSLineBreakByCharWrapping];
+//
+//    [self updateTextStorage];
+//    [self updateTextViewFrame];
+//    [superview addSubview:_textView];
   }
 
   return self;
 }
 
-- (void)dealloc
-{
-  [NIUIGrid freeRows:_rows withSize:_size];
-}
-
 - (void)setSize:(NIGridSize)size
 {
-  nvim_grid_cell_t **rows = [NIUIGrid createRowsWithSize:size];
+  _size = size;
 
-  if (_rows) {
-    [NIUIGrid copyRows:_rows withSize:_size toRows:rows withSize:size];
+  if (size.height > [_rows count]) {
+    NSInteger delta = size.height - [_rows count];
+
+    for (NSInteger i = 0; i < delta; i++) {
+      id row = [[NIUIGridRow alloc] initWithAppearance:_appearance
+                                            superlayer:_layer];
+      [_rows addObject:row];
+
+      id attributedString = [[NSMutableAttributedString alloc] init];
+      [_attributedStrings addObject:attributedString];
+    }
   }
 
-  _size = size;
-  _rows = rows;
+  for (NSInteger rowY = 0; rowY < size.height; rowY++) {
+    [_rows[rowY] setGridSize:size andRowY:rowY];
 
-  [self updateTextContainerSize];
-  [self updateTextStorage];
+    id attributedString = _attributedStrings[rowY];
+
+    if (size.width > [attributedString length]) {
+      id string = [@"" stringByPaddingToLength:size.width - [attributedString length]
+                                    withString:@" "
+                               startingAtIndex:0];
+      id attributes = [_appearance stringAttributesForHighlightID:0];
+      [attributedString appendAttributedString:[[NSAttributedString alloc] initWithString:string
+                                                                               attributes:attributes]];
+    }
+
+    [_rows[rowY] setAttributedString:_attributedStrings[rowY]];
+  }
+
+  [self updateLayerFrame];
+}
+
+- (void)setHidden:(BOOL)hidden
+{
+  [_layer setHidden:hidden];
 }
 
 - (void)applyRawLineAtGridY:(NSInteger)gridY
                  startGridX:(NSInteger)startGridX
                    endGridX:(NSInteger)endGridX
                  clearGridX:(NSInteger)clearGridX
-             clearAttribute:(NSNumber *)clearAttribute
+             clearAttribute:(NSUInteger)clearAttribute
                       flags:(NSInteger)flags
                       chunk:(nvim_schar_t *)chunk
                  attributes:(nvim_sattr_t *)attributes
 {
-  nvim_grid_cell_t *row = _rows[gridY];
-
   NSInteger length = endGridX - startGridX;
 
-  for (NSInteger i = 0; i < length; i++) {
-    NSInteger gridX = i + startGridX;
+  NSMutableString *result = [@"" mutableCopy];
 
-    memcpy(row[gridX].data, chunk[i], sizeof(nvim_schar_t));
-    row[gridX].attr = attributes[i];
+  for (NSInteger i = 0; i < length; i++) {
+    id string = [[NSString alloc] initWithBytes:chunk[i]
+                                         length:4
+                                       encoding:NSUTF32StringEncoding];
+
+    if (string) {
+      [result appendString:string];
+    } else {
+      [result appendString:@" "];
+    }
   }
 
-  [self updateTextStorage];
+  id resultAttributedString = [[NSAttributedString alloc] initWithString:result
+                                                              attributes:[_appearance stringAttributesForHighlightID:0]];
+  id attributedString = _attributedStrings[gridY];
+  [attributedString replaceCharactersInRange:NSMakeRange(startGridX, length)
+                        withAttributedString:resultAttributedString];
+
+  /*if (clearGridX > endGridX) {
+     NSRange range = NSMakeRange(endGridX, clearGridX - endGridX);
+     id string = [@"" stringByPaddingToLength:range.length
+                                  withString:@" "
+                             startingAtIndex:0];
+     [attributedString replaceCharactersInRange:range withString:string];
+     [attributedString setAttributes:[_appearance stringAttributesForHighlightID:clearAttribute]
+                              range:range];
+     }*/
+
+  [_rows[gridY] setAttributedString:attributedString];
 }
 
-- (void)applyWinPosWithWindowRef:(NSNumber *)windowRef
+- (void)applyWinPosWithWindowRef:(NSValue *)windowRef
                            frame:(NIGridRect)frame
                        zPosition:(CGFloat)zPosition
 {
   _windowRef = windowRef;
-  _frame = frame;
-  _zPosition = zPosition;
+  _windowFrame = frame;
 
-  [_textView setHidden:false];
-  [self updateTextContainerSize];
+  [_layer setZPosition:zPosition];
+
+  [self updateLayerFrame];
+
+  //[_textView setHidden:false];
+
+  //[self updateTextViewFrame];
+  //[self updateTextStorage];
 }
 
-- (NSView *)view
+- (void)applyGridClear
 {
-  return _textView;
-}
+  NSInteger rowY = 0;
 
-- (void)updateTextStorage
-{
-  NSMutableAttributedString *gridAttributedString = [[NSMutableAttributedString alloc] init];
+  for (id attributedString in _attributedStrings) {
+    NSRange range = NSMakeRange(0, [attributedString length]);
+    id string = [@"" stringByPaddingToLength:range.length withString:@" " startingAtIndex:0];
+    [attributedString replaceCharactersInRange:range withString:string];
+    [attributedString setAttributes:[_appearance stringAttributesForHighlightID:0] range:range];
 
-  for (NSInteger gridY = 0; gridY < _size.height; gridY++) {
-    nvim_grid_cell_t *row = _rows[gridY];
+    [_rows[rowY] setAttributedString:attributedString];
 
-    NSMutableString *currentHighlightString = [@"" mutableCopy];
-    NSInteger currentHighlightID = row[0].attr;
-
-    for (NSInteger gridX = 0; gridX < _size.width; gridX++) {
-      if (currentHighlightID == row[gridX].attr) {
-        NSString *cellText = [NSString stringWithUTF8String:row[gridX].data];
-
-        if ([cellText length] > 0) {
-          [currentHighlightString appendString:cellText];
-        }
-      } else {
-        id attributes = [_appearance stringAttributesForHighlightID:[NSNumber numberWithInteger:currentHighlightID]];
-        id attributedString = [[NSAttributedString alloc] initWithString:currentHighlightString
-                                                              attributes:attributes];
-        [gridAttributedString appendAttributedString:attributedString];
-
-        currentHighlightString = [@"" mutableCopy];
-        currentHighlightID = row[gridX].attr;
-      }
-    }
-
-    id attributes = [_appearance stringAttributesForHighlightID:[NSNumber numberWithInteger:currentHighlightID]];
-    id attributedString = [[NSAttributedString alloc] initWithString:currentHighlightString
-                                                          attributes:attributes];
-    [gridAttributedString appendAttributedString:attributedString];
-
-    //[gridAttributedString appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
+    rowY++;
   }
-
-  [_textStorage setAttributedString:gridAttributedString];
 }
 
-- (void)updateTextContainerSize
+- (void)updateLayerFrame
 {
-  NIGridSize size;
+  NIGridRect gridFrame;
 
-  if (_windowRef == nil) {
-    size = _size;
+  if (_windowFrame.size.width == 0 && _windowFrame.size.height == 0) {
+    gridFrame = NIGridRectMake(NIGridPointZero, _size);
   } else {
-    size = _frame.size;
+    gridFrame = _windowFrame;
   }
 
   CGSize cellSize = [_appearance cellSize];
-  [_textContainer setSize:NSMakeSize(size.width * cellSize.width,
-                                     size.height * cellSize.height)];
+
+  CGRect frame = CGRectMake(gridFrame.origin.x * cellSize.width,
+                            gridFrame.origin.y * cellSize.height,
+                            gridFrame.size.width * cellSize.width,
+                            gridFrame.size.height * cellSize.height);
+
+  [_layer setFrame:frame];
 }
 
-+ (nvim_grid_cell_t **)createRowsWithSize:(NIGridSize)size
-{
-  nvim_grid_cell_t **rows = malloc(sizeof(nvim_grid_cell_t *) * size.height);
+//- (void)updateTextStorage
+//{
+//  NSTextStorage *textStorage = [_textView textStorage];
+//
+//  [textStorage beginEditing];
+//  [textStorage deleteCharactersInRange:NSMakeRange(0, [textStorage length])];
+//
+//  for (NSInteger gridY = 0; gridY < _size.height; NSMakeRange([textStorage ], )) {
+//    nvim_grid_cell_t *row = _rows[gridY](__bridge nvim_grid_cell_t *)();
+//
+//    NSMutableString *currentHighlightString = [@"" mutableCopy];
+//    NSInteger currentHighlightID = row[0].attr;
+//
+//    for (NSInteger gridX = 0; gridX < _size.width; gridX++) {
+//      if (currentHighlightID == row[gridX].attr) {
+//        NSString *cellText = [[NSString stringWithCString:row[gridX].data encoding:NSUTF8StringEncoding] copy];
+//
+//        if (cellText == nil || [cellText length] == 0) {
+//          cellText = @" ";
+//        }
+//
+//        [currentHighlightString appendString:cellText];
+//      } else {
+//        id attributes = [_appearance stringAttributesForHighlightID:[NSNumber numberWithInteger:currentHighlightID]];
+//        id attributedString = [[NSAttributedString alloc] initWithString:currentHighlightString
+//                                                              attributes:attributes];
+//        [textStorage appendAttributedString:attributedString];
+//
+//        currentHighlightString = [@"" mutableCopy];
+//        currentHighlightID = row[gridX].attr;
+//      }
+//    }
+//
+//    id attributes = [_appearance stringAttributesForHighlightID:[NSNumber numberWithInteger:currentHighlightID]];
+//    id attributedString = [[NSAttributedString alloc] initWithString:currentHighlightString
+//                                                          attributes:attributes];
+//    [textStorage appendAttributedString:attributedString];
+//
+//    //[textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:@"\n"]];
+//  }
+//
+//  [textStorage endEditing];
+//}
 
-  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
-    rows[gridY] = malloc(sizeof(nvim_grid_cell_t) * size.width);
+//- (void)updateTextViewFrame
+//{
+//  NIGridRect gridFrame;
+//
+//  if (_windowRef == nil) {
+//    gridFrame = _frame;
+//  } else {
+//    gridFrame = NIGridRectMake(NIGridPointZero, _size);
+//  }
+//
+//  CGSize cellSize = [_appearance cellSize];
+//
+//  CGRect frame = CGRectMake(gridFrame.origin.x * cellSize.width,
+//                            gridFrame.origin.y * cellSize.height,
+//                            gridFrame.size.width * cellSize.width,
+//                            gridFrame.size.height * cellSize.height);
+//
+//  //`[[_textView textContainer] setSize:frame.size];
+//  [_textView setFrame:frame];
+//}
 
-    nvim_grid_cell_t *row = rows[gridY];
-
-    for (NSInteger gridX = 0; gridX < size.width; gridX++) {
-      row[gridX].data[0] = ' ';
-      row[gridX].data[1] = 0;
-      row[gridX].attr = 0;
-    }
-  }
-
-  return rows;
-}
-
-+ (void)copyRows:(nvim_grid_cell_t **)srcRows
-        withSize:(NIGridSize)srcSize
-          toRows:(nvim_grid_cell_t **)dstRows
-        withSize:(NIGridSize)dstSize
-{
-  NIGridSize size = NIGridSizeMake(MIN(srcSize.width, dstSize.width),
-                                   MIN(srcSize.height, dstSize.height));
-
-  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
-    memcpy(dstRows[gridY], srcRows[gridY], sizeof(nvim_grid_cell_t) * size.width);
-  }
-}
-
-+ (void)freeRows:(nvim_grid_cell_t **)rows withSize:(NIGridSize)size
-{
-  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
-    free(rows[gridY]);
-  }
-
-  free(rows);
-}
+//+ (nvim_grid_cell_t **)createRowsWithSize:(NIGridSize)size
+//{
+//  nvim_grid_cell_t **rows = malloc(sizeof(nvim_grid_cell_t *) * size.height);
+//
+//  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
+//    size_t rowSize = sizeof(nvim_grid_cell_t) * size.width;
+//    rows[gridY] = malloc(rowSize);
+//
+//    memset(rows[gridY], 0, rowSize);
+//
+//    for (NSInteger gridX = 0; gridX < size.width; gridX++) {
+//      rows[gridY][gridX].data[0] = ' ';
+//    }
+//  }
+//
+//  return rows;
+//}
+//
+//+ (void)copyRows:(nvim_grid_cell_t **)srcRows
+//        withSize:(NIGridSize)srcSize
+//          toRows:(nvim_grid_cell_t **)dstRows
+//        withSize:(NIGridSize)dstSize
+//{
+//  NIGridSize size = NIGridSizeMake(MIN(srcSize.width, dstSize.width),
+//                                   MIN(srcSize.height, dstSize.height));
+//
+//  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
+//    memmove(dstRows[gridY], srcRows[gridY], sizeof(nvim_grid_cell_t) * size.width);
+//  }
+//}
+//
+//+ (void)freeRows:(nvim_grid_cell_t *)rows withSize:(NIGridSize)size
+//{
+//  for (NSInteger gridY = 0; gridY < size.height; gridY++) {
+//    free(rows[gridY]);
+//  }
+//
+//  free(rows);
+//}
 
 @end
+
+/*
+
+ */

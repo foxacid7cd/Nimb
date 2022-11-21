@@ -11,12 +11,12 @@
 
 @implementation NIUIGridResizeOperation{
   NIUIContext *_context;
-  NSNumber *_gridID;
+  NSUInteger _gridID;
   NIGridSize _size;
 }
 
 - (instancetype)initWithContext:(NIUIContext *)context
-                         gridID:(NSNumber *)gridID
+                         gridID:(NSUInteger)gridID
                            size:(NIGridSize)size
 {
   self = [super init];
@@ -36,14 +36,15 @@
 
   if (grid == nil) {
     grid = [[NIUIGrid alloc] initWithAppearance:[_context appearance]
-                                        andSize:_size];
+                                     superlayer:[_context mainLayer]];
     [_context setGrid:grid forID:_gridID];
-  } else {
-    [grid setSize:_size];
   }
 
-  [[grid view] setFrame:[[_context view] bounds]];
-  [[_context view] addSubview:[grid view]];
+  [grid setSize:_size];
+
+  if (_gridID == 0 || _gridID == 1) {
+    [grid setHidden:false];
+  }
 }
 
 @end

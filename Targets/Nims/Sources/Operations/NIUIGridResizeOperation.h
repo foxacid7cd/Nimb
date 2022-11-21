@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NIUIGridResizeOperation : NSOperation
 
 - (instancetype)initWithContext:(NIUIContext *)context
-                         gridID:(NSNumber *)gridID
+                         gridID:(NSUInteger)gridID
                            size:(NIGridSize)size;
 
 @end

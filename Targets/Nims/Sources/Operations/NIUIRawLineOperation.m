@@ -10,24 +10,24 @@
 
 @implementation NIUIRawLineOperation{
   NIUIContext *_context;
-  NSNumber *_gridID;
+  NSUInteger _gridID;
   NSInteger _gridY;
   NSInteger _startGridX;
   NSInteger _endGridX;
   NSInteger _clearGridX;
-  NSNumber *_clearAttribute;
+  NSUInteger _clearAttribute;
   NSInteger _flags;
   nvim_schar_t *_chunk;
   nvim_sattr_t *_attributes;
 }
 
 - (instancetype)initWithContext:(NIUIContext *)context
-                         gridID:(NSNumber *)gridID
+                         gridID:(NSUInteger)gridID
                           gridY:(NSInteger)gridY
                      startGridX:(NSInteger)startGridX
                        endGridX:(NSInteger)endGridX
                      clearGridX:(NSInteger)clearGridX
-                 clearAttribute:(NSNumber *)clearAttribute
+                 clearAttribute:(NSUInteger)clearAttribute
                           flags:(NSInteger)flags
                           chunk:(const nvim_schar_t *)chunk
                      attributes:(const nvim_sattr_t *)attributes

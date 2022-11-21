@@ -18,14 +18,14 @@
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
                      outerGridSize:(NIGridSize)outerGridSize
-                              view:(NSView *)view
+                         mainLayer:(CALayer *)mainLayer
 {
   self = [super init];
 
   if (self != nil) {
     _appearance = appearance;
     _outerGridSize = outerGridSize;
-    _view = view;
+    _mainLayer = mainLayer;
 
     _windowZPositionCounter = 10000;
     _floatingWindowZPositionCounter = 20000;
@@ -52,39 +52,33 @@
   return value;
 }
 
-- (NIUIGrid *)gridForID:(NSNumber *)gridID
+- (NIUIGrid *)gridForID:(NSUInteger)gridID
 {
-  NSInteger index = [gridID integerValue];
-
-  if (index >= [_grids count]) {
+  if (gridID >= [_grids count]) {
     return nil;
   }
 
-  return [_grids objectAtIndex:index];
+  return _grids[gridID];
 }
 
-- (void)setGrid:(NIUIGrid *)grid forID:(NSNumber *)gridID
+- (void)setGrid:(NIUIGrid *)grid forID:(NSUInteger)gridID
 {
-  NSInteger index = [gridID integerValue];
-
-  NSInteger additionalArrayElementsNeededCount = MAX(0, index - [_grids count] + 1);
+  NSInteger additionalArrayElementsNeededCount = MAX(0, gridID - [_grids count] + 1);
 
   for (NSInteger i = 0; i < additionalArrayElementsNeededCount; i++) {
     [_grids addObject:[NSNull null]];
   }
 
-  [_grids setObject:grid atIndexedSubscript:index];
+  _grids[gridID] = grid;
 }
 
-- (void)removeGridForID:(NSNumber *)gridID
+- (void)removeGridForID:(NSUInteger)gridID
 {
-  NSInteger index = [gridID integerValue];
-
-  if (index >= [_grids count]) {
+  if (gridID >= [_grids count]) {
     return;
   }
 
-  [_grids setObject:[NSNull null] atIndexedSubscript:index];
+  _grids[gridID] = [NSNull null];
 }
 
 @end

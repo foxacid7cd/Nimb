@@ -37,7 +37,7 @@
     id additionalString = [@"" stringByPaddingToLength:delta
                                             withString:@" "
                                        startingAtIndex:0];
-    id attributes = [self->_appearance stringAttributesForHighlightID:[NimsAppearance defaultHighlightID]];
+    id attributes = [self->_appearance stringAttributesForHighlightID:0];
     id attributedString = [[NSAttributedString alloc] initWithString:additionalString
                                                           attributes:attributes];
     [self->_backingStore appendAttributedString:attributedString];
@@ -75,7 +75,7 @@
   id clearString = [@"" stringByPaddingToLength:range.length
                                      withString:@" "
                                 startingAtIndex:0];
-  id attributes = [self->_appearance stringAttributesForHighlightID:[NimsAppearance defaultHighlightID]];
+  id attributes = [self->_appearance stringAttributesForHighlightID:0];
   id attributedString = [[NSAttributedString alloc] initWithString:clearString
                                                         attributes:attributes];
 
@@ -93,7 +93,7 @@
                                        usingBlock:^(NSDictionary<NSAttributedStringKey, id> *attrs, NSRange range, BOOL *stop) {
     NSNumber *highlightID = [attrs objectForKey:HighlightIDAttributeName];
 
-    [self->_backingStore setAttributes:[self->_appearance stringAttributesForHighlightID:highlightID]
+    [self->_backingStore setAttributes:[self->_appearance stringAttributesForHighlightID:0]
                                  range:range];
   }];
 

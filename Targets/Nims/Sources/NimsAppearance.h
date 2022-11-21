@@ -13,8 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NimsAppearance : NSObject
 
-+ (NSNumber *)defaultHighlightID;
-
 - (instancetype)initWithFont:(NSFont *)font;
 
 - (void)setFont:(NSFont *)font;
@@ -24,16 +22,16 @@ NS_ASSUME_NONNULL_BEGIN
                                  rgb_bg:(int32_t)rgb_bg
                                  rgb_sp:(int32_t)rgb_sp;
 
-- (void)applyAttrDefineForHighlightID:(NSNumber *)highlightID
+- (void)applyAttrDefineForHighlightID:(NSUInteger)highlightID
                             rgb_attrs:(nvim_hl_attrs_t)rgb_attrs;
 
-- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightID:(NSNumber *)highlightID;
+- (NSDictionary<NSAttributedStringKey, id> *)stringAttributesForHighlightID:(NSUInteger)highlightID;
 
-- (NSFont *)fontForHighlightID:(NSNumber *)highlightID;
+- (NSFont *)fontForHighlightID:(NSUInteger)highlightID;
 
-- (NSColor *)foregroundColorForHighlightID:(NSNumber *)highlightID;
-- (NSColor *)backgroundColorForHighlightID:(NSNumber *)highlightID;
-- (NSColor *)specialColorForHighlightID:(NSNumber *)highlightID;
+- (NSColor *)foregroundColorForHighlightID:(NSUInteger)highlightID;
+- (NSColor *)backgroundColorForHighlightID:(NSUInteger)highlightID;
+- (NSColor *)specialColorForHighlightID:(NSUInteger)highlightID;
 
 @end
 

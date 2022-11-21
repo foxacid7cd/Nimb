@@ -15,23 +15,25 @@
 @interface NIUIGrid : NSObject
 
 - (instancetype)initWithAppearance:(NimsAppearance *)appearance
-                           andSize:(NIGridSize)size;
+                        superlayer:(CALayer *)superlayer;
 
 @property (nonatomic) NIGridSize size;
+
+- (void)setHidden:(BOOL)hidden;
 
 - (void)applyRawLineAtGridY:(NSInteger)gridY
                  startGridX:(NSInteger)startGridX
                    endGridX:(NSInteger)endGridX
                  clearGridX:(NSInteger)clearGridX
-             clearAttribute:(NSNumber *)clearAttribute
+             clearAttribute:(NSUInteger)clearAttribute
                       flags:(NSInteger)flags
                       chunk:(nvim_schar_t *)chunk
                  attributes:(nvim_sattr_t *)attributes;
 
-- (void)applyWinPosWithWindowRef:(NSNumber *)windowRef
+- (void)applyWinPosWithWindowRef:(NSValue *)windowRef
                            frame:(NIGridRect)frame
                        zPosition:(CGFloat)zPosition;
 
-@property (readonly) NSView *view;
+- (void)applyGridClear;
 
 @end

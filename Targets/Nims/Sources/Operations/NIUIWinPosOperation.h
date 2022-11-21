@@ -13,9 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NIUIWinPosOperation : NSOperation
 
-- (instancetype)initWithGridID:(NSNumber *)gridID
-                     windowRef:(NSNumber *)windowRef
-                         frame:(NIGridRect)frame;
+- (instancetype)initWithContext:(NIUIContext *)context
+                         gridID:(NSUInteger)gridID
+                      windowRef:(NSValue *)windowRef
+                          frame:(NIGridRect)frame;
 
 @end
 
