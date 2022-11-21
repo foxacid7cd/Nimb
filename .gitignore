@@ -66,11 +66,14 @@ DerivedData/
 graph.dot
 Derived/
 
-### Tuist managed dependencies ###
 Tuist/Dependencies
 
-## Generated source files
 /Targets/**/Generated
 
 .build/
 build/
+
+/bazel-*
+
+/output/
+

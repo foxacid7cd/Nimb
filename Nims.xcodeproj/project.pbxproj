@@ -1350,7 +1350,7 @@
 					"$(inherited)",
 					"INCLUDE_GENERATED_DECLARATIONS=1",
 				);
-				HEADER_SEARCH_PATHS = Targets/nvimd/include;
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1419,6 +1419,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -1507,19 +1508,8 @@
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				EXECUTABLE_PREFIX = lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					neovim/.deps/usr/include,
-					neovim/src,
-					neovim/build/include,
-					neovim/build/cmake.config,
-					neovim/build/src/nvim/auto,
-					/opt/homebrew/include,
-					Targets/nvims/include,
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1538,15 +1528,7 @@
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				EXECUTABLE_PREFIX = lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				HEADER_SEARCH_PATHS = (
-					neovim/.deps/usr/include,
-					neovim/src,
-					neovim/build/include,
-					neovim/build/cmake.config,
-					neovim/build/src/nvim/auto,
-					/opt/homebrew/include,
-					Targets/nvims/include,
-				);
+				HEADER_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1616,11 +1598,7 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-					"INCLUDE_GENERATED_DECLARATIONS=1",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -1647,7 +1625,7 @@
 				DEFINES_MODULE = NO;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = WXA9R8SW25;
 				ENABLE_PREVIEWS = YES;
-				HEADER_SEARCH_PATHS = Targets/nvimd/include;
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = "Derived/InfoPlists/Nims-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

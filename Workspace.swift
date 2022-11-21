@@ -1,7 +1,8 @@
 import ProjectDescription
 
 let workspace = Workspace(
-  name: "Nims",
+    name: "Nims",
+
   projects: [.relativeToRoot(".")],
   schemes: [],
   generationOptions: .options(

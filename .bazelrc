@@ -1,0 +1,10 @@
+build --apple_platform_type=macos
+
+build --cxxopt='-std=c++20'
+
+build --swiftcopt=-whole-module-optimization
+
+build --features=debug_prefix_map_pwd_is_dot
+build --features=swift.cacheable_swiftmodules
+build --features=swift.debug_prefix_map
+build --features=swift.enable_vfsoverlays
