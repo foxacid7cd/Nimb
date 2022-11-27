@@ -60,7 +60,6 @@ DerivedData/
 ### Projects ###
 *.xcodeproj
 *.xcworkspace
-*.tulsiproj
 
 /Targets/**/Generated
 
@@ -68,6 +67,7 @@ DerivedData/
 build/
 
 /bazel-*
+*.tulsiconf-user
 
 /output/
 

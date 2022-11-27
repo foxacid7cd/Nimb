@@ -1,0 +1,62 @@
+{
+  "additionalFilePaths" : [
+    "Nims/BUILD"
+  ],
+  "buildTargets" : [
+    "//Nims:Nims",
+    "//Nims:NvimServiceAPI",
+    "//Nims:_Nims",
+    "//Nims:_NvimService"
+  ],
+  "optionSet" : {
+    "BazelBuildOptionsDebug" : {
+      "p" : "$(inherited)"
+    },
+    "BazelBuildOptionsRelease" : {
+      "p" : "$(inherited)"
+    },
+    "BazelBuildStartupOptionsDebug" : {
+      "p" : "$(inherited)"
+    },
+    "BazelBuildStartupOptionsRelease" : {
+      "p" : "$(inherited)"
+    },
+    "BuildActionPostActionScript" : {
+      "p" : "$(inherited)"
+    },
+    "BuildActionPreActionScript" : {
+      "p" : "$(inherited)"
+    },
+    "CommandlineArguments" : {
+      "p" : "$(inherited)"
+    },
+    "EnvironmentVariables" : {
+      "p" : "$(inherited)"
+    },
+    "LaunchActionPostActionScript" : {
+      "p" : "$(inherited)"
+    },
+    "LaunchActionPreActionScript" : {
+      "p" : "$(inherited)"
+    },
+    "ProjectGenerationBazelStartupOptions" : {
+      "p" : "$(inherited)"
+    },
+    "TestActionPostActionScript" : {
+      "p" : "$(inherited)"
+    },
+    "TestActionPreActionScript" : {
+      "p" : "$(inherited)"
+    }
+  },
+  "projectName" : "Nims",
+  "sourceFilters" : [
+    "Nims/...",
+    "Nims/Modules",
+    "Nims/Modules/NvimService",
+    "Nims/Modules/NvimService/Sources",
+    "Nims/Modules/NvimServiceAPI",
+    "Nims/Modules/NvimServiceAPI/Sources",
+    "Nims/Sources"
+  ]
+}
