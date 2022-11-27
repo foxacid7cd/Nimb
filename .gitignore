@@ -56,17 +56,11 @@ DerivedData/
 #!*.xcodeproj/project.pbxproj
 #!*.xcodeproj/xcshareddata/
 #!*.xcworkspace/contents.xcworkspacedata
-#/*.gcno
 
 ### Projects ###
-#*.xcodeproj
-#*.xcworkspace
-
-### Tuist derived files ###
-graph.dot
-Derived/
-
-Tuist/Dependencies
+*.xcodeproj
+*.xcworkspace
+*.tulsiproj
 
 /Targets/**/Generated
 
