@@ -1,6 +1,6 @@
 //
 //  NvimServiceProtocol.swift
-//  Nims
+//  NvimServiceAPI
 //
 //  Created by Yevhenii Matviienko on 22.11.2022.
 //

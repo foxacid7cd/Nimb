@@ -52,25 +52,11 @@ DerivedData/
 !default.perspectivev3
 
 ### Xcode Patch ###
-#*.xcodeproj/*
-#!*.xcodeproj/project.pbxproj
-#!*.xcodeproj/xcshareddata/
-#!*.xcworkspace/contents.xcworkspacedata
-
-### Projects ###
-*.xcodeproj
-*.xcworkspace
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
 
 /Targets/**/Generated
 
-.build/
 build/
-
-/bazel-*
-*.tulsiconf-user
-
-/output/
-
-/Nims/*.a
-/Nims/*.dylib
-/Nims/*.tbd
