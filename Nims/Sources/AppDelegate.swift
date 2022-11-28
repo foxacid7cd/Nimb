@@ -32,12 +32,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let standardOutputPipe = Pipe()
     process.standardOutput = standardOutputPipe
     
+    let unpacker = MessageUnpacker()
+    
     standardOutputPipe.fileHandleForReading
       .readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
         
-        Task.detached(priority: .high) {
-          await message_unpack(data: data)
+        Task(priority: .high) {
+          do {
+            let values = try await unpacker.unpack(data: data)
+            os_log("Unpacked \(values.count) values: \(values)")
+            
+          } catch {
+            fatalError("Unpacker failed unpacking: \(error)")
+          }
         }
       }
     
@@ -64,7 +72,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       )
       let packer = MessagePacker()
       
-      let data = packer.pack(value: request)
+      let data = await packer.pack(value: request)
       
       try! standardInputPipe.fileHandleForWriting
         .write(contentsOf: data)
