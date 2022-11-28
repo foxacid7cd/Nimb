@@ -104,7 +104,9 @@ swift_library(
     "-import-objc-header",
     "Nims/Sources/Bridging-Header.h",
   ],
-  deps = [":NvimServiceAPI"],
+  deps = [
+    ":NvimServiceAPI"
+  ],
 )
 
 apple_bundle_version(

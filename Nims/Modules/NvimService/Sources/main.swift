@@ -25,7 +25,11 @@ class NvimService: NvimServiceProtocol {
     let mainThread = Thread {
       var cArguments = ([ProcessInfo.processInfo.arguments[0]] + arguments)
         .map { UnsafeMutablePointer<Int8>(strdup($0)) }
+      
       nvim_main(Int32(cArguments.count), &cArguments)
+      os_log("nvim_main ended")
+      
+      cArguments.forEach { free($0) }
     }
     self.mainThread = mainThread
     
