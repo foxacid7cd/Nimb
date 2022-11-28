@@ -1,14 +1,8 @@
 {
   "configDefaults" : {
     "optionSet" : {
-      "CLANG_CXX_LANGUAGE_STANDARD" : {
-        "p" : "c++17"
-      },
       "ProjectGenerationPlatformConfiguration" : {
         "p" : "macos_arm64e"
-      },
-      "ProjectPrioritizesSwift" : {
-        "p" : "YES"
       }
     }
   },

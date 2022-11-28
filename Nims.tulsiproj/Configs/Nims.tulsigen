@@ -42,6 +42,9 @@
     "ProjectGenerationBazelStartupOptions" : {
       "p" : "$(inherited)"
     },
+    "ProjectGenerationPlatformConfiguration" : {
+      "p" : "macos_arm64e"
+    },
     "TestActionPostActionScript" : {
       "p" : "$(inherited)"
     },

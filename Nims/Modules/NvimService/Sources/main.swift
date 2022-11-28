@@ -6,14 +6,33 @@
 //
 
 import Foundation
-import Nims_NvimServiceAPI
+import NvimServiceAPI
 import OSLog
 
 class NvimService: NvimServiceProtocol {
+  private var mainThread: Thread?
+  
   func startNvim(arguments: [String], _ callback: @escaping () -> Void) {
+    guard mainThread == nil else {
+      os_log("Failed starting nvim, already started")
+      callback()
+      
+      return
+    }
+    
     os_log("Starting nvim with arguments: \(arguments)")
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+    
+    let mainThread = Thread {
+      var cArguments = ([ProcessInfo.processInfo.arguments[0]] + arguments)
+        .map { UnsafeMutablePointer<Int8>(strdup($0)) }
+      nvim_main(Int32(cArguments.count), &cArguments)
+    }
+    self.mainThread = mainThread
+    
+    mainThread.name = "\(Bundle.main.bundleIdentifier!).nvim_main"
+    mainThread.start()
+    
+    DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
       os_log("Started nvim")
 
       callback()

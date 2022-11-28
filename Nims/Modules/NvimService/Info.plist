@@ -22,6 +22,11 @@
 	<string>Copyright © 2022 foxacid7cd. All rights reserved.</string>
 	<key>XPCService</key>
 	<dict>
+		<key>EnvironmentVariables</key>
+		<dict>
+			<key>VIMRUNTIME</key>
+			<string>/opt/homebrew/share/nvim/runtime</string>
+		</dict>
 		<key>ServiceType</key>
 		<string>Application</string>
 	</dict>

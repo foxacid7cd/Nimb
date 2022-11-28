@@ -9,7 +9,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     let connection = NSXPCConnection(serviceName: ServiceBundleIdentifier)
     self.connection = connection
-
+    
     connection.invalidationHandler = { [unowned self] in
       os_log("XPC connection invalidated")
       self.connection = nil
@@ -29,7 +29,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     } as? NvimServiceProtocol
 
     if let nvimService {
-      let arguments = ["--listen", "localhost:4141"]
+      let temporaryFileName = "\(UUID().uuidString).nvim"
+      let temporaryFileURL = FileManager.default.temporaryDirectory
+        .appending(component: temporaryFileName, directoryHint: .notDirectory)
+      
+      let arguments = ["--listen", temporaryFileURL.relativePath]
 
       os_log("Starting nvim with arguments: \(arguments)")
 

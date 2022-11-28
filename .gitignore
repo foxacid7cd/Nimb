@@ -71,3 +71,6 @@ build/
 
 /output/
 
+/Nims/*.a
+/Nims/*.dylib
+/Nims/*.tbd
