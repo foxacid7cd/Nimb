@@ -49,8 +49,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     os_log("Process started!")
     
     Task.detached(priority: .high) {
+      let request = RPCRequest(
+        id: 0,
+        method: "nvim_ui_attach",
+        parameters: [
+          MessageUInt32Value(80),
+          MessageUInt32Value(24),
+          MessageMapValue([
+            (MessageStringValue("rgb"), MessageBooleanValue(true)),
+            (MessageStringValue("override"), MessageBooleanValue(true)),
+            (MessageStringValue("ext_multigrid"), MessageBooleanValue(true))
+          ])
+        ]
+      )
+      let packer = MessagePacker()
+      
+      let data = packer.pack(value: request)
+      
       try! standardInputPipe.fileHandleForWriting
-        .write(contentsOf: message_pack())
+        .write(contentsOf: data)
     }
   }
   

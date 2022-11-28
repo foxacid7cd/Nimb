@@ -40,6 +40,10 @@
 		6843852E2934D486000C4A1D /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852D2934D480000C4A1D /* libiconv.tbd */; };
 		684385302934D4A6000C4A1D /* libintl.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; };
 		684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		684C03EB2935376F00810852 /* MessagePacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EA2935376F00810852 /* MessagePacker.swift */; };
+		684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* RPCRequest.swift */; };
+		687290C029355A0900445435 /* RPCResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* RPCResponse.swift */; };
+		687290C329355AF500445435 /* RPCNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* RPCNotification.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
@@ -175,6 +179,10 @@
 		684385242934D440000C4A1D /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluv.a; path = "Third-Party/neovim/.deps/usr/lib/libluv.a"; sourceTree = "<group>"; };
 		6843852D2934D480000C4A1D /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		6843852F2934D4A6000C4A1D /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/Cellar/gettext/0.21.1/lib/libintl.8.dylib; sourceTree = "<group>"; };
+		684C03EA2935376F00810852 /* MessagePacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePacker.swift; sourceTree = "<group>"; };
+		684C03EC29354C0F00810852 /* RPCRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCRequest.swift; sourceTree = "<group>"; };
+		687290BF29355A0900445435 /* RPCResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCResponse.swift; sourceTree = "<group>"; };
+		687290C129355AE800445435 /* RPCNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCNotification.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -387,6 +395,10 @@
 			children = (
 				68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */,
 				68E9FC482934D90600AE946A /* MessagePack.swift */,
+				684C03EA2935376F00810852 /* MessagePacker.swift */,
+				684C03EC29354C0F00810852 /* RPCRequest.swift */,
+				687290BF29355A0900445435 /* RPCResponse.swift */,
+				687290C129355AE800445435 /* RPCNotification.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -628,7 +640,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				687290C329355AF500445435 /* RPCNotification.swift in Sources */,
+				687290C029355A0900445435 /* RPCResponse.swift in Sources */,
 				68E9FC492934D90600AE946A /* MessagePack.swift in Sources */,
+				684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */,
+				684C03EB2935376F00810852 /* MessagePacker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
