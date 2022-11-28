@@ -25,8 +25,15 @@
 		6843852E2934D486000C4A1D /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852D2934D480000C4A1D /* libiconv.tbd */; };
 		684385302934D4A6000C4A1D /* libintl.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; };
 		684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
+		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
+		68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; };
+		68E9FC422934D8CD00AE946A /* MessagePack.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		68E9FC492934D90600AE946A /* MessagePack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E9FC482934D90600AE946A /* MessagePack.swift */; };
+		68E9FC4B2934D93900AE946A /* MessagePack-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */; };
+		68E9FC4C2934D9B500AE946A /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843851F2934D43F000C4A1D /* libmsgpackc.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +51,20 @@
 			remoteGlobalIDString = 684385082934D225000C4A1D;
 			remoteInfo = NvimService;
 		};
+		687E27432934FF7100DBE399 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68BFEF392934CF6100564FE2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 684384F52934D17F000C4A1D;
+			remoteInfo = NvimServiceAPI;
+		};
+		68E9FC3F2934D8CD00AE946A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68BFEF392934CF6100564FE2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68E9FC3A2934D8CD00AE946A;
+			remoteInfo = MessagePack;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,6 +75,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				684384FD2934D17F000C4A1D /* NvimServiceAPI.framework in Embed Frameworks */,
+				68E9FC422934D8CD00AE946A /* MessagePack.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -76,6 +98,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */,
+				687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -107,6 +130,9 @@
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
+		68E9FC3B2934D8CD00AE946A /* MessagePack.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessagePack.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		68E9FC482934D90600AE946A /* MessagePack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePack.swift; sourceTree = "<group>"; };
+		68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MessagePack-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +152,7 @@
 				6843852B2934D45E000C4A1D /* libuv_a.a in Frameworks */,
 				6843852A2934D45E000C4A1D /* libunibilium.a in Frameworks */,
 				6843852E2934D486000C4A1D /* libiconv.tbd in Frameworks */,
+				687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */,
 				684385262934D45E000C4A1D /* libluv.a in Frameworks */,
 				6843851C2934D415000C4A1D /* libnvim.a in Frameworks */,
 				684385302934D4A6000C4A1D /* libintl.8.dylib in Frameworks */,
@@ -140,6 +167,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */,
+				68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68E9FC382934D8CD00AE946A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68E9FC4C2934D9B500AE946A /* libmsgpackc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,8 +194,9 @@
 		684384D62934D0A1000C4A1D /* Modules */ = {
 			isa = PBXGroup;
 			children = (
-				684384D72934D0A1000C4A1D /* NvimServiceAPI */,
 				684384DA2934D0A1000C4A1D /* NvimService */,
+				684384D72934D0A1000C4A1D /* NvimServiceAPI */,
+				68E9FC462934D8E500AE946A /* MessagePack */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -232,6 +269,7 @@
 				68BFEF412934CF6100564FE2 /* Nims.app */,
 				684384F62934D17F000C4A1D /* NvimServiceAPI.framework */,
 				684385092934D225000C4A1D /* NvimService.xpc */,
+				68E9FC3B2934D8CD00AE946A /* MessagePack.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -248,6 +286,23 @@
 			path = Nims;
 			sourceTree = "<group>";
 		};
+		68E9FC462934D8E500AE946A /* MessagePack */ = {
+			isa = PBXGroup;
+			children = (
+				68E9FC472934D8F600AE946A /* Sources */,
+			);
+			path = MessagePack;
+			sourceTree = "<group>";
+		};
+		68E9FC472934D8F600AE946A /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */,
+				68E9FC482934D90600AE946A /* MessagePack.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -255,6 +310,14 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68E9FC362934D8CD00AE946A /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68E9FC4B2934D93900AE946A /* MessagePack-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -291,6 +354,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				687E27442934FF7100DBE399 /* PBXTargetDependency */,
 			);
 			name = NvimService;
 			productName = NvimService;
@@ -312,11 +376,30 @@
 			dependencies = (
 				684384FB2934D17F000C4A1D /* PBXTargetDependency */,
 				684385132934D225000C4A1D /* PBXTargetDependency */,
+				68E9FC402934D8CD00AE946A /* PBXTargetDependency */,
 			);
 			name = Nims;
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
 			productType = "com.apple.product-type.application";
+		};
+		68E9FC3A2934D8CD00AE946A /* MessagePack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "MessagePack" */;
+			buildPhases = (
+				68E9FC362934D8CD00AE946A /* Headers */,
+				68E9FC372934D8CD00AE946A /* Sources */,
+				68E9FC382934D8CD00AE946A /* Frameworks */,
+				68E9FC392934D8CD00AE946A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MessagePack;
+			productName = MessagePack;
+			productReference = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -337,6 +420,10 @@
 					68BFEF402934CF6100564FE2 = {
 						CreatedOnToolsVersion = 14.1;
 					};
+					68E9FC3A2934D8CD00AE946A = {
+						CreatedOnToolsVersion = 14.1;
+						LastSwiftMigration = 1410;
+					};
 				};
 			};
 			buildConfigurationList = 68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nims" */;
@@ -353,8 +440,9 @@
 			projectRoot = "";
 			targets = (
 				68BFEF402934CF6100564FE2 /* Nims */,
-				684384F52934D17F000C4A1D /* NvimServiceAPI */,
 				684385082934D225000C4A1D /* NvimService */,
+				684384F52934D17F000C4A1D /* NvimServiceAPI */,
+				68E9FC3A2934D8CD00AE946A /* MessagePack */,
 			);
 		};
 /* End PBXProject section */
@@ -380,6 +468,13 @@
 			files = (
 				68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */,
 				68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68E9FC392934D8CD00AE946A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -410,6 +505,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68E9FC372934D8CD00AE946A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68E9FC492934D90600AE946A /* MessagePack.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -422,6 +525,16 @@
 			isa = PBXTargetDependency;
 			target = 684385082934D225000C4A1D /* NvimService */;
 			targetProxy = 684385122934D225000C4A1D /* PBXContainerItemProxy */;
+		};
+		687E27442934FF7100DBE399 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 684384F52934D17F000C4A1D /* NvimServiceAPI */;
+			targetProxy = 687E27432934FF7100DBE399 /* PBXContainerItemProxy */;
+		};
+		68E9FC402934D8CD00AE946A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68E9FC3A2934D8CD00AE946A /* MessagePack */;
+			targetProxy = 68E9FC3F2934D8CD00AE946A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -440,14 +553,17 @@
 		684384FF2934D180000C4A1D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -455,8 +571,9 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NvimServiceAPI;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.NvimServiceAPI;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -469,14 +586,17 @@
 		684385002934D180000C4A1D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -484,8 +604,9 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NvimServiceAPI;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.NvimServiceAPI;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -501,7 +622,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = Nims/Modules/NvimService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NvimService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -511,6 +634,7 @@
 					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					/opt/homebrew/Cellar/gettext/0.21.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.NvimService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -527,7 +651,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = Nims/Modules/NvimService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = NvimService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -537,6 +663,7 @@
 					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					/opt/homebrew/Cellar/gettext/0.21.1/lib,
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.NvimService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -553,7 +680,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -583,7 +710,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -597,6 +724,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "Third-Party/neovim/.deps/usr/include";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -604,6 +732,7 @@
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
 			};
 			name = Debug;
 		};
@@ -613,7 +742,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -643,7 +772,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -651,12 +780,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "Third-Party/neovim/.deps/usr/include";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
 			};
 			name = Release;
 		};
@@ -667,10 +798,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -678,6 +812,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -693,10 +828,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -704,11 +842,91 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		68E9FC432934D8CD00AE946A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.MessagePack;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/MessagePack/Sources/MessagePack-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		68E9FC442934D8CD00AE946A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = WXA9R8SW25;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims.MessagePack;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/MessagePack/Sources/MessagePack-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
@@ -747,6 +965,15 @@
 			buildConfigurations = (
 				68BFEF4F2934CF6200564FE2 /* Debug */,
 				68BFEF502934CF6200564FE2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "MessagePack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68E9FC432934D8CD00AE946A /* Debug */,
+				68E9FC442934D8CD00AE946A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
