@@ -16,6 +16,15 @@ class NimsAppearance {
       self.cellSize = self.regularFont.makeCellSize()
     }
   }
+  
+  @MainActor
+  private(set) var boldFont: NSFont
+  
+  @MainActor
+  private(set) var italicFont: NSFont
+  
+  @MainActor
+  private(set) var boldItalicFont: NSFont
 
   @MainActor
   private(set) var cellSize: CGSize
@@ -34,17 +43,44 @@ class NimsAppearance {
   @MainActor
   init(regularFont: NSFont) {
     self.regularFont = regularFont
+    (self.boldFont, self.italicFont, self.boldItalicFont) = regularFont.makeFontVariants()
     self.cellSize = regularFont.makeCellSize()
   }
 
   @MainActor
   func stringAttributes(hlID: Int) -> [NSAttributedString.Key: Any] {
     [
-      .font: self.regularFont,
+      .font: self.font(hlID: hlID),
       .foregroundColor: self.foregroundColor(hlID: hlID),
       .backgroundColor: self.backgroundColor(hlID: hlID),
       .underlineColor: self.specialColor(hlID: hlID)
     ]
+  }
+  
+  @MainActor
+  func font(hlID: Int) -> NSFont {
+    guard
+      hlID != 0,
+      let highlight = self.highlights[hlID]
+    else {
+      return self.regularFont
+    }
+    
+    if highlight.isBold {
+      if highlight.isItalic {
+        return self.boldItalicFont
+        
+      } else {
+        return self.boldFont
+      }
+    } else {
+      if highlight.isItalic {
+        return self.italicFont
+        
+      } else {
+        return self.regularFont
+      }
+    }
   }
 
   @MainActor
@@ -123,6 +159,16 @@ class NimsAppearance {
 
       case "special":
         highlight.special = value as? Int
+        
+      case "bold":
+        if let value = value as? Bool {
+          highlight.isBold = value
+        }
+        
+      case "italic":
+        if let value = value as? Bool {
+          highlight.isItalic = value
+        }
 
       default:
         break
@@ -149,12 +195,23 @@ private extension NSFont {
 
     return .init(width: width, height: height)
   }
+  
+  func makeFontVariants() -> (bold: NSFont, italic: NSFont, boldItalic: NSFont) {
+    let bold = NSFontManager.shared.convert(self, toHaveTrait: .boldFontMask)
+    let italic = NSFontManager.shared.convert(self, toHaveTrait: .italicFontMask)
+    let boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+    
+    return (bold, italic, boldItalic)
+  }
 }
 
 private class Highlight {
   var foreground: Int?
   var background: Int?
   var special: Int?
+  
+  var isBold = false
+  var isItalic = false
 
   var foregroundColor: NSColor?
   var backgroundColor: NSColor?
