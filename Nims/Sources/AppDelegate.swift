@@ -29,8 +29,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       os_log("Process terminated: \(process.terminationStatus) \(process.terminationReason.rawValue)")
     }
     
+    let standardInputPipe = Pipe()
+    process.standardInput = standardInputPipe
+    
     let standardOutputPipe = Pipe()
     process.standardOutput = standardOutputPipe
+    
+    let packer = MessagePacker()
+    
+    let messageRPC = MessageRPC(
+      send: { value in
+        Task.detached(priority: .high) {
+          let data = await packer.pack(value: value)
+          
+          try! standardInputPipe.fileHandleForWriting
+            .write(contentsOf: data)
+        }
+      },
+      handleNotification: { notification in
+        os_log("Notification received: \(notification.method) \(notification.parameters)")
+      }
+    )
+    self.messageRPC = messageRPC
     
     let unpacker = MessageUnpacker()
     
@@ -38,46 +58,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       .readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
         
-        Task(priority: .high) {
+        Task.detached(priority: .high) { @MainActor in
           do {
-            let values = try await unpacker.unpack(data: data)
-            os_log("Unpacked \(values.count) values: \(values)")
+            let values = try unpacker.unpack(data: data)
+            for value in values {
+              try messageRPC.handleReceived(value: value)
+            }
             
           } catch {
-            fatalError("Unpacker failed unpacking: \(error)")
+            fatalError("Unpacker failed unpacking or MessageRPC failed receiving: \(error)")
           }
         }
       }
-    
-    let standardInputPipe = Pipe()
-    process.standardInput = standardInputPipe
     
     try! process.run()
     
     os_log("Process started!")
     
-    Task.detached(priority: .high) {
-      let request = RPCRequest(
-        id: 0,
-        method: "nvim_ui_attach",
-        parameters: [
-          MessageUInt32Value(80),
-          MessageUInt32Value(24),
-          MessageMapValue([
-            (MessageStringValue("rgb"), MessageBooleanValue(true)),
-            (MessageStringValue("override"), MessageBooleanValue(true)),
-            (MessageStringValue("ext_multigrid"), MessageBooleanValue(true))
-          ])
-        ]
-      )
-      let packer = MessagePacker()
-      
-      let data = await packer.pack(value: request)
-      
-      try! standardInputPipe.fileHandleForWriting
-        .write(contentsOf: data)
+    Task(priority: .high) {
+      try! await messageRPC.request(method: "nvim_ui_attach", parameters: [
+        MessageUInt32Value(80),
+        MessageUInt32Value(24),
+        MessageMapValue([
+          (MessageStringValue("rgb"), MessageBooleanValue(true)),
+          (MessageStringValue("override"), MessageBooleanValue(true)),
+          (MessageStringValue("ext_multigrid"), MessageBooleanValue(true))
+        ])
+      ])
     }
   }
   
   private var process: Process?
+  private var messageRPC: MessageRPC?
 }

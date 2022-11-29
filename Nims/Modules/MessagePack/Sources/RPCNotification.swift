@@ -8,8 +8,8 @@
 import Foundation
 
 public struct RPCNotification: MessageValue {
-  var method: String
-  var parameters: [MessageValue]
+  public var method: String
+  public var parameters: [MessageValue]
   
   public init(method: String, parameters: [MessageValue]) {
     self.method = method

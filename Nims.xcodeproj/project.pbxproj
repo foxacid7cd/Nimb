@@ -44,13 +44,13 @@
 		684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* RPCRequest.swift */; };
 		687290C029355A0900445435 /* RPCResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* RPCResponse.swift */; };
 		687290C329355AF500445435 /* RPCNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* RPCNotification.swift */; };
+		687290C6293578D700445435 /* MessageRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* MessageRPC.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
 		68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; };
 		68E9FC422934D8CD00AE946A /* MessagePack.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		68E9FC492934D90600AE946A /* MessagePack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E9FC482934D90600AE946A /* MessagePack.swift */; };
 		68E9FC4B2934D93900AE946A /* MessagePack-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */; };
 		68E9FC4C2934D9B500AE946A /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843851F2934D43F000C4A1D /* libmsgpackc.a */; };
 /* End PBXBuildFile section */
@@ -183,12 +183,12 @@
 		684C03EC29354C0F00810852 /* RPCRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCRequest.swift; sourceTree = "<group>"; };
 		687290BF29355A0900445435 /* RPCResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCResponse.swift; sourceTree = "<group>"; };
 		687290C129355AE800445435 /* RPCNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCNotification.swift; sourceTree = "<group>"; };
+		687290C4293577C000445435 /* MessageRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRPC.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68E9FC3B2934D8CD00AE946A /* MessagePack.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessagePack.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		68E9FC482934D90600AE946A /* MessagePack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePack.swift; sourceTree = "<group>"; };
 		68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MessagePack-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -394,8 +394,8 @@
 			isa = PBXGroup;
 			children = (
 				68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */,
-				68E9FC482934D90600AE946A /* MessagePack.swift */,
 				684C03EA2935376F00810852 /* MessagePacker.swift */,
+				687290C4293577C000445435 /* MessageRPC.swift */,
 				684C03EC29354C0F00810852 /* RPCRequest.swift */,
 				687290BF29355A0900445435 /* RPCResponse.swift */,
 				687290C129355AE800445435 /* RPCNotification.swift */,
@@ -641,8 +641,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				687290C329355AF500445435 /* RPCNotification.swift in Sources */,
+				687290C6293578D700445435 /* MessageRPC.swift in Sources */,
 				687290C029355A0900445435 /* RPCResponse.swift in Sources */,
-				68E9FC492934D90600AE946A /* MessagePack.swift in Sources */,
 				684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */,
 				684C03EB2935376F00810852 /* MessagePacker.swift in Sources */,
 			);
