@@ -18,7 +18,7 @@ public struct RPCNotification: MessageValue {
   
   public func pack(to packer: MessagePacker) {
     MessageArrayValue([
-      MessageInt64Value(2),
+      MessageIntValue(2),
       MessageStringValue(method),
       MessageArrayValue(parameters)
     ])

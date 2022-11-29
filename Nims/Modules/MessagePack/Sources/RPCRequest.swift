@@ -20,7 +20,7 @@ public struct RPCRequest: MessageValue {
   
   public func pack(to packer: MessagePacker) {
     MessageArrayValue([
-      MessageInt64Value(0),
+      MessageIntValue(0),
       MessageUInt32Value(id),
       MessageStringValue(method),
       MessageArrayValue(parameters)

@@ -19,7 +19,7 @@ public struct RPCResponse: MessageValue {
   }
   
   public func pack(to packer: MessagePacker) {
-    var elements: [MessageValue] = [MessageInt64Value(1), MessageUInt32Value(id)]
+    var elements: [MessageValue] = [MessageIntValue(1), MessageUInt32Value(id)]
     
     if isSuccess {
       elements += [payload, MessageNilValue()]

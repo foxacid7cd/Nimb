@@ -31,7 +31,7 @@ public class MessageRPC {
     
     var elements = arrayValue.elements
     
-    guard !elements.isEmpty, let integerValue = elements.removeFirst() as? MessageInt64Value else {
+    guard !elements.isEmpty, let integerValue = elements.removeFirst() as? MessageIntValue else {
       throw MessageRPCError.failedParsingArray
     }
     
@@ -40,7 +40,7 @@ public class MessageRPC {
       throw MessageRPCError.unexpectedRPCRequest
       
     case 1:
-      guard !elements.isEmpty, let unsignedIntegerValue = elements.removeFirst() as? MessageInt64Value else {
+      guard !elements.isEmpty, let unsignedIntegerValue = elements.removeFirst() as? MessageIntValue else {
         throw MessageRPCError.failedParsingArray
       }
       let responseID = unsignedIntegerValue.value

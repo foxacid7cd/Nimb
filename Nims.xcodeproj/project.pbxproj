@@ -42,9 +42,25 @@
 		684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		684C03EB2935376F00810852 /* MessagePacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EA2935376F00810852 /* MessagePacker.swift */; };
 		684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* RPCRequest.swift */; };
+		685B61612935D1AD006381F1 /* WinRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685B61602935D1AD006381F1 /* WinRef.swift */; };
+		685EE9632935A01B00D85550 /* NimsUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9622935A01B00D85550 /* NimsUI.swift */; };
+		685EE9652935A0FD00D85550 /* MainWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9642935A0FD00D85550 /* MainWindow.swift */; };
+		685EE9672935A21000D85550 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9662935A21000D85550 /* MainView.swift */; };
+		685EE96A2935A79D00D85550 /* BitCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9692935A79D00D85550 /* BitCollections */; };
+		685EE96C2935A79D00D85550 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE96B2935A79D00D85550 /* Collections */; };
+		685EE96E2935A79D00D85550 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE96D2935A79D00D85550 /* DequeModule */; };
+		685EE9702935A79D00D85550 /* HeapModule in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE96F2935A79D00D85550 /* HeapModule */; };
+		685EE9722935A79D00D85550 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9712935A79D00D85550 /* OrderedCollections */; };
+		685EE9742935A79D00D85550 /* PersistentCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9732935A79D00D85550 /* PersistentCollections */; };
+		685EE9762935A79D00D85550 /* SortedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9752935A79D00D85550 /* SortedCollections */; };
+		685EE9792935A80200D85550 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9782935A80200D85550 /* AsyncAlgorithms */; };
+		685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* NimsAppearance.swift */; };
+		685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97C2935AD8900D85550 /* GridGeometry.swift */; };
 		687290C029355A0900445435 /* RPCResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* RPCResponse.swift */; };
 		687290C329355AF500445435 /* RPCNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* RPCNotification.swift */; };
 		687290C6293578D700445435 /* MessageRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* MessageRPC.swift */; };
+		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
+		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
@@ -181,9 +197,18 @@
 		6843852F2934D4A6000C4A1D /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/Cellar/gettext/0.21.1/lib/libintl.8.dylib; sourceTree = "<group>"; };
 		684C03EA2935376F00810852 /* MessagePacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePacker.swift; sourceTree = "<group>"; };
 		684C03EC29354C0F00810852 /* RPCRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCRequest.swift; sourceTree = "<group>"; };
+		685B61602935D1AD006381F1 /* WinRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinRef.swift; sourceTree = "<group>"; };
+		685EE96129359F1A00D85550 /* Targets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Targets; sourceTree = "<group>"; };
+		685EE9622935A01B00D85550 /* NimsUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsUI.swift; sourceTree = "<group>"; };
+		685EE9642935A0FD00D85550 /* MainWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindow.swift; sourceTree = "<group>"; };
+		685EE9662935A21000D85550 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		685EE97A2935A98A00D85550 /* NimsAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsAppearance.swift; sourceTree = "<group>"; };
+		685EE97C2935AD8900D85550 /* GridGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridGeometry.swift; sourceTree = "<group>"; };
 		687290BF29355A0900445435 /* RPCResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCResponse.swift; sourceTree = "<group>"; };
 		687290C129355AE800445435 /* RPCNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCNotification.swift; sourceTree = "<group>"; };
 		687290C4293577C000445435 /* MessageRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRPC.swift; sourceTree = "<group>"; };
+		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
+		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -243,7 +268,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */,
+				685EE9762935A79D00D85550 /* SortedCollections in Frameworks */,
 				68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */,
+				685EE96E2935A79D00D85550 /* DequeModule in Frameworks */,
+				685EE96C2935A79D00D85550 /* Collections in Frameworks */,
+				685EE9702935A79D00D85550 /* HeapModule in Frameworks */,
+				685EE9742935A79D00D85550 /* PersistentCollections in Frameworks */,
+				685EE9722935A79D00D85550 /* OrderedCollections in Frameworks */,
+				685EE96A2935A79D00D85550 /* BitCollections in Frameworks */,
+				685EE9792935A80200D85550 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,6 +313,14 @@
 			children = (
 				684384D12934D04A000C4A1D /* Nims-Bridging-Header.h */,
 				684384D22934D04A000C4A1D /* AppDelegate.swift */,
+				687290C929358F8300445435 /* NvimNotificationMethodName.swift */,
+				687290CB293593F400445435 /* RedrawUIEventName.swift */,
+				685EE9622935A01B00D85550 /* NimsUI.swift */,
+				685EE97A2935A98A00D85550 /* NimsAppearance.swift */,
+				685EE9642935A0FD00D85550 /* MainWindow.swift */,
+				685EE9662935A21000D85550 /* MainView.swift */,
+				685EE97C2935AD8900D85550 /* GridGeometry.swift */,
+				685B61602935D1AD006381F1 /* WinRef.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -352,6 +393,7 @@
 		68BFEF382934CF6100564FE2 = {
 			isa = PBXGroup;
 			children = (
+				685EE96129359F1A00D85550 /* Targets */,
 				68BFEF432934CF6100564FE2 /* Nims */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
@@ -499,6 +541,16 @@
 				68E9FC402934D8CD00AE946A /* PBXTargetDependency */,
 			);
 			name = Nims;
+			packageProductDependencies = (
+				685EE9692935A79D00D85550 /* BitCollections */,
+				685EE96B2935A79D00D85550 /* Collections */,
+				685EE96D2935A79D00D85550 /* DequeModule */,
+				685EE96F2935A79D00D85550 /* HeapModule */,
+				685EE9712935A79D00D85550 /* OrderedCollections */,
+				685EE9732935A79D00D85550 /* PersistentCollections */,
+				685EE9752935A79D00D85550 /* SortedCollections */,
+				685EE9782935A80200D85550 /* AsyncAlgorithms */,
+			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
 			productType = "com.apple.product-type.application";
@@ -558,6 +610,10 @@
 				Base,
 			);
 			mainGroup = 68BFEF382934CF6100564FE2;
+			packageReferences = (
+				685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */,
+				685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -654,7 +710,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				685EE9632935A01B00D85550 /* NimsUI.swift in Sources */,
+				685EE9672935A21000D85550 /* MainView.swift in Sources */,
+				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
+				685EE9652935A0FD00D85550 /* MainWindow.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
+				685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */,
+				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,
+				685B61612935D1AD006381F1 /* WinRef.swift in Sources */,
+				685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1185,6 +1249,68 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "git@github.com:apple/swift-async-algorithms.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		685EE9692935A79D00D85550 /* BitCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = BitCollections;
+		};
+		685EE96B2935A79D00D85550 /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		685EE96D2935A79D00D85550 /* DequeModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = DequeModule;
+		};
+		685EE96F2935A79D00D85550 /* HeapModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = HeapModule;
+		};
+		685EE9712935A79D00D85550 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+		685EE9732935A79D00D85550 /* PersistentCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = PersistentCollections;
+		};
+		685EE9752935A79D00D85550 /* SortedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = SortedCollections;
+		};
+		685EE9782935A80200D85550 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 68BFEF392934CF6100564FE2 /* Project object */;
 }

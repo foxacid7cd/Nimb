@@ -100,10 +100,10 @@ public class MessageUnpacker {
       )
       
     case MSGPACK_OBJECT_POSITIVE_INTEGER:
-      return MessageInt64Value(Int64(object.via.u64))
+      return MessageIntValue(Int(object.via.u64))
       
     case MSGPACK_OBJECT_NEGATIVE_INTEGER:
-      return MessageInt64Value(object.via.i64)
+      return MessageIntValue(Int(object.via.i64))
       
     case MSGPACK_OBJECT_STR:
       let str = object.via.str
@@ -177,9 +177,9 @@ public struct DeferredMessageValue: MessageValue {
 }
 
 public struct MessageStringValue: MessageValue, ExpressibleByStringLiteral {
-  var string: any StringProtocol
+  public var string: String
   
-  public init(_ string: any StringProtocol) {
+  public init(_ string: String) {
     self.string = string
   }
   
@@ -188,7 +188,7 @@ public struct MessageStringValue: MessageValue, ExpressibleByStringLiteral {
   }
   
   public func pack(to packer: MessagePacker) {
-    String(string).utf8CString
+    string.utf8CString
       .withUnsafeBytes { bufferPointer in
         let pointer = bufferPointer.baseAddress!
         
@@ -202,7 +202,7 @@ public struct MessageStringValue: MessageValue, ExpressibleByStringLiteral {
 }
 
 public struct MessageUInt32Value: MessageValue, ExpressibleByIntegerLiteral {
-  var value: UInt32
+  public var value: UInt32
   
   public init(_ value: UInt32) {
     self.value = value
@@ -217,24 +217,24 @@ public struct MessageUInt32Value: MessageValue, ExpressibleByIntegerLiteral {
   }
 }
 
-public struct MessageInt64Value: MessageValue, ExpressibleByIntegerLiteral {
-  var value: Int64
+public struct MessageIntValue: MessageValue, ExpressibleByIntegerLiteral {
+  public var value: Int
   
-  public init(_ value: Int64) {
+  public init(_ value: Int) {
     self.value = value
   }
   
   public init(integerLiteral value: IntegerLiteralType) {
-    self.value = Int64(value)
+    self.value = value
   }
   
   public func pack(to packer: MessagePacker) {
-    msgpack_pack_int64(&packer.pk, value)
+    msgpack_pack_int64(&packer.pk, Int64(value))
   }
 }
 
 public struct MessageArrayValue: MessageValue, ExpressibleByArrayLiteral {
-  var elements = [MessageValue]()
+  public var elements = [MessageValue]()
   
   public init(_ elements: [MessageValue]) {
     self.elements = elements
@@ -345,8 +345,8 @@ public struct MessageBinaryValue: MessageValue {
 }
 
 public struct MessageExtValue: MessageValue {
-  var data: Data
-  var type: Int8
+  public var data: Data
+  public var type: Int8
   
   public init(data: Data, type: Int8) {
     self.data = data
