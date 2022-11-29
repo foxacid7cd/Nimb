@@ -75,24 +75,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               continue
             }
             
-            for i in (1..<parameterArrayValue.elements.count) {
-              guard let uiEventParameters = parameterArrayValue.elements[i] as? MessageArrayValue else {
-                os_log("Unexpected, uiEventParameters is not an array")
-                continue
+            func forEachUIEventParametersTuple(_ body: ([MessageValue]) throws -> Void) {
+              for i in (1..<parameterArrayValue.elements.count) {
+                do {
+                  guard let uiEventParameters = parameterArrayValue.elements[i] as? MessageArrayValue else {
+                    throw RedrawNotificationParsingError.uiEventParametersIsNotArray
+                  }
+                  
+                  try body(uiEventParameters.elements)
+                  
+                } catch {
+                  os_log("Redraw notification parsing failed: \(error)")
+                }
               }
-              
-              var elements = uiEventParameters.elements
-              
-              switch name {
-              case .gridResize:
+            }
+            
+            switch name {
+            case .gridResize:
+              forEachUIEventParametersTuple { parameters in
+                var parameters = parameters
+                
                 guard
-                  elements.count == 3,
-                  let gridID = elements.removeFirst() as? MessageIntValue,
-                  let width = elements.removeFirst() as? MessageIntValue,
-                  let height = elements.removeFirst() as? MessageIntValue
+                  parameters.count == 3,
+                  let gridID = parameters.removeFirst() as? MessageIntValue,
+                  let width = parameters.removeFirst() as? MessageIntValue,
+                  let height = parameters.removeFirst() as? MessageIntValue
                 else {
-                  os_log("Failed parsing gridResize UI event")
-                  continue
+                  throw RedrawNotificationParsingError.invalidParameterTypes
                 }
                 
                 nimsUI.gridResize(
@@ -102,28 +111,108 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     height: height.value
                   )
                 )
+              }
+              
+            case .gridLine:
+              var lastHlID: Int?
+              var lastY: Int?
+              
+              forEachUIEventParametersTuple { parameters in
+                var parameters = parameters
                 
-              case .gridLine:
-                os_log("gridLine!")
-                
-              case .gridClear:
-                os_log("gridClear!")
-                
-              case .gridCursorGoto:
-                os_log("gridCursorGoto!")
-                
-              case .winPos:
                 guard
-                  elements.count == 6,
-                  let gridID = elements.removeFirst() as? MessageIntValue,
-                  let winRef = elements.removeFirst() as? MessageExtValue,
-                  let y = elements.removeFirst() as? MessageIntValue,
-                  let x = elements.removeFirst() as? MessageIntValue,
-                  let width = elements.removeFirst() as? MessageIntValue,
-                  let height = elements.removeFirst() as? MessageIntValue
+                  parameters.count == 4,
+                  let gridID = parameters.removeFirst() as? MessageIntValue,
+                  let y = parameters.removeFirst() as? MessageIntValue,
+                  let x = parameters.removeFirst() as? MessageIntValue,
+                  let data = parameters.removeFirst() as? MessageArrayValue
                 else {
-                  os_log("Failed parsing winPos UI event")
-                  continue
+                  throw RedrawNotificationParsingError.invalidParameterTypes
+                }
+                
+                let origin = GridPoint(
+                  x: x.value,
+                  y: y.value
+                )
+                
+                var updatedCellsCount = 0
+                var updatedCells = [Cell]()
+
+                for value in data.elements {
+                  guard let arrayValue = value as? MessageArrayValue else {
+                    throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
+                  }
+                  var elements = arrayValue.elements
+
+                  guard !elements.isEmpty, let stringValue = elements.removeFirst() as? MessageStringValue else {
+                    throw RedrawNotificationParsingError.gridLineCellTextIsNotString
+                  }
+                  let text = stringValue.string
+                  if text.count > 1 {
+                    throw RedrawNotificationParsingError.gridLineCellTextIsNotString
+                  }
+                  let character = text.first
+
+                  var repeatCount = 1
+
+                  if !elements.isEmpty {
+                    guard let hlID = elements.removeFirst() as? MessageIntValue else {
+                      throw RedrawNotificationParsingError.gridLineHlIdIsNotInt
+                    }
+                    lastHlID = Int(hlID.value)
+
+                    if !elements.isEmpty {
+                      guard let parsedRepeatCount = elements.removeFirst() as? MessageIntValue else {
+                        throw RedrawNotificationParsingError.gridLineCellRepeatCountIsNotInt
+                      }
+                      repeatCount = parsedRepeatCount.value
+                    }
+                  }
+
+                  guard let lastHlID else {
+                    throw RedrawNotificationParsingError.gridLineHlIDNotParsedYet
+                  }
+
+                  if lastY != y.value {
+                    updatedCellsCount = 0
+                  }
+
+                  for _ in 0 ..< repeatCount {
+                    let cell = Cell(
+                      character: character,
+                      hlID: lastHlID
+                    )
+                    updatedCells.append(cell)
+                  }
+
+                  updatedCellsCount += repeatCount
+
+                  lastY = y.value
+                }
+                
+                nimsUI.gridLine(gridID: gridID.value, origin: origin, cells: updatedCells)
+              }
+              
+            case .gridClear:
+              os_log("gridClear!")
+              
+            case .gridCursorGoto:
+              os_log("gridCursorGoto!")
+              
+            case .winPos:
+              forEachUIEventParametersTuple { parameters in
+                var parameters = parameters
+                
+                guard
+                  parameters.count == 6,
+                  let gridID = parameters.removeFirst() as? MessageIntValue,
+                  let winRef = parameters.removeFirst() as? MessageExtValue,
+                  let y = parameters.removeFirst() as? MessageIntValue,
+                  let x = parameters.removeFirst() as? MessageIntValue,
+                  let width = parameters.removeFirst() as? MessageIntValue,
+                  let height = parameters.removeFirst() as? MessageIntValue
+                else {
+                  throw RedrawNotificationParsingError.invalidParameterTypes
                 }
                 
                 nimsUI.winPos(
@@ -140,10 +229,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     )
                   )
                 )
-                
-              case .flush:
-                os_log("FLUSH!")
               }
+              
+            case .flush:
+              os_log("FLUSH!")
             }
           }
         }
@@ -190,4 +279,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private var process: Process?
   private var messageRPC: MessageRPC?
   private var nimsUI: NimsUI?
+}
+
+enum RedrawNotificationParsingError: Error {
+  case uiEventParametersIsNotArray
+  case invalidParameterTypes
+  case gridLineCellDataIsNotArray
+  case gridLineCellTextIsNotString
+  case gridLineHlIdIsNotInt
+  case gridLineCellRepeatCountIsNotInt
+  case gridLineHlIDNotParsedYet
 }

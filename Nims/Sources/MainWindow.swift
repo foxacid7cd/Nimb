@@ -20,7 +20,7 @@ class MainWindow: NSWindow {
     
     super.init(
       contentRect: .zero,
-      styleMask: .titled,
+      styleMask: [.titled, .miniaturizable, .closable],
       backing: .buffered,
       defer: true
     )
@@ -43,6 +43,10 @@ class MainWindow: NSWindow {
     }
     
     self.mainView.gridResize(gridID: gridID, gridSize: gridSize)
+  }
+  
+  func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
+    self.mainView.gridLine(gridID: gridID, origin: origin, cells: cells)
   }
   
   func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {

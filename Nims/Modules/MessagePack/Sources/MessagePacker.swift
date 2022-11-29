@@ -201,22 +201,6 @@ public struct MessageStringValue: MessageValue, ExpressibleByStringLiteral {
   }
 }
 
-public struct MessageUInt32Value: MessageValue, ExpressibleByIntegerLiteral {
-  public var value: UInt32
-  
-  public init(_ value: UInt32) {
-    self.value = value
-  }
-  
-  public init(integerLiteral value: IntegerLiteralType) {
-    self.value = UInt32(value)
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_uint32(&packer.pk, value)
-  }
-}
-
 public struct MessageIntValue: MessageValue, ExpressibleByIntegerLiteral {
   public var value: Int
   

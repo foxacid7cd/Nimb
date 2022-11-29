@@ -11,9 +11,9 @@ public class MessageRPC {
   private let send: (MessageValue) async throws -> Void
   private let handleNotification: (RPCNotification) -> Void
   @MainActor
-  private var requestCounter: UInt32 = 0
+  private var requestCounter = 0
   @MainActor
-  private var responseHandlers = [UInt32: (isSuccess: Bool, payload: MessageValue) -> Void]()
+  private var responseHandlers = [Int: (isSuccess: Bool, payload: MessageValue) -> Void]()
   
   public init(
     send: @escaping (MessageValue) async throws -> Void,
@@ -48,7 +48,7 @@ public class MessageRPC {
       guard elements.count == 2 else {
         throw MessageRPCError.failedParsingArray
       }
-      if let handler = self.responseHandler(responseID: UInt32(responseID)) {
+      if let handler = self.responseHandler(responseID: responseID) {
         handler(true, elements[0])
       }
       
@@ -102,13 +102,13 @@ public class MessageRPC {
   @MainActor
   private func register(
     resposeHandler: @escaping (_ isSuccess: Bool, _ payload: MessageValue) -> Void,
-    forRequestID id: UInt32
+    forRequestID id: Int
   ) {
     self.responseHandlers[id] = resposeHandler
   }
   
   @MainActor
-  private func responseHandler(responseID: UInt32) -> ((_ isSuccess: Bool, _ payload: MessageValue) -> Void)? {
+  private func responseHandler(responseID: Int) -> ((_ isSuccess: Bool, _ payload: MessageValue) -> Void)? {
     self.responseHandlers.removeValue(forKey: responseID)
   }
 }

@@ -8,11 +8,11 @@
 import Foundation
 
 public struct RPCRequest: MessageValue {
-  var id: UInt32
+  var id: Int
   var method: String
   var parameters: [MessageValue]
   
-  public init(id: UInt32, method: String, parameters: [MessageValue]) {
+  public init(id: Int, method: String, parameters: [MessageValue]) {
     self.id = id
     self.method = method
     self.parameters = parameters
@@ -21,7 +21,7 @@ public struct RPCRequest: MessageValue {
   public func pack(to packer: MessagePacker) {
     MessageArrayValue([
       MessageIntValue(0),
-      MessageUInt32Value(id),
+      MessageIntValue(id),
       MessageStringValue(method),
       MessageArrayValue(parameters)
     ])

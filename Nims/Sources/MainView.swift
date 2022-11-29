@@ -7,6 +7,7 @@
 
 import Cocoa
 import Collections
+import OSLog
 
 class MainView: NSView {
   private var nimsAppearance: NimsAppearance
@@ -31,6 +32,10 @@ class MainView: NSView {
     if gridView.superview == nil {
       self.addSubview(gridView)
     }
+  }
+  
+  func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
+    os_log("gridLine \(gridID) \(origin.x) \(origin.y) \(cells.map { $0.character })")
   }
   
   func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {

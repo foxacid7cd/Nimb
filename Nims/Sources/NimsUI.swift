@@ -13,7 +13,7 @@ class NimsUI {
   
   @MainActor
   init() {
-    let nimsAppearance = NimsAppearance(regularFont: .monospacedSystemFont(ofSize: 13, weight: .regular))
+    let nimsAppearance = NimsAppearance(regularFont: .monospacedSystemFont(ofSize: 12, weight: .medium))
     self.nimsAppearance = nimsAppearance
     
     let mainWindow = MainWindow(nimsAppearance: nimsAppearance)
@@ -29,6 +29,11 @@ class NimsUI {
   @MainActor
   func gridResize(gridID: Int, gridSize: GridSize) {
     self.mainWindow.gridResize(gridID: gridID, gridSize: gridSize)
+  }
+  
+  @MainActor
+  func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
+    self.mainWindow.gridLine(gridID: gridID, origin: origin, cells: cells)
   }
   
   @MainActor
