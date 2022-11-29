@@ -27,7 +27,7 @@ class NimsAppearance {
 
 private extension NSFont {
   func makeCellSize() -> CGSize {
-    let string = "M"
+    let string = "A"
     var character = string.utf16.first!
     
     var glyph = CGGlyph()

@@ -27,8 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     process.arguments = [executableURL.relativePath, "--embed"]
     
     var environment = ProcessInfo.processInfo.environment
-//    let nvimRuntimeURL = Bundle.main.url(forResource: "runtime", withExtension: nil)!
-//    environment["VIMRUNTIME"] = nvimRuntimeURL.relativePath
     environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
     process.environment = environment
     
@@ -259,7 +257,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
-        try await messageRPC.request(method: "nvim_ui_attach", parameters: [80, 24, options])
+        try await messageRPC.request(method: "nvim_ui_attach", parameters: [120, 40, options])
         
       } catch {
         os_log("nvim_ui_attach failed: \(error)")

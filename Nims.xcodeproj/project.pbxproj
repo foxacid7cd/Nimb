@@ -64,6 +64,7 @@
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		689A634C2935E829003D6363 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634B2935E829003D6363 /* Cell.swift */; };
+		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
 		68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; };
@@ -211,6 +212,7 @@
 		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
 		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		689A634B2935E829003D6363 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
+		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -324,6 +326,7 @@
 				685EE97C2935AD8900D85550 /* GridGeometry.swift */,
 				685B61602935D1AD006381F1 /* WinRef.swift */,
 				689A634B2935E829003D6363 /* Cell.swift */,
+				689A634F2936124F003D6363 /* DrawRun.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -534,7 +537,6 @@
 				684385012934D180000C4A1D /* Embed Frameworks */,
 				684385182934D225000C4A1D /* Embed XPC Services */,
 				6820BFBA2935276F0057F22B /* CopyFiles */,
-				687290C82935892E00445435 /* Copy Nvim Runtime */,
 			);
 			buildRules = (
 			);
@@ -663,27 +665,6 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		687290C82935892E00445435 /* Copy Nvim Runtime */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Copy Nvim Runtime";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "cp -Rf \"${PROJECT_DIR}/Third-Party/neovim/build/runtime\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		6820BF9A293524640057F22B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -720,6 +701,7 @@
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */,
 				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,
+				689A63502936124F003D6363 /* DrawRun.swift in Sources */,
 				689A634C2935E829003D6363 /* Cell.swift in Sources */,
 				685B61612935D1AD006381F1 /* WinRef.swift in Sources */,
 				685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */,

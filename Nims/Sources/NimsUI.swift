@@ -13,7 +13,11 @@ class NimsUI {
   
   @MainActor
   init() {
-    let nimsAppearance = NimsAppearance(regularFont: .monospacedSystemFont(ofSize: 12, weight: .medium))
+    let font = NSFont(name: "BlexMono Nerd Font", size: 12)!
+    
+    let nimsAppearance = NimsAppearance(
+      regularFont: font
+    )
     self.nimsAppearance = nimsAppearance
     
     let mainWindow = MainWindow(nimsAppearance: nimsAppearance)

@@ -20,7 +20,7 @@ class MainWindow: NSWindow {
     
     super.init(
       contentRect: .zero,
-      styleMask: [.titled, .miniaturizable, .closable],
+      styleMask: [.titled],
       backing: .buffered,
       defer: true
     )
