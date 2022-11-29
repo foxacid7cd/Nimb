@@ -39,97 +39,25 @@ class NimsAppearance {
   private(set) var defaultSpecialColor = NSColor.clear
 
   @MainActor
-  var regularFont: NSFont {
-    didSet {
-      self.cellSize = self.regularFont.makeCellSize()
-    }
-  }
+  private(set) var regularFont: NSFont
 
   @MainActor
   func stringAttributes(hlID: Int) -> [NSAttributedString.Key: Any] {
-    [
-      .font: self.font(hlID: hlID),
-      .foregroundColor: self.foregroundColor(hlID: hlID),
-      .backgroundColor: self.backgroundColor(hlID: hlID),
-      .underlineColor: self.specialColor(hlID: hlID),
+    guard hlID != 0, let highlight = self.highlights[hlID] else {
+      return [
+        .font: self.regularFont,
+        .foregroundColor: self.defaultForegroundColor,
+        .backgroundColor: self.defaultBackgroundColor,
+        .underlineColor: self.defaultSpecialColor,
+      ]
+    }
+
+    return [
+      .font: self.font(highlight: highlight),
+      .foregroundColor: self.foregroundColor(highlight: highlight),
+      .backgroundColor: self.backgroundColor(highlight: highlight),
+      .underlineColor: self.specialColor(highlight: highlight),
     ]
-  }
-
-  @MainActor
-  func font(hlID: Int) -> NSFont {
-    guard
-      hlID != 0,
-      let highlight = highlights[hlID]
-    else {
-      return self.regularFont
-    }
-
-    if highlight.isBold {
-      if highlight.isItalic {
-        return self.boldItalicFont
-
-      } else {
-        return self.boldFont
-      }
-    } else {
-      if highlight.isItalic {
-        return self.italicFont
-
-      } else {
-        return self.regularFont
-      }
-    }
-  }
-
-  @MainActor
-  func foregroundColor(hlID: Int) -> NSColor {
-    guard
-      hlID != 0,
-      let highlight = highlights[hlID],
-      let foreground = highlight.foreground
-    else {
-      return self.defaultForegroundColor
-    }
-
-    return highlight.foregroundColor ?? {
-      let color = NSColor(rgb: foreground)
-      highlight.foregroundColor = color
-      return color
-    }()
-  }
-
-  @MainActor
-  func backgroundColor(hlID: Int) -> NSColor {
-    guard
-      hlID != 0,
-      let highlight = highlights[hlID],
-      let background = highlight.background
-    else {
-      return self.defaultBackgroundColor
-    }
-
-    return highlight.backgroundColor ?? {
-      let color = NSColor(rgb: background)
-      highlight.backgroundColor = color
-      return color
-    }()
-  }
-
-  @MainActor
-  func specialColor(hlID: Int) -> NSColor {
-    guard
-      hlID != 0,
-      let highlight = highlights[hlID],
-      let special = highlight.special
-    else {
-      return self.defaultSpecialColor
-    }
-
-    return highlight.specialColor ?? {
-      let color = NSColor(rgb: special)
-      highlight.specialColor = color
-      return color
-    }()
   }
 
   @MainActor
@@ -150,13 +78,22 @@ class NimsAppearance {
     for (key, value) in rgbAttr {
       switch key {
       case "foreground":
-        highlight.foreground = value as? Int
+        if let foreground = value as? Int {
+          highlight.foreground = foreground
+          highlight.foregroundColor = nil
+        }
 
       case "background":
-        highlight.background = value as? Int
+        if let background = value as? Int {
+          highlight.background = background
+          highlight.backgroundColor = nil
+        }
 
       case "special":
-        highlight.special = value as? Int
+        if let special = value as? Int {
+          highlight.special = special
+          highlight.specialColor = nil
+        }
 
       case "bold":
         if let value = value as? Bool {
@@ -174,7 +111,66 @@ class NimsAppearance {
     }
   }
 
+  @MainActor
   private var highlights = PersistentDictionary<Int, Highlight>()
+
+  @MainActor
+  private func font(highlight: Highlight) -> NSFont {
+    if highlight.isBold {
+      if highlight.isItalic {
+        return self.boldItalicFont
+
+      } else {
+        return self.boldFont
+      }
+    } else {
+      if highlight.isItalic {
+        return self.italicFont
+
+      } else {
+        return self.regularFont
+      }
+    }
+  }
+
+  @MainActor
+  private func foregroundColor(highlight: Highlight) -> NSColor {
+    guard let foreground = highlight.foreground else {
+      return self.defaultForegroundColor
+    }
+
+    return highlight.foregroundColor ?? {
+      let color = NSColor(rgb: foreground)
+      highlight.foregroundColor = color
+      return color
+    }()
+  }
+
+  @MainActor
+  private func backgroundColor(highlight: Highlight) -> NSColor {
+    guard let background = highlight.background else {
+      return self.defaultBackgroundColor
+    }
+
+    return highlight.backgroundColor ?? {
+      let color = NSColor(rgb: background)
+      highlight.backgroundColor = color
+      return color
+    }()
+  }
+
+  @MainActor
+  private func specialColor(highlight: Highlight) -> NSColor {
+    guard let special = highlight.special else {
+      return self.defaultSpecialColor
+    }
+
+    return highlight.specialColor ?? {
+      let color = NSColor(rgb: special)
+      highlight.specialColor = color
+      return color
+    }()
+  }
 }
 
 private extension NSFont {
