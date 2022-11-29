@@ -22,7 +22,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     process.arguments = [executableURL.relativePath, "--embed"]
     
     var environment = ProcessInfo.processInfo.environment
-    environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
+    let nvimRuntimeURL = Bundle.main.url(forResource: "runtime", withExtension: nil)!
+    environment["VIMRUNTIME"] = nvimRuntimeURL.relativePath
     process.environment = environment
     
     process.terminationHandler = { process in
@@ -58,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       .readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
         
-        Task.detached(priority: .high) { @MainActor in
+        Task { @MainActor in
           do {
             let values = try unpacker.unpack(data: data)
             for value in values {
@@ -75,7 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     os_log("Process started!")
     
-    Task(priority: .high) {
+    Task {
       try! await messageRPC.request(method: "nvim_ui_attach", parameters: [
         MessageUInt32Value(80),
         MessageUInt32Value(24),

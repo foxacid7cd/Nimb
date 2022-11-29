@@ -489,6 +489,7 @@
 				684385012934D180000C4A1D /* Embed Frameworks */,
 				684385182934D225000C4A1D /* Embed XPC Services */,
 				6820BFBA2935276F0057F22B /* CopyFiles */,
+				687290C82935892E00445435 /* Copy Nvim Runtime */,
 			);
 			buildRules = (
 			);
@@ -602,6 +603,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		687290C82935892E00445435 /* Copy Nvim Runtime */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Nvim Runtime";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -Rf \"${PROJECT_DIR}/Third-Party/neovim/build/runtime\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6820BF9A293524640057F22B /* Sources */ = {
