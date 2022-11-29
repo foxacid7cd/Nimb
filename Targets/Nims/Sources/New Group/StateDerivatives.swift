@@ -26,7 +26,7 @@ class StateDerivatives {
 
   @MainActor
   func font(state: State) -> Font {
-    if let cachedFont = self.cachedFonts[state.font] {
+    if let cachedFont = cachedFonts[state.font] {
       return cachedFont
 
     } else {

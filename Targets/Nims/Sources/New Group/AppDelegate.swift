@@ -13,7 +13,7 @@ import RxCocoa
 import RxSwift
 
 class AppDelegate1: NSObject, NSApplicationDelegate {
-  func applicationDidFinishLaunching(_ notification: AppKit.Notification) {
+  func applicationDidFinishLaunching(_: AppKit.Notification) {
 //    let connection = xpc_connection_create("\(Bundle.main.bundleIdentifier!).Agent", nil)
 //    self.xpcConnection = connection
 //
@@ -69,7 +69,7 @@ class AppDelegate1: NSObject, NSApplicationDelegate {
 //    }
   }
 
-  func applicationWillTerminate(_ notification: AppKit.Notification) {
+  func applicationWillTerminate(_: AppKit.Notification) {
     self.nvimProcess?.terminate()
   }
 
@@ -130,7 +130,7 @@ class AppDelegate1: NSObject, NSApplicationDelegate {
           options: [
             UIOption.extMultigrid.value: true,
             UIOption.extHlstate.value: true,
-            UIOption.extMessages.value: true
+            UIOption.extMessages.value: true,
           ]
         )
 
@@ -221,7 +221,7 @@ class AppDelegate1: NSObject, NSApplicationDelegate {
 
   @MainActor
   private func handle(state: State, events: [Event]) async {
-    if let gridsWindowController = self.gridsWindowController {
+    if let gridsWindowController {
       await gridsWindowController.handle(state: state, events: events)
 
     } else {
@@ -254,7 +254,7 @@ private extension Error {
         fail.logMessage,
         fail.logChildren
           .map { ($0 as? Error)?.alertMessage ?? String(describing: $0) }
-          .joined(separator: "\n")
+          .joined(separator: "\n"),
       ]
       .joined(separator: "\n")
     }
@@ -275,12 +275,12 @@ private extension State {
           columnsCount: model.width
         )
 
-        if var window = self.windows[model.grid] {
+        if var window = windows[model.grid] {
           window.grid.resize(to: gridSize, fillingEmptyWith: nil)
-          self.windows[model.grid] = window
+          windows[model.grid] = window
 
         } else {
-          self.windows[model.grid] = State.Window(
+          windows[model.grid] = State.Window(
             grid: .init(repeating: nil, size: gridSize),
             origin: .init(),
             anchor: .topLeft,
@@ -297,7 +297,7 @@ private extension State {
 
     case let .gridDestroy(models):
       for model in models {
-        self.windows[model.grid] = nil
+        windows[model.grid] = nil
 
         events.append(
           .grid(id: model.grid, model: .windowClosed)
@@ -353,7 +353,7 @@ private extension State {
               row: model.row,
               column: model.colStart + updatedCellsCount + repeatIndex
             )
-            self.windows[model.grid]?.grid[index] = Cell(
+            windows[model.grid]?.grid[index] = Cell(
               character: character,
               hlID: latestHlID
             )
@@ -383,7 +383,7 @@ private extension State {
         let rowsCount = model.bot - model.top
         let delta = model.rows
 
-        self.withMutableWindowIfExists(gridID: model.grid) { window in
+        withMutableWindowIfExists(gridID: model.grid) { window in
           guard model.right - model.left == window.grid.size.columnsCount else {
             "Full width vertical scroll expected, but got something different"
               .fail()
@@ -411,7 +411,7 @@ private extension State {
 
     case let .gridClear(models):
       for model in models {
-        self.withMutableWindowIfExists(gridID: model.grid) { window in
+        withMutableWindowIfExists(gridID: model.grid) { window in
           window.grid = .init(
             repeating: nil,
             size: window.grid.size
@@ -428,9 +428,9 @@ private extension State {
 
     case let .gridCursorGoto(models):
       for model in models {
-        let previousCursor = self.cursor
+        let previousCursor = cursor
 
-        self.cursor = State.Cursor(
+        cursor = State.Cursor(
           gridID: model.grid,
           position: .init(
             row: model.row,
@@ -443,7 +443,7 @@ private extension State {
 
     case let .winPos(models):
       for model in models {
-        self.withMutableWindowIfExists(gridID: model.grid) { window in
+        withMutableWindowIfExists(gridID: model.grid) { window in
           window.grid.resize(
             to: .init(rowsCount: model.height, columnsCount: model.width),
             fillingEmptyWith: nil
@@ -461,13 +461,13 @@ private extension State {
 
     case let .winFloatPos(models):
       for model in models {
-        let anchorWindow = self.windows[model.anchorGrid]!
+        let anchorWindow = windows[model.anchorGrid]!
         let anchorPoint = anchorWindow.frame.origin + GridPoint(
           row: Int(model.anchorRow.doubleValue!),
           column: Int(model.anchorCol.doubleValue!)
         )
 
-        self.withMutableWindowIfExists(gridID: model.grid) { window in
+        withMutableWindowIfExists(gridID: model.grid) { window in
           window.origin = anchorPoint
           window.anchor = model.anchorValue
           window.isHidden = false
@@ -485,7 +485,7 @@ private extension State {
 
     case let .winHide(models):
       for model in models {
-        self.withMutableWindowIfExists(gridID: model.grid) { window in
+        withMutableWindowIfExists(gridID: model.grid) { window in
           window.isHidden = true
         }
 
@@ -496,7 +496,7 @@ private extension State {
 
     case let .winClose(models):
       for model in models {
-        self.windows[model.grid] = nil
+        windows[model.grid] = nil
 
         events.append(
           .grid(id: model.grid, model: .windowClosed)
@@ -505,7 +505,7 @@ private extension State {
 
     case let .defaultColorsSet(models):
       for model in models {
-        self.defaultHighlight = .init(
+        defaultHighlight = .init(
           foregroundColor: .init(hex: UInt(model.rgbFg), alpha: 1),
           backgroundColor: .init(hex: UInt(model.rgbBg), alpha: 1),
           specialColor: .init(hex: UInt(model.rgbSp), alpha: 1)
@@ -516,7 +516,7 @@ private extension State {
 
     case let .hlAttrDefine(models):
       for model in models {
-        self.withMutableHighlight(id: model.id) { highlight in
+        withMutableHighlight(id: model.id) { highlight in
           if let hex = model.rgbAttrs[.string("foreground")]?.uintValue {
             highlight.foregroundColor = .init(hex: hex, alpha: 1)
           }

@@ -54,7 +54,6 @@
 		685EE9722935A79D00D85550 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9712935A79D00D85550 /* OrderedCollections */; };
 		685EE9742935A79D00D85550 /* PersistentCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9732935A79D00D85550 /* PersistentCollections */; };
 		685EE9762935A79D00D85550 /* SortedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9752935A79D00D85550 /* SortedCollections */; };
-		685EE9792935A80200D85550 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 685EE9782935A80200D85550 /* AsyncAlgorithms */; };
 		685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* NimsAppearance.swift */; };
 		685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97C2935AD8900D85550 /* GridGeometry.swift */; };
 		687290C029355A0900445435 /* RPCResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* RPCResponse.swift */; };
@@ -64,6 +63,7 @@
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		688971672936B60E00A62849 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 688971662936B60E00A62849 /* AsyncAlgorithms */; };
 		689A634C2935E829003D6363 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634B2935E829003D6363 /* Cell.swift */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
@@ -282,7 +282,7 @@
 				685EE9742935A79D00D85550 /* PersistentCollections in Frameworks */,
 				685EE9722935A79D00D85550 /* OrderedCollections in Frameworks */,
 				685EE96A2935A79D00D85550 /* BitCollections in Frameworks */,
-				685EE9792935A80200D85550 /* AsyncAlgorithms in Frameworks */,
+				688971672936B60E00A62849 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,6 +534,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nims" */;
 			buildPhases = (
+				688971642936B4BE00A62849 /* Run swiftformat */,
 				68BFEF3D2934CF6100564FE2 /* Sources */,
 				68BFEF3E2934CF6100564FE2 /* Frameworks */,
 				68BFEF3F2934CF6100564FE2 /* Resources */,
@@ -557,7 +558,7 @@
 				685EE9712935A79D00D85550 /* OrderedCollections */,
 				685EE9732935A79D00D85550 /* PersistentCollections */,
 				685EE9752935A79D00D85550 /* SortedCollections */,
-				685EE9782935A80200D85550 /* AsyncAlgorithms */,
+				688971662936B60E00A62849 /* AsyncAlgorithms */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -620,7 +621,7 @@
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
 				685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */,
-				685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -667,6 +668,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		688971642936B4BE00A62849 /* Run swiftformat */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Run swiftformat";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd Tools\nSDKROOT=(xcrun --sdk macosx --show-sdk-path)\n#swift package update\nswift run -c release swiftformat \"$SRCROOT\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6820BF9A293524640057F22B /* Sources */ = {
@@ -1249,9 +1272,9 @@
 				kind = branch;
 			};
 		};
-		685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+		688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:apple/swift-async-algorithms.git";
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
 			requirement = {
 				branch = main;
 				kind = branch;
@@ -1295,9 +1318,9 @@
 			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
 			productName = SortedCollections;
 		};
-		685EE9782935A80200D85550 /* AsyncAlgorithms */ = {
+		688971662936B60E00A62849 /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 685EE9772935A80200D85550 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			package = 688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
 			productName = AsyncAlgorithms;
 		};
 /* End XCSwiftPackageProductDependency section */

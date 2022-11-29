@@ -20,8 +20,8 @@ public enum Message {
     func next<ReturnType>(
       _ entity: String,
       _ transform: (Value) -> ReturnType? = { $0 },
-      file: StaticString = #fileID,
-      line: UInt = #line
+      file _: StaticString = #fileID,
+      line _: UInt = #line
     ) throws -> ReturnType {
       let currentPosition = previousPosition.map { $0 + 1 } ?? 0
       defer { previousPosition = currentPosition }
@@ -33,7 +33,7 @@ public enum Message {
       return value
     }
 
-    func finalize(_ entity: String, file: StaticString = #fileID, line: UInt = #line) throws {
+    func finalize(_ entity: String, file _: StaticString = #fileID, line _: UInt = #line) throws {
       guard let previousPosition, previousPosition == arrayValue.count - 1 else {
         throw "\(entity) is expected to be created from \(previousPosition.map { $0 + 1 } ?? 0) elements, but \(arrayValue.count) elements were passed"
           .fail()
@@ -74,7 +74,7 @@ public enum Message {
         .uint(UInt64(MessageType.request.rawValue)),
         .uint(UInt64(id)),
         .string(model.method),
-        .array(model.parameters)
+        .array(model.parameters),
       ]
 
     case let .response(id, model):
@@ -82,14 +82,14 @@ public enum Message {
         .uint(UInt64(MessageType.response.rawValue)),
         .uint(UInt64(id)),
         model.isSuccess ? .nil : model.value,
-        model.isSuccess ? model.value : .nil
+        model.isSuccess ? model.value : .nil,
       ]
 
     case let .notification(notification):
       arrayValue = [
         .uint(UInt64(MessageType.notification.rawValue)),
         .string(notification.method),
-        .array(notification.parameters.map(Value.array))
+        .array(notification.parameters.map(Value.array)),
       ]
     }
 

@@ -10,17 +10,14 @@ import Collections
 import OSLog
 
 class MainView: NSView {
-  private var nimsAppearance: NimsAppearance
-  private var gridViews = PersistentDictionary<Int, GridView>()
-  private var outerGridSize = GridSize()
-
   init(nimsAppearance: NimsAppearance) {
     self.nimsAppearance = nimsAppearance
 
     super.init(frame: .zero)
   }
 
-  required init?(coder: NSCoder) {
+  @available(*, unavailable)
+  required init?(coder _: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
@@ -52,12 +49,12 @@ class MainView: NSView {
 
     gridView.gridLine(origin: origin, cells: cells)
   }
-  
+
   func gridClear(gridID: Int) {
     guard let gridView = gridViews[gridID] else {
       return
     }
-    
+
     gridView.gridClear()
   }
 
@@ -70,6 +67,10 @@ class MainView: NSView {
 
     addSubview(gridView)
   }
+
+  private var nimsAppearance: NimsAppearance
+  private var gridViews = PersistentDictionary<Int, GridView>()
+  private var outerGridSize = GridSize()
 
   private func gridView(gridID: Int) -> GridView {
     if let gridView = gridViews[gridID] {
@@ -86,22 +87,34 @@ class MainView: NSView {
 }
 
 private class GridView: NSView {
-  var gridSize = GridSize()
-  var winRef: WinRef?
-  var winFrame: GridRectangle?
-  var outerGridSize = GridSize()
-
-  private var nimsAppearance: NimsAppearance
-  private var drawRuns = Deque<DrawRun>()
-
   init(nimsAppearance: NimsAppearance) {
     self.nimsAppearance = nimsAppearance
 
     super.init(frame: .zero)
   }
 
-  required init?(coder: NSCoder) {
+  @available(*, unavailable)
+  required init?(coder _: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  var gridSize = GridSize()
+  var winRef: WinRef?
+  var winFrame: GridRectangle?
+  var outerGridSize = GridSize()
+
+  var gridFrame: GridRectangle {
+    if let winFrame {
+      return .init(
+        origin: .init(
+          x: winFrame.origin.x,
+          y: outerGridSize.height - winFrame.origin.y - winFrame.size.height
+        ),
+        size: winFrame.size
+      )
+    }
+
+    return .init(size: gridSize)
   }
 
   override func draw(_ dirtyRect: NSRect) {
@@ -109,7 +122,7 @@ private class GridView: NSView {
 
     context.saveGraphicsState()
     defer { context.restoreGraphicsState() }
-    
+
     context.cgContext.setFillColor(self.nimsAppearance.defaultBackgroundColor.cgColor)
     context.cgContext.fill([dirtyRect])
 
@@ -175,7 +188,7 @@ private class GridView: NSView {
     var previousCell = cells[0]
 
     for (cellIndex, cell) in cells.enumerated() {
-      if cell.hlID == previousCell.hlID && cellIndex != cells.count - 1 {
+      if cell.hlID == previousCell.hlID, cellIndex != cells.count - 1 {
         if let character = cell.character {
           string.append(String(character))
         }
@@ -183,7 +196,7 @@ private class GridView: NSView {
       } else {
         let attributedString = NSAttributedString(
           string: string as String,
-          attributes: self.nimsAppearance.stringAttributes(hlID: previousCell.hlID)
+          attributes: nimsAppearance.stringAttributes(hlID: previousCell.hlID)
         )
         accumulator.append(attributedString)
 
@@ -202,26 +215,15 @@ private class GridView: NSView {
     self.drawRuns.append(drawRun)
     setNeedsDisplay(rect)
   }
-  
+
   func gridClear() {
-    setNeedsDisplay(self.bounds)
+    setNeedsDisplay(bounds)
   }
 
   func updateViewFrame() {
     frame = self.gridFrame * self.nimsAppearance.cellSize
   }
 
-  var gridFrame: GridRectangle {
-    if let winFrame {
-      return .init(
-        origin: .init(
-          x: winFrame.origin.x,
-          y: self.outerGridSize.height - winFrame.origin.y - winFrame.size.height
-        ),
-        size: winFrame.size
-      )
-    }
-
-    return .init(size: self.gridSize)
-  }
+  private var nimsAppearance: NimsAppearance
+  private var drawRuns = Deque<DrawRun>()
 }

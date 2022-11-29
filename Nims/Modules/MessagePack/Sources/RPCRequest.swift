@@ -8,17 +8,17 @@
 import Foundation
 
 public struct RPCRequest: MessageValueEncodable {
-  var id: Int
-  var method: String
-  var parameters: [MessageValue]
-  
   public init(id: Int, method: String, parameters: [MessageValue]) {
     self.id = id
     self.method = method
     self.parameters = parameters
   }
-  
+
   public var messageValueEncoded: Any? {
-    [0, id, method, parameters]
+    [0, self.id, self.method, self.parameters]
   }
+
+  var id: Int
+  var method: String
+  var parameters: [MessageValue]
 }

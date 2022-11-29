@@ -67,14 +67,14 @@ class GridView: NSView {
     let fontDerivatives = StateDerivatives.shared.font(state: state)
     let cellSize = fontDerivatives.cellSize
 
-    guard let context = NSGraphicsContext.current, let window = state.windows[self.gridID] else {
+    guard let context = NSGraphicsContext.current, let window = state.windows[gridID] else {
       return
     }
 
     context.saveGraphicsState()
     defer { context.restoreGraphicsState() }
 
-    let rects = self.rectsBeingDrawn()
+    let rects = rectsBeingDrawn()
 
     context.cgContext.setFillColor(state.defaultHighlight.backgroundColor?.cgColor ?? .clear)
     context.cgContext.fill(rects)
@@ -101,9 +101,9 @@ class GridView: NSView {
           var glyphsInRowCount = 0
 
           var latestHighlightCharacters = [Character]()
-          var latestHighlightId: Int?
+          var latestHighlightID: Int?
           func createDrawRun() {
-            guard let id = latestHighlightId else {
+            guard let id = latestHighlightID else {
               return
             }
 
@@ -189,7 +189,7 @@ class GridView: NSView {
               newCharacters = [" "]
             }
 
-            if let id = latestHighlightId {
+            if let id = latestHighlightID {
               if id == cell?.hlID {
                 latestHighlightCharacters += newCharacters
                 continue
@@ -199,7 +199,7 @@ class GridView: NSView {
               }
             }
 
-            latestHighlightId = cell?.hlID
+            latestHighlightID = cell?.hlID
             latestHighlightCharacters = newCharacters
           }
 
@@ -215,7 +215,7 @@ class GridView: NSView {
           )
           let rect = CellsGeometry.upsideDownRect(
             from: CellsGeometry.cellsRect(for: rectangle, cellSize: cellSize),
-            parentViewHeight: self.bounds.height
+            parentViewHeight: bounds.height
           )
           context.cgContext.fill([rect])
 
@@ -239,8 +239,8 @@ class GridView: NSView {
 
       case let .copy(from, to, size, _):
         let fromRect = CGRect(origin: from, size: size)
-        let rep = self.bitmapImageRepForCachingDisplay(in: fromRect)!
-        self.cacheDisplay(in: fromRect, to: rep)
+        let rep = bitmapImageRepForCachingDisplay(in: fromRect)!
+        cacheDisplay(in: fromRect, to: rep)
 
         context.cgContext.draw(
           rep.cgImage!,
@@ -252,7 +252,7 @@ class GridView: NSView {
       }
     }
 
-    if let cursorPosition = state.cursorPosition(gridID: self.gridID), self.needsToDraw(CellsGeometry.cellRect(for: cursorPosition, cellSize: cellSize)) {
+    if let cursorPosition = state.cursorPosition(gridID: gridID), needsToDraw(CellsGeometry.cellRect(for: cursorPosition, cellSize: cellSize)) {
       context.cgContext.setFillColor(state.defaultHighlight.foregroundColor?.cgColor ?? .white)
       context.cgContext.setBlendMode(.exclusion)
 
@@ -261,7 +261,7 @@ class GridView: NSView {
           for: cursorPosition,
           cellSize: cellSize
         ),
-        parentViewHeight: self.bounds.height
+        parentViewHeight: bounds.height
       )
       context.cgContext.fill([rect])
     }
@@ -275,7 +275,7 @@ class GridView: NSView {
 
   @MainActor
   func enque(drawingRequest: DrawingRequest) {
-    guard let window = self.state.windows[gridID] else { return }
+    guard let window = state.windows[gridID] else { return }
 
     switch drawingRequest {
     case let .draw(rectangle):
@@ -325,7 +325,7 @@ class GridView: NSView {
      } */
 
     for currentDrawingOperation in self.currentDrawingOperations {
-      self.setNeedsDisplay(currentDrawingOperation.targetRect)
+      setNeedsDisplay(currentDrawingOperation.targetRect)
     }
 
     self.needsSynchronization = true
@@ -349,7 +349,7 @@ class GridView: NSView {
         for: rectangle,
         cellSize: fontDerivatives.cellSize
       ),
-      parentViewHeight: self.bounds.height
+      parentViewHeight: bounds.height
     )
 //    return CellsGeometry.insetForDrawing(
 //      rect: CellsGeometry.upsideDownRect(

@@ -8,15 +8,15 @@
 import Foundation
 
 public struct RPCNotification: MessageValueEncodable {
-  public var method: String
-  public var parameters: [Any?]
-  
   public init(method: String, parameters: [Any?]) {
     self.method = method
     self.parameters = parameters
   }
-  
+
+  public var method: String
+  public var parameters: [Any?]
+
   public var messageValueEncoded: Any? {
-    [2, method, parameters]
+    [2, self.method, self.parameters]
   }
 }

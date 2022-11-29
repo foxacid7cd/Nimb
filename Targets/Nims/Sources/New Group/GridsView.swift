@@ -20,7 +20,7 @@ class GridsView: NSView {
     self.state = state
     super.init(frame: frame)
 
-    self.wantsLayer = true
+    wantsLayer = true
 
     for (id, window) in state.windows {
       self.insertGridLayer(id: id, window: window)
@@ -28,7 +28,7 @@ class GridsView: NSView {
   }
 
   @available(*, unavailable)
-  required init?(coder: NSCoder) {
+  required init?(coder _: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
@@ -153,13 +153,13 @@ class GridsView: NSView {
 
   @MainActor
   private func insertGridLayer(id: Int, window: State.Window) {
-    let gridLayer = GridLayer(layer: self.layer!)
+    let gridLayer = GridLayer(layer: layer!)
     gridLayer.viewState = .init(id: id, state: self.state, window: window, fontDerivatives: self.state.fontDerivatives)
     gridLayer.delegate = self
     self.gridLayers[id] = gridLayer
     gridLayer.isHidden = window.isHidden
     gridLayer.zPosition = CGFloat(window.zIndex)
-    self.layer?.addSublayer(gridLayer)
+    layer?.addSublayer(gridLayer)
 
 //    let relativeSubview = self.subviews
 //      .map { self.state.windows[($0 as! GridView).gridID]!.zIndex }
@@ -176,19 +176,19 @@ class GridsView: NSView {
 
   @MainActor
   private func rect(for rectangle: GridRectangle) -> CGRect {
-    return CellsGeometry.upsideDownRect(
+    CellsGeometry.upsideDownRect(
       from: CellsGeometry.cellsRect(
         for: rectangle,
         cellSize: self.state.fontDerivatives.cellSize
       ),
-      parentViewHeight: self.bounds.height
+      parentViewHeight: bounds.height
     )
   }
 }
 
 extension GridsView: CALayerDelegate {
   func layerWillDraw(_ layer: CALayer) {
-    let scaleFactor = self.window?.backingScaleFactor ?? 1
+    let scaleFactor = window?.backingScaleFactor ?? 1
     layer.contentsScale = scaleFactor
     layer.contentsGravity = .center
     layer.needsDisplayOnBoundsChange = true

@@ -23,7 +23,7 @@ public extension CustomLoggable {
 
 public extension String {
   func loggable(_ children: Any...) -> CustomLoggable {
-    return Wrapper(logMessage: self, logChildren: children)
+    Wrapper(logMessage: self, logChildren: children)
 
     struct Wrapper: CustomLoggable {
       var logMessage: String

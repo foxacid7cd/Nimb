@@ -8,13 +8,6 @@
 import Foundation
 
 public class MessageRPC {
-  private let sendMessageValue: (MessageValue) async throws -> Void
-  private let handleNotification: (RPCNotification) -> Void
-  @MainActor
-  private var requestCounter = 0
-  @MainActor
-  private var responseHandlers = [Int: (isSuccess: Bool, payload: MessageValue) -> Void]()
-
   public init(
     sendMessageValue: @escaping (MessageValue) async throws -> Void,
     handleNotification: @escaping (RPCNotification) -> Void
@@ -64,7 +57,7 @@ public class MessageRPC {
         throw MessageRPCError.failedParsingArray
       }
 
-      handleNotification(.init(method: String(method), parameters: parameters))
+      self.handleNotification(.init(method: String(method), parameters: parameters))
 
     default:
       throw MessageRPCError.unexpectedRPCEvent
@@ -73,8 +66,8 @@ public class MessageRPC {
 
   @MainActor @discardableResult
   public func request(method: String, parameters: [MessageValue]) async throws -> MessageValue {
-    let id = requestCounter
-    requestCounter += 1
+    let id = self.requestCounter
+    self.requestCounter += 1
 
     return try await withUnsafeThrowingContinuation { continuation in
       let request = RPCRequest(id: id, method: method, parameters: parameters)
@@ -101,17 +94,23 @@ public class MessageRPC {
     }
   }
 
+  private var responseHandlers = [Int: (isSuccess: Bool, payload: MessageValue) -> Void]()
+  private let sendMessageValue: (MessageValue) async throws -> Void
+  private let handleNotification: (RPCNotification) -> Void
+  @MainActor
+  private var requestCounter = 0
+
   @MainActor
   private func register(
     resposeHandler: @escaping (_ isSuccess: Bool, _ payload: Any?) -> Void,
     forRequestID id: Int
   ) {
-    responseHandlers[id] = resposeHandler
+    self.responseHandlers[id] = resposeHandler
   }
 
   @MainActor
   private func responseHandler(responseID: Int) -> ((_ isSuccess: Bool, _ payload: Any?) -> Void)? {
-    responseHandlers.removeValue(forKey: responseID)
+    self.responseHandlers.removeValue(forKey: responseID)
   }
 }
 

@@ -90,7 +90,7 @@ struct State: Hashable {
   var defaultHighlight = Highlight()
 
   mutating func withMutableWindowIfExists(gridID: Int, _ body: (inout Window) -> Void) {
-    guard var window = self.windows[gridID] else {
+    guard var window = windows[gridID] else {
       return
     }
     body(&window)
@@ -104,7 +104,7 @@ struct State: Hashable {
   }
 
   func foregroundColor(for index: GridPoint, gridID: Int) -> Color? {
-    if let hlID = self.windows[gridID]?.grid[index]?.hlID, let highlight = self.highlights[hlID] {
+    if let hlID = windows[gridID]?.grid[index]?.hlID, let highlight = highlights[hlID] {
       return highlight.reverse ? highlight.backgroundColor : highlight.foregroundColor
 
     } else {
@@ -113,7 +113,7 @@ struct State: Hashable {
   }
 
   func backgroundColor(for index: GridPoint, gridID: Int) -> Color? {
-    if let hlID = self.windows[gridID]?.grid[index]?.hlID, let highlight = self.highlights[hlID] {
+    if let hlID = windows[gridID]?.grid[index]?.hlID, let highlight = highlights[hlID] {
       return highlight.reverse ? highlight.foregroundColor : highlight.backgroundColor
 
     } else {

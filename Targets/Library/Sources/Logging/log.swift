@@ -15,7 +15,7 @@ public func log(_ logLevel: OSLogType, log: OSLog = .default, _ item: @autoclosu
 
   let header = [
     logLevel.name?.uppercased(),
-    "\(file):\(line)"
+    "\(file):\(line)",
   ]
   .compactMap { $0 }
   .joined(separator: " @ ")

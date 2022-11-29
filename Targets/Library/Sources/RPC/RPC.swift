@@ -52,11 +52,11 @@ public class RPC {
 
   @discardableResult
   public func request(_ model: Request) async -> Response {
-    let id = await self.stepper.next()
+    let id = await stepper.next()
 
     let channel = AsyncChannel<Response>()
 
-    await self.register(
+    await register(
       inputResponseHandler: { response in
         Task {
           await channel.send(response)

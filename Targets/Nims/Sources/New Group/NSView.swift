@@ -12,7 +12,7 @@ public extension NSView {
   func rectsBeingDrawn() -> [CGRect] {
     var rects: UnsafePointer<NSRect>!
     var count = 0
-    self.getRectsBeingDrawn(&rects, count: &count)
+    getRectsBeingDrawn(&rects, count: &count)
 
     return [CGRect](unsafeUninitializedCapacity: count) { buffer, initializedCount in
       buffer.baseAddress!.initialize(from: rects, count: count)

@@ -9,9 +9,6 @@ import Cocoa
 import MessagePack
 
 class NimsUI {
-  private let nimsAppearance: NimsAppearance
-  private let mainWindow: MainWindow
-
   @MainActor
   init() {
     let font = NSFont(name: "BlexMono Nerd Font", size: 12)!
@@ -40,7 +37,7 @@ class NimsUI {
   func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
     self.mainWindow.gridLine(gridID: gridID, origin: origin, cells: cells)
   }
-  
+
   @MainActor
   func gridClear(gridID: Int) {
     self.mainWindow.gridClear(gridID: gridID)
@@ -60,4 +57,7 @@ class NimsUI {
   func hlAttrDefine(id: Int, rgbAttr: [(key: String, value: MessageValue)]) {
     self.nimsAppearance.hlAttrDefine(id: id, rgbAttr: rgbAttr)
   }
+
+  private let nimsAppearance: NimsAppearance
+  private let mainWindow: MainWindow
 }

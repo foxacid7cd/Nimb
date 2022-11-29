@@ -10,50 +10,46 @@ import NvimServiceAPI
 import OSLog
 
 class NvimService: NvimServiceProtocol {
-  private var mainThread: Thread?
-  
   func startNvim(arguments: [String], _ callback: @escaping () -> Void) {
     guard mainThread == nil else {
       os_log("Failed starting nvim, already started")
       callback()
-      
+
       return
     }
-    
+
     os_log("Starting nvim with arguments: \(arguments)")
-    
+
     let mainThread = Thread {
       var cArguments = ([ProcessInfo.processInfo.arguments[0]] + arguments)
         .map { UnsafeMutablePointer<Int8>(strdup($0)) }
-      
+
       nvim_main(Int32(cArguments.count), &cArguments)
       os_log("nvim_main ended")
-      
+
       cArguments.forEach { free($0) }
     }
     self.mainThread = mainThread
-    
+
     mainThread.name = "\(Bundle.main.bundleIdentifier!).nvim_main"
     mainThread.start()
-    
+
     DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
       os_log("Started nvim")
 
       callback()
     }
   }
+
+  private var mainThread: Thread?
 }
 
 class ListenerDelegate: NSObject, NSXPCListenerDelegate {
-  private let nvimService: NvimService
-
   init(nvimService: NvimService) {
     self.nvimService = nvimService
   }
 
-  private var connection: NSXPCConnection?
-
-  func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
+  func listener(_: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
     if let connection {
       connection.invalidate()
     }
@@ -69,13 +65,17 @@ class ListenerDelegate: NSObject, NSXPCListenerDelegate {
     }
 
     newConnection.exportedInterface = NSXPCInterface(with: NvimServiceProtocol.self)
-    newConnection.exportedObject = nvimService
+    newConnection.exportedObject = self.nvimService
 
     newConnection.activate()
     connection = newConnection
 
     return true
   }
+
+  private let nvimService: NvimService
+
+  private var connection: NSXPCConnection?
 }
 
 let nvimService = NvimService()

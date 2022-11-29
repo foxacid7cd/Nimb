@@ -29,7 +29,7 @@ public struct KeyPress {
   public var modifierFlags: NSEvent.ModifierFlags
 
   public func makeNvimKeyCode() -> String {
-    guard let unicodeScalar = self.characters.unicodeScalars.first else {
+    guard let unicodeScalar = characters.unicodeScalars.first else {
       return self.characters
     }
 
@@ -62,16 +62,16 @@ public struct KeyPress {
 
 private extension NSEvent.ModifierFlags {
   var modifier: String? {
-    if self.contains(.shift) {
+    if contains(.shift) {
       return "S"
 
-    } else if self.contains(.control) {
+    } else if contains(.control) {
       return "C"
 
-    } else if self.contains(.option) {
+    } else if contains(.option) {
       return "M"
 
-    } else if self.contains(.command) {
+    } else if contains(.command) {
       return "D"
 
     } else {
@@ -134,5 +134,5 @@ private let SpecialKeys = [
   NSF34FunctionKey: "F34",
   NSF35FunctionKey: "F35",
   Int(Character(" ").utf16.first!): "Space",
-  Int(Character("\\").utf16.first!): "Bslash"
+  Int(Character("\\").utf16.first!): "Bslash",
 ]

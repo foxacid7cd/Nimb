@@ -148,7 +148,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                   if !arrayValue.isEmpty {
                     guard let hlID = arrayValue.removeFirst() as? Int else {
-                      throw RedrawNotificationParsingError.gridLineHlIdIsNotInt
+                      throw RedrawNotificationParsingError.gridLineHlIDIsNotInt
                     }
                     lastHlID = hlID
 
@@ -192,7 +192,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
-                
+
                 nimsUI.gridClear(gridID: gridID)
               }
 
@@ -248,7 +248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   rgbSp: rgbSp
                 )
               }
-              
+
             case .hlAttrDefine:
               forEachParametersTuple { parameters in
                 guard
@@ -260,10 +260,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
-                
+
                 nimsUI.hlAttrDefine(id: id, rgbAttr: rgbAttr)
               }
-            
 
             case .flush:
               os_log("FLUSH!")
@@ -316,7 +315,7 @@ enum RedrawNotificationParsingError: Error {
   case invalidParameterTypes
   case gridLineCellDataIsNotArray
   case gridLineCellTextIsNotString
-  case gridLineHlIdIsNotInt
+  case gridLineHlIDIsNotInt
   case gridLineCellRepeatCountIsNotInt
   case gridLineHlIDNotParsedYet
 }

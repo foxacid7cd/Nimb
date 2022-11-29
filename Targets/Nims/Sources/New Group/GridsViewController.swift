@@ -24,7 +24,7 @@ class GridsViewController: NSViewController {
   }
 
   override func loadView() {
-    self.view = self.gridsView
+    view = self.gridsView
   }
 
   @MainActor

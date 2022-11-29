@@ -25,8 +25,8 @@ class GridsWindow: NSWindow {
       backing: .buffered,
       defer: true
     )
-    self.contentViewController = gridsViewController
-    self.acceptsMouseMovedEvents = true
+    contentViewController = gridsViewController
+    acceptsMouseMovedEvents = true
 
     self <~ self.mouseMovedSubject
       .throttle(.milliseconds(50), scheduler: MainScheduler.instance)

@@ -15,7 +15,7 @@ class GridLayer: CALayer {
   }
 
   @available(*, unavailable)
-  required init?(coder: NSCoder) {
+  required init?(coder _: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
@@ -30,7 +30,7 @@ class GridLayer: CALayer {
     didSet {
       guard let viewState else { return }
 
-      self.backgroundColor = viewState.state.defaultHighlight.backgroundColor?.cgColor ?? .clear
+      backgroundColor = viewState.state.defaultHighlight.backgroundColor?.cgColor ?? .clear
     }
   }
 
@@ -41,10 +41,10 @@ class GridLayer: CALayer {
         for: rectangle,
         cellSize: self.viewState!.fontDerivatives.cellSize
       ),
-      parentViewHeight: self.bounds.height
+      parentViewHeight: bounds.height
     )
 
-    self.setNeedsDisplay(rect)
+    setNeedsDisplay(rect)
   }
 
   @MainActor
@@ -57,11 +57,11 @@ class GridLayer: CALayer {
     let rect = context.boundingBoxOfClipPath
 
     let rectangle = CellsGeometry.gridRectangle(
-      cellsRect: CellsGeometry.upsideDownRect(from: rect, parentViewHeight: self.bounds.height),
+      cellsRect: CellsGeometry.upsideDownRect(from: rect, parentViewHeight: bounds.height),
       cellSize: self.viewState!.fontDerivatives.cellSize
     )
     .intersection(.init(origin: .init(), size: self.viewState!.window.grid.size))
-    guard let rectangle = rectangle else { return }
+    guard let rectangle else { return }
 
     let cursorPosition = self.viewState!.state.cursorPosition(gridID: self.viewState!.id)
 
@@ -71,9 +71,9 @@ class GridLayer: CALayer {
       var glyphsInRowCount = 0
 
       var latestHighlightCharacters = [Character]()
-      var latestHighlightId: Int?
+      var latestHighlightID: Int?
       func createDrawRun() {
-        guard let id = latestHighlightId else {
+        guard let id = latestHighlightID else {
           return
         }
 
@@ -109,7 +109,7 @@ class GridLayer: CALayer {
         let origin = GridPoint(row: row, column: rectangle.origin.column + glyphsInRowCount)
 
         let drawRun: DrawRun
-        if let cachedGlyphRun = self.viewState!.fontDerivatives.glyphRunCache.value(forKey: glyphRunCacheKey) {
+        if let cachedGlyphRun = viewState!.fontDerivatives.glyphRunCache.value(forKey: glyphRunCacheKey) {
           drawRun = DrawRun(
             origin: origin,
             characters: latestHighlightCharacters,
@@ -155,7 +155,7 @@ class GridLayer: CALayer {
           newCharacters = [" "]
         }
 
-        if let id = latestHighlightId {
+        if let id = latestHighlightID {
           if id == cell?.hlID {
             latestHighlightCharacters += newCharacters
             continue
@@ -165,7 +165,7 @@ class GridLayer: CALayer {
           }
         }
 
-        latestHighlightId = cell?.hlID
+        latestHighlightID = cell?.hlID
         latestHighlightCharacters = newCharacters
       }
 
@@ -183,7 +183,7 @@ class GridLayer: CALayer {
             for: rectangle,
             cellSize: self.viewState!.fontDerivatives.cellSize
           ),
-          parentViewHeight: self.bounds.height
+          parentViewHeight: bounds.height
         )
         context.fill([rect])
 
@@ -219,7 +219,7 @@ class GridLayer: CALayer {
           for: cursorPosition,
           cellSize: self.viewState!.fontDerivatives.cellSize
         ),
-        parentViewHeight: self.bounds.height
+        parentViewHeight: bounds.height
       )
       context.fill([rect])
     }

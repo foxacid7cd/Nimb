@@ -15,8 +15,8 @@ public enum Anchor: String {
 
 public extension UIEvents.WinFloatPos {
   var anchorValue: Anchor {
-    guard let value = Anchor(rawValue: self.anchor) else {
-      "unknown anchor string: \(self.anchor)"
+    guard let value = Anchor(rawValue: anchor) else {
+      "unknown anchor string: \(anchor)"
         .fail()
         .assertionFailure()
 

@@ -25,14 +25,14 @@ public struct AnyAsyncSequence<Element>: AsyncSequence {
     public typealias Element = Element
 
     public mutating func next() async throws -> Element? {
-      return try await self._next()
+      try await self._next()
     }
 
     private let _next: () async throws -> Element?
   }
 
   public func makeAsyncIterator() -> AnyAsyncIterator<Element> {
-    return self._makeAsyncIterator()
+    self._makeAsyncIterator()
   }
 
   let _makeAsyncIterator: () -> AnyAsyncIterator<Element>

@@ -144,7 +144,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
               return [
                 "name": name,
                 "type": swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type),
-                "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: name)
+                "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: name),
               ]
             },
           "parametersInitializationSignature": function.parameters
@@ -157,7 +157,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
 
             return [
               "func \(function.name.camelCased(capitalized: false))(\(formattedParameters)) async throws",
-              function.returnType == "void" ? nil : swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType)
+              function.returnType == "void" ? nil : swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType),
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
@@ -169,12 +169,12 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
 
             return [
               "\(function.name)(\(formattedParameters))",
-              function.returnType == "void" ? nil : function.returnType
+              function.returnType == "void" ? nil : function.returnType,
             ]
             .compactMap { $0 }
             .joined(separator: " -> ")
           }(),
-          "isDeprecated": function.deprecatedSince != nil
+          "isDeprecated": function.deprecatedSince != nil,
         ]
         if function.returnType != "void" {
           dictionary["returnType"] = swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: function.returnType)
@@ -186,9 +186,9 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
       .map { uiOption in
         [
           "name": uiOption.camelCased(capitalized: false),
-          "originalName": uiOption
+          "originalName": uiOption,
         ]
-      }
+      },
   ]
 
   var uiEvents = [Any]()
@@ -220,9 +220,9 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
           return [
             "name": name,
             "type": swiftType(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type),
-            "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: "$0")
+            "obtainingValue": obtainingReturnValue(extendedTypes: apiInfo.extendedTypes, nvimType: parameter.type, name: "$0"),
           ]
-        }
+        },
     ]
 
     if !uiEvent.parameters.isEmpty {
@@ -242,7 +242,7 @@ private func renderingContext(apiInfo: APIInfo) throws -> [String: Any] {
     types.append([
       "name": key,
       "id": type.id,
-      "prefix": type.prefix
+      "prefix": type.prefix,
     ])
   }
   dictionary["types"] = types

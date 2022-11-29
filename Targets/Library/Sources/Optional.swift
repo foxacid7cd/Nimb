@@ -8,6 +8,6 @@
 
 public extension Optional {
   var logDescription: String {
-    return self.map { "\($0)" } ?? "nil"
+    map { "\($0)" } ?? "nil"
   }
 }

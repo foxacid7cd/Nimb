@@ -17,29 +17,29 @@ struct DrawRun: Equatable {
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
 
     let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
-    
+
     let glyphRuns = ctRuns
       .map { ctRun in
         let glyphCount = CTRunGetGlyphCount(ctRun)
         let range = CFRange(location: 0, length: glyphCount)
-        
+
         let attributes = CTRunGetAttributes(ctRun) as NSDictionary
         let font = attributes.value(forKey: NSAttributedString.Key.font.rawValue) as! NSFont
         let foregroundColor = attributes.value(forKey: NSAttributedString.Key.foregroundColor.rawValue) as! NSColor
         let backgroundColor = attributes.value(forKey: NSAttributedString.Key.backgroundColor.rawValue) as! NSColor
-        
+
         let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
           CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
           initializedCount = glyphCount
         }
-        
+
         let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
           CTRunGetPositions(ctRun, range, buffer.baseAddress!)
           initializedCount = glyphCount
         }
-        
+
         let stringRange = CTRunGetStringRange(ctRun)
-        
+
         return GlyphRun(
           glyphs: glyphs,
           positions: positions,

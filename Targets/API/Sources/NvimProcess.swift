@@ -12,7 +12,7 @@ import Library
 import MessagePack
 
 public class NvimProcess {
-  public init(executableURL: URL, runtimeURL: URL) {
+  public init(executableURL _: URL, runtimeURL _: URL) {
 //    log(.info, "Nvim executable URL: \(executableURL.absoluteURL.relativePath)")
 //
 //    let errorChannel = AsyncChannel<Error>()
@@ -69,7 +69,7 @@ public class NvimProcess {
 
   public var error: AnyAsyncSequence<Error> {
     fatalError()
-    //self.errorChannel.eraseToAnyAsyncSequence()
+    // self.errorChannel.eraseToAnyAsyncSequence()
   }
 
   public func register(input: Input) {
@@ -120,7 +120,7 @@ public class NvimProcess {
   }
 
   public func terminate() {
-    //self.process.terminate()
+    // self.process.terminate()
   }
 
   static let dispatchQueue = DispatchQueue(
@@ -136,7 +136,7 @@ public class NvimProcess {
   private var inputTask: Task<Void, Never>?
   private var outputTask: Task<Void, Never>?
 
-//  private func setup(socket: Socket) {
+  //  private func setup(socket: Socket) {
 //    self.inputTask = Task {
 //      do {
 //        for try await values in socket.unpack() {
@@ -176,9 +176,9 @@ public class NvimProcess {
 //        )
 //      }
 //    }
-//  }
+  //  }
 //
-//  private func createSocket() async throws -> Socket {
+  //  private func createSocket() async throws -> Socket {
 //    try await withCheckedThrowingContinuation { continuation in
 //      Task {
 //        let tries = 3
@@ -205,7 +205,7 @@ public class NvimProcess {
 //        }
 //      }
 //    }
-//  }
+  //  }
 }
 
 //
@@ -278,4 +278,3 @@ public class NvimProcess {
 //    }
 //  }
 // }
-
