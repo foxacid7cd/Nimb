@@ -22,6 +22,7 @@
 		6820BFB42935257B0057F22B /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6820BFB7293525890057F22B /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6820BFB6293525890057F22B /* CoreServices.framework */; };
 		6820BFBB293527790057F22B /* nvim in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6820BF9E293524640057F22B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		6822B86429365DD300D0EAE1 /* NSColor+RGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */; };
 		684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684384D22934D04A000C4A1D /* AppDelegate.swift */; };
 		684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		684384FD2934D17F000C4A1D /* NvimServiceAPI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -177,6 +178,7 @@
 		6820BFA72935249A0057F22B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		6820BFB6293525890057F22B /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		6820BFB9293527070057F22B /* nvim.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nvim.entitlements; sourceTree = "<group>"; };
+		6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSColor+RGB.swift"; sourceTree = "<group>"; };
 		684384D12934D04A000C4A1D /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		684384D92934D0A1000C4A1D /* NvimServiceProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NvimServiceProtocol.swift; sourceTree = "<group>"; };
@@ -327,6 +329,7 @@
 				685B61602935D1AD006381F1 /* WinRef.swift */,
 				689A634B2935E829003D6363 /* Cell.swift */,
 				689A634F2936124F003D6363 /* DrawRun.swift */,
+				6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -698,6 +701,7 @@
 				685EE9672935A21000D85550 /* MainView.swift in Sources */,
 				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
 				685EE9652935A0FD00D85550 /* MainWindow.swift in Sources */,
+				6822B86429365DD300D0EAE1 /* NSColor+RGB.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */,
 				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,

@@ -8,51 +8,55 @@
 import Cocoa
 
 struct DrawRun: Equatable {
-  var origin: GridPoint
-  var characters: [Character]
-  var glyphRun: GlyphRun
-  
-  static func make(origin: GridPoint, characters: [Character], font: NSFont) -> DrawRun {
-    let paragraphStyle = NSMutableParagraphStyle()
-    paragraphStyle.lineSpacing = CTFontGetLeading(font)
-    paragraphStyle.allowsDefaultTighteningForTruncation = false
-    paragraphStyle.paragraphSpacing = 0
-    
-    let attributedString = NSAttributedString(
-      string: String(characters),
-      attributes: [.font: font, .paragraphStyle: paragraphStyle.copy()]
-    )
+  var gridOrigin: GridPoint
+  var glyphRuns: [GlyphRun]
+  var rect: CGRect
+
+  static func make(gridOrigin: GridPoint, rect: CGRect, attributedString: NSAttributedString) -> DrawRun {
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
-    
-    var glyphs = [CGGlyph]()
-    var positions = [CGPoint]()
-    
+
     let ctRuns = CTLineGetGlyphRuns(line) as! [CTRun]
-
-    for ctRun in ctRuns {
-      let glyphCount = CTRunGetGlyphCount(ctRun)
-      let range = CFRange(location: 0, length: glyphCount)
-
-      glyphs += [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-        CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
-        initializedCount = glyphCount
-      }
-
-      positions += [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-        CTRunGetPositions(ctRun, range, buffer.baseAddress!)
-        initializedCount = glyphCount
-      }
-    }
     
+    let glyphRuns = ctRuns
+      .map { ctRun in
+        let glyphCount = CTRunGetGlyphCount(ctRun)
+        let range = CFRange(location: 0, length: glyphCount)
+        
+        let attributes = CTRunGetAttributes(ctRun) as NSDictionary
+        let font = attributes.value(forKey: NSAttributedString.Key.font.rawValue) as! NSFont
+        let foregroundColor = attributes.value(forKey: NSAttributedString.Key.foregroundColor.rawValue) as! NSColor
+        let backgroundColor = attributes.value(forKey: NSAttributedString.Key.backgroundColor.rawValue) as! NSColor
+        
+        let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+          CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
+        
+        let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+          CTRunGetPositions(ctRun, range, buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
+        
+        let stringRange = CTRunGetStringRange(ctRun)
+        
+        return GlyphRun(
+          glyphs: glyphs,
+          positions: positions,
+          stringRange: NSRange(
+            location: stringRange.location,
+            length: stringRange.length
+          ),
+          font: font,
+          foregroundColor: foregroundColor,
+          backgroundColor: backgroundColor
+        )
+      }
+
     return .init(
-      origin: origin,
-      characters: characters,
-      glyphRun: .init(
-        glyphs: glyphs,
-        positions: positions,
-        font: font
-      )
+      gridOrigin: gridOrigin,
+      glyphRuns: glyphRuns,
+      rect: rect
     )
   }
 }
@@ -60,7 +64,10 @@ struct DrawRun: Equatable {
 struct GlyphRun: Equatable {
   var glyphs: [CGGlyph]
   var positions: [CGPoint]
+  var stringRange: NSRange
   var font: NSFont
+  var foregroundColor: NSColor
+  var backgroundColor: NSColor
 
   func positionsWithOffset(dx: Double, dy: Double) -> [CGPoint] {
     self.positions

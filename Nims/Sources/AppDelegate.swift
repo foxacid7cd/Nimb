@@ -6,9 +6,9 @@
 //
 
 import Cocoa
+import MessagePack
 import NvimServiceAPI
 import OSLog
-import MessagePack
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -16,37 +16,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     let nimsUI = NimsUI()
     self.nimsUI = nimsUI
-    
+
     nimsUI.start()
-    
+
     let process = Process()
     self.process = process
-    
+
     let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
     process.executableURL = executableURL
     process.arguments = [executableURL.relativePath, "--embed"]
-    
+
     var environment = ProcessInfo.processInfo.environment
     environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
     process.environment = environment
-    
+
     process.terminationHandler = { process in
       os_log("Process terminated: \(process.terminationStatus) \(process.terminationReason.rawValue)")
     }
-    
+
     let standardInputPipe = Pipe()
     process.standardInput = standardInputPipe
-    
+
     let standardOutputPipe = Pipe()
     process.standardOutput = standardOutputPipe
-    
+
     let packer = MessagePacker()
-    
+
     let messageRPC = MessageRPC(
       sendMessageValue: { value in
         Task { @MainActor in
           let data = packer.pack(messageValue: value)
-          
+
           try! standardInputPipe.fileHandleForWriting
             .write(contentsOf: data)
         }
@@ -56,7 +56,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           os_log("Unexpected nvim notification method: \(notification.method)")
           return
         }
-        
+
         switch method {
         case .redraw:
           for parameter in notification.parameters {
@@ -67,32 +67,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               os_log("Unexpected redraw notification structure")
               continue
             }
-            
+
             guard let name = RedrawUIEventName(rawValue: uiEventName) else {
               os_log("Unexpected redraw UI event with name: \(uiEventName)")
               continue
             }
-            
-            func forEachUIEventParametersTuple(_ body: ([MessageValue]) throws -> Void) {
-              for i in (1..<parameterArrayValue.count) {
+
+            func forEachParametersTuple(_ body: (inout [MessageValue]) throws -> Void) {
+              for i in 1 ..< parameterArrayValue.count {
                 do {
-                  guard let uiEventParameters = parameterArrayValue[i] as? [MessageValue] else {
+                  guard var parameters = parameterArrayValue[i] as? [MessageValue] else {
                     throw RedrawNotificationParsingError.uiEventParametersIsNotArray
                   }
-                  
-                  try body(uiEventParameters)
-                  
+
+                  try body(&parameters)
+
                 } catch {
                   os_log("Redraw notification parsing failed: \(error)")
                 }
               }
             }
-            
+
             switch name {
             case .gridResize:
-              forEachUIEventParametersTuple { parameters in
+              forEachParametersTuple { parameters in
                 var parameters = parameters
-                
+
                 guard
                   parameters.count == 3,
                   let gridID = parameters.removeFirst() as? Int,
@@ -101,7 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
-                
+
                 nimsUI.gridResize(
                   gridID: gridID,
                   gridSize: .init(
@@ -110,14 +110,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   )
                 )
               }
-              
+
             case .gridLine:
               var lastHlID: Int?
               var lastY: Int?
-              
-              forEachUIEventParametersTuple { parameters in
-                var parameters = parameters
-                
+
+              forEachParametersTuple { parameters in
                 guard
                   parameters.count == 4,
                   let gridID = parameters.removeFirst() as? Int,
@@ -127,9 +125,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
-                
+
                 let origin = GridPoint(x: x, y: y)
-                
+
                 var updatedCellsCount = 0
                 var updatedCells = [Cell]()
 
@@ -182,20 +180,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                   lastY = y
                 }
-                
+
                 nimsUI.gridLine(gridID: gridID, origin: origin, cells: updatedCells)
               }
-              
+
             case .gridClear:
               os_log("gridClear!")
-              
+
             case .gridCursorGoto:
               os_log("gridCursorGoto!")
-              
+
             case .winPos:
-              forEachUIEventParametersTuple { parameters in
-                var parameters = parameters
-                
+              forEachParametersTuple { parameters in
                 guard
                   parameters.count == 6,
                   let gridID = parameters.removeFirst() as? Int,
@@ -207,7 +203,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
-                
+
                 nimsUI.winPos(
                   gridID: gridID,
                   winRef: WinRef(data: winRef.data),
@@ -223,7 +219,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   )
                 )
               }
+
+            case .defaultColorsSet:
+              forEachParametersTuple { parameters in
+                guard
+                  parameters.count == 5,
+                  let rgbFg = parameters.removeFirst() as? Int,
+                  let rgbBg = parameters.removeFirst() as? Int,
+                  let rgbSp = parameters.removeFirst() as? Int,
+                  let _ = parameters.removeFirst() as? Int,
+                  let _ = parameters.removeFirst() as? Int
+                else {
+                  throw RedrawNotificationParsingError.invalidParameterTypes
+                }
+
+                nimsUI.defaultColorsSet(
+                  rgbFg: rgbFg,
+                  rgbBg: rgbBg,
+                  rgbSp: rgbSp
+                )
+              }
               
+            case .hlAttrDefine:
+              forEachParametersTuple { parameters in
+                guard
+                  parameters.count == 4,
+                  let id = parameters.removeFirst() as? Int,
+                  let rgbAttr = parameters.removeFirst() as? [(key: String, value: MessageValue)],
+                  let _ = parameters.removeFirst() as? [(key: String, value: MessageValue)],
+                  let _ = parameters.removeFirst() as? [MessageValue]
+                else {
+                  throw RedrawNotificationParsingError.invalidParameterTypes
+                }
+                
+                nimsUI.hlAttrDefine(id: id, rgbAttr: rgbAttr)
+              }
+            
+
             case .flush:
               os_log("FLUSH!")
             }
@@ -232,39 +264,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       }
     )
     self.messageRPC = messageRPC
-    
+
     let unpacker = MessageUnpacker()
-    
+
     standardOutputPipe.fileHandleForReading
       .readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
-        
+
         Task { @MainActor in
           do {
             try unpacker.unpack(data: data)
               .forEach { try messageRPC.handleReceived(value: $0) }
-            
+
           } catch {
             fatalError("Unpacker failed unpacking or MessageRPC failed receiving: \(error)")
           }
         }
       }
-    
+
     try! process.run()
-    
+
     os_log("Process started!")
-    
+
     Task {
       do {
         let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
         try await messageRPC.request(method: "nvim_ui_attach", parameters: [120, 40, options])
-        
+
       } catch {
         os_log("nvim_ui_attach failed: \(error)")
       }
     }
   }
-  
+
   private var process: Process?
   private var messageRPC: MessageRPC?
   private var nimsUI: NimsUI?

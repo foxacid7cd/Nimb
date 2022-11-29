@@ -13,5 +13,7 @@ enum RedrawUIEventName: String {
   case gridClear = "grid_clear"
   case gridCursorGoto = "grid_cursor_goto"
   case winPos = "win_pos"
+  case defaultColorsSet = "default_colors_set"
+  case hlAttrDefine = "hl_attr_define"
   case flush
 }
