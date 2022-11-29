@@ -40,6 +40,11 @@ class NimsUI {
   func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
     self.mainWindow.gridLine(gridID: gridID, origin: origin, cells: cells)
   }
+  
+  @MainActor
+  func gridClear(gridID: Int) {
+    self.mainWindow.gridClear(gridID: gridID)
+  }
 
   @MainActor
   func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {

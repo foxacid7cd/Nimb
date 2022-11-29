@@ -49,6 +49,10 @@ class MainWindow: NSWindow {
     self.mainView.gridLine(gridID: gridID, origin: origin, cells: cells)
   }
   
+  func gridClear(gridID: Int) {
+    self.mainView.gridClear(gridID: gridID)
+  }
+  
   func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {
     self.mainView.winPos(gridID: gridID, winRef: winRef, winFrame: winFrame)
   }

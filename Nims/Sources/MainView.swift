@@ -52,6 +52,14 @@ class MainView: NSView {
 
     gridView.gridLine(origin: origin, cells: cells)
   }
+  
+  func gridClear(gridID: Int) {
+    guard let gridView = gridViews[gridID] else {
+      return
+    }
+    
+    gridView.gridClear()
+  }
 
   func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {
     let gridView = self.gridView(gridID: gridID)
@@ -101,6 +109,9 @@ private class GridView: NSView {
 
     context.saveGraphicsState()
     defer { context.restoreGraphicsState() }
+    
+    context.cgContext.setFillColor(self.nimsAppearance.defaultBackgroundColor.cgColor)
+    context.cgContext.fill([dirtyRect])
 
     var filteredDrawRuns = Deque<DrawRun>()
     defer { self.drawRuns = filteredDrawRuns }
@@ -190,6 +201,10 @@ private class GridView: NSView {
 
     self.drawRuns.append(drawRun)
     setNeedsDisplay(rect)
+  }
+  
+  func gridClear() {
+    setNeedsDisplay(self.bounds)
   }
 
   func updateViewFrame() {

@@ -185,7 +185,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               }
 
             case .gridClear:
-              os_log("gridClear!")
+              forEachParametersTuple { parameters in
+                guard
+                  parameters.count == 1,
+                  let gridID = parameters.removeFirst() as? Int
+                else {
+                  throw RedrawNotificationParsingError.invalidParameterTypes
+                }
+                
+                nimsUI.gridClear(gridID: gridID)
+              }
 
             case .gridCursorGoto:
               os_log("gridCursorGoto!")
