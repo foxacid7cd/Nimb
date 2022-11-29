@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680E72AC2936BDA0009BFA53 /* KeyPress.swift */; };
 		6820BFA82935249A0057F22B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6820BFA72935249A0057F22B /* main.c */; };
 		6820BFA9293524EA0057F22B /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 684385222934D43F000C4A1D /* libluajit-5.1.a */; };
 		6820BFAA293524EA0057F22B /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 684385242934D440000C4A1D /* libluv.a */; };
@@ -174,6 +175,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		680E72AC2936BDA0009BFA53 /* KeyPress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyPress.swift; sourceTree = "<group>"; };
 		6820BF9E293524640057F22B /* nvim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = nvim; sourceTree = BUILT_PRODUCTS_DIR; };
 		6820BFA72935249A0057F22B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		6820BFB6293525890057F22B /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
@@ -330,6 +332,7 @@
 				689A634B2935E829003D6363 /* Cell.swift */,
 				689A634F2936124F003D6363 /* DrawRun.swift */,
 				6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */,
+				680E72AC2936BDA0009BFA53 /* KeyPress.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -724,6 +727,7 @@
 				685EE9672935A21000D85550 /* MainView.swift in Sources */,
 				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
 				685EE9652935A0FD00D85550 /* MainWindow.swift in Sources */,
+				680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */,
 				6822B86429365DD300D0EAE1 /* NSColor+RGB.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* NimsAppearance.swift in Sources */,

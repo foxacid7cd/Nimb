@@ -8,8 +8,9 @@
 import Cocoa
 
 class MainWindow: NSWindow {
-  init(nimsAppearance: NimsAppearance) {
+  init(nimsAppearance: NimsAppearance, handleKeyDown: @escaping (NSEvent) -> Void) {
     self.nimsAppearance = nimsAppearance
+    self.handleKeyDown = handleKeyDown
 
     let mainView = MainView(nimsAppearance: nimsAppearance)
     self.mainView = mainView
@@ -32,7 +33,9 @@ class MainWindow: NSWindow {
     true
   }
 
-  override func keyDown(with _: NSEvent) {}
+  override func keyDown(with event: NSEvent) {
+    self.handleKeyDown(event)
+  }
 
   func gridResize(gridID: Int, gridSize: GridSize) {
     if gridID == 1 {
@@ -55,6 +58,7 @@ class MainWindow: NSWindow {
     self.mainView.winPos(gridID: gridID, winRef: winRef, winFrame: winFrame)
   }
 
+  private let handleKeyDown: (NSEvent) -> Void
   private let nimsAppearance: NimsAppearance
   private let mainView: MainView
   private var outerGridSize = GridSize()

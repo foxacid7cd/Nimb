@@ -10,7 +10,7 @@ import MessagePack
 
 class NimsUI {
   @MainActor
-  init() {
+  init(handleKeyDown: @escaping (NSEvent) -> Void) {
     let font = NSFont(name: "BlexMono Nerd Font", size: 12)!
 
     let nimsAppearance = NimsAppearance(
@@ -18,7 +18,10 @@ class NimsUI {
     )
     self.nimsAppearance = nimsAppearance
 
-    let mainWindow = MainWindow(nimsAppearance: nimsAppearance)
+    let mainWindow = MainWindow(
+      nimsAppearance: nimsAppearance,
+      handleKeyDown: handleKeyDown
+    )
     self.mainWindow = mainWindow
   }
 

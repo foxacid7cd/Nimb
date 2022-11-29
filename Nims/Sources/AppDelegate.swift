@@ -14,7 +14,20 @@ import OSLog
 class AppDelegate: NSObject, NSApplicationDelegate {
   @MainActor
   func applicationDidFinishLaunching(_ notification: Notification) {
-    let nimsUI = NimsUI()
+    let nimsUI = NimsUI { [unowned self] event in
+      Task {
+        let keyPress = KeyPress(event: event)
+        do {
+          try await self.messageRPC?.request(
+            method: "nvim_input",
+            parameters: [keyPress.makeNvimKeyCode()]
+          )
+
+        } catch {
+          os_log("nvim_input failed: \(error)")
+        }
+      }
+    }
     self.nimsUI = nimsUI
 
     nimsUI.start()
