@@ -7,29 +7,28 @@
 
 import Foundation
 
-public struct RPCResponse: MessageValue {
+public struct RPCResponse: MessageValueEncodable {
   var id: Int
   var isSuccess: Bool
-  var payload: MessageValue
+  var payload: Any?
   
-  public init(id: Int, isSuccess: Bool, payload: MessageValue) {
+  public init(id: Int, isSuccess: Bool, payload: Any?) {
     self.id = id
     self.isSuccess = isSuccess
     self.payload = payload
   }
   
-  public func pack(to packer: MessagePacker) {
-    var elements: [MessageValue] = [MessageIntValue(1), MessageIntValue(id)]
+  public var messageValueEncoded: Any? {
+    var elements: [Any?] = [1, id]
     
     if isSuccess {
-      elements += [payload, MessageNilValue()]
+      elements += [payload, nil]
       
     } else {
-      elements += [MessageNilValue(), payload]
+      elements += [nil, payload]
     }
     
-    MessageArrayValue(elements)
-      .pack(to: packer)
+    return elements
   }
 }
 

@@ -8,7 +8,7 @@
 import Foundation
 
 public class MessageRPC {
-  private let send: (MessageValue) async throws -> Void
+  private let sendMessageValue: (MessageValue) async throws -> Void
   private let handleNotification: (RPCNotification) -> Void
   @MainActor
   private var requestCounter = 0
@@ -16,52 +16,53 @@ public class MessageRPC {
   private var responseHandlers = [Int: (isSuccess: Bool, payload: MessageValue) -> Void]()
   
   public init(
-    send: @escaping (MessageValue) async throws -> Void,
+    sendMessageValue: @escaping (MessageValue) async throws -> Void,
     handleNotification: @escaping (RPCNotification) -> Void
   ) {
-    self.send = send
+    self.sendMessageValue = sendMessageValue
     self.handleNotification = handleNotification
   }
   
   @MainActor
   public func handleReceived(value: MessageValue) throws -> Void {
-    guard let arrayValue = value as? MessageArrayValue else {
+    guard var arrayValue = value as? [MessageValue] else {
       throw MessageRPCError.receivedMessageIsNotArray
     }
     
-    var elements = arrayValue.elements
-    
-    guard !elements.isEmpty, let integerValue = elements.removeFirst() as? MessageIntValue else {
+    guard !arrayValue.isEmpty, let intValue = arrayValue.removeFirst() as? Int else {
       throw MessageRPCError.failedParsingArray
     }
     
-    switch integerValue.value {
+    switch intValue {
     case 0:
       throw MessageRPCError.unexpectedRPCRequest
       
     case 1:
-      guard !elements.isEmpty, let unsignedIntegerValue = elements.removeFirst() as? MessageIntValue else {
+      guard !arrayValue.isEmpty, let responseID = arrayValue.removeFirst() as? Int else {
         throw MessageRPCError.failedParsingArray
       }
-      let responseID = unsignedIntegerValue.value
       
-      guard elements.count == 2 else {
+      guard arrayValue.count == 2 else {
         throw MessageRPCError.failedParsingArray
       }
+      
       if let handler = self.responseHandler(responseID: responseID) {
-        handler(true, elements[0])
+        if arrayValue[0] != nil {
+          handler(false, arrayValue[0])
+          
+        } else {
+          handler(true, arrayValue[1])
+        }
       }
       
     case 2:
-      guard !elements.isEmpty, let stringValue = elements.removeFirst() as? MessageStringValue else {
+      guard !arrayValue.isEmpty, let method = arrayValue.removeFirst() as? String else {
         throw MessageRPCError.failedParsingArray
       }
-      let method = stringValue.string
       
-      guard !elements.isEmpty, let arrayValue = elements.removeFirst() as? MessageArrayValue else {
+      guard !arrayValue.isEmpty, let parameters = arrayValue.removeFirst() as? [MessageValue] else {
         throw MessageRPCError.failedParsingArray
       }
-      let parameters = arrayValue.elements
       
       self.handleNotification(.init(method: String(method), parameters: parameters))
       
@@ -77,6 +78,7 @@ public class MessageRPC {
     
     return try await withUnsafeThrowingContinuation { continuation in
       let request = RPCRequest(id: id, method: method, parameters: parameters)
+      
       let responseHandler = { (isSuccess: Bool, payload: MessageValue) in
         if isSuccess {
           continuation.resume(with: .success(payload))
@@ -90,7 +92,7 @@ public class MessageRPC {
       
       Task {
         do {
-          try await self.send(request)
+          try await self.sendMessageValue(request.messageValueEncoded)
           
         } catch {
           continuation.resume(throwing: error)
@@ -101,14 +103,14 @@ public class MessageRPC {
   
   @MainActor
   private func register(
-    resposeHandler: @escaping (_ isSuccess: Bool, _ payload: MessageValue) -> Void,
+    resposeHandler: @escaping (_ isSuccess: Bool, _ payload: Any?) -> Void,
     forRequestID id: Int
   ) {
     self.responseHandlers[id] = resposeHandler
   }
   
   @MainActor
-  private func responseHandler(responseID: Int) -> ((_ isSuccess: Bool, _ payload: MessageValue) -> Void)? {
+  private func responseHandler(responseID: Int) -> ((_ isSuccess: Bool, _ payload: Any?) -> Void)? {
     self.responseHandlers.removeValue(forKey: responseID)
   }
 }
@@ -121,5 +123,5 @@ public enum MessageRPCError: Error {
 }
 
 public struct MessageRPCRequestError: Error {
-  public let payload: MessageValue
+  public let payload: Any?
 }

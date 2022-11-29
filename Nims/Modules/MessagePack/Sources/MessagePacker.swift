@@ -22,13 +22,93 @@ public class MessagePacker {
   }
   
   @MainActor
-  public func pack(value: MessageValue) -> Data {
-    value.pack(to: self)
+  public func pack(encodable: MessageValueEncodable) -> Data {
+    self.pack(messageValue: encodable.messageValueEncoded)
+  }
+  
+  @MainActor
+  public func pack(messageValue: MessageValue) -> Data {
+    self.pack(messageValue)
     
     let data = Data(bytes: sbuf.data, count: sbuf.size)
     msgpack_sbuffer_clear(&sbuf)
     
     return data
+  }
+  
+  @MainActor
+  private func pack(_ messageValue: MessageValue) {
+    guard let messageValue else {
+      msgpack_pack_nil(&pk)
+      return
+    }
+    
+    switch messageValue {
+    case let value as Bool:
+      if value {
+        msgpack_pack_true(&pk)
+        
+      } else {
+        msgpack_pack_false(&pk)
+      }
+      
+    case let value as Int:
+      msgpack_pack_int64(&pk, Int64(value))
+      
+    case let value as String:
+      value.utf8CString
+        .withUnsafeBytes { bufferPointer in
+          let pointer = bufferPointer.baseAddress!
+          
+          _ = msgpack_pack_str_with_body(
+            &pk,
+            pointer,
+            strlen(pointer)
+          )
+        }
+      
+    case let value as Double:
+      msgpack_pack_float(&pk, Float(value))
+      
+    case let keyValues as [(key: MessageValue, value: MessageValue)]:
+      msgpack_pack_map(&pk, keyValues.count)
+      
+      for (key, value) in keyValues {
+        self.pack(key)
+        self.pack(value)
+      }
+      
+    case let value as [MessageValue]:
+      msgpack_pack_array(&pk, value.count)
+      
+      for element in value {
+        self.pack(element)
+      }
+      
+    case let value as (data: Data, type: Int8):
+      value.data
+        .withUnsafeBytes { bufferPointer in
+          _ = msgpack_pack_ext_with_body(
+            &pk,
+            bufferPointer.baseAddress!,
+            bufferPointer.count,
+            value.type
+          )
+      }
+      
+    case let value as Data:
+      value.withUnsafeBytes { bufferPointer in
+        _ = msgpack_pack_bin_with_body(
+          &pk,
+          bufferPointer.baseAddress!,
+          bufferPointer.count
+        )
+      }
+      
+    default:
+      assertionFailure("Failed packing message value with unsupported type: \(messageValue)")
+      return
+    }
   }
 }
 
@@ -92,31 +172,27 @@ public class MessageUnpacker {
   private func value(from object: msgpack_object) throws -> MessageValue {
     switch object.type {
     case MSGPACK_OBJECT_NIL:
-      return MessageNilValue()
+      return nil
       
     case MSGPACK_OBJECT_BOOLEAN:
-      return MessageBooleanValue(
-        boolean: object.via.boolean
-      )
+      return object.via.boolean
       
     case MSGPACK_OBJECT_POSITIVE_INTEGER:
-      return MessageIntValue(Int(object.via.u64))
+      return Int(object.via.u64)
       
     case MSGPACK_OBJECT_NEGATIVE_INTEGER:
-      return MessageIntValue(Int(object.via.i64))
+      return Int(object.via.i64)
       
     case MSGPACK_OBJECT_STR:
       let str = object.via.str
       let size = Int(str.size)
       
-      return MessageStringValue(
-        String(unsafeUninitializedCapacity: size, initializingUTF8With: { buffer in
-          let pointer = buffer.baseAddress!
-          
-          memcpy(pointer, str.ptr, size)
-          return size
-        })
-      )
+      return String(unsafeUninitializedCapacity: size, initializingUTF8With: { buffer in
+        let pointer = buffer.baseAddress!
+        
+        memcpy(pointer, str.ptr, size)
+        return size
+      })
       
     case MSGPACK_OBJECT_ARRAY:
       var values = [MessageValue]()
@@ -126,7 +202,7 @@ public class MessageUnpacker {
         values.append(try self.value(from: element))
       }
       
-      return MessageArrayValue(values)
+      return values
       
     case MSGPACK_OBJECT_MAP:
       var keyValues = [(key: MessageValue, value: MessageValue)]()
@@ -139,20 +215,20 @@ public class MessageUnpacker {
         ))
       }
       
-      return MessageMapValue(keyValues)
+      return keyValues
       
     case MSGPACK_OBJECT_FLOAT, MSGPACK_OBJECT_FLOAT32:
-      return MessageDoubleValue(object.via.f64)
+      return Double(object.via.f64)
       
     case MSGPACK_OBJECT_BIN:
       let bin = object.via.bin
       let data = Data(bytes: bin.ptr, count: Int(bin.size))
-      return MessageBinaryValue(data)
+      return data
       
     case MSGPACK_OBJECT_EXT:
       let ext = object.via.ext
       let data = Data(bytes: ext.ptr, count: Int(ext.size))
-      return MessageExtValue(data: data, type: ext.type)
+      return (data: data, type: ext.type)
       
     default:
       throw MessageUnpackError.unexpectedValueType
@@ -160,192 +236,10 @@ public class MessageUnpacker {
   }
 }
 
-public protocol MessageValue {
-  func pack(to packer: MessagePacker)
-}
+public typealias MessageValue = Any?
 
-public struct DeferredMessageValue: MessageValue {
-  var deferred: @Sendable () -> MessageValue
-  
-  public init(_ deferred: @Sendable @escaping () -> MessageValue) {
-    self.deferred = deferred
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    self.deferred().pack(to: packer)
-  }
-}
-
-public struct MessageStringValue: MessageValue, ExpressibleByStringLiteral {
-  public var string: String
-  
-  public init(_ string: String) {
-    self.string = string
-  }
-  
-  public init(stringLiteral value: StringLiteralType) {
-    self.string = value
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    string.utf8CString
-      .withUnsafeBytes { bufferPointer in
-        let pointer = bufferPointer.baseAddress!
-        
-        _ = msgpack_pack_str_with_body(
-          &packer.pk,
-          pointer,
-          strlen(pointer)
-        )
-      }
-  }
-}
-
-public struct MessageIntValue: MessageValue, ExpressibleByIntegerLiteral {
-  public var value: Int
-  
-  public init(_ value: Int) {
-    self.value = value
-  }
-  
-  public init(integerLiteral value: IntegerLiteralType) {
-    self.value = value
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_int64(&packer.pk, Int64(value))
-  }
-}
-
-public struct MessageArrayValue: MessageValue, ExpressibleByArrayLiteral {
-  public var elements = [MessageValue]()
-  
-  public init(_ elements: [MessageValue]) {
-    self.elements = elements
-  }
-  
-  public init(arrayLiteral elements: MessageValue...) {
-    self.elements = elements
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_array(&packer.pk, elements.count)
-    
-    for element in elements {
-      element.pack(to: packer)
-    }
-  }
-}
-
-public struct MessageMapValue: MessageValue, ExpressibleByDictionaryLiteral {
-  var keyValues = [(key: MessageValue, value: MessageValue)]()
-  
-  public init(_ keyValues: [(key: MessageValue, value: MessageValue)]) {
-    self.keyValues = keyValues
-  }
-  
-  public init(dictionaryLiteral elements: (Key, Value)...) {
-    self.init(elements)
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_map(&packer.pk, self.keyValues.count)
-    
-    for (key, value) in self.keyValues {
-      key.pack(to: packer)
-      value.pack(to: packer)
-    }
-  }
-  
-  public typealias Key = MessageValue
-  public typealias Value = MessageValue
-}
-
-public struct MessageNilValue: MessageValue, ExpressibleByNilLiteral {
-  public init() {}
-  
-  public init(nilLiteral: ()) {
-    self.init()
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_nil(&packer.pk)
-  }
-}
-
-public struct MessageBooleanValue: MessageValue, ExpressibleByBooleanLiteral {
-  var boolean: Bool
-  
-  public init(boolean: Bool) {
-    self.boolean = boolean
-  }
-  
-  public init(booleanLiteral value: Bool) {
-    self.boolean = value
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    if boolean {
-      msgpack_pack_true(&packer.pk)
-      
-    } else {
-      msgpack_pack_false(&packer.pk)
-    }
-  }
-}
-
-public struct MessageDoubleValue: MessageValue, ExpressibleByFloatLiteral {
-  var double: Double
-  
-  public init(_ double: Double) {
-    self.double = double
-  }
-  
-  public init(floatLiteral value: FloatLiteralType) {
-    self.double = value
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    msgpack_pack_double(&packer.pk, double)
-  }
-}
-
-public struct MessageBinaryValue: MessageValue {
-  var data: Data
-  
-  public init(_ data: Data) {
-    self.data = data
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    data.withUnsafeBytes { bufferPointer in
-      _ = msgpack_pack_bin_with_body(
-        &packer.pk,
-        bufferPointer.baseAddress!,
-        bufferPointer.count
-      )
-    }
-  }
-}
-
-public struct MessageExtValue: MessageValue {
-  public var data: Data
-  public var type: Int8
-  
-  public init(data: Data, type: Int8) {
-    self.data = data
-    self.type = type
-  }
-  
-  public func pack(to packer: MessagePacker) {
-    data.withUnsafeBytes { bufferPointer in
-      _ = msgpack_pack_ext_with_body(
-        &packer.pk,
-        bufferPointer.baseAddress!,
-        bufferPointer.count, type
-      )
-    }
-  }
+public protocol MessageValueEncodable {
+  var messageValueEncoded: MessageValue { get }
 }
 
 public enum MessageUnpackError: Error {

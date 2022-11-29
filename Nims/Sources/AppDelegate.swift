@@ -45,9 +45,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let packer = MessagePacker()
     
     let messageRPC = MessageRPC(
-      send: { value in
+      sendMessageValue: { value in
         Task { @MainActor in
-          let data = packer.pack(value: value)
+          let data = packer.pack(messageValue: value)
           
           try! standardInputPipe.fileHandleForWriting
             .write(contentsOf: data)
@@ -63,26 +63,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case .redraw:
           for parameter in notification.parameters {
             guard
-              let parameterArrayValue = parameter as? MessageArrayValue,
-              let uiEventName = parameterArrayValue.elements.first as? MessageStringValue
+              let parameterArrayValue = parameter as? [MessageValue],
+              let uiEventName = parameterArrayValue.first as? String
             else {
               os_log("Unexpected redraw notification structure")
               continue
             }
             
-            guard let name = RedrawUIEventName(rawValue: uiEventName.string) else {
-              os_log("Unexpected redraw UI event with name: \(uiEventName.string)")
+            guard let name = RedrawUIEventName(rawValue: uiEventName) else {
+              os_log("Unexpected redraw UI event with name: \(uiEventName)")
               continue
             }
             
             func forEachUIEventParametersTuple(_ body: ([MessageValue]) throws -> Void) {
-              for i in (1..<parameterArrayValue.elements.count) {
+              for i in (1..<parameterArrayValue.count) {
                 do {
-                  guard let uiEventParameters = parameterArrayValue.elements[i] as? MessageArrayValue else {
+                  guard let uiEventParameters = parameterArrayValue[i] as? [MessageValue] else {
                     throw RedrawNotificationParsingError.uiEventParametersIsNotArray
                   }
                   
-                  try body(uiEventParameters.elements)
+                  try body(uiEventParameters)
                   
                 } catch {
                   os_log("Redraw notification parsing failed: \(error)")
@@ -97,18 +97,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 guard
                   parameters.count == 3,
-                  let gridID = parameters.removeFirst() as? MessageIntValue,
-                  let width = parameters.removeFirst() as? MessageIntValue,
-                  let height = parameters.removeFirst() as? MessageIntValue
+                  let gridID = parameters.removeFirst() as? Int,
+                  let width = parameters.removeFirst() as? Int,
+                  let height = parameters.removeFirst() as? Int
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
                 
                 nimsUI.gridResize(
-                  gridID: gridID.value,
+                  gridID: gridID,
                   gridSize: .init(
-                    width: width.value,
-                    height: height.value
+                    width: width,
+                    height: height
                   )
                 )
               }
@@ -122,32 +122,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 guard
                   parameters.count == 4,
-                  let gridID = parameters.removeFirst() as? MessageIntValue,
-                  let y = parameters.removeFirst() as? MessageIntValue,
-                  let x = parameters.removeFirst() as? MessageIntValue,
-                  let data = parameters.removeFirst() as? MessageArrayValue
+                  let gridID = parameters.removeFirst() as? Int,
+                  let y = parameters.removeFirst() as? Int,
+                  let x = parameters.removeFirst() as? Int,
+                  let data = parameters.removeFirst() as? [MessageValue]
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
                 
-                let origin = GridPoint(
-                  x: x.value,
-                  y: y.value
-                )
+                let origin = GridPoint(x: x, y: y)
                 
                 var updatedCellsCount = 0
                 var updatedCells = [Cell]()
 
-                for value in data.elements {
-                  guard let arrayValue = value as? MessageArrayValue else {
+                for value in data {
+                  guard var arrayValue = value as? [MessageValue] else {
                     throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
                   }
-                  var elements = arrayValue.elements
 
-                  guard !elements.isEmpty, let stringValue = elements.removeFirst() as? MessageStringValue else {
+                  guard !arrayValue.isEmpty, let text = arrayValue.removeFirst() as? String else {
                     throw RedrawNotificationParsingError.gridLineCellTextIsNotString
                   }
-                  let text = stringValue.string
                   if text.count > 1 {
                     throw RedrawNotificationParsingError.gridLineCellTextIsNotString
                   }
@@ -155,17 +150,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                   var repeatCount = 1
 
-                  if !elements.isEmpty {
-                    guard let hlID = elements.removeFirst() as? MessageIntValue else {
+                  if !arrayValue.isEmpty {
+                    guard let hlID = arrayValue.removeFirst() as? Int else {
                       throw RedrawNotificationParsingError.gridLineHlIdIsNotInt
                     }
-                    lastHlID = Int(hlID.value)
+                    lastHlID = hlID
 
-                    if !elements.isEmpty {
-                      guard let parsedRepeatCount = elements.removeFirst() as? MessageIntValue else {
+                    if !arrayValue.isEmpty {
+                      guard let parsedRepeatCount = arrayValue.removeFirst() as? Int else {
                         throw RedrawNotificationParsingError.gridLineCellRepeatCountIsNotInt
                       }
-                      repeatCount = parsedRepeatCount.value
+                      repeatCount = parsedRepeatCount
                     }
                   }
 
@@ -173,7 +168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     throw RedrawNotificationParsingError.gridLineHlIDNotParsedYet
                   }
 
-                  if lastY != y.value {
+                  if lastY != y {
                     updatedCellsCount = 0
                   }
 
@@ -187,10 +182,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                   updatedCellsCount += repeatCount
 
-                  lastY = y.value
+                  lastY = y
                 }
                 
-                nimsUI.gridLine(gridID: gridID.value, origin: origin, cells: updatedCells)
+                nimsUI.gridLine(gridID: gridID, origin: origin, cells: updatedCells)
               }
               
             case .gridClear:
@@ -205,27 +200,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 guard
                   parameters.count == 6,
-                  let gridID = parameters.removeFirst() as? MessageIntValue,
-                  let winRef = parameters.removeFirst() as? MessageExtValue,
-                  let y = parameters.removeFirst() as? MessageIntValue,
-                  let x = parameters.removeFirst() as? MessageIntValue,
-                  let width = parameters.removeFirst() as? MessageIntValue,
-                  let height = parameters.removeFirst() as? MessageIntValue
+                  let gridID = parameters.removeFirst() as? Int,
+                  let winRef = parameters.removeFirst() as? (data: Data, type: Int8),
+                  let y = parameters.removeFirst() as? Int,
+                  let x = parameters.removeFirst() as? Int,
+                  let width = parameters.removeFirst() as? Int,
+                  let height = parameters.removeFirst() as? Int
                 else {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
                 
                 nimsUI.winPos(
-                  gridID: gridID.value,
+                  gridID: gridID,
                   winRef: WinRef(data: winRef.data),
                   winFrame: .init(
                     origin: .init(
-                      x: x.value,
-                      y: y.value
+                      x: x,
+                      y: y
                     ),
                     size: .init(
-                      width: width.value,
-                      height: height.value
+                      width: width,
+                      height: height
                     )
                   )
                 )
@@ -248,10 +243,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         Task { @MainActor in
           do {
-            let values = try unpacker.unpack(data: data)
-            for value in values {
-              try messageRPC.handleReceived(value: value)
-            }
+            try unpacker.unpack(data: data)
+              .forEach { try messageRPC.handleReceived(value: $0) }
             
           } catch {
             fatalError("Unpacker failed unpacking or MessageRPC failed receiving: \(error)")
@@ -264,15 +257,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     os_log("Process started!")
     
     Task {
-      try! await messageRPC.request(method: "nvim_ui_attach", parameters: [
-        MessageIntValue(80),
-        MessageIntValue(24),
-        MessageMapValue([
-          (MessageStringValue("rgb"), MessageBooleanValue(true)),
-          (MessageStringValue("override"), MessageBooleanValue(true)),
-          (MessageStringValue("ext_multigrid"), MessageBooleanValue(true))
-        ])
-      ] as [MessageValue])
+      do {
+        let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
+        try await messageRPC.request(method: "nvim_ui_attach", parameters: [80, 24, options])
+        
+      } catch {
+        os_log("nvim_ui_attach failed: \(error)")
+      }
     }
   }
   

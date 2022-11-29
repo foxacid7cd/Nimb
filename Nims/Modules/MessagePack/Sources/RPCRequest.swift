@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct RPCRequest: MessageValue {
+public struct RPCRequest: MessageValueEncodable {
   var id: Int
   var method: String
   var parameters: [MessageValue]
@@ -18,13 +18,7 @@ public struct RPCRequest: MessageValue {
     self.parameters = parameters
   }
   
-  public func pack(to packer: MessagePacker) {
-    MessageArrayValue([
-      MessageIntValue(0),
-      MessageIntValue(id),
-      MessageStringValue(method),
-      MessageArrayValue(parameters)
-    ])
-    .pack(to: packer)
+  public var messageValueEncoded: Any? {
+    [0, id, method, parameters]
   }
 }

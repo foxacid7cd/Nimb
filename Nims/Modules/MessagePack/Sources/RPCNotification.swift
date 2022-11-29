@@ -7,21 +7,16 @@
 
 import Foundation
 
-public struct RPCNotification: MessageValue {
+public struct RPCNotification: MessageValueEncodable {
   public var method: String
-  public var parameters: [MessageValue]
+  public var parameters: [Any?]
   
-  public init(method: String, parameters: [MessageValue]) {
+  public init(method: String, parameters: [Any?]) {
     self.method = method
     self.parameters = parameters
   }
   
-  public func pack(to packer: MessagePacker) {
-    MessageArrayValue([
-      MessageIntValue(2),
-      MessageStringValue(method),
-      MessageArrayValue(parameters)
-    ])
-    .pack(to: packer)
+  public var messageValueEncoded: Any? {
+    [2, method, parameters]
   }
 }
