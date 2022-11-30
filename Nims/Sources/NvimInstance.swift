@@ -50,15 +50,22 @@ class NvimInstance {
     let packer = MessagePacker()
 
     let messageRPC = MessageRPC(
-      sendMessageValue: { value in
-        Task { @MainActor in
-          let data = packer.pack(messageValue: value)
+      send: { value in
+        let data = packer.pack(messageValue: value)
 
-          try! standardInputPipe.fileHandleForWriting
+        do {
+          try standardInputPipe.fileHandleForWriting
             .write(contentsOf: data)
+
+        } catch {
+          os_log("Failed writing to process standard input: \(error)")
         }
-      },
-      handleNotification: { notification in
+      }
+    )
+    self.messageRPC = messageRPC
+
+    Task {
+      for await notification in messageRPC.notifications {
         guard let method = NvimNotificationMethodName(rawValue: notification.method) else {
           os_log("Unexpected nvim notification method: \(notification.method)")
           return
@@ -80,14 +87,14 @@ class NvimInstance {
               continue
             }
 
-            func forEachParametersTuple(_ body: (inout [MessageValue]) throws -> Void) {
+            func forEachParametersTuple(_ body: (inout [MessageValue]) async throws -> Void) async {
               for i in 1 ..< parameterArrayValue.count {
                 do {
                   guard var parameters = parameterArrayValue[i] as? [MessageValue] else {
                     throw RedrawNotificationParsingError.uiEventParametersIsNotArray
                   }
 
-                  try body(&parameters)
+                  try await body(&parameters)
 
                 } catch {
                   os_log("Redraw notification parsing failed: \(error)")
@@ -97,7 +104,7 @@ class NvimInstance {
 
             switch name {
             case .gridResize:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 var parameters = parameters
 
                 guard
@@ -111,11 +118,8 @@ class NvimInstance {
 
                 if gridID == 1 {
                   let gridSize = GridSize(width: width, height: height)
-
-                  Task {
-                    let cellSize = await appearance.cellSize()
-                    window.setContentSize(gridSize * cellSize)
-                  }
+                  let cellSize = await appearance.cellSize()
+                  window.setContentSize(gridSize * cellSize)
                 }
 
                 mainView.gridResize(
@@ -128,7 +132,7 @@ class NvimInstance {
               var lastHlID: Int?
               var lastY: Int?
 
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 4,
                   let gridID = parameters.removeFirst() as? Int,
@@ -194,7 +198,7 @@ class NvimInstance {
               }
 
             case .gridClear:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 1,
                   let gridID = parameters.removeFirst() as? Int
@@ -209,7 +213,7 @@ class NvimInstance {
               os_log("gridCursorGoto!")
 
             case .gridDestroy:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 1,
                   let gridID = parameters.removeFirst() as? Int
@@ -221,7 +225,7 @@ class NvimInstance {
               }
 
             case .winPos:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 6,
                   let gridID = parameters.removeFirst() as? Int,
@@ -246,7 +250,7 @@ class NvimInstance {
               }
 
             case .winFloatPos:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 8,
                   let gridID = parameters.removeFirst() as? Int,
@@ -274,7 +278,7 @@ class NvimInstance {
               }
 
             case .winHide:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 1,
                   let gridID = parameters.removeFirst() as? Int
@@ -286,7 +290,7 @@ class NvimInstance {
               }
 
             case .winClose:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 1,
                   let gridID = parameters.removeFirst() as? Int
@@ -298,7 +302,7 @@ class NvimInstance {
               }
 
             case .defaultColorsSet:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 5,
                   let foregroundRGB = parameters.removeFirst() as? Int,
@@ -310,17 +314,15 @@ class NvimInstance {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
 
-                Task {
-                  await appearance.setDefaultColors(
-                    foregroundRGB: foregroundRGB,
-                    backgroundRGB: backgroundRGB,
-                    specialRGB: specialRGB
-                  )
-                }
+                await appearance.setDefaultColors(
+                  foregroundRGB: foregroundRGB,
+                  backgroundRGB: backgroundRGB,
+                  specialRGB: specialRGB
+                )
               }
 
             case .hlAttrDefine:
-              forEachParametersTuple { parameters in
+              await forEachParametersTuple { parameters in
                 guard
                   parameters.count == 4,
                   let highlightID = parameters.removeFirst() as? Int,
@@ -331,12 +333,10 @@ class NvimInstance {
                   throw RedrawNotificationParsingError.invalidParameterTypes
                 }
 
-                Task {
-                  await appearance.apply(
-                    nvimAttr: rgbAttr,
-                    forHighlightID: highlightID
-                  )
-                }
+                await appearance.apply(
+                  nvimAttr: rgbAttr,
+                  forHighlightID: highlightID
+                )
               }
 
             case .flush:
@@ -345,8 +345,7 @@ class NvimInstance {
           }
         }
       }
-    )
-    self.messageRPC = messageRPC
+    }
 
     let unpacker = MessageUnpacker()
 

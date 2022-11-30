@@ -6,6 +6,7 @@
 //
 
 import AsyncAlgorithms
+import Backbone
 import Cocoa
 
 @MainActor

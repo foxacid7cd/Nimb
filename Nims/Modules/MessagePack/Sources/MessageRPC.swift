@@ -5,15 +5,17 @@
 //  Created by Yevhenii Matviienko on 29.11.2022.
 //
 
+import AsyncAlgorithms
+import Backbone
 import Foundation
 
 public class MessageRPC {
-  public init(
-    sendMessageValue: @escaping (MessageValue) async throws -> Void,
-    handleNotification: @escaping (RPCNotification) -> Void
-  ) {
-    self.sendMessageValue = sendMessageValue
-    self.handleNotification = handleNotification
+  public init(send: @escaping (MessageValue) async -> Void) {
+    self.send = send
+  }
+
+  public var notifications: AnyAsyncSequence<RPCNotification> {
+    self.notificationChannel.eraseToAnyAsyncSequence()
   }
 
   @MainActor
@@ -57,7 +59,14 @@ public class MessageRPC {
         throw MessageRPCError.failedParsingArray
       }
 
-      self.handleNotification(.init(method: String(method), parameters: parameters))
+      let notification = RPCNotification(
+        method: method,
+        parameters: parameters
+      )
+
+      Task {
+        await self.notificationChannel.send(notification)
+      }
 
     default:
       throw MessageRPCError.unexpectedRPCEvent
@@ -84,19 +93,15 @@ public class MessageRPC {
       self.register(resposeHandler: responseHandler, forRequestID: id)
 
       Task {
-        do {
-          try await self.sendMessageValue(request.messageValueEncoded)
-
-        } catch {
-          continuation.resume(throwing: error)
-        }
+        await self.send(request.messageValueEncoded)
       }
     }
   }
 
   private var responseHandlers = [Int: (isSuccess: Bool, payload: MessageValue) -> Void]()
-  private let sendMessageValue: (MessageValue) async throws -> Void
-  private let handleNotification: (RPCNotification) -> Void
+  private let send: (MessageValue) async -> Void
+  private let notificationChannel = AsyncChannel<RPCNotification>()
+
   @MainActor
   private var requestCounter = 0
 
