@@ -65,3 +65,10 @@ func * (first: GridRectangle, second: CGSize) -> CGRect {
     size: first.size * second
   )
 }
+
+func + (first: GridRectangle, second: GridPoint) -> GridRectangle {
+  .init(
+    origin: first.origin + second,
+    size: first.size
+  )
+}

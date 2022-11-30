@@ -10,8 +10,8 @@ import Collections
 import OSLog
 
 class MainView: NSView {
-  init(nimsAppearance: NimsAppearance) {
-    self.nimsAppearance = nimsAppearance
+  init(appearance: Appearance) {
+    self._appearance = appearance
 
     super.init(frame: .zero)
   }
@@ -22,6 +22,24 @@ class MainView: NSView {
   }
 
   func gridResize(gridID: Int, gridSize: GridSize) {
+    let gridView = self.gridViews[gridID] ?? {
+      let new = GridView(appearance: self._appearance, gridID: gridID)
+      self.gridViews[gridID] = new
+
+      new.outerGridSize = self.outerGridSize
+      return new
+    }()
+
+    gridView.isHidden = false
+    gridView.gridSize = gridSize
+    gridView.updateViewFrame()
+
+    if gridView.superview == nil {
+      addSubview(gridView)
+
+      self.sortGridViews()
+    }
+
     if gridID == 1 {
       self.outerGridSize = gridSize
 
@@ -30,15 +48,6 @@ class MainView: NSView {
 
         gridView.updateViewFrame()
       }
-    }
-
-    let gridView = self.gridView(gridID: gridID)
-
-    gridView.gridSize = gridSize
-    gridView.updateViewFrame()
-
-    if gridView.superview == nil {
-      addSubview(gridView)
     }
   }
 
@@ -58,37 +67,110 @@ class MainView: NSView {
     gridView.gridClear()
   }
 
-  func winPos(gridID: Int, winRef: WinRef, winFrame: GridRectangle) {
-    let gridView = self.gridView(gridID: gridID)
+  func gridDestroy(gridID: Int) {
+    guard let gridView = self.gridViews.removeValue(forKey: gridID) else {
+      return
+    }
 
-    gridView.winRef = winRef
-    gridView.winFrame = winFrame
-    gridView.updateViewFrame()
+    gridView.removeFromSuperview()
 
-    addSubview(gridView)
+    self.sortGridViews()
   }
 
-  private var nimsAppearance: NimsAppearance
+  func winPos(gridID: Int, winRef: WinRef, gridFrame: GridRectangle) {
+    guard let gridView = self.gridViews[gridID] else {
+      return
+    }
+
+    gridView.isHidden = false
+    gridView.winPos = .init(
+      winRef: winRef,
+      gridFrame: gridFrame,
+      zPositionWeight: self.winPosCallCounter
+    )
+    gridView.updateViewFrame()
+
+    self.winPosCallCounter += 1
+
+    self.sortGridViews()
+  }
+
+  func winFloatPos(gridID: Int, winRef _: WinRef, anchorType: String, anchorGridID: Int, anchorX: Double, anchorY: Double, focusable: Bool, zPosition: Int) {
+    guard
+      let gridView = self.gridViews[gridID],
+      let anchorGridView = self.gridViews[anchorGridID]
+    else {
+      return
+    }
+
+    gridView.isHidden = false
+    gridView.winFloatPos = .init(
+      anchorType: anchorType,
+      anchorGridID: anchorGridID,
+      anchorX: anchorX,
+      anchorY: anchorY,
+      focusable: focusable,
+      zPosition: zPosition,
+      zPositionWeight: self.winPosCallCounter,
+      getAnchorGridOrigin: { [weak anchorGridView] in
+        guard let anchorGridView else { return .init() }
+
+        return anchorGridView.gridFrame.origin
+      }
+    )
+    gridView.updateViewFrame()
+
+    self.winPosCallCounter += 1
+
+    self.sortGridViews()
+  }
+
+  func winHide(gridID: Int) {
+    guard let gridView = gridViews[gridID] else {
+      return
+    }
+
+    gridView.isHidden = true
+  }
+
+  func winClose(gridID: Int) {
+    guard let gridView = gridViews[gridID] else {
+      return
+    }
+
+    gridView.isHidden = true
+    gridView.winPos = nil
+    gridView.updateViewFrame()
+
+    self.sortGridViews()
+  }
+
+  private var winPosCallCounter = 0
+  private var _appearance: Appearance
   private var gridViews = PersistentDictionary<Int, GridView>()
   private var outerGridSize = GridSize()
 
-  private func gridView(gridID: Int) -> GridView {
-    if let gridView = gridViews[gridID] {
-      return gridView
+  private func sortGridViews() {
+    func compare(firstView: NSView, secondView: NSView, context _: UnsafeMutableRawPointer?) -> ComparisonResult {
+      guard let firstView = firstView as? GridView, let secondView = secondView as? GridView else {
+        os_log("sortGridViews type casting failed")
+        return .orderedSame
+      }
 
-    } else {
-      let gridView = GridView(nimsAppearance: nimsAppearance)
-      self.gridViews[gridID] = gridView
+      let firstWeight = firstView.zPositionWeight
+      let secondWeight = secondView.zPositionWeight
 
-      gridView.outerGridSize = self.outerGridSize
-      return gridView
+      return (firstWeight == secondWeight) ? .orderedSame : (firstWeight > secondWeight) ? .orderedDescending : .orderedAscending
     }
+
+    self.sortSubviews(compare, context: nil)
   }
 }
 
 private class GridView: NSView {
-  init(nimsAppearance: NimsAppearance) {
-    self.nimsAppearance = nimsAppearance
+  init(appearance: Appearance, gridID: Int) {
+    self._appearance = appearance
+    self.gridID = gridID
 
     super.init(frame: .zero)
   }
@@ -98,122 +180,166 @@ private class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  struct WinPos {
+    var winRef: WinRef
+    var gridFrame: GridRectangle
+
+    var zPositionWeight: Int
+  }
+
+  struct WinFloatPos {
+    var anchorType: String
+    var anchorGridID: Int
+    var anchorX: Double
+    var anchorY: Double
+    var focusable: Bool
+    var zPosition: Int
+
+    var zPositionWeight: Int
+    var getAnchorGridOrigin: () -> GridPoint
+  }
+
+  let gridID: Int
   var gridSize = GridSize()
-  var winRef: WinRef?
-  var winFrame: GridRectangle?
   var outerGridSize = GridSize()
+  var winPos: WinPos?
+  var winFloatPos: WinFloatPos?
+
+  override var isOpaque: Bool {
+    true
+  }
 
   var gridFrame: GridRectangle {
-    if let winFrame {
+    if let winFloatPos {
+      return .init(
+        origin: winFloatPos.getAnchorGridOrigin() + GridPoint(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
+        size: self.gridSize
+      )
+    }
+
+    if let winPos {
       return .init(
         origin: .init(
-          x: winFrame.origin.x,
-          y: outerGridSize.height - winFrame.origin.y - winFrame.size.height
+          x: winPos.gridFrame.origin.x,
+          y: self.outerGridSize.height - winPos.gridFrame.origin.y - winPos.gridFrame.size.height
         ),
-        size: winFrame.size
+        size: winPos.gridFrame.size
       )
     }
 
-    return .init(size: gridSize)
+    return .init(size: self.gridSize)
   }
 
-  override func draw(_ dirtyRect: NSRect) {
-    let context = NSGraphicsContext.current!
-
-    context.saveGraphicsState()
-    defer { context.restoreGraphicsState() }
-
-    context.cgContext.setFillColor(self.nimsAppearance.defaultBackgroundColor.cgColor)
-    context.cgContext.fill([dirtyRect])
-
-    var filteredDrawRuns = Deque<DrawRun>()
-    defer { self.drawRuns = filteredDrawRuns }
-
-    for drawRun in self.drawRuns {
-      guard dirtyRect.contains(drawRun.rect) else {
-        filteredDrawRuns.append(drawRun)
-
-        continue
-      }
-
-      for glyphRun in drawRun.glyphRuns {
-        context.cgContext.setShouldAntialias(false)
-        context.cgContext.setFillColor(glyphRun.backgroundColor.cgColor)
-
-        let backgroundGridRectangle = GridRectangle(
-          origin: .init(x: drawRun.gridOrigin.x + glyphRun.stringRange.location, y: drawRun.gridOrigin.y),
-          size: .init(width: glyphRun.stringRange.length + 1, height: 1)
-        )
-        let backgroundRect = (backgroundGridRectangle * self.nimsAppearance.cellSize)
-
-        context.cgContext.fill([backgroundRect])
-
-        context.cgContext.setShouldAntialias(true)
-        context.cgContext.setFillColor(glyphRun.foregroundColor.cgColor)
-
-        CTFontDrawGlyphs(
-          glyphRun.font,
-          glyphRun.glyphs,
-          glyphRun.positionsWithOffset(
-            dx: drawRun.rect.origin.x,
-            dy: drawRun.rect.origin.y + self.nimsAppearance.cellSize.height - self.nimsAppearance.regularFont.ascender
-          ),
-          glyphRun.glyphs.count,
-          context.cgContext
-        )
-      }
+  var zPositionWeight: Int {
+    if let winFloatPos {
+      return 1_000_000_000 + winFloatPos.zPositionWeight
     }
+
+    if let winPos {
+      return 1_000_000_000 + winPos.zPositionWeight
+    }
+
+    return 0
   }
 
-  func gridLine(origin: GridPoint, cells: [Cell]) {
-    let cellSize = self.nimsAppearance.cellSize
+  override func draw(_: NSRect) {
+//    let context = NSGraphicsContext.current!
+//
+//    context.saveGraphicsState()
+//    defer { context.restoreGraphicsState() }
+//
+//    let rects = self.rectsBeingDrawn
+//
+//    context.cgContext.setFillColor(self._apperance.backgroundColor().cgColor)
+//    context.cgContext.fill(rects)
+//
+//    var filteredDrawRuns = Deque<DrawRun>()
+//    defer { self.drawRuns = filteredDrawRuns }
+//
+//    for drawRun in self.drawRuns {
+//      guard rects.contains(where: { $0.contains(drawRun.rect) }) else {
+//        filteredDrawRuns.append(drawRun)
+//
+//        continue
+//      }
+//      self.oldDrawRuns.append(drawRun)
+//
+//      for glyphRun in drawRun.glyphRuns {
+//        context.cgContext.setShouldAntialias(false)
+//        context.cgContext.setFillColor(glyphRun.backgroundColor.cgColor)
+//
+//        let backgroundGridRectangle = GridRectangle(
+//          origin: .init(x: drawRun.gridOrigin.x + glyphRun.stringRange.location, y: drawRun.gridOrigin.y),
+//          size: .init(width: glyphRun.stringRange.length + 1, height: 1)
+//        )
+//        let backgroundRect = (backgroundGridRectangle * self._.cellSize)
+//
+//        context.cgContext.fill([backgroundRect])
+//
+//        context.cgContext.setShouldAntialias(true)
+//        context.cgContext.setFillColor(glyphRun.foregroundColor.cgColor)
+//
+//        CTFontDrawGlyphs(
+//          glyphRun.font,
+//          glyphRun.glyphs,
+//          glyphRun.positionsWithOffset(
+//            dx: drawRun.rect.origin.x,
+//            dy: drawRun.rect.origin.y + self._apperance.cellSize.height - self._apperance.fonts.regular.ascender
+//          ),
+//          glyphRun.glyphs.count,
+//          context.cgContext
+//        )
+//      }
+//    }
+  }
 
-    let origin = GridPoint(
-      x: origin.x,
-      y: self.gridSize.height - origin.y - 1
-    )
-
-    let gridRectangle = GridRectangle(
-      origin: origin,
-      size: .init(
-        width: cells.count,
-        height: 1
-      )
-    )
-    let rect = gridRectangle * cellSize
-
-    let accumulator = NSMutableAttributedString()
-
-    let string = NSMutableString()
-    var previousCell = cells[0]
-
-    for (cellIndex, cell) in cells.enumerated() {
-      if cell.hlID == previousCell.hlID, cellIndex != cells.count - 1 {
-        if let character = cell.character {
-          string.append(String(character))
-        }
-
-      } else {
-        let attributedString = NSAttributedString(
-          string: string as String,
-          attributes: nimsAppearance.stringAttributes(hlID: previousCell.hlID)
-        )
-        accumulator.append(attributedString)
-
-        string.setString(cell.character.map { String($0) } ?? "")
-      }
-
-      previousCell = cell
-    }
-
-    let drawRun = DrawRun.make(
-      gridOrigin: origin,
-      rect: rect,
-      attributedString: accumulator
-    )
-
-    self.drawRuns.append(drawRun)
-    setNeedsDisplay(rect)
+  func gridLine(origin _: GridPoint, cells _: [Cell]) {
+//    let cellSize = self._apperance.cellSize
+//
+//    let origin = GridPoint(
+//      x: origin.x,
+//      y: self.gridFrame.size.height - origin.y - 1
+//    )
+//
+//    let gridRectangle = GridRectangle(
+//      origin: origin,
+//      size: .init(
+//        width: cells.count,
+//        height: 1
+//      )
+//    )
+//    let rect = gridRectangle * cellSize
+//
+//    let accumulator = NSMutableAttributedString()
+//
+//    let string = NSMutableString()
+//    var previousCell = cells[0]
+//
+//    for (cellIndex, cell) in cells.enumerated() {
+//      if cell.highlightID == previousCell.highlightID, cellIndex != cells.count - 1 {
+//        string.append(cell.text)
+//
+//      } else {
+//        let attributedString = NSAttributedString(
+//          string: string as String,
+//          attributes: self._apperance.stringAttributes(highlightID: previousCell.highlightID)
+//        )
+//        accumulator.append(attributedString)
+//
+//        string.setString(cell.text)
+//      }
+//
+//      previousCell = cell
+//    }
+//
+//    let drawRun = DrawRun.make(
+//      gridOrigin: origin,
+//      rect: rect,
+//      attributedString: accumulator
+//    )
+//
+//    self.drawRuns.append(drawRun)
+//    setNeedsDisplay(rect)
   }
 
   func gridClear() {
@@ -221,9 +347,10 @@ private class GridView: NSView {
   }
 
   func updateViewFrame() {
-    frame = self.gridFrame * self.nimsAppearance.cellSize
+//    self.frame = self.gridFrame * self._appearance.font.cellSize
   }
 
-  private var nimsAppearance: NimsAppearance
+  private var _appearance: Appearance
   private var drawRuns = Deque<DrawRun>()
+  private var oldDrawRuns = Deque<DrawRun>()
 }

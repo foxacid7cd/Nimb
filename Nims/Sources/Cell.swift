@@ -8,6 +8,6 @@
 import Foundation
 
 struct Cell: Hashable {
-  var character: Character?
-  var hlID: Int
+  var text: String
+  var highlightID: Int
 }
