@@ -7,6 +7,7 @@
 
 import Backbone
 import Cocoa
+import IdentifiedCollections
 import OSLog
 import RPC
 
@@ -97,96 +98,45 @@ class NvimInstance {
               switch name {
               case .gridResize:
                 await forEachParametersTuple { parameters in
-                  var parameters = parameters
-
                   guard
                     parameters.count == 3,
-                    let gridID = parameters.removeFirst() as? Int,
+                    let rawID = parameters.removeFirst() as? Int,
                     let width = parameters.removeFirst() as? Int,
                     let height = parameters.removeFirst() as? Int
                   else {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
+                  let id = Grid.ID(rawID)
+                  let size = Size(width: width, height: height)
 
-                  if gridID == 1 {
-                    let gridSize = Size(width: width, height: height)
-                    let cellSize = await appearance.cellSize()
-                    window.setContentSize(gridSize * cellSize)
-                  }
-
-                  mainView.gridResize(
-                    gridID: gridID,
-                    gridSize: .init(width: width, height: height)
+                  let grid = Grid(
+                    appearance: appearance,
+                    id: id,
+                    size: size
                   )
+                  self.grids.append(grid)
+
+                  if id == 1 {
+                    let cellSize = await appearance.cellSize()
+                    window.setContentSize(size * cellSize)
+                  }
                 }
 
               case .gridLine:
-                var lastHlID: Int?
-                var lastY: Int?
-
                 await forEachParametersTuple { parameters in
                   guard
                     parameters.count == 4,
-                    let gridID = parameters.removeFirst() as? Int,
+                    let rawID = parameters.removeFirst() as? Int,
                     let y = parameters.removeFirst() as? Int,
                     let x = parameters.removeFirst() as? Int,
                     let data = parameters.removeFirst() as? [Value]
                   else {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
-
+                  let id = Grid.ID(rawID)
                   let origin = Point(x: x, y: y)
 
-                  var updatedCellsCount = 0
-                  var updatedCells = [Cell]()
-
-                  for value in data {
-                    guard var arrayValue = value as? [Value] else {
-                      throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
-                    }
-
-                    guard !arrayValue.isEmpty, let text = arrayValue.removeFirst() as? String else {
-                      throw RedrawNotificationParsingError.gridLineCellTextIsNotString
-                    }
-
-                    var repeatCount = 1
-
-                    if !arrayValue.isEmpty {
-                      guard let hlID = arrayValue.removeFirst() as? Int else {
-                        throw RedrawNotificationParsingError.gridLineHlIDIsNotInt
-                      }
-                      lastHlID = hlID
-
-                      if !arrayValue.isEmpty {
-                        guard let parsedRepeatCount = arrayValue.removeFirst() as? Int else {
-                          throw RedrawNotificationParsingError.gridLineCellRepeatCountIsNotInt
-                        }
-                        repeatCount = parsedRepeatCount
-                      }
-                    }
-
-                    guard let lastHlID else {
-                      throw RedrawNotificationParsingError.gridLineHlIDNotParsedYet
-                    }
-
-                    if lastY != y {
-                      updatedCellsCount = 0
-                    }
-
-                    for _ in 0 ..< repeatCount {
-                      let cell = Cell(
-                        text: text,
-                        highlightID: lastHlID
-                      )
-                      updatedCells.append(cell)
-                    }
-
-                    updatedCellsCount += repeatCount
-
-                    lastY = y
-                  }
-
-                  mainView.gridLine(gridID: gridID, origin: origin, cells: updatedCells)
+                  await self.grids[id: id]!.update(lineParametersBatch: [(origin, data)])
                 }
 
               case .gridClear:
@@ -332,7 +282,12 @@ class NvimInstance {
                 }
 
               case .flush:
-                break
+                if !self.flushed {
+                  self.window.becomeMain()
+                  self.window.makeKeyAndOrderFront(nil)
+
+                  self.flushed = true
+                }
               }
             }
           }
@@ -367,11 +322,8 @@ class NvimInstance {
 
     try self.process.run()
 
-    self.window.becomeMain()
-    self.window.makeKeyAndOrderFront(nil)
-
     let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
-    await self.rpc.call(method: "nvim_ui_attach", parameters: [120, 40, options])
+    await self.rpc.call(method: "nvim_ui_attach", parameters: [80, 24, options])
   }
 
   func stop() async throws {
@@ -388,10 +340,12 @@ class NvimInstance {
   private let window: Window
   private let process: Process
   private let rpc: RPC.Facade
+  private var grids = IdentifiedArrayOf<Grid>()
 
   private var notificationsTask: Task<Void, Never>?
   private var inputTask: Task<Void, Never>?
   private var started = false
+  private var flushed = false
 }
 
 enum RedrawNotificationParsingError: Error {

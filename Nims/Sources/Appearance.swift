@@ -31,6 +31,10 @@ actor Appearance {
     await self.highlights.apply(nvimAttr: nvimAttr, forID: id)
   }
 
+  func highlight(id: Highlight.ID) async -> Highlight {
+    await self.highlights.highlight(id: id)
+  }
+
   private var font = Font()
   private var highlights = Highlights()
 }
@@ -135,7 +139,7 @@ actor Highlights {
   }
 
   func stringAttributes(id: Highlight.ID? = nil, font: Font) async -> [NSAttributedString.Key: Any] {
-    let highlight = id.flatMap { self.highlights[id: $0] }
+    let highlight = id.map { self.highlight(id: $0) }
 
     return [
       .font: await font.nsFont(highlight: highlight),
@@ -145,19 +149,28 @@ actor Highlights {
     ]
   }
 
-  func foregroundColor(highlightID: Int? = nil) async -> Color {
-    let highlight = highlightID.flatMap { self.highlights[$0] }
+  func foregroundColor(highlightID: Highlight.ID? = nil) async -> Color {
+    let highlight = highlightID.map { self.highlight(id: $0) }
     return await self.foregroundColor(highlight: highlight)
   }
 
-  func backgroundColor(highlightID: Int? = nil) async -> Color {
-    let highlight = highlightID.flatMap { self.highlights[$0] }
+  func backgroundColor(highlightID: Highlight.ID? = nil) async -> Color {
+    let highlight = highlightID.map { self.highlight(id: $0) }
     return await self.backgroundColor(highlight: highlight)
   }
 
-  func specialColor(highlightID: Int? = nil) async -> Color {
-    let highlight = highlightID.flatMap { self.highlights[$0] }
+  func specialColor(highlightID: Highlight.ID? = nil) async -> Color {
+    let highlight = highlightID.map { self.highlight(id: $0) }
     return await self.specialColor(highlight: highlight)
+  }
+
+  func highlight(id: Highlight.ID) -> Highlight {
+    self.highlights[id: id] ?? {
+      let new = Highlight(id: id)
+      self.highlights.append(new)
+
+      return new
+    }()
   }
 
   private var defaultForegroundColor = Color(rgb: 0x00FF00)

@@ -51,7 +51,7 @@ class MainView: NSView {
     }
   }
 
-  func gridLine(gridID: Int, origin: Point, cells: [Cell]) {
+  func gridLine(gridID: Int, origin: Point, cells: [_Cell]) {
     guard let gridView = gridViews[gridID] else {
       return
     }
@@ -293,7 +293,7 @@ private class GridView: NSView {
 //    }
   }
 
-  func gridLine(origin _: Point, cells _: [Cell]) {
+  func gridLine(origin _: Point, cells _: [_Cell]) {
 //    let cellSize = self._apperance.cellSize
 //
 //    let origin = GridPoint(
@@ -353,4 +353,9 @@ private class GridView: NSView {
   private var _appearance: Appearance
   private var drawRuns = Deque<DrawRun>()
   private var oldDrawRuns = Deque<DrawRun>()
+}
+
+struct _Cell {
+  var text = " "
+  var highlightID: Int?
 }
