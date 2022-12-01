@@ -8,11 +8,11 @@
 import Cocoa
 
 struct DrawRun: Equatable {
-  var gridOrigin: GridPoint
+  var origin: Point
   var glyphRuns: [GlyphRun]
-  var rect: CGRect
+  var cgFrame: CGRect
 
-  static func make(gridOrigin: GridPoint, rect: CGRect, attributedString: NSAttributedString) -> DrawRun {
+  static func make(origin: Point, cgFrame: CGRect, attributedString: NSAttributedString) -> DrawRun {
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
 
@@ -54,9 +54,9 @@ struct DrawRun: Equatable {
       }
 
     return .init(
-      gridOrigin: gridOrigin,
+      origin: origin,
       glyphRuns: glyphRuns,
-      rect: rect
+      cgFrame: cgFrame
     )
   }
 }

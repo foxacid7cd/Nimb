@@ -40,3 +40,9 @@ actor FileHandleDecorator: DataSource, DataDestination {
 
   private let fileHandle: FileHandle
 }
+
+extension FileHandle {
+  var decorator: FileHandleDecorator {
+    .init(self)
+  }
+}

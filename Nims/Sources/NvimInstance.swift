@@ -109,7 +109,7 @@ class NvimInstance {
                   }
 
                   if gridID == 1 {
-                    let gridSize = GridSize(width: width, height: height)
+                    let gridSize = Size(width: width, height: height)
                     let cellSize = await appearance.cellSize()
                     window.setContentSize(gridSize * cellSize)
                   }
@@ -135,7 +135,7 @@ class NvimInstance {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
-                  let origin = GridPoint(x: x, y: y)
+                  let origin = Point(x: x, y: y)
 
                   var updatedCellsCount = 0
                   var updatedCells = [Cell]()
@@ -230,7 +230,7 @@ class NvimInstance {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
-                  let gridFrame = GridRectangle(
+                  let gridFrame = Rectangle(
                     origin: .init(x: x, y: y),
                     size: .init(width: width, height: height)
                   )

@@ -7,7 +7,7 @@
 
 import Cocoa
 
-public extension NSColor {
+extension NSColor {
   convenience init(rgb: Int, alpha: Double = 1) {
     self.init(
       red: Double((rgb & 0xFF0000) >> 16) / 255.0,

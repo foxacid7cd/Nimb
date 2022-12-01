@@ -18,8 +18,8 @@ public actor Facade {
 
   public init(writingTo: FileHandle, readingFrom: FileHandle) {
     self.init(
-      packer: Packer(dataDestination: FileHandleDecorator(writingTo)),
-      unpacker: Unpacker(dataSource: FileHandleDecorator(readingFrom))
+      packer: Packer(dataDestination: writingTo.decorator),
+      unpacker: Unpacker(dataSource: readingFrom.decorator)
     )
   }
 

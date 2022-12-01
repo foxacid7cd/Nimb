@@ -32,7 +32,9 @@
 		6824DE0B29384E4D00D26A6E /* Prelude in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0A29384E4D00D26A6E /* Prelude */; };
 		6824DE0E29384FC300D26A6E /* Tagged in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0D29384FC300D26A6E /* Tagged */; };
 		6824DE132938613400D26A6E /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE112938610600D26A6E /* Value.swift */; };
-		6824DE17293867C200D26A6E /* NSColor+RGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */; };
+		6824DE17293867C200D26A6E /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor.swift */; };
+		6824DE1D2938705500D26A6E /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1929386DF300D26A6E /* Geometry.swift */; };
+		6824DE1E2938705F00D26A6E /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1B29386F4400D26A6E /* Grid.swift */; };
 		684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684384D22934D04A000C4A1D /* AppDelegate.swift */; };
 		684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		684384FD2934D17F000C4A1D /* NvimServiceAPI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -53,14 +55,12 @@
 		684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		684C03EB2935376F00810852 /* Packer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EA2935376F00810852 /* Packer.swift */; };
 		684C03ED29354C0F00810852 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* Request.swift */; };
-		68561F4A29371285002FD94B /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4929371285002FD94B /* Grid.swift */; };
-		68561F4C29378E87002FD94B /* NSView+Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* NSView+Nims.swift */; };
+		68561F4C29378E87002FD94B /* NSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* NSView.swift */; };
 		685B61612935D1AD006381F1 /* WinRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685B61602935D1AD006381F1 /* WinRef.swift */; };
 		685EE9632935A01B00D85550 /* NvimInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9622935A01B00D85550 /* NvimInstance.swift */; };
 		685EE9652935A0FD00D85550 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9642935A0FD00D85550 /* Window.swift */; };
 		685EE9672935A21000D85550 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9662935A21000D85550 /* MainView.swift */; };
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
-		685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97C2935AD8900D85550 /* GridGeometry.swift */; };
 		687290C029355A0900445435 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* Response.swift */; };
 		687290C329355AF500445435 /* Notification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* Notification.swift */; };
 		687290C6293578D700445435 /* Facade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* Facade.swift */; };
@@ -68,7 +68,6 @@
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		689A634C2935E829003D6363 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634B2935E829003D6363 /* Cell.swift */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
@@ -218,9 +217,10 @@
 		6820BFA72935249A0057F22B /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		6820BFB6293525890057F22B /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		6820BFB9293527070057F22B /* nvim.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nvim.entitlements; sourceTree = "<group>"; };
-		6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSColor+RGB.swift"; sourceTree = "<group>"; };
+		6822B86329365DD300D0EAE1 /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
 		6824DE112938610600D26A6E /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
-		684384D12934D04A000C4A1D /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
+		6824DE1929386DF300D26A6E /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
+		6824DE1B29386F4400D26A6E /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		684384D92934D0A1000C4A1D /* NvimServiceProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NvimServiceProtocol.swift; sourceTree = "<group>"; };
 		684384DC2934D0A1000C4A1D /* nvim_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nvim_main.h; sourceTree = "<group>"; };
@@ -242,20 +242,17 @@
 		6843852F2934D4A6000C4A1D /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/Cellar/gettext/0.21.1/lib/libintl.8.dylib; sourceTree = "<group>"; };
 		684C03EA2935376F00810852 /* Packer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packer.swift; sourceTree = "<group>"; };
 		684C03EC29354C0F00810852 /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
-		68561F4929371285002FD94B /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
-		68561F4B29378E87002FD94B /* NSView+Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSView+Nims.swift"; sourceTree = "<group>"; };
+		68561F4B29378E87002FD94B /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
 		685B61602935D1AD006381F1 /* WinRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinRef.swift; sourceTree = "<group>"; };
 		685EE9622935A01B00D85550 /* NvimInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimInstance.swift; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE9662935A21000D85550 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
-		685EE97C2935AD8900D85550 /* GridGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridGeometry.swift; sourceTree = "<group>"; };
 		687290BF29355A0900445435 /* Response.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
 		687290C129355AE800445435 /* Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notification.swift; sourceTree = "<group>"; };
 		687290C4293577C000445435 /* Facade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Facade.swift; sourceTree = "<group>"; };
 		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
 		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
-		689A634B2935E829003D6363 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
 		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -372,10 +369,18 @@
 			path = src;
 			sourceTree = "<group>";
 		};
+		6824DE1829386C7500D26A6E /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				68561F4B29378E87002FD94B /* NSView.swift */,
+				6822B86329365DD300D0EAE1 /* NSColor.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				684384D12934D04A000C4A1D /* Nims-Bridging-Header.h */,
 				684384D22934D04A000C4A1D /* AppDelegate.swift */,
 				687290C929358F8300445435 /* NvimNotificationMethodName.swift */,
 				687290CB293593F400445435 /* RedrawUIEventName.swift */,
@@ -383,14 +388,12 @@
 				685EE97A2935A98A00D85550 /* Appearance.swift */,
 				685EE9642935A0FD00D85550 /* Window.swift */,
 				685EE9662935A21000D85550 /* MainView.swift */,
-				685EE97C2935AD8900D85550 /* GridGeometry.swift */,
 				685B61602935D1AD006381F1 /* WinRef.swift */,
-				689A634B2935E829003D6363 /* Cell.swift */,
 				689A634F2936124F003D6363 /* DrawRun.swift */,
 				680E72AC2936BDA0009BFA53 /* KeyPress.swift */,
-				68561F4929371285002FD94B /* Grid.swift */,
-				68561F4B29378E87002FD94B /* NSView+Nims.swift */,
-				6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */,
+				6824DE1929386DF300D26A6E /* Geometry.swift */,
+				6824DE1B29386F4400D26A6E /* Grid.swift */,
+				6824DE1829386C7500D26A6E /* Extensions */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -888,16 +891,15 @@
 				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
 				685EE9652935A0FD00D85550 /* Window.swift in Sources */,
 				680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */,
+				6824DE1D2938705500D26A6E /* Geometry.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* Appearance.swift in Sources */,
 				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,
-				6824DE17293867C200D26A6E /* NSColor+RGB.swift in Sources */,
+				6824DE17293867C200D26A6E /* NSColor.swift in Sources */,
 				689A63502936124F003D6363 /* DrawRun.swift in Sources */,
-				689A634C2935E829003D6363 /* Cell.swift in Sources */,
-				68561F4A29371285002FD94B /* Grid.swift in Sources */,
+				6824DE1E2938705F00D26A6E /* Grid.swift in Sources */,
 				685B61612935D1AD006381F1 /* WinRef.swift in Sources */,
-				68561F4C29378E87002FD94B /* NSView+Nims.swift in Sources */,
-				685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */,
+				68561F4C29378E87002FD94B /* NSView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

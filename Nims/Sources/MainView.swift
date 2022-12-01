@@ -21,7 +21,7 @@ class MainView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func gridResize(gridID: Int, gridSize: GridSize) {
+  func gridResize(gridID: Int, gridSize: Size) {
     let gridView = self.gridViews[gridID] ?? {
       let new = GridView(appearance: self._appearance, gridID: gridID)
       self.gridViews[gridID] = new
@@ -51,7 +51,7 @@ class MainView: NSView {
     }
   }
 
-  func gridLine(gridID: Int, origin: GridPoint, cells: [Cell]) {
+  func gridLine(gridID: Int, origin: Point, cells: [Cell]) {
     guard let gridView = gridViews[gridID] else {
       return
     }
@@ -77,7 +77,7 @@ class MainView: NSView {
     self.sortGridViews()
   }
 
-  func winPos(gridID: Int, winRef: WinRef, gridFrame: GridRectangle) {
+  func winPos(gridID: Int, winRef: WinRef, gridFrame: Rectangle) {
     guard let gridView = self.gridViews[gridID] else {
       return
     }
@@ -148,7 +148,7 @@ class MainView: NSView {
   private var winPosCallCounter = 0
   private var _appearance: Appearance
   private var gridViews = TreeDictionary<Int, GridView>()
-  private var outerGridSize = GridSize()
+  private var outerGridSize = Size()
 
   private func sortGridViews() {
     func compare(firstView: NSView, secondView: NSView, context _: UnsafeMutableRawPointer?) -> ComparisonResult {
@@ -182,7 +182,7 @@ private class GridView: NSView {
 
   struct WinPos {
     var winRef: WinRef
-    var gridFrame: GridRectangle
+    var gridFrame: Rectangle
 
     var zPositionWeight: Int
   }
@@ -196,12 +196,12 @@ private class GridView: NSView {
     var zPosition: Int
 
     var zPositionWeight: Int
-    var getAnchorGridOrigin: () -> GridPoint
+    var getAnchorGridOrigin: () -> Point
   }
 
   let gridID: Int
-  var gridSize = GridSize()
-  var outerGridSize = GridSize()
+  var gridSize = Size()
+  var outerGridSize = Size()
   var winPos: WinPos?
   var winFloatPos: WinFloatPos?
 
@@ -209,10 +209,10 @@ private class GridView: NSView {
     true
   }
 
-  var gridFrame: GridRectangle {
+  var gridFrame: Rectangle {
     if let winFloatPos {
       return .init(
-        origin: winFloatPos.getAnchorGridOrigin() + GridPoint(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
+        origin: winFloatPos.getAnchorGridOrigin() + Point(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
         size: self.gridSize
       )
     }
@@ -293,7 +293,7 @@ private class GridView: NSView {
 //    }
   }
 
-  func gridLine(origin _: GridPoint, cells _: [Cell]) {
+  func gridLine(origin _: Point, cells _: [Cell]) {
 //    let cellSize = self._apperance.cellSize
 //
 //    let origin = GridPoint(

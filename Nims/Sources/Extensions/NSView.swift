@@ -8,7 +8,7 @@
 import Cocoa
 
 extension NSView {
-  var rectsBeingDrawn: [CGRect] {
+  func rectsBeingDrawn() -> [CGRect] {
     var rects: UnsafePointer<CGRect>?
     var count = 0
     self.getRectsBeingDrawn(&rects, count: &count)

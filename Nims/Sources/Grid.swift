@@ -2,48 +2,46 @@
 //  Grid.swift
 //  Nims
 //
-//  Created by Yevhenii Matviienko on 30.11.2022.
+//  Created by Yevhenii Matviienko on 01.12.2022.
 //
 
 import AsyncAlgorithms
 import Cocoa
 
 actor Grid {
-  init(appearance: Appearance) {
-    self.appearance = appearance
-  }
-
-  actor Line {
-    init() {}
-
-    func resize(to length: Int) {
-      self.cells = (0 ..< length)
-        .map { _ in
-          Cell()
-        }
-    }
-
-    private var cells = [Cell]()
-  }
-
-  actor Cell {
-    var text = " "
-    var highlightID: Int?
-  }
-
-  func resize(to size: GridSize) async {
-    var lines = [Line]()
+  func resize(to size: Size) async {
+    var rows = [Row]()
 
     for _ in 0 ..< size.height {
-      let line = Line()
-      await line.resize(to: size.width)
+      let row = Row()
+      await row.resize(to: size.width)
 
-      lines.append(line)
+      rows.append(row)
     }
 
-    self.lines = lines
+    self.rows = rows
   }
 
-  private let appearance: Appearance
-  private var lines = [Line]()
+  private var rows = [Row]()
+}
+
+actor Row {
+  func resize(to length: Int) {
+    self.cells = (0 ..< length)
+      .map { _ in
+        Cell()
+      }
+  }
+
+  private var cells = [Cell]()
+}
+
+actor Cell {
+  init(text: String = " ", highlightID: Int? = nil) {
+    self.text = text
+    self.highlightID = highlightID
+  }
+
+  var text: String
+  var highlightID: Int?
 }
