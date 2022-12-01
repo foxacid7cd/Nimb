@@ -1,5 +1,5 @@
 //
-//  Facade.swift
+//  RPCService.swift
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 29.11.2022.
@@ -10,47 +10,46 @@ import Backbone
 import Collections
 import Foundation
 
-public actor Facade {
+public protocol RPCServiceProtocol {
+  func run() async throws
+  func notifications() async -> AnyAsyncSequence<Notification>
+  func call(method: String, parameters: [Value]) async -> Response
+}
+
+public actor RPCService: RPCServiceProtocol {
   public init(packer: PackerProtocol, unpacker: UnpackerProtocol) {
     self.packer = packer
     self.unpacker = unpacker
   }
 
-  public init(writingTo: FileHandle, readingFrom: FileHandle) {
-    self.init(
-      packer: Packer(dataDestination: writingTo.decorator),
-      unpacker: Unpacker(dataSource: readingFrom.decorator)
-    )
-  }
-
-  public func notifications() -> AnyAsyncThrowingSequence<Notification> {
-    let stream = AsyncThrowingStream<Notification, Error> { continuation in
-      let task = Task {
-        do {
-          for try await values in await self.unpacker.valueBatches() {
-            guard !Task.isCancelled else {
-              return
-            }
-
-            try await self.process(
-              values: values,
-              notificationDecoded: { continuation.yield($0) }
-            )
+  public func run() async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        for try await unpackedBatch in await self.unpacker.unpackedBatches() {
+          guard !Task.isCancelled else {
+            return
           }
 
-          continuation.finish()
-
-        } catch {
-          continuation.finish(throwing: error)
+          try await self.process(
+            unpackedBatch: unpackedBatch
+          )
         }
       }
 
-      continuation.onTermination = { _ in
-        task.cancel()
+      group.addTask {
+        try await self.unpacker.run()
       }
-    }
 
-    return stream.eraseToAnyAsyncThrowingSequence()
+      group.addTask {
+        try await self.packer.run()
+      }
+
+      try await group.waitForAll()
+    }
+  }
+
+  public func notifications() -> AnyAsyncSequence<Notification> {
+    self.notificationChannel.eraseToAnyAsyncSequence()
   }
 
   @discardableResult
@@ -59,37 +58,34 @@ public actor Facade {
     self.callsCount += 1
 
     return await withUnsafeContinuation { continuation in
-      let request = Request(id: id, method: method, parameters: parameters)
-
-      Task.detached {
+      Task {
         await self.responseWaiters.register(id: id) { response in
           continuation.resume(returning: response)
         }
-      }
 
-      Task {
-        try await self.packer.pack(
-          value: request.makeValue()
+        let request = Request(
+          id: id,
+          method: method,
+          parameters: parameters
         )
+        await self.packer.pack(value: request.makeValue())
       }
     }
   }
 
   private let packer: PackerProtocol
   private let unpacker: UnpackerProtocol
+  private let notificationChannel = AsyncChannel<Notification>()
   private let responseWaiters = ResponseWaiters()
   private var callsCount = 0
 
-  private func process(
-    values: [Value],
-    notificationDecoded: @Sendable @escaping (Notification) -> Void
-  ) async throws {
-    for value in values {
-      guard var casted = value as? [Value] else {
+  private func process(unpackedBatch: [Value]) async throws {
+    for value in unpackedBatch {
+      guard var value = value as? [Value] else {
         throw MessageRPCError.receivedMessageIsNotArray
       }
 
-      guard !casted.isEmpty, let type = casted.removeFirst() as? Int else {
+      guard !value.isEmpty, let type = value.removeFirst() as? Int else {
         throw MessageRPCError.failedParsingArray
       }
 
@@ -98,42 +94,46 @@ public actor Facade {
         throw MessageRPCError.unexpectedRPCRequest
 
       case 1:
-        guard !casted.isEmpty, let rawID = casted.removeFirst() as? Int else {
+        guard !value.isEmpty, let rawID = value.removeFirst() as? Int else {
           throw MessageRPCError.failedParsingArray
         }
         let id = Response.ID(rawID)
 
-        guard casted.count == 2 else {
+        guard value.count == 2 else {
           throw MessageRPCError.failedParsingArray
         }
 
         let (isSuccess, payload) = {
-          if casted[0] != nil {
-            return (false, casted[0])
+          if value[0] != nil {
+            return (false, value[0])
 
           } else {
-            return (true, casted[1])
+            return (true, value[1])
           }
         }()
-        await self.responseWaiters.yield(.init(
-          id: id,
-          isSuccess: isSuccess,
-          payload: payload
-        ))
+        await self.responseWaiters.yield(
+          .init(
+            id: id,
+            isSuccess: isSuccess,
+            payload: payload
+          )
+        )
 
       case 2:
-        guard !casted.isEmpty, let method = casted.removeFirst() as? String else {
+        guard !value.isEmpty, let method = value.removeFirst() as? String else {
           throw MessageRPCError.failedParsingArray
         }
 
-        guard !casted.isEmpty, let parameters = casted.removeFirst() as? [Value] else {
+        guard !value.isEmpty, let parameters = value.removeFirst() as? [Value] else {
           throw MessageRPCError.failedParsingArray
         }
 
-        notificationDecoded(.init(
-          method: method,
-          parameters: parameters
-        ))
+        await self.notificationChannel.send(
+          .init(
+            method: method,
+            parameters: parameters
+          )
+        )
 
       default:
         throw MessageRPCError.unexpectedRPCEvent

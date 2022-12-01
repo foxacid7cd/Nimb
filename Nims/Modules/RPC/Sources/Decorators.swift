@@ -8,6 +8,15 @@
 import Backbone
 import Foundation
 
+public extension RPCService {
+  init(destinationFileHandle: FileHandle, sourceFileHandle: FileHandle) {
+    self.init(
+      packer: Packer(dataDestination: FileHandleDecorator(destinationFileHandle)),
+      unpacker: Unpacker(dataSource: FileHandleDecorator(sourceFileHandle))
+    )
+  }
+}
+
 actor FileHandleDecorator: DataSource, DataDestination {
   init(_ fileHandle: FileHandle) {
     self.fileHandle = fileHandle
@@ -39,10 +48,4 @@ actor FileHandleDecorator: DataSource, DataDestination {
   }
 
   private let fileHandle: FileHandle
-}
-
-extension FileHandle {
-  var decorator: FileHandleDecorator {
-    .init(self)
-  }
 }

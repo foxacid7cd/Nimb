@@ -10,7 +10,8 @@ import Backbone
 import Foundation
 
 public protocol UnpackerProtocol {
-  func valueBatches() async -> AnyAsyncThrowingSequence<[Value]>
+  func run() async throws
+  func unpackedBatches() async -> AnyAsyncSequence<[Value]>
 }
 
 public protocol DataSource {
@@ -30,37 +31,26 @@ public actor Unpacker: UnpackerProtocol {
     msgpack_unpacker_destroy(&mpac)
   }
 
-  public func valueBatches() -> AnyAsyncThrowingSequence<[Value]> {
-    let stream = AsyncThrowingStream<[Value], Error> { continuation in
-      let task = Task {
-        do {
-          for try await data in await dataSource.dataBatches() {
-            guard !Task.isCancelled else {
-              return
-            }
-
-            let unpacked = try self.unpack(data: data)
-            continuation.yield(unpacked)
-          }
-
-          continuation.finish()
-
-        } catch {
-          continuation.finish(throwing: error)
-        }
+  public func run() async throws {
+    for try await data in await self.dataSource.dataBatches() {
+      guard !Task.isCancelled else {
+        return
       }
 
-      continuation.onTermination = { _ in
-        task.cancel()
-      }
+      await self.unpackedBatchesChannel.send(
+        try self.unpack(data: data)
+      )
     }
+  }
 
-    return stream.eraseToAnyAsyncThrowingSequence()
+  public func unpackedBatches() -> AnyAsyncSequence<[Value]> {
+    self.unpackedBatchesChannel.eraseToAnyAsyncSequence()
   }
 
   private let dataSource: DataSource
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
+  private let unpackedBatchesChannel = AsyncChannel<[Value]>()
 
   private func unpack(data: Data) throws -> [Value] {
     if msgpack_unpacker_buffer_capacity(&self.mpac) < data.count {

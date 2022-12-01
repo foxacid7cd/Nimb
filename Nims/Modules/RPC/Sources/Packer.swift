@@ -10,7 +10,8 @@ import Backbone
 import Foundation
 
 public protocol PackerProtocol {
-  func pack(value: Value) async throws
+  func run() async throws
+  func pack(value: Value) async
 }
 
 public protocol DataDestination {
@@ -29,16 +30,32 @@ public actor Packer: PackerProtocol {
     msgpack_sbuffer_destroy(&sbuf)
   }
 
-  public func pack(value: Value) async throws {
+  public func run() async throws {
+    for await error in self.errorChannel {
+      guard !Task.isCancelled else {
+        return
+      }
+
+      throw error
+    }
+  }
+
+  public func pack(value: Value) async {
     self.msgpack(value)
 
     let data = Data(bytes: sbuf.data, count: self.sbuf.size)
     msgpack_sbuffer_clear(&self.sbuf)
 
-    try await self.dataDestination.write(data: data)
+    do {
+      try await self.dataDestination.write(data: data)
+
+    } catch {
+      await self.errorChannel.send(error)
+    }
   }
 
   private let dataDestination: DataDestination
+  private let errorChannel = AsyncChannel<Error>()
   private var sbuf = msgpack_sbuffer()
   private var pk = msgpack_packer()
 

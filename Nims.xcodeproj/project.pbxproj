@@ -63,14 +63,16 @@
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
 		687290C029355A0900445435 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* Response.swift */; };
 		687290C329355AF500445435 /* Notification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* Notification.swift */; };
-		687290C6293578D700445435 /* Facade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* Facade.swift */; };
+		687290C6293578D700445435 /* RPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* RPCService.swift */; };
 		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		687E27422934FF7100DBE399 /* NvimServiceAPI.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
+		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
+		68C568382939315A0016165C /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 68C568372939315A0016165C /* SwiftSyntax */; };
 		68E9FC412934D8CD00AE946A /* RPC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* RPC.framework */; };
 		68E9FC422934D8CD00AE946A /* RPC.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* RPC.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68E9FC4B2934D93900AE946A /* Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 68E9FC4A2934D93900AE946A /* Bridging-Header.h */; };
@@ -250,10 +252,11 @@
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		687290BF29355A0900445435 /* Response.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
 		687290C129355AE800445435 /* Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notification.swift; sourceTree = "<group>"; };
-		687290C4293577C000445435 /* Facade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Facade.swift; sourceTree = "<group>"; };
+		687290C4293577C000445435 /* RPCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCService.swift; sourceTree = "<group>"; };
 		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
 		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
+		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -318,6 +321,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */,
+				68C568382939315A0016165C /* SwiftSyntax in Frameworks */,
 				68FFE9542937F8D600B0A882 /* Backbone.framework in Frameworks */,
 				6812D4982938493B0087F95D /* Collections in Frameworks */,
 				68E9FC412934D8CD00AE946A /* RPC.framework in Frameworks */,
@@ -381,6 +385,7 @@
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				6824DE1829386C7500D26A6E /* Extensions */,
 				684384D22934D04A000C4A1D /* AppDelegate.swift */,
 				687290C929358F8300445435 /* NvimNotificationMethodName.swift */,
 				687290CB293593F400445435 /* RedrawUIEventName.swift */,
@@ -393,7 +398,7 @@
 				680E72AC2936BDA0009BFA53 /* KeyPress.swift */,
 				6824DE1929386DF300D26A6E /* Geometry.swift */,
 				6824DE1B29386F4400D26A6E /* Grid.swift */,
-				6824DE1829386C7500D26A6E /* Extensions */,
+				68B21E0D2938C6240033B9E9 /* Store.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -510,10 +515,10 @@
 		68E9FC472934D8F600AE946A /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				6824DE112938610600D26A6E /* Value.swift */,
-				687290C4293577C000445435 /* Facade.swift */,
+				687290C4293577C000445435 /* RPCService.swift */,
 				684C03EA2935376F00810852 /* Packer.swift */,
 				68FFE969293828C500B0A882 /* Unpacker.swift */,
+				6824DE112938610600D26A6E /* Value.swift */,
 				684C03EC29354C0F00810852 /* Request.swift */,
 				687290BF29355A0900445435 /* Response.swift */,
 				687290C129355AE800445435 /* Notification.swift */,
@@ -678,6 +683,7 @@
 			packageProductDependencies = (
 				6812D4972938493B0087F95D /* Collections */,
 				6812D4992938493B0087F95D /* AsyncAlgorithms */,
+				68C568372939315A0016165C /* SwiftSyntax */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -780,6 +786,7 @@
 				6824DE0629384DAD00D26A6E /* XCRemoteSwiftPackageReference "swift-case-paths" */,
 				6824DE0929384E4D00D26A6E /* XCRemoteSwiftPackageReference "swift-prelude" */,
 				6824DE0C29384FC300D26A6E /* XCRemoteSwiftPackageReference "swift-tagged" */,
+				68C568362939315A0016165C /* XCRemoteSwiftPackageReference "swift-syntax" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -886,6 +893,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68B21E0E2938C6240033B9E9 /* Store.swift in Sources */,
 				685EE9632935A01B00D85550 /* NvimInstance.swift in Sources */,
 				685EE9672935A21000D85550 /* MainView.swift in Sources */,
 				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
@@ -909,7 +917,7 @@
 			files = (
 				68FFE96D2938292C00B0A882 /* Unpacker.swift in Sources */,
 				687290C329355AF500445435 /* Notification.swift in Sources */,
-				687290C6293578D700445435 /* Facade.swift in Sources */,
+				687290C6293578D700445435 /* RPCService.swift in Sources */,
 				687290C029355A0900445435 /* Response.swift in Sources */,
 				68FFE97129382DFC00B0A882 /* Decorators.swift in Sources */,
 				684C03ED29354C0F00810852 /* Request.swift in Sources */,
@@ -1574,6 +1582,14 @@
 				kind = branch;
 			};
 		};
+		68C568362939315A0016165C /* XCRemoteSwiftPackageReference "swift-syntax" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-syntax.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1616,6 +1632,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6824DE0C29384FC300D26A6E /* XCRemoteSwiftPackageReference "swift-tagged" */;
 			productName = Tagged;
+		};
+		68C568372939315A0016165C /* SwiftSyntax */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68C568362939315A0016165C /* XCRemoteSwiftPackageReference "swift-syntax" */;
+			productName = SwiftSyntax;
 		};
 		68FFE9652937FAFF00B0A882 /* Collections */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -16,22 +16,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     self.startNvimInstance()
   }
 
-  private var nvimInstance: NvimInstance?
+  private var nvimTask: Task<Void, Never>?
 
   private func startNvimInstance() {
-    guard self.nvimInstance == nil else {
-      return
-    }
-
     let nvimInstance = NvimInstance()
-    self.nvimInstance = nvimInstance
 
-    Task {
+    self.nvimTask = Task {
       do {
-        try await nvimInstance.start()
+        try await nvimInstance.run()
+        os_log("Nvim instance finished running")
 
       } catch {
-        fatalError("NvimInstance start failed: \(error)")
+        os_log("Nvim instance finished running with error: \(error)")
       }
     }
   }

@@ -24,23 +24,30 @@ actor Grid: Identifiable {
 
   let id: ID
 
-  func update(lineParametersBatch: [(origin: Point, nvimData: [Value])]) async {
-    var previousHighlightID: Highlight.ID?
+  func update(parametersBatch: [(origin: Point, data: [Value])]) async {
+    await withTaskGroup(of: Void.self) { taskGroup in
+      for (origin, nvimData) in parametersBatch {
+        let row = self.row(at: origin.y)
 
-    for (origin, nvimData) in lineParametersBatch {
-      let row = self.rows[origin.y]
+        taskGroup.addTask {
+          await row.update(startIndex: origin.x, nvimData: nvimData)
+        }
+      }
 
-      let highlightID = await row.update(
-        startIndex: origin.x,
-        nvimData: nvimData,
-        initialHighlightID: previousHighlightID
-      )
-      previousHighlightID = highlightID
+      for await () in taskGroup {
+        guard !taskGroup.isCancelled else {
+          return
+        }
+      }
     }
   }
 
   private let appearance: Appearance
   private var rows: [Row]
+
+  private func row(at index: Int) -> Row {
+    self.rows[index]
+  }
 }
 
 actor Row {
@@ -64,10 +71,10 @@ actor Row {
       .forEach { $0.element.index = $0.offset }
   }
 
-  func update(startIndex: Int, nvimData: [Value], initialHighlightID: Highlight.ID?) async -> Highlight.ID? {
+  func update(startIndex: Int, nvimData: [Value]) async {
     var updatedCellsCount = 0
 
-    var highlightID = initialHighlightID
+    var highlightID: Highlight.ID?
     var highlightGroupCells = [Cell]()
 
     var createHighlightGroupParametersBatch = [CreateHighlightGroupParameters]()
@@ -128,7 +135,6 @@ actor Row {
     await self.createHighlightGroups(
       parametersBatch: createHighlightGroupParametersBatch
     )
-    return highlightID
   }
 
   private let appearance: Appearance
