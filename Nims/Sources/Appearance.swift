@@ -6,16 +6,17 @@
 //
 
 import Cocoa
-import Collections
-import MessagePack
+import IdentifiedCollections
+import RPC
+import Tagged
 
 actor Appearance {
   func cellSize() async -> CGSize {
     await self.font.cellSize
   }
 
-  func stringAttributes(highlightID: Int? = nil) async -> [NSAttributedString.Key: Any] {
-    await self.highlights.stringAttributes(font: self.font, highlightID: highlightID)
+  func stringAttributes(id: Highlight.ID? = nil) async -> [NSAttributedString.Key: Any] {
+    await self.highlights.stringAttributes(id: id, font: self.font)
   }
 
   func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
@@ -26,15 +27,15 @@ actor Appearance {
     )
   }
 
-  func apply(nvimAttr: [(String, MessageValue)], forHighlightID highlightID: Int) async {
-    await self.highlights.apply(nvimAttr: nvimAttr, forHighlightID: highlightID)
+  func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
+    await self.highlights.apply(nvimAttr: nvimAttr, forID: id)
   }
 
   private var font = Font()
   private var highlights = Highlights()
 }
 
-private actor Font {
+actor Font {
   var regularNSFont = NSFont.monospacedSystemFont(
     ofSize: 13,
     weight: .regular
@@ -115,25 +116,26 @@ private actor Font {
   private var cachedCellSize: CGSize?
 }
 
-private actor Highlights {
+actor Highlights {
   func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
     await self.defaultForegroundColor.set(rgb: foregroundRGB)
     await self.defaultBackgroundColor.set(rgb: backgroundRGB)
     await self.defaultSpecialColor.set(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [(String, MessageValue)], forHighlightID highlightID: Int) async {
-    let highlight = self.highlights[highlightID] ?? {
-      let new = Highlight()
-      self.highlights[highlightID] = new
+  func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
+    let highlight = self.highlights[id: id] ?? {
+      let new = Highlight(id: id)
+      self.highlights.append(new)
+
       return new
     }()
 
     await highlight.apply(nvimAttr: nvimAttr)
   }
 
-  func stringAttributes(font: Font, highlightID: Int? = nil) async -> [NSAttributedString.Key: Any] {
-    let highlight = highlightID.flatMap { self.highlights[$0] }
+  func stringAttributes(id: Highlight.ID? = nil, font: Font) async -> [NSAttributedString.Key: Any] {
+    let highlight = id.flatMap { self.highlights[id: $0] }
 
     return [
       .font: await font.nsFont(highlight: highlight),
@@ -161,7 +163,7 @@ private actor Highlights {
   private var defaultForegroundColor = Color(rgb: 0x00FF00)
   private var defaultBackgroundColor = Color(rgb: 0x000000)
   private var defaultSpecialColor = Color(rgb: 0xFF00FF)
-  private var highlights = PersistentDictionary<Int, Highlight>()
+  private var highlights = IdentifiedArrayOf<Highlight>()
 
   private func foregroundColor(highlight: Highlight? = nil) async -> Color {
     await highlight?.foregroundColor ?? self.defaultForegroundColor
@@ -176,7 +178,15 @@ private actor Highlights {
   }
 }
 
-private actor Highlight {
+actor Highlight: Identifiable {
+  init(id: ID) {
+    self.id = id
+  }
+
+  typealias ID = Tagged<Highlight, Int>
+
+  let id: ID
+
   var isBold = false
   var isItalic = false
 
@@ -184,7 +194,7 @@ private actor Highlight {
   var backgroundColor: Color?
   var specialColor: Color?
 
-  func apply(nvimAttr: [(String, MessageValue)]) {
+  func apply(nvimAttr: [(String, Value)]) {
     for (key, value) in nvimAttr {
       switch key {
       case "foreground":
@@ -219,7 +229,7 @@ private actor Highlight {
   }
 }
 
-private actor Color {
+actor Color {
   init(rgb: Int) {
     self.rgb = rgb
   }

@@ -147,7 +147,7 @@ class MainView: NSView {
 
   private var winPosCallCounter = 0
   private var _appearance: Appearance
-  private var gridViews = PersistentDictionary<Int, GridView>()
+  private var gridViews = TreeDictionary<Int, GridView>()
   private var outerGridSize = GridSize()
 
   private func sortGridViews() {

@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680E72AC2936BDA0009BFA53 /* KeyPress.swift */; };
+		6812D494293849300087F95D /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 6812D493293849300087F95D /* Collections */; };
+		6812D496293849300087F95D /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 6812D495293849300087F95D /* AsyncAlgorithms */; };
+		6812D4982938493B0087F95D /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 6812D4972938493B0087F95D /* Collections */; };
+		6812D49A2938493B0087F95D /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 6812D4992938493B0087F95D /* AsyncAlgorithms */; };
 		6820BFA82935249A0057F22B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6820BFA72935249A0057F22B /* main.c */; };
 		6820BFA9293524EA0057F22B /* libluajit-5.1.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 684385222934D43F000C4A1D /* libluajit-5.1.a */; };
 		6820BFAA293524EA0057F22B /* libluv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 684385242934D440000C4A1D /* libluv.a */; };
@@ -23,7 +27,12 @@
 		6820BFB42935257B0057F22B /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6820BFB7293525890057F22B /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6820BFB6293525890057F22B /* CoreServices.framework */; };
 		6820BFBB293527790057F22B /* nvim in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6820BF9E293524640057F22B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		6822B86429365DD300D0EAE1 /* NSColor+RGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */; };
+		6824DE0529384D3500D26A6E /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0429384D3500D26A6E /* IdentifiedCollections */; };
+		6824DE0829384DAD00D26A6E /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0729384DAD00D26A6E /* CasePaths */; };
+		6824DE0B29384E4D00D26A6E /* Prelude in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0A29384E4D00D26A6E /* Prelude */; };
+		6824DE0E29384FC300D26A6E /* Tagged in Frameworks */ = {isa = PBXBuildFile; productRef = 6824DE0D29384FC300D26A6E /* Tagged */; };
+		6824DE132938613400D26A6E /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE112938610600D26A6E /* Value.swift */; };
+		6824DE17293867C200D26A6E /* NSColor+RGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */; };
 		684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684384D22934D04A000C4A1D /* AppDelegate.swift */; };
 		684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
 		684384FD2934D17F000C4A1D /* NvimServiceAPI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -42,8 +51,8 @@
 		6843852E2934D486000C4A1D /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852D2934D480000C4A1D /* libiconv.tbd */; };
 		684385302934D4A6000C4A1D /* libintl.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; };
 		684385312934D4A6000C4A1D /* libintl.8.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 6843852F2934D4A6000C4A1D /* libintl.8.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		684C03EB2935376F00810852 /* MessagePacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EA2935376F00810852 /* MessagePacker.swift */; };
-		684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* RPCRequest.swift */; };
+		684C03EB2935376F00810852 /* Packer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EA2935376F00810852 /* Packer.swift */; };
+		684C03ED29354C0F00810852 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684C03EC29354C0F00810852 /* Request.swift */; };
 		68561F4A29371285002FD94B /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4929371285002FD94B /* Grid.swift */; };
 		68561F4C29378E87002FD94B /* NSView+Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* NSView+Nims.swift */; };
 		685B61612935D1AD006381F1 /* WinRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685B61602935D1AD006381F1 /* WinRef.swift */; };
@@ -52,9 +61,9 @@
 		685EE9672935A21000D85550 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9662935A21000D85550 /* MainView.swift */; };
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
 		685EE97D2935AD8900D85550 /* GridGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97C2935AD8900D85550 /* GridGeometry.swift */; };
-		687290C029355A0900445435 /* RPCResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* RPCResponse.swift */; };
-		687290C329355AF500445435 /* RPCNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* RPCNotification.swift */; };
-		687290C6293578D700445435 /* MessageRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* MessageRPC.swift */; };
+		687290C029355A0900445435 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290BF29355A0900445435 /* Response.swift */; };
+		687290C329355AF500445435 /* Notification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C129355AE800445435 /* Notification.swift */; };
+		687290C6293578D700445435 /* Facade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C4293577C000445435 /* Facade.swift */; };
 		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		687E27412934FF7100DBE399 /* NvimServiceAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684384F62934D17F000C4A1D /* NvimServiceAPI.framework */; };
@@ -63,9 +72,9 @@
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
-		68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; };
-		68E9FC422934D8CD00AE946A /* MessagePack.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		68E9FC4B2934D93900AE946A /* MessagePack-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */; };
+		68E9FC412934D8CD00AE946A /* RPC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* RPC.framework */; };
+		68E9FC422934D8CD00AE946A /* RPC.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68E9FC3B2934D8CD00AE946A /* RPC.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		68E9FC4B2934D93900AE946A /* Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 68E9FC4A2934D93900AE946A /* Bridging-Header.h */; };
 		68E9FC4C2934D9B500AE946A /* libmsgpackc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6843851F2934D43F000C4A1D /* libmsgpackc.a */; };
 		68FFE9542937F8D600B0A882 /* Backbone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68FFE94E2937F8D600B0A882 /* Backbone.framework */; };
 		68FFE9552937F8D600B0A882 /* Backbone.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68FFE94E2937F8D600B0A882 /* Backbone.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -74,6 +83,8 @@
 		68FFE95F2937FAB400B0A882 /* Backbone.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 68FFE94E2937F8D600B0A882 /* Backbone.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		68FFE9662937FAFF00B0A882 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 68FFE9652937FAFF00B0A882 /* Collections */; };
 		68FFE9682937FB0300B0A882 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68FFE9672937FB0300B0A882 /* AsyncAlgorithms */; };
+		68FFE96D2938292C00B0A882 /* Unpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFE969293828C500B0A882 /* Unpacker.swift */; };
+		68FFE97129382DFC00B0A882 /* Decorators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFE96F29382DB700B0A882 /* Decorators.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -160,7 +171,7 @@
 			files = (
 				684384FD2934D17F000C4A1D /* NvimServiceAPI.framework in Embed Frameworks */,
 				68FFE9552937F8D600B0A882 /* Backbone.framework in Embed Frameworks */,
-				68E9FC422934D8CD00AE946A /* MessagePack.framework in Embed Frameworks */,
+				68E9FC422934D8CD00AE946A /* RPC.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -208,6 +219,7 @@
 		6820BFB6293525890057F22B /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		6820BFB9293527070057F22B /* nvim.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nvim.entitlements; sourceTree = "<group>"; };
 		6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSColor+RGB.swift"; sourceTree = "<group>"; };
+		6824DE112938610600D26A6E /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		684384D12934D04A000C4A1D /* Nims-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Nims-Bridging-Header.h"; sourceTree = "<group>"; };
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		684384D92934D0A1000C4A1D /* NvimServiceProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NvimServiceProtocol.swift; sourceTree = "<group>"; };
@@ -228,20 +240,19 @@
 		684385242934D440000C4A1D /* libluv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluv.a; path = "Third-Party/neovim/.deps/usr/lib/libluv.a"; sourceTree = "<group>"; };
 		6843852D2934D480000C4A1D /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		6843852F2934D4A6000C4A1D /* libintl.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libintl.8.dylib; path = ../../../../../../opt/homebrew/Cellar/gettext/0.21.1/lib/libintl.8.dylib; sourceTree = "<group>"; };
-		684C03EA2935376F00810852 /* MessagePacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePacker.swift; sourceTree = "<group>"; };
-		684C03EC29354C0F00810852 /* RPCRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCRequest.swift; sourceTree = "<group>"; };
+		684C03EA2935376F00810852 /* Packer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packer.swift; sourceTree = "<group>"; };
+		684C03EC29354C0F00810852 /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
 		68561F4929371285002FD94B /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		68561F4B29378E87002FD94B /* NSView+Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSView+Nims.swift"; sourceTree = "<group>"; };
 		685B61602935D1AD006381F1 /* WinRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinRef.swift; sourceTree = "<group>"; };
-		685EE96129359F1A00D85550 /* Targets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Targets; sourceTree = "<group>"; };
 		685EE9622935A01B00D85550 /* NvimInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimInstance.swift; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE9662935A21000D85550 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		685EE97C2935AD8900D85550 /* GridGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridGeometry.swift; sourceTree = "<group>"; };
-		687290BF29355A0900445435 /* RPCResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCResponse.swift; sourceTree = "<group>"; };
-		687290C129355AE800445435 /* RPCNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RPCNotification.swift; sourceTree = "<group>"; };
-		687290C4293577C000445435 /* MessageRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRPC.swift; sourceTree = "<group>"; };
+		687290BF29355A0900445435 /* Response.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
+		687290C129355AE800445435 /* Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notification.swift; sourceTree = "<group>"; };
+		687290C4293577C000445435 /* Facade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Facade.swift; sourceTree = "<group>"; };
 		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
 		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		689A634B2935E829003D6363 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
@@ -250,10 +261,13 @@
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
-		68E9FC3B2934D8CD00AE946A /* MessagePack.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessagePack.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "MessagePack-Bridging-Header.h"; sourceTree = "<group>"; };
+		68E9FC3B2934D8CD00AE946A /* RPC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = RPC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		68E9FC4A2934D93900AE946A /* Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
 		68FFE94E2937F8D600B0A882 /* Backbone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Backbone.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		68FFE95B2937F91F00B0A882 /* AnyAsyncSequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyAsyncSequence.swift; sourceTree = "<group>"; };
+		68FFE969293828C500B0A882 /* Unpacker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Unpacker.swift; sourceTree = "<group>"; };
+		68FFE96F29382DB700B0A882 /* Decorators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Decorators.swift; sourceTree = "<group>"; };
+		68FFE976293845E800B0A882 /* Legacy */ = {isa = PBXFileReference; lastKnownFileType = text; path = Legacy; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -308,7 +322,9 @@
 			files = (
 				684384FC2934D17F000C4A1D /* NvimServiceAPI.framework in Frameworks */,
 				68FFE9542937F8D600B0A882 /* Backbone.framework in Frameworks */,
-				68E9FC412934D8CD00AE946A /* MessagePack.framework in Frameworks */,
+				6812D4982938493B0087F95D /* Collections in Frameworks */,
+				68E9FC412934D8CD00AE946A /* RPC.framework in Frameworks */,
+				6812D49A2938493B0087F95D /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -316,8 +332,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6812D494293849300087F95D /* Collections in Frameworks */,
 				68E9FC4C2934D9B500AE946A /* libmsgpackc.a in Frameworks */,
 				68FFE95E2937FAB400B0A882 /* Backbone.framework in Frameworks */,
+				6812D496293849300087F95D /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,7 +343,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6824DE0E29384FC300D26A6E /* Tagged in Frameworks */,
+				6824DE0529384D3500D26A6E /* IdentifiedCollections in Frameworks */,
+				6824DE0829384DAD00D26A6E /* CasePaths in Frameworks */,
 				68FFE9662937FAFF00B0A882 /* Collections in Frameworks */,
+				6824DE0B29384E4D00D26A6E /* Prelude in Frameworks */,
 				68FFE9682937FB0300B0A882 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -337,7 +359,7 @@
 			isa = PBXGroup;
 			children = (
 				6820BFA6293524880057F22B /* src */,
-				6820BFB9293527070057F22B /* nvim.entitlements */,
+				68FFE9752938455700B0A882 /* Support */,
 			);
 			path = nvim;
 			sourceTree = "<group>";
@@ -365,10 +387,10 @@
 				685B61602935D1AD006381F1 /* WinRef.swift */,
 				689A634B2935E829003D6363 /* Cell.swift */,
 				689A634F2936124F003D6363 /* DrawRun.swift */,
-				6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */,
 				680E72AC2936BDA0009BFA53 /* KeyPress.swift */,
 				68561F4929371285002FD94B /* Grid.swift */,
 				68561F4B29378E87002FD94B /* NSView+Nims.swift */,
+				6822B86329365DD300D0EAE1 /* NSColor+RGB.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -376,11 +398,11 @@
 		684384D62934D0A1000C4A1D /* Modules */ = {
 			isa = PBXGroup;
 			children = (
-				6820BFA52935246A0057F22B /* nvim */,
 				684384DA2934D0A1000C4A1D /* NvimService */,
 				684384D72934D0A1000C4A1D /* NvimServiceAPI */,
-				68E9FC462934D8E500AE946A /* MessagePack */,
+				68E9FC462934D8E500AE946A /* RPC */,
 				68FFE9592937F8E600B0A882 /* Backbone */,
+				6820BFA52935246A0057F22B /* nvim */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -442,7 +464,6 @@
 		68BFEF382934CF6100564FE2 = {
 			isa = PBXGroup;
 			children = (
-				685EE96129359F1A00D85550 /* Targets */,
 				68BFEF432934CF6100564FE2 /* Nims */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
@@ -455,7 +476,7 @@
 				68BFEF412934CF6100564FE2 /* Nims.app */,
 				684384F62934D17F000C4A1D /* NvimServiceAPI.framework */,
 				684385092934D225000C4A1D /* NvimService.xpc */,
-				68E9FC3B2934D8CD00AE946A /* MessagePack.framework */,
+				68E9FC3B2934D8CD00AE946A /* RPC.framework */,
 				6820BF9E293524640057F22B /* nvim */,
 				68FFE94E2937F8D600B0A882 /* Backbone.framework */,
 			);
@@ -467,30 +488,33 @@
 			children = (
 				684384D02934D04A000C4A1D /* Sources */,
 				684384D62934D0A1000C4A1D /* Modules */,
-				68BFEF462934CF6200564FE2 /* Assets.xcassets */,
-				68BFEF482934CF6200564FE2 /* MainMenu.xib */,
-				68BFEF4B2934CF6200564FE2 /* Nims.entitlements */,
+				68FFE9742938441300B0A882 /* Resources */,
+				68FFE9732938440600B0A882 /* Support */,
+				68FFE976293845E800B0A882 /* Legacy */,
 			);
 			path = Nims;
 			sourceTree = "<group>";
 		};
-		68E9FC462934D8E500AE946A /* MessagePack */ = {
+		68E9FC462934D8E500AE946A /* RPC */ = {
 			isa = PBXGroup;
 			children = (
 				68E9FC472934D8F600AE946A /* Sources */,
+				68FFE972293843BA00B0A882 /* Support */,
 			);
-			path = MessagePack;
+			path = RPC;
 			sourceTree = "<group>";
 		};
 		68E9FC472934D8F600AE946A /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				68E9FC4A2934D93900AE946A /* MessagePack-Bridging-Header.h */,
-				684C03EA2935376F00810852 /* MessagePacker.swift */,
-				687290C4293577C000445435 /* MessageRPC.swift */,
-				684C03EC29354C0F00810852 /* RPCRequest.swift */,
-				687290BF29355A0900445435 /* RPCResponse.swift */,
-				687290C129355AE800445435 /* RPCNotification.swift */,
+				6824DE112938610600D26A6E /* Value.swift */,
+				687290C4293577C000445435 /* Facade.swift */,
+				684C03EA2935376F00810852 /* Packer.swift */,
+				68FFE969293828C500B0A882 /* Unpacker.swift */,
+				684C03EC29354C0F00810852 /* Request.swift */,
+				687290BF29355A0900445435 /* Response.swift */,
+				687290C129355AE800445435 /* Notification.swift */,
+				68FFE96F29382DB700B0A882 /* Decorators.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -511,6 +535,39 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		68FFE972293843BA00B0A882 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				68E9FC4A2934D93900AE946A /* Bridging-Header.h */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		68FFE9732938440600B0A882 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				68BFEF4B2934CF6200564FE2 /* Nims.entitlements */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		68FFE9742938441300B0A882 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				68BFEF462934CF6200564FE2 /* Assets.xcassets */,
+				68BFEF482934CF6200564FE2 /* MainMenu.xib */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		68FFE9752938455700B0A882 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				6820BFB9293527070057F22B /* nvim.entitlements */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -525,7 +582,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68E9FC4B2934D93900AE946A /* MessagePack-Bridging-Header.h in Headers */,
+				68E9FC4B2934D93900AE946A /* Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -616,14 +673,16 @@
 			);
 			name = Nims;
 			packageProductDependencies = (
+				6812D4972938493B0087F95D /* Collections */,
+				6812D4992938493B0087F95D /* AsyncAlgorithms */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
 			productType = "com.apple.product-type.application";
 		};
-		68E9FC3A2934D8CD00AE946A /* MessagePack */ = {
+		68E9FC3A2934D8CD00AE946A /* RPC */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "MessagePack" */;
+			buildConfigurationList = 68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "RPC" */;
 			buildPhases = (
 				68E9FC362934D8CD00AE946A /* Headers */,
 				68E9FC372934D8CD00AE946A /* Sources */,
@@ -636,11 +695,13 @@
 			dependencies = (
 				68FFE9612937FAB400B0A882 /* PBXTargetDependency */,
 			);
-			name = MessagePack;
+			name = RPC;
 			packageProductDependencies = (
+				6812D493293849300087F95D /* Collections */,
+				6812D495293849300087F95D /* AsyncAlgorithms */,
 			);
 			productName = MessagePack;
-			productReference = 68E9FC3B2934D8CD00AE946A /* MessagePack.framework */;
+			productReference = 68E9FC3B2934D8CD00AE946A /* RPC.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		68FFE94D2937F8D600B0A882 /* Backbone */ = {
@@ -660,6 +721,10 @@
 			packageProductDependencies = (
 				68FFE9652937FAFF00B0A882 /* Collections */,
 				68FFE9672937FB0300B0A882 /* AsyncAlgorithms */,
+				6824DE0429384D3500D26A6E /* IdentifiedCollections */,
+				6824DE0729384DAD00D26A6E /* CasePaths */,
+				6824DE0A29384E4D00D26A6E /* Prelude */,
+				6824DE0D29384FC300D26A6E /* Tagged */,
 			);
 			productName = Backbone;
 			productReference = 68FFE94E2937F8D600B0A882 /* Backbone.framework */;
@@ -708,6 +773,10 @@
 			packageReferences = (
 				685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				6824DE0329384D3500D26A6E /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
+				6824DE0629384DAD00D26A6E /* XCRemoteSwiftPackageReference "swift-case-paths" */,
+				6824DE0929384E4D00D26A6E /* XCRemoteSwiftPackageReference "swift-prelude" */,
+				6824DE0C29384FC300D26A6E /* XCRemoteSwiftPackageReference "swift-tagged" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -716,7 +785,7 @@
 				68BFEF402934CF6100564FE2 /* Nims */,
 				684385082934D225000C4A1D /* NvimService */,
 				684384F52934D17F000C4A1D /* NvimServiceAPI */,
-				68E9FC3A2934D8CD00AE946A /* MessagePack */,
+				68E9FC3A2934D8CD00AE946A /* RPC */,
 				68FFE94D2937F8D600B0A882 /* Backbone */,
 				6820BF9D293524640057F22B /* nvim */,
 			);
@@ -819,10 +888,10 @@
 				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
 				685EE9652935A0FD00D85550 /* Window.swift in Sources */,
 				680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */,
-				6822B86429365DD300D0EAE1 /* NSColor+RGB.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* Appearance.swift in Sources */,
 				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,
+				6824DE17293867C200D26A6E /* NSColor+RGB.swift in Sources */,
 				689A63502936124F003D6363 /* DrawRun.swift in Sources */,
 				689A634C2935E829003D6363 /* Cell.swift in Sources */,
 				68561F4A29371285002FD94B /* Grid.swift in Sources */,
@@ -836,11 +905,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				687290C329355AF500445435 /* RPCNotification.swift in Sources */,
-				687290C6293578D700445435 /* MessageRPC.swift in Sources */,
-				687290C029355A0900445435 /* RPCResponse.swift in Sources */,
-				684C03ED29354C0F00810852 /* RPCRequest.swift in Sources */,
-				684C03EB2935376F00810852 /* MessagePacker.swift in Sources */,
+				68FFE96D2938292C00B0A882 /* Unpacker.swift in Sources */,
+				687290C329355AF500445435 /* Notification.swift in Sources */,
+				687290C6293578D700445435 /* Facade.swift in Sources */,
+				687290C029355A0900445435 /* Response.swift in Sources */,
+				68FFE97129382DFC00B0A882 /* Decorators.swift in Sources */,
+				684C03ED29354C0F00810852 /* Request.swift in Sources */,
+				684C03EB2935376F00810852 /* Packer.swift in Sources */,
+				6824DE132938613400D26A6E /* Value.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -872,7 +944,7 @@
 		};
 		68E9FC402934D8CD00AE946A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 68E9FC3A2934D8CD00AE946A /* MessagePack */;
+			target = 68E9FC3A2934D8CD00AE946A /* RPC */;
 			targetProxy = 68E9FC3F2934D8CD00AE946A /* PBXContainerItemProxy */;
 		};
 		68FFE9532937F8D600B0A882 /* PBXTargetDependency */ = {
@@ -903,7 +975,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CODE_SIGN_ENTITLEMENTS = Nims/Modules/nvim/nvim.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nims/Modules/nvim/Support/nvim.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
@@ -923,7 +995,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CODE_SIGN_ENTITLEMENTS = Nims/Modules/nvim/nvim.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nims/Modules/nvim/Support/nvim.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
@@ -1186,7 +1258,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nims/Support/Nims.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1216,7 +1288,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nims/Support/Nims.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1272,7 +1344,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/MessagePack/Sources/MessagePack-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/RPC/Support/Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -1312,7 +1384,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/MessagePack/Sources/MessagePack-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Nims/Modules/RPC/Support/Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -1431,7 +1503,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "MessagePack" */ = {
+		68E9FC452934D8CD00AE946A /* Build configuration list for PBXNativeTarget "RPC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				68E9FC432934D8CD00AE946A /* Debug */,
@@ -1452,6 +1524,38 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		6824DE0329384D3500D26A6E /* XCRemoteSwiftPackageReference "swift-identified-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-identified-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.0;
+			};
+		};
+		6824DE0629384DAD00D26A6E /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-case-paths.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.1;
+			};
+		};
+		6824DE0929384E4D00D26A6E /* XCRemoteSwiftPackageReference "swift-prelude" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-prelude.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		6824DE0C29384FC300D26A6E /* XCRemoteSwiftPackageReference "swift-tagged" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-tagged.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.8.0;
+			};
+		};
 		685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-collections.git";
@@ -1471,6 +1575,46 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6812D493293849300087F95D /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		6812D495293849300087F95D /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+		6812D4972938493B0087F95D /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		6812D4992938493B0087F95D /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 688971652936B60E00A62849 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+		6824DE0429384D3500D26A6E /* IdentifiedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6824DE0329384D3500D26A6E /* XCRemoteSwiftPackageReference "swift-identified-collections" */;
+			productName = IdentifiedCollections;
+		};
+		6824DE0729384DAD00D26A6E /* CasePaths */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6824DE0629384DAD00D26A6E /* XCRemoteSwiftPackageReference "swift-case-paths" */;
+			productName = CasePaths;
+		};
+		6824DE0A29384E4D00D26A6E /* Prelude */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6824DE0929384E4D00D26A6E /* XCRemoteSwiftPackageReference "swift-prelude" */;
+			productName = Prelude;
+		};
+		6824DE0D29384FC300D26A6E /* Tagged */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6824DE0C29384FC300D26A6E /* XCRemoteSwiftPackageReference "swift-tagged" */;
+			productName = Tagged;
+		};
 		68FFE9652937FAFF00B0A882 /* Collections */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 685EE9682935A79D00D85550 /* XCRemoteSwiftPackageReference "swift-collections" */;

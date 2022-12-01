@@ -6,13 +6,13 @@
 //
 
 import Cocoa
-import MessagePack
 import NvimServiceAPI
 import OSLog
+import RPC
 
 @NSApplicationMain @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
-  func applicationDidFinishLaunching(_: Notification) {
+  func applicationDidFinishLaunching(_: AppKit.Notification) {
     self.startNvimInstance()
   }
 

@@ -7,8 +7,8 @@
 
 import Backbone
 import Cocoa
-import MessagePack
 import OSLog
+import RPC
 
 @MainActor
 class NvimInstance {
@@ -39,57 +39,21 @@ class NvimInstance {
       os_log("Process terminated: \(process.terminationStatus) \(process.terminationReason.rawValue)")
     }
 
-    let standardInputPipe = Pipe()
-    process.standardInput = standardInputPipe
+    let inputPipe = Pipe()
+    process.standardInput = inputPipe
 
-    let standardOutputPipe = Pipe()
-    process.standardOutput = standardOutputPipe
+    let outputPipe = Pipe()
+    process.standardOutput = outputPipe
 
-    struct FileHandleWrapper: MessageDataSource, MessageDataDestination {
-      var data: AnyAsyncThrowingSequence<Data> {
-        let stream = AsyncStream<Data> { continuation in
-          self.fileHandle.readabilityHandler = { fileHandle in
-            let data = fileHandle.availableData
-
-            if data.isEmpty {
-              continuation.finish()
-
-            } else {
-              continuation.yield(data)
-            }
-          }
-        }
-
-        return stream.eraseToAnyAsyncThrowingSequence()
-      }
-
-      var fileHandle: FileHandle
-
-      func write(data: Data) async throws {
-        try self.fileHandle.write(contentsOf: data)
-      }
-    }
-
-    let packer = MessagePacker(
-      dataDestination: FileHandleWrapper(
-        fileHandle: standardInputPipe.fileHandleForWriting
-      )
+    let rpc = RPC.Facade(
+      writingTo: inputPipe.fileHandleForWriting,
+      readingFrom: outputPipe.fileHandleForReading
     )
-    self.packer = packer
-
-    let unpacker = MessageUnpacker(
-      dataSource: FileHandleWrapper(
-        fileHandle: standardOutputPipe.fileHandleForReading
-      )
-    )
-    self.unpacker = unpacker
-
-    let messageRPC = MessageRPC(packer: packer, unpacker: unpacker)
-    self.messageRPC = messageRPC
+    self.rpc = rpc
 
     self.notificationsTask = Task {
       do {
-        for try await notification in await messageRPC.notifications {
+        for try await notification in await rpc.notifications() {
           guard !Task.isCancelled else {
             return
           }
@@ -103,7 +67,7 @@ class NvimInstance {
           case .redraw:
             for parameter in notification.parameters {
               guard
-                let parameterArrayValue = parameter as? [MessageValue],
+                let parameterArrayValue = parameter as? [Value],
                 let uiEventName = parameterArrayValue.first as? String
               else {
                 os_log("Unexpected redraw notification structure")
@@ -115,10 +79,10 @@ class NvimInstance {
                 continue
               }
 
-              func forEachParametersTuple(_ body: (inout [MessageValue]) async throws -> Void) async {
+              func forEachParametersTuple(_ body: (inout [Value]) async throws -> Void) async {
                 for i in 1 ..< parameterArrayValue.count {
                   do {
-                    guard var parameters = parameterArrayValue[i] as? [MessageValue] else {
+                    guard var parameters = parameterArrayValue[i] as? [Value] else {
                       throw RedrawNotificationParsingError.uiEventParametersIsNotArray
                     }
 
@@ -166,7 +130,7 @@ class NvimInstance {
                     let gridID = parameters.removeFirst() as? Int,
                     let y = parameters.removeFirst() as? Int,
                     let x = parameters.removeFirst() as? Int,
-                    let data = parameters.removeFirst() as? [MessageValue]
+                    let data = parameters.removeFirst() as? [Value]
                   else {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
@@ -177,7 +141,7 @@ class NvimInstance {
                   var updatedCells = [Cell]()
 
                   for value in data {
-                    guard var arrayValue = value as? [MessageValue] else {
+                    guard var arrayValue = value as? [Value] else {
                       throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
                     }
 
@@ -353,17 +317,17 @@ class NvimInstance {
                 await forEachParametersTuple { parameters in
                   guard
                     parameters.count == 4,
-                    let highlightID = parameters.removeFirst() as? Int,
-                    let rgbAttr = parameters.removeFirst() as? [(String, MessageValue)],
-                    let _ = parameters.removeFirst() as? [(String, MessageValue)],
-                    let _ = parameters.removeFirst() as? [MessageValue]
+                    let id = parameters.removeFirst() as? Int,
+                    let rgbAttr = parameters.removeFirst() as? [(String, Value)],
+                    let _ = parameters.removeFirst() as? [(String, Value)],
+                    let _ = parameters.removeFirst() as? [Value]
                   else {
                     throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
                   await appearance.apply(
                     nvimAttr: rgbAttr,
-                    forHighlightID: highlightID
+                    forID: .init(id)
                   )
                 }
 
@@ -387,15 +351,10 @@ class NvimInstance {
           break
         }
 
-        do {
-          try await messageRPC.request(
-            method: "nvim_input",
-            parameters: [keyPress.makeNvimKeyCode()]
-          )
-
-        } catch {
-          os_log("nvim_input failed: \(error)")
-        }
+        await rpc.call(
+          method: "nvim_input",
+          parameters: [keyPress.makeNvimKeyCode()]
+        )
       }
     }
   }
@@ -406,16 +365,13 @@ class NvimInstance {
     }
     self.started = true
 
-    await self.unpacker.start()
-    await self.messageRPC.start()
-
     try self.process.run()
 
     self.window.becomeMain()
     self.window.makeKeyAndOrderFront(nil)
 
     let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
-    try await self.messageRPC.request(method: "nvim_ui_attach", parameters: [120, 40, options])
+    await self.rpc.call(method: "nvim_ui_attach", parameters: [120, 40, options])
   }
 
   func stop() async throws {
@@ -431,9 +387,7 @@ class NvimInstance {
   private let appearance: Appearance
   private let window: Window
   private let process: Process
-  private let packer: MessagePacker
-  private let unpacker: MessageUnpacker
-  private let messageRPC: MessageRPC
+  private let rpc: RPC.Facade
 
   private var notificationsTask: Task<Void, Never>?
   private var inputTask: Task<Void, Never>?
