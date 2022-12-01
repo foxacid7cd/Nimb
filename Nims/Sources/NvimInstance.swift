@@ -5,6 +5,7 @@
 //  Created by Yevhenii Matviienko on 29.11.2022.
 //
 
+import Backbone
 import Cocoa
 import MessagePack
 import OSLog
@@ -15,16 +16,13 @@ class NvimInstance {
     let appearance = Appearance()
     self.appearance = appearance
 
+    let mainView = MainView(appearance: appearance)
+
     let window = Window(
-      contentRect: .zero,
-      styleMask: [.titled],
-      backing: .buffered,
-      defer: true
+      style: [.titled],
+      contentView: mainView
     )
     self.window = window
-
-    let mainView = MainView(appearance: appearance)
-    window.contentView = mainView
 
     let process = Process()
     self.process = process
@@ -47,338 +45,343 @@ class NvimInstance {
     let standardOutputPipe = Pipe()
     process.standardOutput = standardOutputPipe
 
-    let packer = MessagePacker()
+    struct FileHandleWrapper: MessageDataSource, MessageDataDestination {
+      var data: AnyAsyncThrowingSequence<Data> {
+        let stream = AsyncStream<Data> { continuation in
+          self.fileHandle.readabilityHandler = { fileHandle in
+            let data = fileHandle.availableData
 
-    let messageRPC = MessageRPC(
-      send: { value in
-        let data = packer.pack(messageValue: value)
+            if data.isEmpty {
+              continuation.finish()
 
-        do {
-          try standardInputPipe.fileHandleForWriting
-            .write(contentsOf: data)
-
-        } catch {
-          os_log("Failed writing to process standard input: \(error)")
+            } else {
+              continuation.yield(data)
+            }
+          }
         }
+
+        return stream.eraseToAnyAsyncThrowingSequence()
       }
+
+      var fileHandle: FileHandle
+
+      func write(data: Data) async throws {
+        try self.fileHandle.write(contentsOf: data)
+      }
+    }
+
+    let packer = MessagePacker(
+      dataDestination: FileHandleWrapper(
+        fileHandle: standardInputPipe.fileHandleForWriting
+      )
     )
+    self.packer = packer
+
+    let unpacker = MessageUnpacker(
+      dataSource: FileHandleWrapper(
+        fileHandle: standardOutputPipe.fileHandleForReading
+      )
+    )
+    self.unpacker = unpacker
+
+    let messageRPC = MessageRPC(packer: packer, unpacker: unpacker)
     self.messageRPC = messageRPC
 
-    Task {
-      for await notification in messageRPC.notifications {
-        guard let method = NvimNotificationMethodName(rawValue: notification.method) else {
-          os_log("Unexpected nvim notification method: \(notification.method)")
-          return
-        }
+    self.notificationsTask = Task {
+      do {
+        for try await notification in await messageRPC.notifications {
+          guard !Task.isCancelled else {
+            return
+          }
 
-        switch method {
-        case .redraw:
-          for parameter in notification.parameters {
-            guard
-              let parameterArrayValue = parameter as? [MessageValue],
-              let uiEventName = parameterArrayValue.first as? String
-            else {
-              os_log("Unexpected redraw notification structure")
-              continue
-            }
+          guard let method = NvimNotificationMethodName(rawValue: notification.method) else {
+            os_log("Unexpected nvim notification method: \(notification.method)")
+            return
+          }
 
-            guard let name = RedrawUIEventName(rawValue: uiEventName) else {
-              os_log("Unexpected redraw UI event with name: \(uiEventName)")
-              continue
-            }
-
-            func forEachParametersTuple(_ body: (inout [MessageValue]) async throws -> Void) async {
-              for i in 1 ..< parameterArrayValue.count {
-                do {
-                  guard var parameters = parameterArrayValue[i] as? [MessageValue] else {
-                    throw RedrawNotificationParsingError.uiEventParametersIsNotArray
-                  }
-
-                  try await body(&parameters)
-
-                } catch {
-                  os_log("Redraw notification parsing failed: \(error)")
-                }
-              }
-            }
-
-            switch name {
-            case .gridResize:
-              await forEachParametersTuple { parameters in
-                var parameters = parameters
-
-                guard
-                  parameters.count == 3,
-                  let gridID = parameters.removeFirst() as? Int,
-                  let width = parameters.removeFirst() as? Int,
-                  let height = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
-                }
-
-                if gridID == 1 {
-                  let gridSize = GridSize(width: width, height: height)
-                  let cellSize = await appearance.cellSize()
-                  window.setContentSize(gridSize * cellSize)
-                }
-
-                mainView.gridResize(
-                  gridID: gridID,
-                  gridSize: .init(width: width, height: height)
-                )
+          switch method {
+          case .redraw:
+            for parameter in notification.parameters {
+              guard
+                let parameterArrayValue = parameter as? [MessageValue],
+                let uiEventName = parameterArrayValue.first as? String
+              else {
+                os_log("Unexpected redraw notification structure")
+                continue
               }
 
-            case .gridLine:
-              var lastHlID: Int?
-              var lastY: Int?
+              guard let name = RedrawUIEventName(rawValue: uiEventName) else {
+                os_log("Unexpected redraw UI event with name: \(uiEventName)")
+                continue
+              }
 
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 4,
-                  let gridID = parameters.removeFirst() as? Int,
-                  let y = parameters.removeFirst() as? Int,
-                  let x = parameters.removeFirst() as? Int,
-                  let data = parameters.removeFirst() as? [MessageValue]
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
-                }
-
-                let origin = GridPoint(x: x, y: y)
-
-                var updatedCellsCount = 0
-                var updatedCells = [Cell]()
-
-                for value in data {
-                  guard var arrayValue = value as? [MessageValue] else {
-                    throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
-                  }
-
-                  guard !arrayValue.isEmpty, let text = arrayValue.removeFirst() as? String else {
-                    throw RedrawNotificationParsingError.gridLineCellTextIsNotString
-                  }
-
-                  var repeatCount = 1
-
-                  if !arrayValue.isEmpty {
-                    guard let hlID = arrayValue.removeFirst() as? Int else {
-                      throw RedrawNotificationParsingError.gridLineHlIDIsNotInt
+              func forEachParametersTuple(_ body: (inout [MessageValue]) async throws -> Void) async {
+                for i in 1 ..< parameterArrayValue.count {
+                  do {
+                    guard var parameters = parameterArrayValue[i] as? [MessageValue] else {
+                      throw RedrawNotificationParsingError.uiEventParametersIsNotArray
                     }
-                    lastHlID = hlID
+
+                    try await body(&parameters)
+
+                  } catch {
+                    os_log("Redraw notification parsing failed: \(error)")
+                  }
+                }
+              }
+
+              switch name {
+              case .gridResize:
+                await forEachParametersTuple { parameters in
+                  var parameters = parameters
+
+                  guard
+                    parameters.count == 3,
+                    let gridID = parameters.removeFirst() as? Int,
+                    let width = parameters.removeFirst() as? Int,
+                    let height = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
+
+                  if gridID == 1 {
+                    let gridSize = GridSize(width: width, height: height)
+                    let cellSize = await appearance.cellSize()
+                    window.setContentSize(gridSize * cellSize)
+                  }
+
+                  mainView.gridResize(
+                    gridID: gridID,
+                    gridSize: .init(width: width, height: height)
+                  )
+                }
+
+              case .gridLine:
+                var lastHlID: Int?
+                var lastY: Int?
+
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 4,
+                    let gridID = parameters.removeFirst() as? Int,
+                    let y = parameters.removeFirst() as? Int,
+                    let x = parameters.removeFirst() as? Int,
+                    let data = parameters.removeFirst() as? [MessageValue]
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
+
+                  let origin = GridPoint(x: x, y: y)
+
+                  var updatedCellsCount = 0
+                  var updatedCells = [Cell]()
+
+                  for value in data {
+                    guard var arrayValue = value as? [MessageValue] else {
+                      throw RedrawNotificationParsingError.gridLineCellDataIsNotArray
+                    }
+
+                    guard !arrayValue.isEmpty, let text = arrayValue.removeFirst() as? String else {
+                      throw RedrawNotificationParsingError.gridLineCellTextIsNotString
+                    }
+
+                    var repeatCount = 1
 
                     if !arrayValue.isEmpty {
-                      guard let parsedRepeatCount = arrayValue.removeFirst() as? Int else {
-                        throw RedrawNotificationParsingError.gridLineCellRepeatCountIsNotInt
+                      guard let hlID = arrayValue.removeFirst() as? Int else {
+                        throw RedrawNotificationParsingError.gridLineHlIDIsNotInt
                       }
-                      repeatCount = parsedRepeatCount
+                      lastHlID = hlID
+
+                      if !arrayValue.isEmpty {
+                        guard let parsedRepeatCount = arrayValue.removeFirst() as? Int else {
+                          throw RedrawNotificationParsingError.gridLineCellRepeatCountIsNotInt
+                        }
+                        repeatCount = parsedRepeatCount
+                      }
                     }
+
+                    guard let lastHlID else {
+                      throw RedrawNotificationParsingError.gridLineHlIDNotParsedYet
+                    }
+
+                    if lastY != y {
+                      updatedCellsCount = 0
+                    }
+
+                    for _ in 0 ..< repeatCount {
+                      let cell = Cell(
+                        text: text,
+                        highlightID: lastHlID
+                      )
+                      updatedCells.append(cell)
+                    }
+
+                    updatedCellsCount += repeatCount
+
+                    lastY = y
                   }
 
-                  guard let lastHlID else {
-                    throw RedrawNotificationParsingError.gridLineHlIDNotParsedYet
+                  mainView.gridLine(gridID: gridID, origin: origin, cells: updatedCells)
+                }
+
+              case .gridClear:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 1,
+                    let gridID = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
-                  if lastY != y {
-                    updatedCellsCount = 0
+                  mainView.gridClear(gridID: gridID)
+                }
+
+              case .gridCursorGoto:
+                os_log("gridCursorGoto!")
+
+              case .gridDestroy:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 1,
+                    let gridID = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
-                  for _ in 0 ..< repeatCount {
-                    let cell = Cell(
-                      text: text,
-                      highlightID: lastHlID
-                    )
-                    updatedCells.append(cell)
+                  mainView.gridDestroy(gridID: gridID)
+                }
+
+              case .winPos:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 6,
+                    let gridID = parameters.removeFirst() as? Int,
+                    let winRef = parameters.removeFirst() as? (data: Data, type: Int8),
+                    let y = parameters.removeFirst() as? Int,
+                    let x = parameters.removeFirst() as? Int,
+                    let width = parameters.removeFirst() as? Int,
+                    let height = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
                   }
 
-                  updatedCellsCount += repeatCount
-
-                  lastY = y
+                  let gridFrame = GridRectangle(
+                    origin: .init(x: x, y: y),
+                    size: .init(width: width, height: height)
+                  )
+                  mainView.winPos(
+                    gridID: gridID,
+                    winRef: .init(data: winRef.data),
+                    gridFrame: gridFrame
+                  )
                 }
 
-                mainView.gridLine(gridID: gridID, origin: origin, cells: updatedCells)
-              }
+              case .winFloatPos:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 8,
+                    let gridID = parameters.removeFirst() as? Int,
+                    let winRef = parameters.removeFirst() as? (data: Data, type: Int8),
+                    let anchorType = parameters.removeFirst() as? String,
+                    let anchorGridID = parameters.removeFirst() as? Int,
+                    let anchorY = parameters.removeFirst() as? Double,
+                    let anchorX = parameters.removeFirst() as? Double,
+                    let focusable = parameters.removeFirst() as? Bool,
+                    let zPosition = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
 
-            case .gridClear:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 1,
-                  let gridID = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
+                  mainView.winFloatPos(
+                    gridID: gridID,
+                    winRef: .init(data: winRef.data),
+                    anchorType: anchorType,
+                    anchorGridID: anchorGridID,
+                    anchorX: anchorX,
+                    anchorY: anchorY,
+                    focusable: focusable,
+                    zPosition: zPosition
+                  )
                 }
 
-                mainView.gridClear(gridID: gridID)
-              }
+              case .winHide:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 1,
+                    let gridID = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
 
-            case .gridCursorGoto:
-              os_log("gridCursorGoto!")
-
-            case .gridDestroy:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 1,
-                  let gridID = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
+                  mainView.winHide(gridID: gridID)
                 }
 
-                mainView.gridDestroy(gridID: gridID)
-              }
+              case .winClose:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 1,
+                    let gridID = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
 
-            case .winPos:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 6,
-                  let gridID = parameters.removeFirst() as? Int,
-                  let winRef = parameters.removeFirst() as? (data: Data, type: Int8),
-                  let y = parameters.removeFirst() as? Int,
-                  let x = parameters.removeFirst() as? Int,
-                  let width = parameters.removeFirst() as? Int,
-                  let height = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
+                  mainView.winClose(gridID: gridID)
                 }
 
-                let gridFrame = GridRectangle(
-                  origin: .init(x: x, y: y),
-                  size: .init(width: width, height: height)
-                )
-                mainView.winPos(
-                  gridID: gridID,
-                  winRef: .init(data: winRef.data),
-                  gridFrame: gridFrame
-                )
-              }
+              case .defaultColorsSet:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 5,
+                    let foregroundRGB = parameters.removeFirst() as? Int,
+                    let backgroundRGB = parameters.removeFirst() as? Int,
+                    let specialRGB = parameters.removeFirst() as? Int,
+                    let _ = parameters.removeFirst() as? Int,
+                    let _ = parameters.removeFirst() as? Int
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
 
-            case .winFloatPos:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 8,
-                  let gridID = parameters.removeFirst() as? Int,
-                  let winRef = parameters.removeFirst() as? (data: Data, type: Int8),
-                  let anchorType = parameters.removeFirst() as? String,
-                  let anchorGridID = parameters.removeFirst() as? Int,
-                  let anchorY = parameters.removeFirst() as? Double,
-                  let anchorX = parameters.removeFirst() as? Double,
-                  let focusable = parameters.removeFirst() as? Bool,
-                  let zPosition = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
+                  await appearance.setDefaultColors(
+                    foregroundRGB: foregroundRGB,
+                    backgroundRGB: backgroundRGB,
+                    specialRGB: specialRGB
+                  )
                 }
 
-                mainView.winFloatPos(
-                  gridID: gridID,
-                  winRef: .init(data: winRef.data),
-                  anchorType: anchorType,
-                  anchorGridID: anchorGridID,
-                  anchorX: anchorX,
-                  anchorY: anchorY,
-                  focusable: focusable,
-                  zPosition: zPosition
-                )
-              }
+              case .hlAttrDefine:
+                await forEachParametersTuple { parameters in
+                  guard
+                    parameters.count == 4,
+                    let highlightID = parameters.removeFirst() as? Int,
+                    let rgbAttr = parameters.removeFirst() as? [(String, MessageValue)],
+                    let _ = parameters.removeFirst() as? [(String, MessageValue)],
+                    let _ = parameters.removeFirst() as? [MessageValue]
+                  else {
+                    throw RedrawNotificationParsingError.invalidParameterTypes
+                  }
 
-            case .winHide:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 1,
-                  let gridID = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
+                  await appearance.apply(
+                    nvimAttr: rgbAttr,
+                    forHighlightID: highlightID
+                  )
                 }
 
-                mainView.winHide(gridID: gridID)
+              case .flush:
+                break
               }
-
-            case .winClose:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 1,
-                  let gridID = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
-                }
-
-                mainView.winClose(gridID: gridID)
-              }
-
-            case .defaultColorsSet:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 5,
-                  let foregroundRGB = parameters.removeFirst() as? Int,
-                  let backgroundRGB = parameters.removeFirst() as? Int,
-                  let specialRGB = parameters.removeFirst() as? Int,
-                  let _ = parameters.removeFirst() as? Int,
-                  let _ = parameters.removeFirst() as? Int
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
-                }
-
-                await appearance.setDefaultColors(
-                  foregroundRGB: foregroundRGB,
-                  backgroundRGB: backgroundRGB,
-                  specialRGB: specialRGB
-                )
-              }
-
-            case .hlAttrDefine:
-              await forEachParametersTuple { parameters in
-                guard
-                  parameters.count == 4,
-                  let highlightID = parameters.removeFirst() as? Int,
-                  let rgbAttr = parameters.removeFirst() as? [(String, MessageValue)],
-                  let _ = parameters.removeFirst() as? [(String, MessageValue)],
-                  let _ = parameters.removeFirst() as? [MessageValue]
-                else {
-                  throw RedrawNotificationParsingError.invalidParameterTypes
-                }
-
-                await appearance.apply(
-                  nvimAttr: rgbAttr,
-                  forHighlightID: highlightID
-                )
-              }
-
-            case .flush:
-              break
             }
           }
         }
-      }
-    }
-
-    let unpacker = MessageUnpacker()
-
-    standardOutputPipe.fileHandleForReading
-      .readabilityHandler = { fileHandle in
-        let data = fileHandle.availableData
-
-        Task { @MainActor in
-          do {
-            try unpacker.unpack(data: data)
-              .forEach { try messageRPC.handleReceived(value: $0) }
-
-          } catch {
-            fatalError("Unpacker failed unpacking or MessageRPC failed receiving: \(error)")
-          }
-        }
-      }
-
-    try! process.run()
-
-    os_log("Process started!")
-
-    Task {
-      do {
-        let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
-        try await messageRPC.request(method: "nvim_ui_attach", parameters: [120, 40, options])
 
       } catch {
-        os_log("nvim_ui_attach failed: \(error)")
+        if process.isRunning == true {
+          process.terminate()
+        }
       }
     }
 
-    Task {
+    self.inputTask = Task {
       for await keyPress in window.keyPresses {
         guard !Task.isCancelled else {
           break
@@ -397,15 +400,44 @@ class NvimInstance {
     }
   }
 
-  func showWindow() {
+  func start() async throws {
+    guard !self.started else {
+      return
+    }
+    self.started = true
+
+    await self.unpacker.start()
+    await self.messageRPC.start()
+
+    try self.process.run()
+
     self.window.becomeMain()
     self.window.makeKeyAndOrderFront(nil)
+
+    let options = [("rgb", true), ("override", true), ("ext_multigrid", true)]
+    try await self.messageRPC.request(method: "nvim_ui_attach", parameters: [120, 40, options])
+  }
+
+  func stop() async throws {
+    if self.process.isRunning {
+      self.process.terminate()
+    }
+
+    self.window.close()
+    self.notificationsTask?.cancel()
+    self.inputTask?.cancel()
   }
 
   private let appearance: Appearance
-  private let process: Process
-  private let messageRPC: MessageRPC
   private let window: Window
+  private let process: Process
+  private let packer: MessagePacker
+  private let unpacker: MessageUnpacker
+  private let messageRPC: MessageRPC
+
+  private var notificationsTask: Task<Void, Never>?
+  private var inputTask: Task<Void, Never>?
+  private var started = false
 }
 
 enum RedrawNotificationParsingError: Error {

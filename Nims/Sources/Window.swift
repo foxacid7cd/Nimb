@@ -11,6 +11,12 @@ import Cocoa
 
 @MainActor
 class Window: NSWindow {
+  init(style: NSWindow.StyleMask, contentView: NSView) {
+    super.init(contentRect: .zero, styleMask: style, backing: .buffered, defer: true)
+
+    self.contentView = contentView
+  }
+
   override var canBecomeMain: Bool {
     true
   }

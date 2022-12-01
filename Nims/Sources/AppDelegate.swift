@@ -13,8 +13,26 @@ import OSLog
 @NSApplicationMain @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_: Notification) {
-    self.nvimInstance.showWindow()
+    self.startNvimInstance()
   }
 
-  private lazy var nvimInstance = NvimInstance()
+  private var nvimInstance: NvimInstance?
+
+  private func startNvimInstance() {
+    guard self.nvimInstance == nil else {
+      return
+    }
+
+    let nvimInstance = NvimInstance()
+    self.nvimInstance = nvimInstance
+
+    Task {
+      do {
+        try await nvimInstance.start()
+
+      } catch {
+        fatalError("NvimInstance start failed: \(error)")
+      }
+    }
+  }
 }

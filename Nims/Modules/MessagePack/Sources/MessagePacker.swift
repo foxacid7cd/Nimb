@@ -5,11 +5,19 @@
 //  Created by Yevhenii Matviienko on 28.11.2022.
 //
 
+import AsyncAlgorithms
+import Backbone
 import Foundation
 import SwiftUI
 
-public class MessagePacker {
-  public init() {
+public protocol MessagePackerProtocol {
+  func pack(messageValue: MessageValue) async throws
+}
+
+public actor MessagePacker: MessagePackerProtocol {
+  public init(dataDestination: MessageDataDestination) {
+    self.dataDestination = dataDestination
+
     msgpack_sbuffer_init(&self.sbuf)
     msgpack_packer_init(&self.pk, &self.sbuf, msgpack_sbuffer_write)
   }
@@ -18,25 +26,19 @@ public class MessagePacker {
     msgpack_sbuffer_destroy(&sbuf)
   }
 
-  @MainActor
-  public func pack(encodable: MessageValueEncodable) -> Data {
-    self.pack(messageValue: encodable.messageValueEncoded)
-  }
-
-  @MainActor
-  public func pack(messageValue: MessageValue) -> Data {
+  public func pack(messageValue: MessageValue) async throws {
     self.pack(messageValue)
 
     let data = Data(bytes: sbuf.data, count: self.sbuf.size)
     msgpack_sbuffer_clear(&self.sbuf)
 
-    return data
+    try await self.dataDestination.write(data: data)
   }
 
-  var sbuf = msgpack_sbuffer()
-  var pk = msgpack_packer()
+  private let dataDestination: MessageDataDestination
+  private var sbuf = msgpack_sbuffer()
+  private var pk = msgpack_packer()
 
-  @MainActor
   private func pack(_ messageValue: MessageValue) {
     guard let messageValue else {
       msgpack_pack_nil(&self.pk)
@@ -61,7 +63,7 @@ public class MessagePacker {
           let pointer = bufferPointer.baseAddress!
 
           _ = msgpack_pack_str_with_body(
-            &pk,
+            &self.pk,
             pointer,
             strlen(pointer)
           )
@@ -89,7 +91,7 @@ public class MessagePacker {
       value.data
         .withUnsafeBytes { bufferPointer in
           _ = msgpack_pack_ext_with_body(
-            &pk,
+            &self.pk,
             bufferPointer.baseAddress!,
             bufferPointer.count,
             value.type
@@ -99,7 +101,7 @@ public class MessagePacker {
     case let value as Data:
       value.withUnsafeBytes { bufferPointer in
         _ = msgpack_pack_bin_with_body(
-          &pk,
+          &self.pk,
           bufferPointer.baseAddress!,
           bufferPointer.count
         )
@@ -112,25 +114,72 @@ public class MessagePacker {
   }
 }
 
-public class MessageUnpacker {
-  public init() {
+public protocol MessageDataDestination {
+  func write(data: Data) async throws
+}
+
+public protocol MessageUnpackerProtocol {
+  func messageValueBatches() async -> AnyAsyncThrowingSequence<[MessageValue]>
+}
+
+public actor MessageUnpacker: MessageUnpackerProtocol {
+  public init(dataSource: MessageDataSource) {
+    self.dataSource = dataSource
+
     msgpack_unpacker_init(&self.mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
     msgpack_unpacked_init(&self.unpacked)
   }
 
   deinit {
+    self.task?.cancel()
+
     msgpack_unpacked_destroy(&unpacked)
     msgpack_unpacker_destroy(&mpac)
   }
 
-  @MainActor
-  public func unpack(data: Data) throws -> [MessageValue] {
+  public func messageValueBatches() -> AnyAsyncThrowingSequence<[MessageValue]> {
+    self.messageValueBatchChannel.eraseToAnyAsyncThrowingSequence()
+  }
+
+  public func start() async {
+    guard self.task == nil else {
+      return
+    }
+
+    self.task = Task {
+      do {
+        for try await data in dataSource.data {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          let unpacked = try self.unpack(data: data)
+
+          await self.messageValueBatchChannel.send(unpacked)
+        }
+
+        self.messageValueBatchChannel.finish()
+
+      } catch {
+        self.messageValueBatchChannel.fail(error)
+      }
+    }
+  }
+
+  private let dataSource: MessageDataSource
+  private let messageValueBatchChannel = AsyncThrowingChannel<[MessageValue], Error>()
+  private var mpac = msgpack_unpacker()
+  private var unpacked = msgpack_unpacked()
+
+  private var task: Task<Void, Never>?
+
+  private func unpack(data: Data) throws -> [MessageValue] {
     if msgpack_unpacker_buffer_capacity(&self.mpac) < data.count {
       msgpack_unpacker_reserve_buffer(&self.mpac, data.count)
     }
 
     data.withUnsafeBytes { pointer in
-      msgpack_unpacker_buffer(&mpac)!
+      msgpack_unpacker_buffer(&self.mpac)!
         .initialize(
           from: pointer.baseAddress!
             .assumingMemoryBound(to: CChar.self),
@@ -165,9 +214,6 @@ public class MessageUnpacker {
 
     return accumulator
   }
-
-  var mpac = msgpack_unpacker()
-  var unpacked = msgpack_unpacked()
 
   private func value(from object: msgpack_object) throws -> MessageValue {
     switch object.type {
@@ -234,6 +280,10 @@ public class MessageUnpacker {
       throw MessageUnpackError.unexpectedValueType
     }
   }
+}
+
+public protocol MessageDataSource {
+  var data: AnyAsyncThrowingSequence<Data> { get }
 }
 
 public typealias MessageValue = Any?
