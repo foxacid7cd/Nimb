@@ -7,7 +7,7 @@
 
 import AsyncAlgorithms
 import Cocoa
-import RPC
+import MessagePackRPC
 import Tagged
 
 actor Grid: Identifiable {

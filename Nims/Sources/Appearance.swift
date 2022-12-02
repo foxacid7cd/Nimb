@@ -7,7 +7,7 @@
 
 import Cocoa
 import IdentifiedCollections
-import RPC
+import MessagePackRPC
 import Tagged
 
 actor Appearance {

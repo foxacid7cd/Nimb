@@ -10,8 +10,8 @@ import Backbone
 import Cocoa
 import Collections
 import IdentifiedCollections
+import MessagePackRPC
 import OSLog
-import RPC
 
 @MainActor
 class NvimInstance {

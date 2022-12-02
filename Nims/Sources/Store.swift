@@ -9,7 +9,7 @@ import AsyncAlgorithms
 import Backbone
 import Collections
 import IdentifiedCollections
-import RPC
+import MessagePackRPC
 
 actor Store {
   init(rpcService: RPCServiceProtocol) {

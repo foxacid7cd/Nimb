@@ -6,9 +6,8 @@
 //
 
 import Cocoa
-import NvimServiceAPI
+import MessagePackRPC
 import OSLog
-import RPC
 
 @NSApplicationMain @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
