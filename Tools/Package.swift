@@ -8,6 +8,7 @@ let package = Package(
     .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.50.4"),
     .package(url: "https://github.com/apple/swift-syntax", branch: "main"),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
+    .package(path: "../Modules/NvimAPI"),
   ],
   targets: [
     .executableTarget(
@@ -16,6 +17,7 @@ let package = Package(
         .product(name: "SwiftSyntax", package: "swift-syntax"),
         .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .product(name: "NvimAPI", package: "NvimAPI"),
       ],
       path: "",
       sources: ["Sources/generate"]

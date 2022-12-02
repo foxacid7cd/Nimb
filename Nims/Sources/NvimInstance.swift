@@ -10,7 +10,7 @@ import Backbone
 import Cocoa
 import Collections
 import IdentifiedCollections
-import MessagePackRPC
+import NvimAPI
 import OSLog
 
 @MainActor
@@ -33,11 +33,11 @@ class NvimInstance {
     let outputPipe = Pipe()
     process.standardOutput = outputPipe
 
-    let rpcService = RPCService(
-      destinationFileHandle: inputPipe.fileHandleForWriting,
-      sourceFileHandle: outputPipe.fileHandleForReading
-    )
-    self.store = Store(rpcService: rpcService)
+//    let rpcService = RPCService(
+//      destinationFileHandle: inputPipe.fileHandleForWriting,
+//      sourceFileHandle: outputPipe.fileHandleForReading
+//    )
+//    self.store = Store(rpcService: rpcService)
 //    self.notificationsTask = Task.detached {
 //      do {
 //        for try await notification in await caller.notifications() {
@@ -300,7 +300,7 @@ class NvimInstance {
   func run() async throws {
     try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
-        try await self.store.run()
+//        try await self.store.run()
       }
 
       group.addTask {
@@ -319,16 +319,17 @@ class NvimInstance {
   }
 
   private let process: Process
-  private let store: Store
+
+//  private let store: Store
 
   private func terminateProcessIfRunning() {
-    if self.process.isRunning {
-      self.process.terminate()
+    if process.isRunning {
+      process.terminate()
     }
   }
 
   private func runProcess() throws {
-    try self.process.run()
+    try process.run()
   }
 }
 

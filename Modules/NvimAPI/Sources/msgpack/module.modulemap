@@ -1,0 +1,4 @@
+module msgpack {
+  umbrella header "msgpack.h"
+  link "libmsgpackc"
+}

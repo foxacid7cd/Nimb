@@ -26,7 +26,7 @@ class Window: NSWindow {
   }
 
   var keyPresses: AsyncStream<KeyPress> {
-    self.keyPressChannel.asyncStream()
+    .init(self.keyPressChannel)
   }
 
   override func keyDown(with event: NSEvent) {

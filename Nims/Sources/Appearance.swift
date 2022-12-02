@@ -7,20 +7,20 @@
 
 import Cocoa
 import IdentifiedCollections
-import MessagePackRPC
+import NvimAPI
 import Tagged
 
 actor Appearance {
   func cellSize() async -> CGSize {
-    await self.font.cellSize
+    await font.cellSize
   }
 
   func stringAttributes(id: Highlight.ID? = nil) async -> [NSAttributedString.Key: Any] {
-    await self.highlights.stringAttributes(id: id, font: self.font)
+    await highlights.stringAttributes(id: id, font: font)
   }
 
   func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
-    await self.highlights.setDefaultColors(
+    await highlights.setDefaultColors(
       foregroundRGB: foregroundRGB,
       backgroundRGB: backgroundRGB,
       specialRGB: specialRGB
@@ -28,11 +28,11 @@ actor Appearance {
   }
 
   func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
-    await self.highlights.apply(nvimAttr: nvimAttr, forID: id)
+    await highlights.apply(nvimAttr: nvimAttr, forID: id)
   }
 
   func highlight(id: Highlight.ID) async -> Highlight {
-    await self.highlights.highlight(id: id)
+    await highlights.highlight(id: id)
   }
 
   private var font = Font()
@@ -46,7 +46,7 @@ actor Font {
   )
 
   var boldNSFont: NSFont {
-    self.cachedBoldNSFont ?? {
+    cachedBoldNSFont ?? {
       let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .boldFontMask)
       self.cachedBoldNSFont = new
       return new
@@ -54,7 +54,7 @@ actor Font {
   }
 
   var italicNSFont: NSFont {
-    self.cachedItalicNSFont ?? {
+    cachedItalicNSFont ?? {
       let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .italicFontMask)
       self.cachedItalicNSFont = new
       return new
@@ -62,7 +62,7 @@ actor Font {
   }
 
   var boldItalicNSFont: NSFont {
-    self.cachedBoldItalicNSFont ?? {
+    cachedBoldItalicNSFont ?? {
       let new = NSFontManager.shared.convert(self.boldNSFont, toHaveTrait: .italicFontMask)
       self.cachedBoldItalicNSFont = new
       return new
@@ -70,7 +70,7 @@ actor Font {
   }
 
   var cellSize: CGSize {
-    self.cachedCellSize ?? {
+    cachedCellSize ?? {
       let string = "A"
       var character = string.utf16.first!
 
@@ -94,23 +94,23 @@ actor Font {
 
   func nsFont(highlight: Highlight? = nil) async -> NSFont {
     guard let highlight else {
-      return self.regularNSFont
+      return regularNSFont
     }
 
     let isBold = await highlight.isBold
     let isItalic = await highlight.isItalic
 
     if isBold, isItalic {
-      return self.boldItalicNSFont
+      return boldItalicNSFont
 
     } else if isBold {
-      return self.boldNSFont
+      return boldNSFont
 
     } else if isItalic {
-      return self.italicNSFont
+      return italicNSFont
 
     } else {
-      return self.regularNSFont
+      return regularNSFont
     }
   }
 
@@ -122,13 +122,13 @@ actor Font {
 
 actor Highlights {
   func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
-    await self.defaultForegroundColor.set(rgb: foregroundRGB)
-    await self.defaultBackgroundColor.set(rgb: backgroundRGB)
-    await self.defaultSpecialColor.set(rgb: specialRGB)
+    await defaultForegroundColor.set(rgb: foregroundRGB)
+    await defaultBackgroundColor.set(rgb: backgroundRGB)
+    await defaultSpecialColor.set(rgb: specialRGB)
   }
 
   func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
-    let highlight = self.highlights[id: id] ?? {
+    let highlight = highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
 
@@ -143,29 +143,29 @@ actor Highlights {
 
     return [
       .font: await font.nsFont(highlight: highlight),
-      .foregroundColor: await self.foregroundColor(highlight: highlight),
-      .backgroundColor: await self.backgroundColor(highlight: highlight),
-      .underlineColor: await self.specialColor(highlight: highlight),
+      .foregroundColor: await foregroundColor(highlight: highlight),
+      .backgroundColor: await backgroundColor(highlight: highlight),
+      .underlineColor: await specialColor(highlight: highlight),
     ]
   }
 
   func foregroundColor(highlightID: Highlight.ID? = nil) async -> Color {
     let highlight = highlightID.map { self.highlight(id: $0) }
-    return await self.foregroundColor(highlight: highlight)
+    return await foregroundColor(highlight: highlight)
   }
 
   func backgroundColor(highlightID: Highlight.ID? = nil) async -> Color {
     let highlight = highlightID.map { self.highlight(id: $0) }
-    return await self.backgroundColor(highlight: highlight)
+    return await backgroundColor(highlight: highlight)
   }
 
   func specialColor(highlightID: Highlight.ID? = nil) async -> Color {
     let highlight = highlightID.map { self.highlight(id: $0) }
-    return await self.specialColor(highlight: highlight)
+    return await specialColor(highlight: highlight)
   }
 
   func highlight(id: Highlight.ID) -> Highlight {
-    self.highlights[id: id] ?? {
+    highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
 
@@ -179,15 +179,15 @@ actor Highlights {
   private var highlights = IdentifiedArrayOf<Highlight>()
 
   private func foregroundColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.foregroundColor ?? self.defaultForegroundColor
+    await highlight?.foregroundColor ?? defaultForegroundColor
   }
 
   private func backgroundColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.backgroundColor ?? self.defaultBackgroundColor
+    await highlight?.backgroundColor ?? defaultBackgroundColor
   }
 
   private func specialColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.specialColor ?? self.defaultSpecialColor
+    await highlight?.specialColor ?? defaultSpecialColor
   }
 }
 
@@ -212,27 +212,27 @@ actor Highlight: Identifiable {
       switch key {
       case "foreground":
         if let value = value as? Int {
-          self.foregroundColor = .init(rgb: value)
+          foregroundColor = .init(rgb: value)
         }
 
       case "background":
         if let value = value as? Int {
-          self.backgroundColor = .init(rgb: value)
+          backgroundColor = .init(rgb: value)
         }
 
       case "special":
         if let value = value as? Int {
-          self.specialColor = .init(rgb: value)
+          specialColor = .init(rgb: value)
         }
 
       case "bold":
         if let value = value as? Bool {
-          self.isBold = value
+          isBold = value
         }
 
       case "italic":
         if let value = value as? Bool {
-          self.isItalic = value
+          isItalic = value
         }
 
       default:
@@ -250,7 +250,7 @@ actor Color {
   var rgb: Int
 
   var nsColor: NSColor {
-    self.cachedNSColor ?? {
+    cachedNSColor ?? {
       let new = NSColor(rgb: self.rgb)
       self.cachedNSColor = new
 
@@ -261,7 +261,7 @@ actor Color {
   func set(rgb: Int) {
     self.rgb = rgb
 
-    self.cachedNSColor = nil
+    cachedNSColor = nil
   }
 
   private var cachedNSColor: NSColor?

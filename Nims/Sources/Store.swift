@@ -9,7 +9,7 @@ import AsyncAlgorithms
 import Backbone
 import Collections
 import IdentifiedCollections
-import MessagePackRPC
+import NvimAPI
 
 actor Store {
   init(rpcService: RPCServiceProtocol) {
@@ -19,24 +19,24 @@ actor Store {
   func run() async throws {
     try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
-        for await notification in await self.rpcService.notifications() {
-          print(notification)
-        }
+//        for await notification in await self.rpcService.notifications() {
+//          print(notification)
+//        }
       }
 
       group.addTask {
-        try await self.rpcService.run()
+//        try await self.rpcService.run()
       }
 
       group.addTask {
-        let response = await self.rpcService.call(
-          method: "nvim_ui_attach",
-          parameters: [80, 24, [("rgb", true)]]
-        )
-
-        if !response.isSuccess {
-          throw StoreError.nvimUIAttachFailed(payload: response.payload)
-        }
+//        let response = await self.rpcService.call(
+//          method: "nvim_ui_attach",
+//          parameters: [80, 24, [("rgb", true)]]
+//        )
+//
+//        if !response.isSuccess {
+//          throw StoreError.nvimUIAttachFailed(payload: response.payload)
+//        }
       }
 
       try await group.waitForAll()
@@ -45,7 +45,7 @@ actor Store {
 
   func gridResize(id: Grid.ID, size: Size) {
     let grid = Grid(appearance: appearance, id: id, size: size)
-    self.grids[id: id] = grid
+    grids[id: id] = grid
   }
 
   func gridLine(parametersBatches: TreeDictionary<Grid.ID, [(origin: Point, data: [Value])]>) async {
@@ -69,7 +69,7 @@ actor Store {
   private var grids = IdentifiedArrayOf<Grid>()
 
   private func grid(id: Grid.ID) -> Grid? {
-    self.grids[id: id]
+    grids[id: id]
   }
 }
 

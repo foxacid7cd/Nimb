@@ -7,14 +7,14 @@
 
 import AsyncAlgorithms
 import Cocoa
-import MessagePackRPC
+import NvimAPI
 import Tagged
 
 actor Grid: Identifiable {
   init(appearance: Appearance, id: ID, size: Size) {
     self.appearance = appearance
     self.id = id
-    self.rows = (0 ..< size.height)
+    rows = (0 ..< size.height)
       .map { _ in
         Row(appearance: appearance, length: size.width)
       }
@@ -46,7 +46,7 @@ actor Grid: Identifiable {
   private var rows: [Row]
 
   private func row(at index: Int) -> Row {
-    self.rows[index]
+    rows[index]
   }
 }
 
@@ -122,7 +122,7 @@ actor Row {
       for _ in 0 ..< repeatCount {
         let cellIndexInRow = startIndex + updatedCellsCount
 
-        let cell = self.cells[cellIndexInRow]
+        let cell = cells[cellIndexInRow]
         cell.text = text
         cell.indexInHighlightGroup = highlightGroupCells.count
         highlightGroupCells.append(cell)
@@ -132,7 +132,7 @@ actor Row {
     }
     snapshotCreateHighlightGroupParametersIfValid()
 
-    await self.createHighlightGroups(
+    await createHighlightGroups(
       parametersBatch: createHighlightGroupParametersBatch
     )
   }
@@ -187,12 +187,12 @@ actor Row {
       newHighlightGroups.append(lastAffectedHighlightGroup)
     }
 
-    self.highlightGroups.replaceSubrange(
+    highlightGroups.replaceSubrange(
       affectedHighlightGroupsRange,
       with: newHighlightGroups
     )
 
-    self.highlightGroups.enumerated()
+    highlightGroups.enumerated()
       .forEach { $0.element.index = $0.offset }
   }
 }

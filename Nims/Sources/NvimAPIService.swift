@@ -8,7 +8,7 @@
 import AsyncAlgorithms
 import Backbone
 import Foundation
-import MessagePackRPC
+import NvimAPI
 import OSLog
 
 actor NvimRPCService {
@@ -24,11 +24,11 @@ actor NvimRPCService {
   func run() async throws {
     try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
-        for await notification in await self.rpcService.notifications() {}
+//        for await notification in await self.rpcService.notifications() {}
       }
 
       group.addTask {
-        try await self.rpcService.run()
+//        try await self.rpcService.run()
       }
 
       try await group.waitForAll()
@@ -36,12 +36,12 @@ actor NvimRPCService {
   }
 
   func events() -> AsyncStream<Event> {
-    self.eventChannel.asyncStream()
+    .init(eventChannel)
   }
 
   func nvimUIAttach(size: Size) async {
     let parameters: [Value] = [size.width, size.height, [("rgb", true), ("ext_multigrid", true)]]
-    let response = await self.rpcService.call(method: "nvim_ui_attach", parameters: parameters)
+    let response = try! await rpcService.call(method: "nvim_ui_attach", parameters: parameters)
 
     if !response.isSuccess {
       os_log("nvim_ui_attach failed: \(response.payload.debugDescription)")

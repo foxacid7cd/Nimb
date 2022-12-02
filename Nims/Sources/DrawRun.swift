@@ -70,7 +70,7 @@ struct GlyphRun: Equatable {
   var backgroundColor: NSColor
 
   func positionsWithOffset(dx: Double, dy: Double) -> [CGPoint] {
-    self.positions
+    positions
       .map { .init(x: $0.x + dx, y: $0.y + dy) }
   }
 }

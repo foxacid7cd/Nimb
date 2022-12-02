@@ -11,7 +11,7 @@ import OSLog
 
 class MainView: NSView {
   init(appearance: Appearance) {
-    self._appearance = appearance
+    _appearance = appearance
 
     super.init(frame: .zero)
   }
@@ -22,7 +22,7 @@ class MainView: NSView {
   }
 
   func gridResize(gridID: Int, gridSize: Size) {
-    let gridView = self.gridViews[gridID] ?? {
+    let gridView = gridViews[gridID] ?? {
       let new = GridView(appearance: self._appearance, gridID: gridID)
       self.gridViews[gridID] = new
 
@@ -37,13 +37,13 @@ class MainView: NSView {
     if gridView.superview == nil {
       addSubview(gridView)
 
-      self.sortGridViews()
+      sortGridViews()
     }
 
     if gridID == 1 {
-      self.outerGridSize = gridSize
+      outerGridSize = gridSize
 
-      for gridView in self.gridViews.values {
+      for gridView in gridViews.values {
         gridView.outerGridSize = gridSize
 
         gridView.updateViewFrame()
@@ -68,17 +68,17 @@ class MainView: NSView {
   }
 
   func gridDestroy(gridID: Int) {
-    guard let gridView = self.gridViews.removeValue(forKey: gridID) else {
+    guard let gridView = gridViews.removeValue(forKey: gridID) else {
       return
     }
 
     gridView.removeFromSuperview()
 
-    self.sortGridViews()
+    sortGridViews()
   }
 
   func winPos(gridID: Int, winRef: WinRef, gridFrame: Rectangle) {
-    guard let gridView = self.gridViews[gridID] else {
+    guard let gridView = gridViews[gridID] else {
       return
     }
 
@@ -86,19 +86,19 @@ class MainView: NSView {
     gridView.winPos = .init(
       winRef: winRef,
       gridFrame: gridFrame,
-      zPositionWeight: self.winPosCallCounter
+      zPositionWeight: winPosCallCounter
     )
     gridView.updateViewFrame()
 
-    self.winPosCallCounter += 1
+    winPosCallCounter += 1
 
-    self.sortGridViews()
+    sortGridViews()
   }
 
   func winFloatPos(gridID: Int, winRef _: WinRef, anchorType: String, anchorGridID: Int, anchorX: Double, anchorY: Double, focusable: Bool, zPosition: Int) {
     guard
-      let gridView = self.gridViews[gridID],
-      let anchorGridView = self.gridViews[anchorGridID]
+      let gridView = gridViews[gridID],
+      let anchorGridView = gridViews[anchorGridID]
     else {
       return
     }
@@ -111,7 +111,7 @@ class MainView: NSView {
       anchorY: anchorY,
       focusable: focusable,
       zPosition: zPosition,
-      zPositionWeight: self.winPosCallCounter,
+      zPositionWeight: winPosCallCounter,
       getAnchorGridOrigin: { [weak anchorGridView] in
         guard let anchorGridView else { return .init() }
 
@@ -120,9 +120,9 @@ class MainView: NSView {
     )
     gridView.updateViewFrame()
 
-    self.winPosCallCounter += 1
+    winPosCallCounter += 1
 
-    self.sortGridViews()
+    sortGridViews()
   }
 
   func winHide(gridID: Int) {
@@ -142,7 +142,7 @@ class MainView: NSView {
     gridView.winPos = nil
     gridView.updateViewFrame()
 
-    self.sortGridViews()
+    sortGridViews()
   }
 
   private var winPosCallCounter = 0
@@ -163,13 +163,13 @@ class MainView: NSView {
       return (firstWeight == secondWeight) ? .orderedSame : (firstWeight > secondWeight) ? .orderedDescending : .orderedAscending
     }
 
-    self.sortSubviews(compare, context: nil)
+    sortSubviews(compare, context: nil)
   }
 }
 
 private class GridView: NSView {
   init(appearance: Appearance, gridID: Int) {
-    self._appearance = appearance
+    _appearance = appearance
     self.gridID = gridID
 
     super.init(frame: .zero)
@@ -213,7 +213,7 @@ private class GridView: NSView {
     if let winFloatPos {
       return .init(
         origin: winFloatPos.getAnchorGridOrigin() + Point(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
-        size: self.gridSize
+        size: gridSize
       )
     }
 
@@ -221,13 +221,13 @@ private class GridView: NSView {
       return .init(
         origin: .init(
           x: winPos.gridFrame.origin.x,
-          y: self.outerGridSize.height - winPos.gridFrame.origin.y - winPos.gridFrame.size.height
+          y: outerGridSize.height - winPos.gridFrame.origin.y - winPos.gridFrame.size.height
         ),
         size: winPos.gridFrame.size
       )
     }
 
-    return .init(size: self.gridSize)
+    return .init(size: gridSize)
   }
 
   var zPositionWeight: Int {

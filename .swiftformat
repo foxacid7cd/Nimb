@@ -50,7 +50,7 @@
 --patternlet hoist
 --ranges spaced
 --redundanttype infer-locals-only
---self insert
+--self remove
 --selfrequired 
 --semicolons inline
 --shortoptionals always

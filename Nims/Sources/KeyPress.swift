@@ -29,7 +29,7 @@ public struct KeyPress {
 
   public func makeNvimKeyCode() -> String {
     guard let unicodeScalar = characters.unicodeScalars.first else {
-      return self.characters
+      return characters
     }
 
     let specialKey: String? = {
@@ -41,7 +41,7 @@ public struct KeyPress {
       }
     }()
 
-    let modifier = self.modifierFlags.modifier
+    let modifier = modifierFlags.modifier
 
     if let modifier, let specialKey {
       return "<\(modifier)-\(specialKey)>"
@@ -53,7 +53,7 @@ public struct KeyPress {
       return "<\(specialKey)>"
 
     } else {
-      return self.characters
+      return characters
         .replacingOccurrences(of: "<", with: "<lt>")
     }
   }
