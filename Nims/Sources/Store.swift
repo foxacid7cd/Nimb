@@ -48,20 +48,20 @@ actor Store {
     grids[id: id] = grid
   }
 
-  func gridLine(parametersBatches: TreeDictionary<Grid.ID, [(origin: Point, data: [Value])]>) async {
-    await withTaskGroup(of: Void.self) { taskGroup in
-      for (id, parametersBatch) in parametersBatches {
-        guard let grid = self.grid(id: id) else {
-          continue
-        }
-
-        taskGroup.addTask {
-          await grid.update(parametersBatch: parametersBatch)
-        }
-      }
-
-      for await () in taskGroup {}
-    }
+  func gridLine(parametersBatches _: TreeDictionary<Grid.ID, [(origin: Point, data: [Value])]>) async {
+//    await withTaskGroup(of: Void.self) { taskGroup in
+//      for (id, parametersBatch) in parametersBatches {
+//        guard let grid = self.grid(id: id) else {
+//          continue
+//        }
+//
+//        taskGroup.addTask {
+//          await grid.update(parametersBatch: parametersBatch)
+//        }
+//      }
+//
+//      for await () in taskGroup {}
+//    }
   }
 
   private let rpcService: RPCServiceProtocol
@@ -74,5 +74,5 @@ actor Store {
 }
 
 enum StoreError: Error {
-  case nvimUIAttachFailed(payload: Value)
+  case nvimUIAttachFailed
 }

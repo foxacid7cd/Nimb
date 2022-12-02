@@ -8,7 +8,10 @@
 import AsyncAlgorithms
 
 public extension AsyncStream {
-  init<S: AsyncSequence>(_ sequence: S, bufferingPolicy: Continuation.BufferingPolicy = .unbounded) where S.Element == Element {
+  init<S: AsyncSequence>(
+    _ sequence: S,
+    bufferingPolicy: Continuation.BufferingPolicy = .unbounded
+  ) where S.Element == Element {
     self.init(Element.self, bufferingPolicy: bufferingPolicy) { continuation in
       let task = Task {
         do {

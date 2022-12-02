@@ -297,26 +297,7 @@ class NvimInstance {
 //      }
   }
 
-  func run() async throws {
-    try await withThrowingTaskGroup(of: Void.self) { group in
-      group.addTask {
-//        try await self.store.run()
-      }
-
-      group.addTask {
-        try await self.runProcess()
-      }
-
-      try await withTaskCancellationHandler {
-        try await group.waitForAll()
-
-      } onCancel: {
-        Task {
-          await self.terminateProcessIfRunning()
-        }
-      }
-    }
-  }
+  func run() async throws {}
 
   private let process: Process
 

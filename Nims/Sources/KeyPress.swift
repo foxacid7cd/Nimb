@@ -8,7 +8,7 @@
 import AppKit
 import Carbon
 
-public struct KeyPress {
+public struct KeyPress: Sendable {
   public init(event: NSEvent) {
     self.init(
       keyCode: Int(event.keyCode),

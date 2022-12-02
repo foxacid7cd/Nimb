@@ -95,7 +95,16 @@ class MainView: NSView {
     sortGridViews()
   }
 
-  func winFloatPos(gridID: Int, winRef _: WinRef, anchorType: String, anchorGridID: Int, anchorX: Double, anchorY: Double, focusable: Bool, zPosition: Int) {
+  func winFloatPos(
+    gridID: Int,
+    winRef _: WinRef,
+    anchorType: String,
+    anchorGridID: Int,
+    anchorX: Double,
+    anchorY: Double,
+    focusable: Bool,
+    zPosition: Int
+  ) {
     guard
       let gridView = gridViews[gridID],
       let anchorGridView = gridViews[anchorGridID]
@@ -151,20 +160,14 @@ class MainView: NSView {
   private var outerGridSize = Size()
 
   private func sortGridViews() {
-    func compare(firstView: NSView, secondView: NSView, context _: UnsafeMutableRawPointer?) -> ComparisonResult {
-      guard let firstView = firstView as? GridView, let secondView = secondView as? GridView else {
-        os_log("sortGridViews type casting failed")
-        return .orderedSame
-      }
-
-      let firstWeight = firstView.zPositionWeight
-      let secondWeight = secondView.zPositionWeight
-
-      return (firstWeight == secondWeight) ? .orderedSame : (firstWeight > secondWeight) ? .orderedDescending : .orderedAscending
-    }
-
     sortSubviews(compare, context: nil)
   }
+}
+
+func compare(firstView _: NSView, secondView _: NSView,
+             context _: UnsafeMutableRawPointer?) -> ComparisonResult
+{
+  .orderedAscending
 }
 
 private class GridView: NSView {
@@ -212,7 +215,8 @@ private class GridView: NSView {
   var gridFrame: Rectangle {
     if let winFloatPos {
       return .init(
-        origin: winFloatPos.getAnchorGridOrigin() + Point(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
+        origin: winFloatPos
+          .getAnchorGridOrigin() + Point(x: Int(winFloatPos.anchorX), y: Int(winFloatPos.anchorY)),
         size: gridSize
       )
     }

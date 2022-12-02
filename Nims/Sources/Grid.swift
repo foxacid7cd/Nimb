@@ -24,22 +24,22 @@ actor Grid: Identifiable {
 
   let id: ID
 
-  func update(parametersBatch: [(origin: Point, data: [Value])]) async {
-    await withTaskGroup(of: Void.self) { taskGroup in
-      for (origin, nvimData) in parametersBatch {
-        let row = self.row(at: origin.y)
-
-        taskGroup.addTask {
-          await row.update(startIndex: origin.x, nvimData: nvimData)
-        }
-      }
-
-      for await () in taskGroup {
-        guard !taskGroup.isCancelled else {
-          return
-        }
-      }
-    }
+  func update(parametersBatch _: [(origin: Point, data: [Value])]) async {
+//    await withTaskGroup(of: Void.self) { taskGroup in
+//      for (origin, nvimData) in parametersBatch {
+//        let row = self.row(at: origin.y)
+//
+//        taskGroup.addTask {
+//          await row.update(startIndex: origin.x, nvimData: nvimData)
+//        }
+//      }
+//
+//      for await () in taskGroup {
+//        guard !taskGroup.isCancelled else {
+//          return
+//        }
+//      }
+//    }
   }
 
   private let appearance: Appearance

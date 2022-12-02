@@ -5,6 +5,7 @@
 //  Created by Yevhenii Matviienko on 28.11.2022.
 //
 
+import Backbone
 import Cocoa
 import NvimAPI
 import OSLog
@@ -22,6 +23,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     nvimTask = Task {
       do {
+        os_log("Starting nvim instance.")
+
         try await nvimInstance.run()
         os_log("Nvim instance finished running")
 

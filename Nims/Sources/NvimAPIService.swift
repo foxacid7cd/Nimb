@@ -36,18 +36,18 @@ actor NvimRPCService {
   }
 
   func events() -> AsyncStream<Event> {
-    .init(eventChannel)
+    fatalError()
   }
 
-  func nvimUIAttach(size: Size) async {
-    let parameters: [Value] = [size.width, size.height, [("rgb", true), ("ext_multigrid", true)]]
-    let response = try! await rpcService.call(method: "nvim_ui_attach", parameters: parameters)
-
-    if !response.isSuccess {
-      os_log("nvim_ui_attach failed: \(response.payload.debugDescription)")
-    }
+  func nvimUIAttach(size _: Size) async {
+//    let parameters: [Value] = [size.width, size.height, [("rgb", true), ("ext_multigrid", true)]]
+//    let response = try! await rpcService.call(method: "nvim_ui_attach", parameters: parameters)
+//
+//    if !response.isSuccess {
+//      os_log("nvim_ui_attach failed: \(response.payload.debugDescription)")
+//    }
   }
 
   private let rpcService: RPCServiceProtocol
-  private let eventChannel = AsyncChannel<Event>()
+//  private let eventChannel = AsyncChannel<Event>()
 }
