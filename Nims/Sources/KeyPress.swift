@@ -1,9 +1,4 @@
-//
-//  KeyPress.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 30.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AppKit
 import Carbon
@@ -28,14 +23,14 @@ public struct KeyPress: Sendable {
   public var modifierFlags: NSEvent.ModifierFlags
 
   public func makeNvimKeyCode() -> String {
-    guard let unicodeScalar = characters.unicodeScalars.first else {
+    guard let unicodeScalar = characters.unicodeScalars.first
+    else {
       return characters
     }
 
     let specialKey: String? = {
       if self.keyCode == kVK_Escape {
         return "Esc"
-
       } else {
         return SpecialKeys[Int(unicodeScalar.value)]
       }
@@ -45,13 +40,10 @@ public struct KeyPress: Sendable {
 
     if let modifier, let specialKey {
       return "<\(modifier)-\(specialKey)>"
-
     } else if let modifier {
       return "<\(modifier)-\(Character(unicodeScalar))>"
-
     } else if let specialKey {
       return "<\(specialKey)>"
-
     } else {
       return characters
         .replacingOccurrences(of: "<", with: "<lt>")
@@ -63,16 +55,12 @@ private extension NSEvent.ModifierFlags {
   var modifier: String? {
     if contains(.shift) {
       return "S"
-
     } else if contains(.control) {
       return "C"
-
     } else if contains(.option) {
       return "M"
-
     } else if contains(.command) {
       return "D"
-
     } else {
       return nil
     }

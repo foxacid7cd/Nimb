@@ -1,9 +1,4 @@
-//
-//  RPCNotification.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 28.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Foundation
 
@@ -12,10 +7,10 @@ public struct Notification {
     self.method = method
     self.parameters = parameters
   }
-
+  
   public var method: String
   public var parameters: [Value]
-
+  
   public var encoded: Value {
     .init([
       2,

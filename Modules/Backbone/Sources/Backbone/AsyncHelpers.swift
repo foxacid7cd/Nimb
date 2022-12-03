@@ -1,9 +1,4 @@
-//
-//  AsyncHelpers.swift
-//
-//
-//  Created by Yevhenii Matviienko on 02.12.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
 
@@ -22,7 +17,6 @@ public extension AsyncStream {
 
             continuation.yield(element)
           }
-
         } catch {
           preconditionFailure("Please use AsyncThrowingStream for wrapping throwing sequences.")
         }
@@ -44,7 +38,10 @@ public extension AsyncStream {
 }
 
 public extension AsyncThrowingStream where Failure == Error {
-  init<S: AsyncSequence>(_ sequence: S, bufferingPolicy _: Continuation.BufferingPolicy = .unbounded) where S.Element == Element {
+  init<S: AsyncSequence>(_ sequence: S,
+                         bufferingPolicy _: Continuation.BufferingPolicy = .unbounded)
+    where S.Element == Element
+  {
     self.init(Element.self, bufferingPolicy: .unbounded) { continuation in
       let task = Task {
         for try await element in sequence {

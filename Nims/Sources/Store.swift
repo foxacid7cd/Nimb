@@ -1,9 +1,4 @@
-//
-//  Store.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 01.12.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
 import Backbone
@@ -48,7 +43,9 @@ actor Store {
     grids[id: id] = grid
   }
 
-  func gridLine(parametersBatches _: TreeDictionary<Grid.ID, [(origin: Point, data: [Value])]>) async {
+  func gridLine(parametersBatches _: TreeDictionary<Grid.ID,
+    [(origin: Point, data: [Value])]>) async
+  {
 //    await withTaskGroup(of: Void.self) { taskGroup in
 //      for (id, parametersBatch) in parametersBatches {
 //        guard let grid = self.grid(id: id) else {

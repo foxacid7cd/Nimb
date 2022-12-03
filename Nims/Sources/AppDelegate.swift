@@ -1,9 +1,4 @@
-//
-//  AppDeletate.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 28.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Backbone
 import Cocoa
@@ -29,7 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         os_log("Nvim instance finished running")
 
         NSApplication.shared.terminate(nil)
-
       } catch {
         os_log("Nvim instance finished running with error: \(error)")
       }

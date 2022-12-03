@@ -1,9 +1,4 @@
-//
-//  Generate.swift
-//
-//
-//  Created by Yevhenii Matviienko on 01.12.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import ArgumentParser
 import Foundation
@@ -37,7 +32,8 @@ struct Generate: AsyncParsableCommand {
         for await batch in await unpacker.unpackedBatches() {
           print(batch.count)
 
-          guard Task.isCancelled else {
+          guard Task.isCancelled
+          else {
             break
           }
         }
@@ -46,7 +42,6 @@ struct Generate: AsyncParsableCommand {
       group.addTask {
         do {
           try await unpacker.run()
-
         } catch {
           print("run error \(error)")
         }

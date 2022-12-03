@@ -1,9 +1,4 @@
-//
-//  Request.swift
-//  MessagePack
-//
-//  Created by Yevhenii Matviienko on 28.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Foundation
 import Tagged

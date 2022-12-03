@@ -1,9 +1,4 @@
-//
-//  Appearance.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 29.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Cocoa
 import IdentifiedCollections
@@ -93,7 +88,8 @@ actor Font {
   }
 
   func nsFont(highlight: Highlight? = nil) async -> NSFont {
-    guard let highlight else {
+    guard let highlight
+    else {
       return regularNSFont
     }
 
@@ -102,13 +98,10 @@ actor Font {
 
     if isBold, isItalic {
       return boldItalicNSFont
-
     } else if isBold {
       return boldNSFont
-
     } else if isItalic {
       return italicNSFont
-
     } else {
       return regularNSFont
     }
@@ -138,7 +131,9 @@ actor Highlights {
     await highlight.apply(nvimAttr: nvimAttr)
   }
 
-  func stringAttributes(id: Highlight.ID? = nil, font: Font) async -> [NSAttributedString.Key: Any] {
+  func stringAttributes(id: Highlight.ID? = nil,
+                        font: Font) async -> [NSAttributedString.Key: Any]
+  {
     let highlight = id.map { self.highlight(id: $0) }
 
     return [

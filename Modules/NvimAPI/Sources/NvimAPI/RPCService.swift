@@ -1,9 +1,4 @@
-//
-//  RPCService.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 29.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
 import Backbone
@@ -64,7 +59,8 @@ public actor RPCService: RPCServiceProtocol {
     }
 
     func responseReceived(_ response: Response) {
-      guard let resolveWaiter = responseWaiters.removeValue(forKey: response.id) else {
+      guard let resolveWaiter = responseWaiters.removeValue(forKey: response.id)
+      else {
         assertionFailure("Missing response handler for id \(response.id).")
         return
       }
@@ -84,11 +80,13 @@ public actor RPCService: RPCServiceProtocol {
 
   private func process(unpackedBatch: [Value]) async throws {
     for value in unpackedBatch {
-      guard var value = value as? [Value] else {
+      guard var value = value as? [Value]
+      else {
         throw MessageRPCError.receivedMessageIsNotArray
       }
 
-      guard !value.isEmpty, let type = value.removeFirst() as? Int else {
+      guard !value.isEmpty, let type = value.removeFirst() as? Int
+      else {
         throw MessageRPCError.failedParsingArray
       }
 
@@ -97,19 +95,20 @@ public actor RPCService: RPCServiceProtocol {
         throw MessageRPCError.unexpectedRPCRequest
 
       case 1:
-        guard !value.isEmpty, let rawID = value.removeFirst() as? Int else {
+        guard !value.isEmpty, let rawID = value.removeFirst() as? Int
+        else {
           throw MessageRPCError.failedParsingArray
         }
         let id = Response.ID(rawID)
 
-        guard value.count == 2 else {
+        guard value.count == 2
+        else {
           throw MessageRPCError.failedParsingArray
         }
 
         let (isSuccess, payload) = {
           if value[0] != nil {
             return (false, value[0])
-
           } else {
             return (true, value[1])
           }
@@ -122,11 +121,13 @@ public actor RPCService: RPCServiceProtocol {
         await store.responseReceived(response)
 
       case 2:
-        guard !value.isEmpty, let method = value.removeFirst() as? String else {
+        guard !value.isEmpty, let method = value.removeFirst() as? String
+        else {
           throw MessageRPCError.failedParsingArray
         }
 
-        guard !value.isEmpty, let parameters = value.removeFirst() as? [Value] else {
+        guard !value.isEmpty, let parameters = value.removeFirst() as? [Value]
+        else {
           throw MessageRPCError.failedParsingArray
         }
 

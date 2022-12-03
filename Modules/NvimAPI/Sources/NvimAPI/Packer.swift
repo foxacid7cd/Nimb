@@ -1,9 +1,4 @@
-//
-//  Packer.swift
-//  MessagePack
-//
-//  Created by Yevhenii Matviienko on 28.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Backbone
 import Foundation
@@ -36,7 +31,8 @@ public actor Packer: PackerProtocol {
   private var pk = msgpack_packer()
 
   private func msgpack(_ value: Value) {
-    guard let value else {
+    guard let value
+    else {
       msgpack_pack_nil(&pk)
       return
     }
@@ -45,7 +41,6 @@ public actor Packer: PackerProtocol {
     case let value as Bool:
       if value {
         msgpack_pack_true(&pk)
-
       } else {
         msgpack_pack_false(&pk)
       }
@@ -103,7 +98,9 @@ public actor Packer: PackerProtocol {
       }
 
     default:
-      assertionFailure("Sending value \(value)' of invalid msgpack type '\(String(reflecting: value.self))")
+      assertionFailure(
+        "Sending value \(value)' of invalid msgpack type '\(String(reflecting: value.self))"
+      )
       msgpack_pack_nil(&pk)
     }
   }

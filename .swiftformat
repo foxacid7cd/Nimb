@@ -25,7 +25,7 @@
 --generictypes 
 --groupedextension "MARK: %c"
 --guardelse auto
---header ignore
+--header "// Copyright © 2022 foxacid7cd. All rights reserved."
 --hexgrouping 4,8
 --hexliteralcase uppercase
 --ifdef indent
@@ -38,8 +38,7 @@
 --linebreaks lf
 --markcategories false
 --markextensions always
---marktypes always
---maxwidth none
+--maxwidth 100
 --modifierorder 
 --nevertrailing 
 --nospaceoperators 
@@ -56,7 +55,7 @@
 --shortoptionals always
 --smarttabs enabled
 --someAny true
---stripunusedargs always
+--stripunusedargs unnamed-only
 --structthreshold 0
 --swiftversion 5.8
 --tabwidth unspecified
@@ -76,4 +75,4 @@
 --wraptypealiases preserve
 --xcodeindentation disabled
 --yodaswap always
---enable acronyms,blankLineAfterImports,isEmpty,organizeDeclarations,sortedSwitchCases
+--enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases

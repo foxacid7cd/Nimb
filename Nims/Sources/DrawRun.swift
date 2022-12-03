@@ -1,9 +1,4 @@
-//
-//  DrawRun.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 29.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Cocoa
 
@@ -12,7 +7,9 @@ struct DrawRun: Equatable {
   var glyphRuns: [GlyphRun]
   var cgFrame: CGRect
 
-  static func make(origin: Point, cgFrame: CGRect, attributedString: NSAttributedString) -> DrawRun {
+  static func make(origin: Point, cgFrame: CGRect,
+                   attributedString: NSAttributedString) -> DrawRun
+  {
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
 
@@ -25,18 +22,22 @@ struct DrawRun: Equatable {
 
         let attributes = CTRunGetAttributes(ctRun) as NSDictionary
         let font = attributes.value(forKey: NSAttributedString.Key.font.rawValue) as! NSFont
-        let foregroundColor = attributes.value(forKey: NSAttributedString.Key.foregroundColor.rawValue) as! NSColor
-        let backgroundColor = attributes.value(forKey: NSAttributedString.Key.backgroundColor.rawValue) as! NSColor
+        let foregroundColor = attributes
+          .value(forKey: NSAttributedString.Key.foregroundColor.rawValue) as! NSColor
+        let backgroundColor = attributes
+          .value(forKey: NSAttributedString.Key.backgroundColor.rawValue) as! NSColor
 
-        let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-          CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
+        let glyphs =
+          [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+            CTRunGetGlyphs(ctRun, range, buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
 
-        let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-          CTRunGetPositions(ctRun, range, buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
+        let positions =
+          [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+            CTRunGetPositions(ctRun, range, buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
 
         let stringRange = CTRunGetStringRange(ctRun)
 

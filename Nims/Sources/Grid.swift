@@ -1,9 +1,4 @@
-//
-//  Grid.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 01.12.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
 import Cocoa
@@ -80,7 +75,8 @@ actor Row {
     var createHighlightGroupParametersBatch = [CreateHighlightGroupParameters]()
 
     func snapshotCreateHighlightGroupParametersIfValid() {
-      guard !highlightGroupCells.isEmpty else {
+      guard !highlightGroupCells.isEmpty
+      else {
         return
       }
 
@@ -88,18 +84,21 @@ actor Row {
     }
 
     for element in nvimData {
-      guard var casted = element as? [Value] else {
+      guard var casted = element as? [Value]
+      else {
         fatalError("Not an array")
       }
 
-      guard let text = casted.removeFirst() as? String else {
+      guard let text = casted.removeFirst() as? String
+      else {
         fatalError("Not a text")
       }
 
       var repeatCount = 1
 
       if !casted.isEmpty {
-        guard let newRawHighlightID = casted.removeFirst() as? Int else {
+        guard let newRawHighlightID = casted.removeFirst() as? Int
+        else {
           fatalError("Not an highlight id")
         }
         let newHighlightID = Highlight.ID(newRawHighlightID)
@@ -112,7 +111,8 @@ actor Row {
         }
 
         if !casted.isEmpty {
-          guard let newRepeatCount = casted.removeFirst() as? Int else {
+          guard let newRepeatCount = casted.removeFirst() as? Int
+          else {
             fatalError("Not a repeat count")
           }
           repeatCount = newRepeatCount
@@ -148,18 +148,22 @@ actor Row {
     let firstAffectedHighlightGroup = firstUpdatedCell.highlightGroup!
     let lastAffectedHighlightGroup = lastUpdatedCell.highlightGroup!
 
-    let affectedHighlightGroupsRange = firstAffectedHighlightGroup.index! ..< lastAffectedHighlightGroup.index! + 1
+    let affectedHighlightGroupsRange = firstAffectedHighlightGroup
+      .index! ..< lastAffectedHighlightGroup.index! + 1
 
     let firstAffectedCell = firstAffectedHighlightGroup.cells.first!
     let lastAffectedCell = lastAffectedHighlightGroup.cells.last!
 
     var newHighlightGroups = [HighlightGroup]()
 
-    let newFirstAffectedHighlightGroupLength = firstUpdatedCell.indexInRow - firstAffectedCell.indexInRow
+    let newFirstAffectedHighlightGroupLength = firstUpdatedCell.indexInRow - firstAffectedCell
+      .indexInRow
     if newFirstAffectedHighlightGroupLength > 0 {
-      let removeLastCount = firstAffectedHighlightGroup.cells.count - newFirstAffectedHighlightGroupLength
+      let removeLastCount = firstAffectedHighlightGroup.cells
+        .count - newFirstAffectedHighlightGroupLength
       firstAffectedHighlightGroup.cells.removeLast(removeLastCount)
-      firstAffectedHighlightGroup.cells.enumerated().forEach { $0.element.indexInHighlightGroup = $0.offset }
+      firstAffectedHighlightGroup.cells.enumerated()
+        .forEach { $0.element.indexInHighlightGroup = $0.offset }
 
       newHighlightGroups.append(firstAffectedHighlightGroup)
     }
@@ -167,7 +171,8 @@ actor Row {
     for parameters in parametersBatch {
       let newHighlightGroup = HighlightGroup(
         highlight: await {
-          guard let id = parameters.highlightID else {
+          guard let id = parameters.highlightID
+          else {
             return nil
           }
 
@@ -178,11 +183,14 @@ actor Row {
       newHighlightGroups.append(newHighlightGroup)
     }
 
-    let newLastAffectedHighlightGroupLength = lastAffectedCell.indexInRow - lastUpdatedCell.indexInRow
+    let newLastAffectedHighlightGroupLength = lastAffectedCell.indexInRow - lastUpdatedCell
+      .indexInRow
     if newLastAffectedHighlightGroupLength > 0 {
-      let removeFirstCount = lastAffectedHighlightGroup.cells.count - newLastAffectedHighlightGroupLength
+      let removeFirstCount = lastAffectedHighlightGroup.cells
+        .count - newLastAffectedHighlightGroupLength
       lastAffectedHighlightGroup.cells.removeFirst(removeFirstCount)
-      lastAffectedHighlightGroup.cells.enumerated().forEach { $0.element.indexInHighlightGroup = $0.offset }
+      lastAffectedHighlightGroup.cells.enumerated()
+        .forEach { $0.element.indexInHighlightGroup = $0.offset }
 
       newHighlightGroups.append(lastAffectedHighlightGroup)
     }
