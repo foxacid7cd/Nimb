@@ -21,38 +21,27 @@ struct Generate: AsyncParsableCommand {
   var generatedPath: String
 
   func run() async throws {
-    let apiInfoFileURL = URL(fileURLWithPath: apiInfoFilePath, isDirectory: false)
-    let fileHandle = try FileHandle(forReadingFrom: apiInfoFileURL)
+    let apiInfoFileURL = URL(filePath: apiInfoFilePath, directoryHint: .notDirectory)
+    let data = try Data(contentsOf: apiInfoFileURL, options: .mappedIfSafe)
 
-    // let data = try fileHandle.readToEnd()
-    let unpacker = Unpacker(sourceFileHandle: fileHandle)
+    let unpacker = Unpacker()
+    let batch = try await unpacker.unpack(data)
 
-    await withTaskGroup(of: Void.self) { group in
-      group.addTask {
-        for await batch in await unpacker.unpackedBatches() {
-          print(batch.count)
-
-          guard Task.isCancelled
-          else {
-            break
-          }
-        }
-      }
-
-      group.addTask {
-        do {
-          try await unpacker.run()
-        } catch {
-          print("run error \(error)")
-        }
-      }
-
-      await group.waitForAll()
+    guard batch.count == 1, let apiInfo = batch[0] as? [Map] else {
+      throw GenerateError.invalidAPIInfoData
     }
 
-    try await unpacker.run()
+    for element in apiInfo {
+      let description = element
+        .map {
+          let key = $0.key.map { String(reflecting: $0) } ?? "nil"
+          let value = $0.value.map { String(reflecting: $0) } ?? "nil"
+          return "\(key): \(value)"
+        }
+        .joined(separator: ", ")
 
-    print(123)
+      print(description)
+    }
 
 //    let apiInfo = await unpacker.unpackedBatches()
 //      .reduce([Value](), +)
@@ -76,4 +65,8 @@ struct Generate: AsyncParsableCommand {
 //      attributes: nil
 //    )
   }
+}
+
+enum GenerateError: Error {
+  case invalidAPIInfoData
 }

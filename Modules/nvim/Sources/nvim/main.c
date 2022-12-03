@@ -1,9 +1,4 @@
-//
-//  main.c
-//  nvim
-//
-//  Created by Yevhenii Matviienko on 28.11.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 extern int nvim_main(int argc, const char * argv[]);
 

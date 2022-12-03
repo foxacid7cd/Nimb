@@ -7,10 +7,10 @@ public struct Notification {
     self.method = method
     self.parameters = parameters
   }
-  
+
   public var method: String
   public var parameters: [Value]
-  
+
   public var encoded: Value {
     .init([
       2,
