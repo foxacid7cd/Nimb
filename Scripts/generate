@@ -3,4 +3,6 @@
 NVIM_PATH="./Third-Party/neovim/build/bin/nvim"
 GENERATE_CMD="swift run --package-path Tools -c debug generate"
 
-${NVIM_PATH} --api-info | eval "${GENERATE_CMD} .build"
+GENERATED_DIR=$(mktemp -d -t Nims_generated)
+${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
+open "${GENERATED_DIR}"

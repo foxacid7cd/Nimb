@@ -305,7 +305,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#export PATH=\"/opt/homebrew/bin:$PATH\"\n\n#cd Tools\n#SDKROOT=(xcrun --sdk macosx --show-sdk-path)\n\n#swift run -c release swiftformat \"$SRCROOT\"\n/opt/homebrew/bin/swiftformat \"$SRCROOT\"\n";
+			shellScript = "/opt/homebrew/bin/swiftformat \"$SRCROOT\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

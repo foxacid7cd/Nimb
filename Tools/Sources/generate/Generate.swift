@@ -13,8 +13,23 @@ struct Generate: AsyncParsableCommand {
   )
   var generatedPath: String
 
+  @Argument(
+    help: "Optional path to file containing encoded neovim API metadata. Standard input is read if not provided.",
+    completion: .file()
+  )
+  var metadataPath: String = ""
+
   func run() async throws {
-    let dataBatches = AsyncStream(reading: FileHandle.standardInput)
+    let sourceFileHandle: FileHandle
+    if metadataPath.isEmpty {
+      sourceFileHandle = .standardInput
+
+    } else {
+      let fileURL = URL(filePath: metadataPath)
+      sourceFileHandle = try FileHandle(forReadingFrom: fileURL)
+    }
+
+    let dataBatches = AsyncStream(reading: sourceFileHandle)
 
     var accumulator = [Value]()
 
@@ -25,37 +40,26 @@ struct Generate: AsyncParsableCommand {
       accumulator += values
     }
 
-    guard accumulator.count == 1, let apiInfo = accumulator[0] as? Map else {
+    guard accumulator.count == 1, let apiInfoMap = accumulator[0] as? Map else {
       throw GenerateError.invalidStandardInputData
     }
 
-    let description = apiInfo
-      .map { key, value in
-        "\(key.map { String(describing: $0) } ?? "nil"): \(value.map { String(describing: $0) } ?? "nil")"
-      }
+    let metadata = NeovimAPIMetadata(map: apiInfoMap)
+
+    let generatedURL = URL(filePath: generatedPath)
+    try? FileManager.default.createDirectory(
+      at: generatedURL,
+      withIntermediateDirectories: true
+    )
+
+    let generatedFileURL = generatedURL
+      .appending(path: "description.txt")
+
+    try metadata.functions
+      .map(\.name)
       .joined(separator: "\n")
-
-    let destinationDirectoryURL = URL(
-      filePath: generatedPath,
-      directoryHint: .isDirectory,
-      relativeTo: nil
-    )
-    try FileManager.default.createDirectory(
-      at: destinationDirectoryURL,
-      withIntermediateDirectories: true,
-      attributes: nil
-    )
-
-    let descriptionFileURL = destinationDirectoryURL
-      .appending(
-        path: "description.txt",
-        directoryHint: .notDirectory
-      )
-
-    try description.data(using: .utf8)!
-      .write(to: descriptionFileURL)
-
-    print(descriptionFileURL)
+      .data(using: .utf8)!
+      .write(to: generatedFileURL)
   }
 }
 
