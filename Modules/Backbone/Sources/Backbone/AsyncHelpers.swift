@@ -1,6 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
+import Foundation
 
 public extension AsyncStream {
   init<S: AsyncSequence>(

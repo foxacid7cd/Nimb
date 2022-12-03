@@ -11,7 +11,7 @@ public protocol RPCServiceProtocol: AnyActor {
 }
 
 public protocol RPCChannel {
-  var dataBatches: AsyncStream<Void> { get async }
+  var dataBatches: AsyncStream<Data> { get async }
   func write(_ data: Data) async throws
 }
 
@@ -36,20 +36,33 @@ public actor RPCService: RPCServiceProtocol {
         let id = await self.store.announceRequest { response in
           continuation.resume(returning: response)
         }
-
         let request = Request(
           id: id,
           method: method,
           parameters: parameters
         )
-
         let data = await self.packer.pack(request.makeValue())
-        try await self.channel.write(data)
+        return try await self.channel.write(data)
       }
     }
   }
 
-  private actor Store {
+  public func run() async throws {
+    let task = Task {
+      for await batch in await self.channel.dataBatches {
+        if Task.isCancelled {
+          break
+        }
+
+        let values = try await self.unpacker.unpack(batch)
+        try await self.process(unpackedBatch: values)
+      }
+    }
+
+    try await task.value
+  }
+
+  private actor RPCStore {
     func announceRequest(_ responseReceived: @escaping @Sendable (Response) -> Void) -> Request.ID {
       let id = Request.ID(requestCounter)
       requestCounter += 1
@@ -75,7 +88,7 @@ public actor RPCService: RPCServiceProtocol {
   private let packer: PackerProtocol
   private let unpacker: UnpackerProtocol
   private let channel: RPCChannel
-  private let store = Store()
+  private let store = RPCStore()
   private let sendNotification: @Sendable (Notification) async -> Void
 
   private func process(unpackedBatch: [Value]) async throws {

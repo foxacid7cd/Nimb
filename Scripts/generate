@@ -1,0 +1,6 @@
+#!/bin/sh
+
+NVIM_PATH="./Third-Party/neovim/build/bin/nvim"
+GENERATE_CMD="swift run --package-path Tools -c debug generate"
+
+${NVIM_PATH} --api-info | eval "${GENERATE_CMD} .build"

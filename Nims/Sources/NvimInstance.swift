@@ -8,9 +8,8 @@ import IdentifiedCollections
 import NvimAPI
 import OSLog
 
-@MainActor
-class NvimInstance {
-  init() {
+actor NvimInstance {
+  init() throws {
     let process = Process()
     self.process = process
 
@@ -22,11 +21,23 @@ class NvimInstance {
     environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
     process.environment = environment
 
-    let inputPipe = Pipe()
-    process.standardInput = inputPipe
+    process.terminationHandler = { process in
+      switch process.terminationReason {
+      case .uncaughtSignal:
+        os_log("Process terminated due to uncaught signal.")
 
-    let outputPipe = Pipe()
-    process.standardOutput = outputPipe
+      case .exit:
+        let exitStatus = process.terminationStatus
+        os_log("Process terminated with exit status \(exitStatus).")
+
+      default:
+        break
+      }
+    }
+
+    let channel = ProcessChannel(process: process)
+    let rpcService = RPCService(channel: channel)
+    self.rpcService = rpcService
 
 //    let rpcService = RPCService(
 //      destinationFileHandle: inputPipe.fileHandleForWriting,
@@ -292,19 +303,35 @@ class NvimInstance {
 //      }
   }
 
-  func run() async throws {}
+  public func run() async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        for await notification in await self.rpcService.notifications {
+          os_log("\(String(describing: notification))")
+        }
+      }
 
-  private let process: Process
+      group.addTask {
+        try await self.startProcess()
 
-//  private let store: Store
+        try await self.rpcService.run()
+      }
 
-  private func terminateProcessIfRunning() {
-    if process.isRunning {
-      process.terminate()
+      group.addTask {
+        try await self.rpcService.call(
+          method: "nvim_ui_attach",
+          parameters: [80, 24, [("rgb", true)]]
+        )
+      }
+
+      try await group.waitForAll()
     }
   }
 
-  private func runProcess() throws {
+  private let process: Process
+  private let rpcService: RPCService
+
+  private func startProcess() throws {
     try process.run()
   }
 }
@@ -317,4 +344,27 @@ enum RedrawNotificationParsingError: Error {
   case gridLineHlIDIsNotInt
   case gridLineCellRepeatCountIsNotInt
   case gridLineHlIDNotParsedYet
+}
+
+private class ProcessChannel: RPCChannel {
+  init(process: Process) {
+    let inputPipe = Pipe()
+    process.standardOutput = inputPipe
+    sourceFileHandle = inputPipe.fileHandleForReading
+
+    let outputPipe = Pipe()
+    process.standardInput = outputPipe
+    destinationFileHandle = outputPipe.fileHandleForWriting
+  }
+
+  var dataBatches: AsyncStream<Data> {
+    .init(reading: sourceFileHandle)
+  }
+
+  func write(_ data: Data) async throws {
+    try destinationFileHandle.write(contentsOf: data)
+  }
+
+  private let sourceFileHandle: FileHandle
+  private let destinationFileHandle: FileHandle
 }

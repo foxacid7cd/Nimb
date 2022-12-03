@@ -1,19 +1,12 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import ArgumentParser
+import Backbone
 import Foundation
 import NvimAPI
-import SwiftSyntax
-import SwiftSyntaxBuilder
 
 @main
 struct Generate: AsyncParsableCommand {
-  @Argument(
-    help: "The path to the file with binary output of nvim launched with --api-info argument",
-    completion: .file()
-  )
-  var apiInfoFilePath: String
-
   @Argument(
     help: "The path to the destination directory where the source files are to be generated",
     completion: .directory
@@ -21,52 +14,51 @@ struct Generate: AsyncParsableCommand {
   var generatedPath: String
 
   func run() async throws {
-    let apiInfoFileURL = URL(filePath: apiInfoFilePath, directoryHint: .notDirectory)
-    let data = try Data(contentsOf: apiInfoFileURL, options: .mappedIfSafe)
+    let dataBatches = AsyncStream(reading: FileHandle.standardInput)
+
+    var accumulator = [Value]()
 
     let unpacker = Unpacker()
-    let batch = try await unpacker.unpack(data)
+    for await data in dataBatches {
+      let values = try await unpacker.unpack(data)
 
-    guard batch.count == 1, let apiInfo = batch[0] as? [Map] else {
-      throw GenerateError.invalidAPIInfoData
+      accumulator += values
     }
 
-    for element in apiInfo {
-      let description = element
-        .map {
-          let key = $0.key.map { String(reflecting: $0) } ?? "nil"
-          let value = $0.value.map { String(reflecting: $0) } ?? "nil"
-          return "\(key): \(value)"
-        }
-        .joined(separator: ", ")
-
-      print(description)
+    guard accumulator.count == 1, let apiInfo = accumulator[0] as? Map else {
+      throw GenerateError.invalidStandardInputData
     }
 
-//    let apiInfo = await unpacker.unpackedBatches()
-//      .reduce([Value](), +)
+    let description = apiInfo
+      .map { key, value in
+        "\(key.map { String(describing: $0) } ?? "nil"): \(value.map { String(describing: $0) } ?? "nil")"
+      }
+      .joined(separator: "\n")
 
-    // print(apiInfo)
+    let destinationDirectoryURL = URL(
+      filePath: generatedPath,
+      directoryHint: .isDirectory,
+      relativeTo: nil
+    )
+    try FileManager.default.createDirectory(
+      at: destinationDirectoryURL,
+      withIntermediateDirectories: true,
+      attributes: nil
+    )
 
-//    Task {
-//      var data = Data()
-//      for try await byte in fileHandle.bytes {
-//        data.append(byte)
-//      }
-//
-//      print("Data output: \(data.count)")
-//    }
-//
-//    let destination = URL(fileURLWithPath: generatedPath, isDirectory: true)
-//
-//    try FileManager.default.createDirectory(
-//      at: destination,
-//      withIntermediateDirectories: true,
-//      attributes: nil
-//    )
+    let descriptionFileURL = destinationDirectoryURL
+      .appending(
+        path: "description.txt",
+        directoryHint: .notDirectory
+      )
+
+    try description.data(using: .utf8)!
+      .write(to: descriptionFileURL)
+
+    print(descriptionFileURL)
   }
 }
 
 enum GenerateError: Error {
-  case invalidAPIInfoData
+  case invalidStandardInputData
 }

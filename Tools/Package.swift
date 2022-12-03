@@ -5,7 +5,6 @@ let package = Package(
   name: "Tools",
   platforms: [.macOS(.v13)],
   dependencies: [
-    .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.50.4"),
     .package(url: "https://github.com/apple/swift-syntax", branch: "main"),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
     .package(path: "../Modules/NvimAPI"),
