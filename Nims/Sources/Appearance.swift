@@ -22,7 +22,7 @@ actor Appearance {
     )
   }
 
-  func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
+  func apply(nvimAttr: [(String, MessageValue)], forID id: Highlight.ID) async {
     await highlights.apply(nvimAttr: nvimAttr, forID: id)
   }
 
@@ -120,7 +120,7 @@ actor Highlights {
     await defaultSpecialColor.set(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [(String, Value)], forID id: Highlight.ID) async {
+  func apply(nvimAttr: [(String, MessageValue)], forID id: Highlight.ID) async {
     let highlight = highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
@@ -202,7 +202,7 @@ actor Highlight: Identifiable {
   var backgroundColor: Color?
   var specialColor: Color?
 
-  func apply(nvimAttr: [(String, Value)]) {
+  func apply(nvimAttr: [(String, MessageValue)]) {
     for (key, value) in nvimAttr {
       switch key {
       case "foreground":

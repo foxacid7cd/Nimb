@@ -44,7 +44,7 @@ actor Store {
   }
 
   func gridLine(parametersBatches _: TreeDictionary<Grid.ID,
-    [(origin: Point, data: [Value])]>) async
+    [(origin: Point, data: [MessageValue])]>) async
   {
 //    await withTaskGroup(of: Void.self) { taskGroup in
 //      for (id, parametersBatch) in parametersBatches {

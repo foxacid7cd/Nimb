@@ -30,14 +30,13 @@ let package = Package(
       name: "Neovim",
       dependencies: [
         .target(name: "MessagePack"),
-        .target(name: "Library"),
       ]
     ),
     .target(
       name: "MessagePack",
       dependencies: [
-        .target(name: "msgpack"),
         .target(name: "Library"),
+        .target(name: "msgpack"),
       ]
     ),
     .target(

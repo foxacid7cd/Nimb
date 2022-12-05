@@ -6,17 +6,16 @@ import Foundation
 import Library
 import Tagged
 
-public typealias Notification = (method: String, parameters: [Value])
-
-public typealias Response = Result<Value, RemoteError>
+public typealias Notification = (method: String, parameters: [MessageValue])
 
 public struct RemoteError: Error {
-  public var rawValue: Value
+  public var messageValue: MessageValue
 }
 
 public protocol RPCProtocol {
   var notifications: AsyncStream<Notification> { get async }
-  func call(method: String, withParameters parameters: [Value]) async throws -> Response
+  func call(method: String, withParameters parameters: [MessageValue]) async throws
+    -> Result<MessageValue, RemoteError>
 }
 
 public actor RPC: RPCProtocol {
@@ -41,13 +40,16 @@ public actor RPC: RPCProtocol {
   public let notifications: AsyncStream<Notification>
 
   @discardableResult
-  public func call(method: String, withParameters parameters: [Value]) async throws -> Response {
+  public func call(
+    method: String,
+    withParameters parameters: [MessageValue]
+  ) async throws -> Result<MessageValue, RemoteError> {
     await withUnsafeContinuation { continuation in
       Task {
         let requestID = await self.store.announceRequest { response in
           continuation.resume(returning: response)
         }
-        let requestMessage: Value = [
+        let requestMessage: MessageValue = [
           MessageType.request.rawValue,
           requestID.rawValue,
           method,
@@ -80,9 +82,9 @@ public actor RPC: RPCProtocol {
   private let store = Store()
   private let sendNotification: @Sendable (Notification) async -> Void
 
-  private func messagesReceived(_ messages: [Value]) async throws {
+  private func messagesReceived(_ messages: [MessageValue]) async throws {
     for value in messages {
-      guard var value = value as? [Value]
+      guard var value = value as? [MessageValue]
       else {
         throw Error.receivedMessageIsNotArray
       }
@@ -108,9 +110,9 @@ public actor RPC: RPCProtocol {
           throw Error.failedParsingArray
         }
 
-        let response: Response
+        let response: Result<MessageValue, RemoteError>
         if value[0] != nil {
-          response = .failure(.init(rawValue: value[0]))
+          response = .failure(.init(messageValue: value[0]))
 
         } else {
           response = .success(value[1])
@@ -124,7 +126,7 @@ public actor RPC: RPCProtocol {
           throw Error.failedParsingArray
         }
 
-        guard !value.isEmpty, let parameters = value.removeFirst() as? [Value]
+        guard !value.isEmpty, let parameters = value.removeFirst() as? [MessageValue]
         else {
           throw Error.failedParsingArray
         }
@@ -139,7 +141,9 @@ public actor RPC: RPCProtocol {
 }
 
 private actor Store {
-  func announceRequest(_ responseReceived: @escaping @Sendable (Response) -> Void) -> Request.ID {
+  func announceRequest(_ responseReceived: @escaping @Sendable (Result<MessageValue, RemoteError>)
+    -> Void) -> Request.ID
+  {
     let id = Request.ID(requestCounter)
     requestCounter += 1
 
@@ -147,7 +151,10 @@ private actor Store {
     return id
   }
 
-  func responseReceived(_ response: Response, forRequestWithID requestID: Request.ID) {
+  func responseReceived(
+    _ response: Result<MessageValue, RemoteError>,
+    forRequestWithID requestID: Request.ID
+  ) {
     guard let resolveWaiter = responseWaiters.removeValue(forKey: requestID)
     else {
       assertionFailure("Missing response handler for request with id \(requestID).")
@@ -158,7 +165,8 @@ private actor Store {
   }
 
   private var requestCounter = 0
-  private var responseWaiters = TreeDictionary <Request.ID, @Sendable (Response) -> Void > ()
+  private var responseWaiters = TreeDictionary <Request.ID,
+              @Sendable (Result<MessageValue, RemoteError>) -> Void > ()
 }
 
 private enum MessageType: Int {

@@ -20,7 +20,7 @@ actor Grid: Identifiable {
 
   let id: ID
 
-  func update(parametersBatch _: [(origin: Point, data: [Value])]) async {
+  func update(parametersBatch _: [(origin: Point, data: [MessageValue])]) async {
 //    await withTaskGroup(of: Void.self) { taskGroup in
 //      for (origin, nvimData) in parametersBatch {
 //        let row = self.row(at: origin.y)
@@ -67,7 +67,7 @@ actor Row {
       .forEach { $0.element.index = $0.offset }
   }
 
-  func update(startIndex: Int, nvimData: [Value]) async {
+  func update(startIndex: Int, nvimData: [MessageValue]) async {
     var updatedCellsCount = 0
 
     var highlightID: Highlight.ID?
@@ -85,7 +85,7 @@ actor Row {
     }
 
     for element in nvimData {
-      guard var casted = element as? [Value]
+      guard var casted = element as? [MessageValue]
       else {
         fatalError("Not an array")
       }

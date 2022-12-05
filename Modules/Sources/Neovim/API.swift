@@ -9,15 +9,14 @@ public actor API {
 
   func call<Success>(
     method: String,
-    withParameters parameters: [Value],
+    withParameters parameters: [MessageValue],
     assumingSuccessType successType: Success.Type
   ) async throws -> Result<Success, RemoteError> {
     try await rpc.call(method: method, withParameters: parameters)
       .map { success in
         guard let success = success as? Success else {
-          preconditionFailure("Assumed success type does not match real success type")
+          preconditionFailure("Assumed success response type does not match returned response type")
         }
-
         return success
       }
   }

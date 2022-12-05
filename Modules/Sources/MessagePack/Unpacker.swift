@@ -6,7 +6,7 @@ import Library
 import msgpack
 
 public protocol UnpackerProtocol {
-  func unpack(_ data: Data) async throws -> [Value]
+  func unpack(_ data: Data) async throws -> [MessageValue]
 }
 
 public actor Unpacker: UnpackerProtocol {
@@ -20,7 +20,7 @@ public actor Unpacker: UnpackerProtocol {
     msgpack_unpacker_destroy(&mpac)
   }
 
-  public func unpack(_ data: Data) throws -> [Value] {
+  public func unpack(_ data: Data) throws -> [MessageValue] {
     if msgpack_unpacker_buffer_capacity(&mpac) < data.count {
       msgpack_unpacker_reserve_buffer(&mpac, data.count)
     }
@@ -35,7 +35,7 @@ public actor Unpacker: UnpackerProtocol {
     }
     msgpack_unpacker_buffer_consumed(&mpac, data.count)
 
-    var accumulator = [Value]()
+    var accumulator = [MessageValue]()
 
     var result = msgpack_unpacker_next(&mpac, &unpacked)
     var isCancelled = false
@@ -65,7 +65,7 @@ public actor Unpacker: UnpackerProtocol {
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
 
-  private func value(from object: msgpack_object) throws -> Value {
+  private func value(from object: msgpack_object) throws -> MessageValue {
     switch object.type {
     case MSGPACK_OBJECT_NIL:
       return nil
@@ -91,7 +91,7 @@ public actor Unpacker: UnpackerProtocol {
       })
 
     case MSGPACK_OBJECT_ARRAY:
-      var values = [Value]()
+      var values = [MessageValue]()
 
       for i in 0 ..< Int(object.via.array.size) {
         let element = object.via.array.ptr.advanced(by: i).pointee
@@ -101,7 +101,7 @@ public actor Unpacker: UnpackerProtocol {
       return values
 
     case MSGPACK_OBJECT_MAP:
-      var keyValues = [(key: Value, value: Value)]()
+      var keyValues = [(key: MessageValue, value: MessageValue)]()
 
       for i in 0 ..< Int(object.via.map.size) {
         let element = object.via.map.ptr.advanced(by: i).pointee

@@ -14,7 +14,7 @@ actor NvimRPCService {
 
   enum Event {
     case gridResize(id: Grid.ID, size: Size)
-    case gridLine(id: Grid.ID, origin: Point, data: [Value])
+    case gridLine(id: Grid.ID, origin: Point, data: [MessageValue])
   }
 
   func run() async throws {

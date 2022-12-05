@@ -5,7 +5,7 @@ import Library
 import msgpack
 
 public protocol PackerProtocol {
-  func pack(_ value: Value) async -> Data
+  func pack(_ value: MessageValue) async -> Data
 }
 
 public actor Packer: PackerProtocol {
@@ -18,7 +18,7 @@ public actor Packer: PackerProtocol {
     msgpack_sbuffer_destroy(&sbuf)
   }
 
-  public func pack(_ value: Value) -> Data {
+  public func pack(_ value: MessageValue) -> Data {
     msgpack(value)
 
     let data = Data(bytes: sbuf.data, count: sbuf.size)
@@ -30,7 +30,7 @@ public actor Packer: PackerProtocol {
   private var sbuf = msgpack_sbuffer()
   private var pk = msgpack_packer()
 
-  private func msgpack(_ value: Value) {
+  private func msgpack(_ value: MessageValue) {
     guard let value
     else {
       msgpack_pack_nil(&pk)
@@ -63,7 +63,7 @@ public actor Packer: PackerProtocol {
     case let value as Double:
       msgpack_pack_float(&pk, Float(value))
 
-    case let value as Map:
+    case let value as MessageMapValue:
       msgpack_pack_map(&pk, value.count)
 
       for keyValue in value {
@@ -71,14 +71,14 @@ public actor Packer: PackerProtocol {
         msgpack(keyValue.value)
       }
 
-    case let value as [Value]:
+    case let value as [MessageValue]:
       msgpack_pack_array(&pk, value.count)
 
       for element in value {
         msgpack(element)
       }
 
-    case let value as Ext:
+    case let value as MessageExtValue:
       value.data.withUnsafeBytes { buffer in
         _ = msgpack_pack_ext_with_body(
           &self.pk,

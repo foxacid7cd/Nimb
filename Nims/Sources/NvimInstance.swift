@@ -6,6 +6,7 @@ import Collections
 import IdentifiedCollections
 import Library
 import MessagePack
+import Neovim
 import OSLog
 
 actor NvimInstance {
@@ -36,10 +37,13 @@ actor NvimInstance {
     }
 
     let channel = ProcessChannel(process: process)
-    let rpcService = RPC(channel: channel)
-    self.rpcService = rpcService
 
-//    let rpcService = RPCService(
+    let rpc = RPC(channel: channel)
+    self.rpc = rpc
+
+    api = .init(rpc: rpc)
+
+    //    let rpcService = RPCService(
 //      destinationFileHandle: inputPipe.fileHandleForWriting,
 //      sourceFileHandle: outputPipe.fileHandleForReading
 //    )
@@ -306,7 +310,7 @@ actor NvimInstance {
   public func run() async throws {
     try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
-        for await notification in await self.rpcService.notifications {
+        for await notification in await self.rpc.notifications {
           os_log("\(String(describing: notification))")
         }
       }
@@ -314,14 +318,20 @@ actor NvimInstance {
       group.addTask {
         try await self.startProcess()
 
-        try await self.rpcService.run()
+        try await self.rpc.run()
       }
 
       group.addTask {
-        try await self.rpcService.call(
-          method: "nvim_ui_attach",
-          withParameters: [80, 24, [("rgb", true)]]
+        try await self.api.nvimUIAttach(
+          width: 80,
+          height: 24,
+          options: [
+            "rgb": true,
+            "ext_multigrid": true,
+            "ext_hlstate": true,
+          ]
         )
+        .check()
       }
 
       try await group.waitForAll()
@@ -329,7 +339,8 @@ actor NvimInstance {
   }
 
   private let process: Process
-  private let rpcService: RPC
+  private let rpc: RPC
+  private let api: API
 
   private func startProcess() throws {
     try process.run()

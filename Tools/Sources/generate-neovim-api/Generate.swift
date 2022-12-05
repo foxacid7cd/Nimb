@@ -4,6 +4,8 @@ import ArgumentParser
 import Foundation
 import Library
 import MessagePack
+import SwiftSyntax
+import SwiftSyntaxBuilder
 
 @main
 struct Generate: AsyncParsableCommand {
@@ -21,7 +23,7 @@ struct Generate: AsyncParsableCommand {
 
   func run() async throws {
     print("Generating...")
-    
+
     let sourceFileHandle: FileHandle
     if metadataPath.isEmpty {
       sourceFileHandle = .standardInput
@@ -33,7 +35,7 @@ struct Generate: AsyncParsableCommand {
 
     let dataBatches = AsyncStream(reading: sourceFileHandle)
 
-    var accumulator = [Value]()
+    var accumulator = [MessageValue]()
 
     let unpacker = Unpacker()
     for await data in dataBatches {
@@ -42,13 +44,13 @@ struct Generate: AsyncParsableCommand {
       accumulator += values
     }
 
-    guard accumulator.count == 1, let apiInfoMap = accumulator[0] as? Map else {
+    guard accumulator.count == 1, let apiInfoMap = accumulator[0] as? MessageMapValue else {
       throw GenerateError.invalidStandardInputData
     }
 
-    let metadata = NeovimAPIMetadata(map: apiInfoMap)
+    let metadata = Metadata(map: apiInfoMap)
 
-    let generatableFiles: [GeneratableFile] = [
+    let generatables: [Generatable] = [
       APIFunctionsFile(metadata: metadata),
     ]
 
@@ -58,15 +60,15 @@ struct Generate: AsyncParsableCommand {
       withIntermediateDirectories: true
     )
 
-    for generatableFile in generatableFiles {
+    for generatable in generatables {
       let fileURL = generatedURL
-        .appending(path: "\(generatableFile.name).swift")
+        .appending(path: "\(generatable.name).swift")
 
-      try generatableFile.sourceFile
+      try SourceFile(statements: generatable.generated)
         .formatted()
         .description
         .write(to: fileURL, atomically: true, encoding: .utf8)
-      
+
       print(fileURL.absoluteURL.relativePath)
     }
   }

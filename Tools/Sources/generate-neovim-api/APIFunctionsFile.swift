@@ -5,45 +5,44 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct APIFunctionsFile: GeneratableFile {
-  var metadata: NeovimAPIMetadata
+struct APIFunctionsFile: Generatable {
+  var metadata: Metadata
 
-  var name: String { "\(Self.self)" }
+  var fileName: String {
+    "APIFunctions"
+  }
 
-  var sourceFile: SourceFile {
-    .init {
-      "import MessagePack" as ImportDecl
+  var statements: CodeBlockItemList {
+    "import MessagePack" as ImportDecl
 
-      ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
-        for function in metadata.functions {
-          let parametersInSignature = function.parameters
-            .map { "\($0.name.camelCased): \(APIType($0.type).inSignature)" }
+    ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
+      for function in metadata.functions {
+        let parametersInSignature = function.parameters
+          .map { "\($0.name.camelCased): \(APIType($0.type).inSignature)" }
+          .joined(separator: ", ")
+
+        let returnTypeInSignature = APIType(function.returnType).inSignature
+
+        FunctionDecl(
+          "func \(function.name.camelCased)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
+        ) {
+          let parametersInArray = function.parameters
+            .map(\.name.camelCased)
             .joined(separator: ", ")
-
-          let returnTypeInSignature = APIType(function.returnType).inSignature
-
-          FunctionDecl(
-            "func \(function.name.camelCased)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
-          ) {
-            let parametersInArray = function.parameters
-              .map(\.name.camelCased)
-              .joined(separator: ", ")
-            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(returnTypeInSignature).self)" as Stmt
-          }
-          .withUnexpectedBeforeAttributes(.init {
-            if function.deprecatedSince != nil {
-              StringSegment(content: "@available(*, deprecated) ")
-            }
-          })
+          "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(returnTypeInSignature).self)" as Stmt
         }
+        .withUnexpectedBeforeAttributes(.init {
+          if function.deprecatedSince != nil {
+            StringSegment(content: "@available(*, deprecated) ")
+          }
+        })
       }
     }
   }
 }
 
-private let mapTypes: Set = ["Object", "Dictionary"]
-
-private let integerTypes: Set = ["Buffer", "Integer", "LuaRef", "Tabpage", "Window"]
+private let MapTypes: Set = ["Object", "Dictionary"]
+private let IntegerTypes: Set = ["Buffer", "Integer", "LuaRef", "Tabpage", "Window"]
 
 private enum APIType {
   case integer
@@ -58,10 +57,10 @@ private enum APIType {
     if rawValue.starts(with: "Array") {
       self = .array
 
-    } else if mapTypes.contains(rawValue) {
+    } else if MapTypes.contains(rawValue) {
       self = .map
 
-    } else if integerTypes.contains(rawValue) {
+    } else if IntegerTypes.contains(rawValue) {
       self = .integer
 
     } else if rawValue == "Float" {
@@ -93,13 +92,13 @@ private enum APIType {
       return "Bool"
 
     case .map:
-      return "Map"
+      return "MessageMapValue"
 
     case .array:
-      return "[Value]"
+      return "[MessageValue]"
 
     case .value:
-      return "Value"
+      return "MessageValue"
     }
   }
 }

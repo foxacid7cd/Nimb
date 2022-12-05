@@ -5,7 +5,7 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct NeovimAPIMetadata {
+struct Metadata {
   struct Function {
     var name = ""
     var parameters = [Parameter]()
@@ -23,16 +23,16 @@ struct NeovimAPIMetadata {
   var functions = [Function]()
 }
 
-extension NeovimAPIMetadata {
-  init(map: Map) {
-    var model = NeovimAPIMetadata()
+extension Metadata {
+  init(map: MessageMapValue) {
+    var model = Metadata()
 
     for (key, value) in map {
       switch key as! String {
       case "functions":
         var functions = [Function]()
 
-        let array = value as! [Map]
+        let array = value as! [MessageMapValue]
 
         for value in array {
           var function = Function()

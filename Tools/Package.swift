@@ -17,7 +17,6 @@ let package = Package(
         .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
         .product(name: "MessagePack", package: "Modules"),
-        .product(name: "Library", package: "Modules"),
       ]
     ),
   ]
