@@ -1,8 +1,14 @@
 #!/bin/sh
 
-NVIM_PATH="./Third-Party/neovim/build/bin/nvim"
-GENERATE_CMD="swift run --package-path Tools -c debug generate-neovim-api"
+if [ -z "$1" ]; then
+  >&2 echo "Usage: $0 project_root"
+  exit 1
+fi
 
-GENERATED_DIR="./Modules/Sources/Neovim/generated"
+NVIM_PATH="$1/Third-Party/neovim/build/bin/nvim"
+GENERATE_CMD="swift run --package-path $1/Tools -c debug generate-neovim-api"
+
+GENERATED_DIR="$1/Modules/Sources/Neovim/generated"
 ${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
-/opt/homebrew/bin/swiftformat --config .swiftformat "${GENERATED_DIR}"
+
+/opt/homebrew/bin/swiftformat --config "$1/.swiftformat" "${GENERATED_DIR}"

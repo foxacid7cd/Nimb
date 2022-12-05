@@ -20,6 +20,8 @@ struct Generate: AsyncParsableCommand {
   var metadataPath: String = ""
 
   func run() async throws {
+    print("Generating...")
+    
     let sourceFileHandle: FileHandle
     if metadataPath.isEmpty {
       sourceFileHandle = .standardInput
@@ -64,6 +66,8 @@ struct Generate: AsyncParsableCommand {
         .formatted()
         .description
         .write(to: fileURL, atomically: true, encoding: .utf8)
+      
+      print(fileURL.absoluteURL.relativePath)
     }
   }
 }

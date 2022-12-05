@@ -11,6 +11,7 @@
 		682272BB293DD63800A36AB9 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BA293DD63800A36AB9 /* Library */; };
 		682272BD293DD63800A36AB9 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BC293DD63800A36AB9 /* MessagePack */; };
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
+		682272C2293DE0F600A36AB9 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68A323D0293B93B70028A87D /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6824DE17293867C200D26A6E /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor.swift */; };
 		6824DE1D2938705500D26A6E /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1929386DF300D26A6E /* Geometry.swift */; };
 		6824DE1E2938705F00D26A6E /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1B29386F4400D26A6E /* Grid.swift */; };
@@ -25,7 +26,6 @@
 		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
-		68A323D1293B93CD0028A87D /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68A323D0293B93B70028A87D /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
@@ -58,7 +58,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				68A323D1293B93CD0028A87D /* nvim in Copy nvim Executable */,
+				682272C2293DE0F600A36AB9 /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -67,6 +67,7 @@
 
 /* Begin PBXFileReference section */
 		680E72AC2936BDA0009BFA53 /* KeyPress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyPress.swift; sourceTree = "<group>"; };
+		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6822B86329365DD300D0EAE1 /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
 		6824DE1929386DF300D26A6E /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		6824DE1B29386F4400D26A6E /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
@@ -148,6 +149,7 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
+				682272C0293DE09C00A36AB9 /* Scripts */,
 				68A323D2293B97970028A87D /* Legacy */,
 				68A323D0293B93B70028A87D /* nvim */,
 			);
