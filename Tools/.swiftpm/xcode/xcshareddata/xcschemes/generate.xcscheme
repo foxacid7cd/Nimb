@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "generate-neovim-api"
-               BuildableName = "generate-neovim-api"
-               BlueprintName = "generate-neovim-api"
+               BlueprintIdentifier = "generate"
+               BuildableName = "generate"
+               BlueprintName = "generate"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,9 +45,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "generate-neovim-api"
-            BuildableName = "generate-neovim-api"
-            BlueprintName = "generate-neovim-api"
+            BlueprintIdentifier = "generate"
+            BuildableName = "generate"
+            BlueprintName = "generate"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,9 +62,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "generate-neovim-api"
-            BuildableName = "generate-neovim-api"
-            BlueprintName = "generate-neovim-api"
+            BlueprintIdentifier = "generate"
+            BuildableName = "generate"
+            BlueprintName = "generate"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>

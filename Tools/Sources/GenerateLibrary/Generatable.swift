@@ -2,7 +2,7 @@
 
 import SwiftSyntaxBuilder
 
-protocol Generatable {
+public protocol Generatable {
   var fileName: String { get }
 
   @CodeBlockItemListBuilder

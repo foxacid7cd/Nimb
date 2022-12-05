@@ -5,14 +5,18 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct APIFunctionsFile: Generatable {
-  var metadata: Metadata
+public struct APIFunctionsFile: Generatable {
+  public init(metadata: Metadata) {
+    self.metadata = metadata
+  }
 
-  var fileName: String {
+  public var metadata: Metadata
+
+  public var fileName: String {
     "APIFunctions"
   }
 
-  var statements: CodeBlockItemList {
+  public var statements: CodeBlockItemList {
     "import MessagePack" as ImportDecl
 
     ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {

@@ -1,6 +1,6 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
-extension StringProtocol {
+public extension StringProtocol {
   var camelCased: String {
     components(separatedBy: "_")
       .enumerated()

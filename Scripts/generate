@@ -5,8 +5,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-NVIM_PATH="$1/Third-Party/neovim/build/bin/nvim"
-GENERATE_CMD="swift run --package-path $1/Tools -c debug generate-neovim-api"
+NVIM_PATH="$1/.build/bin/nvim"
+GENERATE_CMD="swift run --package-path $1/Tools -c debug generate"
 
 GENERATED_DIR="$1/Modules/Sources/Neovim/generated"
 ${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
