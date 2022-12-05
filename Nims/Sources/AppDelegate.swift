@@ -1,8 +1,8 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
-import Backbone
 import Cocoa
-import NvimAPI
+import Library
+import Neovim
 import OSLog
 
 @NSApplicationMain @MainActor

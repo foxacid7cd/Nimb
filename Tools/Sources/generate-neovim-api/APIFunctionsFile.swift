@@ -1,7 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Foundation
-import NvimAPI
+import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
@@ -12,6 +12,8 @@ struct APIFunctionsFile: GeneratableFile {
 
   var sourceFile: SourceFile {
     .init {
+      "import MessagePack" as ImportDecl
+
       ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
         for function in metadata.functions {
           let parametersInSignature = function.parameters
@@ -21,13 +23,12 @@ struct APIFunctionsFile: GeneratableFile {
           let returnTypeInSignature = APIType(function.returnType).inSignature
 
           FunctionDecl(
-            "func \(function.name.camelCased)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), NeovimError>"
+            "func \(function.name.camelCased)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
           ) {
             let parametersInArray = function.parameters
               .map(\.name.camelCased)
               .joined(separator: ", ")
-
-            "return try await rpc.call(method: \"\(function.name)\", parameters: [\(parametersInArray)]).resultAssuming(successType: \(returnTypeInSignature).self)" as Stmt
+            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(returnTypeInSignature).self)" as Stmt
           }
           .withUnexpectedBeforeAttributes(.init {
             if function.deprecatedSince != nil {

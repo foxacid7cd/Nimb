@@ -2,7 +2,7 @@
 
 import Cocoa
 import IdentifiedCollections
-import NvimAPI
+import MessagePack
 import Tagged
 
 actor Appearance {

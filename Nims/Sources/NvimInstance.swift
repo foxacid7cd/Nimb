@@ -1,11 +1,11 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
-import Backbone
 import Cocoa
 import Collections
 import IdentifiedCollections
-import NvimAPI
+import Library
+import MessagePack
 import OSLog
 
 actor NvimInstance {
@@ -320,7 +320,7 @@ actor NvimInstance {
       group.addTask {
         try await self.rpcService.call(
           method: "nvim_ui_attach",
-          parameters: [80, 24, [("rgb", true)]]
+          withParameters: [80, 24, [("rgb", true)]]
         )
       }
 
@@ -346,7 +346,7 @@ enum RedrawNotificationParsingError: Error {
   case gridLineHlIDNotParsedYet
 }
 
-private class ProcessChannel: RPCChannel {
+private class ProcessChannel: Channel {
   init(process: Process) {
     let inputPipe = Pipe()
     process.standardOutput = inputPipe

@@ -1,8 +1,8 @@
 #!/bin/sh
 
 NVIM_PATH="./Third-Party/neovim/build/bin/nvim"
-GENERATE_CMD="swift run --package-path Tools -c debug generate"
+GENERATE_CMD="swift run --package-path Tools -c debug generate-neovim-api"
 
-GENERATED_DIR="./Modules/NvimAPI/Sources/NvimAPI/generated"
+GENERATED_DIR="./Modules/Sources/Neovim/generated"
 ${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
 /opt/homebrew/bin/swiftformat --config .swiftformat "${GENERATED_DIR}"

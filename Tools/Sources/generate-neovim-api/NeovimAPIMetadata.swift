@@ -1,7 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Foundation
-import NvimAPI
+import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

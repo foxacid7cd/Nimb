@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680E72AC2936BDA0009BFA53 /* KeyPress.swift */; };
-		68197ED22939853000BDB968 /* Backbone in Frameworks */ = {isa = PBXBuildFile; productRef = 68197ED12939853000BDB968 /* Backbone */; };
+		682272BB293DD63800A36AB9 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BA293DD63800A36AB9 /* Library */; };
+		682272BD293DD63800A36AB9 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BC293DD63800A36AB9 /* MessagePack */; };
+		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
 		6824DE17293867C200D26A6E /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor.swift */; };
 		6824DE1D2938705500D26A6E /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1929386DF300D26A6E /* Geometry.swift */; };
 		6824DE1E2938705F00D26A6E /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1B29386F4400D26A6E /* Grid.swift */; };
@@ -22,7 +24,6 @@
 		68639E9F29393C9A0080ABEB /* NvimAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68639E9E29393C9A0080ABEB /* NvimAPIService.swift */; };
 		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
 		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
-		6873A32E293A84070043EAC4 /* NvimAPI in Frameworks */ = {isa = PBXBuildFile; productRef = 6873A32D293A84070043EAC4 /* NvimAPI */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68A323D1293B93CD0028A87D /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68A323D0293B93B70028A87D /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
@@ -69,6 +70,7 @@
 		6822B86329365DD300D0EAE1 /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
 		6824DE1929386DF300D26A6E /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		6824DE1B29386F4400D26A6E /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
+		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		68561F4B29378E87002FD94B /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
@@ -82,7 +84,6 @@
 		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		6873A32F293A86230043EAC4 /* Tools */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Tools; sourceTree = "<group>"; };
 		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
-		68A323CA293B7FA50028A87D /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = nvim; sourceTree = "<group>"; };
 		68A323D0293B93B70028A87D /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = "Third-Party/neovim/build/bin/nvim"; sourceTree = "<group>"; };
 		68A323D2293B97970028A87D /* Legacy */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legacy; sourceTree = "<group>"; };
 		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
@@ -90,8 +91,6 @@
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
-		68EB246A293A4B8E00A4474A /* Backbone */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Backbone; sourceTree = "<group>"; };
-		68EB246B293A4F0C00A4474A /* NvimAPI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NvimAPI; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,8 +98,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68197ED22939853000BDB968 /* Backbone in Frameworks */,
-				6873A32E293A84070043EAC4 /* NvimAPI in Frameworks */,
+				682272BB293DD63800A36AB9 /* Library in Frameworks */,
+				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
+				682272BF293DD63800A36AB9 /* Neovim in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -154,21 +154,12 @@
 			name = Locations;
 			sourceTree = "<group>";
 		};
-		68BC1C61293961FB00D30A9B /* Modules */ = {
-			isa = PBXGroup;
-			children = (
-				68EB246A293A4B8E00A4474A /* Backbone */,
-				68EB246B293A4F0C00A4474A /* NvimAPI */,
-			);
-			path = Modules;
-			sourceTree = SOURCE_ROOT;
-		};
 		68BFEF382934CF6100564FE2 = {
 			isa = PBXGroup;
 			children = (
 				68BFEF432934CF6100564FE2 /* Nims */,
 				6873A32F293A86230043EAC4 /* Tools */,
-				68BC1C61293961FB00D30A9B /* Modules */,
+				682DF1D5293DC59500DACFE7 /* Modules */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
 				68A323CF293B93070028A87D /* Locations */,
@@ -197,7 +188,6 @@
 		68FFE9732938440600B0A882 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				68A323CA293B7FA50028A87D /* nvim */,
 				68BFEF4B2934CF6200564FE2 /* Nims.entitlements */,
 			);
 			path = Support;
@@ -233,8 +223,9 @@
 			);
 			name = Nims;
 			packageProductDependencies = (
-				68197ED12939853000BDB968 /* Backbone */,
-				6873A32D293A84070043EAC4 /* NvimAPI */,
+				682272BA293DD63800A36AB9 /* Library */,
+				682272BC293DD63800A36AB9 /* MessagePack */,
+				682272BE293DD63800A36AB9 /* Neovim */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -554,13 +545,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		68197ED12939853000BDB968 /* Backbone */ = {
+		682272BA293DD63800A36AB9 /* Library */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Backbone;
+			productName = Library;
 		};
-		6873A32D293A84070043EAC4 /* NvimAPI */ = {
+		682272BC293DD63800A36AB9 /* MessagePack */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = NvimAPI;
+			productName = MessagePack;
+		};
+		682272BE293DD63800A36AB9 /* Neovim */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Neovim;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
