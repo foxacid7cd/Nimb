@@ -46,20 +46,25 @@ struct Generate: AsyncParsableCommand {
 
     let metadata = NeovimAPIMetadata(map: apiInfoMap)
 
+    let generatableFiles: [GeneratableFile] = [
+      APIFunctionsFile(metadata: metadata),
+    ]
+
     let generatedURL = URL(filePath: generatedPath)
     try? FileManager.default.createDirectory(
       at: generatedURL,
       withIntermediateDirectories: true
     )
 
-    let generatedFileURL = generatedURL
-      .appending(path: "description.txt")
+    for generatableFile in generatableFiles {
+      let fileURL = generatedURL
+        .appending(path: "\(generatableFile.name).swift")
 
-    try metadata.functions
-      .map(\.name)
-      .joined(separator: "\n")
-      .data(using: .utf8)!
-      .write(to: generatedFileURL)
+      try generatableFile.sourceFile
+        .formatted()
+        .description
+        .write(to: fileURL, atomically: true, encoding: .utf8)
+    }
   }
 }
 

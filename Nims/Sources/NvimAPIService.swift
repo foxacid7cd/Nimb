@@ -7,7 +7,7 @@ import NvimAPI
 import OSLog
 
 actor NvimRPCService {
-  init(rpcService: RPCServiceProtocol) {
+  init(rpcService: RPCProtocol) {
     self.rpcService = rpcService
   }
 
@@ -43,6 +43,6 @@ actor NvimRPCService {
 //    }
   }
 
-  private let rpcService: RPCServiceProtocol
+  private let rpcService: RPCProtocol
 //  private let eventChannel = AsyncChannel<Event>()
 }

@@ -36,7 +36,7 @@ actor NvimInstance {
     }
 
     let channel = ProcessChannel(process: process)
-    let rpcService = RPCService(channel: channel)
+    let rpcService = RPC(channel: channel)
     self.rpcService = rpcService
 
 //    let rpcService = RPCService(
@@ -329,7 +329,7 @@ actor NvimInstance {
   }
 
   private let process: Process
-  private let rpcService: RPCService
+  private let rpcService: RPC
 
   private func startProcess() throws {
     try process.run()

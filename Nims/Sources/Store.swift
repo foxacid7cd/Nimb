@@ -7,7 +7,7 @@ import IdentifiedCollections
 import NvimAPI
 
 actor Store {
-  init(rpcService: RPCServiceProtocol) {
+  init(rpcService: RPCProtocol) {
     self.rpcService = rpcService
   }
 
@@ -61,7 +61,7 @@ actor Store {
 //    }
   }
 
-  private let rpcService: RPCServiceProtocol
+  private let rpcService: RPCProtocol
   private let appearance = Appearance()
   private var grids = IdentifiedArrayOf<Grid>()
 

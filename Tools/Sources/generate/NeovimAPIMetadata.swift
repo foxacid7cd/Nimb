@@ -2,6 +2,8 @@
 
 import Foundation
 import NvimAPI
+import SwiftSyntax
+import SwiftSyntaxBuilder
 
 struct NeovimAPIMetadata {
   struct Function {
@@ -46,8 +48,8 @@ extension NeovimAPIMetadata {
               for parameterData in functionValue as! [[String]] {
                 parameters.append(
                   .init(
-                    name: parameterData[0],
-                    type: parameterData[1]
+                    name: parameterData[1],
+                    type: parameterData[0]
                   )
                 )
               }

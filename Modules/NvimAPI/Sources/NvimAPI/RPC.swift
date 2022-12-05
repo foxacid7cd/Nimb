@@ -5,7 +5,7 @@ import Backbone
 import Collections
 import Foundation
 
-public protocol RPCServiceProtocol: AnyActor {
+public protocol RPCProtocol: AnyActor {
   var notifications: AsyncStream<Notification> { get async }
   func call(method: String, parameters: [Value]) async throws -> Response
 }
@@ -15,7 +15,7 @@ public protocol RPCChannel {
   func write(_ data: Data) async throws
 }
 
-public actor RPCService: RPCServiceProtocol {
+public actor RPC: RPCProtocol {
   public init(
     packer: PackerProtocol = Packer(),
     unpacker: UnpackerProtocol = Unpacker(),

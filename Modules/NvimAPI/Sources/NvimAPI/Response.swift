@@ -3,7 +3,7 @@
 import Foundation
 import Tagged
 
-public struct Response {
+public struct Response: Identifiable {
   public init(id: ID, isSuccess: Bool, payload: Any?) {
     self.id = id
     self.isSuccess = isSuccess
