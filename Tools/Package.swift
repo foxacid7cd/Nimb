@@ -35,7 +35,7 @@ let package = Package(
         .target(name: "GenerateLibrary"),
       ],
       resources: [
-        .copy("Resources/metadata.msgpack")
+        .copy("Resources/metadata.msgpack"),
       ]
     ),
   ]

@@ -131,9 +131,10 @@ actor Highlights {
     await highlight.apply(nvimAttr: nvimAttr)
   }
 
-  func stringAttributes(id: Highlight.ID? = nil,
-                        font: Font) async -> [NSAttributedString.Key: Any]
-  {
+  func stringAttributes(
+    id: Highlight.ID? = nil,
+    font: Font
+  ) async -> [NSAttributedString.Key: Any] {
     let highlight = id.map { self.highlight(id: $0) }
 
     return [

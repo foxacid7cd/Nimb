@@ -159,9 +159,12 @@ class MainView: NSView {
   }
 }
 
-func compare(firstView _: NSView, secondView _: NSView,
-             context _: UnsafeMutableRawPointer?) -> ComparisonResult
-{
+func compare(
+  firstView _: NSView,
+  secondView _: NSView,
+  context _: UnsafeMutableRawPointer?
+)
+  -> ComparisonResult {
   .orderedAscending
 }
 

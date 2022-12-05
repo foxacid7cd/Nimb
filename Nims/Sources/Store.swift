@@ -43,9 +43,10 @@ actor Store {
     grids[id: id] = grid
   }
 
-  func gridLine(parametersBatches _: TreeDictionary<Grid.ID,
-    [(origin: Point, data: [MessageValue])]>) async
-  {
+  func gridLine(parametersBatches _: TreeDictionary<
+    Grid.ID,
+    [(origin: Point, data: [MessageValue])]
+  >) async {
 //    await withTaskGroup(of: Void.self) { taskGroup in
 //      for (id, parametersBatch) in parametersBatches {
 //        guard let grid = self.grid(id: id) else {

@@ -1,6 +1,6 @@
 --acronyms ID,RPC,UI,URL,UUID
 --allman false
---assetliterals visual-width
+--assetliterals actual-width
 --beforemarks 
 --binarygrouping 4,8
 --categorymark "MARK: %c"
@@ -21,11 +21,11 @@
 --extensionmark "MARK: - %t + %c"
 --fractiongrouping disabled
 --fragment false
---funcattributes preserve
+--funcattributes prev-line
 --generictypes 
 --groupedextension "MARK: %c"
 --guardelse auto
---header "// Copyright © 2022 foxacid7cd. All rights reserved."
+--header "/// Copyright © 2022 foxacid7cd. All rights reserved."
 --hexgrouping 4,8
 --hexliteralcase uppercase
 --ifdef indent
@@ -55,24 +55,24 @@
 --shortoptionals always
 --smarttabs enabled
 --someAny true
---stripunusedargs unnamed-only
 --structthreshold 0
 --swiftversion 5.8
 --tabwidth unspecified
 --trailingclosures 
 --trimwhitespace always
---typeattributes preserve
+--typeattributes prev-line
 --typeblanklines remove
 --typemark "MARK: - %t"
---varattributes preserve
+--varattributes prev-line
 --voidtype void
---wraparguments preserve
---wrapcollections preserve
+--wraparguments before-first
+--wrapcollections before-first
 --wrapconditions preserve
---wrapparameters default
---wrapreturntype preserve
+--wrapparameters before-first
+--wrapreturntype if-multiline
 --wrapternary default
---wraptypealiases preserve
+--wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
+--disable unusedArguments,wrapMultilineStatementBraces
 --enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases

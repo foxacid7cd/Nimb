@@ -17,27 +17,12 @@ struct Generate: AsyncParsableCommand {
   var generatedPath: String
 
   func run() async throws {
-    let files = try await Metadata.generateFiles(
-      dataBatches: AsyncStream(
-        reading: .standardInput
-      )
-    )
-    
+    let dataBatches = AsyncStream(reading: .standardInput)
+    let generator = Generator(dataBatches)
+
     let generatedURL = URL(filePath: generatedPath)
-    try? FileManager.default.createDirectory(
-      at: generatedURL,
-      withIntermediateDirectories: true
-    )
     
-    for (name, content) in files {
-      let fileURL = generatedURL
-        .appending(path: "\(name).swift")
-      
-      try content
-        .write(to: fileURL, atomically: true, encoding: .utf8)
-      
-      print(fileURL.absoluteURL.relativePath)
-    }
+    try await generator.writeFiles(to: generatedURL)
   }
 }
 

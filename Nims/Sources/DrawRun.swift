@@ -7,9 +7,12 @@ struct DrawRun: Equatable {
   var glyphRuns: [GlyphRun]
   var cgFrame: CGRect
 
-  static func make(origin: Point, cgFrame: CGRect,
-                   attributedString: NSAttributedString) -> DrawRun
-  {
+  static func make(
+    origin: Point,
+    cgFrame: CGRect,
+    attributedString: NSAttributedString
+  )
+    -> DrawRun {
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
     let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
 

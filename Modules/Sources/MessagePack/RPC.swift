@@ -80,7 +80,8 @@ public actor RPC: RPCProtocol {
   private let unpacker: UnpackerProtocol
   private let channel: Channel
   private let store = Store()
-  private let sendNotification: @Sendable (Notification) async -> Void
+  private let sendNotification: @Sendable (Notification)
+    async -> Void
 
   private func messagesReceived(_ messages: [MessageValue]) async throws {
     for value in messages {
@@ -141,9 +142,11 @@ public actor RPC: RPCProtocol {
 }
 
 private actor Store {
-  func announceRequest(_ responseReceived: @escaping @Sendable (Result<MessageValue, RemoteError>)
-    -> Void) -> Request.ID
-  {
+  func announceRequest(
+    _ responseReceived: @escaping @Sendable (Result<MessageValue, RemoteError>)
+      -> Void
+  )
+    -> Request.ID {
     let id = Request.ID(requestCounter)
     requestCounter += 1
 
