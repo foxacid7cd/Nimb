@@ -7,9 +7,5 @@ public actor API {
     self.rpc = rpc
   }
 
-  public init(channel: RPCChannel) {
-    self.init(rpc: RPC(channel: channel))
-  }
-
   let rpc: RPCProtocol
 }

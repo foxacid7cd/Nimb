@@ -27,4 +27,17 @@ public struct Response: Identifiable {
 
     return elements
   }
+
+  public func resultAssuming<Success>(successType: Success.Type) -> Result<Success, NeovimError> {
+    if isSuccess {
+      guard let payload = payload as? Success else {
+        preconditionFailure("Assumed success type does not match actual type of payload")
+      }
+
+      return .success(payload)
+
+    } else {
+      return .failure(.init(rawValue: payload))
+    }
+  }
 }
