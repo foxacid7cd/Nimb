@@ -23,16 +23,20 @@ public struct APIFunctionsFile: GeneratableFile {
       ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
         for function in metadata.functions {
           let parametersInSignature = function.parameters
-            .map { "\($0.name.camelCased): \(APIType($0.type).inSignature)" }
+            .map {
+              "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \(APIType($0.type).inSignature)"
+            }
             .joined(separator: ", ")
 
           let returnTypeInSignature = APIType(function.returnType).inSignature
 
+          let functionNameInSignature = function.name
+            .camelCasedAssumingSnakeCased(capitalized: false)
           FunctionDecl(
-            "func \(function.name.camelCased)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
+            "func \(functionNameInSignature)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
           ) {
             let parametersInArray = function.parameters
-              .map(\.name.camelCased)
+              .map { $0.name.camelCasedAssumingSnakeCased(capitalized: false) }
               .joined(separator: ", ")
             "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(returnTypeInSignature).self)" as Stmt
           }

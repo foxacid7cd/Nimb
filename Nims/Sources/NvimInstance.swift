@@ -38,10 +38,7 @@ actor NvimInstance {
 
     let channel = ProcessChannel(process: process)
 
-    let rpc = RPC(channel: channel)
-    self.rpc = rpc
-
-    api = .init(rpc: rpc)
+    api = API(channel)
 
     //    let rpcService = RPCService(
 //      destinationFileHandle: inputPipe.fileHandleForWriting,
@@ -307,43 +304,20 @@ actor NvimInstance {
 //      }
   }
 
-  public func run() async throws {
-    try await withThrowingTaskGroup(of: Void.self) { group in
-      group.addTask {
-        for await notification in await self.rpc.notifications {
-          os_log("\(String(describing: notification))")
-        }
-      }
-
-      group.addTask {
-        try await self.startProcess()
-
-        try await self.rpc.run()
-      }
-
-      group.addTask {
-        try await self.api.nvimUIAttach(
-          width: 80,
-          height: 24,
-          options: [
-            "rgb": true,
-            "ext_multigrid": true,
-            "ext_hlstate": true,
-          ]
-        )
-        .check()
-      }
-
-      try await group.waitForAll()
-    }
-  }
-
   private let process: Process
-  private let rpc: RPC
   private let api: API
 
-  private func startProcess() throws {
-    try process.run()
+  private func startProcess() async throws {
+    try await api.nvimUIAttach(
+      width: 80,
+      height: 24,
+      options: [
+        "rgb": true,
+        "ext_multigrid": true,
+        "ext_hlstate": true,
+      ]
+    )
+    .check()
   }
 }
 

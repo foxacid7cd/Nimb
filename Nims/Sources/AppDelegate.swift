@@ -11,7 +11,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       do {
         let nvimInstance = try NvimInstance()
-        try await nvimInstance.run()
 
         os_log("Nvim instance ended running.")
 

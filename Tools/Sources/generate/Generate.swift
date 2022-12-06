@@ -21,7 +21,7 @@ struct Generate: AsyncParsableCommand {
     let generator = Generator(dataBatches)
 
     let generatedURL = URL(filePath: generatedPath)
-    
+
     try await generator.writeFiles(to: generatedURL)
   }
 }

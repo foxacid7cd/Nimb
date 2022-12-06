@@ -3,6 +3,8 @@
 import Foundation
 
 public protocol Channel {
-  var dataBatches: AsyncStream<Data> { get async }
+  associatedtype S: AsyncSequence where S.Element == Data
+
+  var dataBatches: S { get async }
   func write(_ data: Data) async throws
 }

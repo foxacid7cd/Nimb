@@ -97,26 +97,6 @@ public extension Metadata {
   }
 }
 
-private extension MessageValue {
-  var assumingDictionary: [String: MessageValue]? {
-    guard let mapValue = self as? MessageMapValue else {
-      return nil
-    }
-
-    var accumulator = [String: MessageValue]()
-
-    for (key, value) in mapValue {
-      guard let key = key as? String else {
-        continue
-      }
-
-      accumulator[key] = value
-    }
-
-    return accumulator
-  }
-}
-
 private extension Metadata.Parameter {
   init?(value: MessageValue) {
     guard

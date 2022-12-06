@@ -5,11 +5,7 @@ import Foundation
 import Library
 import msgpack
 
-public protocol UnpackerProtocol {
-  func unpack(_ data: Data) async throws -> [MessageValue]
-}
-
-public actor Unpacker: UnpackerProtocol {
+public actor Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
     msgpack_unpacked_init(&unpacked)

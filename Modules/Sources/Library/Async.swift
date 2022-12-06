@@ -71,7 +71,7 @@ public extension AsyncThrowingStream where Failure == Error {
 }
 
 public extension AsyncChannel {
-  static func pipe<Element>(
+  static func pipe(
     bufferingPolicy: AsyncStream<Element>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncStream<Element>) {
     let channel = AsyncChannel<Element>()

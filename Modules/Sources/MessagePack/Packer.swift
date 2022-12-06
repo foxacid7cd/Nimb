@@ -4,11 +4,7 @@ import Foundation
 import Library
 import msgpack
 
-public protocol PackerProtocol {
-  func pack(_ value: MessageValue) async -> Data
-}
-
-public actor Packer: PackerProtocol {
+public actor Packer {
   public init() {
     msgpack_sbuffer_init(&sbuf)
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)

@@ -3,8 +3,30 @@
 import MessagePack
 
 public actor API {
-  public init(rpc: RPCProtocol) {
+  public init(_ channel: some Channel) {
+    let rpc = RPC(channel)
     self.rpc = rpc
+
+    runTask = Task {
+      for try await notification in await rpc.notifications {
+        switch notification.method {
+        case "redraw":
+          for parameter in notification.parameters {
+            guard
+              let arrayValue = parameter as? [MessageValue],
+              !arrayValue.isEmpty,
+              let uiEventName = arrayValue[0] as? String
+            else {
+              assertionFailure()
+              continue
+            }
+          }
+          
+        default:
+          break
+        }
+      }
+    }
   }
 
   func call<Success>(
@@ -21,5 +43,6 @@ public actor API {
       }
   }
 
-  private let rpc: RPCProtocol
+  private let runTask: Task<Void, Error>
+  private let rpc: RPC
 }
