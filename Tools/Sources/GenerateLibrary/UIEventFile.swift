@@ -25,13 +25,22 @@ public struct UIEventFile: GeneratableFile {
         InitializerDecl("init(_ value: Value) throws") {
           Stmt("""
           guard case let .array(arrayValue) = value else {
-            throw UIEventDecodingFailed.encodedValueIsNotArray(
+            throw UIEventDecodingError.encodedValueIsNotArray(
               description: .init(describing: value)
             )
           }
           """)
 
           "var iterator = arrayValue.makeIterator()" as VariableDecl
+          "let nameValue = iterator.next()" as VariableDecl
+
+          Stmt("""
+          guard case let .string(name) = nameValue else {
+            throw UIEventDecodingError.invalidName(
+              .init(describing: nameValue)
+            )
+          }
+          """)
           SwitchStmt(
             switchKeyword: .switch,
             expression: "name" as IdentifierExpr,
@@ -46,10 +55,11 @@ public struct UIEventFile: GeneratableFile {
                     let nextEventExpr = ClosureExpr(
                       signature: ClosureSignature(
                         leadingTrivia: .space,
+                        input: .input(.init()),
                         asyncKeyword: "async ",
                         throwsTok: .throws,
                         output: .init(
-                          returnType: "\(structName) " as Type
+                          returnType: "\(structName)? " as Type
                         )
                       ),
                       statements: .init {
@@ -59,75 +69,115 @@ public struct UIEventFile: GeneratableFile {
                         }
                         """)
 
-                        let arrayConditions = ConditionElementList {
-                          .init(
-                            condition: .optionalBinding(
-                              OptionalBindingCondition(
-                                letOrVarKeyword: .let,
-                                pattern: "arrayValue" as Pattern,
-                                initializer: .init(
-                                  value: AsExpr(
-                                    expression: "next" as Expr,
-                                    typeName: "[MessageValue]" as Type
-                                  )
-                                )
-                              )
-                            )
-                          )
-                        }
-                        GuardStmt(conditions: arrayConditions) {
-                          Stmt("""
-                          throw UIEventDecodingFailed.encodedValueIsNotArray(
+//                        let arrayConditions = ConditionElementList {
+//                          .init(
+//                            condition: .optionalBinding(
+//                              OptionalBindingCondition(
+//                                letOrVarKeyword: .let,
+//                                pattern: "arrayValue" as Pattern,
+//                                initializer: .init(
+//                                  value: AsExpr(
+//                                    expression: "next" as Expr,
+//                                    typeName: "[MessageValue]" as Type
+//                                  )
+//                                )
+//                              )
+//                            )
+//                          )
+//                        }
+//                        GuardStmt(conditions: arrayConditions) {
+//                          Stmt("""
+//                          throw UIEventDecodingError.encodedValueIsNotArray(
+//                            description: .init(describing: next)
+//                          )
+//                          """)
+//                        }
+                        Stmt("""
+                        guard case let .array(arrayValue) = next else {
+                          throw UIEventDecodingError.encodedValueIsNotArray(
                             description: .init(describing: next)
                           )
-                          """)
                         }
+                        """)
 
-                        let parameterConditions = ConditionElementList {
-                          for parameter in uiEvent.parameters {
+//                        let parameterConditions = ConditionElementList {
+//                          for parameter in uiEvent.parameters {
+//                            let name = parameter.name
+//                              .camelCasedAssumingSnakeCased(capitalized: false)
+//                            ConditionElement(
+//                              condition: .optionalBinding(
+//                                OptionalBindingCondition(
+//                                  letOrVarKeyword: .let,
+//                                  pattern: "\(name)" as Pattern,
+//                                  typeAnnotation: nil,
+//                                  initializer: .init(
+//                                    value: UnresolvedPatternExpr(pattern: AsTypePattern(
+//                                      pattern: "\(name)" as Pattern,
+//                                      type: "\(parameter.type.swift.signature)" as Type
+//                                    ))
+//                                  )
+//                                )
+//                              )
+//                            )
+//                          }
+//                        }
+//                        GuardStmt(conditions: parameterConditions) {
+//                          Stmt("""
+//                          throw UIEventDecodingError.invalidEncodedValue(
+//                            description: .init(describing: arrayValue)
+//                          )
+//                          """)
+//                        }
+                        let parametersCountCondition =
+                          "arrayValue.count == \(uiEvent.parameters.count)"
+                        let parameterTypeConditions = uiEvent.parameters
+                          .enumerated()
+                          .map { index, parameter -> String in
                             let name = parameter.name
                               .camelCasedAssumingSnakeCased(capitalized: false)
-                            ConditionElement(
-                              condition: .optionalBinding(
-                                OptionalBindingCondition(
-                                  letOrVarKeyword: .let,
-                                  pattern: "\(name)" as Pattern,
-                                  typeAnnotation: nil,
-                                  initializer: .init(
-                                    value: UnresolvedPatternExpr(pattern: AsTypePattern(
-                                      pattern: "\(name)" as Pattern,
-                                      type: "\(parameter.type.swift.signature)" as Type
-                                    ))
-                                  )
-                                )
-                              )
-                            )
+
+                            let wrappedName = parameter.type
+                              .wrapExprWithValueEncoder(String(name))
+
+                            return "case let \(wrappedName) = arrayValue[\(index)]"
                           }
-                        }
-                        GuardStmt(conditions: parameterConditions) {
-                          Stmt("""
-                          throw UIEventDecodingFailed.invalidEncodedValue(
+                        let guardConditions = ([parametersCountCondition] + parameterTypeConditions)
+                          .joined(separator: ", ")
+                        Stmt("""
+                        guard \(guardConditions) else {
+                          throw UIEventDecodingError.invalidEncodedValue(
                             description: .init(describing: arrayValue)
                           )
-                          """)
                         }
+                        """)
+//                        let arguments = uiEvent.parameters
+//                          .map { parameter -> TupleExprElement in
+//                            let name = parameter.name
+//                              .camelCasedAssumingSnakeCased(capitalized: false)
+//                            return TupleExprElement(
+//                              label: String(name),
+//                              expression: "\(name)" as Expr
+//                            )
+//                          }
+//
+//                        ReturnStmt(
+//                          returnKeyword: .return,
+//                          expression: FunctionCallExpr(
+//                            calledExpression: "\(structName)" as IdentifierExpr,
+//                            argumentList: .init(arguments)
+//                          )
+//                        )
 
-                        let arguments = uiEvent.parameters
-                          .map { parameter -> TupleExprElement in
+                        let structArguments = uiEvent.parameters
+                          .map { parameter in
                             let name = parameter.name
                               .camelCasedAssumingSnakeCased(capitalized: false)
-                            return TupleExprElement(
-                              label: String(name),
-                              expression: "\(name)" as Expr
-                            )
+                            return "\(name): \(name)"
                           }
-                        ReturnStmt(
-                          returnKeyword: .return,
-                          expression: FunctionCallExpr(
-                            calledExpression: "\(structName)" as IdentifierExpr,
-                            argumentList: .init(arguments)
-                          )
-                        )
+                          .joined(separator: ", ")
+                        Stmt("""
+                        return \(structName)(\(structArguments))
+                        """)
                       }
                     )
                     VariableDecl(.let, name: "nextEvent", initializer: .init(value: nextEventExpr))
@@ -136,7 +186,7 @@ public struct UIEventFile: GeneratableFile {
                 }
 
                 SwitchCase("default:") {
-                  "throw UIEventDecodingFailed.unknownName(name)" as ThrowStmt
+                  "throw UIEventDecodingError.invalidName(name)" as ThrowStmt
                 }
               }
             },
