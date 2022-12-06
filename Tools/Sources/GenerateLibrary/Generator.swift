@@ -7,12 +7,12 @@ import SwiftSyntaxBuilder
 
 private let GeneratableFileTypes: [GeneratableFile.Type] = [
   APIFunctionsFile.self,
-  UIEventFile.self,
+  UIEventsFile.self,
 ]
 
 public actor Generator {
-  public init<DataBatches: AsyncSequence>(_ dataBatches: DataBatches)
-    where DataBatches.Element == Data {
+  public init<S: AsyncSequence>(_ dataBatches: S)
+    where S.Element == Data {
     metadataTask = Task<Metadata, Error> {
       var accumulator = [Value]()
 
@@ -28,13 +28,13 @@ public actor Generator {
           let value = accumulator.first,
           let metadata = Metadata(value)
         else {
-          throw GeneratorError.invalidDataBatches
+          throw GeneratorError.invalidData(details: "No API metadata.")
         }
 
         return metadata
 
       } catch {
-        throw GeneratorError.invalidDataBatches
+        throw GeneratorError.invalidData(details: "\(error)")
       }
     }
   }
@@ -62,7 +62,8 @@ public actor Generator {
           .description
           .write(to: fileURL, atomically: true, encoding: .utf8)
       } catch {
-        throw GeneratorError.invalidDataBatches
+        throw GeneratorError
+          .invalidData(details: "\(error)")
       }
     }
   }
@@ -71,5 +72,5 @@ public actor Generator {
 }
 
 public enum GeneratorError: Error {
-  case invalidDataBatches
+  case invalidData(details: String)
 }

@@ -5,7 +5,7 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-public struct UIEventFile: GeneratableFile {
+public struct UIEventsFile: GeneratableFile {
   public init(_ metadata: Metadata) {
     self.metadata = metadata
   }
@@ -13,7 +13,7 @@ public struct UIEventFile: GeneratableFile {
   public var metadata: Metadata
 
   public var name: String {
-    "UIEvent"
+    "UIEvents"
   }
 
   public var sourceFile: SourceFile {
@@ -21,7 +21,33 @@ public struct UIEventFile: GeneratableFile {
       "import MessagePack" as ImportDecl
       "import CasePaths" as ImportDecl
 
-      EnumDecl("public enum UIEvent") {
+      EnumDecl("public enum UIEvents") {
+        for uiEvent in metadata.uiEvents {
+          let structName = uiEvent.name
+            .camelCasedAssumingSnakeCased(capitalized: true)
+
+          StructDecl(
+            "public struct \(structName)"
+          ) {
+            for parameter in uiEvent.parameters {
+              let formattedName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+              "public var \(formattedName): \(parameter.type.swift.signature)" as VariableDecl
+            }
+          }
+        }
+      }
+
+      EnumDecl("public enum UIEventBatch") {
+        for uiEvent in metadata.uiEvents {
+          let caseName = uiEvent.name
+            .camelCasedAssumingSnakeCased(capitalized: false)
+
+          let structName = uiEvent.name
+            .camelCasedAssumingSnakeCased(capitalized: true)
+
+          EnumCaseDecl("case \(caseName)(AsyncThrowingStream<UIEvents.\(structName), Error>)")
+        }
+
         InitializerDecl("init(_ value: Value) throws") {
           Stmt("""
           guard case let .array(arrayValue) = value else {
@@ -59,7 +85,7 @@ public struct UIEventFile: GeneratableFile {
                         asyncKeyword: "async ",
                         throwsTok: .throws,
                         output: .init(
-                          returnType: "\(structName)? " as Type
+                          returnType: "UIEvents.\(structName)? " as Type
                         )
                       ),
                       statements: .init {
@@ -69,29 +95,6 @@ public struct UIEventFile: GeneratableFile {
                         }
                         """)
 
-//                        let arrayConditions = ConditionElementList {
-//                          .init(
-//                            condition: .optionalBinding(
-//                              OptionalBindingCondition(
-//                                letOrVarKeyword: .let,
-//                                pattern: "arrayValue" as Pattern,
-//                                initializer: .init(
-//                                  value: AsExpr(
-//                                    expression: "next" as Expr,
-//                                    typeName: "[MessageValue]" as Type
-//                                  )
-//                                )
-//                              )
-//                            )
-//                          )
-//                        }
-//                        GuardStmt(conditions: arrayConditions) {
-//                          Stmt("""
-//                          throw UIEventDecodingError.encodedValueIsNotArray(
-//                            description: .init(describing: next)
-//                          )
-//                          """)
-//                        }
                         Stmt("""
                         guard case let .array(arrayValue) = next else {
                           throw UIEventDecodingError.encodedValueIsNotArray(
@@ -100,34 +103,6 @@ public struct UIEventFile: GeneratableFile {
                         }
                         """)
 
-//                        let parameterConditions = ConditionElementList {
-//                          for parameter in uiEvent.parameters {
-//                            let name = parameter.name
-//                              .camelCasedAssumingSnakeCased(capitalized: false)
-//                            ConditionElement(
-//                              condition: .optionalBinding(
-//                                OptionalBindingCondition(
-//                                  letOrVarKeyword: .let,
-//                                  pattern: "\(name)" as Pattern,
-//                                  typeAnnotation: nil,
-//                                  initializer: .init(
-//                                    value: UnresolvedPatternExpr(pattern: AsTypePattern(
-//                                      pattern: "\(name)" as Pattern,
-//                                      type: "\(parameter.type.swift.signature)" as Type
-//                                    ))
-//                                  )
-//                                )
-//                              )
-//                            )
-//                          }
-//                        }
-//                        GuardStmt(conditions: parameterConditions) {
-//                          Stmt("""
-//                          throw UIEventDecodingError.invalidEncodedValue(
-//                            description: .init(describing: arrayValue)
-//                          )
-//                          """)
-//                        }
                         let parametersCountCondition =
                           "arrayValue.count == \(uiEvent.parameters.count)"
                         let parameterTypeConditions = uiEvent.parameters
@@ -150,23 +125,6 @@ public struct UIEventFile: GeneratableFile {
                           )
                         }
                         """)
-//                        let arguments = uiEvent.parameters
-//                          .map { parameter -> TupleExprElement in
-//                            let name = parameter.name
-//                              .camelCasedAssumingSnakeCased(capitalized: false)
-//                            return TupleExprElement(
-//                              label: String(name),
-//                              expression: "\(name)" as Expr
-//                            )
-//                          }
-//
-//                        ReturnStmt(
-//                          returnKeyword: .return,
-//                          expression: FunctionCallExpr(
-//                            calledExpression: "\(structName)" as IdentifierExpr,
-//                            argumentList: .init(arguments)
-//                          )
-//                        )
 
                         let structArguments = uiEvent.parameters
                           .map { parameter in
@@ -176,7 +134,7 @@ public struct UIEventFile: GeneratableFile {
                           }
                           .joined(separator: ", ")
                         Stmt("""
-                        return \(structName)(\(structArguments))
+                        return .init(\(structArguments))
                         """)
                       }
                     )
@@ -192,25 +150,6 @@ public struct UIEventFile: GeneratableFile {
             },
             rightBrace: .rightBrace
           )
-        }
-
-        for uiEvent in metadata.uiEvents {
-          let caseName = uiEvent.name
-            .camelCasedAssumingSnakeCased(capitalized: false)
-
-          let structName = uiEvent.name
-            .camelCasedAssumingSnakeCased(capitalized: true)
-
-          EnumCaseDecl("case \(caseName)(AsyncThrowingStream<\(structName), Error>)")
-
-          StructDecl(
-            "public struct \(structName)"
-          ) {
-            for parameter in uiEvent.parameters {
-              let formattedName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-              "public var \(formattedName): \(parameter.type.swift.signature)" as VariableDecl
-            }
-          }
         }
       }
     }
