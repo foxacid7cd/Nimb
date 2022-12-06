@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "swift-case-paths",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-case-paths",
+      "state" : {
+        "branch" : "main",
+        "revision" : "bb436421f57269fbcfe7360735985321585a86e5"
+      }
+    },
+    {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
@@ -43,15 +52,6 @@
       "state" : {
         "branch" : "main",
         "revision" : "715f12517277d914c667ae09e734fa5ff3e6cd70"
-      }
-    },
-    {
-      "identity" : "swift-tagged",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-tagged",
-      "state" : {
-        "revision" : "33f44ceb793b12d6af5019cbe26f8b0e66e6389f",
-        "version" : "0.8.0"
       }
     }
   ],

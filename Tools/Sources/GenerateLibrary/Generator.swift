@@ -11,9 +11,10 @@ private let GeneratableFileTypes: [GeneratableFile.Type] = [
 ]
 
 public actor Generator {
-  public init<S: AsyncSequence>(_ dataBatches: S) where S.Element == Data {
+  public init<DataBatches: AsyncSequence>(_ dataBatches: DataBatches)
+    where DataBatches.Element == Data {
     metadataTask = Task<Metadata, Error> {
-      var accumulator = [MessageValue]()
+      var accumulator = [Value]()
 
       do {
         let unpacker = Unpacker()
@@ -24,9 +25,8 @@ public actor Generator {
         }
 
         guard
-          accumulator.count == 1,
-          let apiInfoValue = accumulator[0] as? MessageMapValue,
-          let metadata = Metadata(value: apiInfoValue)
+          let value = accumulator.first,
+          let metadata = Metadata(value)
         else {
           throw GeneratorError.invalidDataBatches
         }

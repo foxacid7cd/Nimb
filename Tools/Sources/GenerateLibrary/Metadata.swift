@@ -1,5 +1,6 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
+import CasePaths
 import Foundation
 import MessagePack
 import SwiftSyntax
@@ -9,7 +10,7 @@ public struct Metadata: Hashable {
   public struct Function: Hashable {
     public var name: String
     public var parameters: [Parameter]
-    public var returnType: String
+    public var returnType: ValueType
     public var method: Bool
     public var since: Int
     public var deprecatedSince: Int?
@@ -17,7 +18,7 @@ public struct Metadata: Hashable {
 
   public struct Parameter: Hashable {
     public var name: String
-    public var type: String
+    public var type: ValueType
   }
 
   public struct UIEvent: Hashable {
@@ -30,57 +31,25 @@ public struct Metadata: Hashable {
 }
 
 public extension Metadata {
-  init?(value: MessageValue) {
-    guard let dictionary = value.assumingDictionary else {
+  init?(_ value: Value) {
+    guard let dictionary = value[/Value.dictionary] else {
       return nil
     }
 
-    if let functionsValue = dictionary["functions"] as? [MessageValue] {
+    if let functionsValue = dictionary["functions"]?[/Value.array] {
       functions = functionsValue
         .compactMap { functionValue -> Function? in
-          guard let dictionary = functionValue.assumingDictionary else {
+          guard let dictionary = functionValue[/Value.dictionary] else {
             return nil
           }
 
           guard
-            let parameters = dictionary["parameters"] as? [MessageValue],
-            let name = dictionary["name"] as? String,
-            let returnType = dictionary["return_type"] as? String,
-            let method = dictionary["method"] as? Bool,
-            let since = dictionary["since"] as? Int
-          else {
-            return nil
-          }
-
-          return .init(
-            name: name,
-            parameters: parameters
-              .compactMap { parameterValue in
-                guard let pair = parameterValue as? [String], pair.count == 2 else {
-                  return nil
-                }
-                return Parameter(name: pair[1], type: pair[0])
-              },
-            returnType: returnType,
-            method: method,
-            since: since,
-            deprecatedSince: dictionary["deprecated_since"] as? Int
-          )
-        }
-    } else {
-      functions = []
-    }
-
-    if let uiEventsValue = dictionary["ui_events"] as? [MessageValue] {
-      uiEvents = uiEventsValue
-        .compactMap { uiEventValue -> UIEvent? in
-          guard let dictionary = uiEventValue.assumingDictionary else {
-            return nil
-          }
-
-          guard
-            let parameterValues = dictionary["parameters"] as? [MessageValue],
-            let name = dictionary["name"] as? String
+            let parameterValues = dictionary["parameters"]?[/Value.array],
+            let name = dictionary["name"]?[/Value.string],
+            let returnType = dictionary["return_type"]?[/Value.string]
+            .map(ValueType.init(metadataString:)),
+            let method = dictionary["method"]?[/Value.boolean],
+            let since = dictionary["since"]?[/Value.integer]
           else {
             return nil
           }
@@ -88,7 +57,35 @@ public extension Metadata {
           return .init(
             name: name,
             parameters: parameterValues
-              .compactMap { Parameter(value: $0) }
+              .compactMap { Parameter($0) },
+            returnType: returnType,
+            method: method,
+            since: since,
+            deprecatedSince: dictionary["deprecated_since"]?[/Value.integer]
+          )
+        }
+    } else {
+      functions = []
+    }
+
+    if let uiEventsValue = dictionary["ui_events"]?[/Value.array] {
+      uiEvents = uiEventsValue
+        .compactMap { uiEventValue -> UIEvent? in
+          guard let dictionary = uiEventValue[/Value.dictionary] else {
+            return nil
+          }
+
+          guard
+            let parameterValues = dictionary["parameters"]?[/Value.array],
+            let name = dictionary["name"]?[/Value.string]
+          else {
+            return nil
+          }
+
+          return .init(
+            name: name,
+            parameters: parameterValues
+              .compactMap { Parameter($0) }
           )
         }
     } else {
@@ -98,17 +95,19 @@ public extension Metadata {
 }
 
 private extension Metadata.Parameter {
-  init?(value: MessageValue) {
+  init?(_ value: Value) {
     guard
-      let pair = value as? [String],
-      pair.count == 2
+      let arrayValue = value[/Value.array],
+      arrayValue.count == 2,
+      let type = arrayValue[0][/Value.string],
+      let name = arrayValue[1][/Value.string]
     else {
       return nil
     }
 
     self.init(
-      name: pair[1],
-      type: pair[0]
+      name: name,
+      type: .init(metadataString: type)
     )
   }
 }

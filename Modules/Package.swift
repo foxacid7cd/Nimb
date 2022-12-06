@@ -23,7 +23,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-collections", branch: "main"),
     .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-identified-collections", from: "0.5.0"),
-    .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.8.0"),
+    .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "main"),
   ],
   targets: [
     .target(
@@ -45,7 +45,7 @@ let package = Package(
         .product(name: "Collections", package: "swift-collections"),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
-        .product(name: "Tagged", package: "swift-tagged"),
+        .product(name: "CasePaths", package: "swift-case-paths"),
       ]
     ),
     .systemLibrary(

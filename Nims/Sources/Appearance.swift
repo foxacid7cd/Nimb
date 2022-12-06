@@ -3,7 +3,6 @@
 import Cocoa
 import IdentifiedCollections
 import MessagePack
-import Tagged
 
 actor Appearance {
   func cellSize() async -> CGSize {
@@ -22,7 +21,7 @@ actor Appearance {
     )
   }
 
-  func apply(nvimAttr: [(String, MessageValue)], forID id: Highlight.ID) async {
+  func apply(nvimAttr: [Value: Value], forID id: Highlight.ID) async {
     await highlights.apply(nvimAttr: nvimAttr, forID: id)
   }
 
@@ -120,7 +119,7 @@ actor Highlights {
     await defaultSpecialColor.set(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [(String, MessageValue)], forID id: Highlight.ID) async {
+  func apply(nvimAttr: [Value: Value], forID id: Highlight.ID) async {
     let highlight = highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
@@ -192,7 +191,7 @@ actor Highlight: Identifiable {
     self.id = id
   }
 
-  typealias ID = Tagged<Highlight, Int>
+  typealias ID = Int
 
   let id: ID
 
@@ -203,32 +202,36 @@ actor Highlight: Identifiable {
   var backgroundColor: Color?
   var specialColor: Color?
 
-  func apply(nvimAttr: [(String, MessageValue)]) {
+  func apply(nvimAttr: [Value: Value]) {
     for (key, value) in nvimAttr {
+      guard case let .string(key) = key else {
+        continue
+      }
+
       switch key {
       case "foreground":
-        if let value = value as? Int {
-          foregroundColor = .init(rgb: value)
+        if case let .integer(integer) = value {
+          foregroundColor = .init(rgb: integer)
         }
 
       case "background":
-        if let value = value as? Int {
-          backgroundColor = .init(rgb: value)
+        if case let .integer(integer) = value {
+          backgroundColor = .init(rgb: integer)
         }
 
       case "special":
-        if let value = value as? Int {
-          specialColor = .init(rgb: value)
+        if case let .integer(integer) = value {
+          specialColor = .init(rgb: integer)
         }
 
       case "bold":
-        if let value = value as? Bool {
-          isBold = value
+        if case let .boolean(boolean) = value {
+          isBold = boolean
         }
 
       case "italic":
-        if let value = value as? Bool {
-          isItalic = value
+        if case let .boolean(boolean) = value {
+          isItalic = boolean
         }
 
       default:

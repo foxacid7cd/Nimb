@@ -24,21 +24,24 @@ public struct APIFunctionsFile: GeneratableFile {
         for function in metadata.functions {
           let parametersInSignature = function.parameters
             .map {
-              "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \(APIType($0.type).inSignature)"
+              "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \($0.type.swift.signature)"
             }
             .joined(separator: ", ")
-
-          let returnTypeInSignature = APIType(function.returnType).inSignature
 
           let functionNameInSignature = function.name
             .camelCasedAssumingSnakeCased(capitalized: false)
           FunctionDecl(
-            "func \(functionNameInSignature)(\(parametersInSignature)) async throws -> Result<\(returnTypeInSignature), RemoteError>"
+            "func \(functionNameInSignature)(\(parametersInSignature)) async throws -> Result<\(function.returnType.swift.signature), RemoteError>"
           ) {
             let parametersInArray = function.parameters
-              .map { $0.name.camelCasedAssumingSnakeCased(capitalized: false) }
+              .map { parameter in
+                let name = parameter.name
+                  .camelCasedAssumingSnakeCased(capitalized: false)
+
+                return parameter.type.wrapExprWithValueEncoder(String(name))
+              }
               .joined(separator: ", ")
-            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(returnTypeInSignature).self)" as Stmt
+            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(function.returnType.swift.signature).self)" as Stmt
           }
           .withUnexpectedBeforeAttributes(.init {
             if function.deprecatedSince != nil {

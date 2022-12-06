@@ -4,7 +4,6 @@ import AsyncAlgorithms
 import Cocoa
 import Library
 import MessagePack
-import Tagged
 
 actor Grid: Identifiable {
   init(appearance: Appearance, id: ID, size: Size) {
@@ -16,11 +15,11 @@ actor Grid: Identifiable {
       }
   }
 
-  typealias ID = Tagged<Grid, Int>
+  typealias ID = Int
 
   let id: ID
 
-  func update(parametersBatch _: [(origin: Point, data: [MessageValue])]) async {
+  func update(parametersBatch _: [(origin: Point, data: [Value])]) async {
 //    await withTaskGroup(of: Void.self) { taskGroup in
 //      for (origin, nvimData) in parametersBatch {
 //        let row = self.row(at: origin.y)
@@ -67,7 +66,7 @@ actor Row {
       .forEach { $0.element.index = $0.offset }
   }
 
-  func update(startIndex: Int, nvimData: [MessageValue]) async {
+  func update(startIndex: Int, nvimData: [Value]) async {
     var updatedCellsCount = 0
 
     var highlightID: Highlight.ID?
@@ -85,7 +84,7 @@ actor Row {
     }
 
     for element in nvimData {
-      guard var casted = element as? [MessageValue]
+      guard var casted = element as? [Value]
       else {
         fatalError("Not an array")
       }

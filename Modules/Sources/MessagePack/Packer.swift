@@ -14,38 +14,36 @@ public actor Packer {
     msgpack_sbuffer_destroy(&sbuf)
   }
 
-  public func pack(_ value: MessageValue) -> Data {
-    msgpack(value)
+  public func pack(_ value: Value) -> Data {
+    process(value)
 
-    let data = Data(bytes: sbuf.data, count: sbuf.size)
-    msgpack_sbuffer_clear(&sbuf)
-
-    return data
+    defer {
+      msgpack_sbuffer_clear(&sbuf)
+    }
+    return .init(
+      bytes: sbuf.data,
+      count: sbuf.size
+    )
   }
 
   private var sbuf = msgpack_sbuffer()
   private var pk = msgpack_packer()
 
-  private func msgpack(_ value: MessageValue) {
-    guard let value
-    else {
-      msgpack_pack_nil(&pk)
-      return
-    }
-
+  private func process(_ value: Value) {
     switch value {
-    case let value as Bool:
-      if value {
+    case let .boolean(boolean):
+      if boolean {
         msgpack_pack_true(&pk)
+
       } else {
         msgpack_pack_false(&pk)
       }
 
-    case let value as Int:
-      msgpack_pack_int64(&pk, Int64(value))
+    case let .integer(integer):
+      msgpack_pack_int64(&pk, Int64(integer))
 
-    case let value as String:
-      value.data(using: .utf8)!
+    case let .string(string):
+      string.data(using: .utf8)!
         .withUnsafeBytes { buffer in
           let pointer = buffer.baseAddress!
 
@@ -56,36 +54,36 @@ public actor Packer {
           )
         }
 
-    case let value as Double:
-      msgpack_pack_float(&pk, Float(value))
+    case let .float(double):
+      msgpack_pack_float(&pk, Float(double))
 
-    case let value as MessageMapValue:
-      msgpack_pack_map(&pk, value.count)
+    case let .dictionary(dictionary):
+      msgpack_pack_map(&pk, dictionary.count)
 
-      for keyValue in value {
-        msgpack(keyValue.key)
-        msgpack(keyValue.value)
+      for (key, value) in dictionary {
+        process(key)
+        process(value)
       }
 
-    case let value as [MessageValue]:
-      msgpack_pack_array(&pk, value.count)
+    case let .array(array):
+      msgpack_pack_array(&pk, array.count)
 
-      for element in value {
-        msgpack(element)
+      for element in array {
+        process(element)
       }
 
-    case let value as MessageExtValue:
-      value.data.withUnsafeBytes { buffer in
+    case let .ext(type, data):
+      data.withUnsafeBytes { buffer in
         _ = msgpack_pack_ext_with_body(
           &self.pk,
           buffer.baseAddress!,
           buffer.count,
-          value.type
+          type
         )
       }
 
-    case let value as Data:
-      value.withUnsafeBytes { buffer in
+    case let .binary(data):
+      data.withUnsafeBytes { buffer in
         _ = msgpack_pack_bin_with_body(
           &self.pk,
           buffer.baseAddress!,
@@ -93,10 +91,7 @@ public actor Packer {
         )
       }
 
-    default:
-      assertionFailure(
-        "Sending value \(value)' of invalid msgpack type '\(String(reflecting: value.self))"
-      )
+    case .nil:
       msgpack_pack_nil(&pk)
     }
   }

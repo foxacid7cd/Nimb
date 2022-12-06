@@ -19,10 +19,19 @@ public struct UIEventFile: GeneratableFile {
   public var sourceFile: SourceFile {
     .init {
       "import MessagePack" as ImportDecl
+      "import CasePaths" as ImportDecl
 
       EnumDecl("public enum UIEvent") {
-        InitializerDecl("init(name: String, messageValues: [MessageValue]) throws") {
-          "var iterator = messageValues.makeIterator()" as VariableDecl
+        InitializerDecl("init(_ value: Value) throws") {
+          Stmt("""
+          guard case let .array(arrayValue) = value else {
+            throw UIEventDecodingFailed.encodedValueIsNotArray(
+              description: .init(describing: value)
+            )
+          }
+          """)
+
+          "var iterator = arrayValue.makeIterator()" as VariableDecl
           SwitchStmt(
             switchKeyword: .switch,
             expression: "name" as IdentifierExpr,
@@ -33,7 +42,7 @@ public struct UIEventFile: GeneratableFile {
                   SwitchCase("case \"\(uiEvent.name)\":") {
                     let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
                     let structName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: true)
-                    
+
                     let nextEventExpr = ClosureExpr(
                       signature: ClosureSignature(
                         leadingTrivia: .space,
@@ -49,7 +58,7 @@ public struct UIEventFile: GeneratableFile {
                           return nil
                         }
                         """)
-                        
+
                         let arrayConditions = ConditionElementList {
                           .init(
                             condition: .optionalBinding(
@@ -73,18 +82,23 @@ public struct UIEventFile: GeneratableFile {
                           )
                           """)
                         }
-                        
+
                         let parameterConditions = ConditionElementList {
                           for parameter in uiEvent.parameters {
-                            let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                            let type = APIType(parameter.type).inSignature
+                            let name = parameter.name
+                              .camelCasedAssumingSnakeCased(capitalized: false)
                             ConditionElement(
                               condition: .optionalBinding(
                                 OptionalBindingCondition(
                                   letOrVarKeyword: .let,
                                   pattern: "\(name)" as Pattern,
                                   typeAnnotation: nil,
-                                  initializer: .init(value: UnresolvedPatternExpr(pattern: AsTypePattern(pattern: "\(name)" as Pattern, type: "\(type)" as Type)))
+                                  initializer: .init(
+                                    value: UnresolvedPatternExpr(pattern: AsTypePattern(
+                                      pattern: "\(name)" as Pattern,
+                                      type: "\(parameter.type.swift.signature)" as Type
+                                    ))
+                                  )
                                 )
                               )
                             )
@@ -97,11 +111,15 @@ public struct UIEventFile: GeneratableFile {
                           )
                           """)
                         }
-                        
+
                         let arguments = uiEvent.parameters
                           .map { parameter -> TupleExprElement in
-                            let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                            return TupleExprElement(label: String(name), expression: "\(name)" as Expr)
+                            let name = parameter.name
+                              .camelCasedAssumingSnakeCased(capitalized: false)
+                            return TupleExprElement(
+                              label: String(name),
+                              expression: "\(name)" as Expr
+                            )
                           }
                         ReturnStmt(
                           returnKeyword: .return,
@@ -116,7 +134,7 @@ public struct UIEventFile: GeneratableFile {
                     "self = .\(caseName)(.init(unfolding: nextEvent))" as Expr
                   }
                 }
-                
+
                 SwitchCase("default:") {
                   "throw UIEventDecodingFailed.unknownName(name)" as ThrowStmt
                 }
@@ -140,8 +158,7 @@ public struct UIEventFile: GeneratableFile {
           ) {
             for parameter in uiEvent.parameters {
               let formattedName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-              let formattedType = APIType(parameter.type).inSignature
-              "public var \(formattedName): \(formattedType)" as VariableDecl
+              "public var \(formattedName): \(parameter.type.swift.signature)" as VariableDecl
             }
           }
         }

@@ -1,9 +1,4 @@
-//
-//  File.swift
-//  
-//
-//  Created by Yevhenii Matviienko on 06.12.2022.
-//
+// Copyright © 2022 foxacid7cd. All rights reserved.
 
 public enum UIEventDecodingFailed: Error {
   case unknownName(String)
