@@ -6,8 +6,6 @@ import Collections
 import Foundation
 import Library
 
-public typealias Notification = (method: String, parameters: [Value])
-
 public struct RemoteError: Error {
   public var value: Value
 }
@@ -25,7 +23,8 @@ public actor RPC {
     let store = Store()
     self.store = store
 
-    let (sendNotification, notifications) = AsyncChannel<Notification>.pipe()
+    let (sendNotification, notifications) = AsyncChannel<(method: String, parameters: [Value])>
+      .pipe()
     self.notifications = notifications
 
     task = Task {
@@ -87,7 +86,7 @@ public actor RPC {
     }
   }
 
-  public let notifications: AsyncStream<Notification>
+  public let notifications: AsyncStream<(method: String, parameters: [Value])>
   public let task: Task<Void, Error>
 
   @discardableResult

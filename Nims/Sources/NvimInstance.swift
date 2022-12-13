@@ -9,7 +9,8 @@ import MessagePack
 import Neovim
 import OSLog
 
-actor NvimInstance {
+@MainActor
+class NvimInstance {
   init() throws {
     let process = Process()
     self.process = process
@@ -38,7 +39,51 @@ actor NvimInstance {
 
     let channel = ProcessChannel(process: process)
 
-    api = API(channel)
+    let api = API(channel)
+    self.api = api
+
+    task = Task {
+      try await withThrowingTaskGroup(of: Void.self) { group in
+        group.addTask {
+          for await batch in await api.uiEventBatches {
+            switch batch {
+            case let .gridResize(models):
+              for try await model in models {
+                print(model)
+              }
+
+            case let .gridLine(models):
+              for try await model in models {
+                print(model)
+              }
+            default:
+              break
+            }
+          }
+        }
+
+        group.addTask {
+          try await api.task.value
+        }
+
+        group.addTask {
+          try await api.nvimUIAttach(
+            width: 80,
+            height: 24,
+            options: [
+              "rgb": true,
+              "ext_multigrid": true,
+              "ext_hlstate": true,
+            ]
+          )
+          .check()
+        }
+
+        try await group.waitForAll()
+      }
+    }
+
+    try process.run()
 
     //    let rpcService = RPCService(
 //      destinationFileHandle: inputPipe.fileHandleForWriting,
@@ -304,21 +349,10 @@ actor NvimInstance {
 //      }
   }
 
+  let task: Task<Void, Error>
+
   private let process: Process
   private let api: API
-
-  private func startProcess() async throws {
-    try await api.nvimUIAttach(
-      width: 80,
-      height: 24,
-      options: [
-        "rgb": true,
-        "ext_multigrid": true,
-        "ext_hlstate": true,
-      ]
-    )
-    .check()
-  }
 }
 
 enum RedrawNotificationParsingError: Error {

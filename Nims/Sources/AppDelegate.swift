@@ -8,15 +8,27 @@ import OSLog
 @NSApplicationMain @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_: AppKit.Notification) {
-    Task {
-      do {
-        let nvimInstance = try NvimInstance()
+    do {
+      let nvimInstance = try NvimInstance()
+      self.nvimInstance = nvimInstance
 
-        os_log("Nvim instance ended running.")
+      Task.detached {
+        do {
+          try await nvimInstance.task.value
 
-      } catch {
-        os_log("Nvim instance failed starting with error \(error).")
+          os_log("Nvim instance ended running.")
+
+        } catch {
+          os_log("Nvim instance failed: \(error)")
+        }
       }
+
+      os_log("Nvim started.")
+
+    } catch {
+      os_log("Nvim instance failed starting: \(error)")
     }
   }
+
+  private var nvimInstance: NvimInstance?
 }

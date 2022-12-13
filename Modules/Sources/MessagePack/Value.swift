@@ -4,7 +4,7 @@ import CasePaths
 import Foundation
 import msgpack
 
-public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral {
+public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, ExpressibleByNilLiteral {
   case integer(Int)
   case float(Double)
   case boolean(Bool)
@@ -23,6 +23,10 @@ public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLit
     self = .boolean(value)
   }
 
+  public init(nilLiteral: ()) {
+    self = .nil
+  }
+
   init(_ object: msgpack_object) {
     switch object.type {
     case MSGPACK_OBJECT_POSITIVE_INTEGER:
@@ -31,7 +35,7 @@ public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLit
     case MSGPACK_OBJECT_NEGATIVE_INTEGER:
       self = .integer(Int(object.via.i64))
 
-    case MSGPACK_OBJECT_FLOAT:
+    case MSGPACK_OBJECT_FLOAT, MSGPACK_OBJECT_FLOAT32:
       self = .float(object.via.f64)
 
     case MSGPACK_OBJECT_BOOLEAN:
@@ -39,16 +43,16 @@ public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLit
 
     case MSGPACK_OBJECT_STR:
       let str = object.via.str
-
-      let originalBuffer = UnsafeBufferPointer<UInt8>(
-        start: UnsafeRawPointer(str.ptr)!
-          .assumingMemoryBound(to: UInt8.self),
-        count: Int(str.size)
-      )
+      let size = Int(str.size)
 
       let string = String(
-        unsafeUninitializedCapacity: originalBuffer.count,
-        initializingUTF8With: { $0.initialize(fromContentsOf: originalBuffer) }
+        unsafeUninitializedCapacity: size,
+        initializingUTF8With: { buffer in
+          let pointer = buffer.baseAddress!
+
+          memcpy(pointer, str.ptr, size)
+          return size
+        }
       )
       self = .string(string)
 
@@ -56,24 +60,19 @@ public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLit
       let cArray = object.via.array
 
       let count = Int(cArray.size)
-      let array = [Value](unsafeUninitializedCapacity: count) { buffer, initializedCount in
-        let pointer = buffer.baseAddress!
+      var accumulator = [Value]()
 
-        for index in 0 ..< count {
-          let value = Value(
+      for index in 0 ..< count {
+        accumulator.append(
+          Value(
             cArray.ptr
               .advanced(by: index)
               .pointee
           )
-
-          pointer
-            .advanced(by: index)
-            .pointee = value
-        }
-
-        initializedCount = count
+        )
       }
-      self = .array(array)
+
+      self = .array(accumulator)
 
     case MSGPACK_OBJECT_MAP:
       let map = object.via.map

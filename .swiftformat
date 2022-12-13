@@ -1,6 +1,6 @@
 --acronyms ID,RPC,UI,URL,UUID
 --allman false
---assetliterals actual-width
+--assetliterals visual-width
 --beforemarks 
 --binarygrouping 4,8
 --categorymark "MARK: %c"
@@ -38,7 +38,7 @@
 --linebreaks lf
 --markcategories false
 --markextensions always
---maxwidth 100
+--maxwidth 120
 --modifierorder 
 --nevertrailing 
 --nospaceoperators 
@@ -67,12 +67,12 @@
 --voidtype void
 --wraparguments before-first
 --wrapcollections before-first
---wrapconditions preserve
+--wrapconditions before-first
 --wrapparameters before-first
---wrapreturntype if-multiline
+--wrapreturntype preserve
 --wrapternary default
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---disable unusedArguments,wrapMultilineStatementBraces
+--disable spaceInsideGenerics,unusedArguments,wrapMultilineStatementBraces
 --enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases

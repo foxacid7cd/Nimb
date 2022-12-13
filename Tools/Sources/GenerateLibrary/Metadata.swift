@@ -47,7 +47,7 @@ public extension Metadata {
             let parameterValues = dictionary["parameters"]?[/Value.array],
             let name = dictionary["name"]?[/Value.string],
             let returnType = dictionary["return_type"]?[/Value.string]
-            .map(ValueType.init(metadataString:)),
+              .map(ValueType.init(metadataString:)),
             let method = dictionary["method"]?[/Value.boolean],
             let since = dictionary["since"]?[/Value.integer]
           else {

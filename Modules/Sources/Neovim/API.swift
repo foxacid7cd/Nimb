@@ -1,5 +1,6 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
+import AsyncAlgorithms
 import CasePaths
 import MessagePack
 
@@ -8,21 +9,16 @@ public actor API {
     let rpc = RPC(channel)
     self.rpc = rpc
 
+    let (sendUIEventBatch, uiEventBatches) = AsyncChannel<UIEventBatch>.pipe()
+    self.uiEventBatches = uiEventBatches
+
     task = Task {
       for try await notification in await rpc.notifications {
         switch notification.method {
         case "redraw":
           for parameter in notification.parameters {
-            guard
-              let array = (/Value.array).extract(from: parameter),
-              !array.isEmpty,
-              let uiEventName = (/Value.string).extract(from: array[0])
-            else {
-              assertionFailure()
-              continue
-            }
-
-            print(uiEventName)
+            let batch = try UIEventBatch(parameter)
+            await sendUIEventBatch(batch)
           }
 
         default:
@@ -33,6 +29,7 @@ public actor API {
   }
 
   public let task: Task<Void, Error>
+  public let uiEventBatches: AsyncStream<UIEventBatch>
 
   func call<Success>(
     method: String,
