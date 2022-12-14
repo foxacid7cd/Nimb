@@ -55,8 +55,11 @@ public actor Instance {
     let api = API(processChannel)
     self.api = api
 
+    let terminateCalls: AsyncStream<Void>
+    (_terminate, terminateCalls) = AsyncChannel.pipe()
+
     states = AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-      Task { @MainActor in
+      let task = Task { @MainActor in
         let process = Process()
         let processObjectIdentifier = ObjectIdentifier(process)
 
@@ -70,69 +73,99 @@ public actor Instance {
         environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
         process.environment = environment
 
-        do {
-          try process.run()
-
-        } catch {
-          continuation.finish(throwing: error)
-          return
+        let terminateProcess = { @Sendable @MainActor in
+          process.terminate()
         }
 
-        continuation.yield(.running)
+        Task {
+          for await _ in terminateCalls {
+            terminateProcess()
+          }
+        }
 
-        await withTaskGroup(of: Void.self) { group in
-          group.addTask { @MainActor in
-            do {
-              try await api.task.value
+        await withTaskCancellationHandler {
+          do {
+            try process.run()
 
-            } catch {
-              continuation.finish(throwing: error)
-              process.terminate()
-            }
+          } catch {
+            continuation.finish(throwing: error)
+            return
           }
 
-          group.addTask { @MainActor in
-            defer {
-              api.task.cancel()
-            }
+          continuation.yield(.running)
 
-            let termination = NotificationCenter.default
-              .notifications(named: Process.didTerminateNotification)
-              .compactMap { notification -> Void? in
-                guard
-                  let object = notification.object as? AnyObject,
-                  ObjectIdentifier(object) == processObjectIdentifier
-                else {
-                  return nil
-                }
+          await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+              do {
+                try await api.task.value
 
-                return ()
-              }
-
-            for await _ in termination {
-              switch process.terminationReason {
-              case .uncaughtSignal:
-                continuation.finish(throwing: TerminationError.uncaughtSignal)
-                return
-
-              case .exit:
-                let exitCode = Int(process.terminationStatus)
-
-                if exitCode != 0 {
-                  continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
+              } catch {
+                guard !Task.isCancelled else {
                   return
                 }
 
-              default:
-                assertionFailure("Unknown process termination reason: \(process.terminationReason).")
+                continuation.finish(throwing: error)
+                await terminateProcess()
               }
-
-              continuation.finish()
-              return
             }
+
+            group.addTask { @MainActor in
+              let termination = NotificationCenter.default
+                .notifications(named: Process.didTerminateNotification)
+                .compactMap { notification -> Void? in
+                  guard
+                    let object = notification.object as? AnyObject,
+                    ObjectIdentifier(object) == processObjectIdentifier
+                  else {
+                    return nil
+                  }
+
+                  return ()
+                }
+
+              for await _ in termination {
+                guard !Task.isCancelled else {
+                  return
+                }
+
+                switch process.terminationReason {
+                case .uncaughtSignal:
+                  continuation.finish(throwing: TerminationError.uncaughtSignal)
+
+                case .exit:
+                  let exitCode = Int(process.terminationStatus)
+
+                  if exitCode != 0 {
+                    continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
+                  }
+
+                default:
+                  assertionFailure("Unknown process termination reason: \(process.terminationReason).")
+                }
+
+                continuation.finish()
+              }
+            }
+
+            await group.waitForAll()
           }
 
-          await group.waitForAll()
+        } onCancel: {
+          Task {
+            await terminateProcess()
+          }
+        }
+      }
+
+      continuation.onTermination = { termination in
+        api.task.cancel()
+
+        switch termination {
+        case .cancelled:
+          task.cancel()
+
+        default:
+          break
         }
       }
     }
@@ -150,4 +183,10 @@ public actor Instance {
   public let api: API
   public let states: AsyncThrowingStream<State, Error>
   public let processErrorMessages: AsyncStream<String>
+
+  public func terminate() async {
+    await _terminate(())
+  }
+
+  private let _terminate: @Sendable (()) async -> Void
 }

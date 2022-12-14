@@ -12,17 +12,17 @@
 		682272BB293DD63800A36AB9 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BA293DD63800A36AB9 /* Library */; };
 		682272BD293DD63800A36AB9 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BC293DD63800A36AB9 /* MessagePack */; };
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
-		6824DE17293867C200D26A6E /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6822B86329365DD300D0EAE1 /* NSColor.swift */; };
 		6824DE1D2938705500D26A6E /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1929386DF300D26A6E /* Geometry.swift */; };
 		6824DE1E2938705F00D26A6E /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824DE1B29386F4400D26A6E /* Grid.swift */; };
 		684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684384D22934D04A000C4A1D /* AppDelegate.swift */; };
-		68561F4C29378E87002FD94B /* NSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* NSView.swift */; };
+		68561F4C29378E87002FD94B /* AppKitUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* AppKitUtils.swift */; };
 		685B61612935D1AD006381F1 /* WinRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685B61602935D1AD006381F1 /* WinRef.swift */; };
 		685EE9652935A0FD00D85550 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9642935A0FD00D85550 /* Window.swift */; };
 		685EE9672935A21000D85550 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9662935A21000D85550 /* MainView.swift */; };
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
+		68BC1B1329496398000458FA /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BC1B1229496398000458FA /* AppCoordinator.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
 /* End PBXBuildFile section */
@@ -66,13 +66,12 @@
 		68142FA8293E25A500363ECE /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/bin/nvim; sourceTree = "<group>"; };
 		68142FAA293E260000363ECE /* Tools */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Tools; sourceTree = "<group>"; };
 		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
-		6822B86329365DD300D0EAE1 /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
 		6824DE1929386DF300D26A6E /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		6824DE1B29386F4400D26A6E /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		68561F4B29378E87002FD94B /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
+		68561F4B29378E87002FD94B /* AppKitUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppKitUtils.swift; sourceTree = "<group>"; };
 		685B61602935D1AD006381F1 /* WinRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinRef.swift; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE9662935A21000D85550 /* MainView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainView.swift; sourceTree = "<group>"; };
@@ -80,6 +79,7 @@
 		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
 		68A323D2293B97970028A87D /* Legacy */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legacy; sourceTree = "<group>"; };
 		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		68BC1B1229496398000458FA /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF462934CF6200564FE2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68BFEF492934CF6200564FE2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -100,20 +100,12 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		6824DE1829386C7500D26A6E /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				68561F4B29378E87002FD94B /* NSView.swift */,
-				6822B86329365DD300D0EAE1 /* NSColor.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				6824DE1829386C7500D26A6E /* Extensions */,
+				68561F4B29378E87002FD94B /* AppKitUtils.swift */,
 				684384D22934D04A000C4A1D /* AppDelegate.swift */,
+				68BC1B1229496398000458FA /* AppCoordinator.swift */,
 				685EE97A2935A98A00D85550 /* Appearance.swift */,
 				685EE9642935A0FD00D85550 /* Window.swift */,
 				685EE9662935A21000D85550 /* MainView.swift */,
@@ -295,6 +287,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68BC1B1329496398000458FA /* AppCoordinator.swift in Sources */,
 				68B21E0E2938C6240033B9E9 /* Store.swift in Sources */,
 				685EE9672935A21000D85550 /* MainView.swift in Sources */,
 				685EE9652935A0FD00D85550 /* Window.swift in Sources */,
@@ -302,11 +295,10 @@
 				6824DE1D2938705500D26A6E /* Geometry.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* Appearance.swift in Sources */,
-				6824DE17293867C200D26A6E /* NSColor.swift in Sources */,
 				689A63502936124F003D6363 /* DrawRun.swift in Sources */,
 				6824DE1E2938705F00D26A6E /* Grid.swift in Sources */,
 				685B61612935D1AD006381F1 /* WinRef.swift in Sources */,
-				68561F4C29378E87002FD94B /* NSView.swift in Sources */,
+				68561F4C29378E87002FD94B /* AppKitUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
+import CasePaths
 import Cocoa
 import Library
 import MessagePack
@@ -84,12 +85,12 @@ actor Row {
     }
 
     for element in nvimData {
-      guard var casted = element as? [Value]
+      guard var casted = element[/Value.array]
       else {
         fatalError("Not an array")
       }
 
-      guard let text = casted.removeFirst() as? String
+      guard let text = casted.removeFirst()[/Value.string]
       else {
         fatalError("Not a text")
       }
@@ -97,7 +98,7 @@ actor Row {
       var repeatCount = 1
 
       if !casted.isEmpty {
-        guard let newRawHighlightID = casted.removeFirst() as? Int
+        guard let newRawHighlightID = casted.removeFirst()[/Value.integer]
         else {
           fatalError("Not an highlight id")
         }
@@ -111,7 +112,7 @@ actor Row {
         }
 
         if !casted.isEmpty {
-          guard let newRepeatCount = casted.removeFirst() as? Int
+          guard let newRepeatCount = casted.removeFirst()[/Value.integer]
           else {
             fatalError("Not a repeat count")
           }
@@ -170,13 +171,14 @@ actor Row {
 
     for parameters in parametersBatch {
       let newHighlightGroup = HighlightGroup(
-        highlight: await {
-          guard let id = parameters.highlightID
+        highlight: await { () -> Highlight? in
+          guard
+            let id = parameters.highlightID
           else {
             return nil
           }
 
-          return await self.appearance.highlight(id: id)
+          return await self.appearance.highlight(withID: id)
         }(),
         cells: parameters.cells
       )

@@ -9,7 +9,7 @@ actor Appearance {
     await font.cellSize
   }
 
-  func stringAttributes(id: Highlight.ID? = nil) async -> [NSAttributedString.Key: Any] {
+  func stringAttributes(forHighlightWithID id: Int) async -> [NSAttributedString.Key: Any] {
     await highlights.stringAttributes(id: id, font: font)
   }
 
@@ -21,12 +21,12 @@ actor Appearance {
     )
   }
 
-  func apply(nvimAttr: [Value: Value], forID id: Highlight.ID) async {
-    await highlights.apply(nvimAttr: nvimAttr, forID: id)
+  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) async {
+    await highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
   }
 
-  func highlight(id: Highlight.ID) async -> Highlight {
-    await highlights.highlight(id: id)
+  func highlight(withID id: Int) -> Highlight? {
+    highlight(withID: id)
   }
 
   private var font = Font()
@@ -119,7 +119,7 @@ actor Highlights {
     await defaultSpecialColor.set(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [Value: Value], forID id: Highlight.ID) async {
+  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) async {
     let highlight = highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
@@ -134,7 +134,7 @@ actor Highlights {
     id: Highlight.ID? = nil,
     font: Font
   ) async -> [NSAttributedString.Key: Any] {
-    let highlight = id.map { self.highlight(id: $0) }
+    let highlight = id.map { self.highlight(withID: $0) }
 
     return [
       .font: await font.nsFont(highlight: highlight),
@@ -145,21 +145,21 @@ actor Highlights {
   }
 
   func foregroundColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(id: $0) }
+    let highlight = highlightID.map { self.highlight(withID: $0) }
     return await foregroundColor(highlight: highlight)
   }
 
   func backgroundColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(id: $0) }
+    let highlight = highlightID.map { self.highlight(withID: $0) }
     return await backgroundColor(highlight: highlight)
   }
 
   func specialColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(id: $0) }
+    let highlight = highlightID.map { self.highlight(withID: $0) }
     return await specialColor(highlight: highlight)
   }
 
-  func highlight(id: Highlight.ID) -> Highlight {
+  func highlight(withID id: Int) -> Highlight {
     highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
@@ -187,13 +187,11 @@ actor Highlights {
 }
 
 actor Highlight: Identifiable {
-  init(id: ID) {
+  init(id: Int) {
     self.id = id
   }
 
-  typealias ID = Int
-
-  let id: ID
+  let id: Int
 
   var isBold = false
   var isItalic = false

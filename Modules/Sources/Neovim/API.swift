@@ -14,6 +14,10 @@ public actor API {
 
     task = Task {
       for try await notification in await rpc.notifications {
+        guard !Task.isCancelled else {
+          return
+        }
+
         switch notification.method {
         case "redraw":
           for parameter in notification.parameters {
