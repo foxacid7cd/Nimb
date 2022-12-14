@@ -35,29 +35,24 @@ public actor RPC {
 
         for message in try await unpacker.unpack(data) {
           guard
-            let array = (/Value.array).extract(from: message)
-          else {
-            throw RPCError.receivedMessageIsNotArray
-          }
-
-          guard
+            let array = message[/Value.array],
             let firstValue = array.first,
-            let integer = (/Value.integer).extract(from: firstValue),
+            let integer = firstValue[/Value.integer],
             let messageType = MessageType(rawValue: integer)
           else {
-            throw RPCError.failedParsingArray
+            throw ParsingFailed.messageType(rawMessage: "\(message)")
           }
 
           switch messageType {
           case .request:
-            throw RPCError.unsupportedMessage
+            assertionFailure("Unpacked unexpected request message (\(array)).")
 
           case .response:
             guard
               array.count == 4,
-              let id = (/Value.integer).extract(from: array[1])
+              let id = array[1][/Value.integer]
             else {
-              throw RPCError.failedParsingArray
+              throw ParsingFailed.response(rawResponse: "\(array)")
             }
 
             let result: Result<Value, RemoteError>
@@ -73,10 +68,10 @@ public actor RPC {
           case .notification:
             guard
               array.count == 3,
-              let method = (/Value.string).extract(from: array[1]),
-              let parameters = (/Value.array).extract(from: array[2])
+              let method = array[1][/Value.string],
+              let parameters = array[2][/Value.array]
             else {
-              throw RPCError.failedParsingArray
+              throw ParsingFailed.notification(rawNotification: "\(array)")
             }
 
             await sendNotification((method, parameters))
@@ -86,8 +81,14 @@ public actor RPC {
     }
   }
 
+  public enum ParsingFailed: Error {
+    case messageType(rawMessage: String)
+    case response(rawResponse: String)
+    case notification(rawNotification: String)
+  }
+
   public let notifications: AsyncStream<(method: String, parameters: [Value])>
-  public let task: Task<Void, Error>
+  public let task: Task<Void, Swift.Error>
 
   @discardableResult
   public func call(
@@ -152,11 +153,4 @@ public actor RPC {
   private let packer: Packer
   private let unpacker: Unpacker
   private let store: Store
-}
-
-public enum RPCError: Error {
-  case receivedMessageIsNotArray
-  case failedParsingArray
-  case invalidRequest
-  case unsupportedMessage
 }

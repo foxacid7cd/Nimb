@@ -18,12 +18,9 @@
 		684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684384D22934D04A000C4A1D /* AppDelegate.swift */; };
 		68561F4C29378E87002FD94B /* NSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68561F4B29378E87002FD94B /* NSView.swift */; };
 		685B61612935D1AD006381F1 /* WinRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685B61602935D1AD006381F1 /* WinRef.swift */; };
-		685EE9632935A01B00D85550 /* NvimInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9622935A01B00D85550 /* NvimInstance.swift */; };
 		685EE9652935A0FD00D85550 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9642935A0FD00D85550 /* Window.swift */; };
 		685EE9672935A21000D85550 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9662935A21000D85550 /* MainView.swift */; };
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
-		687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290C929358F8300445435 /* NvimNotificationMethodName.swift */; };
-		687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687290CB293593F400445435 /* RedrawUIEventName.swift */; };
 		689A63502936124F003D6363 /* DrawRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689A634F2936124F003D6363 /* DrawRun.swift */; };
 		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
@@ -77,12 +74,9 @@
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		68561F4B29378E87002FD94B /* NSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSView.swift; sourceTree = "<group>"; };
 		685B61602935D1AD006381F1 /* WinRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinRef.swift; sourceTree = "<group>"; };
-		685EE9622935A01B00D85550 /* NvimInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimInstance.swift; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE9662935A21000D85550 /* MainView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainView.swift; sourceTree = "<group>"; };
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
-		687290C929358F8300445435 /* NvimNotificationMethodName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NvimNotificationMethodName.swift; sourceTree = "<group>"; };
-		687290CB293593F400445435 /* RedrawUIEventName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedrawUIEventName.swift; sourceTree = "<group>"; };
 		689A634F2936124F003D6363 /* DrawRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRun.swift; sourceTree = "<group>"; };
 		68A323D2293B97970028A87D /* Legacy */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legacy; sourceTree = "<group>"; };
 		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
@@ -120,9 +114,6 @@
 			children = (
 				6824DE1829386C7500D26A6E /* Extensions */,
 				684384D22934D04A000C4A1D /* AppDelegate.swift */,
-				687290C929358F8300445435 /* NvimNotificationMethodName.swift */,
-				687290CB293593F400445435 /* RedrawUIEventName.swift */,
-				685EE9622935A01B00D85550 /* NvimInstance.swift */,
 				685EE97A2935A98A00D85550 /* Appearance.swift */,
 				685EE9642935A0FD00D85550 /* Window.swift */,
 				685EE9662935A21000D85550 /* MainView.swift */,
@@ -305,15 +296,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				68B21E0E2938C6240033B9E9 /* Store.swift in Sources */,
-				685EE9632935A01B00D85550 /* NvimInstance.swift in Sources */,
 				685EE9672935A21000D85550 /* MainView.swift in Sources */,
-				687290CA29358F8300445435 /* NvimNotificationMethodName.swift in Sources */,
 				685EE9652935A0FD00D85550 /* Window.swift in Sources */,
 				680E72AD2936BDA0009BFA53 /* KeyPress.swift in Sources */,
 				6824DE1D2938705500D26A6E /* Geometry.swift in Sources */,
 				684384D42934D04A000C4A1D /* AppDelegate.swift in Sources */,
 				685EE97B2935A98A00D85550 /* Appearance.swift in Sources */,
-				687290CC293593F400445435 /* RedrawUIEventName.swift in Sources */,
 				6824DE17293867C200D26A6E /* NSColor.swift in Sources */,
 				689A63502936124F003D6363 /* DrawRun.swift in Sources */,
 				6824DE1E2938705F00D26A6E /* Grid.swift in Sources */,

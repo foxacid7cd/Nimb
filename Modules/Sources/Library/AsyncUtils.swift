@@ -96,15 +96,13 @@ public extension AsyncThrowingChannel where Failure == Error {
   }
 }
 
-public extension AsyncStream<Data> {
-  init(reading fileHandle: FileHandle) {
-    self.init { continuation in
-      fileHandle.readabilityHandler = { fileHandle in
+public extension FileHandle {
+  var dataBatches: AsyncStream<Data> {
+    .init { continuation in
+      readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
 
         if data.isEmpty {
-          fileHandle.readabilityHandler = nil
-
           continuation.finish()
 
         } else {
@@ -112,14 +110,8 @@ public extension AsyncStream<Data> {
         }
       }
 
-      continuation.onTermination = { termination in
-        switch termination {
-        case .cancelled:
-          fileHandle.readabilityHandler = nil
-
-        default:
-          break
-        }
+      continuation.onTermination = { _ in
+        self.readabilityHandler = nil
       }
     }
   }

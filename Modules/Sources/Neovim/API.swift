@@ -28,8 +28,9 @@ public actor API {
     }
   }
 
-  public let task: Task<Void, Error>
   public let uiEventBatches: AsyncStream<UIEventBatch>
+
+  let task: Task<Void, Error>
 
   func call<Success>(
     method: String,
