@@ -51,7 +51,6 @@ actor Store {
         }
 
         let newGrid = Grid(
-          appearance: appearance,
           id: event.grid,
           size: .init(
             width: event.width,
@@ -82,6 +81,10 @@ actor Store {
     default:
       break
     }
+  }
+
+  func stringAttributes(forHighlightWithID id: Int) async -> [NSAttributedString.Key: Any] {
+    await appearance.stringAttributes(forHighlightWithID: id)
   }
 
   private let appearance = Appearance()

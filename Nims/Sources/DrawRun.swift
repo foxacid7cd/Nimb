@@ -52,6 +52,10 @@ struct DrawRun: Equatable {
             length: stringRange.length
           ),
           font: font,
+          rectangle: .init(
+            origin: .init(x: origin.x + stringRange.location, y: origin.y),
+            size: .init(width: stringRange.length, height: 1)
+          ),
           foregroundColor: foregroundColor,
           backgroundColor: backgroundColor
         )
@@ -70,6 +74,7 @@ struct GlyphRun: Equatable {
   var positions: [CGPoint]
   var stringRange: NSRange
   var font: NSFont
+  var rectangle: Rectangle
   var foregroundColor: NSColor
   var backgroundColor: NSColor
 

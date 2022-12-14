@@ -1,6 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Cocoa
+import Collections
 
 @MainActor
 class MainViewController: NSViewController {
@@ -73,13 +74,88 @@ class MainViewController: NSViewController {
 
     let grid: Grid
 
+    override func draw(_: NSRect) {
+      guard let graphicsContext = NSGraphicsContext.current else {
+        assertionFailure()
+        return
+      }
+      let cgContext = graphicsContext.cgContext
+
+      cgContext.saveGState()
+      defer { cgContext.restoreGState() }
+
+      let rects = rectsBeingDrawn()
+
+      for rect in rects {
+        for (index, drawRun) in drawRuns.enumerated().reversed() {
+          if rect.contains(drawRun.cgFrame) {
+            drawRuns.remove(at: index)
+
+            for glyphRun in drawRun.glyphRuns {
+              cgContext.setShouldAntialias(false)
+              cgContext.setFillColor(glyphRun.backgroundColor.cgColor)
+
+              let backgroundRect = glyphRun.rectangle * cellSize
+              cgContext.fill([backgroundRect])
+
+              graphicsContext.cgContext.setShouldAntialias(true)
+              graphicsContext.cgContext.setFillColor(glyphRun.foregroundColor.cgColor)
+
+              CTFontDrawGlyphs(
+                glyphRun.font,
+                glyphRun.glyphs,
+                glyphRun.positionsWithOffset(
+                  dx: drawRun.cgFrame.origin.x,
+                  dy: drawRun.cgFrame.origin.y + cellSize.height - glyphRun.font.ascender
+                ),
+                glyphRun.glyphs.count,
+                graphicsContext.cgContext
+              )
+            }
+          }
+        }
+      }
+    }
+
     func drawGrid(at rectangle: Rectangle) async {
       let cellSize = await store.cellSize
+      self.cellSize = cellSize
 
-      setNeedsDisplay(rectangle * cellSize)
+      for yOffset in 0 ..< rectangle.size.height {
+        let y = rectangle.origin.y + yOffset
+        let origin = Point(x: rectangle.origin.x, y: y)
+
+        let invertedY = grid.size.height - y - 1
+        let invertedOrigin = Point(x: rectangle.origin.x, y: invertedY)
+
+        let rowRectangle = Rectangle(
+          origin: invertedOrigin,
+          size: .init(
+            width: rectangle.size.width,
+            height: 1
+          )
+        )
+        let cgFrame = rowRectangle * cellSize
+
+        let attributedString = await grid.rowAttributedString(
+          startingAt: origin,
+          length: rectangle.size.width,
+          store: store
+        )
+        let drawRun = DrawRun.make(
+          origin: invertedOrigin,
+          cgFrame: cgFrame,
+          attributedString: attributedString
+        )
+
+        drawRuns.append(drawRun)
+        setNeedsDisplay(cgFrame)
+      }
     }
 
     private let store: Store
+    private var drawRuns = [DrawRun]()
+    private var cellSize = CGSize(width: 1, height: 1)
   }
 
   private let store: Store

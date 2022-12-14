@@ -36,10 +36,7 @@ actor Appearance {
 }
 
 actor Font {
-  var regularNSFont = NSFont.monospacedSystemFont(
-    ofSize: 13,
-    weight: .regular
-  )
+  var regularNSFont = NSFont(name: "BlexMono Nerd Font", size: 13)!
 
   var boldNSFont: NSFont {
     cachedBoldNSFont ?? {
@@ -133,36 +130,40 @@ actor Highlights {
   }
 
   func stringAttributes(
-    id: Highlight.ID? = nil,
+    id: Int? = nil,
     font: Font
   ) async -> [NSAttributedString.Key: Any] {
-    let highlight = id.map { self.highlight(withID: $0) }
+    let highlight = id.flatMap { self.highlight(withID: $0) }
 
     return [
       .font: await font.nsFont(highlight: highlight),
-      .foregroundColor: await foregroundColor(highlight: highlight),
-      .backgroundColor: await backgroundColor(highlight: highlight),
-      .underlineColor: await specialColor(highlight: highlight),
+      .foregroundColor: await foregroundColor(highlight: highlight).nsColor,
+      .backgroundColor: await backgroundColor(highlight: highlight).nsColor,
+      .underlineColor: await specialColor(highlight: highlight).nsColor,
     ]
   }
 
-  func foregroundColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(withID: $0) }
+  func foregroundColor(highlightID: Int? = nil) async -> Color {
+    let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return await foregroundColor(highlight: highlight)
   }
 
-  func backgroundColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(withID: $0) }
+  func backgroundColor(highlightID: Int? = nil) async -> Color {
+    let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return await backgroundColor(highlight: highlight)
   }
 
-  func specialColor(highlightID: Highlight.ID? = nil) async -> Color {
-    let highlight = highlightID.map { self.highlight(withID: $0) }
+  func specialColor(highlightID: Int? = nil) async -> Color {
+    let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return await specialColor(highlight: highlight)
   }
 
-  func highlight(withID id: Int) -> Highlight {
-    highlights[id: id] ?? {
+  func highlight(withID id: Int) -> Highlight? {
+    if id == 0 {
+      return nil
+    }
+
+    return highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
 

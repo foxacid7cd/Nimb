@@ -52,11 +52,11 @@ actor Coordinator {
                     height: 24,
                     options: [
                       "ext_multigrid": true,
-                      "ext_hlstate": true,
-                      "ext_cmdline": true,
+                      // "ext_hlstate": true,
+                      // "ext_cmdline": true,
                       // "ext_messages": true,
-                      "ext_popupmenu": true,
-                      "ext_tabline": true,
+                      // "ext_popupmenu": true,
+                      // "ext_tabline": true,
                     ]
                   )
                   .check()
