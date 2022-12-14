@@ -1,10 +1,93 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import AsyncAlgorithms
-import Collections
+import Cocoa
 import IdentifiedCollections
 import Library
 import MessagePack
+import Neovim
+
+actor Store {
+  init() {
+    (sendUpdate, updates) = AsyncChannel.pipe(bufferingPolicy: .unbounded)
+  }
+
+  enum Update {
+    case cellSize
+    case newGrid(Grid)
+  }
+
+  let updates: AsyncStream<Update>
+
+  var cellSize: CGSize {
+    get async {
+      await appearance.cellSize
+    }
+  }
+
+  func apply(_ uiEventBatch: UIEventBatch) async throws {
+    switch uiEventBatch {
+    case let .defaultColorsSet(events):
+      for try await event in events {
+        await appearance.setDefaultColors(
+          foregroundRGB: event.rgbFg,
+          backgroundRGB: event.rgbBg,
+          specialRGB: event.rgbSp
+        )
+      }
+
+    case let .hlAttrDefine(events):
+      for try await event in events {
+        await appearance.apply(
+          nvimAttr: event.rgbAttrs,
+          forHighlightWithID: event.id
+        )
+      }
+
+    case let .gridResize(events):
+      for try await event in events {
+        if grids[id: event.grid] != nil {
+          assertionFailure()
+        }
+
+        let newGrid = Grid(
+          appearance: appearance,
+          id: event.grid,
+          size: .init(
+            width: event.width,
+            height: event.height
+          )
+        )
+        grids.append(newGrid)
+
+        await sendUpdate(.newGrid(newGrid))
+      }
+
+    case let .gridLine(events):
+      for try await event in events {
+        guard let grid = grids[id: event.grid] else {
+          assertionFailure("Missing required grid with id (\(event.grid)).")
+          continue
+        }
+
+        await grid.update(
+          origin: .init(
+            x: event.colStart,
+            y: event.row
+          ),
+          data: event.data
+        )
+      }
+
+    default:
+      break
+    }
+  }
+
+  private let appearance = Appearance()
+  private var grids = IdentifiedArrayOf<Grid>()
+  private let sendUpdate: @Sendable (Update) async -> Void
+}
 
 // actor Store {
 //  init(rpcService: RPCProtocol) {

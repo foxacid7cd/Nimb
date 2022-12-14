@@ -5,8 +5,8 @@ import Collections
 import OSLog
 
 class MainView: NSView {
-  init(appearance: Appearance) {
-    _appearance = appearance
+  init(store: Store) {
+    self.store = store
 
     super.init(frame: .zero)
   }
@@ -16,9 +16,11 @@ class MainView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  func apply(_ update: Store.Update) {}
+
   func gridResize(gridID: Int, gridSize: Size) {
     let gridView = gridViews[gridID] ?? {
-      let new = GridView(appearance: self._appearance, gridID: gridID)
+      let new = GridView(store: store, gridID: gridID)
       self.gridViews[gridID] = new
 
       new.outerGridSize = self.outerGridSize
@@ -150,7 +152,7 @@ class MainView: NSView {
   }
 
   private var winPosCallCounter = 0
-  private var _appearance: Appearance
+  private let store: Store
   private var gridViews = TreeDictionary<Int, GridView>()
   private var outerGridSize = Size()
 
@@ -169,8 +171,8 @@ func compare(
 }
 
 private class GridView: NSView {
-  init(appearance: Appearance, gridID: Int) {
-    _appearance = appearance
+  init(store: Store, gridID: Int) {
+    self.store = store
     self.gridID = gridID
 
     super.init(frame: .zero)
@@ -352,7 +354,7 @@ private class GridView: NSView {
 //    self.frame = self.gridFrame * self._appearance.font.cellSize
   }
 
-  private var _appearance: Appearance
+  private let store: Store
   private var drawRuns = Deque<DrawRun>()
   private var oldDrawRuns = Deque<DrawRun>()
 }

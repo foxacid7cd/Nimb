@@ -28,8 +28,10 @@ public actor Instance {
             }
 
             if !accumulator.isEmpty {
-              continuation.yield("*\(accumulator.count) byte(s) of non UTF-8 data*")
+              assertionFailure("Failed decoding UTF-8 String from data \(accumulator).")
             }
+
+            continuation.finish()
           }
         }
       }
@@ -61,8 +63,6 @@ public actor Instance {
     states = AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
       let task = Task { @MainActor in
         let process = Process()
-        let processObjectIdentifier = ObjectIdentifier(process)
-
         processChannel.bind(to: process)
 
         let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
@@ -77,9 +77,14 @@ public actor Instance {
           process.terminate()
         }
 
-        Task {
+        let terminateCallsTask = Task {
           for await _ in terminateCalls {
+            guard !Task.isCancelled else {
+              return
+            }
+
             terminateProcess()
+            return
           }
         }
 
@@ -110,6 +115,8 @@ public actor Instance {
             }
 
             group.addTask { @MainActor in
+              let processObjectIdentifier = ObjectIdentifier(process)
+
               let termination = NotificationCenter.default
                 .notifications(named: Process.didTerminateNotification)
                 .compactMap { notification -> Void? in
@@ -140,7 +147,7 @@ public actor Instance {
                   }
 
                 default:
-                  assertionFailure("Unknown process termination reason: \(process.terminationReason).")
+                  assertionFailure("Unknown process termination reason (\(process.terminationReason.rawValue)).")
                 }
 
                 continuation.finish()
@@ -151,6 +158,8 @@ public actor Instance {
           }
 
         } onCancel: {
+          terminateCallsTask.cancel()
+
           Task {
             await terminateProcess()
           }

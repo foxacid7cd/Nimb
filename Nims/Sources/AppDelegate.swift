@@ -12,19 +12,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_: AppKit.Notification) {
     os_log("Cocoa application did finish launching.")
 
-    os_log("Starting app coordinator.")
-    let appCoordinator = AppCoordinator()
-    self.appCoordinator = appCoordinator
+    os_log("Starting coordinator.")
+    let coordinator = Coordinator()
+    self.coordinator = coordinator
 
     Task {
-      for await state in appCoordinator.states {
+      for await state in coordinator.states {
         switch state {
         case .running:
-          os_log("App coordinator is running.")
+          os_log("Coordinator is running.")
         }
       }
 
-      os_log("App coordinator finished running.")
+      os_log("Coordinator finished running.")
 
       NSApplication.shared.terminate(nil)
     }
@@ -34,5 +34,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     os_log("Cocoa application will terminate.")
   }
 
-  private var appCoordinator: AppCoordinator?
+  private var coordinator: Coordinator?
 }

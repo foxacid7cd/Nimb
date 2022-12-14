@@ -5,8 +5,10 @@ import IdentifiedCollections
 import MessagePack
 
 actor Appearance {
-  func cellSize() async -> CGSize {
-    await font.cellSize
+  var cellSize: CGSize {
+    get async {
+      await font.cellSize
+    }
   }
 
   func stringAttributes(forHighlightWithID id: Int) async -> [NSAttributedString.Key: Any] {
@@ -25,8 +27,8 @@ actor Appearance {
     await highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
   }
 
-  func highlight(withID id: Int) -> Highlight? {
-    highlight(withID: id)
+  func highlight(withID id: Int) async -> Highlight? {
+    await highlights.highlight(withID: id)
   }
 
   private var font = Font()

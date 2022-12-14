@@ -10,6 +10,10 @@ actor Grid: Identifiable {
   init(appearance: Appearance, id: ID, size: Size) {
     self.appearance = appearance
     self.id = id
+    self.size = size
+
+    (sendUpdate, updates) = AsyncChannel.pipe(bufferingPolicy: .unbounded)
+
     rows = (0 ..< size.height)
       .map { _ in
         Row(appearance: appearance, length: size.width)
@@ -18,28 +22,25 @@ actor Grid: Identifiable {
 
   typealias ID = Int
 
-  let id: ID
+  enum Update {
+    case size
+    case row(origin: Point, width: Int)
+  }
 
-  func update(parametersBatch _: [(origin: Point, data: [Value])]) async {
-//    await withTaskGroup(of: Void.self) { taskGroup in
-//      for (origin, nvimData) in parametersBatch {
-//        let row = self.row(at: origin.y)
-//
-//        taskGroup.addTask {
-//          await row.update(startIndex: origin.x, nvimData: nvimData)
-//        }
-//      }
-//
-//      for await () in taskGroup {
-//        guard !taskGroup.isCancelled else {
-//          return
-//        }
-//      }
-//    }
+  let id: ID
+  let size: Size
+  let updates: AsyncStream<Update>
+
+  func update(origin: Point, data: [Value]) async {
+    let row = row(at: origin.y)
+    let width = await row.update(startIndex: origin.x, data: data)
+    await sendUpdate(.row(origin: origin, width: width))
   }
 
   private let appearance: Appearance
   private var rows: [Row]
+  private let sendUpdate: @Sendable (Update)
+    async -> Void
 
   private func row(at index: Int) -> Row {
     rows[index]
@@ -67,7 +68,7 @@ actor Row {
       .forEach { $0.element.index = $0.offset }
   }
 
-  func update(startIndex: Int, nvimData: [Value]) async {
+  func update(startIndex: Int, data: [Value]) async -> Int {
     var updatedCellsCount = 0
 
     var highlightID: Highlight.ID?
@@ -84,7 +85,7 @@ actor Row {
       createHighlightGroupParametersBatch.append((highlightID, highlightGroupCells))
     }
 
-    for element in nvimData {
+    for element in data {
       guard var casted = element[/Value.array]
       else {
         fatalError("Not an array")
@@ -136,6 +137,8 @@ actor Row {
     await createHighlightGroups(
       parametersBatch: createHighlightGroupParametersBatch
     )
+
+    return updatedCellsCount
   }
 
   private let appearance: Appearance
@@ -243,5 +246,5 @@ private class Cell {
   var indexInRow: Int
 
   var indexInHighlightGroup: Int?
-  weak var highlightGroup: HighlightGroup?
+  var highlightGroup: HighlightGroup?
 }

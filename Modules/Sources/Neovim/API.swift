@@ -32,6 +32,10 @@ public actor API {
     }
   }
 
+  public enum CallFailed: Error {
+    case invalidAssumedSuccessResponseType(description: String)
+  }
+
   public let uiEventBatches: AsyncStream<UIEventBatch>
 
   let task: Task<Void, Error>
@@ -39,16 +43,23 @@ public actor API {
   func call<Success>(
     method: String,
     withParameters parameters: [Value],
-    assumingSuccessType successType: Success.Type
+    transformSuccess: (Value) -> Success?
   ) async throws -> Result<Success, RemoteError> {
-    try await rpc.call(method: method, withParameters: parameters)
-      .map { success in
-        guard let success = success as? Success else {
-          preconditionFailure("Assumed success response type does not match returned response type")
-        }
+    let result = try await rpc.call(method: method, withParameters: parameters)
 
-        return success
+    switch result {
+    case let .success(rawSuccess):
+      guard let success = transformSuccess(rawSuccess) else {
+        throw CallFailed.invalidAssumedSuccessResponseType(
+          description: "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
+        )
       }
+
+      return .success(success)
+
+    case let .failure(error):
+      return .failure(error)
+    }
   }
 
   private let rpc: RPC

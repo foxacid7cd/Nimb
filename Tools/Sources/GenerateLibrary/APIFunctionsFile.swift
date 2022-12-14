@@ -18,6 +18,7 @@ public struct APIFunctionsFile: GeneratableFile {
 
   public var sourceFile: SourceFile {
     .init {
+      "import CasePaths" as ImportDecl
       "import MessagePack" as ImportDecl
 
       ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
@@ -41,7 +42,7 @@ public struct APIFunctionsFile: GeneratableFile {
                 return parameter.type.wrapExprWithValueEncoder(String(name))
               }
               .joined(separator: ", ")
-            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], assumingSuccessType: \(function.returnType.swift.signature).self)" as Stmt
+            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], transformSuccess: { \(function.returnType.wrapWithValueDecoder("$0")) })" as Stmt
           }
           .withUnexpectedBeforeAttributes(.init {
             if function.deprecatedSince != nil {

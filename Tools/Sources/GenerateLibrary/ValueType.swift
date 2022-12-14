@@ -96,4 +96,32 @@ public struct ValueType: Hashable {
       return expr
     }
   }
+
+  public func wrapWithValueDecoder(_ expr: String) -> String {
+    switch swift {
+    case .integer:
+      return "\(expr)[/Value.integer]"
+
+    case .float:
+      return "\(expr)[/Value.float]"
+
+    case .string:
+      return "\(expr)[/Value.string]"
+
+    case .boolean:
+      return "\(expr)[/Value.boolean]"
+
+    case .dictionary:
+      return "\(expr)[/Value.dictionary]"
+
+    case .array:
+      return "\(expr)[/Value.array]"
+
+    case .binary:
+      return "\(expr)[/Value.binary]"
+
+    case .value:
+      return expr
+    }
+  }
 }

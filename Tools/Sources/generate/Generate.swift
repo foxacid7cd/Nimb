@@ -17,7 +17,7 @@ struct Generate: AsyncParsableCommand {
   var generatedPath: String
 
   func run() async throws {
-    let dataBatches = AsyncStream(reading: .standardInput)
+    let dataBatches = FileHandle.standardInput.dataBatches
     let generator = Generator(dataBatches)
 
     let generatedURL = URL(filePath: generatedPath)

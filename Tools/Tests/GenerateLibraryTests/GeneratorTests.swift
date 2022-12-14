@@ -6,7 +6,7 @@ import XCTest
 
 private let ExpectedGeneratedFiles: Set = [
   "APIFunctions.swift",
-  "UIEvent.swift",
+  "UIEvents.swift",
 ]
 
 class GeneratorTests: XCTestCase {

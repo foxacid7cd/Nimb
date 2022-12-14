@@ -4,10 +4,10 @@ import Cocoa
 import Neovim
 import OSLog
 
-actor AppCoordinator {
+actor Coordinator {
   init() {
-    let appearance = Appearance()
-    self.appearance = appearance
+    let store = Store()
+    self.store = store
 
     os_log("Starting Neovim instance.")
     let neovimInstance = Instance()
@@ -41,33 +41,7 @@ actor AppCoordinator {
                     return
                   }
 
-                  switch uiEventBatch {
-                  case let .defaultColorsSet(events):
-                    for try await event in events {
-                      await appearance.setDefaultColors(
-                        foregroundRGB: event.rgbFg,
-                        backgroundRGB: event.rgbBg,
-                        specialRGB: event.rgbSp
-                      )
-                    }
-
-                  case let .hlAttrDefine(events):
-                    try await withThrowingTaskGroup(of: Void.self) { group in
-                      for try await event in events {
-                        group.addTask {
-                          await appearance.apply(
-                            nvimAttr: event.rgbAttrs,
-                            forHighlightWithID: event.id
-                          )
-                        }
-                      }
-
-                      try await group.waitForAll()
-                    }
-
-                  default:
-                    break
-                  }
+                  try await store.apply(uiEventBatch)
                 }
               }
 
@@ -80,7 +54,7 @@ actor AppCoordinator {
                       "ext_multigrid": true,
                       "ext_hlstate": true,
                       "ext_cmdline": true,
-                      "ext_messages": true,
+                      // "ext_messages": true,
                       "ext_popupmenu": true,
                       "ext_tabline": true,
                     ]
@@ -89,7 +63,42 @@ actor AppCoordinator {
 
                   os_log("Neovim UI attached.")
 
+                  let mainViewController = await MainViewController(store: store)
+
+                  let updatesTask = Task {
+                    for await update in store.updates {
+                      guard !Task.isCancelled else {
+                        return
+                      }
+
+                      await mainViewController.apply(update)
+                    }
+                  }
+
+                  let window = await Window(contentViewController: mainViewController)
+
+                  let keyPressesTask = Task {
+                    for await keyPress in await window.keyPresses {
+                      guard !Task.isCancelled else {
+                        return
+                      }
+
+                      try? await neovimInstance.api.nvimInput(
+                        keys: keyPress.makeNvimKeyCode()
+                      )
+                      .check()
+                    }
+                  }
+
+                  await window.makeMain()
+                  await window.makeKeyAndOrderFront(nil)
+
                   continuation.yield(.running)
+
+                  await withTaskCancellationHandler {} onCancel: {
+                    updatesTask.cancel()
+                    keyPressesTask.cancel()
+                  }
 
                 } catch {
                   os_log("Neovim UI attach request failed with error (\(error)).")
@@ -130,6 +139,6 @@ actor AppCoordinator {
 
   let states: AsyncStream<State>
 
-  private let appearance: Appearance
+  private let store: Store
   private let neovimInstance: Instance
 }
