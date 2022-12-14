@@ -44,6 +44,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     print(event)
                   }
 
+                case let .hlAttrDefine(events):
+                  for try await event in events {
+                    print(event)
+                  }
+
                 default:
                   break
                 }
@@ -55,9 +60,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 width: 80,
                 height: 24,
                 options: [
-                  "rgb": true,
                   "ext_multigrid": true,
                   "ext_hlstate": true,
+                  "ext_cmdline": true,
+                  "ext_messages": true,
+                  "ext_popupmenu": true,
+                  "ext_tabline": true,
                 ]
               )
               .check()

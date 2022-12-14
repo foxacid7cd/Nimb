@@ -58,6 +58,8 @@ public actor Instance {
     states = AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
       Task { @MainActor in
         let process = Process()
+        let processObjectIdentifier = ObjectIdentifier(process)
+
         processChannel.bind(to: process)
 
         let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
@@ -94,10 +96,20 @@ public actor Instance {
               api.task.cancel()
             }
 
-            let didTerminateNotifications = NotificationCenter.default
+            let termination = NotificationCenter.default
               .notifications(named: Process.didTerminateNotification)
+              .compactMap { notification -> Void? in
+                guard
+                  let object = notification.object as? AnyObject,
+                  ObjectIdentifier(object) == processObjectIdentifier
+                else {
+                  return nil
+                }
 
-            for await notification in didTerminateNotifications where (notification.object as? Process) === process {
+                return ()
+              }
+
+            for await _ in termination {
               switch process.terminationReason {
               case .uncaughtSignal:
                 continuation.finish(throwing: TerminationError.uncaughtSignal)
