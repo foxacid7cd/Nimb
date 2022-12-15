@@ -33,7 +33,7 @@
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
         "branch" : "main",
-        "revision" : "ceab2a560af75361d0f6ca01a15ad58174daf77e"
+        "revision" : "53a8adc54374f620002a3b6401d39e0feb3c57ae"
       }
     },
     {
@@ -48,10 +48,10 @@
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-syntax.git",
+      "location" : "https://github.com/apple/swift-syntax",
       "state" : {
         "branch" : "main",
-        "revision" : "715f12517277d914c667ae09e734fa5ff3e6cd70"
+        "revision" : "378dd9ce5814deb56ed8f70543b4e2fb2c05fba5"
       }
     }
   ],

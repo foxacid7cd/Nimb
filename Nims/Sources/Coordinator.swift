@@ -11,7 +11,7 @@ class Coordinator {
     let store = Store()
     self.store = store
 
-    os_log("Starting Neovim instance.")
+    os_log("Starting Neovim instance")
     let neovimInstance = Instance()
     self.neovimInstance = neovimInstance
 
@@ -35,7 +35,7 @@ class Coordinator {
 
             switch state {
             case .running:
-              os_log("Neovim instance is running.")
+              os_log("Neovim instance is running")
 
               let uiEventBatchesTask = Task {
                 for await uiEventBatch in await neovimInstance.api.uiEventBatches {
@@ -47,7 +47,7 @@ class Coordinator {
                     try await store.apply(uiEventBatch)
 
                   } catch {
-                    os_log("Failed applying UI event batch to Store with error (\(error)).")
+                    os_log("Failed applying UI event batch to Store with error (\(error))")
 
                     await neovimInstance.terminate()
                   }
@@ -57,74 +57,80 @@ class Coordinator {
               await withTaskCancellationHandler {
                 do {
                   try await neovimInstance.api.nvimUIAttach(
-                    width: 80,
-                    height: 24,
+                    width: 100,
+                    height: 36,
                     options: [
                       "ext_multigrid": true,
-                      // "ext_hlstate": true,
-                      // "ext_cmdline": true,
-                      // "ext_messages": true,
-                      // "ext_popupmenu": true,
-                      // "ext_tabline": true,
+                      "ext_hlstate": true,
+                      "ext_cmdline": true,
+                      "ext_messages": true,
+                      "ext_popupmenu": true,
+                      "ext_tabline": true,
                     ]
                   )
                   .check()
 
-                  os_log("Neovim UI attached.")
+                  os_log("Neovim UI attached")
 
-                  Task { @MainActor in
-                    let viewController = ViewController(viewModel: store.viewModel)
-                    let window = Window(contentViewController: viewController)
+                  var viewModelsTask: Task<Void, Never>?
+                  var keyPressesTask: Task<Void, Never>?
 
-                    var keyPressesTask: Task<Void, Never>?
-                    var eventsTask: Task<Void, Never>?
+                  let cancel = {
+                    viewModelsTask?.cancel()
+                    keyPressesTask?.cancel()
+                  }
 
-                    let cancel = {
-                      keyPressesTask?.cancel()
-                      eventsTask?.cancel()
-                    }
+                  let viewController = ViewController()
+                  let window = Window(contentViewController: viewController)
 
-                    await withTaskCancellationHandler {
-                      keyPressesTask = Task {
-                        for await keyPress in window.keyPresses {
-                          guard !Task.isCancelled else {
-                            return
-                          }
-
-                          try? await neovimInstance.api.nvimInput(
-                            keys: keyPress.makeNvimKeyCode()
-                          )
-                          .check()
+                  await withTaskCancellationHandler {
+                    viewModelsTask = Task {
+                      for await (viewModel, effects) in store.viewModels {
+                        guard !Task.isCancelled else {
+                          return
                         }
-                      }
 
-                      eventsTask = Task {
-                        for await event in store.events {
-                          guard !Task.isCancelled else {
-                            return
-                          }
+                        viewController.render(
+                          viewModel: viewModel,
+                          effects: effects
+                        )
 
-                          switch event {
-                          case .viewModelChanged:
-                            viewController.set(viewModel: store.viewModel)
-
-                            if !window.isMainWindow, store.viewModel.outerSize != .zero {
+                        for effect in effects {
+                          switch effect {
+                          case .outerSizeChanged:
+                            if !window.isMainWindow {
                               window.makeMain()
                               window.makeKeyAndOrderFront(nil)
                             }
+
+                          default:
+                            break
                           }
                         }
                       }
+                    }
 
-                    } onCancel: {
-                      cancel()
+                    keyPressesTask = Task {
+                      for await keyPress in window.keyPresses {
+                        guard !Task.isCancelled else {
+                          return
+                        }
+
+                        try? await neovimInstance.api.nvimInput(
+                          keys: keyPress.makeNvimKeyCode()
+                        )
+                        .check()
+                      }
                     }
 
                     continuation.yield(.running)
+
+                  } onCancel: {
+                    cancel()
                   }
 
                 } catch {
-                  os_log("Neovim UI attach request failed with error (\(error)).")
+                  os_log("Neovim UI attach request failed with error (\(error))")
 
                   await neovimInstance.terminate()
                 }
@@ -135,10 +141,10 @@ class Coordinator {
             }
           }
 
-          os_log("Neovim instance finished running.")
+          os_log("Neovim instance finished running")
 
         } catch {
-          os_log("Neovim instance finished running with error (\(error)).")
+          os_log("Neovim instance finished running with error (\(error))")
         }
 
         continuation.finish()

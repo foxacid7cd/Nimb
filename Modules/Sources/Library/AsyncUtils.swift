@@ -70,6 +70,16 @@ public extension AsyncThrowingStream where Failure == Error {
   }
 }
 
+public extension AsyncSequence {
+  var erasedToAsyncStream: AsyncStream<Element> {
+    .init(self)
+  }
+
+  var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> {
+    .init(self)
+  }
+}
+
 public extension AsyncChannel {
   static func pipe(
     bufferingPolicy: AsyncStream<Element>.Continuation.BufferingPolicy = .unbounded

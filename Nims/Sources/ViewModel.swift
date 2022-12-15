@@ -7,16 +7,17 @@ struct ViewModel {
   struct Grid: Identifiable {
     let id: Int
     var frame: CGRect
-    var rows: [Row]
-  }
-
-  struct Row: Identifiable {
-    let id: Int
-    var attributedString: AttributedString
+    var rows: [State.Row]
   }
 
   var outerSize: CGSize
-  var grids: IdentifiedArrayOf<Grid>
+  var grids: [Grid]
   var rowHeight: Double
   var defaultBackgroundColor: Color
+}
+
+enum ViewModelEffect {
+  case initial
+  case outerSizeChanged
+  case canvasChanged
 }
