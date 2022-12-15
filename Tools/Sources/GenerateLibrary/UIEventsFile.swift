@@ -45,28 +45,22 @@ public struct UIEventsFile: GeneratableFile {
           let structName = uiEvent.name
             .camelCasedAssumingSnakeCased(capitalized: true)
 
-          EnumCaseDecl("case \(caseName)(AsyncThrowingStream<UIEvents.\(structName), Error>)")
+          EnumCaseDecl("case \(caseName)(LazyMapSequence<[Value], UIEvents.\(structName)>)")
         }
 
-        InitializerDecl("init(_ value: Value) throws") {
+        InitializerDecl("init(_ value: Value)") {
           Stmt("""
-          guard case let .array(arrayValue) = value else {
-            throw UIEventDecodingError.encodedValueIsNotArray(
-              details: .init(describing: value)
-            )
+          guard case var .array(arrayValue) = value else {
+            fatalError("Failed decoding UI event, root value is not array")
           }
           """)
 
-          "var iterator = arrayValue.makeIterator()" as VariableDecl
-          "let nameValue = iterator.next()" as VariableDecl
-
           Stmt("""
-          guard case let .string(name) = nameValue else {
-            throw UIEventDecodingError.invalidName(
-              .init(describing: nameValue)
-            )
+          guard !arrayValue.isEmpty, case let .string(name) = arrayValue.removeFirst() else {
+            fatalError("Failed decoding UI event name.")
           }
           """)
+
           SwitchStmt(
             switchKeyword: .switch,
             expression: "name" as IdentifierExpr,
@@ -78,28 +72,28 @@ public struct UIEventsFile: GeneratableFile {
                     let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
                     let structName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: true)
 
-                    let nextEventExpr = ClosureExpr(
+                    let transformExpr = ClosureExpr(
                       signature: ClosureSignature(
                         leadingTrivia: .space,
-                        input: .input(.init()),
-                        asyncKeyword: "async ",
-                        throwsTok: .throws,
+                        input: .input(
+                          .init(
+                            parameterList: [
+                              .init(
+                                firstName: .init(.identifier("value"), presence: .present),
+                                colon: .colon,
+                                type: "Value" as Type
+                              ),
+                            ]
+                          )
+                        ),
                         output: .init(
-                          returnType: "UIEvents.\(structName)? " as Type
+                          returnType: "UIEvents.\(structName) " as Type
                         )
                       ),
                       statements: .init {
                         Stmt("""
-                        guard !Task.isCancelled, let next = iterator.next() else {
-                          return nil
-                        }
-                        """)
-
-                        Stmt("""
-                        guard case let .array(arrayValue) = next else {
-                          throw UIEventDecodingError.encodedValueIsNotArray(
-                            details: "UI event name (\(uiEvent.name)), value " + String(describing: next)
-                          )
+                        guard case let .array(arrayValue) = value else {
+                          fatalError("Failed decoding (UIEvents.\(structName)), value is not array.")
                         }
                         """)
 
@@ -120,9 +114,7 @@ public struct UIEventsFile: GeneratableFile {
                           .joined(separator: ", ")
                         Stmt("""
                         guard \(guardConditions) else {
-                          throw UIEventDecodingError.invalidEncodedValue(
-                            details: "UI event name (\(uiEvent.name)), value " + String(describing: next)
-                          )
+                          fatalError("Failed decoding (UIEvents.\(structName)), invalid parameters.")
                         }
                         """)
 
@@ -138,13 +130,15 @@ public struct UIEventsFile: GeneratableFile {
                         """)
                       }
                     )
-                    VariableDecl(.let, name: "nextEvent", initializer: .init(value: nextEventExpr))
-                    "self = .\(caseName)(.init(unfolding: nextEvent))" as Expr
+                    VariableDecl(.let, name: "transform", initializer: .init(value: transformExpr))
+                    "self = .\(caseName)(arrayValue.lazy.map(transform))" as Expr
                   }
                 }
 
                 SwitchCase("default:") {
-                  "throw UIEventDecodingError.invalidName(name)" as ThrowStmt
+                  Expr("""
+                  fatalError("Failed decoding UI event, unknown name " + name)
+                  """)
                 }
               }
             },

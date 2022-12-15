@@ -34,7 +34,7 @@ class Store {
   func apply(_ uiEventBatch: UIEventBatch) async throws {
     switch uiEventBatch {
     case let .defaultColorsSet(events):
-      for try await event in events {
+      for event in events {
         appearance.setDefaultColors(
           foregroundRGB: event.rgbFg,
           backgroundRGB: event.rgbBg,
@@ -46,7 +46,7 @@ class Store {
       }
 
     case let .hlAttrDefine(events):
-      for try await event in events {
+      for event in events {
         appearance.apply(
           nvimAttr: event.rgbAttrs,
           forHighlightWithID: event.id
@@ -54,7 +54,7 @@ class Store {
       }
 
     case let .gridResize(events):
-      for try await event in events {
+      for event in events {
         let size = Size(
           width: event.width,
           height: event.height
@@ -97,7 +97,7 @@ class Store {
       }
 
     case let .gridLine(events):
-      for try await event in events {
+      for event in events {
         let grid = grids[id: event.grid]!
 
         _ = grid.update(
@@ -119,7 +119,7 @@ class Store {
       }
 
     case let .gridClear(events):
-      for try await event in events {
+      for event in events {
         let grid = grids[id: event.grid]!
         grid.clear()
 
@@ -136,7 +136,7 @@ class Store {
       }
 
     case let .gridDestroy(events):
-      for try await event in events {
+      for event in events {
         _ = grids.remove(id: event.grid)!
 
         _ = viewModel.grids.remove(id: event.grid)!
@@ -144,7 +144,7 @@ class Store {
       }
 
     case let .winPos(events):
-      for try await event in events {
+      for event in events {
         grids.move(
           fromOffsets: [grids.index(id: event.grid)!],
           toOffset: grids.count
@@ -178,7 +178,7 @@ class Store {
       }
 
     case let .winClose(events):
-      for try await event in events {
+      for event in events {
         let grid = grids[id: event.grid]!
         grid.set(win: nil)
 
