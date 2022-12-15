@@ -16,8 +16,6 @@ class MainView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func apply(_ update: Store.Update) {}
-
   func gridResize(gridID: Int, gridSize: Size) {
     let gridView = gridViews[gridID] ?? {
       let new = GridView(store: store, gridID: gridID)

@@ -2,6 +2,6 @@
 
 public enum UIEventDecodingError: Error {
   case invalidName(String)
-  case encodedValueIsNotArray(description: String)
-  case invalidEncodedValue(description: String)
+  case encodedValueIsNotArray(details: String)
+  case invalidEncodedValue(details: String)
 }

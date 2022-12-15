@@ -7,38 +7,47 @@ import Library
 import MessagePack
 import Neovim
 
-actor Store {
+@MainActor
+class Store {
   init() {
-    (sendUpdate, updates) = AsyncChannel.pipe(bufferingPolicy: .unbounded)
+    (sendEvent, events) = AsyncChannel.pipe()
+
+    let appearance = Appearance()
+    self.appearance = appearance
+
+    viewModel = ViewModel(
+      outerSize: .init(),
+      grids: .init(),
+      rowHeight: appearance.cellSize.height,
+      defaultBackgroundColor: appearance.defaultBackgroundColor
+    )
   }
 
-  enum Update {
-    case cellSize
-    case newGrid(Grid)
+  public enum Event {
+    case viewModelChanged
   }
 
-  let updates: AsyncStream<Update>
+  public let events: AsyncStream<Event>
 
-  var cellSize: CGSize {
-    get async {
-      await appearance.cellSize
-    }
-  }
+  private(set) var viewModel: ViewModel
 
   func apply(_ uiEventBatch: UIEventBatch) async throws {
     switch uiEventBatch {
     case let .defaultColorsSet(events):
       for try await event in events {
-        await appearance.setDefaultColors(
+        appearance.setDefaultColors(
           foregroundRGB: event.rgbFg,
           backgroundRGB: event.rgbBg,
           specialRGB: event.rgbSp
         )
+
+        viewModel.defaultBackgroundColor = appearance.defaultBackgroundColor
+        await sendEvent(.viewModelChanged)
       }
 
     case let .hlAttrDefine(events):
       for try await event in events {
-        await appearance.apply(
+        appearance.apply(
           nvimAttr: event.rgbAttrs,
           forHighlightWithID: event.id
         )
@@ -46,36 +55,135 @@ actor Store {
 
     case let .gridResize(events):
       for try await event in events {
-        if grids[id: event.grid] != nil {
-          assertionFailure()
+        let size = Size(
+          width: event.width,
+          height: event.height
+        )
+
+        if let grid = grids[id: event.grid] {
+          grid.set(size: size)
+
+          viewModel.grids[id: event.grid]!.frame = grid.frame
+
+        } else {
+          let newGrid = Grid(
+            id: event.grid,
+            size: size,
+            cellSize: appearance.cellSize
+          )
+          grids[id: event.grid] = newGrid
+
+          viewModel.grids[id: event.grid] = .init(
+            id: event.grid,
+            frame: newGrid.frame,
+            rows: (0 ..< size.height)
+              .map { index in
+                let row = newGrid.rows[index]
+
+                return .init(
+                  id: index,
+                  attributedString: row.attributedString
+                    .settingAttributes(appearance.attributeContainer())
+                )
+              }
+          )
         }
 
-        let newGrid = Grid(
-          id: event.grid,
-          size: .init(
-            width: event.width,
-            height: event.height
-          )
-        )
-        grids.append(newGrid)
+        if event.grid == 1 {
+          updateOuterSize()
+        }
 
-        await sendUpdate(.newGrid(newGrid))
+        await sendEvent(.viewModelChanged)
       }
 
     case let .gridLine(events):
       for try await event in events {
-        guard let grid = grids[id: event.grid] else {
-          assertionFailure("Missing required grid with id (\(event.grid)).")
-          continue
-        }
+        let grid = grids[id: event.grid]!
 
-        await grid.update(
+        _ = grid.update(
           origin: .init(
             x: event.colStart,
             y: event.row
           ),
           data: event.data
         )
+
+        let attributedString = grid.rows[event.row]
+          .attributedString
+          .settingAttributes(appearance.attributeContainer())
+
+        viewModel.grids[id: event.grid]!.rows[event.row]
+          .attributedString = attributedString
+
+        await sendEvent(.viewModelChanged)
+      }
+
+    case let .gridClear(events):
+      for try await event in events {
+        let grid = grids[id: event.grid]!
+        grid.clear()
+
+        viewModel.grids[id: event.grid]!.rows = grid.rows
+          .enumerated()
+          .map { offset, row in
+            .init(
+              id: offset,
+              attributedString: row.attributedString
+                .settingAttributes(appearance.attributeContainer())
+            )
+          }
+        await sendEvent(.viewModelChanged)
+      }
+
+    case let .gridDestroy(events):
+      for try await event in events {
+        _ = grids.remove(id: event.grid)!
+
+        _ = viewModel.grids.remove(id: event.grid)!
+        await sendEvent(.viewModelChanged)
+      }
+
+    case let .winPos(events):
+      for try await event in events {
+        grids.move(
+          fromOffsets: [grids.index(id: event.grid)!],
+          toOffset: grids.count
+        )
+
+        let grid = grids[id: event.grid]!
+        grid.set(
+          win: .init(
+            frame: .init(
+              origin: .init(
+                x: event.startcol,
+                y: event.startrow
+              ),
+              size: .init(
+                width: event.width,
+                height: event.height
+              )
+            )
+          )
+        )
+
+        // var viewModelGrid = viewModel.grids.remove(id: event.grid)!
+        // viewModelGrid.frame = grid.frame
+        // viewModel.grids[id: event.grid] = viewModelGrid
+        viewModel.grids[id: event.grid]!.frame = grid.frame
+        viewModel.grids.move(
+          fromOffsets: [viewModel.grids.index(id: event.grid)!],
+          toOffset: viewModel.grids.count
+        )
+        await sendEvent(.viewModelChanged)
+      }
+
+    case let .winClose(events):
+      for try await event in events {
+        let grid = grids[id: event.grid]!
+        grid.set(win: nil)
+
+        viewModel.grids[id: event.grid]!.frame = grid.frame
+        await sendEvent(.viewModelChanged)
       }
 
     default:
@@ -83,80 +191,22 @@ actor Store {
     }
   }
 
-  func stringAttributes(forHighlightWithID id: Int) async -> [NSAttributedString.Key: Any] {
-    await appearance.stringAttributes(forHighlightWithID: id)
-  }
-
-  private let appearance = Appearance()
+  private let appearance: Appearance
+  private let sendEvent: @Sendable (Event)
+    async -> Void
   private var grids = IdentifiedArrayOf<Grid>()
-  private let sendUpdate: @Sendable (Update) async -> Void
-}
+  private var outerSize = CGSize()
 
-// actor Store {
-//  init(rpcService: RPCProtocol) {
-//    self.rpcService = rpcService
-//  }
-//
-//  func run() async throws {
-//    try await withThrowingTaskGroup(of: Void.self) { group in
-//      group.addTask {
-////        for await notification in await self.rpcService.notifications() {
-////          print(notification)
-////        }
-//      }
-//
-//      group.addTask {
-////        try await self.rpcService.run()
-//      }
-//
-//      group.addTask {
-////        let response = await self.rpcService.call(
-////          method: "nvim_ui_attach",
-////          parameters: [80, 24, [("rgb", true)]]
-////        )
-////
-////        if !response.isSuccess {
-////          throw StoreError.nvimUIAttachFailed(payload: response.payload)
-////        }
-//      }
-//
-//      try await group.waitForAll()
-//    }
-//  }
-//
-//  func gridResize(id: Grid.ID, size: Size) {
-//    let grid = Grid(appearance: appearance, id: id, size: size)
-//    grids[id: id] = grid
-//  }
-//
-//  func gridLine(parametersBatches _: TreeDictionary<
-//    Grid.ID,
-//    [(origin: Point, data: [MessageValue])]
-//  >) async {
-////    await withTaskGroup(of: Void.self) { taskGroup in
-////      for (id, parametersBatch) in parametersBatches {
-////        guard let grid = self.grid(id: id) else {
-////          continue
-////        }
-////
-////        taskGroup.addTask {
-////          await grid.update(parametersBatch: parametersBatch)
-////        }
-////      }
-////
-////      for await () in taskGroup {}
-////    }
-//  }
-//
-//  private let rpcService: RPCProtocol
-//  private let appearance = Appearance()
-//  private var grids = IdentifiedArrayOf<Grid>()
-//
-//  private func grid(id: Grid.ID) -> Grid? {
-//    grids[id: id]
-//  }
-// }
-//
-// enum StoreError: Error {
-//  case nvimUIAttachFailed
-// }
+  private func updateOuterSize() {
+    guard let grid = grids[id: 1] else {
+      return
+    }
+
+    let outerSize = grid.frame.size
+    if outerSize != self.outerSize {
+      self.outerSize = outerSize
+
+      viewModel.outerSize = outerSize
+    }
+  }
+}

@@ -3,39 +3,49 @@
 import Cocoa
 import IdentifiedCollections
 import MessagePack
+import SwiftUI
 
-actor Appearance {
+@MainActor
+class Appearance {
   var cellSize: CGSize {
-    get async {
-      await font.cellSize
-    }
+    font.cellSize
   }
 
-  func stringAttributes(forHighlightWithID id: Int) async -> [NSAttributedString.Key: Any] {
-    await highlights.stringAttributes(id: id, font: font)
+  var defaultBackgroundColor: Color {
+    highlights.backgroundColor()
   }
 
-  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
-    await highlights.setDefaultColors(
+  func attributeContainer(
+    forHighlightWithID id: Int? = nil
+  ) -> AttributeContainer {
+    highlights.attributeContainer(
+      forHighlightWithID: id,
+      font: font
+    )
+  }
+
+  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
+    highlights.setDefaultColors(
       foregroundRGB: foregroundRGB,
       backgroundRGB: backgroundRGB,
       specialRGB: specialRGB
     )
   }
 
-  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) async {
-    await highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
+  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
+    highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
   }
 
   func highlight(withID id: Int) async -> Highlight? {
-    await highlights.highlight(withID: id)
+    highlights.highlight(withID: id)
   }
 
   private var font = Font()
   private var highlights = Highlights()
 }
 
-actor Font {
+@MainActor
+class Font {
   var regularNSFont = NSFont(name: "BlexMono Nerd Font", size: 13)!
 
   var boldNSFont: NSFont {
@@ -85,14 +95,15 @@ actor Font {
     }()
   }
 
-  func nsFont(highlight: Highlight? = nil) async -> NSFont {
-    guard let highlight
+  func nsFont(highlight: Highlight? = nil) -> NSFont {
+    guard
+      let highlight
     else {
       return regularNSFont
     }
 
-    let isBold = await highlight.isBold
-    let isItalic = await highlight.isItalic
+    let isBold = highlight.isBold
+    let isItalic = highlight.isItalic
 
     if isBold, isItalic {
       return boldItalicNSFont
@@ -111,14 +122,15 @@ actor Font {
   private var cachedCellSize: CGSize?
 }
 
-actor Highlights {
-  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) async {
-    await defaultForegroundColor.set(rgb: foregroundRGB)
-    await defaultBackgroundColor.set(rgb: backgroundRGB)
-    await defaultSpecialColor.set(rgb: specialRGB)
+@MainActor
+class Highlights {
+  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
+    defaultForegroundColor = .init(rgb: foregroundRGB)
+    defaultBackgroundColor = .init(rgb: backgroundRGB)
+    defaultSpecialColor = .init(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) async {
+  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
     let highlight = highlights[id: id] ?? {
       let new = Highlight(id: id)
       self.highlights.append(new)
@@ -126,36 +138,40 @@ actor Highlights {
       return new
     }()
 
-    await highlight.apply(nvimAttr: nvimAttr)
+    highlight.apply(nvimAttr: nvimAttr)
   }
 
-  func stringAttributes(
-    id: Int? = nil,
+  func attributeContainer(
+    forHighlightWithID id: Int? = nil,
     font: Font
-  ) async -> [NSAttributedString.Key: Any] {
+  ) -> AttributeContainer {
     let highlight = id.flatMap { self.highlight(withID: $0) }
 
-    return [
-      .font: await font.nsFont(highlight: highlight),
-      .foregroundColor: await foregroundColor(highlight: highlight).nsColor,
-      .backgroundColor: await backgroundColor(highlight: highlight).nsColor,
-      .underlineColor: await specialColor(highlight: highlight).nsColor,
-    ]
+    var container = AttributeContainer()
+    container.font = font.nsFont(highlight: highlight)
+    container.foregroundColor = foregroundColor(highlight: highlight)
+    container.backgroundColor = backgroundColor(highlight: highlight)
+
+//    let paragraphStyle = NSMutableParagraphStyle()
+//    paragraphStyle.lineSpacing = 0
+//    container.paragraphStyle = paragraphStyle
+
+    return container
   }
 
-  func foregroundColor(highlightID: Int? = nil) async -> Color {
+  func foregroundColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
-    return await foregroundColor(highlight: highlight)
+    return foregroundColor(highlight: highlight)
   }
 
-  func backgroundColor(highlightID: Int? = nil) async -> Color {
+  func backgroundColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
-    return await backgroundColor(highlight: highlight)
+    return backgroundColor(highlight: highlight)
   }
 
-  func specialColor(highlightID: Int? = nil) async -> Color {
+  func specialColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
-    return await specialColor(highlight: highlight)
+    return specialColor(highlight: highlight)
   }
 
   func highlight(withID id: Int) -> Highlight? {
@@ -176,20 +192,21 @@ actor Highlights {
   private var defaultSpecialColor = Color(rgb: 0xFF00FF)
   private var highlights = IdentifiedArrayOf<Highlight>()
 
-  private func foregroundColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.foregroundColor ?? defaultForegroundColor
+  private func foregroundColor(highlight: Highlight? = nil) -> Color {
+    highlight?.foregroundColor ?? defaultForegroundColor
   }
 
-  private func backgroundColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.backgroundColor ?? defaultBackgroundColor
+  private func backgroundColor(highlight: Highlight? = nil) -> Color {
+    highlight?.backgroundColor ?? defaultBackgroundColor
   }
 
-  private func specialColor(highlight: Highlight? = nil) async -> Color {
-    await highlight?.specialColor ?? defaultSpecialColor
+  private func specialColor(highlight: Highlight? = nil) -> Color {
+    highlight?.specialColor ?? defaultSpecialColor
   }
 }
 
-actor Highlight: Identifiable {
+@MainActor
+class Highlight: Identifiable {
   init(id: Int) {
     self.id = id
   }
@@ -242,27 +259,39 @@ actor Highlight: Identifiable {
   }
 }
 
-actor Color {
-  init(rgb: Int) {
-    self.rgb = rgb
+private extension Color {
+  init(rgb: Int, opacity: Double = 1) {
+    self.init(
+      red: Double((rgb & 0xFF0000) >> 16) / 255.0,
+      green: Double((rgb & 0xFF00) >> 8) / 255.0,
+      blue: Double(rgb & 0xFF) / 255.0,
+      opacity: opacity
+    )
   }
-
-  var rgb: Int
-
-  var nsColor: NSColor {
-    cachedNSColor ?? {
-      let new = NSColor(rgb: self.rgb)
-      self.cachedNSColor = new
-
-      return new
-    }()
-  }
-
-  func set(rgb: Int) {
-    self.rgb = rgb
-
-    cachedNSColor = nil
-  }
-
-  private var cachedNSColor: NSColor?
 }
+
+// @StoreActor
+// class Color {
+//  init(rgb: Int) {
+//    self.rgb = rgb
+//  }
+//
+//  var rgb: Int
+//
+//  var nsColor: NSColor {
+//    cachedNSColor ?? {
+//      let new = NSColor(rgb: self.rgb)
+//      self.cachedNSColor = new
+//
+//      return new
+//    }()
+//  }
+//
+//  func set(rgb: Int) {
+//    self.rgb = rgb
+//
+//    cachedNSColor = nil
+//  }
+//
+//  private var cachedNSColor: NSColor?
+// }

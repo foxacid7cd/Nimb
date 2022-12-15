@@ -1,7 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 private let DictionaryTypes: Set = ["Object", "Dictionary"]
-private let IntegerTypes: Set = ["Buffer", "Integer", "LuaRef", "Tabpage", "Window"]
+private let IntegerTypes: Set = ["Integer", "LuaRef"]
 
 public struct ValueType: Hashable {
   public enum SwiftType {

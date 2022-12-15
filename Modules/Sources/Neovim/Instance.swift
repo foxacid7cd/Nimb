@@ -5,6 +5,11 @@ import Foundation
 import MessagePack
 import OSLog
 
+@globalActor
+public actor InstanceProcessActor {
+  public static let shared = InstanceProcessActor()
+}
+
 public actor Instance {
   public init() {
     struct ProcessChannel: Channel, Sendable {
@@ -13,7 +18,7 @@ public actor Instance {
       }
 
       var errorMessages: AsyncStream<String> {
-        .init(bufferingPolicy: .unbounded) { continuation in
+        .init { continuation in
           Task {
             var accumulator = Data()
 
@@ -60,8 +65,8 @@ public actor Instance {
     let terminateCalls: AsyncStream<Void>
     (_terminate, terminateCalls) = AsyncChannel.pipe()
 
-    states = AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-      let task = Task { @MainActor in
+    states = .init { continuation in
+      let task = Task { @InstanceProcessActor in
         let process = Process()
         processChannel.bind(to: process)
 
@@ -73,7 +78,7 @@ public actor Instance {
         environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
         process.environment = environment
 
-        let terminateProcess = { @Sendable @MainActor in
+        let terminateProcess = { @Sendable @InstanceProcessActor in
           process.terminate()
         }
 
@@ -114,7 +119,7 @@ public actor Instance {
               }
             }
 
-            group.addTask { @MainActor in
+            group.addTask { @InstanceProcessActor in
               let processObjectIdentifier = ObjectIdentifier(process)
 
               let termination = NotificationCenter.default

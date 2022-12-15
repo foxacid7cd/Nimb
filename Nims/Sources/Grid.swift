@@ -5,117 +5,169 @@ import CasePaths
 import Cocoa
 import Library
 import MessagePack
+import SwiftUI
 
-private let HighlightIDAttributeName = NSAttributedString.Key("HighlightIDAttributeName")
-
-actor Grid: Identifiable {
-  init(id: ID, size: Size) {
+@MainActor
+class Grid: Identifiable {
+  init(id: ID, size: Size, cellSize: CGSize) {
     self.id = id
-    self.size = size
+    self.cellSize = cellSize
 
-    (sendUpdate, updates) = AsyncChannel.pipe(bufferingPolicy: .unbounded)
+    width = size.width
 
     rows = (0 ..< size.height)
       .map { _ in
-        Row(length: size.width)
+        let row = Row()
+        row.set(width: size.width)
+        return row
       }
+
+    updateFrames()
   }
 
-  enum Update {
-    case size
-    case row(origin: Point, width: Int)
+  struct Win {
+    var frame: Rectangle
   }
 
   let id: Int
-  let size: Size
-  let updates: AsyncStream<Update>
 
-  @MainActor
-  func update(origin: Point, data: [Value]) async {
-    let row = row(at: origin.y)
-    let width = await row.update(startIndex: origin.x, data: data)
-    await sendUpdate(.row(origin: origin, width: width))
-  }
+  private(set) var gridFrame = Rectangle()
+  private(set) var frame = CGRect()
 
-  @MainActor
-  func rowAttributedString(
-    startingAt origin: Point,
-    length: Int,
-    store: Store
-  ) async -> NSAttributedString {
-    let rowAttributedString = row(at: origin.y)
-      .mutableAttributedString
-      .attributedSubstring(
-        from: .init(
-          location: origin.x,
-          length: length
-        )
-      )
-      .mutableCopy() as! NSMutableAttributedString
+  private(set) var rows: [Row]
 
-    await withTaskGroup(of: Void.self) { group in
-      rowAttributedString
-        .enumerateAttribute(
-          HighlightIDAttributeName,
-          in: .init(location: 0, length: length)
-        ) { highlightID, range, _ in
-          guard let highlightiD = highlightID as? Int else {
-            return
-          }
+  func set(size: Size) {
+    let delta = size.height - rows.count
 
-          group.addTask { @MainActor in
-            let attributes = await store.stringAttributes(forHighlightWithID: highlightiD)
-            rowAttributedString.addAttributes(attributes, range: range)
-          }
-        }
+    if delta > 0 {
+      for _ in 0 ..< delta {
+        rows.append(Row())
+      }
 
-      await group.waitForAll()
+    } else {
+      rows = rows.dropLast(-delta)
     }
 
-    return rowAttributedString
+    for row in rows {
+      row.set(width: size.width)
+    }
+
+    width = size.width
+    updateFrames()
   }
 
-  @MainActor
-  private var rows: [Row]
-  private let sendUpdate: @Sendable (Update) async -> Void
+  func set(win: Win?) {
+    self.win = win
+    updateFrames()
+  }
 
-  @MainActor
-  private func row(at index: Int) -> Row {
-    rows[index]
+  func set(cellSize: CGSize) {
+    self.cellSize = cellSize
+    updateFrames()
+  }
+
+  func update(origin: Point, data: [Value]) -> Int {
+    rows[origin.y]
+      .update(
+        startIndex: origin.x,
+        data: data
+      )
+  }
+
+  func clear() {
+    for row in rows {
+      row.clear()
+    }
+  }
+
+  func rowAttributedString(
+    startingAt origin: Point,
+    width: Int
+  ) -> AttributedString {
+    let row = rows[origin.y]
+    let attributedString = row.attributedString
+
+    let startIndex = attributedString
+      .index(
+        attributedString.startIndex,
+        offsetByCharacters: origin.x
+      )
+    let endIndex = attributedString
+      .index(
+        startIndex,
+        offsetByCharacters: width
+      )
+    let substring = attributedString[startIndex ..< endIndex]
+
+    return AttributedString(substring)
+  }
+
+  private var width: Int
+  private var win: Win?
+  private var cellSize: CGSize
+
+  private func updateFrames() {
+    if let win {
+      gridFrame = win.frame
+
+    } else {
+      gridFrame = .init(
+        origin: .init(),
+        size: .init(
+          width: width,
+          height: rows.count
+        )
+      )
+    }
+
+    frame = gridFrame * cellSize
   }
 }
 
-actor Row {
-  init(length: Int) {
-    let attributedString = NSAttributedString(
-      string: "".padding(toLength: length, withPad: " ", startingAt: 0)
-    )
-    mutableAttributedString = attributedString.mutableCopy() as! NSMutableAttributedString
+@MainActor
+class Row {
+  private(set) var attributedString = AttributedString()
+
+  func set(width: Int) {
+    let delta = width - attributedString.characters.count
+
+    if delta > 0 {
+      let placeholderString = "".padding(toLength: delta, withPad: " ", startingAt: 0)
+      attributedString.append(AttributedString(placeholderString))
+
+    } else {
+      let startIndex = attributedString.index(
+        attributedString.endIndex,
+        offsetByCharacters: delta
+      )
+      let range = startIndex ..< attributedString.endIndex
+      attributedString.removeSubrange(range)
+    }
   }
 
-  @MainActor
-  let mutableAttributedString: NSMutableAttributedString
-
-  @MainActor
-  func update(startIndex: Int, data: [Value]) async -> Int {
-    mutableAttributedString.beginEditing()
-    defer {
-      self.mutableAttributedString.endEditing()
-    }
-
+  func update(startIndex: Int, data: [Value]) -> Int {
     var updatedCellsCount = 0
 
     var highlight: (id: Int, startIndex: Int)?
-    let accumulator = NSMutableString(capacity: mutableAttributedString.length)
+    var accumulator = ""
 
     func snapshotHighlightGroupIfValid() {
-      guard let highlight, accumulator.length > 0 else {
+      guard let highlight, !accumulator.isEmpty else {
         return
       }
 
-      let range = NSRange(location: highlight.startIndex, length: accumulator.length)
-      mutableAttributedString.replaceCharacters(in: range, with: accumulator as String)
-      mutableAttributedString.addAttribute(HighlightIDAttributeName, value: highlight.id, range: range)
+      let startIndex = attributedString.index(
+        attributedString.startIndex,
+        offsetByCharacters: highlight.startIndex
+      )
+      let endIndex = attributedString.index(
+        startIndex,
+        offsetByCharacters: accumulator.count
+      )
+      attributedString.replaceSubrange(
+        startIndex ..< endIndex,
+        with: AttributedString(accumulator)
+      )
     }
 
     for element in data {
@@ -144,12 +196,7 @@ actor Row {
             id: newHighlightID,
             startIndex: startIndex + updatedCellsCount
           )
-          accumulator.deleteCharacters(
-            in: .init(
-              location: 0,
-              length: accumulator.length
-            )
-          )
+          accumulator.removeAll(keepingCapacity: true)
         }
 
         if !casted.isEmpty {
@@ -169,5 +216,18 @@ actor Row {
     snapshotHighlightGroupIfValid()
 
     return updatedCellsCount
+  }
+
+  func clear() {
+    let placeholderString = "".padding(
+      toLength: attributedString.characters.count,
+      withPad: " ",
+      startingAt: 0
+    )
+
+    attributedString.replaceSubrange(
+      attributedString.startIndex ..< attributedString.endIndex,
+      with: AttributedString(placeholderString)
+    )
   }
 }

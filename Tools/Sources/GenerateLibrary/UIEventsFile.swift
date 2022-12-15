@@ -52,7 +52,7 @@ public struct UIEventsFile: GeneratableFile {
           Stmt("""
           guard case let .array(arrayValue) = value else {
             throw UIEventDecodingError.encodedValueIsNotArray(
-              description: .init(describing: value)
+              details: .init(describing: value)
             )
           }
           """)
@@ -98,7 +98,7 @@ public struct UIEventsFile: GeneratableFile {
                         Stmt("""
                         guard case let .array(arrayValue) = next else {
                           throw UIEventDecodingError.encodedValueIsNotArray(
-                            description: .init(describing: next)
+                            details: "UI event name (\(uiEvent.name)), value " + String(describing: next)
                           )
                         }
                         """)
@@ -121,7 +121,7 @@ public struct UIEventsFile: GeneratableFile {
                         Stmt("""
                         guard \(guardConditions) else {
                           throw UIEventDecodingError.invalidEncodedValue(
-                            description: .init(describing: arrayValue)
+                            details: "UI event name (\(uiEvent.name)), value " + String(describing: next)
                           )
                         }
                         """)

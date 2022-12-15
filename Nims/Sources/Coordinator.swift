@@ -1,10 +1,12 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
 import Cocoa
+import Combine
 import Neovim
 import OSLog
 
-actor Coordinator {
+@MainActor
+class Coordinator {
   init() {
     let store = Store()
     self.store = store
@@ -23,7 +25,7 @@ actor Coordinator {
       }
     }
 
-    states = .init(bufferingPolicy: .bufferingNewest(1)) { continuation in
+    states = .init { continuation in
       let task = Task {
         do {
           for try await state in await neovimInstance.states {
@@ -41,7 +43,14 @@ actor Coordinator {
                     return
                   }
 
-                  try await store.apply(uiEventBatch)
+                  do {
+                    try await store.apply(uiEventBatch)
+
+                  } catch {
+                    os_log("Failed applying UI event batch to Store with error (\(error)).")
+
+                    await neovimInstance.terminate()
+                  }
                 }
               }
 
@@ -63,41 +72,55 @@ actor Coordinator {
 
                   os_log("Neovim UI attached.")
 
-                  let mainViewController = await MainViewController(store: store)
+                  Task { @MainActor in
+                    let viewController = ViewController(viewModel: store.viewModel)
+                    let window = Window(contentViewController: viewController)
 
-                  let updatesTask = Task {
-                    for await update in store.updates {
-                      guard !Task.isCancelled else {
-                        return
+                    var keyPressesTask: Task<Void, Never>?
+                    var eventsTask: Task<Void, Never>?
+
+                    let cancel = {
+                      keyPressesTask?.cancel()
+                      eventsTask?.cancel()
+                    }
+
+                    await withTaskCancellationHandler {
+                      keyPressesTask = Task {
+                        for await keyPress in window.keyPresses {
+                          guard !Task.isCancelled else {
+                            return
+                          }
+
+                          try? await neovimInstance.api.nvimInput(
+                            keys: keyPress.makeNvimKeyCode()
+                          )
+                          .check()
+                        }
                       }
 
-                      await mainViewController.apply(update)
-                    }
-                  }
+                      eventsTask = Task {
+                        for await event in store.events {
+                          guard !Task.isCancelled else {
+                            return
+                          }
 
-                  let window = await Window(contentViewController: mainViewController)
+                          switch event {
+                          case .viewModelChanged:
+                            viewController.set(viewModel: store.viewModel)
 
-                  let keyPressesTask = Task {
-                    for await keyPress in await window.keyPresses {
-                      guard !Task.isCancelled else {
-                        return
+                            if !window.isMainWindow, store.viewModel.outerSize != .zero {
+                              window.makeMain()
+                              window.makeKeyAndOrderFront(nil)
+                            }
+                          }
+                        }
                       }
 
-                      try? await neovimInstance.api.nvimInput(
-                        keys: keyPress.makeNvimKeyCode()
-                      )
-                      .check()
+                    } onCancel: {
+                      cancel()
                     }
-                  }
 
-                  await window.makeMain()
-                  await window.makeKeyAndOrderFront(nil)
-
-                  continuation.yield(.running)
-
-                  await withTaskCancellationHandler {} onCancel: {
-                    updatesTask.cancel()
-                    keyPressesTask.cancel()
+                    continuation.yield(.running)
                   }
 
                 } catch {
