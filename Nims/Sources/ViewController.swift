@@ -52,6 +52,16 @@ class ViewController: NSViewController {
                   in: frame
                 )
               }
+
+              if let cursor = viewModel.cursor, cursor.gridID == grid.id {
+                var cursorGraphicsContext = graphicsContext
+                cursorGraphicsContext.blendMode = .difference
+                cursorGraphicsContext.fill(
+                  Path(cursor.rect),
+                  with: .color(Color.white),
+                  style: .init(antialiased: false)
+                )
+              }
             }
             .frame(width: grid.frame.width, height: grid.frame.height)
             .offset(x: grid.frame.origin.x, y: grid.frame.origin.y)

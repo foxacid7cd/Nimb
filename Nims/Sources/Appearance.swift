@@ -152,10 +152,6 @@ class Highlights {
     container.foregroundColor = foregroundColor(highlight: highlight)
     container.backgroundColor = backgroundColor(highlight: highlight)
 
-//    let paragraphStyle = NSMutableParagraphStyle()
-//    paragraphStyle.lineSpacing = 0
-//    container.paragraphStyle = paragraphStyle
-
     return container
   }
 
@@ -187,9 +183,9 @@ class Highlights {
     }()
   }
 
-  private var defaultForegroundColor = Color(rgb: 0x00FF00)
-  private var defaultBackgroundColor = Color(rgb: 0x000000)
-  private var defaultSpecialColor = Color(rgb: 0xFF00FF)
+  private var defaultForegroundColor = Color.white
+  private var defaultBackgroundColor = Color.black
+  private var defaultSpecialColor = Color.gray
   private var highlights = IdentifiedArrayOf<Highlight>()
 
   private func foregroundColor(highlight: Highlight? = nil) -> Color {

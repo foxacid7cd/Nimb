@@ -81,6 +81,36 @@ class Store {
 
           accum.state.gridsChangedInTransaction = true
 
+        case let .gridScroll(event):
+          let grid = accum.state.grids[id: event.grid]!
+
+          let frame = Rectangle(
+            origin: .init(
+              x: event.left,
+              y: event.top
+            ),
+            size: .init(
+              width: event.right - event.left,
+              height: event.bot - event.top
+            )
+          )
+          let delta = Point(x: event.cols, y: event.rows)
+          Task { @MainActor in
+            grid.offset(frame: frame, by: delta)
+          }
+
+          accum.state.gridsChangedInTransaction = true
+
+        case let .gridCursorGoto(event):
+          accum.state.cursor = (
+            gridID: event.grid,
+            position: Point(
+              x: event.col,
+              y: event.row
+            )
+          )
+          accum.effects.append(.cursorChanged)
+
         case let .gridClear(event):
           let grid = accum.state.grids[id: event.grid]!
 
@@ -181,6 +211,23 @@ class Store {
           case .defaultBackgroundColorChanged:
             accum!.viewModel.defaultBackgroundColor = state.defaultBackgroundColor
             accum!.effects.append(.canvasChanged)
+
+          case .cursorChanged:
+            if let cursor = state.cursor {
+              let rectangle = Rectangle(
+                origin: cursor.position,
+                size: .init(width: 1, height: 1)
+              )
+              accum!.viewModel.cursor = (
+                gridID: cursor.gridID,
+                rect: rectangle * state.cellSize
+              )
+
+            } else {
+              accum!.viewModel.cursor = nil
+            }
+
+            accum!.effects.append(.canvasChanged)
           }
         }
       }
@@ -222,137 +269,41 @@ class Store {
     case let .gridResize(events):
       for event in events {
         await sendAction(.gridResize(event))
-//        let size = Size(
-//          width: event.width,
-//          height: event.height
-//        )
-//
-//        if let grid = grids[id: event.grid] {
-//          grid.set(size: size)
-//
-//          viewModel.grids[id: event.grid]!.frame = grid.frame
-//
-//        } else {
-//          let newGrid = Grid(
-//            id: event.grid,
-//            size: size,
-//            cellSize: appearance.cellSize
-//          )
-//          grids[id: event.grid] = newGrid
-//
-//          viewModel.grids[id: event.grid] = .init(
-//            id: event.grid,
-//            frame: newGrid.frame,
-//            rows: (0 ..< size.height)
-//              .map { index in
-//                let row = newGrid.rows[index]
-//
-//                return .init(
-//                  id: index,
-//                  attributedString: row.attributedString
-//                    .settingAttributes(appearance.attributeContainer())
-//                )
-//              }
-//          )
-//        }
-//
-//        if event.grid == 1 {
-//          updateOuterSize()
-//        }
-//
-//        await sendEvent(.viewModelChanged)
       }
 
     case let .gridLine(events):
       for event in events {
         await sendAction(.gridLine(event))
-//        let grid = grids[id: event.grid]!
-//
-//        _ = grid.update(
-//          origin: .init(
-//            x: event.colStart,
-//            y: event.row
-//          ),
-//          data: event.data
-//        )
-//
-//        let attributedString = grid.rows[event.row]
-//          .attributedString
-//          .settingAttributes(appearance.attributeContainer())
-//
-//        viewModel.grids[id: event.grid]!.rows[event.row]
-//          .attributedString = attributedString
-//
-//        await sendEvent(.viewModelChanged)
+      }
+
+    case let .gridScroll(events):
+      for event in events {
+        await sendAction(.gridScroll(event))
+      }
+
+    case let .gridCursorGoto(events):
+      for event in events {
+        await sendAction(.gridCursorGoto(event))
       }
 
     case let .gridClear(events):
       for event in events {
         await sendAction(.gridClear(event))
-//        let grid = grids[id: event.grid]!
-//        grid.clear()
-//
-//        viewModel.grids[id: event.grid]!.rows = grid.rows
-//          .enumerated()
-//          .map { offset, row in
-//            .init(
-//              id: offset,
-//              attributedString: row.attributedString
-//                .settingAttributes(appearance.attributeContainer())
-//            )
-//          }
-//        await sendEvent(.viewModelChanged)
       }
 
     case let .gridDestroy(events):
       for event in events {
         await sendAction(.gridDestroy(event))
-//        _ = grids.remove(id: event.grid)!
-//
-//        _ = viewModel.grids.remove(id: event.grid)!
-//        await sendEvent(.viewModelChanged)
       }
 
     case let .winPos(events):
       for event in events {
         await sendAction(.winPos(event))
-//        grids.move(
-//          fromOffsets: [grids.index(id: event.grid)!],
-//          toOffset: grids.count
-//        )
-//
-//        let grid = grids[id: event.grid]!
-//        grid.set(
-//          win: .init(
-//            frame: .init(
-//              origin: .init(
-//                x: event.startcol,
-//                y: event.startrow
-//              ),
-//              size: .init(
-//                width: event.width,
-//                height: event.height
-//              )
-//            )
-//          )
-//        )
-//
-//        viewModel.grids[id: event.grid]!.frame = grid.frame
-//        viewModel.grids.move(
-//          fromOffsets: [viewModel.grids.index(id: event.grid)!],
-//          toOffset: viewModel.grids.count
-//        )
-//        await sendEvent(.viewModelChanged)
       }
 
     case let .winClose(events):
       for event in events {
         await sendAction(.winClose(event))
-//        let grid = grids[id: event.grid]!
-//        grid.set(win: nil)
-//
-//        viewModel.grids[id: event.grid]!.frame = grid.frame
-//        await sendEvent(.viewModelChanged)
       }
 
     case let .flush(events):
@@ -369,6 +320,8 @@ class Store {
     case initial
     case gridResize(UIEvents.GridResize)
     case gridLine(UIEvents.GridLine)
+    case gridScroll(UIEvents.GridScroll)
+    case gridCursorGoto(UIEvents.GridCursorGoto)
     case gridClear(UIEvents.GridClear)
     case gridDestroy(UIEvents.GridDestroy)
     case winPos(UIEvents.WinPos)

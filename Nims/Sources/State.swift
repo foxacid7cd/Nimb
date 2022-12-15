@@ -36,6 +36,31 @@ struct State {
         )
       }
     }
+
+    @MainActor
+    func offset(frame: Rectangle, by delta: Point) {
+      let isFullWidth = frame.size.width == size.width
+
+      guard isFullWidth else {
+        fatalError()
+      }
+
+      let sourceAttributedStrings = rows
+        .map(\.attributedString)
+
+      for yOffset in 0 ..< frame.size.height {
+        let sourceY = frame.origin.y + yOffset
+        let destinationY = sourceY - delta.y
+
+        guard destinationY >= 0, destinationY < rows.count else {
+          continue
+        }
+
+        rows[destinationY].set(
+          attributedString: sourceAttributedStrings[sourceY]
+        )
+      }
+    }
   }
 
   @MainActor
@@ -161,6 +186,10 @@ struct State {
       )
     }
 
+    func set(attributedString: AttributedString) {
+      self.attributedString = attributedString
+    }
+
     private let appearance: Appearance
   }
 
@@ -169,6 +198,7 @@ struct State {
   var grids = IdentifiedArrayOf<Grid>()
   var cachedOuterGridSize = Size()
   var gridsChangedInTransaction = false
+  var cursor: (gridID: Int, position: Point)?
 }
 
 enum StateEffect {
@@ -176,4 +206,5 @@ enum StateEffect {
   case outerGridSizeChanged
   case gridsChanged
   case defaultBackgroundColorChanged
+  case cursorChanged
 }

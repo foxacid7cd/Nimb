@@ -14,6 +14,7 @@ struct ViewModel {
   var grids: [Grid]
   var rowHeight: Double
   var defaultBackgroundColor: Color
+  var cursor: (gridID: Int, rect: CGRect)?
 }
 
 enum ViewModelEffect {
