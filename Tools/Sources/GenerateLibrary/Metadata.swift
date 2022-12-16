@@ -32,24 +32,24 @@ public struct Metadata: Hashable {
 
 public extension Metadata {
   init?(_ value: Value) {
-    guard let dictionary = value[/Value.dictionary] else {
+    guard let dictionary = (/Value.dictionary).extract(from: value) else {
       return nil
     }
 
-    if let functionsValue = dictionary["functions"]?[/Value.array] {
+    if let functionsValue = dictionary["functions"].flatMap(/Value.array) {
       functions = functionsValue
         .compactMap { functionValue -> Function? in
-          guard let dictionary = functionValue[/Value.dictionary] else {
+          guard let dictionary = (/Value.dictionary).extract(from: functionValue) else {
             return nil
           }
 
           guard
-            let parameterValues = dictionary["parameters"]?[/Value.array],
-            let name = dictionary["name"]?[/Value.string],
-            let returnType = dictionary["return_type"]?[/Value.string]
+            let parameterValues = dictionary["parameters"].flatMap(/Value.array),
+            let name = dictionary["name"].flatMap(/Value.string),
+            let returnType = dictionary["return_type"].flatMap(/Value.string)
               .map(ValueType.init(metadataString:)),
-            let method = dictionary["method"]?[/Value.boolean],
-            let since = dictionary["since"]?[/Value.integer]
+            let method = dictionary["method"].flatMap(/Value.boolean),
+            let since = dictionary["since"].flatMap(/Value.integer)
           else {
             return nil
           }
@@ -61,23 +61,23 @@ public extension Metadata {
             returnType: returnType,
             method: method,
             since: since,
-            deprecatedSince: dictionary["deprecated_since"]?[/Value.integer]
+            deprecatedSince: dictionary["deprecated_since"].flatMap(/Value.integer)
           )
         }
     } else {
       functions = []
     }
 
-    if let uiEventsValue = dictionary["ui_events"]?[/Value.array] {
+    if let uiEventsValue = dictionary["ui_events"].flatMap(/Value.array) {
       uiEvents = uiEventsValue
         .compactMap { uiEventValue -> UIEvent? in
-          guard let dictionary = uiEventValue[/Value.dictionary] else {
+          guard let dictionary = (/Value.dictionary).extract(from: uiEventValue) else {
             return nil
           }
 
           guard
-            let parameterValues = dictionary["parameters"]?[/Value.array],
-            let name = dictionary["name"]?[/Value.string]
+            let parameterValues = dictionary["parameters"].flatMap(/Value.array),
+            let name = dictionary["name"].flatMap(/Value.string)
           else {
             return nil
           }
@@ -97,10 +97,10 @@ public extension Metadata {
 private extension Metadata.Parameter {
   init?(_ value: Value) {
     guard
-      let arrayValue = value[/Value.array],
+      let arrayValue = (/Value.array).extract(from: value),
       arrayValue.count == 2,
-      let type = arrayValue[0][/Value.string],
-      let name = arrayValue[1][/Value.string]
+      let type = (/Value.string).extract(from: arrayValue[0]),
+      let name = (/Value.string).extract(from: arrayValue[1])
     else {
       return nil
     }

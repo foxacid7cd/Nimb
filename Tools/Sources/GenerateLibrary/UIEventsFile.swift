@@ -31,13 +31,20 @@ public struct UIEventsFile: GeneratableFile {
           ) {
             for parameter in uiEvent.parameters {
               let formattedName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-              "public var \(formattedName): \(parameter.type.swift.signature)" as VariableDecl
+              "public var \(raw: formattedName): \(raw: parameter.type.swift.signature)" as VariableDecl
             }
           }
         }
       }
 
       EnumDecl("public enum UIEventBatch") {
+        Decl("""
+        public enum DecodingFailed: Error {
+          case initial(rawEventBatch: Value, details: String)
+          case event(name: String, rawEvent: Value, details: String)
+        }
+        """)
+
         for uiEvent in metadata.uiEvents {
           let caseName = uiEvent.name
             .camelCasedAssumingSnakeCased(capitalized: false)
@@ -45,19 +52,19 @@ public struct UIEventsFile: GeneratableFile {
           let structName = uiEvent.name
             .camelCasedAssumingSnakeCased(capitalized: true)
 
-          EnumCaseDecl("case \(caseName)(LazyMapSequence<[Value], UIEvents.\(structName)>)")
+          EnumCaseDecl("case \(raw: caseName)(@Sendable () throws -> [UIEvents.\(raw: structName)])")
         }
 
-        InitializerDecl("init(_ value: Value)") {
+        InitializerDecl("init(_ value: Value) throws") {
           Stmt("""
-          guard case var .array(arrayValue) = value else {
-            fatalError("Failed decoding UI event, root value is not array")
+          guard case let .array(arrayValue) = value else {
+            throw DecodingFailed.initial(rawEventBatch: value, details: "Raw value is not an array")
           }
           """)
 
           Stmt("""
-          guard !arrayValue.isEmpty, case let .string(name) = arrayValue.removeFirst() else {
-            fatalError("Failed decoding UI event name.")
+          guard case let .string(name) = arrayValue.first else {
+            throw DecodingFailed.initial(rawEventBatch: value, details: "First array value element is not a name string or array is empty")
           }
           """)
 
@@ -68,76 +75,84 @@ public struct UIEventsFile: GeneratableFile {
             cases: .init {
               SwitchCaseList {
                 for uiEvent in metadata.uiEvents {
-                  SwitchCase("case \"\(uiEvent.name)\":") {
+                  SwitchCase("case \"\(raw: uiEvent.name)\":") {
                     let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
                     let structName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: true)
 
-                    let transformExpr = ClosureExpr(
+                    let decodeClosureExpr = ClosureExpr(
                       signature: ClosureSignature(
                         leadingTrivia: .space,
-                        input: .input(
-                          .init(
-                            parameterList: [
-                              .init(
-                                firstName: .init(.identifier("value"), presence: .present),
-                                colon: .colon,
-                                type: "Value" as Type
-                              ),
-                            ]
-                          )
-                        ),
+                        attributes: [.attribute(.init(attributeName: .identifier("Sendable")))],
+                        input: .input(.init()),
+                        throwsTok: .throwsKeyword(leadingTrivia: .space),
                         output: .init(
-                          returnType: "UIEvents.\(structName) " as Type
+                          returnType: "[UIEvents.\(raw: structName)] " as Type
                         )
                       ),
                       statements: .init {
-                        Stmt("""
-                        guard case let .array(arrayValue) = value else {
-                          fatalError("Failed decoding (UIEvents.\(structName)), value is not array.")
-                        }
+                        VariableDecl("""
+                        var accumulator = [UIEvents.\(raw: structName)]()
                         """)
-
-                        let parametersCountCondition =
-                          "arrayValue.count == \(uiEvent.parameters.count)"
-                        let parameterTypeConditions = uiEvent.parameters
-                          .enumerated()
-                          .map { index, parameter -> String in
-                            let name = parameter.name
-                              .camelCasedAssumingSnakeCased(capitalized: false)
-
-                            let wrappedName = parameter.type
-                              .wrapExprWithValueEncoder(String(name))
-
-                            return "case let \(wrappedName) = arrayValue[\(index)]"
+                        ForInStmt("for rawEvent in arrayValue.dropFirst()") {
+                          Stmt("""
+                          guard case let .array(rawParameters) = rawEvent else {
+                            throw DecodingFailed.event(name: \(
+                              literal: uiEvent
+                                .name
+                          ), rawEvent: rawEvent, details: "Raw value is not a parameters array.")
                           }
-                        let guardConditions = ([parametersCountCondition] + parameterTypeConditions)
-                          .joined(separator: ", ")
-                        Stmt("""
-                        guard \(guardConditions) else {
-                          fatalError("Failed decoding (UIEvents.\(structName)), invalid parameters.")
+                          """)
+
+                          let parametersCountCondition =
+                            "rawParameters.count == \(uiEvent.parameters.count)"
+                          let parameterTypeConditions = uiEvent.parameters
+                            .enumerated()
+                            .map { index, parameter -> String in
+                              let name = parameter.name
+                                .camelCasedAssumingSnakeCased(capitalized: false)
+
+                              let wrappedName = parameter.type
+                                .wrapWithValueEncoder(String(name))
+
+                              return "case let \(wrappedName) = rawParameters[\(index)]"
+                            }
+                          let guardConditions = ([parametersCountCondition] + parameterTypeConditions)
+                            .joined(separator: ", ")
+                          Stmt("""
+                          guard \(raw: guardConditions) else {
+                            throw DecodingFailed.event(name: \(
+                              literal: uiEvent
+                                .name
+                          ), rawEvent: rawEvent, details: "Invalid parameters count or type of individual parameter.")
+                          }
+                          """)
+
+                          let structArguments = uiEvent.parameters
+                            .map { parameter in
+                              let name = parameter.name
+                                .camelCasedAssumingSnakeCased(capitalized: false)
+                              return "\(name): \(name)"
+                            }
+                            .joined(separator: ", ")
+                          Expr("""
+                          accumulator.append(
+                            .init(\(raw: structArguments))
+                          )
+                          """)
                         }
-                        """)
-
-                        let structArguments = uiEvent.parameters
-                          .map { parameter in
-                            let name = parameter.name
-                              .camelCasedAssumingSnakeCased(capitalized: false)
-                            return "\(name): \(name)"
-                          }
-                          .joined(separator: ", ")
                         Stmt("""
-                        return .init(\(structArguments))
+                        return accumulator
                         """)
                       }
                     )
-                    VariableDecl(.let, name: "transform", initializer: .init(value: transformExpr))
-                    "self = .\(caseName)(arrayValue.lazy.map(transform))" as Expr
+                    VariableDecl(.let, name: "decode", initializer: .init(value: decodeClosureExpr))
+                    "self = .\(raw: caseName)(decode)" as Expr
                   }
                 }
 
                 SwitchCase("default:") {
-                  Expr("""
-                  fatalError("Failed decoding UI event, unknown name " + name)
+                  Stmt("""
+                  throw DecodingFailed.initial(rawEventBatch: value, details: "Unknown name " + name)
                   """)
                 }
               }

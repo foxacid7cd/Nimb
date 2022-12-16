@@ -39,10 +39,10 @@ public struct APIFunctionsFile: GeneratableFile {
                 let name = parameter.name
                   .camelCasedAssumingSnakeCased(capitalized: false)
 
-                return parameter.type.wrapExprWithValueEncoder(String(name))
+                return parameter.type.wrapWithValueEncoder(String(name))
               }
               .joined(separator: ", ")
-            "return try await call(method: \"\(function.name)\", withParameters: [\(parametersInArray)], transformSuccess: { \(function.returnType.wrapWithValueDecoder("$0")) })" as Stmt
+            "return try await call(method: \(literal: function.name), withParameters: [\(raw: parametersInArray)], transformSuccess: { \(raw: function.returnType.wrapWithValueDecoder("$0")) })" as Stmt
           }
           .withUnexpectedBeforeAttributes(.init {
             if function.deprecatedSince != nil {

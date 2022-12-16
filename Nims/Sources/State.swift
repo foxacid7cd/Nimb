@@ -12,33 +12,58 @@ struct State {
   }
 
   struct Grid: Identifiable {
+    init(id: Int) {
+      self.id = id
+    }
+
     enum Win {
       case pos(frame: Rectangle)
+      case floatingPos(
+        anchor: String,
+        anchorGridID: Int,
+        anchorPosition: CGPoint
+      )
     }
 
     let id: Int
-    var size = Size()
-    var rows = [Row]()
-    var win: Win?
-    private(set) var frame = Rectangle()
+    private(set) var size = Size()
+    private(set) var rows = [Row]()
+    private(set) var win: Win?
+    private(set) var gridFrame = CGRect()
+    private(set) var anchorGridID: Int?
 
-    mutating func updateFrame() {
-      if let win {
-        switch win {
-        case let .pos(frame):
-          self.frame = frame
+    mutating func set(size: Size) {
+      let delta = size.height - self.size.height
+
+      if delta > 0 {
+        for _ in 0 ..< delta {
+          rows.append(.init())
         }
 
-      } else {
-        frame = .init(
-          origin: .init(),
-          size: size
+      } else if delta < 0 {
+        rows.removeSubrange(
+          (rows.count + delta) ..< rows.count
         )
       }
+
+      for index in rows.indices {
+        rows[index].set(width: size.width)
+      }
+
+      self.size = size
+      updateFrame()
     }
 
-    @MainActor
-    func offset(frame: Rectangle, by delta: Point) {
+    mutating func set(win: Win?) {
+      self.win = win
+      updateFrame()
+    }
+
+    mutating func updateLine(origin: Point, data: [Value]) -> Int {
+      rows[origin.y].update(startIndex: origin.x, data: data)
+    }
+
+    mutating func offset(frame: Rectangle, by delta: Point) {
       let isFullWidth = frame.size.width == size.width
 
       guard isFullWidth else {
@@ -61,29 +86,86 @@ struct State {
         )
       }
     }
-  }
 
-  @MainActor
-  class Row {
-    nonisolated init(appearance: Appearance) {
-      self.appearance = appearance
+    mutating func clear() {
+      for index in rows.indices {
+        rows[index].clear()
+      }
     }
 
+    private mutating func updateFrame() {
+      if let win {
+        switch win {
+        case let .pos(frame):
+          anchorGridID = nil
+          gridFrame = .init(
+            origin: .init(
+              x: Double(frame.origin.x),
+              y: Double(frame.origin.y)
+            ),
+            size: .init(
+              width: Double(frame.size.width),
+              height: Double(frame.size.height)
+            )
+          )
+
+        case let .floatingPos(anchor, anchorGridID, anchorPosition):
+          self.anchorGridID = anchorGridID
+
+          let offset: CGPoint
+          switch anchor {
+          case "NW":
+            offset = .init()
+
+          case "NE":
+            offset = .init(x: -size.width, y: 0)
+
+          case "SW":
+            offset = .init(x: 0, y: -size.height)
+
+          case "SE":
+            offset = .init(x: -size.width, y: -size.height)
+
+          default:
+            fatalError("Unknown anchor value (\(anchor))")
+          }
+
+          gridFrame = .init(
+            origin: .init(
+              x: anchorPosition.x - offset.x,
+              y: anchorPosition.y - offset.y
+            ),
+            size: .init(
+              width: Double(size.width),
+              height: Double(size.height)
+            )
+          )
+        }
+
+      } else {
+        anchorGridID = nil
+        gridFrame = .init(
+          origin: .init(),
+          size: .init(
+            width: Double(size.width),
+            height: Double(size.height)
+          )
+        )
+      }
+    }
+  }
+
+  struct Row {
     private(set) var attributedString = AttributedString()
 
-    func set(width: Int) {
+    mutating func set(width: Int) {
       let delta = width - attributedString.characters.count
 
       if delta > 0 {
-        let placeholderString = "".padding(toLength: delta, withPad: " ", startingAt: 0)
-        attributedString.append(
-          AttributedString(
-            placeholderString,
-            attributes: appearance.attributeContainer()
-          )
-        )
+        let placeholder = "".padding(toLength: delta, withPad: " ", startingAt: 0)
+        attributedString.append(AttributedString(placeholder))
 
-      } else {
+      } else if delta < 0 {
         let startIndex = attributedString.index(
           attributedString.endIndex,
           offsetByCharacters: delta
@@ -93,7 +175,7 @@ struct State {
       }
     }
 
-    func update(startIndex: Int, data: [Value]) -> Int {
+    mutating func update(startIndex: Int, data: [Value]) -> Int {
       var updatedCellsCount = 0
 
       var highlight: (id: Int, startIndex: Int)?
@@ -114,32 +196,26 @@ struct State {
         )
         attributedString.replaceSubrange(
           startIndex ..< endIndex,
-          with: AttributedString(
-            accumulator,
-            attributes: appearance.attributeContainer(
-              forHighlightWithID: highlight.id
-            )
-          )
+          with: AttributedString(accumulator)
         )
       }
 
       for element in data {
-        guard var casted = element[/Value.array]
+        guard
+          let array = (/Value.array).extract(from: element),
+          !array.isEmpty,
+          let text = (/Value.string).extract(from: array[0])
         else {
-          fatalError("Not an array")
-        }
-
-        guard let text = casted.removeFirst()[/Value.string] else {
-          fatalError("Not a text")
+          fatalError()
         }
 
         var repeatCount = 1
 
-        if !casted.isEmpty {
+        if array.count > 1 {
           guard
-            let newHighlightID = casted.removeFirst()[/Value.integer]
+            let newHighlightID = (/Value.integer).extract(from: array[1])
           else {
-            fatalError("Not an highlight id")
+            fatalError()
           }
 
           if highlight?.id != newHighlightID {
@@ -152,18 +228,20 @@ struct State {
             accumulator.removeAll(keepingCapacity: true)
           }
 
-          if !casted.isEmpty {
-            guard let newRepeatCount = casted.removeFirst()[/Value.integer]
+          if array.count > 2 {
+            guard
+              let newRepeatCount = (/Value.integer).extract(from: array[2])
             else {
-              fatalError("Not a repeat count")
+              fatalError()
             }
+
             repeatCount = newRepeatCount
           }
         }
 
         for _ in 0 ..< repeatCount {
           accumulator.append(text)
-          updatedCellsCount += 1
+          updatedCellsCount += text.count
         }
       }
       snapshotHighlightGroupIfValid()
@@ -171,34 +249,78 @@ struct State {
       return updatedCellsCount
     }
 
-    func clear() {
-      let placeholderString = "".padding(
+    mutating func clear() {
+      let placeholder = "".padding(
         toLength: attributedString.characters.count,
         withPad: " ",
         startingAt: 0
       )
       attributedString.replaceSubrange(
         attributedString.startIndex ..< attributedString.endIndex,
-        with: AttributedString(
-          placeholderString,
-          attributes: appearance.attributeContainer()
-        )
+        with: AttributedString(placeholder)
       )
     }
 
-    func set(attributedString: AttributedString) {
+    mutating func set(attributedString: AttributedString) {
+      if attributedString.characters.count != self.attributedString.characters.count {
+        preconditionFailure()
+      }
+
       self.attributedString = attributedString
     }
-
-    private let appearance: Appearance
   }
 
   var cellSize: CGSize
   var defaultBackgroundColor: Color
   var grids = IdentifiedArrayOf<Grid>()
-  var cachedOuterGridSize = Size()
+  var outerGridSize = Size()
   var gridsChangedInTransaction = false
   var cursor: (gridID: Int, position: Point)?
+  var defaultAttributesContainer = AttributeContainer()
+  let font = NSFont(name: "MesloLGS NF", size: 13)!
+
+  mutating func renewArrayPosition(forGridWithID id: Int) {
+    let oldIndex = grids.index(id: id)!
+    let grid = grids[oldIndex]
+
+    var newIndex = oldIndex
+    if let win = grid.win {
+      switch win {
+      case .pos:
+        for (offset, element) in grids.enumerated() {
+          guard offset < grids.count - 1 else {
+            newIndex = offset + 1
+            break
+          }
+
+          if let win = element.win, (/State.Grid.Win.floatingPos).extract(from: win) != nil {
+            newIndex = offset + 1
+            break
+          }
+        }
+
+      case .floatingPos:
+        newIndex = grids.count
+      }
+
+    } else {
+      for (offset, element) in grids.enumerated() {
+        guard offset < grids.count - 1 else {
+          newIndex = offset + 1
+          break
+        }
+
+        if element.win != nil {
+          newIndex = offset + 1
+          break
+        }
+      }
+    }
+
+    if newIndex != oldIndex {
+      grids.move(fromOffsets: [oldIndex], toOffset: newIndex)
+    }
+  }
 }
 
 enum StateEffect {

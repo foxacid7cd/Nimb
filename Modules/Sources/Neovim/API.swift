@@ -21,7 +21,7 @@ public actor API {
         switch notification.method {
         case "redraw":
           for parameter in notification.parameters {
-            let batch = UIEventBatch(parameter)
+            let batch = try UIEventBatch(parameter)
             await sendUIEventBatch(batch)
           }
 

@@ -6,8 +6,9 @@ import SwiftUI
 struct ViewModel {
   struct Grid: Identifiable {
     let id: Int
+    let index: Int
     var frame: CGRect
-    var rows: [State.Row]
+    var rowAttributedStrings: [AttributedString]
   }
 
   var outerSize: CGSize
@@ -19,6 +20,5 @@ struct ViewModel {
 
 enum ViewModelEffect {
   case initial
-  case outerSizeChanged
   case canvasChanged
 }

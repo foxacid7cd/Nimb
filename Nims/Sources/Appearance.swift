@@ -3,19 +3,34 @@
 import Cocoa
 import IdentifiedCollections
 import MessagePack
+import Overture
 import SwiftUI
 
-@MainActor
-class Appearance {
+struct Appearance {
   var cellSize: CGSize {
-    font.cellSize
+    let nsFont = NSFont(name: "MesloLGS NF", size: 13)!
+    let string = "A"
+    var character = string.utf16.first!
+
+    var glyph = CGGlyph()
+    var advance = CGSize()
+    CTFontGetGlyphsForCharacters(nsFont, &character, &glyph, 1)
+    CTFontGetAdvancesForGlyphs(nsFont, .horizontal, &glyph, &advance, 1)
+    let width = advance.width
+
+    let ascent = CTFontGetAscent(nsFont)
+    let descent = CTFontGetDescent(nsFont)
+    let leading = CTFontGetLeading(nsFont)
+    let height = ascent + descent + leading
+
+    return CGSize(width: width, height: height)
   }
 
-  var defaultBackgroundColor: Color {
+  mutating func defaultBackgroundColor() -> Color {
     highlights.backgroundColor()
   }
 
-  func attributeContainer(
+  mutating func attributeContainer(
     forHighlightWithID id: Int? = nil
   ) -> AttributeContainer {
     highlights.attributeContainer(
@@ -24,7 +39,7 @@ class Appearance {
     )
   }
 
-  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
+  mutating func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
     highlights.setDefaultColors(
       foregroundRGB: foregroundRGB,
       backgroundRGB: backgroundRGB,
@@ -32,155 +47,160 @@ class Appearance {
     )
   }
 
-  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
+  mutating func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
     highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
   }
 
-  func highlight(withID id: Int) async -> Highlight? {
+  mutating func highlight(withID id: Int) async -> Highlight? {
     highlights.highlight(withID: id)
   }
 
-  private var font = Font()
+  private var font = Font.custom("MesloLGS NF", size: 13)
   private var highlights = Highlights()
 }
 
-@MainActor
-class Font {
-  var regularNSFont = NSFont(name: "BlexMono Nerd Font", size: 13)!
+// @MainActor
+// class Font {
+//  var regularNSFont = NSFont(name: "MesloLGS NF", size: 13)!
+//
+//  var boldNSFont: NSFont {
+//    cachedBoldNSFont ?? {
+//      let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .boldFontMask)
+//      self.cachedBoldNSFont = new
+//      return new
+//    }()
+//  }
+//
+//  var italicNSFont: NSFont {
+//    cachedItalicNSFont ?? {
+//      let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .italicFontMask)
+//      self.cachedItalicNSFont = new
+//      return new
+//    }()
+//  }
+//
+//  var boldItalicNSFont: NSFont {
+//    cachedBoldItalicNSFont ?? {
+//      let new = NSFontManager.shared.convert(self.boldNSFont, toHaveTrait: .italicFontMask)
+//      self.cachedBoldItalicNSFont = new
+//      return new
+//    }()
+//  }
+//
+//  var cellSize: CGSize {
+//    cachedCellSize ?? {
+//      let string = "A"
+//      var character = string.utf16.first!
+//
+//      var glyph = CGGlyph()
+//      var advance = CGSize()
+//      CTFontGetGlyphsForCharacters(self.regularNSFont, &character, &glyph, 1)
+//      CTFontGetAdvancesForGlyphs(self.regularNSFont, .horizontal, &glyph, &advance, 1)
+//      let width = advance.width
+//
+//      let ascent = CTFontGetAscent(self.regularNSFont)
+//      let descent = CTFontGetDescent(self.regularNSFont)
+//      let leading = CTFontGetLeading(self.regularNSFont)
+//      let height = ascent + descent + leading
+//
+//      let cellSize = CGSize(width: width, height: height)
+//      self.cachedCellSize = cellSize
+//
+//      return cellSize
+//    }()
+//  }
+//
+//  func nsFont(highlight: Highlight? = nil) -> NSFont {
+//    guard
+//      let highlight
+//    else {
+//      return regularNSFont
+//    }
+//
+//    let isBold = highlight.isBold
+//    let isItalic = highlight.isItalic
+//
+//    if isBold, isItalic {
+//      return boldItalicNSFont
+//
+//    } else if isBold {
+//      return boldNSFont
+//
+//    } else if isItalic {
+//      return italicNSFont
+//
+//    } else {
+//      return regularNSFont
+//    }
+//  }
+//
+//  private var cachedBoldNSFont: NSFont?
+//  private var cachedItalicNSFont: NSFont?
+//  private var cachedBoldItalicNSFont: NSFont?
+//  private var cachedCellSize: CGSize?
+// }
 
-  var boldNSFont: NSFont {
-    cachedBoldNSFont ?? {
-      let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .boldFontMask)
-      self.cachedBoldNSFont = new
-      return new
-    }()
-  }
-
-  var italicNSFont: NSFont {
-    cachedItalicNSFont ?? {
-      let new = NSFontManager.shared.convert(self.regularNSFont, toHaveTrait: .italicFontMask)
-      self.cachedItalicNSFont = new
-      return new
-    }()
-  }
-
-  var boldItalicNSFont: NSFont {
-    cachedBoldItalicNSFont ?? {
-      let new = NSFontManager.shared.convert(self.boldNSFont, toHaveTrait: .italicFontMask)
-      self.cachedBoldItalicNSFont = new
-      return new
-    }()
-  }
-
-  var cellSize: CGSize {
-    cachedCellSize ?? {
-      let string = "A"
-      var character = string.utf16.first!
-
-      var glyph = CGGlyph()
-      var advance = CGSize()
-      CTFontGetGlyphsForCharacters(self.regularNSFont, &character, &glyph, 1)
-      CTFontGetAdvancesForGlyphs(self.regularNSFont, .horizontal, &glyph, &advance, 1)
-      let width = advance.width
-
-      let ascent = CTFontGetAscent(self.regularNSFont)
-      let descent = CTFontGetDescent(self.regularNSFont)
-      let leading = CTFontGetLeading(self.regularNSFont)
-      let height = ascent + descent + leading
-
-      let cellSize = CGSize(width: width, height: height)
-      self.cachedCellSize = cellSize
-
-      return cellSize
-    }()
-  }
-
-  func nsFont(highlight: Highlight? = nil) -> NSFont {
-    guard
-      let highlight
-    else {
-      return regularNSFont
-    }
-
-    let isBold = highlight.isBold
-    let isItalic = highlight.isItalic
-
-    if isBold, isItalic {
-      return boldItalicNSFont
-    } else if isBold {
-      return boldNSFont
-    } else if isItalic {
-      return italicNSFont
-    } else {
-      return regularNSFont
-    }
-  }
-
-  private var cachedBoldNSFont: NSFont?
-  private var cachedItalicNSFont: NSFont?
-  private var cachedBoldItalicNSFont: NSFont?
-  private var cachedCellSize: CGSize?
-}
-
-@MainActor
-class Highlights {
-  func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
+struct Highlights {
+  mutating func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
     defaultForegroundColor = .init(rgb: foregroundRGB)
     defaultBackgroundColor = .init(rgb: backgroundRGB)
     defaultSpecialColor = .init(rgb: specialRGB)
   }
 
-  func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
-    let highlight = highlights[id: id] ?? {
-      let new = Highlight(id: id)
-      self.highlights.append(new)
+  mutating func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
+    update(&highlights[id: id]) { highlight in
+      if highlight == nil {
+        highlight = .init(id: id)
+      }
 
-      return new
-    }()
-
-    highlight.apply(nvimAttr: nvimAttr)
+      highlight!.apply(nvimAttr: nvimAttr)
+    }
   }
 
-  func attributeContainer(
+  mutating func attributeContainer(
     forHighlightWithID id: Int? = nil,
     font: Font
   ) -> AttributeContainer {
     let highlight = id.flatMap { self.highlight(withID: $0) }
 
     var container = AttributeContainer()
-    container.font = font.nsFont(highlight: highlight)
+    container.font = font
     container.foregroundColor = foregroundColor(highlight: highlight)
     container.backgroundColor = backgroundColor(highlight: highlight)
+    container.ligature = 2
 
     return container
   }
 
-  func foregroundColor(highlightID: Int? = nil) -> Color {
+  mutating func foregroundColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return foregroundColor(highlight: highlight)
   }
 
-  func backgroundColor(highlightID: Int? = nil) -> Color {
+  mutating func backgroundColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return backgroundColor(highlight: highlight)
   }
 
-  func specialColor(highlightID: Int? = nil) -> Color {
+  mutating func specialColor(highlightID: Int? = nil) -> Color {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return specialColor(highlight: highlight)
   }
 
-  func highlight(withID id: Int) -> Highlight? {
+  mutating func highlight(withID id: Int) -> Highlight? {
     if id == 0 {
       return nil
     }
 
-    return highlights[id: id] ?? {
+    if let index = highlights.index(id: id) {
+      return highlights[index]
+
+    } else {
       let new = Highlight(id: id)
-      self.highlights.append(new)
+      highlights[id: id] = new
 
       return new
-    }()
+    }
   }
 
   private var defaultForegroundColor = Color.white
@@ -201,22 +221,21 @@ class Highlights {
   }
 }
 
-@MainActor
-class Highlight: Identifiable {
+struct Highlight: Identifiable {
   init(id: Int) {
     self.id = id
   }
 
   let id: Int
 
-  var isBold = false
-  var isItalic = false
+  private(set) var isBold = false
+  private(set) var isItalic = false
 
-  var foregroundColor: Color?
-  var backgroundColor: Color?
-  var specialColor: Color?
+  private(set) var foregroundColor: Color?
+  private(set) var backgroundColor: Color?
+  private(set) var specialColor: Color?
 
-  func apply(nvimAttr: [Value: Value]) {
+  mutating func apply(nvimAttr: [Value: Value]) {
     for (key, value) in nvimAttr {
       guard case let .string(key) = key else {
         continue
@@ -265,29 +284,3 @@ private extension Color {
     )
   }
 }
-
-// @StoreActor
-// class Color {
-//  init(rgb: Int) {
-//    self.rgb = rgb
-//  }
-//
-//  var rgb: Int
-//
-//  var nsColor: NSColor {
-//    cachedNSColor ?? {
-//      let new = NSColor(rgb: self.rgb)
-//      self.cachedNSColor = new
-//
-//      return new
-//    }()
-//  }
-//
-//  func set(rgb: Int) {
-//    self.rgb = rgb
-//
-//    cachedNSColor = nil
-//  }
-//
-//  private var cachedNSColor: NSColor?
-// }

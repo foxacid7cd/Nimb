@@ -1,6 +1,5 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
-import CasePaths
 import Foundation
 import msgpack
 
@@ -118,9 +117,5 @@ public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLit
     default:
       preconditionFailure("Not implemented behavior for type \(object.type)")
     }
-  }
-
-  public subscript<SubValue>(casePath: CasePath<Value, SubValue>) -> SubValue? {
-    casePath.extract(from: self)
   }
 }

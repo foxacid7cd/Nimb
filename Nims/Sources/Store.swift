@@ -9,226 +9,302 @@ import Neovim
 import Overture
 import SwiftUI
 
-@MainActor
 class Store {
   init() {
-    let appearance = Appearance()
-    self.appearance = appearance
+    var appearance = Appearance()
+
+    let initialCellSize = appearance.cellSize
+    let initialDefaultBackgroundColor = appearance.defaultBackgroundColor()
 
     let actions: AsyncStream<Action>
     (sendAction, actions) = AsyncChannel.pipe()
 
-    let initialState = State(
-      cellSize: appearance.cellSize,
-      defaultBackgroundColor: appearance.defaultBackgroundColor
-    )
-    let initialStateAccumulator: (state: State, effects: [StateEffect]) = (
-      state: initialState,
-      effects: .init()
-    )
+    let initialStateAccumulator: (state: State, effects: Set<StateEffect>)? = nil
 
     let states = actions
-      .reductions(into: initialStateAccumulator) { accum, action in
-        accum.effects.removeAll(keepingCapacity: true)
+      .reductions(into: initialStateAccumulator) { @MainActor accum, action in
+        accum?.effects.removeAll(keepingCapacity: true)
 
         switch action {
         case .initial:
-          accum.effects.append(.initial)
-
-        case let .gridResize(event):
-          let size = Size(
-            width: event.width,
-            height: event.height
+          let initialState = State(
+            cellSize: initialCellSize,
+            defaultBackgroundColor: initialDefaultBackgroundColor
+          )
+          accum = (
+            state: initialState,
+            effects: [.initial]
           )
 
-          update(&accum.state.grids[id: event.grid]) { grid in
-            if grid == nil {
-              grid = .init(id: event.grid)
+        case let .uiEventBatch(batch):
+          switch batch {
+          case let .gridResize(decode):
+            for event in try decode() {
+              let size = Size(
+                width: event.width,
+                height: event.height
+              )
+
+              update(&accum!.state.grids[id: event.grid]) { grid in
+                if grid == nil {
+                  grid = .init(id: event.grid)
+                }
+
+                grid!.set(size: size)
+              }
+
+              if event.grid == 1, let grid = accum!.state.grids[id: event.grid] {
+                accum!.state.outerGridSize = grid.size
+                accum!.effects.insert(.outerGridSizeChanged)
+              }
+
+              accum!.state.renewArrayPosition(forGridWithID: event.grid)
+              accum!.state.gridsChangedInTransaction = true
             }
 
-            grid!.size = size
-
-            for y in 0 ..< size.height {
-              if y >= grid!.rows.count {
-                grid!.rows.append(
-                  .init(appearance: appearance)
+          case let .gridLine(decode):
+            for event in try decode() {
+              _ = accum!.state.grids[id: event.grid]!
+                .updateLine(
+                  origin: .init(
+                    x: event.colStart,
+                    y: event.row
+                  ),
+                  data: event.data
                 )
-              }
+            }
 
-              let row = grid!.rows[y]
-              Task { @MainActor in
-                row.set(width: size.width)
+            accum!.state.gridsChangedInTransaction = true
+
+          case let .gridScroll(decode):
+            for event in try decode() {
+              let frame = Rectangle(
+                origin: .init(
+                  x: event.left,
+                  y: event.top
+                ),
+                size: .init(
+                  width: event.right - event.left,
+                  height: event.bot - event.top
+                )
+              )
+              let delta = Point(x: event.cols, y: event.rows)
+
+              update(&accum!.state.grids[id: event.grid]!) { grid in
+                grid.offset(frame: frame, by: delta)
               }
             }
 
-            grid!.updateFrame()
-          }
+            accum!.state.gridsChangedInTransaction = true
 
-          if event.grid == 1, let grid = accum.state.grids[id: event.grid] {
-            accum.state.cachedOuterGridSize = grid.size
-            accum.effects.append(.outerGridSizeChanged)
-          }
-
-          accum.state.gridsChangedInTransaction = true
-
-        case let .gridLine(event):
-          let grid = accum.state.grids[id: event.grid]!
-
-          let row = grid.rows[event.row]
-          Task { @MainActor in
-            _ = row.update(startIndex: event.colStart, data: event.data)
-          }
-
-          accum.state.gridsChangedInTransaction = true
-
-        case let .gridScroll(event):
-          let grid = accum.state.grids[id: event.grid]!
-
-          let frame = Rectangle(
-            origin: .init(
-              x: event.left,
-              y: event.top
-            ),
-            size: .init(
-              width: event.right - event.left,
-              height: event.bot - event.top
-            )
-          )
-          let delta = Point(x: event.cols, y: event.rows)
-          Task { @MainActor in
-            grid.offset(frame: frame, by: delta)
-          }
-
-          accum.state.gridsChangedInTransaction = true
-
-        case let .gridCursorGoto(event):
-          accum.state.cursor = (
-            gridID: event.grid,
-            position: Point(
-              x: event.col,
-              y: event.row
-            )
-          )
-          accum.effects.append(.cursorChanged)
-
-        case let .gridClear(event):
-          let grid = accum.state.grids[id: event.grid]!
-
-          Task { @MainActor in
-            for row in grid.rows {
-              row.clear()
+          case let .gridCursorGoto(decode):
+            for event in try decode() {
+              accum!.state.cursor = (
+                gridID: event.grid,
+                position: Point(
+                  x: event.col,
+                  y: event.row
+                )
+              )
             }
-          }
 
-          accum.state.gridsChangedInTransaction = true
+            accum!.effects.insert(.cursorChanged)
 
-        case let .gridDestroy(event):
-          _ = accum.state.grids.remove(id: event.grid)!
+          case let .gridClear(decode):
+            for event in try decode() {
+              accum!.state.grids[id: event.grid]!.clear()
+            }
 
-          accum.state.gridsChangedInTransaction = true
+            accum!.state.gridsChangedInTransaction = true
 
-        case let .winPos(event):
-          accum.state.grids.move(
-            fromOffsets: [accum.state.grids.index(id: event.grid)!],
-            toOffset: accum.state.grids.count
-          )
+          case let .gridDestroy(decode):
+            for event in try decode() {
+              _ = accum!.state.grids.remove(id: event.grid)!
+            }
 
-          let frame = Rectangle(
-            origin: .init(x: event.startcol, y: event.startrow),
-            size: .init(width: event.width, height: event.height)
-          )
+            accum!.state.gridsChangedInTransaction = true
 
-          update(&accum.state.grids[id: event.grid]) { grid in
-            grid!.win = .pos(frame: frame)
-            grid!.updateFrame()
-          }
+          case let .winPos(decode):
+            for event in try decode() {
+              let frame = Rectangle(
+                origin: .init(x: event.startcol, y: event.startrow),
+                size: .init(width: event.width, height: event.height)
+              )
 
-          accum.state.gridsChangedInTransaction = true
+              update(&accum!.state.grids[id: event.grid]!) { grid in
+                grid.set(win: .pos(frame: frame))
+              }
 
-        case let .winClose(event):
-          update(&accum.state.grids[id: event.grid]) { grid in
-            grid!.win = nil
-            grid!.updateFrame()
-          }
+              accum!.state.renewArrayPosition(forGridWithID: event.grid)
+            }
 
-          accum.state.gridsChangedInTransaction = true
+            accum!.state.gridsChangedInTransaction = true
 
-        case let .defaultBackgroudColor(color):
-          accum.state.defaultBackgroundColor = color
-          accum.effects.append(.defaultBackgroundColorChanged)
+          case let .winFloatPos(decode):
+            for event in try decode() {
+              update(&accum!.state.grids[id: event.grid]!) { grid in
+                let win = State.Grid.Win.floatingPos(
+                  anchor: event.anchor,
+                  anchorGridID: event.anchorGrid,
+                  anchorPosition: .init(
+                    x: event.anchorCol,
+                    y: event.anchorRow
+                  )
+                )
+                grid.set(win: win)
+              }
 
-        case .flush:
-          if accum.state.gridsChangedInTransaction {
-            accum.state.gridsChangedInTransaction = false
+              accum!.state.renewArrayPosition(forGridWithID: event.grid)
+            }
 
-            accum.effects.append(.gridsChanged)
+            accum!.state.gridsChangedInTransaction = true
+
+          case let .winClose(decode):
+            for event in try decode() {
+              update(&accum!.state.grids[id: event.grid]!) { grid in
+                grid.set(win: nil)
+              }
+
+              accum!.state.renewArrayPosition(forGridWithID: event.grid)
+            }
+
+            accum!.state.gridsChangedInTransaction = true
+
+//          case let .defaultColorsSet(decode):
+//            for event in try decode() {
+//              appearance.setDefaultColors(
+//                foregroundRGB: event.rgbFg,
+//                backgroundRGB: event.rgbBg,
+//                specialRGB: event.rgbSp
+//              )
+//            }
+//
+//            accum!.effects.insert(.defaultBackgroundColorChanged)
+
+//          case let .hlAttrDefine(decode):
+//            let events = try decode()
+//
+//            for event in events {
+//              appearance.apply(
+//                nvimAttr: event.rgbAttrs,
+//                forHighlightWithID: event.id
+//              )
+//            }
+
+          case let .flush(decode):
+            for _ in try decode() {
+              if accum!.state.gridsChangedInTransaction {
+                accum!.state.gridsChangedInTransaction = false
+
+                accum!.effects.insert(.gridsChanged)
+              }
+            }
+
+          default:
+            break
           }
         }
       }
+      .map { $0! }
       .filter { !$0.effects.isEmpty }
 
-    let initialViewModelAccumulator: (viewModel: ViewModel, effects: [ViewModelEffect])? = nil
+    let initialViewModelAccumulator: (viewModel: ViewModel, effects: Set<ViewModelEffect>)? = nil
 
     viewModels = states
       .reductions(into: initialViewModelAccumulator) { accum, value in
         let (state, stateEffects) = value
 
-        if accum == nil {
+        accum?.effects.removeAll(keepingCapacity: true)
+
+        if stateEffects.contains(.initial) {
           let initialViewModel = ViewModel(
-            outerSize: state.cachedOuterGridSize * state.cellSize,
+            outerSize: .zero,
             grids: .init(),
             rowHeight: state.cellSize.height,
             defaultBackgroundColor: state.defaultBackgroundColor
           )
           accum = (
             viewModel: initialViewModel,
-            effects: .init()
+            effects: [.initial] as Set<ViewModelEffect>
           )
         }
 
-        accum!.effects.removeAll(keepingCapacity: true)
+        if stateEffects.contains(.outerGridSizeChanged) {
+          accum!.viewModel.outerSize = state.outerGridSize * state.cellSize
+          accum!.effects.insert(.canvasChanged)
+        }
 
-        for stateEffect in stateEffects {
-          switch stateEffect {
-          case .initial:
-            accum!.effects.append(.initial)
+        if stateEffects.contains(.gridsChanged) {
+          accum!.viewModel.grids = state.grids
+            .enumerated()
+            .map { index, grid in
+              let gridFrameOffset: CGPoint
+              if let anchorGridID = grid.anchorGridID {
+                gridFrameOffset = state.grids[id: anchorGridID]!.gridFrame.origin
 
-          case .outerGridSizeChanged:
-            accum!.viewModel.outerSize = state.cachedOuterGridSize * state.cellSize
-            accum!.effects.append(.outerSizeChanged)
-
-          case .gridsChanged:
-            accum!.viewModel.grids = state.grids
-              .map { grid in
-                .init(
-                  id: grid.id,
-                  frame: grid.frame * state.cellSize,
-                  rows: grid.rows
-                )
+              } else {
+                gridFrameOffset = .init()
               }
-            accum!.effects.append(.canvasChanged)
 
-          case .defaultBackgroundColorChanged:
-            accum!.viewModel.defaultBackgroundColor = state.defaultBackgroundColor
-            accum!.effects.append(.canvasChanged)
-
-          case .cursorChanged:
-            if let cursor = state.cursor {
-              let rectangle = Rectangle(
-                origin: cursor.position,
-                size: .init(width: 1, height: 1)
-              )
-              accum!.viewModel.cursor = (
-                gridID: cursor.gridID,
-                rect: rectangle * state.cellSize
+              let gridFrame = CGRect(
+                origin: .init(
+                  x: grid.gridFrame.origin.x - gridFrameOffset.x,
+                  y: grid.gridFrame.origin.y - gridFrameOffset.y
+                ),
+                size: grid.gridFrame.size
               )
 
-            } else {
-              accum!.viewModel.cursor = nil
+              let cellSize = state.cellSize
+              let frame = CGRect(
+                origin: .init(
+                  x: gridFrame.origin.x * cellSize.width,
+                  y: gridFrame.origin.y * cellSize.height
+                ),
+                size: .init(
+                  width: gridFrame.size.width * cellSize.width,
+                  height: gridFrame.size.height * cellSize.height
+                )
+              )
+
+              return .init(
+                id: grid.id,
+                index: index,
+                frame: frame,
+                rowAttributedStrings: grid.rows
+                  .map { row in
+                    var attributedString = row.attributedString
+                    attributedString.font = state.font
+
+                    return attributedString
+                  }
+              )
             }
 
-            accum!.effects.append(.canvasChanged)
+          accum!.effects.insert(.canvasChanged)
+        }
+
+        if stateEffects.contains(.defaultBackgroundColorChanged) {
+          accum!.viewModel.defaultBackgroundColor = state.defaultBackgroundColor
+
+          accum!.effects.insert(.canvasChanged)
+        }
+
+        if stateEffects.contains(.cursorChanged) {
+          if let cursor = state.cursor {
+            let rectangle = Rectangle(
+              origin: cursor.position,
+              size: .init(width: 1, height: 1)
+            )
+            accum!.viewModel.cursor = (
+              gridID: cursor.gridID,
+              rect: rectangle * state.cellSize
+            )
+
+          } else {
+            accum!.viewModel.cursor = nil
           }
+
+          accum!.effects.insert(.canvasChanged)
         }
       }
       .map { $0! }
@@ -240,97 +316,17 @@ class Store {
     }
   }
 
-  let viewModels: AsyncStream<(viewModel: ViewModel, effects: [ViewModelEffect])>
+  let viewModels: AsyncStream<(viewModel: ViewModel, effects: Set<ViewModelEffect>)>
 
-  func apply(_ uiEventBatch: UIEventBatch) async throws {
-    switch uiEventBatch {
-    case let .defaultColorsSet(events):
-      for event in events {
-        appearance.setDefaultColors(
-          foregroundRGB: event.rgbFg,
-          backgroundRGB: event.rgbBg,
-          specialRGB: event.rgbSp
-        )
-        await sendAction(
-          .defaultBackgroudColor(
-            appearance.defaultBackgroundColor
-          )
-        )
-      }
-
-    case let .hlAttrDefine(events):
-      for event in events {
-        appearance.apply(
-          nvimAttr: event.rgbAttrs,
-          forHighlightWithID: event.id
-        )
-      }
-
-    case let .gridResize(events):
-      for event in events {
-        await sendAction(.gridResize(event))
-      }
-
-    case let .gridLine(events):
-      for event in events {
-        await sendAction(.gridLine(event))
-      }
-
-    case let .gridScroll(events):
-      for event in events {
-        await sendAction(.gridScroll(event))
-      }
-
-    case let .gridCursorGoto(events):
-      for event in events {
-        await sendAction(.gridCursorGoto(event))
-      }
-
-    case let .gridClear(events):
-      for event in events {
-        await sendAction(.gridClear(event))
-      }
-
-    case let .gridDestroy(events):
-      for event in events {
-        await sendAction(.gridDestroy(event))
-      }
-
-    case let .winPos(events):
-      for event in events {
-        await sendAction(.winPos(event))
-      }
-
-    case let .winClose(events):
-      for event in events {
-        await sendAction(.winClose(event))
-      }
-
-    case let .flush(events):
-      for _ in events {
-        await sendAction(.flush)
-      }
-
-    default:
-      break
-    }
+  func apply(_ uiEventBatch: UIEventBatch) async {
+    await sendAction(.uiEventBatch(uiEventBatch))
   }
 
   private enum Action {
     case initial
-    case gridResize(UIEvents.GridResize)
-    case gridLine(UIEvents.GridLine)
-    case gridScroll(UIEvents.GridScroll)
-    case gridCursorGoto(UIEvents.GridCursorGoto)
-    case gridClear(UIEvents.GridClear)
-    case gridDestroy(UIEvents.GridDestroy)
-    case winPos(UIEvents.WinPos)
-    case winClose(UIEvents.WinClose)
-    case defaultBackgroudColor(Color)
-    case flush
+    case uiEventBatch(UIEventBatch)
   }
 
-  private let appearance: Appearance
   private let sendAction: @Sendable (Action)
     async -> Void
 }

@@ -16,18 +16,16 @@ class ViewController: NSViewController {
   }
 
   struct View: SwiftUI.View {
-    init(_ viewModel: ViewModel?) {
-      self.viewModel = viewModel
-    }
+    let viewModel: ViewModel?
 
     var body: some SwiftUI.View {
       if let viewModel {
         ZStack(alignment: .topLeading) {
           ForEach(viewModel.grids) { grid in
-            Canvas { graphicsContext, size in
+            Canvas(opaque: false, rendersAsynchronously: true) { graphicsContext, size in
               let rect = CGRect(
                 origin: .init(),
-                size: size
+                size: grid.frame.size
               )
               graphicsContext.fill(
                 Path(rect),
@@ -35,7 +33,7 @@ class ViewController: NSViewController {
                 style: .init(antialiased: false)
               )
 
-              for (y, row) in grid.rows.enumerated() {
+              for (y, attributedString) in grid.rowAttributedStrings.enumerated() {
                 let frame = CGRect(
                   origin: .init(
                     x: 0,
@@ -48,15 +46,14 @@ class ViewController: NSViewController {
                 )
 
                 graphicsContext.draw(
-                  Text(row.attributedString),
+                  Text(attributedString),
                   in: frame
                 )
               }
 
               if let cursor = viewModel.cursor, cursor.gridID == grid.id {
-                var cursorGraphicsContext = graphicsContext
-                cursorGraphicsContext.blendMode = .difference
-                cursorGraphicsContext.fill(
+                graphicsContext.blendMode = .difference
+                graphicsContext.fill(
                   Path(cursor.rect),
                   with: .color(Color.white),
                   style: .init(antialiased: false)
@@ -65,6 +62,7 @@ class ViewController: NSViewController {
             }
             .frame(width: grid.frame.width, height: grid.frame.height)
             .offset(x: grid.frame.origin.x, y: grid.frame.origin.y)
+            .zIndex(Double(grid.index))
           }
         }
         .frame(
@@ -77,30 +75,18 @@ class ViewController: NSViewController {
       }
     }
 
-    private var viewModel: ViewModel?
+    private let font = NSFont(name: "MesloLGS NF", size: 13)!
   }
 
   override func loadView() {
     view = NSHostingView<View>(
-      rootView: .init(nil)
+      rootView:
+      .init(viewModel: nil)
     )
   }
 
-  func render(viewModel: ViewModel, effects: [ViewModelEffect]) {
-    hostingView.rootView = .init(viewModel)
-
-    for effect in effects {
-      switch effect {
-      case .initial:
-        break
-
-      case .outerSizeChanged:
-        preferredContentSize = viewModel.outerSize
-
-      case .canvasChanged:
-        break
-      }
-    }
+  func render(viewModel: ViewModel, effects: Set<ViewModelEffect>) {
+    hostingView.rootView = .init(viewModel: viewModel)
   }
 
   private var hostingView: NSHostingView<View> {

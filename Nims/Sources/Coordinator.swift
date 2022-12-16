@@ -43,26 +43,19 @@ class Coordinator {
                     return
                   }
 
-                  do {
-                    try await store.apply(uiEventBatch)
-
-                  } catch {
-                    os_log("Failed applying UI event batch to Store with error (\(error))")
-
-                    await neovimInstance.terminate()
-                  }
+                  await store.apply(uiEventBatch)
                 }
               }
 
               await withTaskCancellationHandler {
                 do {
                   try await neovimInstance.api.nvimUIAttach(
-                    width: 100,
-                    height: 36,
+                    width: 130,
+                    height: 40,
                     options: [
                       "ext_multigrid": true,
                       "ext_hlstate": true,
-                      "ext_cmdline": true,
+                      "ext_cmdline": false,
                       "ext_messages": true,
                       "ext_popupmenu": true,
                       "ext_tabline": true,
@@ -94,19 +87,6 @@ class Coordinator {
                           viewModel: viewModel,
                           effects: effects
                         )
-
-                        for effect in effects {
-                          switch effect {
-                          case .outerSizeChanged:
-                            if !window.isMainWindow {
-                              window.makeMain()
-                              window.makeKeyAndOrderFront(nil)
-                            }
-
-                          default:
-                            break
-                          }
-                        }
                       }
                     }
 
@@ -122,6 +102,9 @@ class Coordinator {
                         .check()
                       }
                     }
+
+                    window.makeMain()
+                    window.makeKeyAndOrderFront(nil)
 
                     continuation.yield(.running)
 
@@ -146,8 +129,6 @@ class Coordinator {
         } catch {
           os_log("Neovim instance finished running with error (\(error))")
         }
-
-        continuation.finish()
       }
 
       continuation.onTermination = { termination in

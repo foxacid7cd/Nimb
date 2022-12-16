@@ -46,6 +46,15 @@
       }
     },
     {
+      "identity" : "swift-overture",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-overture",
+      "state" : {
+        "branch" : "main",
+        "revision" : "360494ae38d3cd9ab23a808807f8df7f675c119c"
+      }
+    },
+    {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-syntax",

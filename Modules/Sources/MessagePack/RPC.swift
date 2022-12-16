@@ -35,9 +35,9 @@ public actor RPC {
 
         for message in try await unpacker.unpack(data) {
           guard
-            let array = message[/Value.array],
-            let firstValue = array.first,
-            let integer = firstValue[/Value.integer],
+            let array = (/Value.array).extract(from: message),
+            !array.isEmpty,
+            let integer = (/Value.integer).extract(from: array[0]),
             let messageType = MessageType(rawValue: integer)
           else {
             throw ParsingFailed.messageType(rawMessage: "\(message)")
@@ -50,7 +50,7 @@ public actor RPC {
           case .response:
             guard
               array.count == 4,
-              let id = array[1][/Value.integer]
+              let id = (/Value.integer).extract(from: array[1])
             else {
               throw ParsingFailed.response(rawResponse: "\(array)")
             }
@@ -68,8 +68,8 @@ public actor RPC {
           case .notification:
             guard
               array.count == 3,
-              let method = array[1][/Value.string],
-              let parameters = array[2][/Value.array]
+              let method = (/Value.string).extract(from: array[1]),
+              let parameters = (/Value.array).extract(from: array[2])
             else {
               throw ParsingFailed.notification(rawNotification: "\(array)")
             }

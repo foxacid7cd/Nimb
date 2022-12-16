@@ -4,7 +4,7 @@ private let DictionaryTypes: Set = ["Object", "Dictionary"]
 private let IntegerTypes: Set = ["Integer", "LuaRef"]
 
 public struct ValueType: Hashable {
-  public enum SwiftType {
+  public enum SwiftType: String {
     case integer
     case float
     case string
@@ -69,59 +69,23 @@ public struct ValueType: Hashable {
     }
   }
 
-  public func wrapExprWithValueEncoder(_ expr: String) -> String {
+  public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
-    case .integer:
-      return ".integer(\(expr))"
-
-    case .float:
-      return ".float(\(expr))"
-
-    case .string:
-      return ".string(\(expr))"
-
-    case .boolean:
-      return ".boolean(\(expr))"
-
-    case .dictionary:
-      return ".dictionary(\(expr))"
-
-    case .array:
-      return ".array(\(expr))"
-
-    case .binary:
-      return ".binary(\(expr))"
-
     case .value:
       return expr
+
+    default:
+      return ".\(swift.rawValue)(\(expr))"
     }
   }
 
   public func wrapWithValueDecoder(_ expr: String) -> String {
     switch swift {
-    case .integer:
-      return "\(expr)[/Value.integer]"
-
-    case .float:
-      return "\(expr)[/Value.float]"
-
-    case .string:
-      return "\(expr)[/Value.string]"
-
-    case .boolean:
-      return "\(expr)[/Value.boolean]"
-
-    case .dictionary:
-      return "\(expr)[/Value.dictionary]"
-
-    case .array:
-      return "\(expr)[/Value.array]"
-
-    case .binary:
-      return "\(expr)[/Value.binary]"
-
     case .value:
       return expr
+
+    default:
+      return "(/Value.\(swift.rawValue)).extract(from: \(expr))"
     }
   }
 }
