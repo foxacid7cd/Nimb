@@ -26,17 +26,10 @@ struct Appearance {
     return CGSize(width: width, height: height)
   }
 
-  mutating func defaultBackgroundColor() -> Color {
-    highlights.backgroundColor()
-  }
+  mutating func defaultBackgroundColor() -> HighlightColor { highlights.backgroundColor() }
 
-  mutating func attributeContainer(
-    forHighlightWithID id: Int? = nil
-  ) -> AttributeContainer {
-    highlights.attributeContainer(
-      forHighlightWithID: id,
-      font: font
-    )
+  mutating func attributeContainer(forHighlightWithID id: Int? = nil) -> AttributeContainer {
+    highlights.attributeContainer(forHighlightWithID: id, font: font)
   }
 
   mutating func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
@@ -51,9 +44,7 @@ struct Appearance {
     highlights.apply(nvimAttr: nvimAttr, forHighlightWithID: id)
   }
 
-  mutating func highlight(withID id: Int) async -> Highlight? {
-    highlights.highlight(withID: id)
-  }
+  mutating func highlight(withID id: Int) async -> Highlight? { highlights.highlight(withID: id) }
 
   private var font = Font.custom("MesloLGS NF", size: 13)
   private var highlights = Highlights()
@@ -148,10 +139,7 @@ struct Highlights {
   }
 
   mutating func apply(nvimAttr: [Value: Value], forHighlightWithID id: Int) {
-    update(&highlights[id: id]) { highlight in
-      if highlight == nil {
-        highlight = .init(id: id)
-      }
+    update(&highlights[id: id]) { highlight in if highlight == nil { highlight = .init(id: id) }
 
       highlight!.apply(nvimAttr: nvimAttr)
     }
@@ -165,32 +153,30 @@ struct Highlights {
 
     var container = AttributeContainer()
     container.font = font
-    container.foregroundColor = foregroundColor(highlight: highlight)
-    container.backgroundColor = backgroundColor(highlight: highlight)
+    container.foregroundColor = foregroundColor(highlight: highlight).color
+    container.backgroundColor = backgroundColor(highlight: highlight).color
     container.ligature = 2
 
     return container
   }
 
-  mutating func foregroundColor(highlightID: Int? = nil) -> Color {
+  mutating func foregroundColor(highlightID: Int? = nil) -> HighlightColor {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return foregroundColor(highlight: highlight)
   }
 
-  mutating func backgroundColor(highlightID: Int? = nil) -> Color {
+  mutating func backgroundColor(highlightID: Int? = nil) -> HighlightColor {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return backgroundColor(highlight: highlight)
   }
 
-  mutating func specialColor(highlightID: Int? = nil) -> Color {
+  mutating func specialColor(highlightID: Int? = nil) -> HighlightColor {
     let highlight = highlightID.flatMap { self.highlight(withID: $0) }
     return specialColor(highlight: highlight)
   }
 
   mutating func highlight(withID id: Int) -> Highlight? {
-    if id == 0 {
-      return nil
-    }
+    if id == 0 { return nil }
 
     if let index = highlights.index(id: id) {
       return highlights[index]
@@ -203,80 +189,81 @@ struct Highlights {
     }
   }
 
-  private var defaultForegroundColor = Color.white
-  private var defaultBackgroundColor = Color.black
-  private var defaultSpecialColor = Color.gray
+  private var defaultForegroundColor = HighlightColor(rgb: 0xFFFFFF)
+  private var defaultBackgroundColor = HighlightColor(rgb: 0x000000)
+  private var defaultSpecialColor = HighlightColor(rgb: 0xFF00FF)
   private var highlights = IdentifiedArrayOf<Highlight>()
 
-  private func foregroundColor(highlight: Highlight? = nil) -> Color {
+  private func foregroundColor(highlight: Highlight? = nil) -> HighlightColor {
     highlight?.foregroundColor ?? defaultForegroundColor
   }
 
-  private func backgroundColor(highlight: Highlight? = nil) -> Color {
+  private func backgroundColor(highlight: Highlight? = nil) -> HighlightColor {
     highlight?.backgroundColor ?? defaultBackgroundColor
   }
 
-  private func specialColor(highlight: Highlight? = nil) -> Color {
+  private func specialColor(highlight: Highlight? = nil) -> HighlightColor {
     highlight?.specialColor ?? defaultSpecialColor
   }
 }
 
 struct Highlight: Identifiable {
-  init(id: Int) {
-    self.id = id
-  }
+  init(id: Int) { self.id = id }
 
   let id: Int
 
   private(set) var isBold = false
   private(set) var isItalic = false
 
-  private(set) var foregroundColor: Color?
-  private(set) var backgroundColor: Color?
-  private(set) var specialColor: Color?
+  private(set) var foregroundColor: HighlightColor?
+  private(set) var backgroundColor: HighlightColor?
+  private(set) var specialColor: HighlightColor?
 
   mutating func apply(nvimAttr: [Value: Value]) {
     for (key, value) in nvimAttr {
-      guard case let .string(key) = key else {
-        continue
-      }
+      guard case let .string(key) = key else { continue }
 
       switch key {
       case "foreground":
-        if case let .integer(integer) = value {
-          foregroundColor = .init(rgb: integer)
-        }
+        if case let .integer(integer) = value { foregroundColor = .init(rgb: integer) }
 
       case "background":
-        if case let .integer(integer) = value {
-          backgroundColor = .init(rgb: integer)
-        }
+        if case let .integer(integer) = value { backgroundColor = .init(rgb: integer) }
 
-      case "special":
-        if case let .integer(integer) = value {
-          specialColor = .init(rgb: integer)
-        }
+      case "special": if case let .integer(integer) = value { specialColor = .init(rgb: integer) }
 
-      case "bold":
-        if case let .boolean(boolean) = value {
-          isBold = boolean
-        }
+      case "bold": if case let .boolean(boolean) = value { isBold = boolean }
 
-      case "italic":
-        if case let .boolean(boolean) = value {
-          isItalic = boolean
-        }
+      case "italic": if case let .boolean(boolean) = value { isItalic = boolean }
 
-      default:
-        break
+      default: break
       }
     }
   }
 }
 
-private extension Color {
-  init(rgb: Int, opacity: Double = 1) {
-    self.init(
+struct HighlightColor: Hashable, Sendable {
+  init(
+    rgb: Int,
+    opacity: Double = 1
+  ) {
+    self.rgb = rgb
+    self.opacity = opacity
+  }
+
+  ///  init(rgb: Int, opacity: Double = 1) {
+  ///    self.init(
+  ///      red: Double((rgb & 0xFF0000) >> 16) / 255.0,
+  ///      green: Double((rgb & 0xFF00) >> 8) / 255.0,
+  ///      blue: Double(rgb & 0xFF) / 255.0,
+  ///      opacity: opacity
+  ///    )
+  ///  }
+  var rgb: Int
+  var opacity: Double
+
+  var color: Color {
+    .init(
       red: Double((rgb & 0xFF0000) >> 16) / 255.0,
       green: Double((rgb & 0xFF00) >> 8) / 255.0,
       blue: Double(rgb & 0xFF) / 255.0,

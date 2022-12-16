@@ -8,13 +8,11 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-@main
-struct Generate: AsyncParsableCommand {
+@main struct Generate: AsyncParsableCommand {
   @Argument(
     help: "The path to the destination directory where the source files are to be generated",
     completion: .directory
-  )
-  var generatedPath: String
+  ) var generatedPath: String
 
   func run() async throws {
     let dataBatches = FileHandle.standardInput.dataBatches
@@ -26,6 +24,4 @@ struct Generate: AsyncParsableCommand {
   }
 }
 
-enum GenerateError: Error {
-  case invalidStandardInputData
-}
+enum GenerateError: Error { case invalidStandardInputData }

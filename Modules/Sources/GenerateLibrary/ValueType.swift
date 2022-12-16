@@ -1,7 +1,7 @@
 // Copyright © 2022 foxacid7cd. All rights reserved.
 
-private let DictionaryTypes: Set = ["Object", "Dictionary"]
-private let IntegerTypes: Set = ["Integer", "LuaRef"]
+private let dictionaryTypes: Set = ["Object", "Dictionary"]
+private let integerTypes: Set = ["Integer", "LuaRef"]
 
 public struct ValueType: Hashable {
   public enum SwiftType: String {
@@ -16,29 +16,21 @@ public struct ValueType: Hashable {
 
     public var signature: String {
       switch self {
-      case .integer:
-        return "Int"
+      case .integer: return "Int"
 
-      case .float:
-        return "Double"
+      case .float: return "Double"
 
-      case .string:
-        return "String"
+      case .string: return "String"
 
-      case .boolean:
-        return "Bool"
+      case .boolean: return "Bool"
 
-      case .dictionary:
-        return "[Value: Value]"
+      case .dictionary: return "[Value: Value]"
 
-      case .array:
-        return "[Value]"
+      case .array: return "[Value]"
 
-      case .binary:
-        return "Data"
+      case .binary: return "Data"
 
-      case .value:
-        return "Value"
+      case .value: return "Value"
       }
     }
   }
@@ -49,10 +41,10 @@ public struct ValueType: Hashable {
     if metadataString.starts(with: "Array") {
       return .array
 
-    } else if DictionaryTypes.contains(metadataString) {
+    } else if dictionaryTypes.contains(metadataString) {
       return .dictionary
 
-    } else if IntegerTypes.contains(metadataString) {
+    } else if integerTypes.contains(metadataString) {
       return .integer
 
     } else if metadataString == "Float" {
@@ -71,21 +63,17 @@ public struct ValueType: Hashable {
 
   public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
-    case .value:
-      return expr
+    case .value: return expr
 
-    default:
-      return ".\(swift.rawValue)(\(expr))"
+    default: return ".\(swift.rawValue)(\(expr))"
     }
   }
 
   public func wrapWithValueDecoder(_ expr: String) -> String {
     switch swift {
-    case .value:
-      return expr
+    case .value: return expr
 
-    default:
-      return "(/Value.\(swift.rawValue)).extract(from: \(expr))"
+    default: return "(/Value.\(swift.rawValue)).extract(from: \(expr))"
     }
   }
 }

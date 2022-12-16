@@ -4,26 +4,17 @@ import AsyncAlgorithms
 import Cocoa
 import Library
 
-@MainActor
-class Window: NSWindow {
-  override var canBecomeMain: Bool {
-    true
-  }
+@MainActor class Window: NSWindow {
+  override var canBecomeMain: Bool { true }
 
-  override var canBecomeKey: Bool {
-    true
-  }
+  override var canBecomeKey: Bool { true }
 
-  var keyPresses: AsyncStream<KeyPress> {
-    .init(self.keyPressChannel)
-  }
+  var keyPresses: AsyncStream<KeyPress> { .init(self.keyPressChannel) }
 
   override func keyDown(with event: NSEvent) {
     let keyPress = KeyPress(event: event)
 
-    Task {
-      await self.keyPressChannel.send(keyPress)
-    }
+    Task { await self.keyPressChannel.send(keyPress) }
   }
 
   private let keyPressChannel = AsyncChannel<KeyPress>()

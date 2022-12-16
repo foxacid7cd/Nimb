@@ -5,7 +5,9 @@ import CasePaths
 import MessagePack
 
 public actor API {
-  public init(_ channel: some Channel) {
+  public init(
+    _ channel: some Channel
+  ) {
     let rpc = RPC(channel)
     self.rpc = rpc
 
@@ -14,9 +16,7 @@ public actor API {
 
     task = Task {
       for try await notification in await rpc.notifications {
-        guard !Task.isCancelled else {
-          return
-        }
+        guard !Task.isCancelled else { return }
 
         switch notification.method {
         case "redraw":
@@ -25,16 +25,13 @@ public actor API {
             await sendUIEventBatch(batch)
           }
 
-        default:
-          break
+        default: break
         }
       }
     }
   }
 
-  public enum CallFailed: Error {
-    case invalidAssumedSuccessResponseType(description: String)
-  }
+  public enum CallFailed: Error { case invalidAssumedSuccessResponseType(description: String) }
 
   public let uiEventBatches: AsyncStream<UIEventBatch>
 
@@ -51,14 +48,14 @@ public actor API {
     case let .success(rawSuccess):
       guard let success = transformSuccess(rawSuccess) else {
         throw CallFailed.invalidAssumedSuccessResponseType(
-          description: "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
+          description:
+            "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
         )
       }
 
       return .success(success)
 
-    case let .failure(error):
-      return .failure(error)
+    case let .failure(error): return .failure(error)
     }
   }
 

@@ -10,20 +10,13 @@ public actor Packer {
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)
   }
 
-  deinit {
-    msgpack_sbuffer_destroy(&sbuf)
-  }
+  deinit { msgpack_sbuffer_destroy(&sbuf) }
 
   public func pack(_ value: Value) -> Data {
     process(value)
 
-    defer {
-      msgpack_sbuffer_clear(&sbuf)
-    }
-    return .init(
-      bytes: sbuf.data,
-      count: sbuf.size
-    )
+    defer { msgpack_sbuffer_clear(&sbuf) }
+    return .init(bytes: sbuf.data, count: sbuf.size)
   }
 
   private var sbuf = msgpack_sbuffer()
@@ -39,23 +32,16 @@ public actor Packer {
         msgpack_pack_false(&pk)
       }
 
-    case let .integer(integer):
-      msgpack_pack_int64(&pk, Int64(integer))
+    case let .integer(integer): msgpack_pack_int64(&pk, Int64(integer))
 
     case let .string(string):
       string.data(using: .utf8)!
-        .withUnsafeBytes { buffer in
-          let pointer = buffer.baseAddress!
+        .withUnsafeBytes { buffer in let pointer = buffer.baseAddress!
 
-          _ = msgpack_pack_str_with_body(
-            &self.pk,
-            pointer,
-            strlen(pointer)
-          )
+          _ = msgpack_pack_str_with_body(&self.pk, pointer, strlen(pointer))
         }
 
-    case let .float(double):
-      msgpack_pack_float(&pk, Float(double))
+    case let .float(double): msgpack_pack_float(&pk, Float(double))
 
     case let .dictionary(dictionary):
       msgpack_pack_map(&pk, dictionary.count)
@@ -68,31 +54,19 @@ public actor Packer {
     case let .array(array):
       msgpack_pack_array(&pk, array.count)
 
-      for element in array {
-        process(element)
-      }
+      for element in array { process(element) }
 
     case let .ext(type, data):
       data.withUnsafeBytes { buffer in
-        _ = msgpack_pack_ext_with_body(
-          &self.pk,
-          buffer.baseAddress!,
-          buffer.count,
-          type
-        )
+        _ = msgpack_pack_ext_with_body(&self.pk, buffer.baseAddress!, buffer.count, type)
       }
 
     case let .binary(data):
       data.withUnsafeBytes { buffer in
-        _ = msgpack_pack_bin_with_body(
-          &self.pk,
-          buffer.baseAddress!,
-          buffer.count
-        )
+        _ = msgpack_pack_bin_with_body(&self.pk, buffer.baseAddress!, buffer.count)
       }
 
-    case .nil:
-      msgpack_pack_nil(&pk)
+    case .nil: msgpack_pack_nil(&pk)
     }
   }
 }

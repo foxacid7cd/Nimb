@@ -6,15 +6,11 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct APIFunctionsFile: GeneratableFile {
-  public init(_ metadata: Metadata) {
-    self.metadata = metadata
-  }
+  public init(_ metadata: Metadata) { self.metadata = metadata }
 
   public var metadata: Metadata
 
-  public var name: String {
-    "APIFunctions"
-  }
+  public var name: String { "APIFunctions" }
 
   public var sourceFile: SourceFile {
     .init {
@@ -29,26 +25,29 @@ public struct APIFunctionsFile: GeneratableFile {
             }
             .joined(separator: ", ")
 
-          let functionNameInSignature = function.name
-            .camelCasedAssumingSnakeCased(capitalized: false)
+          let functionNameInSignature = function.name.camelCasedAssumingSnakeCased(
+            capitalized: false
+          )
           FunctionDecl(
             "func \(functionNameInSignature)(\(parametersInSignature)) async throws -> Result<\(function.returnType.swift.signature), RemoteError>"
           ) {
             let parametersInArray = function.parameters
               .map { parameter in
-                let name = parameter.name
-                  .camelCasedAssumingSnakeCased(capitalized: false)
+                let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
 
                 return parameter.type.wrapWithValueEncoder(String(name))
               }
               .joined(separator: ", ")
-            "return try await call(method: \(literal: function.name), withParameters: [\(raw: parametersInArray)], transformSuccess: { \(raw: function.returnType.wrapWithValueDecoder("$0")) })" as Stmt
+            "return try await call(method: \(literal: function.name), withParameters: [\(raw: parametersInArray)], transformSuccess: { \(raw: function.returnType.wrapWithValueDecoder("$0")) })"
+              as Stmt
           }
-          .withUnexpectedBeforeAttributes(.init {
-            if function.deprecatedSince != nil {
-              StringSegment(content: "@available(*, deprecated) ")
+          .withUnexpectedBeforeAttributes(
+            .init {
+              if function.deprecatedSince != nil {
+                StringSegment(content: "@available(*, deprecated) ")
+              }
             }
-          })
+          )
         }
       }
     }

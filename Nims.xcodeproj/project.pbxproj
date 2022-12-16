@@ -62,7 +62,6 @@
 /* Begin PBXFileReference section */
 		680E72AC2936BDA0009BFA53 /* KeyPress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyPress.swift; sourceTree = "<group>"; };
 		68142FA8293E25A500363ECE /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/bin/nvim; sourceTree = "<group>"; };
-		68142FAA293E260000363ECE /* Tools */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Tools; sourceTree = "<group>"; };
 		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		6824DE1929386DF300D26A6E /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
@@ -70,7 +69,6 @@
 		684384D22934D04A000C4A1D /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
-		68A323D2293B97970028A87D /* Legacy */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Legacy; sourceTree = "<group>"; };
 		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		68B82747294A04A2003347D1 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		68BC1B1229496398000458FA /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
@@ -124,7 +122,6 @@
 			isa = PBXGroup;
 			children = (
 				682272C0293DE09C00A36AB9 /* Scripts */,
-				68A323D2293B97970028A87D /* Legacy */,
 				68142FA8293E25A500363ECE /* nvim */,
 			);
 			name = Locations;
@@ -135,7 +132,6 @@
 			children = (
 				68BFEF432934CF6100564FE2 /* Nims */,
 				682DF1D5293DC59500DACFE7 /* Modules */,
-				68142FAA293E260000363ECE /* Tools */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
 				68A323CF293B93070028A87D /* Locations */,
@@ -185,8 +181,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nims" */;
 			buildPhases = (
-				688971642936B4BE00A62849 /* Run swiftformat */,
 				68BFEF3D2934CF6100564FE2 /* Sources */,
+				68F379F0294C814B00A9E7FE /* Run swift-format format */,
+				68F379F1294C85AE00A9E7FE /* Run swift-format lint */,
 				68BFEF3E2934CF6100564FE2 /* Frameworks */,
 				68BFEF3F2934CF6100564FE2 /* Resources */,
 				684385012934D180000C4A1D /* Embed Frameworks */,
@@ -255,7 +252,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		688971642936B4BE00A62849 /* Run swiftformat */ = {
+		68F379F0294C814B00A9E7FE /* Run swift-format format */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -265,14 +262,33 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swiftformat";
+			name = "Run swift-format format";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/opt/homebrew/bin/swiftformat \"$SRCROOT\"\n";
+			shellScript = "\"${PROJECT_DIR}/Third-Party/swift-format/swift-format\" format -i --configuration \"${PROJECT_DIR}/swift-format.json\" -r -p \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n";
+		};
+		68F379F1294C85AE00A9E7FE /* Run swift-format lint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Run swift-format lint";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PROJECT_DIR}/Third-Party/swift-format/swift-format\" lint --configuration \"${PROJECT_DIR}/swift-format.json\" -r -p \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -5,17 +5,12 @@ import Foundation
 import MessagePack
 import OSLog
 
-@globalActor
-public actor InstanceProcessActor {
-  public static let shared = InstanceProcessActor()
-}
+@globalActor public actor InstanceProcessActor { public static let shared = InstanceProcessActor() }
 
 public actor Instance {
   public init() {
     struct ProcessChannel: Channel, Sendable {
-      var dataBatches: AsyncStream<Data> {
-        outputPipe.fileHandleForReading.dataBatches
-      }
+      var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
 
       var errorMessages: AsyncStream<String> {
         .init { continuation in
@@ -42,8 +37,7 @@ public actor Instance {
       }
 
       func write(_ data: Data) async throws {
-        try inputPipe.fileHandleForWriting
-          .write(contentsOf: data)
+        try inputPipe.fileHandleForWriting.write(contentsOf: data)
       }
 
       private let inputPipe = Pipe()
@@ -66,8 +60,7 @@ public actor Instance {
     (_terminate, terminateCalls) = AsyncChannel.pipe()
 
     states = .init { continuation in
-      let task = Task { @InstanceProcessActor in
-        let process = Process()
+      let task = Task { @InstanceProcessActor in let process = Process()
         processChannel.bind(to: process)
 
         let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
@@ -78,15 +71,11 @@ public actor Instance {
         environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
         process.environment = environment
 
-        let terminateProcess = { @Sendable @InstanceProcessActor in
-          process.terminate()
-        }
+        let terminateProcess = { @Sendable @InstanceProcessActor in process.terminate() }
 
         let terminateCallsTask = Task {
           for await _ in terminateCalls {
-            guard !Task.isCancelled else {
-              return
-            }
+            guard !Task.isCancelled else { return }
 
             terminateProcess()
             return
@@ -110,9 +99,7 @@ public actor Instance {
                 try await api.task.value
 
               } catch {
-                guard !Task.isCancelled else {
-                  return
-                }
+                guard !Task.isCancelled else { return }
 
                 continuation.finish(throwing: error)
                 await terminateProcess()
@@ -125,24 +112,18 @@ public actor Instance {
               let termination = NotificationCenter.default
                 .notifications(named: Process.didTerminateNotification)
                 .compactMap { notification -> Void? in
-                  guard
-                    let object = notification.object as? AnyObject,
+                  guard let object = notification.object as? AnyObject,
                     ObjectIdentifier(object) == processObjectIdentifier
-                  else {
-                    return nil
-                  }
+                  else { return nil }
 
                   return ()
                 }
 
               for await _ in termination {
-                guard !Task.isCancelled else {
-                  return
-                }
+                guard !Task.isCancelled else { return }
 
                 switch process.terminationReason {
-                case .uncaughtSignal:
-                  continuation.finish(throwing: TerminationError.uncaughtSignal)
+                case .uncaughtSignal: continuation.finish(throwing: TerminationError.uncaughtSignal)
 
                 case .exit:
                   let exitCode = Int(process.terminationStatus)
@@ -152,7 +133,9 @@ public actor Instance {
                   }
 
                 default:
-                  assertionFailure("Unknown process termination reason (\(process.terminationReason.rawValue)).")
+                  assertionFailure(
+                    "Unknown process termination reason (\(process.terminationReason.rawValue))."
+                  )
                 }
 
                 continuation.finish()
@@ -165,29 +148,22 @@ public actor Instance {
         } onCancel: {
           terminateCallsTask.cancel()
 
-          Task {
-            await terminateProcess()
-          }
+          Task { await terminateProcess() }
         }
       }
 
-      continuation.onTermination = { termination in
-        api.task.cancel()
+      continuation.onTermination = { termination in api.task.cancel()
 
         switch termination {
-        case .cancelled:
-          task.cancel()
+        case .cancelled: task.cancel()
 
-        default:
-          break
+        default: break
         }
       }
     }
   }
 
-  public enum State {
-    case running
-  }
+  public enum State { case running }
 
   public enum TerminationError: Error {
     case uncaughtSignal
@@ -198,9 +174,7 @@ public actor Instance {
   public let states: AsyncThrowingStream<State, Error>
   public let processErrorMessages: AsyncStream<String>
 
-  public func terminate() async {
-    await _terminate(())
-  }
+  public func terminate() async { await _terminate(()) }
 
   private let _terminate: @Sendable (()) async -> Void
 }

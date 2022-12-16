@@ -3,7 +3,10 @@
 import Foundation
 
 struct Rectangle: Hashable {
-  init(origin: Point = .init(), size: Size = .init()) {
+  init(
+    origin: Point = .init(),
+    size: Size = .init()
+  ) {
     self.origin = origin
     self.size = size
   }
@@ -13,7 +16,10 @@ struct Rectangle: Hashable {
 }
 
 struct Point: Hashable {
-  init(x: Int = 0, y: Int = 0) {
+  init(
+    x: Int = 0,
+    y: Int = 0
+  ) {
     self.x = x
     self.y = y
   }
@@ -22,16 +28,15 @@ struct Point: Hashable {
   var y: Int
 }
 
-func + (lhs: Point, rhs: Point) -> Point {
-  .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
-}
+func + (lhs: Point, rhs: Point) -> Point { .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y) }
 
-prefix func - (point: Point) -> Point {
-  .init(x: -point.x, y: -point.y)
-}
+prefix func - (point: Point) -> Point { .init(x: -point.x, y: -point.y) }
 
 struct Size: Hashable {
-  init(width: Int = 0, height: Int = 0) {
+  init(
+    width: Int = 0,
+    height: Int = 0
+  ) {
     self.width = width
     self.height = height
   }
@@ -41,29 +46,17 @@ struct Size: Hashable {
 }
 
 func * (first: Point, second: CGSize) -> CGPoint {
-  .init(
-    x: Double(first.x) * second.width,
-    y: Double(first.y) * second.height
-  )
+  .init(x: Double(first.x) * second.width, y: Double(first.y) * second.height)
 }
 
 func * (first: Size, second: CGSize) -> CGSize {
-  .init(
-    width: Double(first.width) * second.width,
-    height: Double(first.height) * second.height
-  )
+  .init(width: Double(first.width) * second.width, height: Double(first.height) * second.height)
 }
 
 func * (first: Rectangle, second: CGSize) -> CGRect {
-  .init(
-    origin: first.origin * second,
-    size: first.size * second
-  )
+  .init(origin: first.origin * second, size: first.size * second)
 }
 
 func + (first: Rectangle, second: Point) -> Rectangle {
-  .init(
-    origin: first.origin + second,
-    size: first.size
-  )
+  .init(origin: first.origin + second, size: first.size)
 }

@@ -11,10 +11,10 @@ struct ViewModel {
     var rowAttributedStrings: [AttributedString]
   }
 
-  var outerSize: CGSize
-  var grids: [Grid]
-  var rowHeight: Double
-  var defaultBackgroundColor: Color
+  var outerSize = CGSize()
+  var grids = [Grid]()
+  var rowHeight: Double = 0
+  var defaultBackgroundColor: Color = .black
   var cursor: (gridID: Int, rect: CGRect)?
 }
 

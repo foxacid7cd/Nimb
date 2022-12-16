@@ -3,8 +3,8 @@
 import AsyncAlgorithms
 import Foundation
 
-public extension AsyncStream {
-  init<S: AsyncSequence>(
+extension AsyncStream {
+  public init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy: Continuation.BufferingPolicy = .unbounded
   ) where S.Element == Element {
@@ -12,9 +12,7 @@ public extension AsyncStream {
       let task = Task {
         do {
           for try await element in sequence {
-            if Task.isCancelled {
-              break
-            }
+            if Task.isCancelled { break }
 
             continuation.yield(element)
           }
@@ -27,29 +25,24 @@ public extension AsyncStream {
 
       continuation.onTermination = { termination in
         switch termination {
-        case .cancelled:
-          task.cancel()
+        case .cancelled: task.cancel()
 
-        default:
-          return
+        default: return
         }
       }
     }
   }
 }
 
-public extension AsyncThrowingStream where Failure == Error {
-  init<S: AsyncSequence>(
+extension AsyncThrowingStream where Failure == Error {
+  public init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy _: Continuation.BufferingPolicy = .unbounded
-  )
-    where S.Element == Element {
+  ) where S.Element == Element {
     self.init(Element.self, bufferingPolicy: .unbounded) { continuation in
       let task = Task {
         for try await element in sequence {
-          if Task.isCancelled {
-            break
-          }
+          if Task.isCancelled { break }
 
           continuation.yield(element)
         }
@@ -59,58 +52,49 @@ public extension AsyncThrowingStream where Failure == Error {
 
       continuation.onTermination = { termination in
         switch termination {
-        case .cancelled:
-          task.cancel()
+        case .cancelled: task.cancel()
 
-        default:
-          return
+        default: return
         }
       }
     }
   }
 }
 
-public extension AsyncSequence {
-  var erasedToAsyncStream: AsyncStream<Element> {
-    .init(self)
-  }
+extension AsyncSequence {
+  public var erasedToAsyncStream: AsyncStream<Element> { .init(self) }
 
-  var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> {
-    .init(self)
-  }
+  public var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> { .init(self) }
 }
 
-public extension AsyncChannel {
-  static func pipe(
+extension AsyncChannel {
+  public static func pipe(
     bufferingPolicy: AsyncStream<Element>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncStream<Element>) {
     let channel = AsyncChannel<Element>()
 
     return (
-      send: { await channel.send($0) },
-      stream: .init(channel, bufferingPolicy: bufferingPolicy)
+      send: { await channel.send($0) }, stream: .init(channel, bufferingPolicy: bufferingPolicy)
     )
   }
 }
 
-public extension AsyncThrowingChannel where Failure == Error {
-  static func pipe<Element>(
+extension AsyncThrowingChannel where Failure == Error {
+  public static func pipe<Element>(
     bufferingPolicy: AsyncThrowingStream<Element, Failure>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncThrowingStream<Element, Failure>) {
     let channel = AsyncThrowingChannel<Element, Failure>()
 
     return (
-      send: { await channel.send($0) },
-      stream: .init(channel, bufferingPolicy: bufferingPolicy)
+      send: { await channel.send($0) }, stream: .init(channel, bufferingPolicy: bufferingPolicy)
     )
   }
 }
 
-public extension FileHandle {
-  var dataBatches: AsyncStream<Data> {
+extension FileHandle {
+  public var dataBatches: AsyncStream<Data> {
     .init { continuation in
-      readabilityHandler = { fileHandle in
-        let data = fileHandle.availableData
+      readabilityHandler = { fileHandle in let data = fileHandle.availableData
 
         if data.isEmpty {
           continuation.finish()
@@ -120,9 +104,7 @@ public extension FileHandle {
         }
       }
 
-      continuation.onTermination = { _ in
-        self.readabilityHandler = nil
-      }
+      continuation.onTermination = { _ in self.readabilityHandler = nil }
     }
   }
 }

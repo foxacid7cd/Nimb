@@ -6,9 +6,9 @@ if [ -z "$1" ]; then
 fi
 
 NVIM_PATH="$1/.build/bin/nvim"
-GENERATE_CMD="swift run --package-path $1/Tools -c debug generate"
+GENERATE_CMD="swift run --package-path $1/Modules generate"
 
 GENERATED_DIR="$1/Modules/Sources/Neovim/generated"
 ${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
 
-/opt/homebrew/bin/swiftformat --config "$1/.swiftformat" "${GENERATED_DIR}"
+"$1/Third-Party/swift-format/swift-format" format -i --configuration "$1/swift-format.json" -r -p "${GENERATED_DIR}"
