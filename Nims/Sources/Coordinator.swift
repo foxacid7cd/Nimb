@@ -5,22 +5,23 @@ import Combine
 import Neovim
 import OSLog
 
-@MainActor
-class Coordinator {
+struct Coordinator {
   init() {
     let store = Store()
-    self.store = store
 
     os_log("Starting Neovim instance")
     let neovimInstance = Instance()
-    self.neovimInstance = neovimInstance
 
-    Task {
+    let errorMessagesTask = Task {
       let messages = await neovimInstance.processErrorMessages
         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         .filter { !$0.isEmpty }
 
       for await message in messages {
+        guard !Task.isCancelled else {
+          return
+        }
+
         os_log("Neovim process standard error >> \(message)")
       }
     }
@@ -46,6 +47,12 @@ class Coordinator {
                   await store.apply(uiEventBatch)
                 }
               }
+              var viewModelsTask: Task<Void, Never>?
+
+              let cancel = {
+                uiEventBatchesTask.cancel()
+                viewModelsTask?.cancel()
+              }
 
               await withTaskCancellationHandler {
                 do {
@@ -65,61 +72,64 @@ class Coordinator {
 
                   os_log("Neovim UI attached")
 
-                  var viewModelsTask: Task<Void, Never>?
-                  var keyPressesTask: Task<Void, Never>?
+                  viewModelsTask = Task { @MainActor in
+                    var viewController: ViewController?
+                    var window: Window?
 
-                  let cancel = {
-                    viewModelsTask?.cancel()
-                    keyPressesTask?.cancel()
-                  }
+                    for await (viewModel, effects) in store.viewModels {
+                      guard !Task.isCancelled else {
+                        return
+                      }
 
-                  let viewController = ViewController()
-                  let window = Window(contentViewController: viewController)
+                      if effects.contains(.initial) {
+                        let newViewController = ViewController()
+                        viewController = newViewController
 
-                  await withTaskCancellationHandler {
-                    viewModelsTask = Task {
-                      for await (viewModel, effects) in store.viewModels {
-                        guard !Task.isCancelled else {
-                          return
+                        let newWindow = Window(contentViewController: newViewController)
+                        window = newWindow
+
+                        var keyPressesTask: Task<Void, Never>?
+                        let cancel = { keyPressesTask?.cancel() }
+
+                        await withTaskCancellationHandler {
+                          keyPressesTask = Task {
+                            for await keyPress in newWindow.keyPresses {
+                              guard !Task.isCancelled else {
+                                return
+                              }
+
+                              try? await neovimInstance.api.nvimInput(
+                                keys: keyPress.makeNvimKeyCode()
+                              )
+                              .check()
+                            }
+                          }
+
+                        } onCancel: {
+                          cancel()
                         }
 
-                        viewController.render(
-                          viewModel: viewModel,
-                          effects: effects
-                        )
+                        continuation.yield(.running)
+                      }
+
+                      viewController!.render(
+                        viewModel: viewModel,
+                        effects: effects
+                      )
+
+                      if !window!.isMainWindow, effects.contains(.canvasChanged) {
+                        window!.makeMain()
+                        window!.makeKeyAndOrderFront(nil)
                       }
                     }
-
-                    keyPressesTask = Task {
-                      for await keyPress in window.keyPresses {
-                        guard !Task.isCancelled else {
-                          return
-                        }
-
-                        try? await neovimInstance.api.nvimInput(
-                          keys: keyPress.makeNvimKeyCode()
-                        )
-                        .check()
-                      }
-                    }
-
-                    window.makeMain()
-                    window.makeKeyAndOrderFront(nil)
-
-                    continuation.yield(.running)
-
-                  } onCancel: {
-                    cancel()
                   }
-
                 } catch {
                   os_log("Neovim UI attach request failed with error (\(error))")
-
-                  await neovimInstance.terminate()
+                  continuation.finish()
                 }
 
               } onCancel: {
-                uiEventBatchesTask.cancel()
+                cancel()
               }
             }
           }
@@ -129,15 +139,16 @@ class Coordinator {
         } catch {
           os_log("Neovim instance finished running with error (\(error))")
         }
+
+        continuation.finish()
       }
 
-      continuation.onTermination = { termination in
-        switch termination {
-        case .cancelled:
-          task.cancel()
+      continuation.onTermination = { _ in
+        errorMessagesTask.cancel()
+        task.cancel()
 
-        default:
-          break
+        Task {
+          await neovimInstance.terminate()
         }
       }
     }
@@ -148,7 +159,4 @@ class Coordinator {
   }
 
   let states: AsyncStream<State>
-
-  private let store: Store
-  private let neovimInstance: Instance
 }

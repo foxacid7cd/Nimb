@@ -225,7 +225,7 @@ class Store {
           )
           accum = (
             viewModel: initialViewModel,
-            effects: [.initial] as Set<ViewModelEffect>
+            effects: [.initial]
           )
         }
 
