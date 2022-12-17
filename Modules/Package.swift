@@ -30,6 +30,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-overture", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-composable-architecture", branch: "main"),
+    .package(url: "https://github.com/pointfreeco/swift-tagged", branch: "main")
   ],
   targets: [
     .target(
@@ -78,6 +79,7 @@ let package = Package(
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Overture", package: "swift-overture"),
         .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+        .product(name: "Tagged", package: "swift-tagged")
       ]
     ),
     .systemLibrary(

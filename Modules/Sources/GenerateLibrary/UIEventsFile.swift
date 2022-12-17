@@ -31,7 +31,7 @@ public struct UIEventsFile: GeneratableFile {
         }
       }
 
-      EnumDecl("public enum UIEventBatch") {
+      EnumDecl("public enum UIEventBatch: Sendable") {
         Decl(
           """
           public enum DecodingFailed: Error {
