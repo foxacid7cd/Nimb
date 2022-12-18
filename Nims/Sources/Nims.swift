@@ -8,25 +8,31 @@
 import ComposableArchitecture
 import SwiftUI
 
+@MainActor
 @main struct Nims: App {
   private var store = StoreOf<Reducer>(
     initialState: Reducer.State(
-      font: .init(name: "MesloLGS NF", size: 13),
-      defaultBackgroundColor: .init(rgb: 0x000000),
-      grids: []
+      font: .init(
+        .init(name: "MesloLGS NF", size: 13)!
+      ),
+      grids: [
+        .init(
+          id: 1,
+          cells: .init(
+            size: .init(columnsCount: 80, rowsCount: 24),
+            repeatingElement: .init(text: " ", highlightID: .default)
+          )
+        )
+      ]
     ),
     reducer: Reducer()
   )
 
   var body: some Scene {
     WindowGroup {
-      WithViewStore(store, observe: ViewModel.init(state:)) { _ in
-        
-      }
+      Multigrid(store: store)
     }
-  }
-
-  struct ViewModel: Equatable {
-    init(state: Reducer.State) {}
+    .windowResizability(.contentSize)
+    .windowToolbarStyle(.unified(showsTitle: true))
   }
 }

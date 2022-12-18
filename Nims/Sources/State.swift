@@ -1,4 +1,9 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+//
+//  State.swift
+//  Nims
+//
+//  Created by Yevhenii Matviienko on 17.12.2022.
+//
 
 // import CasePaths
 // import IdentifiedCollections

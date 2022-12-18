@@ -15,64 +15,77 @@ import OSLog
 import Overture
 import Tagged
 
+struct State: Equatable, Sendable {
+  var font: Font
+  var grids: IdentifiedArrayOf<Grid>
+
+  var outerGrid: Grid? {
+    grids[id: .outer]
+  }
+}
+
+struct Grid: Sendable, Equatable, Identifiable {
+  var id: ID
+  var cells: TwoDimensionalArray<Cell>
+
+  typealias ID = Tagged<Grid, Int>
+}
+
+extension Grid.ID {
+  static var outer: Self {
+    1
+  }
+
+  var isOuter: Bool {
+    self == .outer
+  }
+}
+
+struct Cell: Sendable, Equatable {
+  var text: String
+  var highlightID: Highlight.ID
+}
+
+struct Highlight: Sendable, Equatable, Identifiable {
+  var id: ID
+
+  typealias ID = Tagged<Highlight, Int>
+}
+
+extension Highlight.ID {
+  static var `default`: Self {
+    0
+  }
+
+  var isDefault: Bool {
+    self == .default
+  }
+}
+
+struct Color: Sendable, Equatable {
+  var rgb: Int
+  var opacity: Double
+
+  init(
+    rgb: Int,
+    opacity: Double = 1
+  ) {
+    self.rgb = rgb
+    self.opacity = opacity
+  }
+}
+
+enum Action: Sendable {
+  case setFont(Font)
+  case setDefaultBackgroundColor(Color)
+  case appendUIEventBatch(UIEventBatch)
+}
+
 struct Reducer: ReducerProtocol {
-  struct State: Equatable, Sendable {
-    var font: Font
-    var defaultBackgroundColor: Color
-    var grids: IdentifiedArrayOf<Grid>
-  }
-
-  struct Grid: Sendable, Equatable, Identifiable {
-    var id: ID
-    var columnsCount: Int
-    var cells: [Cell]
-
-    typealias ID = Tagged<Grid, Int>
-  }
-
-  struct Cell: Sendable, Equatable {
-    var text: String
-    var highlightID: Highlight.ID
-  }
-
-  struct Highlight: Sendable, Equatable, Identifiable {
-    var id: ID
-
-    typealias ID = Tagged<Highlight, Int>
-  }
-
-  struct Color: Sendable, Equatable {
-    var rgb: Int
-    var opacity: Double
-
-    init(
-      rgb: Int,
-      opacity: Double = 1
-    ) {
-      self.rgb = rgb
-      self.opacity = opacity
-    }
-  }
-
-  struct Font: Sendable, Equatable {
-    var name: String
-    var size: Double
-  }
-
-  enum Action: Sendable {
-    case setFont(Font)
-    case setDefaultBackgroundColor(Color)
-    case appendUIEventBatch(UIEventBatch)
-  }
-
   func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
     case let .setFont(font):
       state.font = font
-      return .none
-
-    case let .setDefaultBackgroundColor(color):
-      state.defaultBackgroundColor = color
       return .none
 
     case let .appendUIEventBatch(batch):
@@ -86,14 +99,10 @@ struct Reducer: ReducerProtocol {
               if grid == nil {
                 grid = .init(
                   id: id,
-                  columnsCount: event.width,
-                  cells: (0..<event.width * event.height)
-                    .map { _ in
-                      .init(
-                        text: " ",
-                        highlightID: .default
-                      )
-                    }
+                  cells: .init(
+                    size: .init(columnsCount: event.width, rowsCount: event.height),
+                    repeatingElement: .init(text: " ", highlightID: .default)
+                  )
                 )
 
               } else {
@@ -126,17 +135,14 @@ struct Reducer: ReducerProtocol {
 
         return .none
       }
+
+    case .setDefaultBackgroundColor(_):
+      return .none
     }
   }
 }
 
-extension Reducer.Highlight.ID {
-  static var `default`: Self {
-    .zero
-  }
-}
-
-extension Reducer.Grid {
+extension Grid {
   fileprivate struct FailedDecodingCells: Error {
     var rawValue: Value
     var details: String
@@ -144,59 +150,59 @@ extension Reducer.Grid {
 
   fileprivate mutating func applyGridLineUpdate(row: Int, startColumn: Int, values: [Value]) throws
   {
-    let startIndex = columnsCount * row + startColumn
+    try update(&self.cells[row]) { rowCells in
+      var updatedCellsCount = 0
+      var highlightID = Highlight.ID.default
 
-    var updatedCellsCount = 0
-    var highlightID = Reducer.Highlight.ID.default
-
-    for value in values {
-      guard
-        let arrayValue = (/Value.array).extract(from: value),
-        !arrayValue.isEmpty,
-        let text = (/Value.string).extract(from: arrayValue[0])
-      else {
-        throw FailedDecodingCells(
-          rawValue: value,
-          details: "Raw value is not an array or first element is not a text"
-        )
-      }
-
-      var repeatCount = 1
-
-      if arrayValue.count > 1 {
+      for value in values {
         guard
-          let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+          let arrayValue = (/Value.array).extract(from: value),
+          !arrayValue.isEmpty,
+          let text = (/Value.string).extract(from: arrayValue[0])
         else {
           throw FailedDecodingCells(
             rawValue: value,
-            details: "Second array element is not an integer highlight id"
+            details: "Raw value is not an array or first element is not a text"
           )
         }
 
-        highlightID = .init(rawValue: newHighlightID)
+        var repeatCount = 1
 
-        if arrayValue.count > 2 {
+        if arrayValue.count > 1 {
           guard
-            let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+            let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
           else {
             throw FailedDecodingCells(
               rawValue: value,
-              details: "Third array element is not a integer repeat count"
+              details: "Second array element is not an integer highlight id"
             )
           }
 
-          repeatCount = newRepeatCount
+          highlightID = .init(rawValue: newHighlightID)
+
+          if arrayValue.count > 2 {
+            guard
+              let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+            else {
+              throw FailedDecodingCells(
+                rawValue: value,
+                details: "Third array element is not a integer repeat count"
+              )
+            }
+
+            repeatCount = newRepeatCount
+          }
         }
-      }
 
-      for _ in 0..<repeatCount {
-        let cell = Reducer.Cell(
-          text: text,
-          highlightID: highlightID
-        )
-        cells[startIndex + updatedCellsCount] = cell
+        for _ in 0..<repeatCount {
+          let cell = Cell(
+            text: text,
+            highlightID: highlightID
+          )
+          rowCells[startColumn + updatedCellsCount] = cell
 
-        updatedCellsCount += 1
+          updatedCellsCount += 1
+        }
       }
     }
   }

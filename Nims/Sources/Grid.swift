@@ -3,26 +3,28 @@
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 17.12.2022.
-//
 
 import Foundation
 
-struct Grid<Element> {
+struct TwoDimensionalArray<Element> {
+  private var array: [Element]
+  private var columnsCount: Int
+
   init(
-    sizr: GridSize,
+    size: Size,
     repeatingElement: Element
   ) {
     self.init(
-      size: sizr,
-      elementAtPosition: { _ in
+      size: size,
+      elementAtPoint: { _ in
         repeatingElement
       }
     )
   }
 
   init(
-    size: GridSize,
-    elementAtPosition: (GridPoint) -> Element
+    size: Size,
+    elementAtPoint: (Point) -> Element
   ) {
     if size.columnsCount < 0 || size.rowsCount < 0 {
       preconditionFailure("Grid size must be non negative")
@@ -32,39 +34,46 @@ struct Grid<Element> {
 
     var accumulator = [Element]()
     for arrayIndex in (0..<elementsCount) {
-      let (row, column) = arrayIndex
-      .quotientAndRemainder(
-        dividingBy: size.columnsCount
-      )
+      let (row, column) =
+        arrayIndex
+        .quotientAndRemainder(
+          dividingBy: size.columnsCount
+        )
 
-      let element = elementAtPosition(
+      let element = elementAtPoint(
         .init(column: column, row: row)
       )
       accumulator.append(element)
     }
 
-    storage = .init(
-      array: accumulator,
-      columnsCount: size.columnsCount
+    array = accumulator
+    columnsCount = size.columnsCount
+  }
+
+  var size: Size {
+    .init(
+      columnsCount: columnsCount,
+      rowsCount: array.count / columnsCount
     )
   }
 
-  private var storage: Storage
+  subscript(row: Int) -> ArraySlice<Element> {
+    get {
+      array[arrayIndices(row: row)]
+    }
+    set {
+      array[arrayIndices(row: row)] = newValue
+    }
+  }
 
-  private struct Storage {
-    var array = [Element]()
-    var columnsCount: Int
+  private func arrayIndices(row: Int) -> Range<Array.Index> {
+    let startIndex = row * columnsCount
+    let endIndex = startIndex + columnsCount
+
+    return startIndex..<endIndex
   }
 }
 
-extension Grid: Sendable where Element: Sendable {}
+extension TwoDimensionalArray: Sendable where Element: Sendable {}
 
-struct GridSize: Sendable, Equatable {
-  var columnsCount: Int
-  var rowsCount: Int
-}
-
-struct GridPoint: Sendable, Equatable {
-  var column: Int
-  var row: Int
-}
+extension TwoDimensionalArray: Equatable where Element: Equatable {}

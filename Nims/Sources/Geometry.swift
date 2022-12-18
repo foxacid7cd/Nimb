@@ -2,7 +2,7 @@
 
 import Foundation
 
-struct Rectangle: Hashable {
+struct Rectangle: Sendable, Equatable {
   init(
     origin: Point = .init(),
     size: Size = .init()
@@ -15,42 +15,47 @@ struct Rectangle: Hashable {
   var size: Size
 }
 
-struct Point: Hashable {
+struct Point: Sendable, Equatable {
   init(
-    x: Int = 0,
-    y: Int = 0
+    column: Int = 0,
+    row: Int = 0
   ) {
-    self.x = x
-    self.y = y
+    self.column = column
+    self.row = row
   }
 
-  var x: Int
-  var y: Int
+  var column: Int
+  var row: Int
 }
 
-func + (lhs: Point, rhs: Point) -> Point { .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y) }
+func + (lhs: Point, rhs: Point) -> Point {
+  .init(column: lhs.column + rhs.column, row: lhs.row + rhs.row)
+}
 
-prefix func - (point: Point) -> Point { .init(x: -point.x, y: -point.y) }
+prefix func - (point: Point) -> Point { .init(column: -point.column, row: -point.row) }
 
-struct Size: Hashable {
+struct Size: Sendable, Equatable {
   init(
-    width: Int = 0,
-    height: Int = 0
+    columnsCount: Int = 0,
+    rowsCount: Int = 0
   ) {
-    self.width = width
-    self.height = height
+    self.columnsCount = columnsCount
+    self.rowsCount = rowsCount
   }
 
-  var width: Int
-  var height: Int
+  var columnsCount: Int
+  var rowsCount: Int
 }
 
 func * (first: Point, second: CGSize) -> CGPoint {
-  .init(x: Double(first.x) * second.width, y: Double(first.y) * second.height)
+  .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
 }
 
 func * (first: Size, second: CGSize) -> CGSize {
-  .init(width: Double(first.width) * second.width, height: Double(first.height) * second.height)
+  .init(
+    width: Double(first.columnsCount) * second.width,
+    height: Double(first.rowsCount) * second.height
+  )
 }
 
 func * (first: Rectangle, second: CGSize) -> CGRect {
