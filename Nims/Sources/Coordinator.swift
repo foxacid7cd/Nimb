@@ -10,7 +10,7 @@ class Coordinator {
     //    let store = Store()
     //
     //    os_log("Starting Neovim instance")
-    //    let neovimInstance = Instance()
+    //    let neovimInstance = Process()
     //
     //    let errorMessagesTask = Task {
     //      let messages = await neovimInstance.processErrorMessages

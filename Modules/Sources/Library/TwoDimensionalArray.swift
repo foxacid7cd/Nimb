@@ -1,17 +1,22 @@
 //
-//  Grid.swift
+//  TwoDimensionalArray.swift
 //  Nims
 //
 //  Created by Yevhenii Matviienko on 17.12.2022.
 
 import Foundation
 
-struct TwoDimensionalArray<Element> {
-  private var array: [Element]
-  private var columnsCount: Int
+public struct TwoDimensionalArray<Element> {
+  var elements: [Element]
+  var columnsCount: Int
 
-  init(
-    size: Size,
+  init(elements: [Element], columnsCount: Int) {
+    self.elements = elements
+    self.columnsCount = columnsCount
+  }
+
+  public init(
+    size: IntegerSize,
     repeatingElement: Element
   ) {
     self.init(
@@ -22,12 +27,15 @@ struct TwoDimensionalArray<Element> {
     )
   }
 
-  init(
-    size: Size,
-    elementAtPoint: (Point) -> Element
+  public init(
+    size: IntegerSize,
+    elementAtPoint: (IntegerPoint) -> Element
   ) {
-    if size.columnsCount < 0 || size.rowsCount < 0 {
-      preconditionFailure("Grid size must be non negative")
+    if size.columnsCount < 0 {
+      preconditionFailure("size.columnsCount must be non negative")
+    }
+    if size.rowsCount < 0 {
+      preconditionFailure("size.rowsCount must be non negative")
     }
 
     let elementsCount = size.columnsCount * size.rowsCount
@@ -46,23 +54,23 @@ struct TwoDimensionalArray<Element> {
       accumulator.append(element)
     }
 
-    array = accumulator
+    elements = accumulator
     columnsCount = size.columnsCount
   }
 
-  var size: Size {
+  public var size: IntegerSize {
     .init(
       columnsCount: columnsCount,
-      rowsCount: array.count / columnsCount
+      rowsCount: elements.count / columnsCount
     )
   }
 
-  subscript(row: Int) -> ArraySlice<Element> {
+  public subscript(row: Int) -> ArraySlice<Element> {
     get {
-      array[arrayIndices(row: row)]
+      elements[arrayIndices(row: row)]
     }
     set {
-      array[arrayIndices(row: row)] = newValue
+      elements[arrayIndices(row: row)] = newValue
     }
   }
 

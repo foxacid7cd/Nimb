@@ -5,51 +5,10 @@ import Foundation
 import MessagePack
 import OSLog
 
-@globalActor public actor InstanceProcessActor { public static let shared = InstanceProcessActor() }
+@globalActor public actor ProcessActor { public static let shared = ProcessActor() }
 
-public actor Instance {
+public actor Process {
   public init() {
-    struct ProcessChannel: Channel, Sendable {
-      var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
-
-      var errorMessages: AsyncStream<String> {
-        .init { continuation in
-          Task {
-            var accumulator = Data()
-
-            for await data in errorPipe.fileHandleForReading.dataBatches {
-              accumulator.append(data)
-
-              if let string = String(data: accumulator, encoding: .utf8) {
-                accumulator.removeAll(keepingCapacity: true)
-
-                continuation.yield(string)
-              }
-            }
-
-            if !accumulator.isEmpty {
-              assertionFailure("Failed decoding UTF-8 String from data \(accumulator).")
-            }
-
-            continuation.finish()
-          }
-        }
-      }
-
-      func write(_ data: Data) async throws {
-        try inputPipe.fileHandleForWriting.write(contentsOf: data)
-      }
-
-      private let inputPipe = Pipe()
-      private let outputPipe = Pipe()
-      private let errorPipe = Pipe()
-
-      func bind(to process: Process) {
-        process.standardInput = inputPipe
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-      }
-    }
     let processChannel = ProcessChannel()
     processErrorMessages = processChannel.errorMessages
 
@@ -60,7 +19,7 @@ public actor Instance {
     (_terminate, terminateCalls) = AsyncChannel.pipe()
 
     states = .init { continuation in
-      let task = Task { @InstanceProcessActor in let process = Process()
+      let task = Task { @ProcessActor in let process = Foundation.Process()
         processChannel.bind(to: process)
 
         let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
@@ -71,7 +30,7 @@ public actor Instance {
         environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
         process.environment = environment
 
-        let terminateProcess = { @Sendable @InstanceProcessActor in process.terminate() }
+        let terminateProcess = { @Sendable @ProcessActor in process.terminate() }
 
         let terminateCallsTask = Task {
           for await _ in terminateCalls {
@@ -106,11 +65,11 @@ public actor Instance {
               }
             }
 
-            group.addTask { @InstanceProcessActor in
+            group.addTask { @ProcessActor in
               let processObjectIdentifier = ObjectIdentifier(process)
 
               let termination = NotificationCenter.default
-                .notifications(named: Process.didTerminateNotification)
+                .notifications(named: Foundation.Process.didTerminateNotification)
                 .compactMap { notification -> Void? in
                   guard let object = notification.object as? AnyObject,
                     ObjectIdentifier(object) == processObjectIdentifier
@@ -152,12 +111,14 @@ public actor Instance {
         }
       }
 
-      continuation.onTermination = { termination in api.task.cancel()
+      continuation.onTermination = { termination in
+        api.task.cancel()
 
         switch termination {
-        case .cancelled: task.cancel()
-
-        default: break
+        case .cancelled:
+          task.cancel()
+        default:
+          break
         }
       }
     }
@@ -177,4 +138,46 @@ public actor Instance {
   public func terminate() async { await _terminate(()) }
 
   private let _terminate: @Sendable (()) async -> Void
+
+  private struct ProcessChannel: Channel, Sendable {
+    var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
+
+    var errorMessages: AsyncStream<String> {
+      .init { continuation in
+        Task {
+          var accumulator = Data()
+
+          for await data in errorPipe.fileHandleForReading.dataBatches {
+            accumulator.append(data)
+
+            if let string = String(data: accumulator, encoding: .utf8) {
+              accumulator.removeAll(keepingCapacity: true)
+
+              continuation.yield(string)
+            }
+          }
+
+          if !accumulator.isEmpty {
+            assertionFailure("Failed decoding UTF-8 String from data \(accumulator).")
+          }
+
+          continuation.finish()
+        }
+      }
+    }
+
+    func write(_ data: Data) async throws {
+      try inputPipe.fileHandleForWriting.write(contentsOf: data)
+    }
+
+    private let inputPipe = Pipe()
+    private let outputPipe = Pipe()
+    private let errorPipe = Pipe()
+
+    func bind(to process: Foundation.Process) {
+      process.standardInput = inputPipe
+      process.standardOutput = outputPipe
+      process.standardError = errorPipe
+    }
+  }
 }

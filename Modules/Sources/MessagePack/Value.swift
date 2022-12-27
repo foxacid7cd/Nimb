@@ -5,7 +5,8 @@ import msgpack
 
 public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
-{ case integer(Int)
+{
+  case integer(Int)
   case float(Double)
   case boolean(Bool)
   case string(String)

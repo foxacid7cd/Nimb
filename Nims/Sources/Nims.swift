@@ -10,29 +10,31 @@ import SwiftUI
 
 @MainActor
 @main struct Nims: App {
+  @Environment(\.scenePhase)
+  var scenePhase: ScenePhase
+
   private var store = StoreOf<Reducer>(
-    initialState: Reducer.State(
-      font: .init(
-        .init(name: "MesloLGS NF", size: 13)!
-      ),
-      grids: [
-        .init(
-          id: 1,
-          cells: .init(
-            size: .init(columnsCount: 80, rowsCount: 24),
-            repeatingElement: .init(text: " ", highlightID: .default)
-          )
-        )
-      ]
-    ),
+    initialState: Reducer.State(instance: nil),
     reducer: Reducer()
   )
 
   var body: some Scene {
     WindowGroup {
-      Multigrid(store: store)
+      IfLetStore(store.scope(state: \.instance)) { instanceStore in
+        InstanceView(
+          store: instanceStore
+        )
+      }
     }
     .windowResizability(.contentSize)
-    .windowToolbarStyle(.unified(showsTitle: true))
+    .onChange(of: scenePhase) { newValue in
+      switch newValue {
+      case .active:
+        break
+
+      default:
+        break
+      }
+    }
   }
 }

@@ -5,11 +5,55 @@
 //  Created by Yevhenii Matviienko on 17.12.2022.
 //
 
-// import CasePaths
-// import IdentifiedCollections
-// import MessagePack
-// import SwiftUI
-//
+import IdentifiedCollections
+import Library
+import Neovim
+import Tagged
+
+public struct State: Sendable, Equatable {
+  public var instance: Instance?
+
+  public init(instance: Instance? = nil) {
+    self.instance = instance
+  }
+
+  public struct Instance: Sendable, Equatable {
+    public var font: Font
+    public var grids: IdentifiedArrayOf<Grid>
+
+    public init(font: Font, grids: IdentifiedArrayOf<Grid>) {
+      self.font = font
+      self.grids = grids
+    }
+
+    public var outerGrid: Grid {
+      grids[id: .outer]!
+    }
+  }
+
+  public struct Grid: Sendable, Equatable, Identifiable {
+    public var id: ID
+    public var cells: TwoDimensionalArray<Cell>
+
+    public typealias ID = Tagged<Grid, Int>
+
+    public init(id: ID, cells: TwoDimensionalArray<Cell>) {
+      self.id = id
+      self.cells = cells
+    }
+  }
+}
+
+extension State.Grid.ID {
+  public static var outer: Self {
+    1
+  }
+
+  public var isOuter: Bool {
+    self == .outer
+  }
+}
+
 // struct State: Sendable {
 //  init(cellSize: CGSize, defaultBackgroundColor: HighlightColor) {
 //    self.cellSize = cellSize

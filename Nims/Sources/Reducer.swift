@@ -9,140 +9,126 @@ import CasePaths
 import ComposableArchitecture
 import Foundation
 import IdentifiedCollections
+import Library
 import MessagePack
 import Neovim
-import OSLog
 import Overture
 import Tagged
 
-struct State: Equatable, Sendable {
-  var font: Font
-  var grids: IdentifiedArrayOf<Grid>
-
-  var outerGrid: Grid? {
-    grids[id: .outer]
-  }
+public enum Action: Sendable {
+  case runInstance
+  case applyUIEventBatches(AsyncStream<UIEventBatch>)
+  case setInitialInstanceState(State.Instance)
+  case removeInstanceState
+  //  case setFont(Font)
+  //  case setDefaultBackgroundColor(Color)
+  //  case appendUIEventBatch(UIEventBatch)
 }
 
-struct Grid: Sendable, Equatable, Identifiable {
-  var id: ID
-  var cells: TwoDimensionalArray<Cell>
+public struct Reducer: ReducerProtocol {
+  public init() {}
 
-  typealias ID = Tagged<Grid, Int>
-}
-
-extension Grid.ID {
-  static var outer: Self {
-    1
-  }
-
-  var isOuter: Bool {
-    self == .outer
-  }
-}
-
-struct Cell: Sendable, Equatable {
-  var text: String
-  var highlightID: Highlight.ID
-}
-
-struct Highlight: Sendable, Equatable, Identifiable {
-  var id: ID
-
-  typealias ID = Tagged<Highlight, Int>
-}
-
-extension Highlight.ID {
-  static var `default`: Self {
-    0
-  }
-
-  var isDefault: Bool {
-    self == .default
-  }
-}
-
-struct Color: Sendable, Equatable {
-  var rgb: Int
-  var opacity: Double
-
-  init(
-    rgb: Int,
-    opacity: Double = 1
-  ) {
-    self.rgb = rgb
-    self.opacity = opacity
-  }
-}
-
-enum Action: Sendable {
-  case setFont(Font)
-  case setDefaultBackgroundColor(Color)
-  case appendUIEventBatch(UIEventBatch)
-}
-
-struct Reducer: ReducerProtocol {
-  func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
+  public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
-    case let .setFont(font):
-      state.font = font
-      return .none
+    case .runInstance:
+      return .run { send in
+        let instance = Neovim.Process()
 
-    case let .appendUIEventBatch(batch):
-      do {
-        switch batch {
-        case let .gridResize(decode):
-          for event in try decode() {
-            let id = Grid.ID(event.grid)
-
-            update(&state.grids[id: .init(event.grid)]) { grid in
-              if grid == nil {
-                grid = .init(
-                  id: id,
-                  cells: .init(
-                    size: .init(columnsCount: event.width, rowsCount: event.height),
-                    repeatingElement: .init(text: " ", highlightID: .default)
-                  )
-                )
-
-              } else {
-                fatalError()
-              }
-            }
+        for try await state in await instance.states {
+          switch state {
+          case .running:
+            await send(
+              .applyUIEventBatches(
+                await instance.api.uiEventBatches))
           }
-          return .none
-
-        case let .gridLine(decode):
-          for event in try decode() {
-            let id = Grid.ID(event.grid)
-
-            try update(&state.grids[id: id]!) { grid in
-              try grid.applyGridLineUpdate(
-                row: event.row,
-                startColumn: event.colStart,
-                values: event.data
-              )
-            }
-          }
-          return .none
-
-        default:
-          return .none
         }
 
-      } catch {
-        os_log("Reduce failed with error (\(error))")
+        await send(.removeInstanceState)
 
-        return .none
+      } catch: { _, _ in
       }
 
-    case .setDefaultBackgroundColor(_):
+    case let .applyUIEventBatches(value):
+      return .run { send in
+        for await uiEventBatch in value {
+          switch uiEventBatch {
+          case .flush:
+            break
+
+          default:
+            break
+          }
+        }
+      }
+
+    case let .setInitialInstanceState(value):
+      state.instance = value
+      return .none
+
+    case .removeInstanceState:
+      state.instance = nil
       return .none
     }
+    //    switch action {
+    //    case let .setFont(font):
+    //      state.font = font
+    //      return .none
+    //
+    //    case let .appendUIEventBatch(batch):
+    //      do {
+    //        switch batch {
+    //        case let .gridResize(decode):
+    //          for event in try decode() {
+    //            let id = Grid.ID(event.grid)
+    //
+    //            update(&state.grids[id: .init(event.grid)]) { grid in
+    //              if grid == nil {
+    //                grid = .init(
+    //                  id: id,
+    //                  cells: .init(
+    //                    size: .init(columnsCount: event.width, rowsCount: event.height),
+    //                    repeatingElement: .init(text: " ", highlightID: .default)
+    //                  )
+    //                )
+    //
+    //              } else {
+    //                fatalError()
+    //              }
+    //            }
+    //          }
+    //          return .none
+    //
+    //        case let .gridLine(decode):
+    //          for event in try decode() {
+    //            let id = Grid.ID(event.grid)
+    //
+    //            try update(&state.grids[id: id]!) { grid in
+    //              try grid.applyGridLineUpdate(
+    //                row: event.row,
+    //                startColumn: event.colStart,
+    //                values: event.data
+    //              )
+    //            }
+    //          }
+    //          return .none
+    //
+    //        default:
+    //          return .none
+    //        }
+    //
+    //      } catch {
+    //        os_log("Reduce failed with error (\(error))")
+    //
+    //        return .none
+    //      }
+    //
+    //    case .setDefaultBackgroundColor(_):
+    //      return .none
+    //    }
   }
 }
 
-extension Grid {
+extension State.Grid {
   fileprivate struct FailedDecodingCells: Error {
     var rawValue: Value
     var details: String
