@@ -25,8 +25,4 @@ public struct Font: Sendable, Equatable {
   }
 
   typealias ID = Tagged<Font, Int>
-
-  public var cellCGSize: CGSize {
-    .init(width: cellWidth, height: cellHeight)
-  }
 }

@@ -7,7 +7,7 @@
 import Foundation
 
 public struct TwoDimensionalArray<Element> {
-  var elements: [Element]
+  public internal(set) var elements: [Element]
   public internal(set) var columnsCount: Int
 
   init(elements: [Element], columnsCount: Int) {

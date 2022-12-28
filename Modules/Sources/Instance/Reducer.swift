@@ -20,6 +20,7 @@ public enum Action: Sendable {
   case applyUIEventBatches(AsyncStream<UIEventBatch>)
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
+  case applyWinPosUIEvents([UIEvents.WinPos])
   case setFont(Font)
   case handleError(Error)
   case processFinished(error: Error?)
@@ -40,7 +41,7 @@ public struct Reducer: ReducerProtocol {
             await send(
               .setFont(
                 .init(
-                  .init(name: "MesloLGS NF", size: 13)!)))
+                  .init(name: "MesloLGS Nerd Font Mono", size: 13)!)))
 
             await send(
               .applyUIEventBatches(
@@ -48,8 +49,8 @@ public struct Reducer: ReducerProtocol {
 
             do {
               _ = try await process.api.nvimUiAttach(
-                width: 110,
-                height: 36,
+                width: 130,
+                height: 40,
                 options: [
                   "ext_multigrid": true,
                   "ext_hlstate": true,
@@ -75,8 +76,8 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyUIEventBatches(value):
       return .run { send in
-        do {
-          for await uiEventBatch in value {
+        for await uiEventBatch in value {
+          do {
             switch uiEventBatch {
             case let .gridResize(decode):
               await send(.applyGridResizeUIEvents(try decode()))
@@ -84,16 +85,19 @@ public struct Reducer: ReducerProtocol {
             case let .gridLine(decode):
               await send(.applyGridLineUIEvents(try decode()))
 
+            case let .winPos(decode):
+              await send(.applyWinPosUIEvents(try decode()))
+
             case .flush:
               break
 
             default:
               break
             }
-          }
 
-        } catch {
-          await send(.handleError(error))
+          } catch {
+            await send(.handleError(error))
+          }
         }
       }
 
@@ -110,10 +114,6 @@ public struct Reducer: ReducerProtocol {
             cells: .init(
               size: size,
               repeatingElement: .init(text: " ", highlightID: .default)))
-        }
-
-        if id.isOuter {
-          state.outerGridSize = size
         }
       }
       return .none
@@ -134,6 +134,30 @@ public struct Reducer: ReducerProtocol {
           await send(.handleError(error))
         }
       }
+
+    case let .applyWinPosUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let winRef = (/Value.ext)
+          .extract(from: uiEvent.win)!
+        let windowID = State.Window.ID(
+          rawValue: winRef.1.hashValue)
+
+        state.windows.remove(id: windowID)
+
+        update(&state.windows[id: windowID]) { window in
+          window = .init(
+            id: windowID,
+            gridID: .init(uiEvent.grid),
+            frame: .init(
+              origin: .init(
+                column: uiEvent.startcol,
+                row: uiEvent.startrow),
+              size: .init(
+                columnsCount: uiEvent.width,
+                rowsCount: uiEvent.height)))
+        }
+      }
+      return .none
 
     case let .setFont(font):
       state.font = font
