@@ -25,7 +25,8 @@ public actor API {
             await sendUIEventBatch(batch)
           }
 
-        default: break
+        default:
+          break
         }
       }
     }
@@ -55,7 +56,8 @@ public actor API {
 
       return .success(success)
 
-    case let .failure(error): return .failure(error)
+    case let .failure(error):
+      return .failure(error)
     }
   }
 

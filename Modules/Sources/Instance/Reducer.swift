@@ -13,6 +13,9 @@ import Tagged
 public enum Action: Sendable {
   case createProcess(keyPresses: AsyncStream<KeyPress>)
   case bindProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
+  case setFont(State.Font)
+  case applyDefaultColorsSet([UIEvents.DefaultColorsSet])
+  case applyHlAttrDefine([UIEvents.HlAttrDefine])
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
   case applyGridScrollUIEvents([UIEvents.GridScroll])
@@ -23,7 +26,6 @@ public enum Action: Sendable {
   case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
   case applyWinHideUIEvents([UIEvents.WinHide])
   case applyWinCloseUIEvents([UIEvents.WinClose])
-  case setFont(Font)
   case flush
   case handleError(Error)
   case processFinished(error: Error?)
@@ -65,6 +67,12 @@ public struct Reducer: ReducerProtocol {
 
           do {
             switch uiEventBatch {
+            case let .defaultColorsSet(decode):
+              await send(.applyDefaultColorsSet(try decode()))
+
+            case let .hlAttrDefine(decode):
+              await send(.applyHlAttrDefine(try decode()))
+
             case let .gridResize(decode):
               await send(.applyGridResizeUIEvents(try decode()))
 
@@ -99,9 +107,7 @@ public struct Reducer: ReducerProtocol {
               if isFirstFlush {
                 await send(
                   .setFont(
-                    .init(
-                      .init(name: "MesloLGS NF", size: 13)!
-                    )
+                    .init(.init(name: "MesloLGS Nerd Font", size: 13)!)
                   )
                 )
               }
@@ -141,15 +147,15 @@ public struct Reducer: ReducerProtocol {
       let requestUIAttach = EffectTask<Action>.run { send in
         do {
           _ = try await process.api.nvimUIAttach(
-            width: 130,
-            height: 40,
+            width: 140,
+            height: 60,
             options: [
               "ext_multigrid": true,
               "ext_hlstate": true,
-              "ext_cmdline": false,
-              "ext_messages": true,
-              "ext_popupmenu": true,
-              "ext_tabline": true,
+              // "ext_cmdline": false,
+              // "ext_messages": true,
+              // "ext_popupmenu": true,
+              // "ext_tabline": true,
             ]
           )
           .get()
@@ -166,6 +172,69 @@ public struct Reducer: ReducerProtocol {
       )
       .cancellable(id: EffectID.bindProcess)
 
+    case let .setFont(font):
+      state.current.font = font
+      return .none
+
+    case let .applyDefaultColorsSet(uiEvents):
+      for uiEvent in uiEvents {
+        state.current.highlights
+          .updateOrAppend(
+            .init(
+              id: .default,
+              foregroundColor: .init(rgb: uiEvent.rgbFg),
+              backgroundColor: .init(rgb: uiEvent.rgbBg),
+              specialColor: .init(rgb: uiEvent.rgbSp)
+            )
+          )
+      }
+      return .none
+
+    case let .applyHlAttrDefine(uiEvents):
+      for uiEvent in uiEvents {
+        let id = State.Highlight.ID(rawValue: uiEvent.id)
+
+        update(&state.current.highlights[id: id]) { highlight in
+          if highlight == nil {
+            highlight = .init(id: id)
+          }
+
+          for (key, value) in uiEvent.rgbAttrs {
+            guard case let .string(key) = key else {
+              continue
+            }
+
+            switch key {
+            case "foreground":
+              if case let .integer(value) = value {
+                highlight!.foregroundColor = .init(rgb: value)
+              }
+
+            case "background":
+              if case let .integer(value) = value {
+                highlight!.backgroundColor = .init(rgb: value)
+              }
+
+            case "special": if case let .integer(value) = value {
+                highlight!.specialColor = .init(rgb: value)
+              }
+
+            case "bold": if case let .boolean(value) = value {
+                highlight!.isBold = value
+              }
+
+            case "italic": if case let .boolean(value) = value {
+                highlight!.isItalic = value
+              }
+
+            default:
+              break
+            }
+          }
+        }
+      }
+      return .none
+
     case let .applyGridResizeUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let id = State.Grid.ID(rawValue: uiEvent.grid)
@@ -175,7 +244,7 @@ public struct Reducer: ReducerProtocol {
         )
 
         update(&state.current.grids[id: id]) { grid in
-          let cells = TwoDimensionalArray<Cell>(
+          let cells = TwoDimensionalArray<State.Cell>(
             size: size,
             elementAtPoint: { point in
               guard
@@ -243,7 +312,7 @@ public struct Reducer: ReducerProtocol {
 
         update(&state.current.grids[id: gridID]!) { grid in
           let rowCells = ArraySlice(
-            repeating: Cell.default,
+            repeating: State.Cell.default,
             count: grid.cells.columnsCount
           )
           let highlightChunks = rowCells.makeHighlightChunks()
@@ -351,10 +420,6 @@ public struct Reducer: ReducerProtocol {
       }
       return .none
 
-    case let .setFont(font):
-      state.current.font = font
-      return .none
-
     case .flush:
       state.flushed = state.current
       return .none
@@ -376,7 +441,7 @@ public struct Reducer: ReducerProtocol {
   private func updateLine(in grid: inout State.Grid, origin: IntegerPoint, values: [Value]) throws {
     try update(&grid.cells.rows[origin.row]) { rowCells in
       var updatedCellsCount = 0
-      var highlightID = Highlight.ID.default
+      var highlightID = State.Highlight.ID.default
 
       for value in values {
         guard
@@ -419,7 +484,7 @@ public struct Reducer: ReducerProtocol {
         }
 
         for _ in 0 ..< repeatCount {
-          let cell = Cell(
+          let cell = State.Cell(
             text: text,
             highlightID: highlightID
           )

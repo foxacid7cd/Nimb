@@ -5,6 +5,7 @@ import ComposableArchitecture
 import IdentifiedCollections
 import Library
 import Neovim
+import SwiftUI
 import Tagged
 
 public struct State: Equatable, Identifiable {
@@ -16,6 +17,21 @@ public struct State: Equatable, Identifiable {
   }
 
   public typealias ID = Tagged<State, String>
+
+  public struct Cell: Equatable {
+    public init(text: String, highlightID: Highlight.ID) {
+      self.text = text
+      self.highlightID = highlightID
+    }
+
+    public static let `default` = Self(
+      text: " ",
+      highlightID: .default
+    )
+
+    public var text: String
+    public var highlightID: Highlight.ID
+  }
 
   public struct Grid: Equatable, Identifiable {
     public init(id: ID, cells: TwoDimensionalArray<Cell>, rowHighlightChunks: [[HighlightChunk]]) {
@@ -113,15 +129,113 @@ public struct State: Equatable, Identifiable {
     public var position: IntegerPoint
   }
 
+  public struct Highlight: Equatable, Identifiable {
+    public init(
+      id: ID,
+      isBold: Bool = false,
+      isItalic: Bool = false,
+      foregroundColor: Color? = nil,
+      backgroundColor: Color? = nil,
+      specialColor: Color? = nil
+    ) {
+      self.id = id
+      self.isBold = isBold
+      self.isItalic = isItalic
+      self.foregroundColor = foregroundColor
+      self.backgroundColor = backgroundColor
+      self.specialColor = specialColor
+    }
+
+    public typealias ID = Tagged<Highlight, Int>
+
+    public var id: ID
+    public var isBold: Bool
+    public var isItalic: Bool
+    public var foregroundColor: Color?
+    public var backgroundColor: Color?
+    public var specialColor: Color?
+  }
+
+  public struct Appearance: Equatable {
+    public init(
+      font: Font,
+      highlights: IdentifiedArrayOf<State.Highlight>,
+      defaultForegroundColor: Color,
+      defaultBackgroundColor: Color,
+      defaultSpecialColor: Color
+    ) {
+      self.font = font
+      self.highlights = highlights
+      self.defaultForegroundColor = defaultForegroundColor
+      self.defaultBackgroundColor = defaultBackgroundColor
+      self.defaultSpecialColor = defaultSpecialColor
+    }
+
+    public var font: Font
+    public var highlights: IdentifiedArrayOf<Highlight>
+    public var defaultForegroundColor: Color
+    public var defaultBackgroundColor: Color
+    public var defaultSpecialColor: Color
+
+    public func foregroundColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.foregroundColor ?? defaultForegroundColor
+    }
+
+    public func backgroundColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.backgroundColor ?? defaultBackgroundColor
+    }
+
+    public func specialColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
+    }
+  }
+
+  public struct Color: Sendable, Hashable {
+    public init(rgb: Int) {
+      self.rgb = rgb
+    }
+
+    public var rgb: Int
+
+    public var swiftUI: SwiftUI.Color {
+      .init(
+        .displayP3,
+        red: Double((rgb >> 16) & 0xFF) / 255,
+        green: Double((rgb >> 8) & 0xFF) / 255,
+        blue: Double(rgb & 0xFF) / 255
+      )
+    }
+  }
+
+  public struct Font: Sendable, Equatable {
+    init(
+      id: ID,
+      cellWidth: Double,
+      cellHeight: Double
+    ) {
+      self.id = id
+      self.cellWidth = cellWidth
+      self.cellHeight = cellHeight
+    }
+
+    public typealias ID = Tagged<Font, Int>
+
+    public var id: ID
+    public var cellWidth: Double
+    public var cellHeight: Double
+  }
+
   public struct Snapshot: Equatable {
     public init(
       font: Font? = nil,
+      highlights: IdentifiedArrayOf<Highlight> = [],
       grids: IdentifiedArrayOf<State.Grid> = [],
       windows: IdentifiedArrayOf<State.Window> = [],
       floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
       cursor: State.Cursor? = nil
     ) {
       self.font = font
+      self.highlights = highlights
       self.grids = grids
       self.windows = windows
       self.cursor = cursor
@@ -129,18 +243,34 @@ public struct State: Equatable, Identifiable {
     }
 
     public var font: Font?
+    public var highlights: IdentifiedArrayOf<Highlight>
     public var grids: IdentifiedArrayOf<Grid>
     public var windows: IdentifiedArrayOf<Window>
     public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
     public var cursor: Cursor?
 
+    public var appearance: Appearance? {
+      guard
+        let font,
+        let defaultHighlight = highlights[id: .default],
+        let defaultForegroundColor = defaultHighlight.foregroundColor,
+        let defaultBackgroundColor = defaultHighlight.backgroundColor,
+        let defaultSpecialColor = defaultHighlight.specialColor
+      else {
+        return nil
+      }
+
+      return .init(
+        font: font,
+        highlights: highlights,
+        defaultForegroundColor: defaultForegroundColor,
+        defaultBackgroundColor: defaultBackgroundColor,
+        defaultSpecialColor: defaultSpecialColor
+      )
+    }
+
     public var outerGrid: Grid? {
-      get {
-        grids[id: .outer]
-      }
-      set {
-        grids[id: .outer] = newValue
-      }
+      grids[id: .outer]
     }
   }
 
@@ -155,6 +285,16 @@ public struct State: Equatable, Identifiable {
   }
 }
 
+public extension State.Highlight.ID {
+  static var `default`: Self {
+    0
+  }
+
+  var isDefault: Bool {
+    self == .default
+  }
+}
+
 public extension State.Grid.ID {
   static var outer: Self {
     1
@@ -165,7 +305,7 @@ public extension State.Grid.ID {
   }
 }
 
-public extension TwoDimensionalArray<Cell>.RowsView.Element {
+public extension TwoDimensionalArray<State.Cell>.RowsView.Element {
   func makeHighlightChunks() -> [State.HighlightChunk] {
     chunked(on: \.highlightID)
       .map { highlightID, cells in
