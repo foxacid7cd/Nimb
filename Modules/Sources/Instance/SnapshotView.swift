@@ -35,6 +35,7 @@ public struct SnapshotView: View {
             width: frameWidth,
             height: frameHeight
           )
+          .zIndex(0)
 
           ForEach(state.windows) { window in
             if !window.isHidden {
@@ -52,6 +53,32 @@ public struct SnapshotView: View {
                 x: Double(window.frame.origin.column) * font.cellWidth,
                 y: Double(window.frame.origin.row) * font.cellHeight
               )
+              .zIndex(Double(window.zIndex) / 1000)
+
+            } else {
+              EmptyView()
+            }
+          }
+
+          ForEach(state.floatingWindows) { floatingWindow in
+            if !floatingWindow.isHidden {
+              let grid = state.grids[id: floatingWindow.gridID]!
+
+              gridView(
+                for: grid,
+                font: font,
+                size: grid.cells.size,
+                cursor: state.cursor
+              )
+              .frame(
+                width: Double(grid.cells.size.columnsCount) * font.cellWidth,
+                height: Double(grid.cells.size.rowsCount) * font.cellHeight
+              )
+              .offset(
+                x: Double(floatingWindow.anchorColumn) * font.cellWidth,
+                y: Double(floatingWindow.anchorRow) * font.cellHeight
+              )
+              .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
 
             } else {
               EmptyView()
@@ -70,52 +97,74 @@ public struct SnapshotView: View {
   }
 
   private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize, cursor: State.Cursor?) -> some View {
-    let attributes = AttributeContainer([
-      .font: font.nsFont,
-      .foregroundColor: NSColor.systemPink,
-    ])
+    Canvas(rendersAsynchronously: true) { graphicsContext, _ in
+      let rowScale = 1 / Double(grid.rowHighlightChunks.count)
 
-    let rows = grid.cells.rows
+      let rowDrawRuns: [(frame: CGRect, backgroundColor: SwiftUI.Color, text: Text)] = grid.rowHighlightChunks
+        .enumerated()
+        .flatMap { row, highlightChunks in
+          let hue = Double(row) * rowScale
+          let chunkScale = 1 / Double(highlightChunks.count)
 
-    let lower = rows.startIndex
-    let upper = min(lower + size.rowsCount, rows.endIndex)
-    let rowAttributedStrings = rows[lower ..< upper]
-      .map { rowCells in
-        let lower = rowCells.startIndex
-        let upper = min(lower + size.columnsCount, rowCells.endIndex)
-        let string = rowCells[lower ..< upper]
-          .map(\.text)
-          .joined()
+          return highlightChunks
+            .enumerated()
+            .map { offset, highlightChunk in
+              let frame = CGRect(
+                origin: .init(
+                  x: Double(highlightChunk.originColumn) * font.cellWidth,
+                  y: Double(row) * font.cellHeight
+                ),
+                size: .init(
+                  width: Double(highlightChunk.columnsCount) * font.cellWidth,
+                  height: font.cellHeight
+                )
+              )
 
-        return AttributedString(string, attributes: attributes)
-      }
+              let backgroundColor = SwiftUI.Color(
+                hue: 0.6 + Double(highlightChunk.highlightID.rawValue / 111),
+                saturation: 0.5 + Double(highlightChunk.highlightID.rawValue / 221),
+                brightness: 0.05
+              )
 
-    return Canvas { graphicsContext, size in
-//      graphicsContext.fill(
-//        Path(CGRect(origin: .init(), size: size)),
-//        with: .color(.black),
-//        style: .init(antialiased: false)
-//      )
+              let text = Text(highlightChunk.text)
+                .font(.init(font.nsFont))
+                .foregroundColor(
+                  .init(
+                    hue: hue,
+                    saturation: 1,
+                    brightness: 0.8 + Double(offset) * chunkScale / 5
+                  )
+                )
 
-      for (offset, rowAttributedString) in rowAttributedStrings.enumerated() {
-        let frame = CGRect(
-          origin: .init(
-            x: 0,
-            y: Double(offset) * font.cellHeight
-          ),
-          size: .init(
-            width: size.width,
-            height: font.cellHeight
+              return (frame, backgroundColor, text)
+            }
+        }
+
+      graphicsContext.drawLayer { backgroundGraphicsContext in
+        for rowDrawRun in rowDrawRuns {
+          backgroundGraphicsContext.fill(
+            Path(rowDrawRun.frame),
+            with: .color(rowDrawRun.backgroundColor)
           )
-        )
-
-        graphicsContext.fill(Path(frame), with: .color(.black))
-
-        graphicsContext.draw(Text(rowAttributedString), in: frame)
+        }
       }
 
-      if let cursor, cursor.gridID == grid.id {
-        var cursorGraphicsContext = graphicsContext
+      graphicsContext.drawLayer { foregroundGraphicsContext in
+        for rowDrawRun in rowDrawRuns {
+          foregroundGraphicsContext.draw(
+            rowDrawRun.text,
+            in: rowDrawRun.frame
+          )
+        }
+      }
+
+      if
+        let cursor,
+        cursor.gridID == grid.id,
+        cursor.position.row < grid.cells.rowsCount,
+        cursor.position.column < grid.cells.columnsCount
+      {
+        let cursorGraphicsContext = graphicsContext
 
         let frame = CGRect(
           origin: .init(
@@ -127,11 +176,19 @@ public struct SnapshotView: View {
             height: font.cellHeight
           )
         )
-        cursorGraphicsContext.blendMode = .difference
+
         cursorGraphicsContext.fill(
           Path(frame),
           with: .color(.white)
         )
+
+        let cell = grid.cells[cursor.position]
+
+        let text = Text(cell.text)
+          .font(.init(font.nsFont))
+          .foregroundColor(.black)
+
+        cursorGraphicsContext.draw(text, in: frame)
       }
     }
   }

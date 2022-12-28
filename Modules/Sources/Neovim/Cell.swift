@@ -6,6 +6,11 @@ public struct Cell: Sendable, Equatable {
     self.highlightID = highlightID
   }
 
+  public static let `default` = Self(
+    text: " ",
+    highlightID: .default
+  )
+
   public var text: String
   public var highlightID: Highlight.ID
 }

@@ -24,6 +24,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
     .package(url: "https://github.com/apple/swift-syntax", branch: "main"),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
+    .package(url: "https://github.com/apple/swift-algorithms", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-identified-collections", from: "0.5.0"),
     .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-overture", branch: "main"),
@@ -79,6 +80,7 @@ let package = Package(
       dependencies: [
         .product(name: "Collections", package: "swift-collections"),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+        .product(name: "Algorithms", package: "swift-algorithms"),
         .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Overture", package: "swift-overture"),

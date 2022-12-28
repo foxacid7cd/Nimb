@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import CasePaths
 import ComposableArchitecture
-import Foundation
 import IdentifiedCollections
 import Library
 import MessagePack
@@ -20,6 +20,7 @@ public enum Action: Sendable {
   case applyGridDestroyUIEvents([UIEvents.GridDestroy])
   case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
   case applyWinPosUIEvents([UIEvents.WinPos])
+  case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
   case applyWinHideUIEvents([UIEvents.WinHide])
   case applyWinCloseUIEvents([UIEvents.WinClose])
   case setFont(Font)
@@ -85,6 +86,9 @@ public struct Reducer: ReducerProtocol {
             case let .winPos(decode):
               await send(.applyWinPosUIEvents(try decode()))
 
+            case let .winFloatPos(decode):
+              await send(.applyWinFloatPosUIEvents(try decode()))
+
             case let .winHide(decode):
               await send(.applyWinHideUIEvents(try decode()))
 
@@ -96,7 +100,7 @@ public struct Reducer: ReducerProtocol {
                 await send(
                   .setFont(
                     .init(
-                      .init(name: "MesloLGS Nerd Font Mono", size: 13)!
+                      .init(name: "MesloLGS NF", size: 13)!
                     )
                   )
                 )
@@ -171,24 +175,28 @@ public struct Reducer: ReducerProtocol {
         )
 
         update(&state.current.grids[id: id]) { grid in
+          let cells = TwoDimensionalArray<Cell>(
+            size: size,
+            elementAtPoint: { point in
+              guard
+                let grid,
+                point.row < grid.cells.rowsCount,
+                point.column < grid.cells.columnsCount
+              else {
+                return .default
+              }
+
+              let rows = grid.cells.rows
+              let row = rows[rows.startIndex + point.row]
+              return row[row.startIndex + point.column]
+            }
+          )
+
           grid = .init(
             id: id,
-            cells: .init(
-              size: size,
-              elementAtPoint: { point in
-                guard
-                  let grid,
-                  point.row < grid.cells.rowsCount,
-                  point.column < grid.cells.columnsCount
-                else {
-                  return .init(text: " ", highlightID: .default)
-                }
-
-                let rows = grid.cells.rows
-                let row = rows[rows.startIndex + point.row]
-                return row[row.startIndex + point.column]
-              }
-            )
+            cells: cells,
+            rowHighlightChunks: cells.rows
+              .map { $0.makeHighlightChunks() }
           )
         }
       }
@@ -206,25 +214,24 @@ public struct Reducer: ReducerProtocol {
         return .none
 
       } catch {
-        return .run { send in
-          await send(.handleError(error))
-        }
+        return .task { .handleError(error) }
       }
 
     case let .applyGridScrollUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        update(&state.current.grids[id: gridID]!.cells.rows) { rows in
-          let copy = rows
+        update(&state.current.grids[id: gridID]!) { grid in
+          let gridCopy = grid
 
           for fromRow in uiEvent.top ..< uiEvent.bot {
             let toRow = fromRow - uiEvent.rows
 
-            guard toRow >= 0, toRow < rows.count else {
+            guard toRow >= 0, toRow < grid.cells.rowsCount else {
               continue
             }
 
-            rows[toRow] = copy[fromRow]
+            grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
+            grid.rowHighlightChunks[toRow] = gridCopy.rowHighlightChunks[fromRow]
           }
         }
       }
@@ -233,14 +240,18 @@ public struct Reducer: ReducerProtocol {
     case let .applyGridClearUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        update(&state.current.grids[id: gridID]!.cells) { cells in
-          cells = .init(
-            size: cells.size,
-            repeatingElement: .init(
-              text: " ",
-              highlightID: .default
-            )
+
+        update(&state.current.grids[id: gridID]!) { grid in
+          let rowCells = ArraySlice(
+            repeating: Cell.default,
+            count: grid.cells.columnsCount
           )
+          let highlightChunks = rowCells.makeHighlightChunks()
+
+          for row in grid.cells.rows.indices {
+            grid.cells.rows[row] = rowCells
+            grid.rowHighlightChunks[row] = highlightChunks
+          }
         }
       }
       return .none
@@ -248,7 +259,9 @@ public struct Reducer: ReducerProtocol {
     case let .applyGridDestroyUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+
         state.current.windows.removeAll(where: { $0.gridID == gridID })
+        state.current.floatingWindows.removeAll(where: { $0.gridID == gridID })
       }
       return .none
 
@@ -266,6 +279,9 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyWinPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
+        state.current.floatingWindows.remove(id: uiEvent.win)
+
+        let zIndex = state.nextWindowZIndex()
         update(&state.current.windows[id: uiEvent.win]) { window in
           window = .init(
             reference: uiEvent.win,
@@ -280,18 +296,32 @@ public struct Reducer: ReducerProtocol {
                 rowsCount: uiEvent.height
               )
             ),
+            zIndex: zIndex,
             isHidden: false
-          )
-        }
-
-        if let index = state.current.windows.index(id: uiEvent.win) {
-          state.current.windows.move(
-            fromOffsets: [index],
-            toOffset: state.current.windows.endIndex
           )
         }
       }
 
+      return .none
+
+    case let .applyWinFloatPosUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        state.current.windows.remove(id: uiEvent.win)
+
+        update(&state.current.floatingWindows[id: uiEvent.win]) { floatingWindow in
+          floatingWindow = .init(
+            reference: uiEvent.win,
+            gridID: .init(uiEvent.grid),
+            anchor: uiEvent.anchor,
+            anchorGridID: .init(uiEvent.anchorGrid),
+            anchorRow: uiEvent.anchorRow,
+            anchorColumn: uiEvent.anchorCol,
+            isFocusable: uiEvent.focusable,
+            zIndex: uiEvent.zindex,
+            isHidden: false
+          )
+        }
+      }
       return .none
 
     case let .applyWinHideUIEvents(uiEvents):
@@ -303,13 +333,21 @@ public struct Reducer: ReducerProtocol {
             state.current.windows[index].isHidden = true
           }
         }
+
+        for index in state.current.floatingWindows.indices {
+          if state.current.floatingWindows[index].gridID == gridID {
+            state.current.floatingWindows[index].isHidden = true
+          }
+        }
       }
       return .none
 
     case let .applyWinCloseUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+
         state.current.windows.removeAll(where: { $0.gridID == gridID })
+        state.current.floatingWindows.removeAll(where: { $0.gridID == gridID })
       }
       return .none
 
@@ -396,5 +434,7 @@ public struct Reducer: ReducerProtocol {
         }
       }
     }
+
+    grid.rowHighlightChunks[origin.row] = grid.cells.rows[origin.row].makeHighlightChunks()
   }
 }

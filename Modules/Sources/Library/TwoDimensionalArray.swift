@@ -60,12 +60,12 @@ public struct TwoDimensionalArray<Element> {
       target.rowsCount
     }
 
-    public subscript(position: Int) -> ArraySlice<Element> {
+    public subscript(row: Int) -> ArraySlice<Element> {
       get {
-        target.elements[elementsIndices(for: position)]
+        target.elements[elementsIndices(for: row)]
       }
       set {
-        target.elements[elementsIndices(for: position)] = newValue
+        target.elements[elementsIndices(for: row)] = newValue
       }
     }
 
@@ -99,6 +99,19 @@ public struct TwoDimensionalArray<Element> {
     set {
       self = newValue.target
     }
+  }
+
+  public subscript(point: IntegerPoint) -> Element {
+    get {
+      elements[elementsIndex(for: point)]
+    }
+    set {
+      elements[elementsIndex(for: point)] = newValue
+    }
+  }
+
+  private func elementsIndex(for point: IntegerPoint) -> Int {
+    columnsCount * point.row + point.column
   }
 }
 
