@@ -175,10 +175,19 @@ public struct Reducer: ReducerProtocol {
             id: id,
             cells: .init(
               size: size,
-              repeatingElement: .init(
-                text: " ",
-                highlightID: .default
-              )
+              elementAtPoint: { point in
+                guard
+                  let grid,
+                  point.row < grid.cells.rowsCount,
+                  point.column < grid.cells.columnsCount
+                else {
+                  return .init(text: " ", highlightID: .default)
+                }
+
+                let rows = grid.cells.rows
+                let row = rows[rows.startIndex + point.row]
+                return row[row.startIndex + point.column]
+              }
             )
           )
         }
@@ -257,8 +266,6 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyWinPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        state.current.windows.remove(id: uiEvent.win)
-
         update(&state.current.windows[id: uiEvent.win]) { window in
           window = .init(
             reference: uiEvent.win,
@@ -276,7 +283,15 @@ public struct Reducer: ReducerProtocol {
             isHidden: false
           )
         }
+
+        if let index = state.current.windows.index(id: uiEvent.win) {
+          state.current.windows.move(
+            fromOffsets: [index],
+            toOffset: state.current.windows.endIndex
+          )
+        }
       }
+
       return .none
 
     case let .applyWinHideUIEvents(uiEvents):

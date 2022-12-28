@@ -37,26 +37,24 @@ public struct SnapshotView: View {
           )
 
           ForEach(state.windows) { window in
-            let view = gridView(
-              for: state.grids[id: window.gridID]!,
-              font: font,
-              size: window.frame.size,
-              cursor: state.cursor
-            )
-            .frame(
-              width: Double(window.frame.size.columnsCount) * font.cellWidth,
-              height: Double(window.frame.size.rowsCount) * font.cellHeight
-            )
-            .offset(
-              x: Double(window.frame.origin.column) * font.cellWidth,
-              y: Double(window.frame.origin.row) * font.cellHeight
-            )
-
             if !window.isHidden {
-              view
+              gridView(
+                for: state.grids[id: window.gridID]!,
+                font: font,
+                size: window.frame.size,
+                cursor: state.cursor
+              )
+              .frame(
+                width: Double(window.frame.size.columnsCount) * font.cellWidth,
+                height: Double(window.frame.size.rowsCount) * font.cellHeight
+              )
+              .offset(
+                x: Double(window.frame.origin.column) * font.cellWidth,
+                y: Double(window.frame.origin.row) * font.cellHeight
+              )
 
             } else {
-              view.hidden()
+              EmptyView()
             }
           }
         }
@@ -92,12 +90,12 @@ public struct SnapshotView: View {
         return AttributedString(string, attributes: attributes)
       }
 
-    return Canvas(opaque: true, rendersAsynchronously: true) { graphicsContext, size in
-      graphicsContext.fill(
-        Path(CGRect(origin: .init(), size: size)),
-        with: .color(.black),
-        style: .init(antialiased: false)
-      )
+    return Canvas { graphicsContext, size in
+//      graphicsContext.fill(
+//        Path(CGRect(origin: .init(), size: size)),
+//        with: .color(.black),
+//        style: .init(antialiased: false)
+//      )
 
       for (offset, rowAttributedString) in rowAttributedStrings.enumerated() {
         let frame = CGRect(
@@ -110,6 +108,8 @@ public struct SnapshotView: View {
             height: font.cellHeight
           )
         )
+
+        graphicsContext.fill(Path(frame), with: .color(.black))
 
         graphicsContext.draw(Text(rowAttributedString), in: frame)
       }
