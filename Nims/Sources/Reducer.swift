@@ -5,38 +5,36 @@
 //  Created by Yevhenii Matviienko on 16.12.2022.
 //
 
+import AppKit
 import CasePaths
 import ComposableArchitecture
-import Foundation
 import IdentifiedCollections
 import Instance
 import Library
+import Neovim
 
 enum Action: Sendable {
-  case createInstance
-  case instance(id: Instance.State.ID, action: Instance.Action)
+  case createInstance(keyPresses: AsyncStream<KeyPress>)
+  case instance(action: Instance.Action)
 }
 
 struct Reducer: ReducerProtocol {
   var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case .createInstance:
+      case let .createInstance(keyPresses):
         let instanceID = Instance.State.ID(
           rawValue: UUID().uuidString)
 
-        state.instances.updateOrAppend(
-          .init(
-            id: instanceID))
+        state.instance = .init(id: instanceID)
 
         return .run { send in
           await send(
             .instance(
-              id: instanceID,
-              action: .startProcess))
+              action: .createProcess(keyPresses: keyPresses)))
         }
 
-      case let .instance(id, action):
+      case let .instance(action):
         switch action {
         case let .handleError(error):
           return .fireAndForget {
@@ -44,12 +42,14 @@ struct Reducer: ReducerProtocol {
           }
 
         case let .processFinished(error):
-          state.instances.remove(id: id)
+          state.instance = nil
 
           return .fireAndForget {
             if let error {
               assertionFailure("\(error)")
             }
+
+            NSApplication.shared.terminate(nil)
           }
 
         default:
@@ -57,8 +57,10 @@ struct Reducer: ReducerProtocol {
         }
       }
     }
-    .forEach(\.instances, action: /Action.instance) {
-      Instance.Reducer()
-    }
+    .ifLet(
+      \.instance, action: /Action.instance,
+      then: {
+        Instance.Reducer()
+      })
   }
 }

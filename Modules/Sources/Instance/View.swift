@@ -30,17 +30,18 @@ public struct View: SwiftUI.View {
         let frameHeight = Double(outerGrid.cells.rowsCount) * font.cellHeight
 
         ZStack(alignment: .topLeading) {
-          canvas(
+          gridView(
             for: outerGrid,
             font: font,
             size: outerGrid.cells.size
           )
           .frame(
             width: frameWidth,
-            height: frameHeight)
+            height: frameHeight
+          )
 
           ForEach(state.windows) { window in
-            canvas(
+            gridView(
               for: state.grids[id: window.gridID]!,
               font: font,
               size: window.frame.size
@@ -51,7 +52,8 @@ public struct View: SwiftUI.View {
             )
             .offset(
               x: Double(window.frame.origin.column) * font.cellWidth,
-              y: Double(window.frame.origin.row) * font.cellHeight)
+              y: Double(window.frame.origin.row) * font.cellHeight
+            )
           }
         }
         .frame(
@@ -64,8 +66,8 @@ public struct View: SwiftUI.View {
     }
   }
 
-  private func canvas(for grid: State.Grid, font: Neovim.Font, size: IntegerSize)
-    -> Canvas<EmptyView>
+  private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize) -> some SwiftUI
+    .View
   {
     let attributes = AttributeContainer([
       .font: font.nsFont,
@@ -75,26 +77,24 @@ public struct View: SwiftUI.View {
     let rows = grid.cells.rows
 
     let lower = rows.startIndex
-    let upper = rows.index(lower, offsetBy: size.rowsCount)
+    let upper = min(lower + size.rowsCount, rows.endIndex)
     let rowAttributedStrings = rows[lower..<upper]
       .map { rowCells in
-        let string: String
-
-        if rowCells.isEmpty {
-          string = ""
-
-        } else {
-          let lower = rowCells.startIndex
-          let upper = rowCells.index(lower, offsetBy: size.columnsCount)
-          string = rowCells[lower..<upper]
-            .map { $0.text }
-            .joined()
-        }
+        let lower = rowCells.startIndex
+        let upper = min(lower + size.columnsCount, rowCells.endIndex)
+        let string = rowCells[lower..<upper]
+          .map { $0.text }
+          .joined()
 
         return AttributedString(string, attributes: attributes)
       }
 
-    return .init { graphicsContext, size in
+    return Canvas(opaque: true, rendersAsynchronously: true) { graphicsContext, size in
+      graphicsContext.fill(
+        Path(CGRect(origin: .init(), size: size)),
+        with: .color(.black),
+        style: .init(antialiased: false))
+
       for (offset, rowAttributedString) in rowAttributedStrings.enumerated() {
         let frame = CGRect(
           origin: .init(

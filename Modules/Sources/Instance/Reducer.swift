@@ -16,8 +16,8 @@ import Overture
 import Tagged
 
 public enum Action: Sendable {
-  case startProcess
-  case applyUIEventBatches(AsyncStream<UIEventBatch>)
+  case createProcess(keyPresses: AsyncStream<KeyPress>)
+  case bindProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
   case applyWinPosUIEvents([UIEvents.WinPos])
@@ -31,52 +31,35 @@ public struct Reducer: ReducerProtocol {
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
-    case .startProcess:
+    case let .createProcess(keyPresses):
+      let process = Neovim.Process()
+
       return .run { send in
-        let process = Neovim.Process()
-
-        for try await state in await process.states {
-          switch state {
-          case .running:
-            await send(
-              .setFont(
-                .init(
-                  .init(name: "MesloLGS Nerd Font Mono", size: 13)!)))
-
-            await send(
-              .applyUIEventBatches(
-                await process.api.uiEventBatches))
-
-            do {
-              _ = try await process.api.nvimUiAttach(
-                width: 130,
-                height: 40,
-                options: [
-                  "ext_multigrid": true,
-                  "ext_hlstate": true,
-                  "ext_cmdline": false,
-                  "ext_messages": true,
-                  "ext_popupmenu": true,
-                  "ext_tabline": true,
-                ]
-              )
-              .get()
-
-            } catch {
-              await send(.handleError(error))
+        do {
+          for try await state in await process.states {
+            switch state {
+            case .running:
+              await send(.bindProcess(process, keyPresses: keyPresses))
             }
           }
+
+          await send(.processFinished(error: nil))
+
+        } catch {
+          await send(.processFinished(error: error))
         }
-
-        await send(.processFinished(error: nil))
-
-      } catch: { error, send in
-        await send(.processFinished(error: error))
       }
+      .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .applyUIEventBatches(value):
-      return .run { send in
-        for await uiEventBatch in value {
+    case let .bindProcess(process, keyPresses):
+      let applyUIEventBatches = EffectTask<Action>.run { send in
+        var isFirstFlush = true
+
+        for await uiEventBatch in await process.api.uiEventBatches {
+          guard !Task.isCancelled else {
+            break
+          }
+
           do {
             switch uiEventBatch {
             case let .gridResize(decode):
@@ -89,7 +72,14 @@ public struct Reducer: ReducerProtocol {
               await send(.applyWinPosUIEvents(try decode()))
 
             case .flush:
-              break
+              if isFirstFlush {
+                await send(
+                  .setFont(
+                    .init(
+                      .init(name: "MesloLGS Nerd Font Mono", size: 13)!)))
+              }
+
+              isFirstFlush = false
 
             default:
               break
@@ -100,6 +90,52 @@ public struct Reducer: ReducerProtocol {
           }
         }
       }
+
+      let reportKeyPresses = EffectTask<Action>.run { send in
+        for await keyPress in keyPresses {
+          guard !Task.isCancelled else {
+            break
+          }
+
+          do {
+            _ = try await process.api.nvimInput(
+              keys: keyPress.makeNvimKeyCode()
+            )
+            .get()
+
+          } catch {
+            await send(.handleError(error))
+          }
+        }
+      }
+
+      let requestUIAttach = EffectTask<Action>.run { send in
+        do {
+          _ = try await process.api.nvimUiAttach(
+            width: 130,
+            height: 40,
+            options: [
+              "ext_multigrid": true,
+              "ext_hlstate": true,
+              "ext_cmdline": false,
+              "ext_messages": true,
+              "ext_popupmenu": true,
+              "ext_tabline": true,
+            ]
+          )
+          .get()
+
+        } catch {
+          await send(.handleError(error))
+        }
+      }
+
+      return .merge(
+        applyUIEventBatches,
+        reportKeyPresses,
+        requestUIAttach
+      )
+      .cancellable(id: EffectID.bindProcess)
 
     case let .applyGridResizeUIEvents(uiEvents):
       for uiEvent in uiEvents {
@@ -232,5 +268,9 @@ public struct Reducer: ReducerProtocol {
         }
       }
     }
+  }
+
+  private enum EffectID: String, Hashable {
+    case bindProcess
   }
 }

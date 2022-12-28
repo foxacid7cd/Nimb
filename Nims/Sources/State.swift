@@ -12,11 +12,7 @@ import Neovim
 import Tagged
 
 struct State: Sendable, Equatable {
-  var instances: IdentifiedArrayOf<Instance.State>
-
-  init(instances: IdentifiedArrayOf<Instance.State> = []) {
-    self.instances = instances
-  }
+  var instance: Instance.State?
 }
 
 // struct State: Sendable {
