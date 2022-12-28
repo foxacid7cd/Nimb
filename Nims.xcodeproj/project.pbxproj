@@ -23,6 +23,7 @@
 		68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF462934CF6200564FE2 /* Assets.xcassets */; };
 		68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68BFEF482934CF6200564FE2 /* MainMenu.xib */; };
 		68D14B07294AF5FE00E4762F /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D14B06294AF5FE00E4762F /* State.swift */; };
+		68E95F23295BB2310082576C /* Instance in Frameworks */ = {isa = PBXBuildFile; productRef = 68E95F22295BB2310082576C /* Instance */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -86,6 +87,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				682272BB293DD63800A36AB9 /* Library in Frameworks */,
+				68E95F23295BB2310082576C /* Instance in Frameworks */,
 				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
 				682272BF293DD63800A36AB9 /* Neovim in Frameworks */,
 			);
@@ -199,6 +201,7 @@
 				682272BA293DD63800A36AB9 /* Library */,
 				682272BC293DD63800A36AB9 /* MessagePack */,
 				682272BE293DD63800A36AB9 /* Neovim */,
+				68E95F22295BB2310082576C /* Instance */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -549,6 +552,10 @@
 		682272BE293DD63800A36AB9 /* Neovim */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Neovim;
+		};
+		68E95F22295BB2310082576C /* Instance */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Instance;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

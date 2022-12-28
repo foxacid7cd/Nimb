@@ -6,10 +6,8 @@ let package = Package(
   name: "Modules",
   platforms: [.macOS(.v13)],
   products: [
-    .library(
-      name: "Neovim",
-      targets: ["Neovim"]
-    ),
+    .library(name: "Instance", targets: ["Instance"]),
+    .library(name: "Neovim", targets: ["Neovim"]),
     .executable(name: "generate", targets: ["generate"]),
     .library(name: "GenerateLibrary", targets: ["GenerateLibrary"]),
     .library(
@@ -33,6 +31,12 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-tagged", branch: "main")
   ],
   targets: [
+    .target(
+      name: "Instance",
+      dependencies: [
+        .target(name: "Neovim")
+      ]
+    ),
     .target(
       name: "Neovim",
       dependencies: [

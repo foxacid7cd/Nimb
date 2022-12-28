@@ -21,7 +21,7 @@ public struct UIEventsFile: GeneratableFile {
         for uiEvent in metadata.uiEvents {
           let structName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: true)
 
-          StructDecl("public struct \(structName)") {
+          StructDecl("public struct \(structName): Sendable, Equatable") {
             for parameter in uiEvent.parameters {
               let formattedName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
               "public var \(raw: formattedName): \(raw: parameter.type.swift.signature)"

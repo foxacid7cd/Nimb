@@ -3,7 +3,7 @@
 import Foundation
 import msgpack
 
-public enum Value: Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
+public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
 {
   case integer(Int)

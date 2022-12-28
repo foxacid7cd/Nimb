@@ -8,7 +8,7 @@ import Foundation
 
 public struct TwoDimensionalArray<Element> {
   var elements: [Element]
-  var columnsCount: Int
+  public internal(set) var columnsCount: Int
 
   init(elements: [Element], columnsCount: Int) {
     self.elements = elements
@@ -58,10 +58,14 @@ public struct TwoDimensionalArray<Element> {
     columnsCount = size.columnsCount
   }
 
+  public var rowsCount: Int {
+    elements.count / columnsCount
+  }
+
   public var size: IntegerSize {
     .init(
       columnsCount: columnsCount,
-      rowsCount: elements.count / columnsCount
+      rowsCount: rowsCount
     )
   }
 
