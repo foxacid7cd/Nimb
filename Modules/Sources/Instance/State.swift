@@ -6,16 +6,10 @@ import Neovim
 import Tagged
 
 public struct State: Sendable, Equatable, Identifiable {
-  public init(
-    id: ID,
-    font: Font? = nil,
-    grids: IdentifiedArrayOf<Grid> = [],
-    windows: IdentifiedArrayOf<Window> = []
-  ) {
+  public init(id: State.ID, flushed: State.Snapshot? = nil, current: State.Snapshot = .init()) {
     self.id = id
-    self.font = font
-    self.grids = grids
-    self.windows = windows
+    self.flushed = flushed
+    self.current = current
   }
 
   public typealias ID = Tagged<State, String>
@@ -60,20 +54,32 @@ public struct State: Sendable, Equatable, Identifiable {
     public var position: IntegerPoint
   }
 
-  public var id: ID
-  public var font: Font?
-  public var grids: IdentifiedArrayOf<Grid>
-  public var windows: IdentifiedArrayOf<Window>
-  public var cursor: Cursor?
-
-  public var outerGrid: Grid? {
-    get {
-      grids[id: .outer]
+  public struct Snapshot: Sendable, Equatable {
+    public init(font: Font? = nil, grids: IdentifiedArrayOf<State.Grid> = [], windows: IdentifiedArrayOf<State.Window> = [], cursor: State.Cursor? = nil) {
+      self.font = font
+      self.grids = grids
+      self.windows = windows
+      self.cursor = cursor
     }
-    set {
-      grids[id: .outer] = newValue
+
+    public var font: Font?
+    public var grids: IdentifiedArrayOf<Grid>
+    public var windows: IdentifiedArrayOf<Window>
+    public var cursor: Cursor?
+
+    public var outerGrid: Grid? {
+      get {
+        grids[id: .outer]
+      }
+      set {
+        grids[id: .outer] = newValue
+      }
     }
   }
+
+  public var id: ID
+  public var flushed: Snapshot?
+  public var current: Snapshot
 }
 
 public extension State.Grid.ID {

@@ -8,14 +8,14 @@ import Overture
 import SwiftUI
 
 @MainActor
-public struct View: SwiftUI.View {
-  public init(store: Store<State, Action>) {
+public struct SnapshotView: View {
+  public init(store: Store<State.Snapshot, Action>) {
     self.store = store
   }
 
-  public var store: Store<State, Action>
+  public var store: Store<State.Snapshot, Action>
 
-  public var body: some SwiftUI.View {
+  public var body: some View {
     WithViewStore(
       store,
       observe: { $0 }
@@ -71,8 +71,7 @@ public struct View: SwiftUI.View {
     }
   }
 
-  private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize, cursor: State.Cursor?) -> some SwiftUI
-    .View {
+  private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize, cursor: State.Cursor?) -> some View {
     let attributes = AttributeContainer([
       .font: font.nsFont,
       .foregroundColor: NSColor.systemPink,

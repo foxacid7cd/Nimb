@@ -23,6 +23,7 @@ public enum Action: Sendable {
   case applyWinHideUIEvents([UIEvents.WinHide])
   case applyWinCloseUIEvents([UIEvents.WinClose])
   case setFont(Font)
+  case flush
   case handleError(Error)
   case processFinished(error: Error?)
 }
@@ -101,6 +102,8 @@ public struct Reducer: ReducerProtocol {
                 )
               }
 
+              await send(.flush)
+
               isFirstFlush = false
 
             default:
@@ -167,7 +170,7 @@ public struct Reducer: ReducerProtocol {
           rowsCount: uiEvent.height
         )
 
-        update(&state.grids[id: id]) { grid in
+        update(&state.current.grids[id: id]) { grid in
           grid = .init(
             id: id,
             cells: .init(
@@ -186,7 +189,7 @@ public struct Reducer: ReducerProtocol {
       do {
         for uiEvent in uiEvents {
           try updateLine(
-            in: &state.grids[id: .init(uiEvent.grid)]!,
+            in: &state.current.grids[id: .init(uiEvent.grid)]!,
             origin: .init(column: uiEvent.colStart, row: uiEvent.row),
             values: uiEvent.data
           )
@@ -202,7 +205,7 @@ public struct Reducer: ReducerProtocol {
     case let .applyGridScrollUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        update(&state.grids[id: gridID]!.cells.rows) { rows in
+        update(&state.current.grids[id: gridID]!.cells.rows) { rows in
           let copy = rows
 
           for fromRow in uiEvent.top ..< uiEvent.bot {
@@ -221,7 +224,7 @@ public struct Reducer: ReducerProtocol {
     case let .applyGridClearUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        update(&state.grids[id: gridID]!.cells) { cells in
+        update(&state.current.grids[id: gridID]!.cells) { cells in
           cells = .init(
             size: cells.size,
             repeatingElement: .init(
@@ -236,13 +239,13 @@ public struct Reducer: ReducerProtocol {
     case let .applyGridDestroyUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        state.windows.removeAll(where: { $0.gridID == gridID })
+        state.current.windows.removeAll(where: { $0.gridID == gridID })
       }
       return .none
 
     case let .applyGridCursorGotoUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        state.cursor = .init(
+        state.current.cursor = .init(
           gridID: .init(uiEvent.grid),
           position: .init(
             column: uiEvent.col,
@@ -254,9 +257,9 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyWinPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        state.windows.remove(id: uiEvent.win)
+        state.current.windows.remove(id: uiEvent.win)
 
-        update(&state.windows[id: uiEvent.win]) { window in
+        update(&state.current.windows[id: uiEvent.win]) { window in
           window = .init(
             reference: uiEvent.win,
             gridID: .init(uiEvent.grid),
@@ -280,9 +283,9 @@ public struct Reducer: ReducerProtocol {
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
 
-        for index in state.windows.indices {
-          if state.windows[index].gridID == gridID {
-            state.windows[index].isHidden = true
+        for index in state.current.windows.indices {
+          if state.current.windows[index].gridID == gridID {
+            state.current.windows[index].isHidden = true
           }
         }
       }
@@ -291,12 +294,16 @@ public struct Reducer: ReducerProtocol {
     case let .applyWinCloseUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        state.windows.removeAll(where: { $0.gridID == gridID })
+        state.current.windows.removeAll(where: { $0.gridID == gridID })
       }
       return .none
 
     case let .setFont(font):
-      state.font = font
+      state.current.font = font
+      return .none
+
+    case .flush:
+      state.flushed = state.current
       return .none
 
     default:

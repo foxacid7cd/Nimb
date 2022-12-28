@@ -14,8 +14,11 @@ struct Nims: App {
   var body: some Scene {
     Window("Nims", id: "Main") {
       IfLetStore(
-        store.scope(state: \.instance, action: Action.instance(action:)),
-        then: { Instance.View(store: $0) }
+        store.scope(
+          state: \.instance?.flushed,
+          action: Action.instance(action:)
+        ),
+        then: { Instance.SnapshotView(store: $0) }
       )
     }
     .windowResizability(.contentSize)
