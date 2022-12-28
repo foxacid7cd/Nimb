@@ -14,11 +14,16 @@ public struct State: Sendable, Equatable, Identifiable {
   public var id: ID
   public var font: Font?
   public var grids: IdentifiedArrayOf<Grid>
+  public var outerGridSize: IntegerSize?
 
-  public init(id: ID, font: Font? = nil, grids: IdentifiedArrayOf<Grid> = .init()) {
+  public init(
+    id: ID, font: Font? = nil, grids: IdentifiedArrayOf<Grid> = [],
+    outerGridSize: IntegerSize? = nil
+  ) {
     self.id = id
     self.font = font
     self.grids = grids
+    self.outerGridSize = outerGridSize
   }
 
   public typealias ID = Tagged<State, String>

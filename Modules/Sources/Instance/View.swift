@@ -24,7 +24,7 @@ public struct View: SwiftUI.View {
       store,
       observe: { $0 }
     ) { state in
-      if let font = state.font, let outerGrid = state.grids[id: .outer] {
+      if let font = state.font, let outerGridSize = state.outerGridSize {
         ZStack(alignment: .topLeading) {
           ForEach(state.grids) { grid in
             Canvas { graphicsContext, size in
@@ -39,8 +39,8 @@ public struct View: SwiftUI.View {
           }
         }
         .frame(
-          width: Double(outerGrid.cells.size.columnsCount) * font.cellWidth,
-          height: Double(outerGrid.cells.size.rowsCount) * font.cellHeight
+          width: Double(outerGridSize.columnsCount) * font.cellWidth,
+          height: Double(outerGridSize.rowsCount) * font.cellHeight
         )
 
       } else {

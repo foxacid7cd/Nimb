@@ -99,12 +99,21 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyGridResizeUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        update(&state.grids[id: .init(uiEvent.grid)]) { grid in
+        let id = State.Grid.ID(rawValue: uiEvent.grid)
+        let size = IntegerSize(
+          columnsCount: uiEvent.width,
+          rowsCount: uiEvent.height)
+
+        update(&state.grids[id: id]) { grid in
           grid = .init(
-            id: .init(uiEvent.grid),
+            id: id,
             cells: .init(
-              size: .init(columnsCount: uiEvent.width, rowsCount: uiEvent.height),
+              size: size,
               repeatingElement: .init(text: " ", highlightID: .default)))
+        }
+
+        if id.isOuter {
+          state.outerGridSize = size
         }
       }
       return .none
@@ -141,7 +150,7 @@ public struct Reducer: ReducerProtocol {
   }
 
   private func updateLine(in grid: inout State.Grid, origin: IntegerPoint, values: [Value]) throws {
-    try update(&grid.cells[origin.row]) { rowCells in
+    try update(&grid.cells.rows[origin.row]) { rowCells in
       var updatedCellsCount = 0
       var highlightID = Highlight.ID.default
 
@@ -190,7 +199,10 @@ public struct Reducer: ReducerProtocol {
             text: text,
             highlightID: highlightID)
 
-          rowCells[rowCells.startIndex + origin.column + updatedCellsCount] = cell
+          let index = rowCells.index(
+            rowCells.startIndex,
+            offsetBy: origin.column + updatedCellsCount)
+          rowCells[index] = cell
 
           updatedCellsCount += 1
         }

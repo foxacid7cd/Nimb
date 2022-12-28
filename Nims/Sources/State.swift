@@ -13,6 +13,10 @@ import Tagged
 
 struct State: Sendable, Equatable {
   var instances: IdentifiedArrayOf<Instance.State>
+
+  init(instances: IdentifiedArrayOf<Instance.State> = []) {
+    self.instances = instances
+  }
 }
 
 // struct State: Sendable {

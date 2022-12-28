@@ -18,8 +18,6 @@ enum Action: Sendable {
 }
 
 struct Reducer: ReducerProtocol {
-  public init() {}
-
   var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
@@ -29,8 +27,7 @@ struct Reducer: ReducerProtocol {
 
         state.instances.updateOrAppend(
           .init(
-            id: instanceID,
-            grids: []))
+            id: instanceID))
 
         return .run { send in
           await send(
@@ -46,9 +43,14 @@ struct Reducer: ReducerProtocol {
             assertionFailure("\(error)")
           }
 
-        case .processFinished:
+        case let .processFinished(error):
           state.instances.remove(id: id)
-          return .none
+
+          return .fireAndForget {
+            if let error {
+              assertionFailure("\(error)")
+            }
+          }
 
         default:
           return .none

@@ -69,20 +69,40 @@ public struct TwoDimensionalArray<Element> {
     )
   }
 
-  public subscript(row: Int) -> ArraySlice<Element> {
+  public var rows: RowsView {
     get {
-      elements[arrayIndices(row: row)]
+      .init(target: self)
     }
     set {
-      elements[arrayIndices(row: row)] = newValue
+      self = newValue.target
     }
   }
 
-  private func arrayIndices(row: Int) -> Range<Array.Index> {
-    let startIndex = row * columnsCount
-    let endIndex = startIndex + columnsCount
+  public struct RowsView: RandomAccessCollection {
+    var target: TwoDimensionalArray<Element>
 
-    return startIndex..<endIndex
+    public var startIndex: Int {
+      0
+    }
+
+    public var endIndex: Int {
+      target.rowsCount
+    }
+
+    public subscript(position: Int) -> ArraySlice<Element> {
+      get {
+        target.elements[elementsIndices(for: position)]
+      }
+      set {
+        target.elements[elementsIndices(for: position)] = newValue
+      }
+    }
+
+    private func elementsIndices(for row: Int) -> Range<Int> {
+      let lower = target.columnsCount * row
+      let upper = lower + target.columnsCount
+      return lower..<upper
+    }
   }
 }
 

@@ -5,7 +5,6 @@
 //  Created by Yevhenii Matviienko on 16.12.2022.
 //
 
-import CasePaths
 import ComposableArchitecture
 import Instance
 import SwiftUI
@@ -16,7 +15,7 @@ import SwiftUI
   var scenePhase: ScenePhase
 
   private var store = StoreOf<Reducer>(
-    initialState: Reducer.State(instances: .init()),
+    initialState: .init(),
     reducer: Reducer()
   )
 
