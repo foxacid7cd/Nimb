@@ -28,7 +28,8 @@ public struct View: SwiftUI.View {
           gridView(
             for: outerGrid,
             font: font,
-            size: outerGrid.cells.size
+            size: outerGrid.cells.size,
+            cursor: state.cursor
           )
           .frame(
             width: frameWidth,
@@ -39,7 +40,8 @@ public struct View: SwiftUI.View {
             let view = gridView(
               for: state.grids[id: window.gridID]!,
               font: font,
-              size: window.frame.size
+              size: window.frame.size,
+              cursor: state.cursor
             )
             .frame(
               width: Double(window.frame.size.columnsCount) * font.cellWidth,
@@ -69,7 +71,7 @@ public struct View: SwiftUI.View {
     }
   }
 
-  private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize) -> some SwiftUI
+  private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize, cursor: State.Cursor?) -> some SwiftUI
     .View {
     let attributes = AttributeContainer([
       .font: font.nsFont,
@@ -111,6 +113,26 @@ public struct View: SwiftUI.View {
         )
 
         graphicsContext.draw(Text(rowAttributedString), in: frame)
+      }
+
+      if let cursor, cursor.gridID == grid.id {
+        var cursorGraphicsContext = graphicsContext
+
+        let frame = CGRect(
+          origin: .init(
+            x: Double(cursor.position.column) * font.cellWidth,
+            y: Double(cursor.position.row) * font.cellHeight
+          ),
+          size: .init(
+            width: font.cellWidth,
+            height: font.cellHeight
+          )
+        )
+        cursorGraphicsContext.blendMode = .difference
+        cursorGraphicsContext.fill(
+          Path(frame),
+          with: .color(.white)
+        )
       }
     }
   }

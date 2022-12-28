@@ -15,7 +15,10 @@ public enum Action: Sendable {
   case bindProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
+  case applyGridScrollUIEvents([UIEvents.GridScroll])
+  case applyGridClearUIEvents([UIEvents.GridClear])
   case applyGridDestroyUIEvents([UIEvents.GridDestroy])
+  case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
   case applyWinPosUIEvents([UIEvents.WinPos])
   case applyWinHideUIEvents([UIEvents.WinHide])
   case applyWinCloseUIEvents([UIEvents.WinClose])
@@ -66,8 +69,17 @@ public struct Reducer: ReducerProtocol {
             case let .gridLine(decode):
               await send(.applyGridLineUIEvents(try decode()))
 
+            case let .gridScroll(decode):
+              await send(.applyGridScrollUIEvents(try decode()))
+
+            case let .gridClear(decode):
+              await send(.applyGridClearUIEvents(try decode()))
+
             case let .gridDestroy(decode):
               await send(.applyGridDestroyUIEvents(try decode()))
+
+            case let .gridCursorGoto(decode):
+              await send(.applyGridCursorGotoUIEvents(try decode()))
 
             case let .winPos(decode):
               await send(.applyWinPosUIEvents(try decode()))
@@ -160,7 +172,10 @@ public struct Reducer: ReducerProtocol {
             id: id,
             cells: .init(
               size: size,
-              repeatingElement: .init(text: " ", highlightID: .default)
+              repeatingElement: .init(
+                text: " ",
+                highlightID: .default
+              )
             )
           )
         }
@@ -184,12 +199,56 @@ public struct Reducer: ReducerProtocol {
         }
       }
 
+    case let .applyGridScrollUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        update(&state.grids[id: gridID]!.cells.rows) { rows in
+          let copy = rows
+
+          for fromRow in uiEvent.top ..< uiEvent.bot {
+            let toRow = fromRow - uiEvent.rows
+
+            guard toRow >= 0, toRow < rows.count else {
+              continue
+            }
+
+            rows[toRow] = copy[fromRow]
+          }
+        }
+      }
+      return .none
+
+    case let .applyGridClearUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        update(&state.grids[id: gridID]!.cells) { cells in
+          cells = .init(
+            size: cells.size,
+            repeatingElement: .init(
+              text: " ",
+              highlightID: .default
+            )
+          )
+        }
+      }
+      return .none
+
     case let .applyGridDestroyUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        if let index = state.windows.firstIndex(where: { gridID == $0.gridID }) {
-          state.windows.remove(at: index)
-        }
+        state.windows.removeAll(where: { $0.gridID == gridID })
+      }
+      return .none
+
+    case let .applyGridCursorGotoUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        state.cursor = .init(
+          gridID: .init(uiEvent.grid),
+          position: .init(
+            column: uiEvent.col,
+            row: uiEvent.row
+          )
+        )
       }
       return .none
 
@@ -220,17 +279,19 @@ public struct Reducer: ReducerProtocol {
     case let .applyWinHideUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        let index = state.windows.firstIndex(where: { gridID == $0.gridID })!
-        state.windows[index].isHidden = true
+
+        for index in state.windows.indices {
+          if state.windows[index].gridID == gridID {
+            state.windows[index].isHidden = true
+          }
+        }
       }
       return .none
 
     case let .applyWinCloseUIEvents(uiEvents):
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        if let index = state.windows.firstIndex(where: { gridID == $0.gridID }) {
-          state.windows.remove(at: index)
-        }
+        state.windows.removeAll(where: { $0.gridID == gridID })
       }
       return .none
 

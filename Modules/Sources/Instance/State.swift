@@ -50,10 +50,21 @@ public struct State: Sendable, Equatable, Identifiable {
     }
   }
 
+  public struct Cursor: Sendable, Equatable {
+    public init(gridID: Grid.ID, position: IntegerPoint) {
+      self.gridID = gridID
+      self.position = position
+    }
+
+    public var gridID: Grid.ID
+    public var position: IntegerPoint
+  }
+
   public var id: ID
   public var font: Font?
   public var grids: IdentifiedArrayOf<Grid>
   public var windows: IdentifiedArrayOf<Window>
+  public var cursor: Cursor?
 
   public var outerGrid: Grid? {
     get {
