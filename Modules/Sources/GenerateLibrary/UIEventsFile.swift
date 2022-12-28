@@ -6,7 +6,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct UIEventsFile: GeneratableFile {
-  public init(_ metadata: Metadata) { self.metadata = metadata }
+  public init(metadata: Metadata) { self.metadata = metadata }
 
   public var metadata: Metadata
 
@@ -55,7 +55,10 @@ public struct UIEventsFile: GeneratableFile {
           Stmt(
             """
             guard case let .array(arrayValue) = value else {
-              throw DecodingFailed.initial(rawEventBatch: value, details: "Raw value is not an array")
+              throw DecodingFailed.initial(
+                rawEventBatch: value,
+                details: "Raw value is not an array"
+              )
             }
             """
           )
@@ -63,7 +66,10 @@ public struct UIEventsFile: GeneratableFile {
           Stmt(
             """
             guard case let .string(name) = arrayValue.first else {
-              throw DecodingFailed.initial(rawEventBatch: value, details: "First array value element is not a name string or array is empty")
+              throw DecodingFailed.initial(
+                rawEventBatch: value,
+                details: "First array value element is not a name string or array is empty"
+              )
             }
             """
           )
@@ -110,17 +116,13 @@ public struct UIEventsFile: GeneratableFile {
                             "rawParameters.count == \(uiEvent.parameters.count)"
                           let parameterTypeConditions = uiEvent.parameters.enumerated()
                             .map { index, parameter -> String in
-                              let name = parameter.name.camelCasedAssumingSnakeCased(
-                                capitalized: false
-                              )
-
-                              let wrappedName = parameter.type.wrapWithValueEncoder(String(name))
-
-                              return "case let \(wrappedName) = rawParameters[\(index)]"
+                              let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                              let result = parameter.type.wrapWithValueDecoder("rawParameters[\(index)]")
+                              return "let \(name) = \(result)"
                             }
                           let guardConditions =
                             ([parametersCountCondition] + parameterTypeConditions)
-                              .joined(separator: ", ")
+                              .joined(separator: ",\n")
                           Stmt(
                             """
                             guard \(raw: guardConditions) else {

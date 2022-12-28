@@ -6,7 +6,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 private let generatableFileTypes: [GeneratableFile.Type] = [
-  APIFunctionsFile.self, UIEventsFile.self,
+  APIFunctionsFile.self, UIEventsFile.self, ReferencesFile.self,
 ]
 
 public actor Generator {
@@ -40,7 +40,7 @@ public actor Generator {
     let metadata = try await metadataTask.value
 
     for type in generatableFileTypes {
-      let file = type.init(metadata)
+      let file = type.init(metadata: metadata)
 
       let fileURL = directoryURL.appending(path: "\(file.name).swift", directoryHint: .notDirectory)
 

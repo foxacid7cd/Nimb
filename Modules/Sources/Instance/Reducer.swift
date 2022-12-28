@@ -174,17 +174,11 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyWinPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        let winRef = (/Value.ext)
-          .extract(from: uiEvent.win)!
-        let windowID = State.Window.ID(
-          rawValue: winRef.1.hashValue
-        )
+        state.windows.remove(id: uiEvent.win)
 
-        state.windows.remove(id: windowID)
-
-        update(&state.windows[id: windowID]) { window in
+        update(&state.windows[id: uiEvent.win]) { window in
           window = .init(
-            id: windowID,
+            reference: uiEvent.win,
             gridID: .init(uiEvent.grid),
             frame: .init(
               origin: .init(

@@ -6,7 +6,6 @@ import Instance
 import Neovim
 import SwiftUI
 
-@MainActor
 @main
 struct Nims: App {
   @Environment(\.scenePhase)
@@ -31,17 +30,24 @@ struct Nims: App {
             return nil
           }
 
-          continuation.onTermination = { _ in
-            if let eventMonitor {
-              NSEvent.removeMonitor(eventMonitor)
+          continuation.onTermination = { termination in
+            switch termination {
+            case .cancelled:
+              continuation.finish()
+
+            case .finished:
+              if let eventMonitor {
+                NSEvent.removeMonitor(eventMonitor)
+              }
+
+            @unknown default:
+              break
             }
           }
         }
 
         ViewStore(store)
-          .send(
-            .createInstance(keyPresses: keyPresses)
-          )
+          .send(.createInstance(keyPresses: keyPresses))
 
       default:
         break

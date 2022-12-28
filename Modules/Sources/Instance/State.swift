@@ -33,17 +33,19 @@ public struct State: Sendable, Equatable, Identifiable {
   }
 
   public struct Window: Sendable, Equatable, Identifiable {
-    public init(id: ID, gridID: Grid.ID, frame: IntegerRectangle) {
-      self.id = id
+    public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle) {
+      self.reference = reference
       self.gridID = gridID
       self.frame = frame
     }
 
-    public typealias ID = Tagged<Window, Int>
-
-    public var id: ID
+    public var reference: References.Window
     public var gridID: Grid.ID
     public var frame: IntegerRectangle
+
+    public var id: References.Window {
+      reference
+    }
   }
 
   public var id: ID

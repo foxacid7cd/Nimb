@@ -39,7 +39,7 @@
 --markcategories false
 --markextensions always
 --marktypes always
---maxwidth 200
+--maxwidth 160
 --modifierorder 
 --nevertrailing 
 --nospaceoperators 
@@ -76,5 +76,5 @@
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---disable spaceInsideGenerics,wrap,wrapMultilineStatementBraces
+--disable wrapMultilineStatementBraces
 --enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases

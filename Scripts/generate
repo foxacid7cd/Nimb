@@ -11,4 +11,7 @@ GENERATE_CMD="swift run --package-path $1/Modules generate"
 GENERATED_DIR="$1/Modules/Sources/Neovim/generated"
 ${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
 
-"$1/Third-Party/swift-format/swift-format" format -i --configuration "$1/swift-format.json" -r -p "${GENERATED_DIR}"
+SWIFTFORMAT="/opt/homebrew/bin/swiftformat"
+if [ -x "${SWIFTFORMAT}" ]; then
+  "${SWIFTFORMAT}" --config "$1/.swiftformat" "${GENERATED_DIR}"
+fi

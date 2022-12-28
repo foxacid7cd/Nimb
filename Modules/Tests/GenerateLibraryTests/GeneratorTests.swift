@@ -4,7 +4,7 @@
 import MessagePack
 import XCTest
 
-private let expectedGeneratedFiles: Set = ["APIFunctions.swift", "UIEvents.swift"]
+private let expectedGeneratedFiles: Set = ["APIFunctions.swift", "UIEvents.swift", "References.swift"]
 
 class GeneratorTests: XCTestCase {
   var temporaryDirectoryURL: URL!

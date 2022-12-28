@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-private let dictionaryTypes: Set = ["Object", "Dictionary"]
-private let integerTypes: Set = ["Integer", "LuaRef"]
+public struct ValueType: Sendable, Equatable {
+  public init(rawValue: String, types: [Metadata.`Type`]) {
+    self.rawValue = rawValue
+    self.types = types
+  }
 
-public struct ValueType: Hashable {
-  public enum SwiftType: String {
+  public enum SwiftType {
     case integer
     case float
     case string
@@ -12,49 +14,65 @@ public struct ValueType: Hashable {
     case dictionary
     case array
     case binary
+    case reference(Metadata.`Type`)
     case value
 
     public var signature: String {
       switch self {
-      case .integer: return "Int"
+      case .integer:
+        return "Int"
 
-      case .float: return "Double"
+      case .float:
+        return "Double"
 
-      case .string: return "String"
+      case .string:
+        return "String"
 
-      case .boolean: return "Bool"
+      case .boolean:
+        return "Bool"
 
-      case .dictionary: return "[Value: Value]"
+      case .dictionary:
+        return "[Value: Value]"
 
-      case .array: return "[Value]"
+      case .array:
+        return "[Value]"
 
-      case .binary: return "Data"
+      case .binary:
+        return "Data"
 
-      case .value: return "Value"
+      case let .reference(type):
+        return "References.\(type.name)"
+
+      case .value:
+        return "Value"
       }
     }
   }
 
-  public var metadataString: String
+  public var rawValue: String
+  public var types: [Metadata.`Type`]
 
   public var swift: SwiftType {
-    if metadataString.starts(with: "Array") {
+    if rawValue.starts(with: "Array") {
       return .array
 
-    } else if dictionaryTypes.contains(metadataString) {
+    } else if ["Object", "Dictionary"].contains(rawValue) {
       return .dictionary
 
-    } else if integerTypes.contains(metadataString) {
+    } else if ["Integer", "LuaRef"].contains(rawValue) {
       return .integer
 
-    } else if metadataString == "Float" {
+    } else if rawValue == "Float" {
       return .float
 
-    } else if metadataString == "String" {
+    } else if rawValue == "String" {
       return .string
 
-    } else if metadataString == "Boolean" {
+    } else if rawValue == "Boolean" {
       return .boolean
+
+    } else if let type = types.first(where: { rawValue == $0.name }) {
+      return .reference(type)
 
     } else {
       return .value
@@ -63,17 +81,63 @@ public struct ValueType: Hashable {
 
   public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
-    case .value: return expr
+    case .integer:
+      return ".integer(\(expr))"
 
-    default: return ".\(swift.rawValue)(\(expr))"
+    case .float:
+      return ".float(\(expr))"
+
+    case .string:
+      return ".string(\(expr))"
+
+    case .boolean:
+      return ".boolean(\(expr))"
+
+    case .dictionary:
+      return ".dictionary(\(expr))"
+
+    case .array:
+      return ".array(\(expr))"
+
+    case .binary:
+      return ".binary(\(expr))"
+
+    case let .reference(type):
+      return ".ext(type: References.\(type.name).type, data: \(expr).data)"
+
+    case .value:
+      return expr
     }
   }
 
   public func wrapWithValueDecoder(_ expr: String) -> String {
     switch swift {
-    case .value: return expr
+    case .integer:
+      return "(/Value.integer).extract(from: \(expr))"
 
-    default: return "(/Value.\(swift.rawValue)).extract(from: \(expr))"
+    case .float:
+      return "(/Value.float).extract(from: \(expr))"
+
+    case .string:
+      return "(/Value.string).extract(from: \(expr))"
+
+    case .boolean:
+      return "(/Value.boolean).extract(from: \(expr))"
+
+    case .dictionary:
+      return "(/Value.dictionary).extract(from: \(expr))"
+
+    case .array:
+      return "(/Value.array).extract(from: \(expr))"
+
+    case .binary:
+      return "(/Value.binary).extract(from: \(expr))"
+
+    case let .reference(type):
+      return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)"
+
+    case .value:
+      return expr
     }
   }
 }
