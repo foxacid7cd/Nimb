@@ -34,10 +34,16 @@ public struct State: Equatable, Identifiable {
   }
 
   public struct Grid: Equatable, Identifiable {
-    public init(id: ID, cells: TwoDimensionalArray<Cell>, rowHighlightChunks: [[HighlightChunk]]) {
+    public init(
+      id: ID,
+      cells: TwoDimensionalArray<Cell>,
+      rowHighlightChunks: [[HighlightChunk]],
+      windowID: References.Window?
+    ) {
       self.id = id
       self.cells = cells
       self.rowHighlightChunks = rowHighlightChunks
+      self.windowID = windowID
     }
 
     public typealias ID = Tagged<Grid, Int>
@@ -45,6 +51,7 @@ public struct State: Equatable, Identifiable {
     public var id: ID
     public var cells: TwoDimensionalArray<Cell>
     public var rowHighlightChunks: [[HighlightChunk]]
+    public var windowID: References.Window?
   }
 
   public struct HighlightChunk: Equatable {
@@ -85,7 +92,7 @@ public struct State: Equatable, Identifiable {
     public init(
       reference: References.Window,
       gridID: State.Grid.ID,
-      anchor: String,
+      anchor: Anchor,
       anchorGridID: State.Grid.ID,
       anchorRow: Double,
       anchorColumn: Double,
@@ -106,7 +113,7 @@ public struct State: Equatable, Identifiable {
 
     public var reference: References.Window
     public var gridID: Grid.ID
-    public var anchor: String
+    public var anchor: Anchor
     public var anchorGridID: Grid.ID
     public var anchorRow: Double
     public var anchorColumn: Double
@@ -117,6 +124,13 @@ public struct State: Equatable, Identifiable {
     public var id: References.Window {
       reference
     }
+  }
+
+  public enum Anchor: String, Equatable {
+    case northWest = "NW"
+    case northEast = "NE"
+    case southWest = "SW"
+    case southEast = "SE"
   }
 
   public struct Cursor: Equatable {

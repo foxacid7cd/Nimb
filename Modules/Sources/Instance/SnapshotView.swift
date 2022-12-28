@@ -62,6 +62,15 @@ public struct SnapshotView: View {
             if !floatingWindow.isHidden {
               let grid = state.grids[id: floatingWindow.gridID]!
 
+              let frame = frame(
+                for: floatingWindow,
+                grid: grid,
+                appearance: appearance,
+                grids: state.grids,
+                windows: state.windows,
+                floatingWindows: state.floatingWindows
+              )
+
               gridView(
                 for: grid,
                 appearance: appearance,
@@ -69,12 +78,12 @@ public struct SnapshotView: View {
                 cursor: state.cursor
               )
               .frame(
-                width: Double(grid.cells.size.columnsCount) * appearance.font.cellWidth,
-                height: Double(grid.cells.size.rowsCount) * appearance.font.cellHeight
+                width: frame.size.width,
+                height: frame.size.height
               )
               .offset(
-                x: Double(floatingWindow.anchorColumn) * appearance.font.cellWidth,
-                y: Double(floatingWindow.anchorRow) * appearance.font.cellHeight
+                x: frame.origin.x,
+                y: frame.origin.y
               )
               .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
             }
@@ -181,5 +190,70 @@ public struct SnapshotView: View {
       }
     }
     .allowsTightening(false)
+  }
+
+  private func frame(
+    for floatingWindow: State.FloatingWindow,
+    grid: State.Grid,
+    appearance: State.Appearance,
+    grids: IdentifiedArrayOf<State.Grid>,
+    windows: IdentifiedArrayOf<State.Window>,
+    floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
+  ) -> CGRect {
+    let anchorGrid = grids[id: floatingWindow.anchorGridID]!
+
+    let anchorGridOrigin: CGPoint
+    if let windowID = anchorGrid.windowID {
+      if let window = windows[id: windowID] {
+        anchorGridOrigin = .init(
+          x: Double(window.frame.origin.column) * appearance.font.cellWidth,
+          y: Double(window.frame.origin.row) * appearance.font.cellHeight
+        )
+
+      } else {
+        let floatingWindow = floatingWindows[id: windowID]!
+
+        anchorGridOrigin = frame(
+          for: floatingWindow,
+          grid: grids[id: floatingWindow.gridID]!,
+          appearance: appearance,
+          grids: grids,
+          windows: windows,
+          floatingWindows: floatingWindows
+        )
+        .origin
+      }
+
+    } else {
+      anchorGridOrigin = .init()
+    }
+
+    var frame = CGRect(
+      origin: .init(
+        x: anchorGridOrigin.x + (floatingWindow.anchorColumn * appearance.font.cellWidth),
+        y: anchorGridOrigin.y + (floatingWindow.anchorRow * appearance.font.cellHeight)
+      ),
+      size: .init(
+        width: Double(grid.cells.columnsCount) * appearance.font.cellWidth,
+        height: Double(grid.cells.rowsCount) * appearance.font.cellHeight
+      )
+    )
+
+    switch floatingWindow.anchor {
+    case .northWest:
+      break
+
+    case .northEast:
+      frame.origin.x -= frame.size.width
+
+    case .southWest:
+      frame.origin.y -= frame.size.height
+
+    case .southEast:
+      frame.origin.x -= frame.size.width
+      frame.origin.y -= frame.size.height
+    }
+
+    return frame
   }
 }

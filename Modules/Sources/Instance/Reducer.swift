@@ -244,29 +244,39 @@ public struct Reducer: ReducerProtocol {
         )
 
         update(&state.current.grids[id: id]) { grid in
-          let cells = TwoDimensionalArray<State.Cell>(
-            size: size,
-            elementAtPoint: { point in
-              guard
-                let grid,
-                point.row < grid.cells.rowsCount,
-                point.column < grid.cells.columnsCount
-              else {
-                return .default
+          if grid == nil {
+            let cells = TwoDimensionalArray<State.Cell>(
+              size: size,
+              repeatingElement: .default
+            )
+
+            grid = .init(
+              id: id,
+              cells: cells,
+              rowHighlightChunks: cells.rows
+                .map { $0.makeHighlightChunks() },
+              windowID: nil
+            )
+
+          } else {
+            let newCells = TwoDimensionalArray<State.Cell>(
+              size: size,
+              elementAtPoint: { point in
+                guard
+                  point.row < grid!.cells.rowsCount,
+                  point.column < grid!.cells.columnsCount
+                else {
+                  return .default
+                }
+
+                return grid!.cells[point]
               }
+            )
 
-              let rows = grid.cells.rows
-              let row = rows[rows.startIndex + point.row]
-              return row[row.startIndex + point.column]
-            }
-          )
-
-          grid = .init(
-            id: id,
-            cells: cells,
-            rowHighlightChunks: cells.rows
+            grid!.cells = newCells
+            grid!.rowHighlightChunks = newCells.rows
               .map { $0.makeHighlightChunks() }
-          )
+          }
         }
       }
       return .none
@@ -311,16 +321,14 @@ public struct Reducer: ReducerProtocol {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
 
         update(&state.current.grids[id: gridID]!) { grid in
-          let rowCells = ArraySlice(
-            repeating: State.Cell.default,
-            count: grid.cells.columnsCount
+          let newCells = TwoDimensionalArray<State.Cell>(
+            size: grid.cells.size,
+            repeatingElement: .default
           )
-          let highlightChunks = rowCells.makeHighlightChunks()
 
-          for row in grid.cells.rows.indices {
-            grid.cells.rows[row] = rowCells
-            grid.rowHighlightChunks[row] = highlightChunks
-          }
+          grid.cells = newCells
+          grid.rowHighlightChunks = newCells.rows
+            .map { $0.makeHighlightChunks() }
         }
       }
       return .none
@@ -329,8 +337,15 @@ public struct Reducer: ReducerProtocol {
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
 
-        state.current.windows.removeAll(where: { $0.gridID == gridID })
-        state.current.floatingWindows.removeAll(where: { $0.gridID == gridID })
+        if let windowID = state.current.grids[id: gridID]!.windowID {
+          let window = state.current.windows.remove(id: windowID)
+
+          if window == nil {
+            state.current.floatingWindows.remove(id: windowID)
+          }
+        }
+
+        state.current.grids[id: gridID]!.windowID = nil
       }
       return .none
 
@@ -350,11 +365,12 @@ public struct Reducer: ReducerProtocol {
       for uiEvent in uiEvents {
         state.current.floatingWindows.remove(id: uiEvent.win)
 
-        let zIndex = state.nextWindowZIndex()
-        update(&state.current.windows[id: uiEvent.win]) { window in
-          window = .init(
+        let gridID = State.Grid.ID(uiEvent.grid)
+
+        state.current.windows.updateOrAppend(
+          .init(
             reference: uiEvent.win,
-            gridID: .init(uiEvent.grid),
+            gridID: gridID,
             frame: .init(
               origin: .init(
                 column: uiEvent.startcol,
@@ -365,23 +381,30 @@ public struct Reducer: ReducerProtocol {
                 rowsCount: uiEvent.height
               )
             ),
-            zIndex: zIndex,
+            zIndex: state.nextWindowZIndex(),
             isHidden: false
           )
-        }
+        )
+        state.current.grids[id: gridID]!.windowID = uiEvent.win
       }
-
       return .none
 
     case let .applyWinFloatPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
+        guard let anchor = State.Anchor(rawValue: uiEvent.anchor) else {
+          assertionFailure("Invalid anchor value: \(uiEvent.anchor)")
+          continue
+        }
+
         state.current.windows.remove(id: uiEvent.win)
 
-        update(&state.current.floatingWindows[id: uiEvent.win]) { floatingWindow in
-          floatingWindow = .init(
+        let gridID = State.Grid.ID(uiEvent.grid)
+
+        state.current.floatingWindows.updateOrAppend(
+          .init(
             reference: uiEvent.win,
-            gridID: .init(uiEvent.grid),
-            anchor: uiEvent.anchor,
+            gridID: gridID,
+            anchor: anchor,
             anchorGridID: .init(uiEvent.anchorGrid),
             anchorRow: uiEvent.anchorRow,
             anchorColumn: uiEvent.anchorCol,
@@ -389,22 +412,21 @@ public struct Reducer: ReducerProtocol {
             zIndex: uiEvent.zindex,
             isHidden: false
           )
-        }
+        )
+
+        state.current.grids[id: gridID]!.windowID = uiEvent.win
       }
       return .none
 
     case let .applyWinHideUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        let gridID = State.Grid.ID(uiEvent.grid)
 
-        for index in state.current.windows.indices {
-          if state.current.windows[index].gridID == gridID {
+        if let windowID = state.current.grids[id: gridID]!.windowID {
+          if let index = state.current.windows.index(id: windowID) {
             state.current.windows[index].isHidden = true
-          }
-        }
 
-        for index in state.current.floatingWindows.indices {
-          if state.current.floatingWindows[index].gridID == gridID {
+          } else if let index = state.current.floatingWindows.index(id: windowID) {
             state.current.floatingWindows[index].isHidden = true
           }
         }
@@ -415,8 +437,15 @@ public struct Reducer: ReducerProtocol {
       for uiEvent in uiEvents {
         let gridID = State.Grid.ID(rawValue: uiEvent.grid)
 
-        state.current.windows.removeAll(where: { $0.gridID == gridID })
-        state.current.floatingWindows.removeAll(where: { $0.gridID == gridID })
+        if let windowID = state.current.grids[id: gridID]!.windowID {
+          let window = state.current.windows.remove(id: windowID)
+
+          if window == nil {
+            state.current.floatingWindows.remove(id: windowID)
+          }
+        }
+
+        state.current.grids[id: gridID]!.windowID = nil
       }
       return .none
 
