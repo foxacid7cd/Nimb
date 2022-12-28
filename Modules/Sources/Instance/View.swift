@@ -36,7 +36,7 @@ public struct View: SwiftUI.View {
           )
 
           ForEach(state.windows) { window in
-            gridView(
+            let view = gridView(
               for: state.grids[id: window.gridID]!,
               font: font,
               size: window.frame.size
@@ -49,6 +49,13 @@ public struct View: SwiftUI.View {
               x: Double(window.frame.origin.column) * font.cellWidth,
               y: Double(window.frame.origin.row) * font.cellHeight
             )
+
+            if !window.isHidden {
+              view
+
+            } else {
+              view.hidden()
+            }
           }
         }
         .frame(

@@ -33,15 +33,17 @@ public struct State: Sendable, Equatable, Identifiable {
   }
 
   public struct Window: Sendable, Equatable, Identifiable {
-    public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle) {
+    public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle, isHidden: Bool) {
       self.reference = reference
       self.gridID = gridID
       self.frame = frame
+      self.isHidden = isHidden
     }
 
     public var reference: References.Window
     public var gridID: Grid.ID
     public var frame: IntegerRectangle
+    public var isHidden: Bool
 
     public var id: References.Window {
       reference

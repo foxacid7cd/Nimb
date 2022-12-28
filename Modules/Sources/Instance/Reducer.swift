@@ -15,7 +15,10 @@ public enum Action: Sendable {
   case bindProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
+  case applyGridDestroyUIEvents([UIEvents.GridDestroy])
   case applyWinPosUIEvents([UIEvents.WinPos])
+  case applyWinHideUIEvents([UIEvents.WinHide])
+  case applyWinCloseUIEvents([UIEvents.WinClose])
   case setFont(Font)
   case handleError(Error)
   case processFinished(error: Error?)
@@ -63,8 +66,17 @@ public struct Reducer: ReducerProtocol {
             case let .gridLine(decode):
               await send(.applyGridLineUIEvents(try decode()))
 
+            case let .gridDestroy(decode):
+              await send(.applyGridDestroyUIEvents(try decode()))
+
             case let .winPos(decode):
               await send(.applyWinPosUIEvents(try decode()))
+
+            case let .winHide(decode):
+              await send(.applyWinHideUIEvents(try decode()))
+
+            case let .winClose(decode):
+              await send(.applyWinCloseUIEvents(try decode()))
 
             case .flush:
               if isFirstFlush {
@@ -172,6 +184,15 @@ public struct Reducer: ReducerProtocol {
         }
       }
 
+    case let .applyGridDestroyUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        if let index = state.windows.firstIndex(where: { gridID == $0.gridID }) {
+          state.windows.remove(at: index)
+        }
+      }
+      return .none
+
     case let .applyWinPosUIEvents(uiEvents):
       for uiEvent in uiEvents {
         state.windows.remove(id: uiEvent.win)
@@ -189,8 +210,26 @@ public struct Reducer: ReducerProtocol {
                 columnsCount: uiEvent.width,
                 rowsCount: uiEvent.height
               )
-            )
+            ),
+            isHidden: false
           )
+        }
+      }
+      return .none
+
+    case let .applyWinHideUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        let index = state.windows.firstIndex(where: { gridID == $0.gridID })!
+        state.windows[index].isHidden = true
+      }
+      return .none
+
+    case let .applyWinCloseUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        if let index = state.windows.firstIndex(where: { gridID == $0.gridID }) {
+          state.windows.remove(at: index)
         }
       }
       return .none
