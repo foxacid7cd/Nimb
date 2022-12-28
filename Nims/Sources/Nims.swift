@@ -1,9 +1,4 @@
-//
-//  Nims.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 16.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
 import ComposableArchitecture
@@ -12,14 +7,10 @@ import Neovim
 import SwiftUI
 
 @MainActor
-@main struct Nims: App {
+@main
+struct Nims: App {
   @Environment(\.scenePhase)
   var scenePhase: ScenePhase
-
-  private var store = StoreOf<Reducer>(
-    initialState: .init(),
-    reducer: Reducer()
-  )
 
   var body: some Scene {
     Window("Nims", id: "Main") {
@@ -48,11 +39,18 @@ import SwiftUI
         }
 
         ViewStore(store)
-          .send(.createInstance(keyPresses: keyPresses))
+          .send(
+            .createInstance(keyPresses: keyPresses)
+          )
 
       default:
         break
       }
     }
   }
+
+  private var store = StoreOf<Reducer>(
+    initialState: .init(),
+    reducer: Reducer()
+  )
 }

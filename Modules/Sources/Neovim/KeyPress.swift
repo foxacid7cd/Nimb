@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import AppKit
 import Carbon
@@ -53,8 +53,8 @@ public struct KeyPress: Sendable {
   }
 }
 
-extension NSEvent.ModifierFlags {
-  fileprivate var modifier: String? {
+private extension NSEvent.ModifierFlags {
+  var modifier: String? {
     if contains(.shift) {
       return "S"
     } else if contains(.control) {

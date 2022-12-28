@@ -1,10 +1,10 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
-//import AsyncAlgorithms
-//import Cocoa
-//import Library
+// import AsyncAlgorithms
+// import Cocoa
+// import Library
 //
-//@MainActor class Window: NSWindow {
+// @MainActor class Window: NSWindow {
 //  override var canBecomeMain: Bool { true }
 //
 //  override var canBecomeKey: Bool { true }
@@ -22,4 +22,4 @@
 //  }
 //
 //  private let keyPressChannel = AsyncChannel<KeyPress>()
-//}
+// }

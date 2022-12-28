@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import CasePaths
 import Foundation
@@ -30,8 +30,8 @@ public struct Metadata: Hashable {
   public var uiEvents: [UIEvent]
 }
 
-extension Metadata {
-  public init?(
+public extension Metadata {
+  init?(
     _ value: Value
   ) {
     guard let dictionary = (/Value.dictionary).extract(from: value) else { return nil }
@@ -40,7 +40,8 @@ extension Metadata {
       functions = functionsValue.compactMap { functionValue -> Function? in
         guard let dictionary = (/Value.dictionary).extract(from: functionValue) else { return nil }
 
-        guard let parameterValues = dictionary["parameters"].flatMap(/Value.array),
+        guard
+          let parameterValues = dictionary["parameters"].flatMap(/Value.array),
           let name = dictionary["name"].flatMap(/Value.string),
           let returnType = dictionary["return_type"].flatMap(/Value.string)
             .map(ValueType.init(metadataString:)),
@@ -65,7 +66,8 @@ extension Metadata {
       uiEvents = uiEventsValue.compactMap { uiEventValue -> UIEvent? in
         guard let dictionary = (/Value.dictionary).extract(from: uiEventValue) else { return nil }
 
-        guard let parameterValues = dictionary["parameters"].flatMap(/Value.array),
+        guard
+          let parameterValues = dictionary["parameters"].flatMap(/Value.array),
           let name = dictionary["name"].flatMap(/Value.string)
         else { return nil }
 
@@ -77,11 +79,12 @@ extension Metadata {
   }
 }
 
-extension Metadata.Parameter {
-  fileprivate init?(
+private extension Metadata.Parameter {
+  init?(
     _ value: Value
   ) {
-    guard let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
+    guard
+      let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
       let type = (/Value.string).extract(from: arrayValue[0]),
       let name = (/Value.string).extract(from: arrayValue[1])
     else { return nil }

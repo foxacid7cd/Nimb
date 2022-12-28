@@ -1,9 +1,4 @@
-//
-//  View.swift
-//
-//
-//  Created by Yevhenii Matviienko on 28.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 import CasePaths
 import ComposableArchitecture
@@ -14,11 +9,11 @@ import SwiftUI
 
 @MainActor
 public struct View: SwiftUI.View {
-  public var store: Store<State, Action>
-
   public init(store: Store<State, Action>) {
     self.store = store
   }
+
+  public var store: Store<State, Action>
 
   public var body: some SwiftUI.View {
     WithViewStore(
@@ -58,7 +53,8 @@ public struct View: SwiftUI.View {
         }
         .frame(
           width: frameWidth,
-          height: frameHeight)
+          height: frameHeight
+        )
 
       } else {
         EmptyView()
@@ -67,8 +63,7 @@ public struct View: SwiftUI.View {
   }
 
   private func gridView(for grid: State.Grid, font: Neovim.Font, size: IntegerSize) -> some SwiftUI
-    .View
-  {
+    .View {
     let attributes = AttributeContainer([
       .font: font.nsFont,
       .foregroundColor: NSColor.systemPink,
@@ -78,12 +73,12 @@ public struct View: SwiftUI.View {
 
     let lower = rows.startIndex
     let upper = min(lower + size.rowsCount, rows.endIndex)
-    let rowAttributedStrings = rows[lower..<upper]
+    let rowAttributedStrings = rows[lower ..< upper]
       .map { rowCells in
         let lower = rowCells.startIndex
         let upper = min(lower + size.columnsCount, rowCells.endIndex)
-        let string = rowCells[lower..<upper]
-          .map { $0.text }
+        let string = rowCells[lower ..< upper]
+          .map(\.text)
           .joined()
 
         return AttributedString(string, attributes: attributes)
@@ -93,16 +88,20 @@ public struct View: SwiftUI.View {
       graphicsContext.fill(
         Path(CGRect(origin: .init(), size: size)),
         with: .color(.black),
-        style: .init(antialiased: false))
+        style: .init(antialiased: false)
+      )
 
       for (offset, rowAttributedString) in rowAttributedStrings.enumerated() {
         let frame = CGRect(
           origin: .init(
             x: 0,
-            y: Double(offset) * font.cellHeight),
+            y: Double(offset) * font.cellHeight
+          ),
           size: .init(
             width: size.width,
-            height: font.cellHeight))
+            height: font.cellHeight
+          )
+        )
 
         graphicsContext.draw(Text(rowAttributedString), in: frame)
       }

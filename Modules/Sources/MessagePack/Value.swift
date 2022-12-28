@@ -1,11 +1,10 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import Foundation
 import msgpack
 
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
-  ExpressibleByNilLiteral
-{
+  ExpressibleByNilLiteral {
   case integer(Int)
   case float(Double)
   case boolean(Bool)
@@ -54,7 +53,7 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleBy
       let count = Int(cArray.size)
       var accumulator = [Value]()
 
-      for index in 0..<count { accumulator.append(Value(cArray.ptr.advanced(by: index).pointee)) }
+      for index in 0 ..< count { accumulator.append(Value(cArray.ptr.advanced(by: index).pointee)) }
 
       self = .array(accumulator)
 
@@ -64,7 +63,7 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleBy
       let count = Int(map.size)
       var dictionary = [Value: Value](minimumCapacity: count)
 
-      for index in 0..<count {
+      for index in 0 ..< count {
         let kv = map.ptr.advanced(by: index).pointee
 
         let key = Value(kv.key)

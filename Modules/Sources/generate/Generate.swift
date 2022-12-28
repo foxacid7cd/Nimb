@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import ArgumentParser
 import Foundation
@@ -8,11 +8,13 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-@main struct Generate: AsyncParsableCommand {
+@main
+struct Generate: AsyncParsableCommand {
   @Argument(
     help: "The path to the destination directory where the source files are to be generated",
     completion: .directory
-  ) var generatedPath: String
+  )
+  var generatedPath: String
 
   func run() async throws {
     let dataBatches = FileHandle.standardInput.dataBatches

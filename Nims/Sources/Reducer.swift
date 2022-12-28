@@ -1,9 +1,4 @@
-//
-//  Reducer.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 16.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 import AppKit
 import CasePaths
@@ -24,14 +19,17 @@ struct Reducer: ReducerProtocol {
       switch action {
       case let .createInstance(keyPresses):
         let instanceID = Instance.State.ID(
-          rawValue: UUID().uuidString)
+          rawValue: UUID().uuidString
+        )
 
         state.instance = .init(id: instanceID)
 
         return .run { send in
           await send(
             .instance(
-              action: .createProcess(keyPresses: keyPresses)))
+              action: .createProcess(keyPresses: keyPresses)
+            )
+          )
         }
 
       case let .instance(action):
@@ -61,6 +59,7 @@ struct Reducer: ReducerProtocol {
       \.instance, action: /Action.instance,
       then: {
         Instance.Reducer()
-      })
+      }
+    )
   }
 }

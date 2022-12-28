@@ -1,9 +1,8 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
-
-import MessagePack
-import XCTest
+// SPDX-License-Identifier: MIT
 
 @testable import GenerateLibrary
+import MessagePack
+import XCTest
 
 private let expectedGeneratedFiles: Set = ["APIFunctions.swift", "UIEvents.swift"]
 

@@ -1,11 +1,11 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
-//import Cocoa
-//import Collections
-//import Combine
-//import SwiftUI
+// import Cocoa
+// import Collections
+// import Combine
+// import SwiftUI
 //
-//class ViewController: NSViewController {
+// class ViewController: NSViewController {
 //  init() { super.init(nibName: nil, bundle: nil) }
 //
 //  @available(*, unavailable) required init?(
@@ -66,4 +66,4 @@
 //  }
 //
 //  private var hostingView: NSHostingView<View> { view as! NSHostingView<View> }
-//}
+// }

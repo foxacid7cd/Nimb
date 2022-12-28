@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
 import CasePaths
@@ -49,7 +49,7 @@ public actor API {
       guard let success = transformSuccess(rawSuccess) else {
         throw CallFailed.invalidAssumedSuccessResponseType(
           description:
-            "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
+          "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
         )
       }
 

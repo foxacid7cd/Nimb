@@ -1,12 +1,12 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
-//import Cocoa
-//import IdentifiedCollections
-//import MessagePack
-//import Overture
-//import SwiftUI
+// import Cocoa
+// import IdentifiedCollections
+// import MessagePack
+// import Overture
+// import SwiftUI
 //
-//struct Appearance {
+// struct Appearance {
 //  var cellSize: CGSize {
 //    let nsFont = NSFont(name: "MesloLGS NF", size: 13)!
 //    let string = "A"
@@ -50,7 +50,7 @@
 //
 //  private var font = Font.custom("MesloLGS NF", size: 13)
 //  private var highlights = Highlights()
-//}
+// }
 //
 //// @MainActor
 //// class Font {
@@ -133,7 +133,7 @@
 ////  private var cachedCellSize: CGSize?
 //// }
 //
-//struct Highlights {
+// struct Highlights {
 //  mutating func setDefaultColors(foregroundRGB: Int, backgroundRGB: Int, specialRGB: Int) {
 //    defaultForegroundColor = .init(rgb: foregroundRGB)
 //    defaultBackgroundColor = .init(rgb: backgroundRGB)
@@ -207,9 +207,9 @@
 //  private func specialColor(highlight: Highlight? = nil) -> HighlightColor {
 //    highlight?.specialColor ?? defaultSpecialColor
 //  }
-//}
+// }
 //
-//struct Highlight: Identifiable {
+// struct Highlight: Identifiable {
 //  init(id: Int) { self.id = id }
 //
 //  let id: Int
@@ -242,9 +242,9 @@
 //      }
 //    }
 //  }
-//}
+// }
 //
-//struct HighlightColor: Hashable, Sendable {
+// struct HighlightColor: Hashable, Sendable {
 //  init(
 //    rgb: Int,
 //    opacity: Double = 1
@@ -272,4 +272,4 @@
 //      opacity: opacity
 //    )
 //  }
-//}
+// }

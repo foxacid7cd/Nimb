@@ -1,11 +1,8 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import Foundation
 
 public struct IntegerRectangle: Sendable, Equatable {
-  public var origin: IntegerPoint
-  public var size: IntegerSize
-
   public init(
     origin: IntegerPoint = .init(),
     size: IntegerSize = .init()
@@ -13,12 +10,12 @@ public struct IntegerRectangle: Sendable, Equatable {
     self.origin = origin
     self.size = size
   }
+
+  public var origin: IntegerPoint
+  public var size: IntegerSize
 }
 
 public struct IntegerPoint: Sendable, Equatable {
-  public var column: Int
-  public var row: Int
-
   public init(
     column: Int = 0,
     row: Int = 0
@@ -26,12 +23,12 @@ public struct IntegerPoint: Sendable, Equatable {
     self.column = column
     self.row = row
   }
+
+  public var column: Int
+  public var row: Int
 }
 
 public struct IntegerSize: Sendable, Equatable {
-  public var columnsCount: Int
-  public var rowsCount: Int
-
   public init(
     columnsCount: Int = 0,
     rowsCount: Int = 0
@@ -39,6 +36,9 @@ public struct IntegerSize: Sendable, Equatable {
     self.columnsCount = columnsCount
     self.rowsCount = rowsCount
   }
+
+  public var columnsCount: Int
+  public var rowsCount: Int
 }
 
 public func + (lhs: IntegerPoint, rhs: IntegerPoint) -> IntegerPoint {

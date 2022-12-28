@@ -1,9 +1,4 @@
-//
-//  Reducer.swift
-//
-//
-//  Created by Yevhenii Matviienko on 28.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 import CasePaths
 import ComposableArchitecture
@@ -76,7 +71,10 @@ public struct Reducer: ReducerProtocol {
                 await send(
                   .setFont(
                     .init(
-                      .init(name: "MesloLGS Nerd Font Mono", size: 13)!)))
+                      .init(name: "MesloLGS Nerd Font Mono", size: 13)!
+                    )
+                  )
+                )
               }
 
               isFirstFlush = false
@@ -111,7 +109,7 @@ public struct Reducer: ReducerProtocol {
 
       let requestUIAttach = EffectTask<Action>.run { send in
         do {
-          _ = try await process.api.nvimUiAttach(
+          _ = try await process.api.nvimUIAttach(
             width: 130,
             height: 40,
             options: [
@@ -142,14 +140,17 @@ public struct Reducer: ReducerProtocol {
         let id = State.Grid.ID(rawValue: uiEvent.grid)
         let size = IntegerSize(
           columnsCount: uiEvent.width,
-          rowsCount: uiEvent.height)
+          rowsCount: uiEvent.height
+        )
 
         update(&state.grids[id: id]) { grid in
           grid = .init(
             id: id,
             cells: .init(
               size: size,
-              repeatingElement: .init(text: " ", highlightID: .default)))
+              repeatingElement: .init(text: " ", highlightID: .default)
+            )
+          )
         }
       }
       return .none
@@ -176,7 +177,8 @@ public struct Reducer: ReducerProtocol {
         let winRef = (/Value.ext)
           .extract(from: uiEvent.win)!
         let windowID = State.Window.ID(
-          rawValue: winRef.1.hashValue)
+          rawValue: winRef.1.hashValue
+        )
 
         state.windows.remove(id: windowID)
 
@@ -187,10 +189,14 @@ public struct Reducer: ReducerProtocol {
             frame: .init(
               origin: .init(
                 column: uiEvent.startcol,
-                row: uiEvent.startrow),
+                row: uiEvent.startrow
+              ),
               size: .init(
                 columnsCount: uiEvent.width,
-                rowsCount: uiEvent.height)))
+                rowsCount: uiEvent.height
+              )
+            )
+          )
         }
       }
       return .none
@@ -207,6 +213,10 @@ public struct Reducer: ReducerProtocol {
   private struct FailedDecodingCells: Error {
     var rawValue: Value
     var details: String
+  }
+
+  private enum EffectID: String, Hashable {
+    case bindProcess
   }
 
   private func updateLine(in grid: inout State.Grid, origin: IntegerPoint, values: [Value]) throws {
@@ -254,23 +264,21 @@ public struct Reducer: ReducerProtocol {
           }
         }
 
-        for _ in 0..<repeatCount {
+        for _ in 0 ..< repeatCount {
           let cell = Cell(
             text: text,
-            highlightID: highlightID)
+            highlightID: highlightID
+          )
 
           let index = rowCells.index(
             rowCells.startIndex,
-            offsetBy: origin.column + updatedCellsCount)
+            offsetBy: origin.column + updatedCellsCount
+          )
           rowCells[index] = cell
 
           updatedCellsCount += 1
         }
       }
     }
-  }
-
-  private enum EffectID: String, Hashable {
-    case bindProcess
   }
 }

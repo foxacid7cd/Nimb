@@ -1,14 +1,6 @@
-//
-//  Color.swift
-//
-//
-//  Created by Yevhenii Matviienko on 27.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 public struct Color: Sendable, Equatable {
-  public var rgb: Int
-  public var opacity: Double
-
   public init(
     rgb: Int,
     opacity: Double = 1
@@ -16,4 +8,7 @@ public struct Color: Sendable, Equatable {
     self.rgb = rgb
     self.opacity = opacity
   }
+
+  public var rgb: Int
+  public var opacity: Double
 }

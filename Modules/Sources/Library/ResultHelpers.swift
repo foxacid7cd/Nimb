@@ -1,3 +1,3 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
-extension Result { public func check() throws { _ = try get() } }
+public extension Result { func check() throws { _ = try get() } }

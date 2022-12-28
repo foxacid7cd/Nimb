@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
 import CasePaths
@@ -32,7 +32,8 @@ public actor RPC {
         if Task.isCancelled { break }
 
         for message in try await unpacker.unpack(data) {
-          guard let array = (/Value.array).extract(from: message), !array.isEmpty,
+          guard
+            let array = (/Value.array).extract(from: message), !array.isEmpty,
             let integer = (/Value.integer).extract(from: array[0]),
             let messageType = MessageType(rawValue: integer)
           else { throw ParsingFailed.messageType(rawMessage: "\(message)") }
@@ -56,7 +57,8 @@ public actor RPC {
             await store.responseReceived(result, forRequestWithID: id)
 
           case .notification:
-            guard array.count == 3, let method = (/Value.string).extract(from: array[1]),
+            guard
+              array.count == 3, let method = (/Value.string).extract(from: array[1]),
               let parameters = (/Value.array).extract(from: array[2])
             else { throw ParsingFailed.notification(rawNotification: "\(array)") }
 
@@ -76,7 +78,8 @@ public actor RPC {
   public let notifications: AsyncStream<(method: String, parameters: [Value])>
   public let task: Task<Void, Swift.Error>
 
-  @discardableResult public func call(
+  @discardableResult
+  public func call(
     method: String,
     withParameters parameters: [Value]
   ) async throws -> Result<Value, RemoteError> {
@@ -94,8 +97,7 @@ public actor RPC {
   }
 
   private actor Store {
-    func announceRequest(_ handler: @escaping @Sendable (Result<Value, RemoteError>) -> Void) -> Int
-    {
+    func announceRequest(_ handler: @escaping @Sendable (Result<Value, RemoteError>) -> Void) -> Int {
       let id = announcedRequestsCount
       announcedRequestsCount += 1
 
@@ -114,7 +116,7 @@ public actor RPC {
 
     private var announcedRequestsCount = 0
     private var currentRequests = TreeDictionary<
-      Int, @Sendable (Result<Value, RemoteError>) -> Void
+    Int, @Sendable (Result<Value, RemoteError>) -> Void
     >()
   }
 

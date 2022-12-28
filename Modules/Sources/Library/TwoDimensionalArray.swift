@@ -1,15 +1,8 @@
-//
-//  TwoDimensionalArray.swift
-//  Nims
-//
-//  Created by Yevhenii Matviienko on 17.12.2022.
+// SPDX-License-Identifier: MIT
 
 import Foundation
 
 public struct TwoDimensionalArray<Element> {
-  public internal(set) var elements: [Element]
-  public internal(set) var columnsCount: Int
-
   init(elements: [Element], columnsCount: Int) {
     self.elements = elements
     self.columnsCount = columnsCount
@@ -41,12 +34,12 @@ public struct TwoDimensionalArray<Element> {
     let elementsCount = size.columnsCount * size.rowsCount
 
     var accumulator = [Element]()
-    for arrayIndex in (0..<elementsCount) {
+    for arrayIndex in 0 ..< elementsCount {
       let (row, column) =
         arrayIndex
-        .quotientAndRemainder(
-          dividingBy: size.columnsCount
-        )
+          .quotientAndRemainder(
+            dividingBy: size.columnsCount
+          )
 
       let element = elementAtPoint(
         .init(column: column, row: row)
@@ -57,6 +50,36 @@ public struct TwoDimensionalArray<Element> {
     elements = accumulator
     columnsCount = size.columnsCount
   }
+
+  public struct RowsView: RandomAccessCollection {
+    public var startIndex: Int {
+      0
+    }
+
+    public var endIndex: Int {
+      target.rowsCount
+    }
+
+    public subscript(position: Int) -> ArraySlice<Element> {
+      get {
+        target.elements[elementsIndices(for: position)]
+      }
+      set {
+        target.elements[elementsIndices(for: position)] = newValue
+      }
+    }
+
+    var target: TwoDimensionalArray<Element>
+
+    private func elementsIndices(for row: Int) -> Range<Int> {
+      let lower = target.columnsCount * row
+      let upper = lower + target.columnsCount
+      return lower ..< upper
+    }
+  }
+
+  public internal(set) var elements: [Element]
+  public internal(set) var columnsCount: Int
 
   public var rowsCount: Int {
     elements.count / columnsCount
@@ -75,33 +98,6 @@ public struct TwoDimensionalArray<Element> {
     }
     set {
       self = newValue.target
-    }
-  }
-
-  public struct RowsView: RandomAccessCollection {
-    var target: TwoDimensionalArray<Element>
-
-    public var startIndex: Int {
-      0
-    }
-
-    public var endIndex: Int {
-      target.rowsCount
-    }
-
-    public subscript(position: Int) -> ArraySlice<Element> {
-      get {
-        target.elements[elementsIndices(for: position)]
-      }
-      set {
-        target.elements[elementsIndices(for: position)] = newValue
-      }
-    }
-
-    private func elementsIndices(for row: Int) -> Range<Int> {
-      let lower = target.columnsCount * row
-      let upper = lower + target.columnsCount
-      return lower..<upper
     }
   }
 }

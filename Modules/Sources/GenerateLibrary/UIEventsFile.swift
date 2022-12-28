@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import Foundation
 import MessagePack
@@ -97,7 +97,11 @@ public struct UIEventsFile: GeneratableFile {
                           Stmt(
                             """
                             guard case let .array(rawParameters) = rawEvent else {
-                              throw DecodingFailed.event(name: \(literal: uiEvent.name), rawEvent: rawEvent, details: "Raw value is not a parameters array.")
+                              throw DecodingFailed.event(
+                                name: \(literal: uiEvent.name),
+                                rawEvent: rawEvent,
+                                details: "Raw value is not a parameters array."
+                              )
                             }
                             """
                           )
@@ -116,11 +120,15 @@ public struct UIEventsFile: GeneratableFile {
                             }
                           let guardConditions =
                             ([parametersCountCondition] + parameterTypeConditions)
-                            .joined(separator: ", ")
+                              .joined(separator: ", ")
                           Stmt(
                             """
                             guard \(raw: guardConditions) else {
-                              throw DecodingFailed.event(name: \(literal: uiEvent.name), rawEvent: rawEvent, details: "Invalid parameters count or type of individual parameter.")
+                              throw DecodingFailed.event(
+                                name: \(literal: uiEvent.name),
+                                rawEvent: rawEvent,
+                                details: "Invalid parameters count or type of individual parameter."
+                              )
                             }
                             """
                           )

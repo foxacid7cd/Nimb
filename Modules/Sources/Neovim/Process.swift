@@ -1,11 +1,12 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
 import Foundation
 import MessagePack
 import OSLog
 
-@globalActor public actor ProcessActor { public static let shared = ProcessActor() }
+@globalActor
+public actor ProcessActor { public static let shared = ProcessActor() }
 
 public actor Process {
   public init() {
@@ -71,7 +72,8 @@ public actor Process {
               let termination = NotificationCenter.default
                 .notifications(named: Foundation.Process.didTerminateNotification)
                 .compactMap { notification -> Void? in
-                  guard let object = notification.object as? AnyObject,
+                  guard
+                    let object = notification.object as? AnyObject,
                     ObjectIdentifier(object) == processObjectIdentifier
                   else { return nil }
 
@@ -137,8 +139,6 @@ public actor Process {
 
   public func terminate() async { await _terminate(()) }
 
-  private let _terminate: @Sendable (()) async -> Void
-
   private struct ProcessChannel: Channel, Sendable {
     var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
 
@@ -170,14 +170,16 @@ public actor Process {
       try inputPipe.fileHandleForWriting.write(contentsOf: data)
     }
 
-    private let inputPipe = Pipe()
-    private let outputPipe = Pipe()
-    private let errorPipe = Pipe()
-
     func bind(to process: Foundation.Process) {
       process.standardInput = inputPipe
       process.standardOutput = outputPipe
       process.standardError = errorPipe
     }
+
+    private let inputPipe = Pipe()
+    private let outputPipe = Pipe()
+    private let errorPipe = Pipe()
   }
+
+  private let _terminate: @Sendable (()) async -> Void
 }

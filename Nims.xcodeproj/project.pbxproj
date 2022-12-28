@@ -13,7 +13,6 @@
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
 		685EE9652935A0FD00D85550 /* Window.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE9642935A0FD00D85550 /* Window.swift */; };
 		685EE97B2935A98A00D85550 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685EE97A2935A98A00D85550 /* Appearance.swift */; };
-		688D70ED295B9B6A00DD071C /* swift-format.json in Resources */ = {isa = PBXBuildFile; fileRef = 688D70EC295B9B6A00DD071C /* swift-format.json */; };
 		688D70EF295BA5CF00DD071C /* Reducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688D70EE295BA5CF00DD071C /* Reducer.swift */; };
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68B21E0E2938C6240033B9E9 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B21E0D2938C6240033B9E9 /* Store.swift */; };
@@ -65,7 +64,6 @@
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		685EE9642935A0FD00D85550 /* Window.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Window.swift; sourceTree = "<group>"; };
 		685EE97A2935A98A00D85550 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
-		688D70EC295B9B6A00DD071C /* swift-format.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "swift-format.json"; sourceTree = "<group>"; };
 		688D70EE295BA5CF00DD071C /* Reducer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Reducer.swift; sourceTree = "<group>"; };
 		68A8C917294D154600BD3EC1 /* Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nims.swift; sourceTree = "<group>"; };
 		68B21E0D2938C6240033B9E9 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
@@ -117,7 +115,6 @@
 			isa = PBXGroup;
 			children = (
 				682272C0293DE09C00A36AB9 /* Scripts */,
-				688D70EC295B9B6A00DD071C /* swift-format.json */,
 				68142FA8293E25A500363ECE /* nvim */,
 			);
 			name = Locations;
@@ -178,8 +175,7 @@
 			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nims" */;
 			buildPhases = (
 				68BFEF3D2934CF6100564FE2 /* Sources */,
-				68F379F0294C814B00A9E7FE /* Run swift-format format */,
-				68F379F1294C85AE00A9E7FE /* Run swift-format lint */,
+				68F379F0294C814B00A9E7FE /* Run swiftformat */,
 				68BFEF3E2934CF6100564FE2 /* Frameworks */,
 				68BFEF3F2934CF6100564FE2 /* Resources */,
 				684385012934D180000C4A1D /* Embed Frameworks */,
@@ -243,14 +239,13 @@
 			files = (
 				68BFEF472934CF6200564FE2 /* Assets.xcassets in Resources */,
 				68BFEF4A2934CF6200564FE2 /* MainMenu.xib in Resources */,
-				688D70ED295B9B6A00DD071C /* swift-format.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		68F379F0294C814B00A9E7FE /* Run swift-format format */ = {
+		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -260,33 +255,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swift-format format";
+			name = "Run swiftformat";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/Third-Party/swift-format/swift-format\" format -i --configuration \"${PROJECT_DIR}/swift-format.json\" -r -p \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n";
-		};
-		68F379F1294C85AE00A9E7FE /* Run swift-format lint */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Run swift-format lint";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/Third-Party/swift-format/swift-format\" lint --configuration \"${PROJECT_DIR}/swift-format.json\" -r -p \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n";
+			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n\nunset EXECUTABLE_FILE\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -1,4 +1,4 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 // Copyright © 2022 foxacid7cd. All rights reserved.
 //

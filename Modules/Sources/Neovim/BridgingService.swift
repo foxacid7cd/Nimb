@@ -1,17 +1,10 @@
-//
-//  BridgingService.swift
-//
-//
-//  Created by Yevhenii Matviienko on 28.12.2022.
-//
+// SPDX-License-Identifier: MIT
 
 import AppKit
 
 @MainActor
 final class BridgingService {
   static let shared = BridgingService()
-
-  private var nsFonts = [NSFont]()
 
   func wrap(_ nsFont: NSFont) -> Font {
     let font = Font(
@@ -27,6 +20,8 @@ final class BridgingService {
   func unwrap(_ font: Font) -> NSFont {
     nsFonts[font.id.rawValue]
   }
+
+  private var nsFonts = [NSFont]()
 
   private func cellWidth(for nsFont: NSFont) -> Double {
     var character = "A".utf16.first!
@@ -48,16 +43,16 @@ final class BridgingService {
   }
 }
 
-extension Font {
+public extension Font {
   @MainActor
-  public init(
+  init(
     _ nsFont: NSFont
   ) {
     self = BridgingService.shared.wrap(nsFont)
   }
 
   @MainActor
-  public var nsFont: NSFont {
+  var nsFont: NSFont {
     BridgingService.shared.unwrap(self)
   }
 }

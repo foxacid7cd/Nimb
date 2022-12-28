@@ -1,10 +1,10 @@
-// Copyright © 2022 foxacid7cd. All rights reserved.
+// SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
 import Foundation
 
-extension AsyncStream {
-  public init<S: AsyncSequence>(
+public extension AsyncStream {
+  init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy: Continuation.BufferingPolicy = .unbounded
   ) where S.Element == Element {
@@ -34,8 +34,8 @@ extension AsyncStream {
   }
 }
 
-extension AsyncThrowingStream where Failure == Error {
-  public init<S: AsyncSequence>(
+public extension AsyncThrowingStream where Failure == Error {
+  init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy _: Continuation.BufferingPolicy = .unbounded
   ) where S.Element == Element {
@@ -61,14 +61,14 @@ extension AsyncThrowingStream where Failure == Error {
   }
 }
 
-extension AsyncSequence {
-  public var erasedToAsyncStream: AsyncStream<Element> { .init(self) }
+public extension AsyncSequence {
+  var erasedToAsyncStream: AsyncStream<Element> { .init(self) }
 
-  public var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> { .init(self) }
+  var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> { .init(self) }
 }
 
-extension AsyncChannel {
-  public static func pipe(
+public extension AsyncChannel {
+  static func pipe(
     bufferingPolicy: AsyncStream<Element>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncStream<Element>) {
     let channel = AsyncChannel<Element>()
@@ -79,8 +79,8 @@ extension AsyncChannel {
   }
 }
 
-extension AsyncThrowingChannel where Failure == Error {
-  public static func pipe<Element>(
+public extension AsyncThrowingChannel where Failure == Error {
+  static func pipe<Element>(
     bufferingPolicy: AsyncThrowingStream<Element, Failure>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncThrowingStream<Element, Failure>) {
     let channel = AsyncThrowingChannel<Element, Failure>()
@@ -91,8 +91,8 @@ extension AsyncThrowingChannel where Failure == Error {
   }
 }
 
-extension FileHandle {
-  public var dataBatches: AsyncStream<Data> {
+public extension FileHandle {
+  var dataBatches: AsyncStream<Data> {
     .init { continuation in
       readabilityHandler = { fileHandle in let data = fileHandle.availableData
 
