@@ -141,10 +141,14 @@ public struct SnapshotView: View {
                   height: rowFrame.size.height
                 )
               )
+              
               let backgroundColor = appearance.backgroundColor(
                 for: rowPart.highlightID
               )
+
               backgroundRuns.append((frame, backgroundColor))
+
+              let textAttributes = appearance.textAttributes(for: rowPart.highlightID)
 
               let text = Text(rowPart.text)
                 .font(.init(appearance.font.appKit))
@@ -153,6 +157,9 @@ public struct SnapshotView: View {
                     .foregroundColor(for: rowPart.highlightID)
                     .swiftUI
                 )
+                .bold(textAttributes.isBold)
+                .italic(textAttributes.isItalic)
+
               foregroundRuns.append((frame.origin, text))
             }
 

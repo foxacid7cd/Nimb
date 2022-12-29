@@ -68,6 +68,17 @@ public struct State: Equatable, Identifiable {
     public func specialColor(for highlightID: Highlight.ID) -> Color {
       highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
     }
+
+    public func textAttributes(for highlightID: Highlight.ID) -> (isBold: Bool, isItalic: Bool) {
+      guard let highlight = highlights[id: highlightID] else {
+        return (false, false)
+      }
+
+      return (
+        isBold: highlight.isBold,
+        isItalic: highlight.isItalic
+      )
+    }
   }
 
   public struct Cell: Equatable {
