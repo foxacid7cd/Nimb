@@ -7,12 +7,8 @@ public typealias UIOptions = Set<UIOption>
 public extension UIOptions {
   var nvimUIAttachOptions: [Value: Value] {
     .init(
-      uniqueKeysWithValues:
-      map { uiOption in
-        (
-          key: Value.string(uiOption.rawValue),
-          value: .boolean(true)
-        )
+      uniqueKeysWithValues: map {
+        (key: .string($0.rawValue), value: .boolean(true))
       }
     )
   }

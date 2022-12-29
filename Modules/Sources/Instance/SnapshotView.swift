@@ -102,6 +102,7 @@ public struct SnapshotView: View {
           width: frame.size.width,
           height: frame.size.height
         )
+        .navigationTitle(state.title ?? "")
       }
     }
   }

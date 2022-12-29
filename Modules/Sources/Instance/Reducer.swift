@@ -18,6 +18,7 @@ public enum Action: Sendable {
   case bindNeovimProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
   case applyOptionSetUIEvents([UIEvents.OptionSet])
   case setFont(State.Font?)
+  case applySetTitleUIEvents([UIEvents.SetTitle])
   case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
   case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
   case applyGridResizeUIEvents([UIEvents.GridResize])
@@ -80,6 +81,9 @@ public struct Reducer: ReducerProtocol {
             switch uiEventBatch {
             case let .optionSet(decode):
               await send(.applyOptionSetUIEvents(try decode()))
+
+            case let .setTitle(decode):
+              await send(.applySetTitleUIEvents(try decode()))
 
             case let .defaultColorsSet(decode):
               await send(.applyDefaultColorsSetUIEvents(try decode()))
@@ -181,6 +185,12 @@ public struct Reducer: ReducerProtocol {
 
     case let .setFont(font):
       state.current.font = font
+      return .none
+
+    case let .applySetTitleUIEvents(uiEvents):
+      for uiEvent in uiEvents {
+        state.current.title = uiEvent.title
+      }
       return .none
 
     case let .applyOptionSetUIEvents(uiEvents):

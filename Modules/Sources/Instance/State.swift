@@ -308,6 +308,7 @@ public struct State: Equatable, Identifiable {
     public init(
       defaultFont: Font? = nil,
       font: Font? = nil,
+      title: String? = nil,
       highlights: IdentifiedArrayOf<Highlight> = [],
       grids: IdentifiedArrayOf<State.Grid> = [],
       windows: IdentifiedArrayOf<State.Window> = [],
@@ -316,6 +317,7 @@ public struct State: Equatable, Identifiable {
     ) {
       self.defaultFont = defaultFont
       self.font = font
+      self.title = title
       self.highlights = highlights
       self.grids = grids
       self.windows = windows
@@ -325,6 +327,7 @@ public struct State: Equatable, Identifiable {
 
     public var defaultFont: Font?
     public var font: Font?
+    public var title: String?
     public var highlights: IdentifiedArrayOf<Highlight>
     public var grids: IdentifiedArrayOf<Grid>
     public var windows: IdentifiedArrayOf<Window>
