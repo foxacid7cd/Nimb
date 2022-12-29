@@ -31,8 +31,8 @@
 --ifdef indent
 --importgrouping alpha
 --indent 2
---indentcase true
---indentstrings true
+--indentcase false
+--indentstrings false
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf

@@ -24,49 +24,49 @@ public actor Packer {
 
   private func process(_ value: Value) {
     switch value {
-      case let .boolean(boolean):
-        if boolean {
-          msgpack_pack_true(&pk)
+    case let .boolean(boolean):
+      if boolean {
+        msgpack_pack_true(&pk)
 
-        } else {
-          msgpack_pack_false(&pk)
+      } else {
+        msgpack_pack_false(&pk)
+      }
+
+    case let .integer(integer): msgpack_pack_int64(&pk, Int64(integer))
+
+    case let .string(string):
+      string.data(using: .utf8)!
+        .withUnsafeBytes { buffer in let pointer = buffer.baseAddress!
+
+          _ = msgpack_pack_str_with_body(&self.pk, pointer, strlen(pointer))
         }
 
-      case let .integer(integer): msgpack_pack_int64(&pk, Int64(integer))
+    case let .float(double): msgpack_pack_float(&pk, Float(double))
 
-      case let .string(string):
-        string.data(using: .utf8)!
-          .withUnsafeBytes { buffer in let pointer = buffer.baseAddress!
+    case let .dictionary(dictionary):
+      msgpack_pack_map(&pk, dictionary.count)
 
-            _ = msgpack_pack_str_with_body(&self.pk, pointer, strlen(pointer))
-          }
+      for (key, value) in dictionary {
+        process(key)
+        process(value)
+      }
 
-      case let .float(double): msgpack_pack_float(&pk, Float(double))
+    case let .array(array):
+      msgpack_pack_array(&pk, array.count)
 
-      case let .dictionary(dictionary):
-        msgpack_pack_map(&pk, dictionary.count)
+      for element in array { process(element) }
 
-        for (key, value) in dictionary {
-          process(key)
-          process(value)
-        }
+    case let .ext(type, data):
+      data.withUnsafeBytes { buffer in
+        _ = msgpack_pack_ext_with_body(&self.pk, buffer.baseAddress!, buffer.count, type)
+      }
 
-      case let .array(array):
-        msgpack_pack_array(&pk, array.count)
+    case let .binary(data):
+      data.withUnsafeBytes { buffer in
+        _ = msgpack_pack_bin_with_body(&self.pk, buffer.baseAddress!, buffer.count)
+      }
 
-        for element in array { process(element) }
-
-      case let .ext(type, data):
-        data.withUnsafeBytes { buffer in
-          _ = msgpack_pack_ext_with_body(&self.pk, buffer.baseAddress!, buffer.count, type)
-        }
-
-      case let .binary(data):
-        data.withUnsafeBytes { buffer in
-          _ = msgpack_pack_bin_with_body(&self.pk, buffer.baseAddress!, buffer.count)
-        }
-
-      case .nil: msgpack_pack_nil(&pk)
+    case .nil: msgpack_pack_nil(&pk)
     }
   }
 }

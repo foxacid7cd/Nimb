@@ -2,6 +2,7 @@
 
 import AsyncAlgorithms
 import Foundation
+import Library
 import MessagePack
 import OSLog
 
@@ -13,7 +14,10 @@ public actor ProcessActor { public static let shared = ProcessActor() }
 // MARK: - Process
 
 public actor Process {
-  public init() {
+  public init(
+    arguments: [String] = [],
+    environmentOverlay: [String: String] = [:]
+  ) {
     let processChannel = ProcessChannel()
     processErrorMessages = processChannel.errorMessages
 
@@ -28,11 +32,15 @@ public actor Process {
         processChannel.bind(to: process)
 
         let executableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
-        process.executableURL = executableURL
-        process.arguments = [executableURL.relativePath, "--embed"]
+        let command = ([executableURL.relativePath, "--embed"] + arguments)
+          .joined(separator: " ")
+
+        process.executableURL = .init(filePath: "/bin/zsh")
+        process.arguments = ["-l", "-c", command]
 
         var environment = ProcessInfo.processInfo.environment
         environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
+        environment.merge(environmentOverlay, uniquingKeysWith: { $1 })
         process.environment = environment
 
         let terminateProcess = { @Sendable @ProcessActor in process.terminate() }
@@ -96,19 +104,18 @@ public actor Process {
                 }
 
                 switch process.terminationReason {
-                  case .uncaughtSignal: continuation.finish(throwing: TerminationError.uncaughtSignal)
+                case .uncaughtSignal:
+                  continuation.finish(throwing: TerminationError.uncaughtSignal)
 
-                  case .exit:
-                    let exitCode = Int(process.terminationStatus)
+                case .exit:
+                  let exitCode = Int(process.terminationStatus)
 
-                    if exitCode != 0 {
-                      continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
-                    }
+                  if exitCode != 0 {
+                    continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
+                  }
 
-                  default:
-                    assertionFailure(
-                      "Unknown process termination reason (\(process.terminationReason.rawValue))."
-                    )
+                @unknown default:
+                  break
                 }
 
                 continuation.finish()
@@ -129,10 +136,11 @@ public actor Process {
         api.task.cancel()
 
         switch termination {
-          case .cancelled:
-            task.cancel()
-          default:
-            break
+        case .cancelled:
+          task.cancel()
+
+        default:
+          break
         }
       }
     }

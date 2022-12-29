@@ -24,36 +24,47 @@ struct Nims: App {
     .windowResizability(.contentSize)
     .onChange(of: scenePhase) { newValue in
       switch newValue {
-        case .active:
-          let keyPresses = AsyncStream<KeyPress> { continuation in
-            let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-              let keyPress = KeyPress(event: event)
-              continuation.yield(keyPress)
+      case .active:
+        let keyPresses = AsyncStream<KeyPress> { continuation in
+          let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let keyPress = KeyPress(event: event)
+            continuation.yield(keyPress)
 
-              return nil
-            }
-
-            continuation.onTermination = { termination in
-              switch termination {
-                case .cancelled:
-                  continuation.finish()
-
-                case .finished:
-                  if let eventMonitor {
-                    NSEvent.removeMonitor(eventMonitor)
-                  }
-
-                @unknown default:
-                  break
-              }
-            }
+            return nil
           }
 
-          ViewStore(store)
-            .send(.createInstance(keyPresses: keyPresses))
+          continuation.onTermination = { termination in
+            switch termination {
+            case .cancelled:
+              continuation.finish()
 
-        default:
-          break
+            case .finished:
+              if let eventMonitor {
+                NSEvent.removeMonitor(eventMonitor)
+              }
+
+            @unknown default:
+              break
+            }
+          }
+        }
+
+        ViewStore(store)
+          .send(
+            .createInstance(
+              arguments: ["-u", "/Users/foxacid/.local/share/lunarvim/lvim/init.lua"],
+              environmentOverlay: [
+                "LUNARVIM_RUNTIME_DIR": "/Users/foxacid/.local/share/lunarvim",
+                "LUNARVIM_CONFIG_DIR": "/Users/foxacid/.config/lvim",
+                "LUNARVIM_CACHE_DIR": "/Users/foxacid/.cache/lvim",
+                "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
+              ],
+              keyPresses: keyPresses
+            )
+          )
+
+      default:
+        break
       }
     }
   }

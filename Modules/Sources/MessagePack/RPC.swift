@@ -47,32 +47,32 @@ public actor RPC {
           }
 
           switch messageType {
-            case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
+          case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
 
-            case .response:
-              guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
-                throw ParsingFailed.response(rawResponse: "\(array)")
-              }
+          case .response:
+            guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
+              throw ParsingFailed.response(rawResponse: "\(array)")
+            }
 
-              let result: Result<Value, RemoteError>
-              if array[2] != .nil {
-                result = .failure(.init(value: array[2]))
+            let result: Result<Value, RemoteError>
+            if array[2] != .nil {
+              result = .failure(.init(value: array[2]))
 
-              } else {
-                result = .success(array[3])
-              }
+            } else {
+              result = .success(array[3])
+            }
 
-              await store.responseReceived(result, forRequestWithID: id)
+            await store.responseReceived(result, forRequestWithID: id)
 
-            case .notification:
-              guard
-                array.count == 3, let method = (/Value.string).extract(from: array[1]),
-                let parameters = (/Value.array).extract(from: array[2])
-              else {
-                throw ParsingFailed.notification(rawNotification: "\(array)")
-              }
+          case .notification:
+            guard
+              array.count == 3, let method = (/Value.string).extract(from: array[1]),
+              let parameters = (/Value.array).extract(from: array[2])
+            else {
+              throw ParsingFailed.notification(rawNotification: "\(array)")
+            }
 
-              await sendNotification((method, parameters))
+            await sendNotification((method, parameters))
           }
         }
       }

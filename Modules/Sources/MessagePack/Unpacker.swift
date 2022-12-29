@@ -39,15 +39,15 @@ public actor Unpacker {
 
     while !isCancelled {
       switch result {
-        case MSGPACK_UNPACK_SUCCESS:
-          let value = Value(unpacked.data)
-          accumulator.append(value)
+      case MSGPACK_UNPACK_SUCCESS:
+        let value = Value(unpacked.data)
+        accumulator.append(value)
 
-        case MSGPACK_UNPACK_CONTINUE: isCancelled = true
+      case MSGPACK_UNPACK_CONTINUE: isCancelled = true
 
-        case MSGPACK_UNPACK_PARSE_ERROR: throw MessageUnpackError.parseError
+      case MSGPACK_UNPACK_PARSE_ERROR: throw MessageUnpackError.parseError
 
-        default: throw MessageUnpackError.unexpectedResult
+      default: throw MessageUnpackError.unexpectedResult
       }
 
       result = msgpack_unpacker_next(&mpac, &unpacked)

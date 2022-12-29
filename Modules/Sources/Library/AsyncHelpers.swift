@@ -27,9 +27,9 @@ public extension AsyncStream {
 
       continuation.onTermination = { termination in
         switch termination {
-          case .cancelled: task.cancel()
+        case .cancelled: task.cancel()
 
-          default: return
+        default: return
         }
       }
     }
@@ -56,9 +56,9 @@ public extension AsyncThrowingStream where Failure == Error {
 
       continuation.onTermination = { termination in
         switch termination {
-          case .cancelled: task.cancel()
+        case .cancelled: task.cancel()
 
-          default: return
+        default: return
         }
       }
     }

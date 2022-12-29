@@ -115,7 +115,10 @@ public struct SnapshotView: View {
     -> some View
   {
     Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-      let rowDrawRuns: [(backgroundRuns: [(frame: CGRect, color: State.Color)], frame: CGRect, text: Text)] =
+      let rowDrawRuns: [(
+        backgroundRuns: [(frame: CGRect, color: State.Color)],
+        foregroundRuns: [(origin: CGPoint, text: Text)]
+      )] =
         grid.rowLayouts
           .enumerated()
           .map { row, rowLayout in
@@ -125,7 +128,7 @@ public struct SnapshotView: View {
             )
 
             var backgroundRuns = [(frame: CGRect, color: State.Color)]()
-            var rowText = Text("")
+            var foregroundRuns = [(origin: CGPoint, text: Text)]()
 
             for rowPart in rowLayout.parts {
               let frame = CGRect(
@@ -138,10 +141,10 @@ public struct SnapshotView: View {
                   height: rowFrame.size.height
                 )
               )
-              let color = appearance.backgroundColor(
+              let backgroundColor = appearance.backgroundColor(
                 for: rowPart.highlightID
               )
-              backgroundRuns.append((frame, color))
+              backgroundRuns.append((frame, backgroundColor))
 
               let text = Text(rowPart.text)
                 .font(.init(appearance.font.appKit))
@@ -150,13 +153,12 @@ public struct SnapshotView: View {
                     .foregroundColor(for: rowPart.highlightID)
                     .swiftUI
                 )
-              rowText = rowText + text
+              foregroundRuns.append((frame.origin, text))
             }
 
             return (
               backgroundRuns: backgroundRuns,
-              frame: rowFrame,
-              text: rowText
+              foregroundRuns: foregroundRuns
             )
           }
 
@@ -174,10 +176,13 @@ public struct SnapshotView: View {
 
       graphicsContext.drawLayer { foregroundGraphicsContext in
         for rowDrawRun in rowDrawRuns {
-          foregroundGraphicsContext.draw(
-            rowDrawRun.text,
-            at: .init(x: rowDrawRun.frame.midX, y: rowDrawRun.frame.midY)
-          )
+          for foregroundRun in rowDrawRun.foregroundRuns {
+            foregroundGraphicsContext.draw(
+              foregroundRun.text,
+              at: foregroundRun.origin,
+              anchor: .zero
+            )
+          }
         }
       }
 
@@ -256,18 +261,18 @@ public struct SnapshotView: View {
     )
 
     switch floatingWindow.anchor {
-      case .northWest:
-        break
+    case .northWest:
+      break
 
-      case .northEast:
-        frame.origin.x -= frame.size.width
+    case .northEast:
+      frame.origin.x -= frame.size.width
 
-      case .southWest:
-        frame.origin.y -= frame.size.height
+    case .southWest:
+      frame.origin.y -= frame.size.height
 
-      case .southEast:
-        frame.origin.x -= frame.size.width
-        frame.origin.y -= frame.size.height
+    case .southEast:
+      frame.origin.x -= frame.size.width
+      frame.origin.y -= frame.size.height
     }
 
     return frame

@@ -11,7 +11,7 @@ import Neovim
 // MARK: - Action
 
 enum Action: Sendable {
-  case createInstance(keyPresses: AsyncStream<KeyPress>)
+  case createInstance(arguments: [String], environmentOverlay: [String: String], keyPresses: AsyncStream<KeyPress>)
   case instance(action: Instance.Action)
 }
 
@@ -21,40 +21,44 @@ struct Reducer: ReducerProtocol {
   var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-        case let .createInstance(keyPresses):
-          let instanceID = Instance.State.ID(
-            rawValue: UUID().uuidString
-          )
+      case let .createInstance(arguments, environmentOverlay, keyPresses):
+        let instanceID = Instance.State.ID(
+          rawValue: UUID().uuidString
+        )
 
-          state.instance = .init(id: instanceID)
+        state.instance = .init(id: instanceID)
 
-          return .run { send in
-            await send(
-              .instance(
-                action: .createProcess(keyPresses: keyPresses)
+        return .run { send in
+          await send(
+            .instance(
+              action: .createNeovimProcess(
+                arguments: arguments,
+                environmentOverlay: environmentOverlay,
+                keyPresses: keyPresses
               )
             )
+          )
+        }
+
+      case let .instance(action):
+        switch action {
+        case let .handleError(error):
+          return .fireAndForget {
+            assertionFailure("\(error)")
           }
 
-        case let .instance(action):
-          switch action {
-            case let .handleError(error):
-              return .fireAndForget {
-                assertionFailure("\(error)")
-              }
+        case let .processFinished(error):
+          state.instance = nil
 
-            case let .processFinished(error):
-              state.instance = nil
-
-              return .fireAndForget {
-                if let error {
-                  assertionFailure("\(error)")
-                }
-              }
-
-            default:
-              return .none
+          return .fireAndForget {
+            if let error {
+              assertionFailure("\(error)")
+            }
           }
+
+        default:
+          return .none
+        }
       }
     }
     .ifLet(
