@@ -13,10 +13,11 @@ import Tagged
 // MARK: - Action
 
 public enum Action: Sendable {
+  case setDefaultFont(State.Font)
   case createNeovimProcess(arguments: [String], environmentOverlay: [String: String], keyPresses: AsyncStream<KeyPress>)
   case bindNeovimProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
-  case setFont(State.Font)
   case applyOptionSetUIEvents([UIEvents.OptionSet])
+  case setFont(State.Font?)
   case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
   case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
   case applyGridResizeUIEvents([UIEvents.GridResize])
@@ -41,6 +42,10 @@ public struct Reducer: ReducerProtocol {
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
+    case let .setDefaultFont(font):
+      state.current.defaultFont = font
+      return .none
+
     case let .createNeovimProcess(arguments, environmentOverlay, keyPresses):
       let process = Neovim.Process(
         arguments: arguments,
@@ -66,8 +71,6 @@ public struct Reducer: ReducerProtocol {
 
     case let .bindNeovimProcess(process, keyPresses):
       let applyUIEventBatches = EffectTask<Action>.run { send in
-        var isFirstFlush = true
-
         for await uiEventBatch in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
             break
@@ -115,17 +118,7 @@ public struct Reducer: ReducerProtocol {
               await send(.applyWinCloseUIEvents(try decode()))
 
             case .flush:
-              if isFirstFlush {
-                await send(
-                  .setFont(
-                    .init(.init(name: "MesloLGS Nerd Font Mono", size: 13)!)
-                  )
-                )
-              }
-
               await send(.flush)
-
-              isFirstFlush = false
 
             default:
               break
@@ -157,17 +150,20 @@ public struct Reducer: ReducerProtocol {
 
       let requestUIAttach = EffectTask<Action>.run { send in
         do {
+          let uiOptions: UIOptions = [
+            .extMultigrid,
+            .extHlstate,
+            .extCmdline,
+            .extMessages,
+            .extPopupmenu,
+            .extTabline,
+          ]
+
           _ = try await process.api.nvimUIAttach(
-            width: 140,
-            height: 60,
-            options: [
-              "ext_multigrid": true,
-              "ext_hlstate": true,
-              // "ext_cmdline": false,
-              // "ext_messages": true,
-              // "ext_popupmenu": true,
-              // "ext_tabline": true,
-            ]
+            width: 110,
+            height: 36,
+            options: uiOptions
+              .nvimUIAttachOptions
           )
           .get()
 
@@ -188,10 +184,50 @@ public struct Reducer: ReducerProtocol {
       return .none
 
     case let .applyOptionSetUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        print(uiEvent)
+      return .run { @MainActor send in
+        for uiEvent in uiEvents {
+          switch uiEvent.name {
+          case "guifont":
+            guard let value = (/Value.string).extract(from: uiEvent.value) else {
+              assertionFailure()
+              break
+            }
+
+            let fontDescriptions = value
+              .components(separatedBy: ",")
+              .map { $0.trimmingCharacters(in: .whitespaces) }
+
+          loop: for fontDescription in fontDescriptions {
+              let components = fontDescription
+                .components(separatedBy: ":")
+
+              if components.count == 2 {
+                switch components[0] {
+                case "monospace":
+                  send(Action.setFont(nil))
+                  break loop
+
+                default:
+                  let size = Double(components[1].dropFirst()) ?? 12
+                  if let font = NSFont(name: components[0], size: size) {
+                    send(Action.setFont(.init(font)))
+                    break loop
+                  }
+                }
+
+              } else {
+                if let font = NSFont(name: fontDescription, size: 12) {
+                  send(Action.setFont(.init(font)))
+                  break loop
+                }
+              }
+            }
+
+          default:
+            break
+          }
+        }
       }
-      return .none
 
     case let .applyDefaultColorsSetUIEvents(uiEvents):
       for uiEvent in uiEvents {
@@ -361,17 +397,21 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyGridDestroyUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        let gridID = State.Grid.ID(uiEvent.grid)
+        guard var grid = state.current.grids[id: gridID] else {
+          continue
+        }
 
-        if let windowID = state.current.grids[id: gridID]!.windowID {
+        if let windowID = grid.windowID {
           let window = state.current.windows.remove(id: windowID)
 
           if window == nil {
             state.current.floatingWindows.remove(id: windowID)
           }
-        }
 
-        state.current.grids[id: gridID]!.windowID = nil
+          grid.windowID = nil
+          state.current.grids.updateOrAppend(grid)
+        }
       }
       return .none
 
@@ -461,17 +501,21 @@ public struct Reducer: ReducerProtocol {
 
     case let .applyWinCloseUIEvents(uiEvents):
       for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+        let gridID = State.Grid.ID(uiEvent.grid)
+        guard var grid = state.current.grids[id: gridID] else {
+          continue
+        }
 
-        if let windowID = state.current.grids[id: gridID]!.windowID {
+        if let windowID = grid.windowID {
           let window = state.current.windows.remove(id: windowID)
 
           if window == nil {
             state.current.floatingWindows.remove(id: windowID)
           }
-        }
 
-        state.current.grids[id: gridID]!.windowID = nil
+          grid.windowID = nil
+          state.current.grids.updateOrAppend(grid)
+        }
       }
       return .none
 

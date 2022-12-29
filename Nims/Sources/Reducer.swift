@@ -29,6 +29,15 @@ struct Reducer: ReducerProtocol {
         state.instance = .init(id: instanceID)
 
         return .run { send in
+          let defaultFont = await Instance.State.Font(
+            .monospacedSystemFont(ofSize: 12, weight: .regular)
+          )
+          await send(
+            .instance(
+              action: .setDefaultFont(defaultFont)
+            )
+          )
+
           await send(
             .instance(
               action: .createNeovimProcess(

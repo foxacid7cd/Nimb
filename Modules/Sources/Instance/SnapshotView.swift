@@ -141,7 +141,7 @@ public struct SnapshotView: View {
                   height: rowFrame.size.height
                 )
               )
-              
+
               let backgroundColor = appearance.backgroundColor(
                 for: rowPart.highlightID
               )

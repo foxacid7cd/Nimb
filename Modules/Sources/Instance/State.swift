@@ -306,6 +306,7 @@ public struct State: Equatable, Identifiable {
 
   public struct Snapshot: Equatable {
     public init(
+      defaultFont: Font? = nil,
       font: Font? = nil,
       highlights: IdentifiedArrayOf<Highlight> = [],
       grids: IdentifiedArrayOf<State.Grid> = [],
@@ -313,6 +314,7 @@ public struct State: Equatable, Identifiable {
       floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
       cursor: State.Cursor? = nil
     ) {
+      self.defaultFont = defaultFont
       self.font = font
       self.highlights = highlights
       self.grids = grids
@@ -321,6 +323,7 @@ public struct State: Equatable, Identifiable {
       self.floatingWindows = floatingWindows
     }
 
+    public var defaultFont: Font?
     public var font: Font?
     public var highlights: IdentifiedArrayOf<Highlight>
     public var grids: IdentifiedArrayOf<Grid>
@@ -330,7 +333,7 @@ public struct State: Equatable, Identifiable {
 
     public var appearance: Appearance? {
       guard
-        let font,
+        let font = font ?? defaultFont,
         let defaultHighlight = highlights[id: .default],
         let defaultForegroundColor = defaultHighlight.foregroundColor,
         let defaultBackgroundColor = defaultHighlight.backgroundColor,
