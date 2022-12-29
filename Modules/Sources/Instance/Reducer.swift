@@ -16,8 +16,9 @@ public enum Action: Sendable {
   case createProcess(keyPresses: AsyncStream<KeyPress>)
   case bindProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
   case setFont(State.Font)
-  case applyDefaultColorsSet([UIEvents.DefaultColorsSet])
-  case applyHlAttrDefine([UIEvents.HlAttrDefine])
+  case applyOptionSetUIEvents([UIEvents.OptionSet])
+  case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
+  case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
   case applyGridResizeUIEvents([UIEvents.GridResize])
   case applyGridLineUIEvents([UIEvents.GridLine])
   case applyGridScrollUIEvents([UIEvents.GridScroll])
@@ -71,11 +72,14 @@ public struct Reducer: ReducerProtocol {
 
             do {
               switch uiEventBatch {
+                case let .optionSet(decode):
+                  await send(.applyOptionSetUIEvents(try decode()))
+
                 case let .defaultColorsSet(decode):
-                  await send(.applyDefaultColorsSet(try decode()))
+                  await send(.applyDefaultColorsSetUIEvents(try decode()))
 
                 case let .hlAttrDefine(decode):
-                  await send(.applyHlAttrDefine(try decode()))
+                  await send(.applyHlAttrDefineUIEvents(try decode()))
 
                 case let .gridResize(decode):
                   await send(.applyGridResizeUIEvents(try decode()))
@@ -180,7 +184,13 @@ public struct Reducer: ReducerProtocol {
         state.current.font = font
         return .none
 
-      case let .applyDefaultColorsSet(uiEvents):
+      case let .applyOptionSetUIEvents(uiEvents):
+        for uiEvent in uiEvents {
+          print(uiEvent)
+        }
+        return .none
+
+      case let .applyDefaultColorsSetUIEvents(uiEvents):
         for uiEvent in uiEvents {
           state.current.highlights
             .updateOrAppend(
@@ -194,7 +204,7 @@ public struct Reducer: ReducerProtocol {
         }
         return .none
 
-      case let .applyHlAttrDefine(uiEvents):
+      case let .applyHlAttrDefineUIEvents(uiEvents):
         for uiEvent in uiEvents {
           let id = State.Highlight.ID(rawValue: uiEvent.id)
 

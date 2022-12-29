@@ -56,7 +56,7 @@ public struct ValueType: Sendable, Equatable {
     if rawValue.starts(with: "Array") {
       return .array
 
-    } else if ["Object", "Dictionary"].contains(rawValue) {
+    } else if rawValue == "Dictionary" {
       return .dictionary
 
     } else if ["Integer", "LuaRef"].contains(rawValue) {

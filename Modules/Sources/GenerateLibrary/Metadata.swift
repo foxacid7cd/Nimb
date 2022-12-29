@@ -10,10 +10,11 @@ import Tagged
 // MARK: - Metadata
 
 public struct Metadata: Sendable, Equatable {
-  public init(functions: [Function], uiEvents: [UIEvent], types: [Type]) {
+  public init(functions: [Function], uiEvents: [UIEvent], types: [Type], uiOptions: [String]) {
     self.functions = functions
     self.uiEvents = uiEvents
     self.types = types
+    self.uiOptions = uiOptions
   }
 
   public init?(_ value: Value) {
@@ -93,6 +94,14 @@ public struct Metadata: Sendable, Equatable {
     } else {
       uiEvents = []
     }
+
+    if let rawUIOptions = dictionary["ui_options"].flatMap(/Value.array) {
+      uiOptions = rawUIOptions
+        .compactMap((/Value.string).extract(from:))
+
+    } else {
+      uiOptions = []
+    }
   }
 
   public struct Function: Sendable, Equatable {
@@ -169,6 +178,7 @@ public struct Metadata: Sendable, Equatable {
   public var functions: [Function]
   public var uiEvents: [UIEvent]
   public var types: [Type]
+  public var uiOptions: [String]
 }
 
 private extension Metadata.Parameter {}

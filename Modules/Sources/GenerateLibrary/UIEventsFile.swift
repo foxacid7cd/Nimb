@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import Algorithms
+import CasePaths
 import Foundation
 import MessagePack
 import SwiftSyntax
@@ -113,7 +115,12 @@ public struct UIEventsFile: GeneratableFile {
 
                           let parametersCountCondition =
                             "rawParameters.count == \(uiEvent.parameters.count)"
-                          let parameterTypeConditions = uiEvent.parameters.enumerated()
+                          let (valueParameters, otherParameters) = uiEvent.parameters
+                            .enumerated()
+                            .partitioned(by: { (/ValueType.SwiftType.value).extract(from: $0.element.type.swift) == nil
+                            })
+
+                          let parameterTypeConditions = otherParameters
                             .map { index, parameter -> String in
                               let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
                               let result = parameter.type.wrapWithValueDecoder("rawParameters[\(index)]")
@@ -133,6 +140,11 @@ public struct UIEventsFile: GeneratableFile {
                             }
                             """
                           )
+
+                          for (index, parameter) in valueParameters {
+                            let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                            "let \(raw: name) = rawParameters[\(raw: index)]" as VariableDecl
+                          }
 
                           let structArguments = uiEvent.parameters
                             .map { parameter in
