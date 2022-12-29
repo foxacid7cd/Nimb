@@ -41,7 +41,7 @@ final class FontBridge {
     let descent = CTFontGetDescent(appKit)
     let leading = CTFontGetLeading(appKit)
 
-    return ascent + descent + leading
+    return ceil(ascent + descent + leading)
   }
 }
 

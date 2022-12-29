@@ -115,7 +115,7 @@ public struct SnapshotView: View {
     -> some View
   {
     Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-      let rowDrawRuns: [(backgroundRuns: [(frame: CGRect, color: State.Color)], text: Text, point: CGPoint)] =
+      let rowDrawRuns: [(backgroundRuns: [(frame: CGRect, color: State.Color)], frame: CGRect, text: Text)] =
         grid.rowLayouts
           .enumerated()
           .map { row, rowLayout in
@@ -155,11 +155,8 @@ public struct SnapshotView: View {
 
             return (
               backgroundRuns: backgroundRuns,
-              text: rowText,
-              point: .init(
-                x: rowFrame.midX,
-                y: rowFrame.midY
-              )
+              frame: rowFrame,
+              text: rowText
             )
           }
 
@@ -179,7 +176,7 @@ public struct SnapshotView: View {
         for rowDrawRun in rowDrawRuns {
           foregroundGraphicsContext.draw(
             rowDrawRun.text,
-            at: rowDrawRun.point
+            at: .init(x: rowDrawRun.frame.midX, y: rowDrawRun.frame.midY)
           )
         }
       }
@@ -206,7 +203,10 @@ public struct SnapshotView: View {
             .font(.init(appearance.font.appKit))
             .foregroundColor(.black)
 
-          cursorGraphicsContext.draw(text, in: frame)
+          cursorGraphicsContext.draw(
+            text,
+            at: .init(x: frame.midX, y: frame.midY)
+          )
         }
       }
     }
