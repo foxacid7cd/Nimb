@@ -6,7 +6,7 @@ import Library
 import Neovim
 import Tagged
 
-struct State: Sendable, Equatable {
+struct State: Equatable {
   var instance: Instance.State?
 }
 

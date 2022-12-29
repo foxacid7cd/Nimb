@@ -5,6 +5,8 @@ import Foundation
 import Library
 import msgpack
 
+// MARK: - Unpacker
+
 public actor Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
@@ -37,15 +39,15 @@ public actor Unpacker {
 
     while !isCancelled {
       switch result {
-      case MSGPACK_UNPACK_SUCCESS:
-        let value = Value(unpacked.data)
-        accumulator.append(value)
+        case MSGPACK_UNPACK_SUCCESS:
+          let value = Value(unpacked.data)
+          accumulator.append(value)
 
-      case MSGPACK_UNPACK_CONTINUE: isCancelled = true
+        case MSGPACK_UNPACK_CONTINUE: isCancelled = true
 
-      case MSGPACK_UNPACK_PARSE_ERROR: throw MessageUnpackError.parseError
+        case MSGPACK_UNPACK_PARSE_ERROR: throw MessageUnpackError.parseError
 
-      default: throw MessageUnpackError.unexpectedResult
+        default: throw MessageUnpackError.unexpectedResult
       }
 
       result = msgpack_unpacker_next(&mpac, &unpacked)
@@ -57,6 +59,8 @@ public actor Unpacker {
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
 }
+
+// MARK: - MessageUnpackError
 
 public enum MessageUnpackError: Error {
   case parseError

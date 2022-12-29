@@ -8,15 +8,67 @@ import Neovim
 import SwiftUI
 import Tagged
 
+// MARK: - State
+
 public struct State: Equatable, Identifiable {
-  public init(id: State.ID, flushed: State.Snapshot? = nil, current: State.Snapshot = .init(), windowZIndexCounter: Int = 0) {
+  public init(
+    id: State.ID,
+    flushed: State.Snapshot? = nil,
+    current: State.Snapshot = .init(),
+    windowZIndexCounter: Int = 0
+  ) {
     self.id = id
     self.flushed = flushed
     self.current = current
     self.windowZIndexCounter = windowZIndexCounter
   }
 
-  public typealias ID = Tagged<State, String>
+  // swiftformat:sort:begin
+
+  public enum Anchor: String, Equatable {
+    case northWest = "NW"
+    case northEast = "NE"
+    case southWest = "SW"
+    case southEast = "SE"
+  }
+
+  public struct Appearance: Equatable {
+    public init(
+      font: Font,
+      highlights: IdentifiedArrayOf<State.Highlight>,
+      defaultForegroundColor: Color,
+      defaultBackgroundColor: Color,
+      defaultSpecialColor: Color
+    ) {
+      self.font = font
+      self.highlights = highlights
+      self.defaultForegroundColor = defaultForegroundColor
+      self.defaultBackgroundColor = defaultBackgroundColor
+      self.defaultSpecialColor = defaultSpecialColor
+    }
+
+    public var font: Font
+    public var highlights: IdentifiedArrayOf<Highlight>
+    public var defaultForegroundColor: Color
+    public var defaultBackgroundColor: Color
+    public var defaultSpecialColor: Color
+
+    public var cellSize: CGSize {
+      font.cellSize
+    }
+
+    public func foregroundColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.foregroundColor ?? defaultForegroundColor
+    }
+
+    public func backgroundColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.backgroundColor ?? defaultBackgroundColor
+    }
+
+    public func specialColor(for highlightID: Highlight.ID) -> Color {
+      highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
+    }
+  }
 
   public struct Cell: Equatable {
     public init(text: String, highlightID: Highlight.ID) {
@@ -33,59 +85,31 @@ public struct State: Equatable, Identifiable {
     public var highlightID: Highlight.ID
   }
 
-  public struct Grid: Equatable, Identifiable {
-    public init(
-      id: ID,
-      cells: TwoDimensionalArray<Cell>,
-      rowHighlightChunks: [[HighlightChunk]],
-      windowID: References.Window?
-    ) {
-      self.id = id
-      self.cells = cells
-      self.rowHighlightChunks = rowHighlightChunks
-      self.windowID = windowID
+  public struct Color: Sendable, Hashable {
+    public init(rgb: Int) {
+      self.rgb = rgb
     }
 
-    public typealias ID = Tagged<Grid, Int>
+    public var rgb: Int
 
-    public var id: ID
-    public var cells: TwoDimensionalArray<Cell>
-    public var rowHighlightChunks: [[HighlightChunk]]
-    public var windowID: References.Window?
-  }
-
-  public struct HighlightChunk: Equatable {
-    public init(highlightID: Highlight.ID, text: String, originColumn: Int, columnsCount: Int) {
-      self.highlightID = highlightID
-      self.text = text
-      self.originColumn = originColumn
-      self.columnsCount = columnsCount
+    public var swiftUI: SwiftUI.Color {
+      .init(
+        .displayP3,
+        red: Double((rgb >> 16) & 0xFF) / 255,
+        green: Double((rgb >> 8) & 0xFF) / 255,
+        blue: Double(rgb & 0xFF) / 255
+      )
     }
-
-    public var highlightID: Highlight.ID
-    public var text: String
-    public var originColumn: Int
-    public var columnsCount: Int
   }
 
-  public struct Window: Equatable, Identifiable {
-    public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle, zIndex: Int, isHidden: Bool) {
-      self.reference = reference
+  public struct Cursor: Equatable {
+    public init(gridID: Grid.ID, position: IntegerPoint) {
       self.gridID = gridID
-      self.frame = frame
-      self.zIndex = zIndex
-      self.isHidden = isHidden
+      self.position = position
     }
 
-    public var reference: References.Window
     public var gridID: Grid.ID
-    public var frame: IntegerRectangle
-    public var zIndex: Int
-    public var isHidden: Bool
-
-    public var id: References.Window {
-      reference
-    }
+    public var position: IntegerPoint
   }
 
   public struct FloatingWindow: Equatable, Identifiable {
@@ -126,21 +150,47 @@ public struct State: Equatable, Identifiable {
     }
   }
 
-  public enum Anchor: String, Equatable {
-    case northWest = "NW"
-    case northEast = "NE"
-    case southWest = "SW"
-    case southEast = "SE"
-  }
-
-  public struct Cursor: Equatable {
-    public init(gridID: Grid.ID, position: IntegerPoint) {
-      self.gridID = gridID
-      self.position = position
+  public struct Font: Sendable, Equatable {
+    init(
+      id: ID,
+      cellWidth: Double,
+      cellHeight: Double
+    ) {
+      self.id = id
+      self.cellWidth = cellWidth
+      self.cellHeight = cellHeight
     }
 
-    public var gridID: Grid.ID
-    public var position: IntegerPoint
+    public typealias ID = Tagged<Font, Int>
+
+    public var id: ID
+    public var cellWidth: Double
+    public var cellHeight: Double
+
+    public var cellSize: CGSize {
+      .init(width: cellWidth, height: cellHeight)
+    }
+  }
+
+  public struct Grid: Equatable, Identifiable {
+    public init(
+      id: ID,
+      cells: TwoDimensionalArray<Cell>,
+      rowLayouts: [RowLayout],
+      windowID: References.Window?
+    ) {
+      self.id = id
+      self.cells = cells
+      self.rowLayouts = rowLayouts
+      self.windowID = windowID
+    }
+
+    public typealias ID = Tagged<Grid, Int>
+
+    public var id: ID
+    public var cells: TwoDimensionalArray<Cell>
+    public var rowLayouts: [RowLayout]
+    public var windowID: References.Window?
   }
 
   public struct Highlight: Equatable, Identifiable {
@@ -170,73 +220,77 @@ public struct State: Equatable, Identifiable {
     public var specialColor: Color?
   }
 
-  public struct Appearance: Equatable {
+  public typealias ID = Tagged<State, String>
+
+  public struct RowLayout: Equatable {
     public init(
-      font: Font,
-      highlights: IdentifiedArrayOf<State.Highlight>,
-      defaultForegroundColor: Color,
-      defaultBackgroundColor: Color,
-      defaultSpecialColor: Color
+      parts: [RowPart],
+      cellIndices: [Range<Int>]
     ) {
-      self.font = font
-      self.highlights = highlights
-      self.defaultForegroundColor = defaultForegroundColor
-      self.defaultBackgroundColor = defaultBackgroundColor
-      self.defaultSpecialColor = defaultSpecialColor
+      self.parts = parts
+      self.cellIndices = cellIndices
     }
 
-    public var font: Font
-    public var highlights: IdentifiedArrayOf<Highlight>
-    public var defaultForegroundColor: Color
-    public var defaultBackgroundColor: Color
-    public var defaultSpecialColor: Color
+    public init(rowCells: ArraySlice<Cell>) {
+      let chunks = rowCells.chunked {
+        $0.highlightID == $1.highlightID && !$0.text.utf16.isEmpty
+      }
 
-    public func foregroundColor(for highlightID: Highlight.ID) -> Color {
-      highlights[id: highlightID]?.foregroundColor ?? defaultForegroundColor
-    }
+      var parts = [RowPart]()
+      var cellIndices = [Range<Int>]()
 
-    public func backgroundColor(for highlightID: Highlight.ID) -> Color {
-      highlights[id: highlightID]?.backgroundColor ?? defaultBackgroundColor
-    }
+      var currentIndex = 0
 
-    public func specialColor(for highlightID: Highlight.ID) -> Color {
-      highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
-    }
-  }
+      for cells in chunks {
+        let lowerBound = currentIndex
 
-  public struct Color: Sendable, Hashable {
-    public init(rgb: Int) {
-      self.rgb = rgb
-    }
+        var text = ""
 
-    public var rgb: Int
+        for cell in cells {
+          text.append(cell.text)
 
-    public var swiftUI: SwiftUI.Color {
-      .init(
-        .displayP3,
-        red: Double((rgb >> 16) & 0xFF) / 255,
-        green: Double((rgb >> 8) & 0xFF) / 255,
-        blue: Double(rgb & 0xFF) / 255
+          let lowerBound = currentIndex
+          currentIndex += cell.text.utf16.count
+          let upperBound = currentIndex
+
+          cellIndices.append(lowerBound..<upperBound)
+        }
+
+        let upperBound = currentIndex
+
+        parts.append(
+          .init(
+            highlightID: cells.first!.highlightID,
+            text: text,
+            indices: lowerBound..<upperBound
+          )
+        )
+      }
+
+      self.init(
+        parts: parts,
+        cellIndices: cellIndices
       )
     }
+
+    public var parts: [RowPart]
+    public var cellIndices: [Range<Int>]
   }
 
-  public struct Font: Sendable, Equatable {
-    init(
-      id: ID,
-      cellWidth: Double,
-      cellHeight: Double
+  public struct RowPart: Equatable {
+    public init(
+      highlightID: Highlight.ID,
+      text: String,
+      indices: Range<Int>
     ) {
-      self.id = id
-      self.cellWidth = cellWidth
-      self.cellHeight = cellHeight
+      self.highlightID = highlightID
+      self.text = text
+      self.indices = indices
     }
 
-    public typealias ID = Tagged<Font, Int>
-
-    public var id: ID
-    public var cellWidth: Double
-    public var cellHeight: Double
+    public var highlightID: Highlight.ID
+    public var text: String
+    public var indices: Range<Int>
   }
 
   public struct Snapshot: Equatable {
@@ -288,6 +342,28 @@ public struct State: Equatable, Identifiable {
     }
   }
 
+  public struct Window: Equatable, Identifiable {
+    public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle, zIndex: Int, isHidden: Bool) {
+      self.reference = reference
+      self.gridID = gridID
+      self.frame = frame
+      self.zIndex = zIndex
+      self.isHidden = isHidden
+    }
+
+    public var reference: References.Window
+    public var gridID: Grid.ID
+    public var frame: IntegerRectangle
+    public var zIndex: Int
+    public var isHidden: Bool
+
+    public var id: References.Window {
+      reference
+    }
+  }
+
+  // swiftformat:sort:end
+
   public var id: ID
   public var flushed: Snapshot?
   public var current: Snapshot
@@ -316,23 +392,5 @@ public extension State.Grid.ID {
 
   var isOuter: Bool {
     self == .outer
-  }
-}
-
-public extension TwoDimensionalArray<State.Cell>.RowsView.Element {
-  func makeHighlightChunks() -> [State.HighlightChunk] {
-    chunked(on: \.highlightID)
-      .map { highlightID, cells in
-        let text = cells
-          .map(\.text)
-          .joined()
-
-        return .init(
-          highlightID: highlightID,
-          text: text,
-          originColumn: cells.startIndex - startIndex,
-          columnsCount: cells.endIndex - cells.startIndex
-        )
-      }
   }
 }

@@ -2,6 +2,8 @@
 
 import AppKit
 
+// MARK: - FontBridge
+
 @MainActor
 final class FontBridge {
   static let shared = FontBridge()

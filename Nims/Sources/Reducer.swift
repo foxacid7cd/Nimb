@@ -1,58 +1,60 @@
 // SPDX-License-Identifier: MIT
 
-import AppKit
 import CasePaths
 import ComposableArchitecture
+import Foundation
 import IdentifiedCollections
 import Instance
 import Library
 import Neovim
+
+// MARK: - Action
 
 enum Action: Sendable {
   case createInstance(keyPresses: AsyncStream<KeyPress>)
   case instance(action: Instance.Action)
 }
 
+// MARK: - Reducer
+
 struct Reducer: ReducerProtocol {
   var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(keyPresses):
-        let instanceID = Instance.State.ID(
-          rawValue: UUID().uuidString
-        )
-
-        state.instance = .init(id: instanceID)
-
-        return .run { send in
-          await send(
-            .instance(
-              action: .createProcess(keyPresses: keyPresses)
-            )
+        case let .createInstance(keyPresses):
+          let instanceID = Instance.State.ID(
+            rawValue: UUID().uuidString
           )
-        }
 
-      case let .instance(action):
-        switch action {
-        case let .handleError(error):
-          return .fireAndForget {
-            assertionFailure("\(error)")
+          state.instance = .init(id: instanceID)
+
+          return .run { send in
+            await send(
+              .instance(
+                action: .createProcess(keyPresses: keyPresses)
+              )
+            )
           }
 
-        case let .processFinished(error):
-          state.instance = nil
+        case let .instance(action):
+          switch action {
+            case let .handleError(error):
+              return .fireAndForget {
+                assertionFailure("\(error)")
+              }
 
-          return .fireAndForget {
-            if let error {
-              assertionFailure("\(error)")
-            }
+            case let .processFinished(error):
+              state.instance = nil
 
-            NSApplication.shared.terminate(nil)
+              return .fireAndForget {
+                if let error {
+                  assertionFailure("\(error)")
+                }
+              }
+
+            default:
+              return .none
           }
-
-        default:
-          return .none
-        }
       }
     }
     .ifLet(

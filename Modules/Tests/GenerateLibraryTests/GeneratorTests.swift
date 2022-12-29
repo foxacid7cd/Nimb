@@ -6,6 +6,8 @@ import XCTest
 
 private let expectedGeneratedFiles: Set = ["APIFunctions.swift", "UIEvents.swift", "References.swift"]
 
+// MARK: - GeneratorTests
+
 class GeneratorTests: XCTestCase {
   var temporaryDirectoryURL: URL!
   var generator: Generator!

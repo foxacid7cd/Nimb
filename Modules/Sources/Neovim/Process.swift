@@ -5,8 +5,12 @@ import Foundation
 import MessagePack
 import OSLog
 
+// MARK: - ProcessActor
+
 @globalActor
 public actor ProcessActor { public static let shared = ProcessActor() }
+
+// MARK: - Process
 
 public actor Process {
   public init() {
@@ -35,7 +39,9 @@ public actor Process {
 
         let terminateCallsTask = Task {
           for await _ in terminateCalls {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+              return
+            }
 
             terminateProcess()
             return
@@ -59,7 +65,9 @@ public actor Process {
                 try await api.task.value
 
               } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else {
+                  return
+                }
 
                 continuation.finish(throwing: error)
                 await terminateProcess()
@@ -75,28 +83,32 @@ public actor Process {
                   guard
                     let object = notification.object as? AnyObject,
                     ObjectIdentifier(object) == processObjectIdentifier
-                  else { return nil }
+                  else {
+                    return nil
+                  }
 
                   return ()
                 }
 
               for await _ in termination {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else {
+                  return
+                }
 
                 switch process.terminationReason {
-                case .uncaughtSignal: continuation.finish(throwing: TerminationError.uncaughtSignal)
+                  case .uncaughtSignal: continuation.finish(throwing: TerminationError.uncaughtSignal)
 
-                case .exit:
-                  let exitCode = Int(process.terminationStatus)
+                  case .exit:
+                    let exitCode = Int(process.terminationStatus)
 
-                  if exitCode != 0 {
-                    continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
-                  }
+                    if exitCode != 0 {
+                      continuation.finish(throwing: TerminationError.exitWithNonzeroCode(exitCode))
+                    }
 
-                default:
-                  assertionFailure(
-                    "Unknown process termination reason (\(process.terminationReason.rawValue))."
-                  )
+                  default:
+                    assertionFailure(
+                      "Unknown process termination reason (\(process.terminationReason.rawValue))."
+                    )
                 }
 
                 continuation.finish()
@@ -117,10 +129,10 @@ public actor Process {
         api.task.cancel()
 
         switch termination {
-        case .cancelled:
-          task.cancel()
-        default:
-          break
+          case .cancelled:
+            task.cancel()
+          default:
+            break
         }
       }
     }

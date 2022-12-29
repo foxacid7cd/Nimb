@@ -16,17 +16,19 @@ public actor API {
 
     task = Task {
       for try await notification in await rpc.notifications {
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else {
+          return
+        }
 
         switch notification.method {
-        case "redraw":
-          for parameter in notification.parameters {
-            let batch = try UIEventBatch(parameter)
-            await sendUIEventBatch(batch)
-          }
+          case "redraw":
+            for parameter in notification.parameters {
+              let batch = try UIEventBatch(parameter)
+              await sendUIEventBatch(batch)
+            }
 
-        default:
-          break
+          default:
+            break
         }
       }
     }
@@ -46,18 +48,18 @@ public actor API {
     let result = try await rpc.call(method: method, withParameters: parameters)
 
     switch result {
-    case let .success(rawSuccess):
-      guard let success = transformSuccess(rawSuccess) else {
-        throw CallFailed.invalidAssumedSuccessResponseType(
-          description:
-          "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
-        )
-      }
+      case let .success(rawSuccess):
+        guard let success = transformSuccess(rawSuccess) else {
+          throw CallFailed.invalidAssumedSuccessResponseType(
+            description:
+            "Assumed: \(String(reflecting: Success.self)), received: \(String(reflecting: rawSuccess))"
+          )
+        }
 
-      return .success(success)
+        return .success(success)
 
-    case let .failure(error):
-      return .failure(error)
+      case let .failure(error):
+        return .failure(error)
     }
   }
 

@@ -24,36 +24,36 @@ struct Nims: App {
     .windowResizability(.contentSize)
     .onChange(of: scenePhase) { newValue in
       switch newValue {
-      case .active:
-        let keyPresses = AsyncStream<KeyPress> { continuation in
-          let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            let keyPress = KeyPress(event: event)
-            continuation.yield(keyPress)
+        case .active:
+          let keyPresses = AsyncStream<KeyPress> { continuation in
+            let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+              let keyPress = KeyPress(event: event)
+              continuation.yield(keyPress)
 
-            return nil
-          }
+              return nil
+            }
 
-          continuation.onTermination = { termination in
-            switch termination {
-            case .cancelled:
-              continuation.finish()
+            continuation.onTermination = { termination in
+              switch termination {
+                case .cancelled:
+                  continuation.finish()
 
-            case .finished:
-              if let eventMonitor {
-                NSEvent.removeMonitor(eventMonitor)
+                case .finished:
+                  if let eventMonitor {
+                    NSEvent.removeMonitor(eventMonitor)
+                  }
+
+                @unknown default:
+                  break
               }
-
-            @unknown default:
-              break
             }
           }
-        }
 
-        ViewStore(store)
-          .send(.createInstance(keyPresses: keyPresses))
+          ViewStore(store)
+            .send(.createInstance(keyPresses: keyPresses))
 
-      default:
-        break
+        default:
+          break
       }
     }
   }

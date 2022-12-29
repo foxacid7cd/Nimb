@@ -12,7 +12,9 @@ public extension AsyncStream {
       let task = Task {
         do {
           for try await element in sequence {
-            if Task.isCancelled { break }
+            if Task.isCancelled {
+              break
+            }
 
             continuation.yield(element)
           }
@@ -25,9 +27,9 @@ public extension AsyncStream {
 
       continuation.onTermination = { termination in
         switch termination {
-        case .cancelled: task.cancel()
+          case .cancelled: task.cancel()
 
-        default: return
+          default: return
         }
       }
     }
@@ -42,7 +44,9 @@ public extension AsyncThrowingStream where Failure == Error {
     self.init(Element.self, bufferingPolicy: .unbounded) { continuation in
       let task = Task {
         for try await element in sequence {
-          if Task.isCancelled { break }
+          if Task.isCancelled {
+            break
+          }
 
           continuation.yield(element)
         }
@@ -52,9 +56,9 @@ public extension AsyncThrowingStream where Failure == Error {
 
       continuation.onTermination = { termination in
         switch termination {
-        case .cancelled: task.cancel()
+          case .cancelled: task.cancel()
 
-        default: return
+          default: return
         }
       }
     }

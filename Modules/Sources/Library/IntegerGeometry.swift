@@ -2,6 +2,8 @@
 
 import Foundation
 
+// MARK: - IntegerRectangle
+
 public struct IntegerRectangle: Sendable, Equatable {
   public init(
     origin: IntegerPoint = .init(),
@@ -14,6 +16,16 @@ public struct IntegerRectangle: Sendable, Equatable {
   public var origin: IntegerPoint
   public var size: IntegerSize
 }
+
+public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
+  .init(origin: first.origin * second, size: first.size * second)
+}
+
+public func + (first: IntegerRectangle, second: IntegerPoint) -> IntegerRectangle {
+  .init(origin: first.origin + second, size: first.size)
+}
+
+// MARK: - IntegerPoint
 
 public struct IntegerPoint: Sendable, Equatable {
   public init(
@@ -28,6 +40,20 @@ public struct IntegerPoint: Sendable, Equatable {
   public var row: Int
 }
 
+public func + (lhs: IntegerPoint, rhs: IntegerPoint) -> IntegerPoint {
+  .init(column: lhs.column + rhs.column, row: lhs.row + rhs.row)
+}
+
+public prefix func - (point: IntegerPoint) -> IntegerPoint {
+  .init(column: -point.column, row: -point.row)
+}
+
+public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
+  .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
+}
+
+// MARK: - IntegerSize
+
 public struct IntegerSize: Sendable, Equatable {
   public init(
     columnsCount: Int = 0,
@@ -41,29 +67,9 @@ public struct IntegerSize: Sendable, Equatable {
   public var rowsCount: Int
 }
 
-public func + (lhs: IntegerPoint, rhs: IntegerPoint) -> IntegerPoint {
-  .init(column: lhs.column + rhs.column, row: lhs.row + rhs.row)
-}
-
-public prefix func - (point: IntegerPoint) -> IntegerPoint {
-  .init(column: -point.column, row: -point.row)
-}
-
-public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
-  .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
-}
-
 public func * (first: IntegerSize, second: CGSize) -> CGSize {
   .init(
     width: Double(first.columnsCount) * second.width,
     height: Double(first.rowsCount) * second.height
   )
-}
-
-public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
-  .init(origin: first.origin * second, size: first.size * second)
-}
-
-public func + (first: IntegerRectangle, second: IntegerPoint) -> IntegerRectangle {
-  .init(origin: first.origin + second, size: first.size)
 }

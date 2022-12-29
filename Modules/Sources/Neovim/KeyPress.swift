@@ -3,6 +3,8 @@
 import AppKit
 import Carbon
 
+// MARK: - KeyPress
+
 public struct KeyPress: Sendable {
   public init(
     event: NSEvent
@@ -29,7 +31,9 @@ public struct KeyPress: Sendable {
   public var modifierFlags: NSEvent.ModifierFlags
 
   public func makeNvimKeyCode() -> String {
-    guard let unicodeScalar = characters.unicodeScalars.first else { return characters }
+    guard let unicodeScalar = characters.unicodeScalars.first else {
+      return characters
+    }
 
     let specialKey: String? = {
       if self.keyCode == kVK_Escape {

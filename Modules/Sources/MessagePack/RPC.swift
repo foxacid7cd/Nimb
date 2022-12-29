@@ -6,7 +6,11 @@ import Collections
 import Foundation
 import Library
 
+// MARK: - RemoteError
+
 public struct RemoteError: Error { public var value: Value }
+
+// MARK: - RPC
 
 public actor RPC {
   public init(
@@ -29,40 +33,46 @@ public actor RPC {
 
     task = Task {
       for try await data in await channel.dataBatches {
-        if Task.isCancelled { break }
+        if Task.isCancelled {
+          break
+        }
 
         for message in try await unpacker.unpack(data) {
           guard
             let array = (/Value.array).extract(from: message), !array.isEmpty,
             let integer = (/Value.integer).extract(from: array[0]),
             let messageType = MessageType(rawValue: integer)
-          else { throw ParsingFailed.messageType(rawMessage: "\(message)") }
+          else {
+            throw ParsingFailed.messageType(rawMessage: "\(message)")
+          }
 
           switch messageType {
-          case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
+            case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
 
-          case .response:
-            guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
-              throw ParsingFailed.response(rawResponse: "\(array)")
-            }
+            case .response:
+              guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
+                throw ParsingFailed.response(rawResponse: "\(array)")
+              }
 
-            let result: Result<Value, RemoteError>
-            if array[2] != .nil {
-              result = .failure(.init(value: array[2]))
+              let result: Result<Value, RemoteError>
+              if array[2] != .nil {
+                result = .failure(.init(value: array[2]))
 
-            } else {
-              result = .success(array[3])
-            }
+              } else {
+                result = .success(array[3])
+              }
 
-            await store.responseReceived(result, forRequestWithID: id)
+              await store.responseReceived(result, forRequestWithID: id)
 
-          case .notification:
-            guard
-              array.count == 3, let method = (/Value.string).extract(from: array[1]),
-              let parameters = (/Value.array).extract(from: array[2])
-            else { throw ParsingFailed.notification(rawNotification: "\(array)") }
+            case .notification:
+              guard
+                array.count == 3, let method = (/Value.string).extract(from: array[1]),
+                let parameters = (/Value.array).extract(from: array[2])
+              else {
+                throw ParsingFailed.notification(rawNotification: "\(array)")
+              }
 
-            await sendNotification((method, parameters))
+              await sendNotification((method, parameters))
           }
         }
       }

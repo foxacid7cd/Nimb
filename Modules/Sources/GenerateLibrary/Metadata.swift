@@ -7,6 +7,8 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import Tagged
 
+// MARK: - Metadata
+
 public struct Metadata: Sendable, Equatable {
   public init(functions: [Function], uiEvents: [UIEvent], types: [Type]) {
     self.functions = functions
@@ -15,7 +17,9 @@ public struct Metadata: Sendable, Equatable {
   }
 
   public init?(_ value: Value) {
-    guard let dictionary = (/Value.dictionary).extract(from: value) else { return nil }
+    guard let dictionary = (/Value.dictionary).extract(from: value) else {
+      return nil
+    }
 
     let types: [Type]
     if let rawTypes = dictionary["types"].flatMap(/Value.dictionary) {
@@ -26,7 +30,9 @@ public struct Metadata: Sendable, Equatable {
             let rawType = (/Value.dictionary).extract(from: rawType),
             let rawID = rawType["id"].flatMap(/Value.integer),
             let prefix = rawType["prefix"].flatMap(/Value.string)
-          else { return nil }
+          else {
+            return nil
+          }
 
           return .init(id: .init(rawID), name: name, prefix: prefix)
         }
@@ -38,7 +44,9 @@ public struct Metadata: Sendable, Equatable {
 
     if let functionsValue = dictionary["functions"].flatMap(/Value.array) {
       functions = functionsValue.compactMap { functionValue -> Function? in
-        guard let dictionary = (/Value.dictionary).extract(from: functionValue) else { return nil }
+        guard let dictionary = (/Value.dictionary).extract(from: functionValue) else {
+          return nil
+        }
 
         guard
           let parameterValues = dictionary["parameters"].flatMap(/Value.array),
@@ -48,7 +56,9 @@ public struct Metadata: Sendable, Equatable {
             .map({ ValueType(rawValue: $0, types: types) }),
           let method = dictionary["method"].flatMap(/Value.boolean),
           let since = dictionary["since"].flatMap(/Value.integer)
-        else { return nil }
+        else {
+          return nil
+        }
 
         return .init(
           name: name,
@@ -70,7 +80,9 @@ public struct Metadata: Sendable, Equatable {
           let rawUIEvent = (/Value.dictionary).extract(from: rawUIEvent),
           let rawParameters = rawUIEvent["parameters"].flatMap(/Value.array),
           let name = rawUIEvent["name"].flatMap(/Value.string)
-        else { return nil }
+        else {
+          return nil
+        }
 
         return .init(
           name: name,
@@ -84,7 +96,14 @@ public struct Metadata: Sendable, Equatable {
   }
 
   public struct Function: Sendable, Equatable {
-    public init(name: String, parameters: [Parameter], returnType: ValueType, method: Bool, since: Int, deprecatedSince: Int? = nil) {
+    public init(
+      name: String,
+      parameters: [Parameter],
+      returnType: ValueType,
+      method: Bool,
+      since: Int,
+      deprecatedSince: Int? = nil
+    ) {
       self.name = name
       self.parameters = parameters
       self.returnType = returnType
@@ -112,7 +131,9 @@ public struct Metadata: Sendable, Equatable {
         let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
         let rawType = (/Value.string).extract(from: arrayValue[0]),
         let name = (/Value.string).extract(from: arrayValue[1])
-      else { return nil }
+      else {
+        return nil
+      }
 
       self.init(name: name, type: .init(rawValue: rawType, types: types))
     }

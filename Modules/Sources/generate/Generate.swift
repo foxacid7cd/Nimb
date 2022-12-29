@@ -8,6 +8,8 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
+// MARK: - Generate
+
 @main
 struct Generate: AsyncParsableCommand {
   @Argument(
@@ -25,5 +27,7 @@ struct Generate: AsyncParsableCommand {
     try await generator.writeFiles(to: generatedURL)
   }
 }
+
+// MARK: - GenerateError
 
 enum GenerateError: Error { case invalidStandardInputData }

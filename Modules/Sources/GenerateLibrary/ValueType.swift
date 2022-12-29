@@ -19,32 +19,32 @@ public struct ValueType: Sendable, Equatable {
 
     public var signature: String {
       switch self {
-      case .integer:
-        return "Int"
+        case .integer:
+          return "Int"
 
-      case .float:
-        return "Double"
+        case .float:
+          return "Double"
 
-      case .string:
-        return "String"
+        case .string:
+          return "String"
 
-      case .boolean:
-        return "Bool"
+        case .boolean:
+          return "Bool"
 
-      case .dictionary:
-        return "[Value: Value]"
+        case .dictionary:
+          return "[Value: Value]"
 
-      case .array:
-        return "[Value]"
+        case .array:
+          return "[Value]"
 
-      case .binary:
-        return "Data"
+        case .binary:
+          return "Data"
 
-      case let .reference(type):
-        return "References.\(type.name)"
+        case let .reference(type):
+          return "References.\(type.name)"
 
-      case .value:
-        return "Value"
+        case .value:
+          return "Value"
       }
     }
   }
@@ -81,63 +81,63 @@ public struct ValueType: Sendable, Equatable {
 
   public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
-    case .integer:
-      return ".integer(\(expr))"
+      case .integer:
+        return ".integer(\(expr))"
 
-    case .float:
-      return ".float(\(expr))"
+      case .float:
+        return ".float(\(expr))"
 
-    case .string:
-      return ".string(\(expr))"
+      case .string:
+        return ".string(\(expr))"
 
-    case .boolean:
-      return ".boolean(\(expr))"
+      case .boolean:
+        return ".boolean(\(expr))"
 
-    case .dictionary:
-      return ".dictionary(\(expr))"
+      case .dictionary:
+        return ".dictionary(\(expr))"
 
-    case .array:
-      return ".array(\(expr))"
+      case .array:
+        return ".array(\(expr))"
 
-    case .binary:
-      return ".binary(\(expr))"
+      case .binary:
+        return ".binary(\(expr))"
 
-    case let .reference(type):
-      return ".ext(type: References.\(type.name).type, data: \(expr).data)"
+      case let .reference(type):
+        return ".ext(type: References.\(type.name).type, data: \(expr).data)"
 
-    case .value:
-      return expr
+      case .value:
+        return expr
     }
   }
 
   public func wrapWithValueDecoder(_ expr: String) -> String {
     switch swift {
-    case .integer:
-      return "(/Value.integer).extract(from: \(expr))"
+      case .integer:
+        return "(/Value.integer).extract(from: \(expr))"
 
-    case .float:
-      return "(/Value.float).extract(from: \(expr))"
+      case .float:
+        return "(/Value.float).extract(from: \(expr))"
 
-    case .string:
-      return "(/Value.string).extract(from: \(expr))"
+      case .string:
+        return "(/Value.string).extract(from: \(expr))"
 
-    case .boolean:
-      return "(/Value.boolean).extract(from: \(expr))"
+      case .boolean:
+        return "(/Value.boolean).extract(from: \(expr))"
 
-    case .dictionary:
-      return "(/Value.dictionary).extract(from: \(expr))"
+      case .dictionary:
+        return "(/Value.dictionary).extract(from: \(expr))"
 
-    case .array:
-      return "(/Value.array).extract(from: \(expr))"
+      case .array:
+        return "(/Value.array).extract(from: \(expr))"
 
-    case .binary:
-      return "(/Value.binary).extract(from: \(expr))"
+      case .binary:
+        return "(/Value.binary).extract(from: \(expr))"
 
-    case let .reference(type):
-      return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)"
+      case let .reference(type):
+        return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)"
 
-    case .value:
-      return expr
+      case .value:
+        return expr
     }
   }
 }

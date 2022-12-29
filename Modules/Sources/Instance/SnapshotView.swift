@@ -22,9 +22,10 @@ public struct SnapshotView: View {
     ) { state in
       if
         let appearance = state.appearance,
-        let outerGrid = state.outerGrid {
-        let frameWidth = Double(outerGrid.cells.columnsCount) * appearance.font.cellWidth
-        let frameHeight = Double(outerGrid.cells.rowsCount) * appearance.font.cellHeight
+        let outerGrid = state.outerGrid
+      {
+        let integerFrame = IntegerRectangle(size: outerGrid.cells.size)
+        let frame = integerFrame * appearance.cellSize
 
         ZStack(alignment: .topLeading) {
           gridView(
@@ -34,25 +35,33 @@ public struct SnapshotView: View {
             cursor: state.cursor
           )
           .frame(
-            width: frameWidth,
-            height: frameHeight
+            width: frame.size.width,
+            height: frame.size.height
           )
 
           ForEach(state.windows) { window in
+            let grid = state.grids[id: window.gridID]!
+            let integerSize = IntegerSize(
+              columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
+              rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
+            )
+            let size = integerSize * appearance.cellSize
+            let origin = window.frame.origin * appearance.cellSize
+
             if !window.isHidden {
               gridView(
-                for: state.grids[id: window.gridID]!,
+                for: grid,
                 appearance: appearance,
-                size: window.frame.size,
+                size: integerSize,
                 cursor: state.cursor
               )
               .frame(
-                width: Double(window.frame.size.columnsCount) * appearance.font.cellWidth,
-                height: Double(window.frame.size.rowsCount) * appearance.font.cellHeight
+                width: size.width,
+                height: size.height
               )
               .offset(
-                x: Double(window.frame.origin.column) * appearance.font.cellWidth,
-                y: Double(window.frame.origin.row) * appearance.font.cellHeight
+                x: origin.x,
+                y: origin.y
               )
               .zIndex(Double(window.zIndex) / 1000)
             }
@@ -62,7 +71,7 @@ public struct SnapshotView: View {
             if !floatingWindow.isHidden {
               let grid = state.grids[id: floatingWindow.gridID]!
 
-              let frame = frame(
+              let frame = self.frame(
                 for: floatingWindow,
                 grid: grid,
                 appearance: appearance,
@@ -90,12 +99,9 @@ public struct SnapshotView: View {
           }
         }
         .frame(
-          width: frameWidth,
-          height: frameHeight
+          width: frame.size.width,
+          height: frame.size.height
         )
-
-      } else {
-        EmptyView()
       }
     }
   }
@@ -105,91 +111,105 @@ public struct SnapshotView: View {
     appearance: State.Appearance,
     size: IntegerSize,
     cursor: State.Cursor?
-  ) -> some View {
-    Canvas(rendersAsynchronously: true) { graphicsContext, _ in
-      let rowDrawRuns: [(frame: CGRect, backgroundColor: State.Color, text: Text)] = grid.rowHighlightChunks
-        .enumerated()
-        .flatMap { row, highlightChunks in
-          highlightChunks
-            .map { highlightChunk in
+  )
+    -> some View
+  {
+    Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+      let rowDrawRuns: [(backgroundRuns: [(frame: CGRect, color: State.Color)], text: Text, point: CGPoint)] =
+        grid.rowLayouts
+          .enumerated()
+          .map { row, rowLayout in
+            let rowFrame = CGRect(
+              origin: .init(x: 0, y: Double(row) * appearance.font.cellHeight),
+              size: .init(width: size.width, height: appearance.font.cellHeight)
+            )
+
+            var backgroundRuns = [(frame: CGRect, color: State.Color)]()
+            var rowText = Text("")
+
+            for rowPart in rowLayout.parts {
               let frame = CGRect(
                 origin: .init(
-                  x: Double(highlightChunk.originColumn) * appearance.font.cellWidth,
-                  y: Double(row) * appearance.font.cellHeight
+                  x: Double(rowPart.indices.lowerBound) * appearance.font.cellWidth,
+                  y: rowFrame.origin.y
                 ),
                 size: .init(
-                  width: Double(highlightChunk.columnsCount) * appearance.font.cellWidth,
-                  height: appearance.font.cellHeight
+                  width: Double(rowPart.indices.count) * appearance.font.cellWidth,
+                  height: rowFrame.size.height
                 )
               )
+              let color = appearance.backgroundColor(
+                for: rowPart.highlightID
+              )
+              backgroundRuns.append((frame, color))
 
-              let text = Text(highlightChunk.text)
+              let text = Text(rowPart.text)
                 .font(.init(appearance.font.appKit))
                 .foregroundColor(
-                  appearance.foregroundColor(for: highlightChunk.highlightID)
+                  appearance
+                    .foregroundColor(for: rowPart.highlightID)
                     .swiftUI
                 )
-
-              let backgroundColor = appearance.backgroundColor(for: highlightChunk.highlightID)
-
-              return (frame, backgroundColor, text)
+              rowText = rowText + text
             }
-        }
+
+            return (
+              backgroundRuns: backgroundRuns,
+              text: rowText,
+              point: .init(
+                x: rowFrame.midX,
+                y: rowFrame.midY
+              )
+            )
+          }
 
       graphicsContext.drawLayer { backgroundGraphicsContext in
         for rowDrawRun in rowDrawRuns {
-          backgroundGraphicsContext.fill(
-            Path(rowDrawRun.frame),
-            with: .color(rowDrawRun.backgroundColor.swiftUI)
-          )
+          for backgroundRun in rowDrawRun.backgroundRuns {
+            backgroundGraphicsContext.fill(
+              Path(backgroundRun.frame),
+              with: .color(backgroundRun.color.swiftUI),
+              style: .init(antialiased: false)
+            )
+          }
         }
       }
 
       graphicsContext.drawLayer { foregroundGraphicsContext in
         for rowDrawRun in rowDrawRuns {
-          var frame = rowDrawRun.frame
-          frame.size.width = .greatestFiniteMagnitude
-
           foregroundGraphicsContext.draw(
             rowDrawRun.text,
-            in: frame
+            at: rowDrawRun.point
           )
         }
       }
 
-      if
-        let cursor,
-        cursor.gridID == grid.id,
-        cursor.position.row < grid.cells.rowsCount,
-        cursor.position.column < grid.cells.columnsCount {
-        let cursorGraphicsContext = graphicsContext
+      if let cursor, cursor.gridID == grid.id {
+        graphicsContext.drawLayer { cursorGraphicsContext in
+          let rowLayout = grid.rowLayouts[cursor.position.row]
+          let cursorIndices = rowLayout.cellIndices[cursor.position.column]
 
-        let frame = CGRect(
-          origin: .init(
-            x: Double(cursor.position.column) * appearance.font.cellWidth,
-            y: Double(cursor.position.row) * appearance.font.cellHeight
-          ),
-          size: .init(
-            width: appearance.font.cellWidth,
-            height: appearance.font.cellHeight
+          let integerFrame = IntegerRectangle(
+            origin: .init(column: cursorIndices.startIndex, row: cursor.position.row),
+            size: .init(columnsCount: cursorIndices.count, rowsCount: 1)
           )
-        )
+          let frame = integerFrame * appearance.cellSize
 
-        cursorGraphicsContext.fill(
-          Path(frame),
-          with: .color(.white)
-        )
+          cursorGraphicsContext.fill(
+            Path(frame),
+            with: .color(.white)
+          )
 
-        let cell = grid.cells[cursor.position]
+          let cell = grid.cells[cursor.position]
 
-        let text = Text(cell.text)
-          .font(.init(appearance.font.appKit))
-          .foregroundColor(.black)
+          let text = Text(cell.text)
+            .font(.init(appearance.font.appKit))
+            .foregroundColor(.black)
 
-        cursorGraphicsContext.draw(text, in: frame)
+          cursorGraphicsContext.draw(text, in: frame)
+        }
       }
     }
-    .allowsTightening(false)
   }
 
   private func frame(
@@ -199,21 +219,20 @@ public struct SnapshotView: View {
     grids: IdentifiedArrayOf<State.Grid>,
     windows: IdentifiedArrayOf<State.Window>,
     floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
-  ) -> CGRect {
+  )
+    -> CGRect
+  {
     let anchorGrid = grids[id: floatingWindow.anchorGridID]!
 
     let anchorGridOrigin: CGPoint
     if let windowID = anchorGrid.windowID {
       if let window = windows[id: windowID] {
-        anchorGridOrigin = .init(
-          x: Double(window.frame.origin.column) * appearance.font.cellWidth,
-          y: Double(window.frame.origin.row) * appearance.font.cellHeight
-        )
+        anchorGridOrigin = window.frame.origin * appearance.cellSize
 
       } else {
         let floatingWindow = floatingWindows[id: windowID]!
 
-        anchorGridOrigin = frame(
+        anchorGridOrigin = self.frame(
           for: floatingWindow,
           grid: grids[id: floatingWindow.gridID]!,
           appearance: appearance,
@@ -233,25 +252,22 @@ public struct SnapshotView: View {
         x: anchorGridOrigin.x + (floatingWindow.anchorColumn * appearance.font.cellWidth),
         y: anchorGridOrigin.y + (floatingWindow.anchorRow * appearance.font.cellHeight)
       ),
-      size: .init(
-        width: Double(grid.cells.columnsCount) * appearance.font.cellWidth,
-        height: Double(grid.cells.rowsCount) * appearance.font.cellHeight
-      )
+      size: grid.cells.size * appearance.cellSize
     )
 
     switch floatingWindow.anchor {
-    case .northWest:
-      break
+      case .northWest:
+        break
 
-    case .northEast:
-      frame.origin.x -= frame.size.width
+      case .northEast:
+        frame.origin.x -= frame.size.width
 
-    case .southWest:
-      frame.origin.y -= frame.size.height
+      case .southWest:
+        frame.origin.y -= frame.size.height
 
-    case .southEast:
-      frame.origin.x -= frame.size.width
-      frame.origin.y -= frame.size.height
+      case .southEast:
+        frame.origin.x -= frame.size.width
+        frame.origin.y -= frame.size.height
     }
 
     return frame

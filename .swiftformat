@@ -21,7 +21,7 @@
 --extensionmark "MARK: - %t + %c"
 --fractiongrouping disabled
 --fragment false
---funcattributes prev-line
+--funcattributes preserve
 --generictypes 
 --groupedextension "MARK: %c"
 --guardelse auto
@@ -31,15 +31,15 @@
 --ifdef indent
 --importgrouping alpha
 --indent 2
---indentcase false
---indentstrings false
+--indentcase true
+--indentstrings true
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf
 --markcategories false
 --markextensions always
 --marktypes always
---maxwidth 160
+--maxwidth 120
 --modifierorder 
 --nevertrailing 
 --nospaceoperators 
@@ -48,7 +48,7 @@
 --operatorfunc spaced
 --organizetypes actor,class,enum,struct
 --patternlet hoist
---ranges spaced
+--ranges no-space
 --redundanttype inferred
 --self remove
 --selfrequired 
@@ -62,19 +62,18 @@
 --tabwidth unspecified
 --trailingclosures 
 --trimwhitespace always
---typeattributes prev-line
+--typeattributes preserve
 --typeblanklines remove
 --typemark "MARK: - %t"
---varattributes prev-line
+--varattributes preserve
 --voidtype void
 --wraparguments before-first
 --wrapcollections before-first
 --wrapconditions before-first
 --wrapparameters before-first
---wrapreturntype preserve
+--wrapreturntype if-multiline
 --wrapternary default
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---disable wrapMultilineStatementBraces
---enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,preferDouble,sortedSwitchCases
+--enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,organizeDeclarations,preferDouble,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases

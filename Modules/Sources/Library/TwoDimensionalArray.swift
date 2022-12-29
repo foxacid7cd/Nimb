@@ -2,6 +2,8 @@
 
 import Foundation
 
+// MARK: - TwoDimensionalArray
+
 public struct TwoDimensionalArray<Element> {
   init(elements: [Element], columnsCount: Int) {
     self.elements = elements
@@ -34,7 +36,7 @@ public struct TwoDimensionalArray<Element> {
     let elementsCount = size.columnsCount * size.rowsCount
 
     var accumulator = [Element]()
-    for arrayIndex in 0 ..< elementsCount {
+    for arrayIndex in 0..<elementsCount {
       let (row, column) =
         arrayIndex
           .quotientAndRemainder(
@@ -74,7 +76,7 @@ public struct TwoDimensionalArray<Element> {
     private func elementsIndices(for row: Int) -> Range<Int> {
       let lower = target.columnsCount * row
       let upper = lower + target.columnsCount
-      return lower ..< upper
+      return lower..<upper
     }
   }
 
@@ -115,6 +117,10 @@ public struct TwoDimensionalArray<Element> {
   }
 }
 
+// MARK: Sendable
+
 extension TwoDimensionalArray: Sendable where Element: Sendable {}
+
+// MARK: Equatable
 
 extension TwoDimensionalArray: Equatable where Element: Equatable {}
