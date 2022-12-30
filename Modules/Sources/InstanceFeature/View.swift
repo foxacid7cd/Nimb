@@ -10,13 +10,17 @@ import SwiftUI
 public extension Instance {
   @MainActor
   struct View: SwiftUI.View {
-    public init(store: Store<State, Action>) {
+    public init(store: StoreOf<Instance>) {
       self.store = store
     }
 
-    public var store: Store<State, Action>
+    public var store: StoreOf<Instance>
 
     public var body: some SwiftUI.View {
+      let cursorPhaseStore = store
+        .scope(state: { $0.cursorPhase })
+        .actionless
+
       IfLetStore(
         store.scope(state: \.flushed)
       ) { flushedStore in
@@ -36,7 +40,8 @@ public extension Instance {
                 for: outerGrid,
                 appearance: appearance,
                 size: outerGrid.cells.size,
-                cursor: state.cursor
+                cursor: state.cursor,
+                cursorPhaseStore: cursorPhaseStore
               )
               .frame(
                 width: frame.size.width,
@@ -57,7 +62,8 @@ public extension Instance {
                     for: grid,
                     appearance: appearance,
                     size: integerSize,
-                    cursor: state.cursor
+                    cursor: state.cursor,
+                    cursorPhaseStore: cursorPhaseStore
                   )
                   .frame(
                     width: size.width,
@@ -88,7 +94,8 @@ public extension Instance {
                     for: grid,
                     appearance: appearance,
                     size: grid.cells.size,
-                    cursor: state.cursor
+                    cursor: state.cursor,
+                    cursorPhaseStore: cursorPhaseStore
                   )
                   .frame(
                     width: frame.size.width,
@@ -110,121 +117,128 @@ public extension Instance {
           }
         }
       }
+      .environment(
+        \EnvironmentValues.cursorPhase,
+         ViewStore(cursorPhaseStore).state
+      )
     }
 
     private func gridView(
       for grid: State.Grid,
       appearance: State.Appearance,
       size: IntegerSize,
-      cursor: State.Cursor?
+      cursor: State.Cursor?,
+      cursorPhaseStore: Store<Bool, Never>
     )
       -> some SwiftUI.View
     {
-      Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-        let rowDrawRuns: [(
-          backgroundRuns: [(frame: CGRect, color: State.Color)],
-          foregroundRuns: [(origin: CGPoint, text: Text)]
-        )] =
-          grid.rowLayouts
-            .enumerated()
-            .map { row, rowLayout in
-              let rowFrame = CGRect(
-                origin: .init(x: 0, y: Double(row) * appearance.font.cellHeight),
-                size: .init(width: size.width, height: appearance.font.cellHeight)
-              )
-
-              var backgroundRuns = [(frame: CGRect, color: State.Color)]()
-              var foregroundRuns = [(origin: CGPoint, text: Text)]()
-
-              for rowPart in rowLayout.parts {
-                let frame = CGRect(
-                  origin: .init(
-                    x: Double(rowPart.indices.lowerBound) * appearance.font.cellWidth,
-                    y: rowFrame.origin.y
-                  ),
-                  size: .init(
-                    width: Double(rowPart.indices.count) * appearance.font.cellWidth,
-                    height: rowFrame.size.height
-                  )
+      WithViewStore(cursorPhaseStore) { cursorPhase in
+        Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+          let rowDrawRuns: [(
+            backgroundRuns: [(frame: CGRect, color: State.Color)],
+            foregroundRuns: [(origin: CGPoint, text: Text)]
+          )] =
+            grid.rowLayouts
+              .enumerated()
+              .map { row, rowLayout in
+                let rowFrame = CGRect(
+                  origin: .init(x: 0, y: Double(row) * appearance.font.cellHeight),
+                  size: .init(width: size.width, height: appearance.font.cellHeight)
                 )
 
-                let backgroundColor = appearance.backgroundColor(
-                  for: rowPart.highlightID
-                )
+                var backgroundRuns = [(frame: CGRect, color: State.Color)]()
+                var foregroundRuns = [(origin: CGPoint, text: Text)]()
 
-                backgroundRuns.append((frame, backgroundColor))
-
-                let textAttributes = appearance.textAttributes(for: rowPart.highlightID)
-
-                let text = Text(rowPart.text)
-                  .font(.init(appearance.font.appKit))
-                  .foregroundColor(
-                    appearance
-                      .foregroundColor(for: rowPart.highlightID)
-                      .swiftUI
+                for rowPart in rowLayout.parts {
+                  let frame = CGRect(
+                    origin: .init(
+                      x: Double(rowPart.indices.lowerBound) * appearance.font.cellWidth,
+                      y: rowFrame.origin.y
+                    ),
+                    size: .init(
+                      width: Double(rowPart.indices.count) * appearance.font.cellWidth,
+                      height: rowFrame.size.height
+                    )
                   )
-                  .bold(textAttributes.isBold)
-                  .italic(textAttributes.isItalic)
 
-                foregroundRuns.append((frame.origin, text))
+                  let backgroundColor = appearance.backgroundColor(
+                    for: rowPart.highlightID
+                  )
+
+                  backgroundRuns.append((frame, backgroundColor))
+
+                  let textAttributes = appearance.textAttributes(for: rowPart.highlightID)
+
+                  let text = Text(rowPart.text)
+                    .font(.init(appearance.font.appKit))
+                    .foregroundColor(
+                      appearance
+                        .foregroundColor(for: rowPart.highlightID)
+                        .swiftUI
+                    )
+                    .bold(textAttributes.isBold)
+                    .italic(textAttributes.isItalic)
+
+                  foregroundRuns.append((frame.origin, text))
+                }
+
+                return (
+                  backgroundRuns: backgroundRuns,
+                  foregroundRuns: foregroundRuns
+                )
               }
 
-              return (
-                backgroundRuns: backgroundRuns,
-                foregroundRuns: foregroundRuns
-              )
-            }
-
-        graphicsContext.drawLayer { backgroundGraphicsContext in
-          for rowDrawRun in rowDrawRuns {
-            for backgroundRun in rowDrawRun.backgroundRuns {
-              backgroundGraphicsContext.fill(
-                Path(backgroundRun.frame),
-                with: .color(backgroundRun.color.swiftUI),
-                style: .init(antialiased: false)
-              )
+          graphicsContext.drawLayer { backgroundGraphicsContext in
+            for rowDrawRun in rowDrawRuns {
+              for backgroundRun in rowDrawRun.backgroundRuns {
+                backgroundGraphicsContext.fill(
+                  Path(backgroundRun.frame),
+                  with: .color(backgroundRun.color.swiftUI),
+                  style: .init(antialiased: false)
+                )
+              }
             }
           }
-        }
 
-        graphicsContext.drawLayer { foregroundGraphicsContext in
-          for rowDrawRun in rowDrawRuns {
-            for foregroundRun in rowDrawRun.foregroundRuns {
-              foregroundGraphicsContext.draw(
-                foregroundRun.text,
-                at: foregroundRun.origin,
-                anchor: .zero
-              )
+          graphicsContext.drawLayer { foregroundGraphicsContext in
+            for rowDrawRun in rowDrawRuns {
+              for foregroundRun in rowDrawRun.foregroundRuns {
+                foregroundGraphicsContext.draw(
+                  foregroundRun.text,
+                  at: foregroundRun.origin,
+                  anchor: .zero
+                )
+              }
             }
           }
-        }
 
-        if let cursor, cursor.gridID == grid.id {
-          graphicsContext.drawLayer { cursorGraphicsContext in
-            let rowLayout = grid.rowLayouts[cursor.position.row]
-            let cursorIndices = rowLayout.cellIndices[cursor.position.column]
+          if cursorPhase.state, let cursor, cursor.gridID == grid.id {
+            graphicsContext.drawLayer { cursorGraphicsContext in
+              let rowLayout = grid.rowLayouts[cursor.position.row]
+              let cursorIndices = rowLayout.cellIndices[cursor.position.column]
 
-            let integerFrame = IntegerRectangle(
-              origin: .init(column: cursorIndices.startIndex, row: cursor.position.row),
-              size: .init(columnsCount: cursorIndices.count, rowsCount: 1)
-            )
-            let frame = integerFrame * appearance.cellSize
+              let integerFrame = IntegerRectangle(
+                origin: .init(column: cursorIndices.startIndex, row: cursor.position.row),
+                size: .init(columnsCount: cursorIndices.count, rowsCount: 1)
+              )
+              let frame = integerFrame * appearance.cellSize
 
-            cursorGraphicsContext.fill(
-              Path(frame),
-              with: .color(.white)
-            )
+              cursorGraphicsContext.fill(
+                Path(frame),
+                with: .color(.white)
+              )
 
-            let cell = grid.cells[cursor.position]
+              let cell = grid.cells[cursor.position]
 
-            let text = Text(cell.text)
-              .font(.init(appearance.font.appKit))
-              .foregroundColor(.black)
+              let text = Text(cell.text)
+                .font(.init(appearance.font.appKit))
+                .foregroundColor(.black)
 
-            cursorGraphicsContext.draw(
-              text,
-              at: .init(x: frame.midX, y: frame.midY)
-            )
+              cursorGraphicsContext.draw(
+                text,
+                at: .init(x: frame.midX, y: frame.midY)
+              )
+            }
           }
         }
       }

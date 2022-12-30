@@ -16,7 +16,7 @@ public struct Nims: ReducerProtocol {
       arguments: [String],
       environmentOverlay: [String: String],
       keyPresses: AsyncStream<KeyPress>,
-      cursorBlinks: AsyncStream<Void>
+      cursorPhases: AsyncStream<Bool>
     )
     case instance(action: Instance.Action)
   }
@@ -32,7 +32,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses, cursorBlinks):
+      case let .createInstance(arguments, environmentOverlay, keyPresses, cursorPhases):
         let instanceID = Instance.State.ID(
           rawValue: UUID().uuidString
         )
@@ -55,7 +55,7 @@ public struct Nims: ReducerProtocol {
                 arguments: arguments,
                 environmentOverlay: environmentOverlay,
                 keyPresses: keyPresses,
-                cursorBlinks: cursorBlinks
+                cursorPhases: cursorPhases
               )
             )
           )

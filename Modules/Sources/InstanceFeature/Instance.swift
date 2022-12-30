@@ -19,9 +19,13 @@ public struct Instance: ReducerProtocol {
       arguments: [String],
       environmentOverlay: [String: String],
       keyPresses: AsyncStream<KeyPress>,
-      cursorBlinks: AsyncStream<Void>
+      cursorPhases: AsyncStream<Bool>
     )
-    case bindNeovimProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>, cursorBlinks: AsyncStream<Void>)
+    case bindNeovimProcess(
+      Neovim.Process,
+      keyPresses: AsyncStream<KeyPress>,
+      cursorPhases: AsyncStream<Bool>
+    )
     case applyOptionSetUIEvents([UIEvents.OptionSet])
     case setFont(State.Font?)
     case applySetTitleUIEvents([UIEvents.SetTitle])
@@ -38,7 +42,7 @@ public struct Instance: ReducerProtocol {
     case applyWinHideUIEvents([UIEvents.WinHide])
     case applyWinCloseUIEvents([UIEvents.WinClose])
     case flush
-    case toggleCursor
+    case setCursorPhase(Bool)
     case handleError(Error)
     case processFinished(error: Error?)
   }
@@ -49,7 +53,7 @@ public struct Instance: ReducerProtocol {
       state.current.defaultFont = font
       return .none
 
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, cursorBlinks):
+    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, cursorPhases):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
@@ -60,7 +64,13 @@ public struct Instance: ReducerProtocol {
           for try await state in await process.states {
             switch state {
             case .running:
-              await send(.bindNeovimProcess(process, keyPresses: keyPresses, cursorBlinks: cursorBlinks))
+              await send(
+                .bindNeovimProcess(
+                  process,
+                  keyPresses: keyPresses,
+                  cursorPhases: cursorPhases
+                )
+              )
             }
           }
 
@@ -72,7 +82,7 @@ public struct Instance: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses, cursorBlinks):
+    case let .bindNeovimProcess(process, keyPresses, cursorPhases):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for await uiEventBatch in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -178,13 +188,13 @@ public struct Instance: ReducerProtocol {
         }
       }
 
-      let toggleCursor = EffectTask<Action>.run { send in
-        for await () in cursorBlinks {
+      let applyCursorPhases = EffectTask<Action>.run { send in
+        for await cursorPhase in cursorPhases {
           guard !Task.isCancelled else {
             break
           }
 
-          await send(.toggleCursor)
+          await send(.setCursorPhase(cursorPhase))
         }
       }
 
@@ -192,7 +202,7 @@ public struct Instance: ReducerProtocol {
         applyUIEventBatches,
         reportKeyPresses,
         requestUIAttach,
-        toggleCursor
+        applyCursorPhases
       )
       .cancellable(id: EffectID.bindProcess)
 
@@ -546,8 +556,8 @@ public struct Instance: ReducerProtocol {
       state.flushed = state.current
       return .none
 
-    case .toggleCursor:
-      update(&state.isCursorHidden) { $0 = !$0 }
+    case let .setCursorPhase(value):
+      state.cursorPhase = value
       return .none
 
     default:

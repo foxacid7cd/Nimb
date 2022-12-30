@@ -15,13 +15,13 @@ public extension Instance {
       flushed: State.Snapshot? = nil,
       current: State.Snapshot = .init(),
       windowZIndexCounter: Int = 0,
-      isCursorHidden: Bool = false
+      cursorPhase: Bool = true
     ) {
       self.id = id
       self.flushed = flushed
       self.current = current
       self.windowZIndexCounter = windowZIndexCounter
-      self.isCursorHidden = isCursorHidden
+      self.cursorPhase = cursorPhase
     }
 
     // swiftformat:sort:begin
@@ -386,7 +386,7 @@ public extension Instance {
     public var flushed: Snapshot?
     public var current: Snapshot
     public var windowZIndexCounter: Int
-    public var isCursorHidden: Bool
+    public var cursorPhase: Bool
 
     public mutating func nextWindowZIndex() -> Int {
       windowZIndexCounter += 1

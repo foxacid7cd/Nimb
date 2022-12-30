@@ -52,9 +52,13 @@ public extension Nims {
             }
           }
 
-          let cursorBlinks = suspendingClock.timer(interval: .milliseconds(500))
-            .map { _ in () }
-            .erasedToAsyncStream
+          let cursorPhases = suspendingClock.timer(
+            interval: .milliseconds(500)
+          )
+          .reductions(into: false) { phase, _ in
+            phase = !phase
+          }
+          .erasedToAsyncStream
 
           ViewStore(store)
             .send(
@@ -67,7 +71,7 @@ public extension Nims {
                   "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
                 ],
                 keyPresses: keyPresses,
-                cursorBlinks: cursorBlinks
+                cursorPhases: cursorPhases
               )
             )
 
