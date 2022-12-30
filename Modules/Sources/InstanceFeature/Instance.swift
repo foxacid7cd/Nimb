@@ -10,36 +10,38 @@ import Neovim
 import Overture
 import Tagged
 
-// MARK: - Action
-
-public enum Action: Sendable {
-  case setDefaultFont(State.Font)
-  case createNeovimProcess(arguments: [String], environmentOverlay: [String: String], keyPresses: AsyncStream<KeyPress>)
-  case bindNeovimProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>)
-  case applyOptionSetUIEvents([UIEvents.OptionSet])
-  case setFont(State.Font?)
-  case applySetTitleUIEvents([UIEvents.SetTitle])
-  case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
-  case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
-  case applyGridResizeUIEvents([UIEvents.GridResize])
-  case applyGridLineUIEvents([UIEvents.GridLine])
-  case applyGridScrollUIEvents([UIEvents.GridScroll])
-  case applyGridClearUIEvents([UIEvents.GridClear])
-  case applyGridDestroyUIEvents([UIEvents.GridDestroy])
-  case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
-  case applyWinPosUIEvents([UIEvents.WinPos])
-  case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
-  case applyWinHideUIEvents([UIEvents.WinHide])
-  case applyWinCloseUIEvents([UIEvents.WinClose])
-  case flush
-  case handleError(Error)
-  case processFinished(error: Error?)
-}
-
-// MARK: - Reducer
-
-public struct Reducer: ReducerProtocol {
+public struct Instance: ReducerProtocol {
   public init() {}
+
+  public enum Action: Sendable {
+    case setDefaultFont(State.Font)
+    case createNeovimProcess(
+      arguments: [String],
+      environmentOverlay: [String: String],
+      keyPresses: AsyncStream<KeyPress>,
+      cursorBlinks: AsyncStream<Void>
+    )
+    case bindNeovimProcess(Neovim.Process, keyPresses: AsyncStream<KeyPress>, cursorBlinks: AsyncStream<Void>)
+    case applyOptionSetUIEvents([UIEvents.OptionSet])
+    case setFont(State.Font?)
+    case applySetTitleUIEvents([UIEvents.SetTitle])
+    case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
+    case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
+    case applyGridResizeUIEvents([UIEvents.GridResize])
+    case applyGridLineUIEvents([UIEvents.GridLine])
+    case applyGridScrollUIEvents([UIEvents.GridScroll])
+    case applyGridClearUIEvents([UIEvents.GridClear])
+    case applyGridDestroyUIEvents([UIEvents.GridDestroy])
+    case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
+    case applyWinPosUIEvents([UIEvents.WinPos])
+    case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
+    case applyWinHideUIEvents([UIEvents.WinHide])
+    case applyWinCloseUIEvents([UIEvents.WinClose])
+    case flush
+    case toggleCursor
+    case handleError(Error)
+    case processFinished(error: Error?)
+  }
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
@@ -47,7 +49,7 @@ public struct Reducer: ReducerProtocol {
       state.current.defaultFont = font
       return .none
 
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses):
+    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, cursorBlinks):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
@@ -58,7 +60,7 @@ public struct Reducer: ReducerProtocol {
           for try await state in await process.states {
             switch state {
             case .running:
-              await send(.bindNeovimProcess(process, keyPresses: keyPresses))
+              await send(.bindNeovimProcess(process, keyPresses: keyPresses, cursorBlinks: cursorBlinks))
             }
           }
 
@@ -70,7 +72,7 @@ public struct Reducer: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses):
+    case let .bindNeovimProcess(process, keyPresses, cursorBlinks):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for await uiEventBatch in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -176,10 +178,21 @@ public struct Reducer: ReducerProtocol {
         }
       }
 
+      let toggleCursor = EffectTask<Action>.run { send in
+        for await () in cursorBlinks {
+          guard !Task.isCancelled else {
+            break
+          }
+
+          await send(.toggleCursor)
+        }
+      }
+
       return .merge(
         applyUIEventBatches,
         reportKeyPresses,
-        requestUIAttach
+        requestUIAttach,
+        toggleCursor
       )
       .cancellable(id: EffectID.bindProcess)
 
@@ -531,6 +544,10 @@ public struct Reducer: ReducerProtocol {
 
     case .flush:
       state.flushed = state.current
+      return .none
+
+    case .toggleCursor:
+      update(&state.isCursorHidden) { $0 = !$0 }
       return .none
 
     default:

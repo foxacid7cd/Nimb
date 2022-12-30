@@ -5,8 +5,6 @@ import Foundation
 import Library
 import msgpack
 
-// MARK: - Unpacker
-
 public actor Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
@@ -59,8 +57,6 @@ public actor Unpacker {
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
 }
-
-// MARK: - MessageUnpackError
 
 public enum MessageUnpackError: Error {
   case parseError

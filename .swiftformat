@@ -37,8 +37,8 @@
 --lineaftermarks true
 --linebreaks lf
 --markcategories false
---markextensions always
---marktypes always
+--markextensions never
+--marktypes never
 --maxwidth 120
 --modifierorder 
 --nevertrailing 

@@ -6,7 +6,8 @@ let package = Package(
   name: "Modules",
   platforms: [.macOS(.v13)],
   products: [
-    .library(name: "Instance", targets: ["Instance"]),
+    .library(name: "NimsFeature", targets: ["NimsFeature"]),
+    .library(name: "InstanceFeature", targets: ["InstanceFeature"]),
     .library(name: "Neovim", targets: ["Neovim"]),
     .executable(name: "generate", targets: ["generate"]),
     .library(name: "GenerateLibrary", targets: ["GenerateLibrary"]),
@@ -33,7 +34,13 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "Instance",
+      name: "NimsFeature",
+      dependencies: [
+        .target(name: "InstanceFeature")
+      ]
+    ),
+    .target(
+      name: "InstanceFeature",
       dependencies: [
         .target(name: "Neovim")
       ]

@@ -6,12 +6,8 @@ import Library
 import MessagePack
 import OSLog
 
-// MARK: - ProcessActor
-
 @globalActor
 public actor ProcessActor { public static let shared = ProcessActor() }
-
-// MARK: - Process
 
 public actor Process {
   public init(

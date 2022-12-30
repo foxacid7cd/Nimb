@@ -6,11 +6,7 @@ import Collections
 import Foundation
 import Library
 
-// MARK: - RemoteError
-
 public struct RemoteError: Error { public var value: Value }
-
-// MARK: - RPC
 
 public actor RPC {
   public init(

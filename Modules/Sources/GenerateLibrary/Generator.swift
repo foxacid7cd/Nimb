@@ -12,8 +12,6 @@ private let generatableFileTypes: [GeneratableFile.Type] = [
   UIOptionFile.self,
 ]
 
-// MARK: - Generator
-
 public actor Generator {
   public init<S: AsyncSequence>(
     _ dataBatches: S
@@ -58,7 +56,5 @@ public actor Generator {
 
   private let metadataTask: Task<Metadata, Error>
 }
-
-// MARK: - GeneratorError
 
 public enum GeneratorError: Error { case invalidData(details: String) }

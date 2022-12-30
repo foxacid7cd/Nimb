@@ -2,8 +2,6 @@
 
 import Foundation
 
-// MARK: - TwoDimensionalArray
-
 public struct TwoDimensionalArray<Element> {
   init(elements: [Element], columnsCount: Int) {
     self.elements = elements
@@ -117,10 +115,6 @@ public struct TwoDimensionalArray<Element> {
   }
 }
 
-// MARK: Sendable
-
 extension TwoDimensionalArray: Sendable where Element: Sendable {}
-
-// MARK: Equatable
 
 extension TwoDimensionalArray: Equatable where Element: Equatable {}

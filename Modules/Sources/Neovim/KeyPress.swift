@@ -3,8 +3,6 @@
 import AppKit
 import Carbon
 
-// MARK: - KeyPress
-
 public struct KeyPress: Sendable {
   public init(
     event: NSEvent

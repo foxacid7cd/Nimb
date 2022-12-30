@@ -4,24 +4,35 @@ import CasePaths
 import ComposableArchitecture
 import Foundation
 import IdentifiedCollections
-import Instance
+import InstanceFeature
 import Library
 import Neovim
 
-// MARK: - Action
+public struct Nims: ReducerProtocol {
+  public init() {}
 
-enum Action: Sendable {
-  case createInstance(arguments: [String], environmentOverlay: [String: String], keyPresses: AsyncStream<KeyPress>)
-  case instance(action: Instance.Action)
-}
+  public enum Action: Sendable {
+    case createInstance(
+      arguments: [String],
+      environmentOverlay: [String: String],
+      keyPresses: AsyncStream<KeyPress>,
+      cursorBlinks: AsyncStream<Void>
+    )
+    case instance(action: Instance.Action)
+  }
 
-// MARK: - Reducer
+  public struct State: Equatable {
+    public init(instance: Instance.State? = nil) {
+      self.instance = instance
+    }
 
-struct Reducer: ReducerProtocol {
-  var body: some ReducerProtocol<State, Action> {
+    public var instance: Instance.State?
+  }
+
+  public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses):
+      case let .createInstance(arguments, environmentOverlay, keyPresses, cursorBlinks):
         let instanceID = Instance.State.ID(
           rawValue: UUID().uuidString
         )
@@ -43,7 +54,8 @@ struct Reducer: ReducerProtocol {
               action: .createNeovimProcess(
                 arguments: arguments,
                 environmentOverlay: environmentOverlay,
-                keyPresses: keyPresses
+                keyPresses: keyPresses,
+                cursorBlinks: cursorBlinks
               )
             )
           )
@@ -70,11 +82,6 @@ struct Reducer: ReducerProtocol {
         }
       }
     }
-    .ifLet(
-      \.instance, action: /Action.instance,
-      then: {
-        Instance.Reducer()
-      }
-    )
+    .ifLet(\.instance, action: /Action.instance, then: { Instance() })
   }
 }

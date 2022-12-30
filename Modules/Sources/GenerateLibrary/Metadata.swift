@@ -7,8 +7,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import Tagged
 
-// MARK: - Metadata
-
 public struct Metadata: Sendable, Equatable {
   public init(functions: [Function], uiEvents: [UIEvent], types: [Type], uiOptions: [String]) {
     self.functions = functions

@@ -2,8 +2,6 @@
 
 import Foundation
 
-// MARK: - IntegerRectangle
-
 public struct IntegerRectangle: Sendable, Equatable {
   public init(
     origin: IntegerPoint = .init(),
@@ -24,8 +22,6 @@ public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
 public func + (first: IntegerRectangle, second: IntegerPoint) -> IntegerRectangle {
   .init(origin: first.origin + second, size: first.size)
 }
-
-// MARK: - IntegerPoint
 
 public struct IntegerPoint: Sendable, Equatable {
   public init(
@@ -51,8 +47,6 @@ public prefix func - (point: IntegerPoint) -> IntegerPoint {
 public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
   .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
 }
-
-// MARK: - IntegerSize
 
 public struct IntegerSize: Sendable, Equatable {
   public init(
