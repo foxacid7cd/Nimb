@@ -23,53 +23,64 @@ public actor RPC {
     let store = Store()
     self.store = store
 
-    let (sendNotification, notifications) = AsyncChannel<(method: String, parameters: [Value])>
-      .pipe()
-    self.notifications = notifications
+    notifications = .init { continuation in
+      let task = Task {
+        do {
+          for try await data in await channel.dataBatches {
+            if Task.isCancelled {
+              break
+            }
 
-    task = Task {
-      for try await data in await channel.dataBatches {
-        if Task.isCancelled {
-          break
+            for message in try await unpacker.unpack(data) {
+              guard
+                let array = (/Value.array).extract(from: message), !array.isEmpty,
+                let integer = (/Value.integer).extract(from: array[0]),
+                let messageType = MessageType(rawValue: integer)
+              else {
+                throw ParsingFailed.messageType(rawMessage: "\(message)")
+              }
+
+              switch messageType {
+              case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
+
+              case .response:
+                guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
+                  throw ParsingFailed.response(rawResponse: "\(array)")
+                }
+
+                let result: Result<Value, RemoteError>
+                if array[2] != .nil {
+                  result = .failure(.init(value: array[2]))
+
+                } else {
+                  result = .success(array[3])
+                }
+
+                await store.responseReceived(result, forRequestWithID: id)
+
+              case .notification:
+                guard
+                  array.count == 3, let method = (/Value.string).extract(from: array[1]),
+                  let parameters = (/Value.array).extract(from: array[2])
+                else {
+                  throw ParsingFailed.notification(rawNotification: "\(array)")
+                }
+
+                continuation.yield((method, parameters))
+              }
+            }
+          }
+
+          continuation.finish()
+
+        } catch {
+          continuation.finish(throwing: error)
         }
+      }
 
-        for message in try await unpacker.unpack(data) {
-          guard
-            let array = (/Value.array).extract(from: message), !array.isEmpty,
-            let integer = (/Value.integer).extract(from: array[0]),
-            let messageType = MessageType(rawValue: integer)
-          else {
-            throw ParsingFailed.messageType(rawMessage: "\(message)")
-          }
-
-          switch messageType {
-          case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
-
-          case .response:
-            guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
-              throw ParsingFailed.response(rawResponse: "\(array)")
-            }
-
-            let result: Result<Value, RemoteError>
-            if array[2] != .nil {
-              result = .failure(.init(value: array[2]))
-
-            } else {
-              result = .success(array[3])
-            }
-
-            await store.responseReceived(result, forRequestWithID: id)
-
-          case .notification:
-            guard
-              array.count == 3, let method = (/Value.string).extract(from: array[1]),
-              let parameters = (/Value.array).extract(from: array[2])
-            else {
-              throw ParsingFailed.notification(rawNotification: "\(array)")
-            }
-
-            await sendNotification((method, parameters))
-          }
+      continuation.onTermination = { termination in
+        if case .cancelled = termination {
+          task.cancel()
         }
       }
     }
@@ -81,8 +92,7 @@ public actor RPC {
     case notification(rawNotification: String)
   }
 
-  public let notifications: AsyncStream<(method: String, parameters: [Value])>
-  public let task: Task<Void, Swift.Error>
+  public let notifications: AsyncThrowingStream<(method: String, parameters: [Value]), Error>
 
   @discardableResult
   public func call(
@@ -91,7 +101,8 @@ public actor RPC {
   ) async throws -> Result<Value, RemoteError> {
     await withUnsafeContinuation { continuation in
       Task {
-        let id = await store.announceRequest { response in continuation.resume(returning: response)
+        let id = await store.announceRequest { response in
+          continuation.resume(returning: response)
         }
         let request: Value = .array([
           .integer(MessageType.request.rawValue), .integer(id), .string(method), .array(parameters),

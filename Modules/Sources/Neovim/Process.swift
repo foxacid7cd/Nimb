@@ -64,20 +64,6 @@ public actor Process {
           continuation.yield(.running)
 
           await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-              do {
-                try await api.task.value
-
-              } catch {
-                guard !Task.isCancelled else {
-                  return
-                }
-
-                continuation.finish(throwing: error)
-                await terminateProcess()
-              }
-            }
-
             group.addTask { @ProcessActor in
               let processObjectIdentifier = ObjectIdentifier(process)
 
@@ -129,8 +115,6 @@ public actor Process {
       }
 
       continuation.onTermination = { termination in
-        api.task.cancel()
-
         switch termination {
         case .cancelled:
           task.cancel()

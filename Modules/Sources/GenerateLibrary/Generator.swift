@@ -7,7 +7,7 @@ import SwiftSyntaxBuilder
 
 private let generatableFileTypes: [GeneratableFile.Type] = [
   APIFunctionsFile.self,
-  UIEventsFile.self,
+  UIEventFile.self,
   ReferencesFile.self,
   UIOptionFile.self,
 ]

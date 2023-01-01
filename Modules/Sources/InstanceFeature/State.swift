@@ -9,19 +9,27 @@ import SwiftUI
 import Tagged
 
 public extension Instance {
-  struct State: Equatable, Identifiable {
+  struct State: Equatable {
     public init(
-      id: State.ID,
-      flushed: State.Snapshot? = nil,
-      current: State.Snapshot = .init(),
-      windowZIndexCounter: Int = 0,
-      cursorPhase: Bool = true
+      defaultFont: Font? = nil,
+      font: Font? = nil,
+      title: String? = nil,
+      highlights: IdentifiedArrayOf<Highlight> = [],
+      grids: IdentifiedArrayOf<State.Grid> = [],
+      windows: IdentifiedArrayOf<State.Window> = [],
+      floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
+      cursor: State.Cursor? = nil,
+      windowZIndexCounter: Int = 0
     ) {
-      self.id = id
-      self.flushed = flushed
-      self.current = current
+      self.defaultFont = defaultFont
+      self.font = font
+      self.title = title
+      self.highlights = highlights
+      self.grids = grids
+      self.windows = windows
+      self.cursor = cursor
+      self.floatingWindows = floatingWindows
       self.windowZIndexCounter = windowZIndexCounter
-      self.cursorPhase = cursorPhase
     }
 
     // swiftformat:sort:begin
@@ -305,61 +313,6 @@ public extension Instance {
       public var indices: Range<Int>
     }
 
-    public struct Snapshot: Equatable {
-      public init(
-        defaultFont: Font? = nil,
-        font: Font? = nil,
-        title: String? = nil,
-        highlights: IdentifiedArrayOf<Highlight> = [],
-        grids: IdentifiedArrayOf<State.Grid> = [],
-        windows: IdentifiedArrayOf<State.Window> = [],
-        floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
-        cursor: State.Cursor? = nil
-      ) {
-        self.defaultFont = defaultFont
-        self.font = font
-        self.title = title
-        self.highlights = highlights
-        self.grids = grids
-        self.windows = windows
-        self.cursor = cursor
-        self.floatingWindows = floatingWindows
-      }
-
-      public var defaultFont: Font?
-      public var font: Font?
-      public var title: String?
-      public var highlights: IdentifiedArrayOf<Highlight>
-      public var grids: IdentifiedArrayOf<Grid>
-      public var windows: IdentifiedArrayOf<Window>
-      public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
-      public var cursor: Cursor?
-
-      public var appearance: Appearance? {
-        guard
-          let font = font ?? defaultFont,
-          let defaultHighlight = highlights[id: .default],
-          let defaultForegroundColor = defaultHighlight.foregroundColor,
-          let defaultBackgroundColor = defaultHighlight.backgroundColor,
-          let defaultSpecialColor = defaultHighlight.specialColor
-        else {
-          return nil
-        }
-
-        return .init(
-          font: font,
-          highlights: highlights,
-          defaultForegroundColor: defaultForegroundColor,
-          defaultBackgroundColor: defaultBackgroundColor,
-          defaultSpecialColor: defaultSpecialColor
-        )
-      }
-
-      public var outerGrid: Grid? {
-        grids[id: .outer]
-      }
-    }
-
     public struct Window: Equatable, Identifiable {
       public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle, zIndex: Int, isHidden: Bool) {
         self.reference = reference
@@ -382,11 +335,19 @@ public extension Instance {
 
     // swiftformat:sort:end
 
-    public var id: ID
-    public var flushed: Snapshot?
-    public var current: Snapshot
+    public var defaultFont: Font?
+    public var font: Font?
+    public var title: String?
+    public var highlights: IdentifiedArrayOf<Highlight>
+    public var grids: IdentifiedArrayOf<Grid>
+    public var windows: IdentifiedArrayOf<Window>
+    public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
+    public var cursor: Cursor?
     public var windowZIndexCounter: Int
-    public var cursorPhase: Bool
+
+    public var outerGrid: Grid? {
+      grids[id: .outer]
+    }
 
     public mutating func nextWindowZIndex() -> Int {
       windowZIndexCounter += 1

@@ -1,4 +1,4 @@
---acronyms ID,RPC,UI,URL,UUID
+--acronyms ID,IDX,RPC,UI,URL,UUID
 --allman false
 --assetliterals visual-width
 --beforemarks 
@@ -76,4 +76,5 @@
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
+--disable wrap
 --enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,organizeDeclarations,preferDouble,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases

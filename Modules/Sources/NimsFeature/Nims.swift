@@ -33,11 +33,7 @@ public struct Nims: ReducerProtocol {
     Reduce { state, action in
       switch action {
       case let .createInstance(arguments, environmentOverlay, keyPresses, cursorPhases):
-        let instanceID = Instance.State.ID(
-          rawValue: UUID().uuidString
-        )
-
-        state.instance = .init(id: instanceID)
+        state.instance = .init()
 
         return .run { send in
           let defaultFont = await Instance.State.Font(

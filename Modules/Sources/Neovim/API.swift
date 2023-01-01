@@ -11,24 +11,34 @@ public actor API {
     let rpc = RPC(channel)
     self.rpc = rpc
 
-    let (sendUIEventBatch, uiEventBatches) = AsyncChannel<UIEventBatch>.pipe()
-    self.uiEventBatches = uiEventBatches
+    uiEventBatches = .init { continuation in
+      let task = Task {
+        do {
+          for try await (method, parameters) in await rpc.notifications {
+            guard !Task.isCancelled else {
+              return
+            }
 
-    task = Task {
-      for try await notification in await rpc.notifications {
-        guard !Task.isCancelled else {
-          return
-        }
+            guard method == "redraw" else {
+              continue
+            }
 
-        switch notification.method {
-        case "redraw":
-          for parameter in notification.parameters {
-            let batch = try UIEventBatch(parameter)
-            await sendUIEventBatch(batch)
+            let uiEvents = try [UIEvent](
+              rawRedrawNotificationParameters: parameters
+            )
+            continuation.yield(uiEvents)
           }
 
-        default:
-          break
+          continuation.finish()
+
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
+
+      continuation.onTermination = { termination in
+        if case .cancelled = termination {
+          task.cancel()
         }
       }
     }
@@ -36,9 +46,7 @@ public actor API {
 
   public enum CallFailed: Error { case invalidAssumedSuccessResponseType(description: String) }
 
-  public let uiEventBatches: AsyncStream<UIEventBatch>
-
-  let task: Task<Void, Error>
+  public let uiEventBatches: AsyncThrowingStream<[UIEvent], Error>
 
   func call<Success>(
     method: String,

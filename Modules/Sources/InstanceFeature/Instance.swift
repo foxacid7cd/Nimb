@@ -26,22 +26,22 @@ public struct Instance: ReducerProtocol {
       keyPresses: AsyncStream<KeyPress>,
       cursorPhases: AsyncStream<Bool>
     )
-    case applyOptionSetUIEvents([UIEvents.OptionSet])
-    case setFont(State.Font?)
-    case applySetTitleUIEvents([UIEvents.SetTitle])
-    case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
-    case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
-    case applyGridResizeUIEvents([UIEvents.GridResize])
-    case applyGridLineUIEvents([UIEvents.GridLine])
-    case applyGridScrollUIEvents([UIEvents.GridScroll])
-    case applyGridClearUIEvents([UIEvents.GridClear])
-    case applyGridDestroyUIEvents([UIEvents.GridDestroy])
-    case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
-    case applyWinPosUIEvents([UIEvents.WinPos])
-    case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
-    case applyWinHideUIEvents([UIEvents.WinHide])
-    case applyWinCloseUIEvents([UIEvents.WinClose])
-    case flush
+    case applyUIEventBatch([UIEvent])
+    ///    case applyOptionSetUIEvents([UIEvents.OptionSet])
+    ///    case setFont(State.Font?)
+    ///    case applySetTitleUIEvents([UIEvents.SetTitle])
+    ///    case applyDefaultColorsSetUIEvents([UIEvents.DefaultColorsSet])
+    ///    case applyHlAttrDefineUIEvents([UIEvents.HlAttrDefine])
+    ///    case applyGridResizeUIEvents([UIEvents.GridResize])
+    ///    case applyGridLineUIEvents([UIEvents.GridLine])
+    ///    case applyGridScrollUIEvents([UIEvents.GridScroll])
+    ///    case applyGridClearUIEvents([UIEvents.GridClear])
+    ///    case applyGridDestroyUIEvents([UIEvents.GridDestroy])
+    ///    case applyGridCursorGotoUIEvents([UIEvents.GridCursorGoto])
+    ///    case applyWinPosUIEvents([UIEvents.WinPos])
+    ///    case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
+    ///    case applyWinHideUIEvents([UIEvents.WinHide])
+    ///    case applyWinCloseUIEvents([UIEvents.WinClose])
     case setCursorPhase(Bool)
     case handleError(Error)
     case processFinished(error: Error?)
@@ -50,7 +50,7 @@ public struct Instance: ReducerProtocol {
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
     case let .setDefaultFont(font):
-      state.current.defaultFont = font
+      state.defaultFont = font
       return .none
 
     case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, cursorPhases):
@@ -84,72 +84,19 @@ public struct Instance: ReducerProtocol {
 
     case let .bindNeovimProcess(process, keyPresses, cursorPhases):
       let applyUIEventBatches = EffectTask<Action>.run { send in
-        for await uiEventBatch in await process.api.uiEventBatches {
+        for try await uiEvents in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
-            break
+            return
           }
 
-          do {
-            switch uiEventBatch {
-            case let .optionSet(decode):
-              await send(.applyOptionSetUIEvents(try decode()))
-
-            case let .setTitle(decode):
-              await send(.applySetTitleUIEvents(try decode()))
-
-            case let .defaultColorsSet(decode):
-              await send(.applyDefaultColorsSetUIEvents(try decode()))
-
-            case let .hlAttrDefine(decode):
-              await send(.applyHlAttrDefineUIEvents(try decode()))
-
-            case let .gridResize(decode):
-              await send(.applyGridResizeUIEvents(try decode()))
-
-            case let .gridLine(decode):
-              await send(.applyGridLineUIEvents(try decode()))
-
-            case let .gridScroll(decode):
-              await send(.applyGridScrollUIEvents(try decode()))
-
-            case let .gridClear(decode):
-              await send(.applyGridClearUIEvents(try decode()))
-
-            case let .gridDestroy(decode):
-              await send(.applyGridDestroyUIEvents(try decode()))
-
-            case let .gridCursorGoto(decode):
-              await send(.applyGridCursorGotoUIEvents(try decode()))
-
-            case let .winPos(decode):
-              await send(.applyWinPosUIEvents(try decode()))
-
-            case let .winFloatPos(decode):
-              await send(.applyWinFloatPosUIEvents(try decode()))
-
-            case let .winHide(decode):
-              await send(.applyWinHideUIEvents(try decode()))
-
-            case let .winClose(decode):
-              await send(.applyWinCloseUIEvents(try decode()))
-
-            case .flush:
-              await send(.flush)
-
-            default:
-              break
-            }
-
-          } catch {
-            await send(.handleError(error))
-          }
+          await send(.applyUIEvents(uiEvents))
         }
       }
 
       let reportKeyPresses = EffectTask<Action>.run { send in
         for await keyPress in keyPresses {
           guard !Task.isCancelled else {
-            break
+            return
           }
 
           do {
@@ -191,7 +138,7 @@ public struct Instance: ReducerProtocol {
       let applyCursorPhases = EffectTask<Action>.run { send in
         for await cursorPhase in cursorPhases {
           guard !Task.isCancelled else {
-            break
+            return
           }
 
           await send(.setCursorPhase(cursorPhase))
@@ -206,359 +153,357 @@ public struct Instance: ReducerProtocol {
       )
       .cancellable(id: EffectID.bindProcess)
 
-    case let .setFont(font):
-      state.current.font = font
-      return .none
+    case let .applyUIEvents(value):
+      for element in value {
 
-    case let .applySetTitleUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        state.current.title = uiEvent.title
       }
       return .none
 
-    case let .applyOptionSetUIEvents(uiEvents):
-      return .run { @MainActor send in
-        for uiEvent in uiEvents {
-          switch uiEvent.name {
-          case "guifont":
-            guard let value = (/Value.string).extract(from: uiEvent.value) else {
-              assertionFailure()
-              break
-            }
-
-            let fontDescriptions = value
-              .components(separatedBy: ",")
-              .map { $0.trimmingCharacters(in: .whitespaces) }
-
-          loop: for fontDescription in fontDescriptions {
-              let components = fontDescription
-                .components(separatedBy: ":")
-
-              if components.count == 2 {
-                switch components[0] {
-                case "monospace":
-                  send(Action.setFont(nil))
-                  break loop
-
-                default:
-                  let size = Double(components[1].dropFirst()) ?? 12
-                  if let font = NSFont(name: components[0], size: size) {
-                    send(Action.setFont(.init(font)))
-                    break loop
-                  }
-                }
-
-              } else {
-                if let font = NSFont(name: fontDescription, size: 12) {
-                  send(Action.setFont(.init(font)))
-                  break loop
-                }
-              }
-            }
-
-          default:
-            break
-          }
-        }
-      }
-
-    case let .applyDefaultColorsSetUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        state.current.highlights
-          .updateOrAppend(
-            .init(
-              id: .default,
-              foregroundColor: .init(rgb: uiEvent.rgbFg),
-              backgroundColor: .init(rgb: uiEvent.rgbBg),
-              specialColor: .init(rgb: uiEvent.rgbSp)
-            )
-          )
-      }
-      return .none
-
-    case let .applyHlAttrDefineUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let id = State.Highlight.ID(rawValue: uiEvent.id)
-
-        update(&state.current.highlights[id: id]) { highlight in
-          if highlight == nil {
-            highlight = .init(id: id)
-          }
-
-          for (key, value) in uiEvent.rgbAttrs {
-            guard case let .string(key) = key else {
-              continue
-            }
-
-            switch key {
-            case "foreground":
-              if case let .integer(value) = value {
-                highlight!.foregroundColor = .init(rgb: value)
-              }
-
-            case "background":
-              if case let .integer(value) = value {
-                highlight!.backgroundColor = .init(rgb: value)
-              }
-
-            case "special": if case let .integer(value) = value {
-                highlight!.specialColor = .init(rgb: value)
-              }
-
-            case "bold": if case let .boolean(value) = value {
-                highlight!.isBold = value
-              }
-
-            case "italic": if case let .boolean(value) = value {
-                highlight!.isItalic = value
-              }
-
-            default:
-              break
-            }
-          }
-        }
-      }
-      return .none
-
-    case let .applyGridResizeUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let id = State.Grid.ID(rawValue: uiEvent.grid)
-        let size = IntegerSize(
-          columnsCount: uiEvent.width,
-          rowsCount: uiEvent.height
-        )
-
-        update(&state.current.grids[id: id]) { grid in
-          if grid == nil {
-            let cells = TwoDimensionalArray<State.Cell>(
-              size: size,
-              repeatingElement: .default
-            )
-
-            grid = .init(
-              id: id,
-              cells: cells,
-              rowLayouts: cells.rows
-                .map(State.RowLayout.init(rowCells:)),
-              windowID: nil
-            )
-
-          } else {
-            let newCells = TwoDimensionalArray<State.Cell>(
-              size: size,
-              elementAtPoint: { point in
-                guard
-                  point.row < grid!.cells.rowsCount,
-                  point.column < grid!.cells.columnsCount
-                else {
-                  return .default
-                }
-
-                return grid!.cells[point]
-              }
-            )
-
-            grid!.cells = newCells
-            grid!.rowLayouts = newCells.rows
-              .map(State.RowLayout.init(rowCells:))
-          }
-        }
-
-        if
-          let cursor = state.current.cursor,
-          cursor.gridID == id,
-          cursor.position.column >= size.columnsCount,
-          cursor.position.row >= size.rowsCount
-        {
-          state.current.cursor = nil
-        }
-      }
-      return .none
-
-    case let .applyGridLineUIEvents(uiEvents):
-      do {
-        for uiEvent in uiEvents {
-          try updateLine(
-            in: &state.current.grids[id: .init(uiEvent.grid)]!,
-            origin: .init(column: uiEvent.colStart, row: uiEvent.row),
-            values: uiEvent.data
-          )
-        }
-        return .none
-
-      } catch {
-        return .task { .handleError(error) }
-      }
-
-    case let .applyGridScrollUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-        update(&state.current.grids[id: gridID]!) { grid in
-          let gridCopy = grid
-
-          for fromRow in uiEvent.top..<uiEvent.bot {
-            let toRow = fromRow - uiEvent.rows
-
-            guard toRow >= 0, toRow < grid.cells.rowsCount else {
-              continue
-            }
-
-            grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
-            grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
-          }
-        }
-      }
-      return .none
-
-    case let .applyGridClearUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
-
-        update(&state.current.grids[id: gridID]!) { grid in
-          let newCells = TwoDimensionalArray<State.Cell>(
-            size: grid.cells.size,
-            repeatingElement: .default
-          )
-
-          grid.cells = newCells
-          grid.rowLayouts = newCells.rows
-            .map(State.RowLayout.init(rowCells:))
-        }
-      }
-      return .none
-
-    case let .applyGridDestroyUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(uiEvent.grid)
-        guard var grid = state.current.grids[id: gridID] else {
-          continue
-        }
-
-        if let windowID = grid.windowID {
-          let window = state.current.windows.remove(id: windowID)
-
-          if window == nil {
-            state.current.floatingWindows.remove(id: windowID)
-          }
-
-          grid.windowID = nil
-          state.current.grids.updateOrAppend(grid)
-        }
-      }
-      return .none
-
-    case let .applyGridCursorGotoUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        state.current.cursor = .init(
-          gridID: .init(uiEvent.grid),
-          position: .init(
-            column: uiEvent.col,
-            row: uiEvent.row
-          )
-        )
-      }
-      return .none
-
-    case let .applyWinPosUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        state.current.floatingWindows.remove(id: uiEvent.win)
-
-        let gridID = State.Grid.ID(uiEvent.grid)
-
-        state.current.windows.updateOrAppend(
-          .init(
-            reference: uiEvent.win,
-            gridID: gridID,
-            frame: .init(
-              origin: .init(
-                column: uiEvent.startcol,
-                row: uiEvent.startrow
-              ),
-              size: .init(
-                columnsCount: uiEvent.width,
-                rowsCount: uiEvent.height
-              )
-            ),
-            zIndex: state.nextWindowZIndex(),
-            isHidden: false
-          )
-        )
-        state.current.grids[id: gridID]!.windowID = uiEvent.win
-      }
-      return .none
-
-    case let .applyWinFloatPosUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        guard let anchor = State.Anchor(rawValue: uiEvent.anchor) else {
-          assertionFailure("Invalid anchor value: \(uiEvent.anchor)")
-          continue
-        }
-
-        state.current.windows.remove(id: uiEvent.win)
-
-        let gridID = State.Grid.ID(uiEvent.grid)
-
-        state.current.floatingWindows.updateOrAppend(
-          .init(
-            reference: uiEvent.win,
-            gridID: gridID,
-            anchor: anchor,
-            anchorGridID: .init(uiEvent.anchorGrid),
-            anchorRow: uiEvent.anchorRow,
-            anchorColumn: uiEvent.anchorCol,
-            isFocusable: uiEvent.focusable,
-            zIndex: uiEvent.zindex,
-            isHidden: false
-          )
-        )
-
-        state.current.grids[id: gridID]!.windowID = uiEvent.win
-      }
-      return .none
-
-    case let .applyWinHideUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(uiEvent.grid)
-
-        if let windowID = state.current.grids[id: gridID]!.windowID {
-          if let index = state.current.windows.index(id: windowID) {
-            state.current.windows[index].isHidden = true
-
-          } else if let index = state.current.floatingWindows.index(id: windowID) {
-            state.current.floatingWindows[index].isHidden = true
-          }
-        }
-      }
-      return .none
-
-    case let .applyWinCloseUIEvents(uiEvents):
-      for uiEvent in uiEvents {
-        let gridID = State.Grid.ID(uiEvent.grid)
-        guard var grid = state.current.grids[id: gridID] else {
-          continue
-        }
-
-        if let windowID = grid.windowID {
-          let window = state.current.windows.remove(id: windowID)
-
-          if window == nil {
-            state.current.floatingWindows.remove(id: windowID)
-          }
-
-          grid.windowID = nil
-          state.current.grids.updateOrAppend(grid)
-        }
-      }
-      return .none
-
-    case .flush:
-      state.flushed = state.current
-      return .none
-
-    case let .setCursorPhase(value):
-      state.cursorPhase = value
-      return .none
+//    case let .setFont(font):
+//      state.current.font = font
+//      return .none
+//
+//    case let .applySetTitleUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        state.current.title = uiEvent.title
+//      }
+//      return .none
+//
+//    case let .applyOptionSetUIEvents(uiEvents):
+//      return .run { @MainActor send in
+//        for uiEvent in uiEvents {
+//          switch uiEvent.name {
+//          case "guifont":
+//            guard let value = (/Value.string).extract(from: uiEvent.value) else {
+//              assertionFailure()
+//              break
+//            }
+//
+//            let fontDescriptions = value
+//              .components(separatedBy: ",")
+//              .map { $0.trimmingCharacters(in: .whitespaces) }
+//
+//          loop: for fontDescription in fontDescriptions {
+//              let components = fontDescription
+//                .components(separatedBy: ":")
+//
+//              if components.count == 2 {
+//                switch components[0] {
+//                case "monospace":
+//                  send(Action.setFont(nil))
+//                  break loop
+//
+//                default:
+//                  let size = Double(components[1].dropFirst()) ?? 12
+//                  if let font = NSFont(name: components[0], size: size) {
+//                    send(Action.setFont(.init(font)))
+//                    break loop
+//                  }
+//                }
+//
+//              } else {
+//                if let font = NSFont(name: fontDescription, size: 12) {
+//                  send(Action.setFont(.init(font)))
+//                  break loop
+//                }
+//              }
+//            }
+//
+//          default:
+//            break
+//          }
+//        }
+//      }
+//
+//    case let .applyDefaultColorsSetUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        state.current.highlights
+//          .updateOrAppend(
+//            .init(
+//              id: .default,
+//              foregroundColor: .init(rgb: uiEvent.rgbFg),
+//              backgroundColor: .init(rgb: uiEvent.rgbBg),
+//              specialColor: .init(rgb: uiEvent.rgbSp)
+//            )
+//          )
+//      }
+//      return .none
+//
+//    case let .applyHlAttrDefineUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let id = State.Highlight.ID(rawValue: uiEvent.id)
+//
+//        update(&state.current.highlights[id: id]) { highlight in
+//          if highlight == nil {
+//            highlight = .init(id: id)
+//          }
+//
+//          for (key, value) in uiEvent.rgbAttrs {
+//            guard case let .string(key) = key else {
+//              continue
+//            }
+//
+//            switch key {
+//            case "foreground":
+//              if case let .integer(value) = value {
+//                highlight!.foregroundColor = .init(rgb: value)
+//              }
+//
+//            case "background":
+//              if case let .integer(value) = value {
+//                highlight!.backgroundColor = .init(rgb: value)
+//              }
+//
+//            case "special": if case let .integer(value) = value {
+//                highlight!.specialColor = .init(rgb: value)
+//              }
+//
+//            case "bold": if case let .boolean(value) = value {
+//                highlight!.isBold = value
+//              }
+//
+//            case "italic": if case let .boolean(value) = value {
+//                highlight!.isItalic = value
+//              }
+//
+//            default:
+//              break
+//            }
+//          }
+//        }
+//      }
+//      return .none
+//
+//    case let .applyGridResizeUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let id = State.Grid.ID(rawValue: uiEvent.grid)
+//        let size = IntegerSize(
+//          columnsCount: uiEvent.width,
+//          rowsCount: uiEvent.height
+//        )
+//
+//        update(&state.current.grids[id: id]) { grid in
+//          if grid == nil {
+//            let cells = TwoDimensionalArray<State.Cell>(
+//              size: size,
+//              repeatingElement: .default
+//            )
+//
+//            grid = .init(
+//              id: id,
+//              cells: cells,
+//              rowLayouts: cells.rows
+//                .map(State.RowLayout.init(rowCells:)),
+//              windowID: nil
+//            )
+//
+//          } else {
+//            let newCells = TwoDimensionalArray<State.Cell>(
+//              size: size,
+//              elementAtPoint: { point in
+//                guard
+//                  point.row < grid!.cells.rowsCount,
+//                  point.column < grid!.cells.columnsCount
+//                else {
+//                  return .default
+//                }
+//
+//                return grid!.cells[point]
+//              }
+//            )
+//
+//            grid!.cells = newCells
+//            grid!.rowLayouts = newCells.rows
+//              .map(State.RowLayout.init(rowCells:))
+//          }
+//        }
+//
+//        if
+//          let cursor = state.current.cursor,
+//          cursor.gridID == id,
+//          cursor.position.column >= size.columnsCount,
+//          cursor.position.row >= size.rowsCount
+//        {
+//          state.current.cursor = nil
+//        }
+//      }
+//      return .none
+//
+//    case let .applyGridLineUIEvents(uiEvents):
+//      do {
+//        for uiEvent in uiEvents {
+//          try updateLine(
+//            in: &state.current.grids[id: .init(uiEvent.grid)]!,
+//            origin: .init(column: uiEvent.colStart, row: uiEvent.row),
+//            values: uiEvent.data
+//          )
+//        }
+//        return .none
+//
+//      } catch {
+//        return .task { .handleError(error) }
+//      }
+//
+//    case let .applyGridScrollUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let gridID = State.Grid.ID(rawValue: uiEvent.grid)
+//        update(&state.current.grids[id: gridID]!) { grid in
+//          let gridCopy = grid
+//
+//          for fromRow in uiEvent.top..<uiEvent.bot {
+//            let toRow = fromRow - uiEvent.rows
+//
+//            guard toRow >= 0, toRow < grid.cells.rowsCount else {
+//              continue
+//            }
+//
+//            grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
+//            grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
+//          }
+//        }
+//      }
+//      return .none
+//
+//    case let .applyGridClearUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//
+//        update(&state.current.grids[id: gridID]!) { grid in
+//          let newCells = TwoDimensionalArray<State.Cell>(
+//            size: grid.cells.size,
+//            repeatingElement: .default
+//          )
+//
+//          grid.cells = newCells
+//          grid.rowLayouts = newCells.rows
+//            .map(State.RowLayout.init(rowCells:))
+//        }
+//      }
+//      return .none
+//
+//    case let .applyGridDestroyUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//        guard var grid = state.current.grids[id: gridID] else {
+//          continue
+//        }
+//
+//        if let windowID = grid.windowID {
+//          let window = state.current.windows.remove(id: windowID)
+//
+//          if window == nil {
+//            state.current.floatingWindows.remove(id: windowID)
+//          }
+//
+//          grid.windowID = nil
+//          state.current.grids.updateOrAppend(grid)
+//        }
+//      }
+//      return .none
+//
+//    case let .applyGridCursorGotoUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        state.current.cursor = .init(
+//          gridID: .init(uiEvent.grid),
+//          position: .init(
+//            column: uiEvent.col,
+//            row: uiEvent.row
+//          )
+//        )
+//      }
+//      return .none
+//
+//    case let .applyWinPosUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        state.current.floatingWindows.remove(id: uiEvent.win)
+//
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//
+//        state.current.windows.updateOrAppend(
+//          .init(
+//            reference: uiEvent.win,
+//            gridID: gridID,
+//            frame: .init(
+//              origin: .init(
+//                column: uiEvent.startcol,
+//                row: uiEvent.startrow
+//              ),
+//              size: .init(
+//                columnsCount: uiEvent.width,
+//                rowsCount: uiEvent.height
+//              )
+//            ),
+//            zIndex: state.nextWindowZIndex(),
+//            isHidden: false
+//          )
+//        )
+//        state.current.grids[id: gridID]!.windowID = uiEvent.win
+//      }
+//      return .none
+//
+//    case let .applyWinFloatPosUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        guard let anchor = State.Anchor(rawValue: uiEvent.anchor) else {
+//          assertionFailure("Invalid anchor value: \(uiEvent.anchor)")
+//          continue
+//        }
+//
+//        state.current.windows.remove(id: uiEvent.win)
+//
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//
+//        state.current.floatingWindows.updateOrAppend(
+//          .init(
+//            reference: uiEvent.win,
+//            gridID: gridID,
+//            anchor: anchor,
+//            anchorGridID: .init(uiEvent.anchorGrid),
+//            anchorRow: uiEvent.anchorRow,
+//            anchorColumn: uiEvent.anchorCol,
+//            isFocusable: uiEvent.focusable,
+//            zIndex: uiEvent.zindex,
+//            isHidden: false
+//          )
+//        )
+//
+//        state.current.grids[id: gridID]!.windowID = uiEvent.win
+//      }
+//      return .none
+//
+//    case let .applyWinHideUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//
+//        if let windowID = state.current.grids[id: gridID]!.windowID {
+//          if let index = state.current.windows.index(id: windowID) {
+//            state.current.windows[index].isHidden = true
+//
+//          } else if let index = state.current.floatingWindows.index(id: windowID) {
+//            state.current.floatingWindows[index].isHidden = true
+//          }
+//        }
+//      }
+//      return .none
+//
+//    case let .applyWinCloseUIEvents(uiEvents):
+//      for uiEvent in uiEvents {
+//        let gridID = State.Grid.ID(uiEvent.grid)
+//        guard var grid = state.current.grids[id: gridID] else {
+//          continue
+//        }
+//
+//        if let windowID = grid.windowID {
+//          let window = state.current.windows.remove(id: windowID)
+//
+//          if window == nil {
+//            state.current.floatingWindows.remove(id: windowID)
+//          }
+//
+//          grid.windowID = nil
+//          state.current.grids.updateOrAppend(grid)
+//        }
+//      }
+//      return .none
 
     default:
       return .none
