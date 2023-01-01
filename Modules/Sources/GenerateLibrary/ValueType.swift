@@ -110,31 +110,33 @@ public struct ValueType: Sendable, Equatable {
     }
   }
 
-  public func wrapWithValueDecoder(_ expr: String) -> String {
+  public func wrapWithValueDecoder(_ expr: String, force: Bool = false) -> String {
+    let forceUnwrapSuffix = force ? "!" : ""
+
     switch swift {
     case .integer:
-      return "(/Value.integer).extract(from: \(expr))"
+      return "(/Value.integer).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .float:
-      return "(/Value.float).extract(from: \(expr))"
+      return "(/Value.float).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .string:
-      return "(/Value.string).extract(from: \(expr))"
+      return "(/Value.string).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .boolean:
-      return "(/Value.boolean).extract(from: \(expr))"
+      return "(/Value.boolean).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .dictionary:
-      return "(/Value.dictionary).extract(from: \(expr))"
+      return "(/Value.dictionary).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .array:
-      return "(/Value.array).extract(from: \(expr))"
+      return "(/Value.array).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case .binary:
-      return "(/Value.binary).extract(from: \(expr))"
+      return "(/Value.binary).extract(from: \(expr))\(forceUnwrapSuffix)"
 
     case let .reference(type):
-      return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)"
+      return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)\(forceUnwrapSuffix)"
 
     case .value:
       return expr

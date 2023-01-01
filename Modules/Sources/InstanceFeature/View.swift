@@ -17,95 +17,96 @@ public extension Instance {
     public var store: StoreOf<Instance>
 
     public var body: some SwiftUI.View {
-      WithViewStore(
-        store.scope(state: \.flushed),
-        observe: { $0 }
-      ) { state in
-        if
-          let appearance = state.appearance,
-          let outerGrid = state.outerGrid
-        {
-          let integerFrame = IntegerRectangle(size: outerGrid.cells.size)
-          let frame = integerFrame * appearance.cellSize
-
-          ZStack(alignment: .topLeading) {
-            gridView(
-              for: outerGrid,
-              appearance: appearance,
-              size: outerGrid.cells.size,
-              cursor: state.cursor
-            )
-            .frame(
-              width: frame.size.width,
-              height: frame.size.height
-            )
-
-            ForEach(state.windows) { window in
-              let grid = state.grids[id: window.gridID]!
-              let integerSize = IntegerSize(
-                columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
-                rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
-              )
-              let size = integerSize * appearance.cellSize
-              let origin = window.frame.origin * appearance.cellSize
-
-              if !window.isHidden {
-                gridView(
-                  for: grid,
-                  appearance: appearance,
-                  size: integerSize,
-                  cursor: state.cursor
-                )
-                .frame(
-                  width: size.width,
-                  height: size.height
-                )
-                .offset(
-                  x: origin.x,
-                  y: origin.y
-                )
-                .zIndex(Double(window.zIndex) / 1000)
-              }
-            }
-
-            ForEach(state.floatingWindows) { floatingWindow in
-              if !floatingWindow.isHidden {
-                let grid = state.grids[id: floatingWindow.gridID]!
-
-                let frame = self.frame(
-                  for: floatingWindow,
-                  grid: grid,
-                  appearance: appearance,
-                  grids: state.grids,
-                  windows: state.windows,
-                  floatingWindows: state.floatingWindows
-                )
-
-                gridView(
-                  for: grid,
-                  appearance: appearance,
-                  size: grid.cells.size,
-                  cursor: state.cursor
-                )
-                .frame(
-                  width: frame.size.width,
-                  height: frame.size.height
-                )
-                .offset(
-                  x: frame.origin.x,
-                  y: frame.origin.y
-                )
-                .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-              }
-            }
-          }
-          .frame(
-            width: frame.size.width,
-            height: frame.size.height
-          )
-          .navigationTitle(state.title ?? "")
-        }
-      }
+      EmptyView()
+//      WithViewStore(
+//        store.scope(state: \.flushed),
+//        observe: { $0 }
+//      ) { state in
+//        if
+//          let appearance = state.appearance,
+//          let outerGrid = state.outerGrid
+//        {
+//          let integerFrame = IntegerRectangle(size: outerGrid.cells.size)
+//          let frame = integerFrame * appearance.cellSize
+//
+//          ZStack(alignment: .topLeading) {
+//            gridView(
+//              for: outerGrid,
+//              appearance: appearance,
+//              size: outerGrid.cells.size,
+//              cursor: state.cursor
+//            )
+//            .frame(
+//              width: frame.size.width,
+//              height: frame.size.height
+//            )
+//
+//            ForEach(state.windows) { window in
+//              let grid = state.grids[id: window.gridID]!
+//              let integerSize = IntegerSize(
+//                columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
+//                rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
+//              )
+//              let size = integerSize * appearance.cellSize
+//              let origin = window.frame.origin * appearance.cellSize
+//
+//              if !window.isHidden {
+//                gridView(
+//                  for: grid,
+//                  appearance: appearance,
+//                  size: integerSize,
+//                  cursor: state.cursor
+//                )
+//                .frame(
+//                  width: size.width,
+//                  height: size.height
+//                )
+//                .offset(
+//                  x: origin.x,
+//                  y: origin.y
+//                )
+//                .zIndex(Double(window.zIndex) / 1000)
+//              }
+//            }
+//
+//            ForEach(state.floatingWindows) { floatingWindow in
+//              if !floatingWindow.isHidden {
+//                let grid = state.grids[id: floatingWindow.gridID]!
+//
+//                let frame = self.frame(
+//                  for: floatingWindow,
+//                  grid: grid,
+//                  appearance: appearance,
+//                  grids: state.grids,
+//                  windows: state.windows,
+//                  floatingWindows: state.floatingWindows
+//                )
+//
+//                gridView(
+//                  for: grid,
+//                  appearance: appearance,
+//                  size: grid.cells.size,
+//                  cursor: state.cursor
+//                )
+//                .frame(
+//                  width: frame.size.width,
+//                  height: frame.size.height
+//                )
+//                .offset(
+//                  x: frame.origin.x,
+//                  y: frame.origin.y
+//                )
+//                .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+//              }
+//            }
+//          }
+//          .frame(
+//            width: frame.size.width,
+//            height: frame.size.height
+//          )
+//          .navigationTitle(state.title ?? "")
+//        }
+//      }
     }
 
     private func gridView(

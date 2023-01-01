@@ -37,9 +37,19 @@ public struct APIFunctionsFile: GeneratableFile {
 
                 return parameter.type.wrapWithValueEncoder(String(name))
               }
-              .joined(separator: ", ")
-            "return try await call(method: \(literal: function.name), withParameters: [\(raw: parametersInArray)], transformSuccess: { \(raw: function.returnType.wrapWithValueDecoder("$0")) })"
-              as Stmt
+              .joined(separator: ",\n")
+
+            ReturnStmt(
+              """
+              return try await rpc.call(
+                method: \(literal: function.name),
+                withParameters: [
+                  \(raw: parametersInArray)
+                ]
+              )
+              .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
+              """
+            )
           }
           .withUnexpectedBeforeAttributes(
             .init {

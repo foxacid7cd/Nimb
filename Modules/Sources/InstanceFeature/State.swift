@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
+import Collections
 import ComposableArchitecture
 import IdentifiedCollections
 import Library
+import MessagePack
 import Neovim
 import SwiftUI
 import Tagged
@@ -12,6 +14,8 @@ public extension Instance {
   struct State: Equatable {
     public init(
       defaultFont: Font? = nil,
+      bufferedUIEvents: [UIEvent] = [],
+      rawOptions: OrderedDictionary<String, Value> = [:],
       font: Font? = nil,
       title: String? = nil,
       highlights: IdentifiedArrayOf<Highlight> = [],
@@ -22,6 +26,8 @@ public extension Instance {
       windowZIndexCounter: Int = 0
     ) {
       self.defaultFont = defaultFont
+      self.bufferedUIEvents = bufferedUIEvents
+      self.rawOptions = rawOptions
       self.font = font
       self.title = title
       self.highlights = highlights
@@ -336,6 +342,8 @@ public extension Instance {
     // swiftformat:sort:end
 
     public var defaultFont: Font?
+    public var bufferedUIEvents: [UIEvent]
+    public var rawOptions: OrderedDictionary<String, Value>
     public var font: Font?
     public var title: String?
     public var highlights: IdentifiedArrayOf<Highlight>
