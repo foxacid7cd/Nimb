@@ -15,8 +15,7 @@ public struct Nims: ReducerProtocol {
     case createInstance(
       arguments: [String],
       environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>,
-      cursorPhases: AsyncStream<Bool>
+      keyPresses: AsyncStream<KeyPress>
     )
     case instance(action: Instance.Action)
   }
@@ -32,7 +31,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses, cursorPhases):
+      case let .createInstance(arguments, environmentOverlay, keyPresses):
         state.instance = .init()
 
         return .run { send in
@@ -50,8 +49,7 @@ public struct Nims: ReducerProtocol {
               action: .createNeovimProcess(
                 arguments: arguments,
                 environmentOverlay: environmentOverlay,
-                keyPresses: keyPresses,
-                cursorPhases: cursorPhases
+                keyPresses: keyPresses
               )
             )
           )

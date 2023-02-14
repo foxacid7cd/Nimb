@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
+import Collections
 import ComposableArchitecture
 import Library
 import Neovim
@@ -10,14 +11,71 @@ import SwiftUI
 public extension Instance {
   @MainActor
   struct View: SwiftUI.View {
-    public init(store: StoreOf<Instance>) {
+    public init(
+      font: Instance.State.Font,
+      defaultForegroundColor: Instance.State.Color,
+      defaultBackgroundColor: Instance.State.Color,
+      defaultSpecialColor: Instance.State.Color,
+      outerGridSize: IntegerSize,
+      store: StoreOf<Instance>
+    ) {
+      self.font = font
+      self.defaultForegroundColor = defaultForegroundColor
+      self.defaultBackgroundColor = defaultBackgroundColor
+      self.defaultSpecialColor = defaultSpecialColor
+      self.outerGridSize = outerGridSize
       self.store = store
     }
 
+    public struct WindowsViewModel: Equatable {
+      public init(windows: IdentifiedArrayOf<Instance.State.Window>) {
+        self.windows = windows
+          .filter { !$0.isHidden }
+      }
+
+      public init(state: State) {
+        windows = state.windows
+      }
+
+      public var windows: IdentifiedArrayOf<State.Window>
+    }
+
+    public var font: State.Font
+    public var defaultForegroundColor: Instance.State.Color
+    public var defaultBackgroundColor: Instance.State.Color
+    public var defaultSpecialColor: Instance.State.Color
+    public var outerGridSize: IntegerSize
     public var store: StoreOf<Instance>
 
     public var body: some SwiftUI.View {
-      EmptyView()
+      let size = outerGridSize * font.cellSize
+
+      WithViewStore(store, observe: WindowsViewModel.init(state:)) { windowsViewModel in
+        ZStack(alignment: .topLeading) {
+          Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+            graphicsContext.fill(
+              Path(CGRect(origin: .init(), size: size)),
+              with: .color(defaultBackgroundColor.swiftUI)
+            )
+          }
+          .frame(width: size.width, height: size.height)
+
+          ForEach(windowsViewModel.windows) { window in
+            let frame = window.frame * font.cellSize
+
+            Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+              graphicsContext.fill(
+                Path(CGRect(origin: .init(), size: size)),
+                with: .color(defaultBackgroundColor.swiftUI)
+              )
+            }
+            .frame(width: frame.width, height: frame.height)
+            .offset(x: frame.minX, y: frame.minY)
+            .zIndex(Double(window.zIndex) / 1000)
+          }
+        }
+        .frame(width: size.width, height: size.height)
+      }
 //      WithViewStore(
 //        store,
 //        observe: { ViewModel($0) }
@@ -104,62 +162,6 @@ public extension Instance {
       ////          .navigationTitle(state.title ?? "")
 //        }
 //      }
-    }
-
-    private struct ViewModel: Equatable {
-      init?(_ state: Instance.State) {
-        guard
-          let font = state.font ?? state.defaultFont,
-          let defaultHighlight = state.highlights[id: .default],
-          let defaultForegroundColor = defaultHighlight.foregroundColor,
-          let defaultBackgroundColor = defaultHighlight.backgroundColor,
-          let defaultSpecialColor = defaultHighlight.specialColor,
-          let outerGrid = state.grids[id: .outer]
-        else {
-          return nil
-        }
-
-        self.font = font
-        highlights = state.highlights
-        self.defaultForegroundColor = defaultForegroundColor
-        self.defaultBackgroundColor = defaultBackgroundColor
-        self.defaultSpecialColor = defaultSpecialColor
-        self.outerGrid = outerGrid
-      }
-
-      var font: Instance.State.Font
-      var highlights: IdentifiedArrayOf<State.Highlight>
-      var defaultForegroundColor: Instance.State.Color
-      var defaultBackgroundColor: Instance.State.Color
-      var defaultSpecialColor: Instance.State.Color
-      var outerGrid: Instance.State.Grid
-
-      var cellSize: CGSize {
-        font.cellSize
-      }
-
-      func foregroundColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
-        highlights[id: highlightID]?.foregroundColor ?? defaultForegroundColor
-      }
-
-      func backgroundColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
-        highlights[id: highlightID]?.backgroundColor ?? defaultBackgroundColor
-      }
-
-      func specialColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
-        highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
-      }
-
-      func textAttributes(for highlightID: State.Highlight.ID) -> (isBold: Bool, isItalic: Bool) {
-        guard let highlight = highlights[id: highlightID] else {
-          return (false, false)
-        }
-
-        return (
-          isBold: highlight.isBold,
-          isItalic: highlight.isItalic
-        )
-      }
     }
 
     private func gridView(

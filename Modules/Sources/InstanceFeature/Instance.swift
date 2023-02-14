@@ -18,13 +18,11 @@ public struct Instance: ReducerProtocol {
     case createNeovimProcess(
       arguments: [String],
       environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>,
-      cursorPhases: AsyncStream<Bool>
+      keyPresses: AsyncStream<KeyPress>
     )
     case bindNeovimProcess(
       Neovim.Process,
-      keyPresses: AsyncStream<KeyPress>,
-      cursorPhases: AsyncStream<Bool>
+      keyPresses: AsyncStream<KeyPress>
     )
     case applyUIEventsBatch([UIEvent])
     ///    case applyOptionSetUIEvents([UIEvents.OptionSet])
@@ -42,7 +40,6 @@ public struct Instance: ReducerProtocol {
     ///    case applyWinFloatPosUIEvents([UIEvents.WinFloatPos])
     ///    case applyWinHideUIEvents([UIEvents.WinHide])
     ///    case applyWinCloseUIEvents([UIEvents.WinClose])
-    case setCursorPhase(Bool)
     case handleError(Error)
     case processFinished(error: Error?)
   }
@@ -53,7 +50,7 @@ public struct Instance: ReducerProtocol {
       state.defaultFont = font
       return .none
 
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, cursorPhases):
+    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
@@ -67,8 +64,7 @@ public struct Instance: ReducerProtocol {
               await send(
                 .bindNeovimProcess(
                   process,
-                  keyPresses: keyPresses,
-                  cursorPhases: cursorPhases
+                  keyPresses: keyPresses
                 )
               )
             }
@@ -82,7 +78,7 @@ public struct Instance: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses, cursorPhases):
+    case let .bindNeovimProcess(process, keyPresses):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -134,21 +130,10 @@ public struct Instance: ReducerProtocol {
         }
       }
 
-      let applyCursorPhases = EffectTask<Action>.run { send in
-        for await cursorPhase in cursorPhases {
-          guard !Task.isCancelled else {
-            return
-          }
-
-          await send(.setCursorPhase(cursorPhase))
-        }
-      }
-
       return .merge(
         applyUIEventBatches,
         reportKeyPresses,
-        requestUIAttach,
-        applyCursorPhases
+        requestUIAttach
       )
       .cancellable(id: EffectID.bindProcess)
 
