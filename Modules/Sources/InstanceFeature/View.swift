@@ -10,6 +10,26 @@ import SwiftUI
 
 public extension Instance {
   @MainActor
+  struct WindowView: SwiftUI.View {
+    public init(reference: References.Window, gridID: State.Grid.ID) {
+      self.reference = reference
+      self.gridID = gridID
+    }
+
+    public var reference: References.Window
+    public var gridID: State.Grid.ID
+
+    public var body: some SwiftUI.View {
+      Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+        graphicsContext.fill(
+          Path(CGRect(origin: .init(), size: size)),
+          with: .color(.blue)
+        )
+      }
+    }
+  }
+
+  @MainActor
   struct View: SwiftUI.View {
     public init(
       font: Instance.State.Font,
@@ -28,16 +48,27 @@ public extension Instance {
     }
 
     public struct WindowsViewModel: Equatable {
-      public init(windows: IdentifiedArrayOf<Instance.State.Window>) {
+      public init(
+        grids: IdentifiedArrayOf<State.Grid>,
+        windows: IdentifiedArrayOf<Instance.State.Window>,
+        floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
+      ) {
+        self.grids = grids
         self.windows = windows
-          .filter { !$0.isHidden }
+        self.floatingWindows = floatingWindows
       }
 
       public init(state: State) {
-        windows = state.windows
+        self.init(
+          grids: state.grids,
+          windows: state.windows,
+          floatingWindows: state.floatingWindows
+        )
       }
 
+      public var grids: IdentifiedArrayOf<State.Grid>
       public var windows: IdentifiedArrayOf<State.Window>
+      public var floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
     }
 
     public var font: State.Font
@@ -48,9 +79,9 @@ public extension Instance {
     public var store: StoreOf<Instance>
 
     public var body: some SwiftUI.View {
-      let size = outerGridSize * font.cellSize
-
       WithViewStore(store, observe: WindowsViewModel.init(state:)) { windowsViewModel in
+        let size = outerGridSize * font.cellSize
+
         ZStack(alignment: .topLeading) {
           Canvas(colorMode: .extendedLinear) { graphicsContext, size in
             graphicsContext.fill(
@@ -63,105 +94,38 @@ public extension Instance {
           ForEach(windowsViewModel.windows) { window in
             let frame = window.frame * font.cellSize
 
-            Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-              graphicsContext.fill(
-                Path(CGRect(origin: .init(), size: size)),
-                with: .color(defaultBackgroundColor.swiftUI)
-              )
-            }
+            WindowView(
+              reference: window.reference,
+              gridID: window.gridID
+            )
             .frame(width: frame.width, height: frame.height)
             .offset(x: frame.minX, y: frame.minY)
             .zIndex(Double(window.zIndex) / 1000)
+            .opacity(window.isHidden ? 0 : 1)
+          }
+
+          ForEach(windowsViewModel.floatingWindows) { floatingWindow in
+            let frame = calculateFrame(
+              for: floatingWindow,
+              grid: windowsViewModel.grids[id: floatingWindow.gridID]!,
+              grids: windowsViewModel.grids,
+              windows: windowsViewModel.windows,
+              floatingWindows: windowsViewModel.floatingWindows,
+              cellSize: font.cellSize
+            )
+
+            WindowView(
+              reference: floatingWindow.reference,
+              gridID: floatingWindow.gridID
+            )
+            .frame(width: frame.width, height: frame.height)
+            .offset(x: frame.minX, y: frame.minY)
+            .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+            .opacity(floatingWindow.isHidden ? 0 : 1)
           }
         }
         .frame(width: size.width, height: size.height)
       }
-//      WithViewStore(
-//        store,
-//        observe: { ViewModel($0) }
-//      ) { viewModel in
-//        if let viewModel {
-//          let integerFrame = IntegerRectangle(size: viewModel.outerGrid.cells.size)
-//          let frame = integerFrame * viewModel.cellSize
-//
-//          ZStack(alignment: .topLeading) {
-      ////            gridView(
-      ////              for: outerGrid,
-      ////              appearance: appearance,
-      ////              size: outerGrid.cells.size,
-      ////              cursor: state.cursor
-      ////            )
-      ////            .frame(
-      ////              width: frame.size.width,
-      ////              height: frame.size.height
-      ////            )
-      ////
-      ////            ForEach(state.windows) { window in
-      ////              let grid = state.grids[id: window.gridID]!
-      ////              let integerSize = IntegerSize(
-      ////                columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
-      ////                rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
-      ////              )
-      ////              let size = integerSize * appearance.cellSize
-      ////              let origin = window.frame.origin * appearance.cellSize
-      ////
-      ////              if !window.isHidden {
-      ////                gridView(
-      ////                  for: grid,
-      ////                  appearance: appearance,
-      ////                  size: integerSize,
-      ////                  cursor: state.cursor
-      ////                )
-      ////                .frame(
-      ////                  width: size.width,
-      ////                  height: size.height
-      ////                )
-      ////                .offset(
-      ////                  x: origin.x,
-      ////                  y: origin.y
-      ////                )
-      ////                .zIndex(Double(window.zIndex) / 1000)
-      ////              }
-      ////            }
-//
-      ////            ForEach(state.floatingWindows) { floatingWindow in
-      ////              if !floatingWindow.isHidden {
-      ////                let grid = state.grids[id: floatingWindow.gridID]!
-      ////
-      ////                let frame = self.frame(
-      ////                  for: floatingWindow,
-      ////                  grid: grid,
-      ////                  appearance: appearance,
-      ////                  grids: state.grids,
-      ////                  windows: state.windows,
-      ////                  floatingWindows: state.floatingWindows
-      ////                )
-      ////
-      ////                gridView(
-      ////                  for: grid,
-      ////                  appearance: appearance,
-      ////                  size: grid.cells.size,
-      ////                  cursor: state.cursor
-      ////                )
-      ////                .frame(
-      ////                  width: frame.size.width,
-      ////                  height: frame.size.height
-      ////                )
-      ////                .offset(
-      ////                  x: frame.origin.x,
-      ////                  y: frame.origin.y
-      ////                )
-      ////                .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-      ////              }
-      ////            }
-      ////          }
-      ////          .frame(
-      ////            width: frame.size.width,
-      ////            height: frame.size.height
-      ////          )
-      ////          .navigationTitle(state.title ?? "")
-//        }
-//      }
     }
 
     private func gridView(
@@ -282,13 +246,13 @@ public extension Instance {
       }
     }
 
-    private func frame(
+    private func calculateFrame(
       for floatingWindow: State.FloatingWindow,
       grid: State.Grid,
-      appearance: State.Appearance,
       grids: IdentifiedArrayOf<State.Grid>,
       windows: IdentifiedArrayOf<State.Window>,
-      floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
+      floatingWindows: IdentifiedArrayOf<State.FloatingWindow>,
+      cellSize: CGSize
     )
       -> CGRect
     {
@@ -297,18 +261,18 @@ public extension Instance {
       let anchorGridOrigin: CGPoint
       if let windowID = anchorGrid.windowID {
         if let window = windows[id: windowID] {
-          anchorGridOrigin = window.frame.origin * appearance.cellSize
+          anchorGridOrigin = window.frame.origin * cellSize
 
         } else {
           let floatingWindow = floatingWindows[id: windowID]!
 
-          anchorGridOrigin = self.frame(
+          anchorGridOrigin = calculateFrame(
             for: floatingWindow,
             grid: grids[id: floatingWindow.gridID]!,
-            appearance: appearance,
             grids: grids,
             windows: windows,
-            floatingWindows: floatingWindows
+            floatingWindows: floatingWindows,
+            cellSize: cellSize
           )
           .origin
         }
@@ -319,10 +283,10 @@ public extension Instance {
 
       var frame = CGRect(
         origin: .init(
-          x: anchorGridOrigin.x + (floatingWindow.anchorColumn * appearance.font.cellWidth),
-          y: anchorGridOrigin.y + (floatingWindow.anchorRow * appearance.font.cellHeight)
+          x: anchorGridOrigin.x + (floatingWindow.anchorColumn * cellSize.width),
+          y: anchorGridOrigin.y + (floatingWindow.anchorRow * cellSize.height)
         ),
-        size: grid.cells.size * appearance.cellSize
+        size: grid.cells.size * cellSize
       )
 
       switch floatingWindow.anchor {

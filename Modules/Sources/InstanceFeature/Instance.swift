@@ -327,6 +327,104 @@ public struct Instance: ReducerProtocol {
               )
             }
 
+          case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
+            state.floatingWindows.remove(id: windowID)
+
+            let gridID = State.Grid.ID(rawGridID)
+
+            state.windows.updateOrAppend(
+              .init(
+                reference: windowID,
+                gridID: gridID,
+                frame: .init(
+                  origin: .init(
+                    column: originColumn,
+                    row: originRow
+                  ),
+                  size: .init(
+                    columnsCount: columnsCount,
+                    rowsCount: rowsCount
+                  )
+                ),
+                zIndex: state.nextWindowZIndex(),
+                isHidden: false
+              )
+            )
+            state.grids[id: gridID]!.windowID = windowID
+
+            return .none
+
+          case let .winFloatPos(
+            rawGridID,
+            windowID,
+            rawAnchor,
+            rawAnchorGridID,
+            anchorRow,
+            anchorColumn,
+            isFocusable,
+            zIndex
+          ):
+            guard let anchor = State.Anchor(rawValue: rawAnchor) else {
+              assertionFailure("Invalid anchor value: \(rawAnchor)")
+              continue
+            }
+
+            state.windows.remove(id: windowID)
+
+            let gridID = State.Grid.ID(rawGridID)
+
+            state.floatingWindows.updateOrAppend(
+              .init(
+                reference: windowID,
+                gridID: gridID,
+                anchor: anchor,
+                anchorGridID: .init(rawAnchorGridID),
+                anchorRow: anchorRow,
+                anchorColumn: anchorColumn,
+                isFocusable: isFocusable,
+                zIndex: zIndex,
+                isHidden: false
+              )
+            )
+
+            state.grids[id: gridID]!.windowID = windowID
+
+            return .none
+
+          case let .winHide(rawGridID):
+            let gridID = State.Grid.ID(rawGridID)
+
+            if let windowID = state.grids[id: gridID]!.windowID {
+              if let index = state.windows.index(id: windowID) {
+                state.windows[index].isHidden = true
+
+              } else if let index = state.floatingWindows.index(id: windowID) {
+                state.floatingWindows[index].isHidden = true
+              }
+            }
+
+            return .none
+
+          case let .winClose(rawGridID):
+            let gridID = State.Grid.ID(rawGridID)
+
+            guard var grid = state.grids[id: gridID] else {
+              continue
+            }
+
+            if let windowID = grid.windowID {
+              let window = state.windows.remove(id: windowID)
+
+              if window == nil {
+                state.floatingWindows.remove(id: windowID)
+              }
+
+              grid.windowID = nil
+              state.grids.updateOrAppend(grid)
+            }
+
+            return .none
+
           default:
             break
           }
