@@ -337,7 +337,9 @@ public struct Instance: ReducerProtocol {
             }
 
             update(&state.grids[id: id]!) { grid in
-              grid.rowLayouts[row] = .init(rowCells: grid.cells.rows[row])
+              grid.rowLayouts[row] = .init(
+                rowCells: grid.cells.rows[row]
+              )
             }
 
           default:

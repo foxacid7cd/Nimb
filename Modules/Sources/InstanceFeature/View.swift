@@ -19,94 +19,147 @@ public extension Instance {
     public var body: some SwiftUI.View {
       EmptyView()
 //      WithViewStore(
-//        store.scope(state: \.flushed),
-//        observe: { $0 }
-//      ) { state in
-//        if
-//          let appearance = state.appearance,
-//          let outerGrid = state.outerGrid
-//        {
-//          let integerFrame = IntegerRectangle(size: outerGrid.cells.size)
-//          let frame = integerFrame * appearance.cellSize
+//        store,
+//        observe: { ViewModel($0) }
+//      ) { viewModel in
+//        if let viewModel {
+//          let integerFrame = IntegerRectangle(size: viewModel.outerGrid.cells.size)
+//          let frame = integerFrame * viewModel.cellSize
 //
 //          ZStack(alignment: .topLeading) {
-//            gridView(
-//              for: outerGrid,
-//              appearance: appearance,
-//              size: outerGrid.cells.size,
-//              cursor: state.cursor
-//            )
-//            .frame(
-//              width: frame.size.width,
-//              height: frame.size.height
-//            )
+      ////            gridView(
+      ////              for: outerGrid,
+      ////              appearance: appearance,
+      ////              size: outerGrid.cells.size,
+      ////              cursor: state.cursor
+      ////            )
+      ////            .frame(
+      ////              width: frame.size.width,
+      ////              height: frame.size.height
+      ////            )
+      ////
+      ////            ForEach(state.windows) { window in
+      ////              let grid = state.grids[id: window.gridID]!
+      ////              let integerSize = IntegerSize(
+      ////                columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
+      ////                rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
+      ////              )
+      ////              let size = integerSize * appearance.cellSize
+      ////              let origin = window.frame.origin * appearance.cellSize
+      ////
+      ////              if !window.isHidden {
+      ////                gridView(
+      ////                  for: grid,
+      ////                  appearance: appearance,
+      ////                  size: integerSize,
+      ////                  cursor: state.cursor
+      ////                )
+      ////                .frame(
+      ////                  width: size.width,
+      ////                  height: size.height
+      ////                )
+      ////                .offset(
+      ////                  x: origin.x,
+      ////                  y: origin.y
+      ////                )
+      ////                .zIndex(Double(window.zIndex) / 1000)
+      ////              }
+      ////            }
 //
-//            ForEach(state.windows) { window in
-//              let grid = state.grids[id: window.gridID]!
-//              let integerSize = IntegerSize(
-//                columnsCount: min(window.frame.size.columnsCount, grid.cells.columnsCount),
-//                rowsCount: min(window.frame.size.rowsCount, grid.cells.rowsCount)
-//              )
-//              let size = integerSize * appearance.cellSize
-//              let origin = window.frame.origin * appearance.cellSize
-//
-//              if !window.isHidden {
-//                gridView(
-//                  for: grid,
-//                  appearance: appearance,
-//                  size: integerSize,
-//                  cursor: state.cursor
-//                )
-//                .frame(
-//                  width: size.width,
-//                  height: size.height
-//                )
-//                .offset(
-//                  x: origin.x,
-//                  y: origin.y
-//                )
-//                .zIndex(Double(window.zIndex) / 1000)
-//              }
-//            }
-//
-//            ForEach(state.floatingWindows) { floatingWindow in
-//              if !floatingWindow.isHidden {
-//                let grid = state.grids[id: floatingWindow.gridID]!
-//
-//                let frame = self.frame(
-//                  for: floatingWindow,
-//                  grid: grid,
-//                  appearance: appearance,
-//                  grids: state.grids,
-//                  windows: state.windows,
-//                  floatingWindows: state.floatingWindows
-//                )
-//
-//                gridView(
-//                  for: grid,
-//                  appearance: appearance,
-//                  size: grid.cells.size,
-//                  cursor: state.cursor
-//                )
-//                .frame(
-//                  width: frame.size.width,
-//                  height: frame.size.height
-//                )
-//                .offset(
-//                  x: frame.origin.x,
-//                  y: frame.origin.y
-//                )
-//                .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-//              }
-//            }
-//          }
-//          .frame(
-//            width: frame.size.width,
-//            height: frame.size.height
-//          )
-//          .navigationTitle(state.title ?? "")
+      ////            ForEach(state.floatingWindows) { floatingWindow in
+      ////              if !floatingWindow.isHidden {
+      ////                let grid = state.grids[id: floatingWindow.gridID]!
+      ////
+      ////                let frame = self.frame(
+      ////                  for: floatingWindow,
+      ////                  grid: grid,
+      ////                  appearance: appearance,
+      ////                  grids: state.grids,
+      ////                  windows: state.windows,
+      ////                  floatingWindows: state.floatingWindows
+      ////                )
+      ////
+      ////                gridView(
+      ////                  for: grid,
+      ////                  appearance: appearance,
+      ////                  size: grid.cells.size,
+      ////                  cursor: state.cursor
+      ////                )
+      ////                .frame(
+      ////                  width: frame.size.width,
+      ////                  height: frame.size.height
+      ////                )
+      ////                .offset(
+      ////                  x: frame.origin.x,
+      ////                  y: frame.origin.y
+      ////                )
+      ////                .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+      ////              }
+      ////            }
+      ////          }
+      ////          .frame(
+      ////            width: frame.size.width,
+      ////            height: frame.size.height
+      ////          )
+      ////          .navigationTitle(state.title ?? "")
 //        }
 //      }
+    }
+
+    private struct ViewModel: Equatable {
+      init?(_ state: Instance.State) {
+        guard
+          let font = state.font ?? state.defaultFont,
+          let defaultHighlight = state.highlights[id: .default],
+          let defaultForegroundColor = defaultHighlight.foregroundColor,
+          let defaultBackgroundColor = defaultHighlight.backgroundColor,
+          let defaultSpecialColor = defaultHighlight.specialColor,
+          let outerGrid = state.grids[id: .outer]
+        else {
+          return nil
+        }
+
+        self.font = font
+        highlights = state.highlights
+        self.defaultForegroundColor = defaultForegroundColor
+        self.defaultBackgroundColor = defaultBackgroundColor
+        self.defaultSpecialColor = defaultSpecialColor
+        self.outerGrid = outerGrid
+      }
+
+      var font: Instance.State.Font
+      var highlights: IdentifiedArrayOf<State.Highlight>
+      var defaultForegroundColor: Instance.State.Color
+      var defaultBackgroundColor: Instance.State.Color
+      var defaultSpecialColor: Instance.State.Color
+      var outerGrid: Instance.State.Grid
+
+      var cellSize: CGSize {
+        font.cellSize
+      }
+
+      func foregroundColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
+        highlights[id: highlightID]?.foregroundColor ?? defaultForegroundColor
+      }
+
+      func backgroundColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
+        highlights[id: highlightID]?.backgroundColor ?? defaultBackgroundColor
+      }
+
+      func specialColor(for highlightID: State.Highlight.ID) -> Instance.State.Color {
+        highlights[id: highlightID]?.specialColor ?? defaultSpecialColor
+      }
+
+      func textAttributes(for highlightID: State.Highlight.ID) -> (isBold: Bool, isItalic: Bool) {
+        guard let highlight = highlights[id: highlightID] else {
+          return (false, false)
+        }
+
+        return (
+          isBold: highlight.isBold,
+          isItalic: highlight.isItalic
+        )
+      }
     }
 
     private func gridView(
