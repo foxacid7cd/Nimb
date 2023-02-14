@@ -20,6 +20,7 @@ public extension Nims {
         defaultBackgroundColor: Instance.State.Color,
         defaultSpecialColor: Instance.State.Color,
         outerGridSize: IntegerSize,
+        highlights: IdentifiedArrayOf<Instance.State.Highlight>,
         title: String
       ) {
         self.font = font
@@ -27,6 +28,7 @@ public extension Nims {
         self.defaultBackgroundColor = defaultBackgroundColor
         self.defaultSpecialColor = defaultSpecialColor
         self.outerGridSize = outerGridSize
+        self.highlights = highlights
         self.title = title
       }
 
@@ -43,18 +45,22 @@ public extension Nims {
           return nil
         }
 
-        self.font = font
-        self.defaultForegroundColor = defaultForegroundColor
-        self.defaultBackgroundColor = defaultBackgroundColor
-        self.defaultSpecialColor = defaultSpecialColor
-        outerGridSize = outerGrid.cells.size
-        self.title = title
+        self.init(
+          font: font,
+          defaultForegroundColor: defaultForegroundColor,
+          defaultBackgroundColor: defaultBackgroundColor,
+          defaultSpecialColor: defaultSpecialColor,
+          outerGridSize: outerGrid.cells.size,
+          highlights: instance.highlights,
+          title: title
+        )
       }
 
       public var font: Instance.State.Font
       public var defaultForegroundColor: Instance.State.Color
       public var defaultBackgroundColor: Instance.State.Color
       public var defaultSpecialColor: Instance.State.Color
+      public var highlights: IdentifiedArrayOf<Instance.State.Highlight>
       public var outerGridSize: IntegerSize
       public var title: String
     }
@@ -76,6 +82,7 @@ public extension Nims {
                     defaultBackgroundColor: instanceViewModel.defaultBackgroundColor,
                     defaultSpecialColor: instanceViewModel.defaultSpecialColor,
                     outerGridSize: instanceViewModel.outerGridSize,
+                    highlights: instanceViewModel.highlights,
                     store: instanceStore
                   )
                   .navigationTitle(instanceViewModel.title)

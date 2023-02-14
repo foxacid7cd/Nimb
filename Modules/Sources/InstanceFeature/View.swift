@@ -11,131 +11,36 @@ import SwiftUI
 public extension Instance {
   @MainActor
   struct WindowView: SwiftUI.View {
-    public init(reference: References.Window, gridID: State.Grid.ID) {
-      self.reference = reference
-      self.gridID = gridID
-    }
-
-    public var reference: References.Window
-    public var gridID: State.Grid.ID
-
-    public var body: some SwiftUI.View {
-      Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-        graphicsContext.fill(
-          Path(CGRect(origin: .init(), size: size)),
-          with: .color(.blue)
-        )
-      }
-    }
-  }
-
-  @MainActor
-  struct View: SwiftUI.View {
     public init(
       font: Instance.State.Font,
+      highlights: IdentifiedArrayOf<Instance.State.Highlight>,
       defaultForegroundColor: Instance.State.Color,
       defaultBackgroundColor: Instance.State.Color,
       defaultSpecialColor: Instance.State.Color,
-      outerGridSize: IntegerSize,
-      store: StoreOf<Instance>
+      windowID: References.Window,
+      grid: Instance.State.Grid,
+      cursor: Instance.State.Cursor? = nil
     ) {
       self.font = font
+      self.highlights = highlights
       self.defaultForegroundColor = defaultForegroundColor
       self.defaultBackgroundColor = defaultBackgroundColor
       self.defaultSpecialColor = defaultSpecialColor
-      self.outerGridSize = outerGridSize
-      self.store = store
-    }
-
-    public struct WindowsViewModel: Equatable {
-      public init(
-        grids: IdentifiedArrayOf<State.Grid>,
-        windows: IdentifiedArrayOf<Instance.State.Window>,
-        floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
-      ) {
-        self.grids = grids
-        self.windows = windows
-        self.floatingWindows = floatingWindows
-      }
-
-      public init(state: State) {
-        self.init(
-          grids: state.grids,
-          windows: state.windows,
-          floatingWindows: state.floatingWindows
-        )
-      }
-
-      public var grids: IdentifiedArrayOf<State.Grid>
-      public var windows: IdentifiedArrayOf<State.Window>
-      public var floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
+      self.windowID = windowID
+      self.grid = grid
+      self.cursor = cursor
     }
 
     public var font: State.Font
+    public var highlights: IdentifiedArrayOf<State.Highlight>
     public var defaultForegroundColor: Instance.State.Color
     public var defaultBackgroundColor: Instance.State.Color
     public var defaultSpecialColor: Instance.State.Color
-    public var outerGridSize: IntegerSize
-    public var store: StoreOf<Instance>
+    public var windowID: References.Window
+    public var grid: State.Grid
+    public var cursor: State.Cursor?
 
     public var body: some SwiftUI.View {
-      WithViewStore(store, observe: WindowsViewModel.init(state:)) { windowsViewModel in
-        let size = outerGridSize * font.cellSize
-
-        ZStack(alignment: .topLeading) {
-          Canvas(colorMode: .extendedLinear) { graphicsContext, size in
-            graphicsContext.fill(
-              Path(CGRect(origin: .init(), size: size)),
-              with: .color(defaultBackgroundColor.swiftUI)
-            )
-          }
-          .frame(width: size.width, height: size.height)
-
-          ForEach(windowsViewModel.windows) { window in
-            let frame = window.frame * font.cellSize
-
-            WindowView(
-              reference: window.reference,
-              gridID: window.gridID
-            )
-            .frame(width: frame.width, height: frame.height)
-            .offset(x: frame.minX, y: frame.minY)
-            .zIndex(Double(window.zIndex) / 1000)
-            .opacity(window.isHidden ? 0 : 1)
-          }
-
-          ForEach(windowsViewModel.floatingWindows) { floatingWindow in
-            let frame = calculateFrame(
-              for: floatingWindow,
-              grid: windowsViewModel.grids[id: floatingWindow.gridID]!,
-              grids: windowsViewModel.grids,
-              windows: windowsViewModel.windows,
-              floatingWindows: windowsViewModel.floatingWindows,
-              cellSize: font.cellSize
-            )
-
-            WindowView(
-              reference: floatingWindow.reference,
-              gridID: floatingWindow.gridID
-            )
-            .frame(width: frame.width, height: frame.height)
-            .offset(x: frame.minX, y: frame.minY)
-            .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-            .opacity(floatingWindow.isHidden ? 0 : 1)
-          }
-        }
-        .frame(width: size.width, height: size.height)
-      }
-    }
-
-    private func gridView(
-      for grid: State.Grid,
-      appearance: State.Appearance,
-      size: IntegerSize,
-      cursor: State.Cursor?
-    )
-      -> some SwiftUI.View
-    {
       Canvas(colorMode: .extendedLinear) { graphicsContext, size in
         let rowDrawRuns: [(
           backgroundRuns: [(frame: CGRect, color: State.Color)],
@@ -145,8 +50,8 @@ public extension Instance {
             .enumerated()
             .map { row, rowLayout in
               let rowFrame = CGRect(
-                origin: .init(x: 0, y: Double(row) * appearance.font.cellHeight),
-                size: .init(width: size.width, height: appearance.font.cellHeight)
+                origin: .init(x: 0, y: Double(row) * font.cellHeight),
+                size: .init(width: size.width, height: font.cellHeight)
               )
 
               var backgroundRuns = [(frame: CGRect, color: State.Color)]()
@@ -155,32 +60,27 @@ public extension Instance {
               for rowPart in rowLayout.parts {
                 let frame = CGRect(
                   origin: .init(
-                    x: Double(rowPart.indices.lowerBound) * appearance.font.cellWidth,
+                    x: Double(rowPart.indices.lowerBound) * font.cellWidth,
                     y: rowFrame.origin.y
                   ),
                   size: .init(
-                    width: Double(rowPart.indices.count) * appearance.font.cellWidth,
+                    width: Double(rowPart.indices.count) * font.cellWidth,
                     height: rowFrame.size.height
                   )
                 )
 
-                let backgroundColor = appearance.backgroundColor(
-                  for: rowPart.highlightID
-                )
+                let highlight = highlights[id: rowPart.highlightID]
 
+                let backgroundColor = highlight?.backgroundColor ?? defaultBackgroundColor
                 backgroundRuns.append((frame, backgroundColor))
 
-                let textAttributes = appearance.textAttributes(for: rowPart.highlightID)
+                let foregroundColor = highlight?.foregroundColor ?? defaultForegroundColor
 
                 let text = Text(rowPart.text)
-                  .font(.init(appearance.font.appKit))
-                  .foregroundColor(
-                    appearance
-                      .foregroundColor(for: rowPart.highlightID)
-                      .swiftUI
-                  )
-                  .bold(textAttributes.isBold)
-                  .italic(textAttributes.isItalic)
+                  .font(.init(font.appKit))
+                  .foregroundColor(foregroundColor.swiftUI)
+                  .bold(highlight?.isBold == true)
+                  .italic(highlight?.isItalic == true)
 
                 foregroundRuns.append((frame.origin, text))
               }
@@ -224,7 +124,7 @@ public extension Instance {
               origin: .init(column: cursorIndices.startIndex, row: cursor.position.row),
               size: .init(columnsCount: cursorIndices.count, rowsCount: 1)
             )
-            let frame = integerFrame * appearance.cellSize
+            let frame = integerFrame * font.cellSize
 
             cursorGraphicsContext.fill(
               Path(frame),
@@ -234,7 +134,7 @@ public extension Instance {
             let cell = grid.cells[cursor.position]
 
             let text = Text(cell.text)
-              .font(.init(appearance.font.appKit))
+              .font(.init(font.appKit))
               .foregroundColor(.black)
 
             cursorGraphicsContext.draw(
@@ -243,6 +143,129 @@ public extension Instance {
             )
           }
         }
+      }
+    }
+  }
+
+  @MainActor
+  struct View: SwiftUI.View {
+    public init(
+      font: Instance.State.Font,
+      defaultForegroundColor: Instance.State.Color,
+      defaultBackgroundColor: Instance.State.Color,
+      defaultSpecialColor: Instance.State.Color,
+      outerGridSize: IntegerSize,
+      highlights: IdentifiedArrayOf<State.Highlight>,
+      store: StoreOf<Instance>
+    ) {
+      self.font = font
+      self.defaultForegroundColor = defaultForegroundColor
+      self.defaultBackgroundColor = defaultBackgroundColor
+      self.defaultSpecialColor = defaultSpecialColor
+      self.outerGridSize = outerGridSize
+      self.highlights = highlights
+      self.store = store
+    }
+
+    public struct WindowsViewModel: Equatable {
+      public init(
+        grids: IdentifiedArrayOf<State.Grid>,
+        windows: IdentifiedArrayOf<Instance.State.Window>,
+        floatingWindows: IdentifiedArrayOf<State.FloatingWindow>,
+        cursor: State.Cursor?
+      ) {
+        self.grids = grids
+        self.windows = windows
+        self.floatingWindows = floatingWindows
+        self.cursor = cursor
+      }
+
+      public init(state: State) {
+        self.init(
+          grids: state.grids,
+          windows: state.windows,
+          floatingWindows: state.floatingWindows,
+          cursor: state.cursor
+        )
+      }
+
+      public var grids: IdentifiedArrayOf<State.Grid>
+      public var windows: IdentifiedArrayOf<State.Window>
+      public var floatingWindows: IdentifiedArrayOf<State.FloatingWindow>
+      public var cursor: State.Cursor?
+    }
+
+    public var font: State.Font
+    public var defaultForegroundColor: Instance.State.Color
+    public var defaultBackgroundColor: Instance.State.Color
+    public var defaultSpecialColor: Instance.State.Color
+    public var outerGridSize: IntegerSize
+    public var highlights: IdentifiedArrayOf<State.Highlight>
+    public var store: StoreOf<Instance>
+
+    public var body: some SwiftUI.View {
+      WithViewStore(store, observe: WindowsViewModel.init(state:)) { windowsViewModel in
+        let size = outerGridSize * font.cellSize
+
+        ZStack(alignment: .topLeading) {
+          Canvas(colorMode: .extendedLinear) { graphicsContext, size in
+            graphicsContext.fill(
+              Path(CGRect(origin: .init(), size: size)),
+              with: .color(defaultBackgroundColor.swiftUI)
+            )
+          }
+          .frame(width: size.width, height: size.height)
+
+          ForEach(windowsViewModel.windows) { window in
+            let grid = windowsViewModel.grids[id: window.gridID]!
+
+            let frame = window.frame * font.cellSize
+
+            WindowView(
+              font: font,
+              highlights: highlights,
+              defaultForegroundColor: defaultForegroundColor,
+              defaultBackgroundColor: defaultBackgroundColor,
+              defaultSpecialColor: defaultSpecialColor,
+              windowID: window.reference,
+              grid: grid,
+              cursor: windowsViewModel.cursor
+            )
+            .frame(width: frame.width, height: frame.height)
+            .offset(x: frame.minX, y: frame.minY)
+            .zIndex(Double(window.zIndex) / 1000)
+            .opacity(window.isHidden ? 0 : 1)
+          }
+
+          ForEach(windowsViewModel.floatingWindows) { floatingWindow in
+            let grid = windowsViewModel.grids[id: floatingWindow.gridID]!
+
+            let frame = calculateFrame(
+              for: floatingWindow,
+              grid: windowsViewModel.grids[id: floatingWindow.gridID]!,
+              grids: windowsViewModel.grids,
+              windows: windowsViewModel.windows,
+              floatingWindows: windowsViewModel.floatingWindows,
+              cellSize: font.cellSize
+            )
+
+            WindowView(
+              font: font,
+              highlights: highlights,
+              defaultForegroundColor: defaultForegroundColor,
+              defaultBackgroundColor: defaultBackgroundColor,
+              defaultSpecialColor: defaultSpecialColor,
+              windowID: floatingWindow.reference,
+              grid: grid,
+              cursor: windowsViewModel.cursor
+            )
+            .frame(width: frame.width, height: frame.height)
+            .offset(x: frame.minX, y: frame.minY)
+            .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+            .opacity(floatingWindow.isHidden ? 0 : 1)
+          }
+        }
+        .frame(width: size.width, height: size.height)
       }
     }
 
