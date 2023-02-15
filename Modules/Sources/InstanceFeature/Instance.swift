@@ -290,7 +290,7 @@ public struct Instance: ReducerProtocol {
                   }
                 }
 
-                for _ in 0..<repeatCount {
+                for _ in 0 ..< repeatCount {
                   let cell = State.Cell(
                     text: text,
                     highlightID: highlightID
@@ -319,7 +319,7 @@ public struct Instance: ReducerProtocol {
             update(&state.grids[id: gridID]!) { grid in
               let gridCopy = grid
 
-              for fromRow in top..<bottom {
+              for fromRow in top ..< bottom {
                 let toRow = fromRow - rowsCount
 
                 guard toRow >= 0, toRow < grid.cells.rowsCount else {

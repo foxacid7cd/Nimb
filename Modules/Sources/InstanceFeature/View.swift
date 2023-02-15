@@ -175,7 +175,7 @@ public extension Instance {
           var backgroundRuns = [(frame: CGRect, color: State.Color)]()
           var foregroundRuns = [(origin: CGPoint, text: Text)]()
 
-          for (row, rowLayout) in zip(0..<grid.rowLayouts.count, grid.rowLayouts) {
+          for (row, rowLayout) in zip(0 ..< grid.rowLayouts.count, grid.rowLayouts) {
             let rowFrame = CGRect(
               origin: .init(x: 0, y: Double(row) * font.cellHeight),
               size: .init(width: size.width, height: font.cellHeight)

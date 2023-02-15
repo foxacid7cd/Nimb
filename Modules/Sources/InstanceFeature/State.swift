@@ -279,7 +279,7 @@ public extension Instance {
             currentIndex += cell.text.utf16.count
             let upperBound = currentIndex
 
-            cellIndices.append(lowerBound..<upperBound)
+            cellIndices.append(lowerBound ..< upperBound)
           }
 
           let upperBound = currentIndex
@@ -288,7 +288,7 @@ public extension Instance {
             .init(
               highlightID: cells.first!.highlightID,
               text: text,
-              indices: lowerBound..<upperBound
+              indices: lowerBound ..< upperBound
             )
           )
         }

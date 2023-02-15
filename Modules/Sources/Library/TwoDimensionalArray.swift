@@ -34,7 +34,7 @@ public struct TwoDimensionalArray<Element> {
     let elementsCount = size.columnsCount * size.rowsCount
 
     var accumulator = [Element]()
-    for arrayIndex in 0..<elementsCount {
+    for arrayIndex in 0 ..< elementsCount {
       let (row, column) =
         arrayIndex
           .quotientAndRemainder(
@@ -74,7 +74,7 @@ public struct TwoDimensionalArray<Element> {
     private func elementsIndices(for row: Int) -> Range<Int> {
       let lower = target.columnsCount * row
       let upper = lower + target.columnsCount
-      return lower..<upper
+      return lower ..< upper
     }
   }
 
