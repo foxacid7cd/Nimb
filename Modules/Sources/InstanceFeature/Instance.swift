@@ -14,7 +14,7 @@ public struct Instance: ReducerProtocol {
   public init() {}
 
   public enum Action: Sendable {
-    case setDefaultFont(State.Font)
+    case setDefaultFont(Font)
     case createNeovimProcess(
       arguments: [String],
       environmentOverlay: [String: String],
@@ -104,8 +104,8 @@ public struct Instance: ReducerProtocol {
           ]
 
           _ = try await process.api.nvimUIAttach(
-            width: 110,
-            height: 36,
+            width: 200,
+            height: 60,
             options: uiOptions
               .nvimUIAttachOptions
           )
@@ -127,6 +127,10 @@ public struct Instance: ReducerProtocol {
       state.bufferedUIEvents += uiEventsBatch
 
       if uiEventsBatch.last.flatMap(/UIEvent.flush) != nil {
+        var isInstanceUpdated = false
+        var isGridsLayoutUpdated = false
+        var updatedGridIDs = Set<Grid.ID>()
+
         var uiEvents = [UIEvent]()
         swap(&uiEvents, &state.bufferedUIEvents)
 
@@ -135,12 +139,16 @@ public struct Instance: ReducerProtocol {
           case let .setTitle(title):
             state.title = title
 
+            isInstanceUpdated = true
+
           case let .optionSet(name, value):
             state.rawOptions.updateValue(
               value,
               forKey: name,
               insertingAt: state.rawOptions.count
             )
+
+            isInstanceUpdated = true
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
             state.highlights.updateOrAppend(
@@ -152,8 +160,10 @@ public struct Instance: ReducerProtocol {
               )
             )
 
+            isInstanceUpdated = true
+
           case let .hlAttrDefine(rawID, rgbAttrs, _, _):
-            let id = State.Highlight.ID(rawID)
+            let id = Highlight.ID(rawID)
 
             update(&state.highlights[id: id]) { highlight in
               if highlight == nil {
@@ -197,8 +207,10 @@ public struct Instance: ReducerProtocol {
               }
             }
 
+            isInstanceUpdated = true
+
           case let .gridResize(rawID, width, height):
-            let id = State.Grid.ID(rawID)
+            let id = Grid.ID(rawID)
             let size = IntegerSize(
               columnsCount: width,
               rowsCount: height
@@ -206,7 +218,7 @@ public struct Instance: ReducerProtocol {
 
             update(&state.grids[id: id]) { grid in
               if grid == nil {
-                let cells = TwoDimensionalArray<State.Cell>(
+                let cells = TwoDimensionalArray<Cell>(
                   size: size,
                   repeatingElement: .default
                 )
@@ -215,12 +227,12 @@ public struct Instance: ReducerProtocol {
                   id: id,
                   cells: cells,
                   rowLayouts: cells.rows
-                    .map(State.RowLayout.init(rowCells:)),
+                    .map(RowLayout.init(rowCells:)),
                   windowID: nil
                 )
 
               } else {
-                let newCells = TwoDimensionalArray<State.Cell>(
+                let newCells = TwoDimensionalArray<Cell>(
                   size: size,
                   elementAtPoint: { point in
                     guard
@@ -236,7 +248,7 @@ public struct Instance: ReducerProtocol {
 
                 grid!.cells = newCells
                 grid!.rowLayouts = newCells.rows
-                  .map(State.RowLayout.init(rowCells:))
+                  .map(RowLayout.init(rowCells:))
               }
             }
 
@@ -249,12 +261,18 @@ public struct Instance: ReducerProtocol {
               state.cursor = nil
             }
 
+            isGridsLayoutUpdated = true
+
+            if id == .outer {
+              isInstanceUpdated = true
+            }
+
           case let .gridLine(rawID, row, startColumn, data):
-            let id = State.Grid.ID(rawID)
+            let id = Grid.ID(rawID)
 
             update(&state.grids[id: id]!.cells.rows[row]) { rowCells in
               var updatedCellsCount = 0
-              var highlightID = State.Highlight.ID.default
+              var highlightID = Highlight.ID.default
 
               for value in data {
                 guard
@@ -291,7 +309,7 @@ public struct Instance: ReducerProtocol {
                 }
 
                 for _ in 0 ..< repeatCount {
-                  let cell = State.Cell(
+                  let cell = Cell(
                     text: text,
                     highlightID: highlightID
                   )
@@ -313,8 +331,10 @@ public struct Instance: ReducerProtocol {
               )
             }
 
+            updatedGridIDs.insert(id)
+
           case let .gridScroll(rawGridID, top, bottom, _, _, rowsCount, _):
-            let gridID = State.Grid.ID(rawValue: rawGridID)
+            let gridID = Grid.ID(rawValue: rawGridID)
 
             update(&state.grids[id: gridID]!) { grid in
               let gridCopy = grid
@@ -331,22 +351,26 @@ public struct Instance: ReducerProtocol {
               }
             }
 
+            updatedGridIDs.insert(gridID)
+
           case let .gridClear(rawGridID):
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
 
             update(&state.grids[id: gridID]!) { grid in
-              let newCells = TwoDimensionalArray<State.Cell>(
+              let newCells = TwoDimensionalArray<Cell>(
                 size: grid.cells.size,
                 repeatingElement: .default
               )
 
               grid.cells = newCells
               grid.rowLayouts = newCells.rows
-                .map(State.RowLayout.init(rowCells:))
+                .map(RowLayout.init(rowCells:))
             }
 
+            updatedGridIDs.insert(gridID)
+
           case let .gridDestroy(rawGridID):
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
             guard var grid = state.grids[id: gridID] else {
               continue
             }
@@ -362,19 +386,29 @@ public struct Instance: ReducerProtocol {
               state.grids.updateOrAppend(grid)
             }
 
+            isGridsLayoutUpdated = true
+
           case let .gridCursorGoto(rawGridID, row, column):
+            if let oldGridID = state.cursor?.gridID {
+              updatedGridIDs.insert(oldGridID)
+            }
+
+            let gridID = Grid.ID(rawGridID)
+
             state.cursor = .init(
-              gridID: .init(rawGridID),
+              gridID: gridID,
               position: .init(
                 column: column,
                 row: row
               )
             )
 
+            updatedGridIDs.insert(gridID)
+
           case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             state.floatingWindows.remove(id: windowID)
 
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
 
             state.windows.updateOrAppend(
               .init(
@@ -396,6 +430,8 @@ public struct Instance: ReducerProtocol {
             )
             state.grids[id: gridID]!.windowID = windowID
 
+            isGridsLayoutUpdated = true
+
           case let .winFloatPos(
             rawGridID,
             windowID,
@@ -406,21 +442,21 @@ public struct Instance: ReducerProtocol {
             isFocusable,
             zIndex
           ):
-            guard let anchor = State.Anchor(rawValue: rawAnchor) else {
+            guard let anchor = Anchor(rawValue: rawAnchor) else {
               assertionFailure("Invalid anchor value: \(rawAnchor)")
               continue
             }
 
             state.windows.remove(id: windowID)
 
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
 
             state.floatingWindows.updateOrAppend(
               .init(
                 reference: windowID,
                 gridID: gridID,
                 anchor: anchor,
-                anchorGridID: .init(rawAnchorGridID),
+                anchorGridID: Grid.ID(rawAnchorGridID),
                 anchorRow: anchorRow,
                 anchorColumn: anchorColumn,
                 isFocusable: isFocusable,
@@ -431,8 +467,10 @@ public struct Instance: ReducerProtocol {
 
             state.grids[id: gridID]!.windowID = windowID
 
+            isGridsLayoutUpdated = true
+
           case let .winHide(rawGridID):
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
 
             if let windowID = state.grids[id: gridID]!.windowID {
               if let index = state.windows.index(id: windowID) {
@@ -443,8 +481,10 @@ public struct Instance: ReducerProtocol {
               }
             }
 
+            isGridsLayoutUpdated = true
+
           case let .winClose(rawGridID):
-            let gridID = State.Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawGridID)
 
             guard var grid = state.grids[id: gridID] else {
               continue
@@ -461,8 +501,29 @@ public struct Instance: ReducerProtocol {
               state.grids.updateOrAppend(grid)
             }
 
+            isGridsLayoutUpdated = true
+
           default:
             break
+          }
+        }
+
+        if isInstanceUpdated {
+          state.instanceUpdateFlag = !state.instanceUpdateFlag
+
+        } else if isGridsLayoutUpdated {
+          state.gridsLayoutUpdateFlag = !state.gridsLayoutUpdateFlag
+
+        } else {
+          for gridID in updatedGridIDs {
+            update(&state.gridUpdateFlags[gridID]) { flag in
+              if let existing = flag {
+                flag = !existing
+
+              } else {
+                flag = true
+              }
+            }
           }
         }
       }

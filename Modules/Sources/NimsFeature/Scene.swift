@@ -15,13 +15,14 @@ public extension Nims {
 
     public struct InstanceViewModel: Equatable {
       public init(
-        font: Instance.State.Font,
-        defaultForegroundColor: Instance.State.Color,
-        defaultBackgroundColor: Instance.State.Color,
-        defaultSpecialColor: Instance.State.Color,
+        font: InstanceFeature.Font,
+        defaultForegroundColor: InstanceFeature.Color,
+        defaultBackgroundColor: InstanceFeature.Color,
+        defaultSpecialColor: InstanceFeature.Color,
         outerGridSize: IntegerSize,
-        highlights: IdentifiedArrayOf<Instance.State.Highlight>,
-        title: String
+        highlights: IdentifiedArrayOf<Highlight>,
+        title: String,
+        instanceUpdateFlag: Bool
       ) {
         self.font = font
         self.defaultForegroundColor = defaultForegroundColor
@@ -30,6 +31,7 @@ public extension Nims {
         self.outerGridSize = outerGridSize
         self.highlights = highlights
         self.title = title
+        self.instanceUpdateFlag = instanceUpdateFlag
       }
 
       public init?(instance: Instance.State) {
@@ -52,17 +54,19 @@ public extension Nims {
           defaultSpecialColor: defaultSpecialColor,
           outerGridSize: outerGrid.cells.size,
           highlights: instance.highlights,
-          title: title
+          title: title,
+          instanceUpdateFlag: instance.instanceUpdateFlag
         )
       }
 
-      public var font: Instance.State.Font
-      public var defaultForegroundColor: Instance.State.Color
-      public var defaultBackgroundColor: Instance.State.Color
-      public var defaultSpecialColor: Instance.State.Color
-      public var highlights: IdentifiedArrayOf<Instance.State.Highlight>
+      public var font: InstanceFeature.Font
+      public var defaultForegroundColor: InstanceFeature.Color
+      public var defaultBackgroundColor: InstanceFeature.Color
+      public var defaultSpecialColor: InstanceFeature.Color
+      public var highlights: IdentifiedArrayOf<Highlight>
       public var outerGridSize: IntegerSize
       public var title: String
+      public var instanceUpdateFlag: Bool
     }
 
     public var store: StoreOf<Nims>
@@ -75,8 +79,12 @@ public extension Nims {
             IfLetStore(
               instanceStore.scope(state: InstanceViewModel.init(instance:)),
               then: {
-                WithViewStore($0, observe: { $0 }) { instanceViewModel in
-                  Instance.View(
+                WithViewStore(
+                  $0,
+                  observe: { $0 },
+                  removeDuplicates: { $0.instanceUpdateFlag == $1.instanceUpdateFlag }
+                ) { instanceViewModel in
+                  InstanceView(
                     font: instanceViewModel.font,
                     defaultForegroundColor: instanceViewModel.defaultForegroundColor,
                     defaultBackgroundColor: instanceViewModel.defaultBackgroundColor,

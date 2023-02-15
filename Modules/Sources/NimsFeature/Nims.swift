@@ -35,7 +35,7 @@ public struct Nims: ReducerProtocol {
         state.instance = .init()
 
         return .run { send in
-          let defaultFont = await Instance.State.Font(
+          let defaultFont = await InstanceFeature.Font(
             .init(name: "MesloLGS Nerd Font Mono", size: 12)!
           )
           await send(

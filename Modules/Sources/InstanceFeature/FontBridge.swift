@@ -6,8 +6,8 @@ import AppKit
 final class FontBridge {
   static let shared = FontBridge()
 
-  func wrap(_ appKit: NSFont) -> Instance.State.Font {
-    let font = Instance.State.Font(
+  func wrap(_ appKit: NSFont) -> Font {
+    let font = Font(
       id: .init(wrapped.count),
       cellWidth: cellWidth(for: appKit),
       cellHeight: cellHeight(for: appKit)
@@ -17,7 +17,7 @@ final class FontBridge {
     return font
   }
 
-  func unwrap(_ font: Instance.State.Font) -> NSFont {
+  func unwrap(_ font: Font) -> NSFont {
     wrapped[font.id.rawValue]
   }
 
@@ -43,7 +43,7 @@ final class FontBridge {
   }
 }
 
-public extension Instance.State.Font {
+public extension Font {
   @MainActor
   init(_ appKit: NSFont) {
     self = FontBridge.shared.wrap(appKit)
