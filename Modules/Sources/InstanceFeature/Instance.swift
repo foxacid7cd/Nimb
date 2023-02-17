@@ -261,11 +261,11 @@ public struct Instance: ReducerProtocol {
               state.cursor = nil
             }
 
-            isGridsLayoutUpdated = true
-
             if id == .outer {
               isInstanceUpdated = true
             }
+
+            isGridsLayoutUpdated = true
 
           case let .gridLine(rawID, row, startColumn, data):
             let id = Grid.ID(rawID)
@@ -509,20 +509,20 @@ public struct Instance: ReducerProtocol {
         }
 
         if isInstanceUpdated {
-          state.instanceUpdateFlag = !state.instanceUpdateFlag
+          state.instanceUpdateFlag.toggle()
+        }
 
-        } else if isGridsLayoutUpdated {
-          state.gridsLayoutUpdateFlag = !state.gridsLayoutUpdateFlag
+        if isGridsLayoutUpdated {
+          state.gridsLayoutUpdateFlag.toggle()
+        }
 
-        } else {
-          for gridID in updatedGridIDs {
-            update(&state.gridUpdateFlags[gridID]) { flag in
-              if let existing = flag {
-                flag = !existing
+        for gridID in updatedGridIDs {
+          update(&state.gridUpdateFlags[gridID]) { flag in
+            if let existing = flag {
+              flag = !existing
 
-              } else {
-                flag = true
-              }
+            } else {
+              flag = true
             }
           }
         }
