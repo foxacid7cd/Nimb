@@ -11,11 +11,12 @@ import Neovim
 public struct Nims: ReducerProtocol {
   public init() {}
 
-  public enum Action: Sendable {
+  public enum Action {
     case createInstance(
       arguments: [String],
       environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>
+      keyPresses: AsyncStream<KeyPress>,
+      mouseEvents: AsyncStream<MouseEvent>
     )
     case instance(action: Instance.Action)
   }
@@ -31,7 +32,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses):
+      case let .createInstance(arguments, environmentOverlay, keyPresses, mouseEvents):
         state.instance = .init()
 
         return .run { send in
@@ -49,7 +50,8 @@ public struct Nims: ReducerProtocol {
               action: .createNeovimProcess(
                 arguments: arguments,
                 environmentOverlay: environmentOverlay,
-                keyPresses: keyPresses
+                keyPresses: keyPresses,
+                mouseEvents: mouseEvents
               )
             )
           )

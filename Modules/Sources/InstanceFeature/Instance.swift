@@ -13,16 +13,18 @@ import Tagged
 public struct Instance: ReducerProtocol {
   public init() {}
 
-  public enum Action: Sendable {
+  public enum Action {
     case setDefaultFont(Font)
     case createNeovimProcess(
       arguments: [String],
       environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>
+      keyPresses: AsyncStream<KeyPress>,
+      mouseEvents: AsyncStream<MouseEvent>
     )
     case bindNeovimProcess(
       Neovim.Process,
-      keyPresses: AsyncStream<KeyPress>
+      keyPresses: AsyncStream<KeyPress>,
+      mouseEvents: AsyncStream<MouseEvent>
     )
     case applyUIEventsBatch([UIEvent])
     case handleError(Error)
@@ -36,7 +38,7 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses):
+    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, mouseEvents):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
@@ -50,7 +52,8 @@ public struct Instance: ReducerProtocol {
               await send(
                 .bindNeovimProcess(
                   process,
-                  keyPresses: keyPresses
+                  keyPresses: keyPresses,
+                  mouseEvents: mouseEvents
                 )
               )
             }
@@ -64,7 +67,7 @@ public struct Instance: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses):
+    case let .bindNeovimProcess(process, keyPresses, mouseEvents):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -83,6 +86,42 @@ public struct Instance: ReducerProtocol {
           do {
             _ = try await process.api.nvimInput(
               keys: keyPress.makeNvimKeyCode()
+            )
+            .get()
+
+          } catch {
+            await send(.handleError(error))
+          }
+        }
+      }
+
+      let reportMouseEvents = EffectTask<Action>.run { send in
+        for await mouseEvent in mouseEvents {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          let rawButton: String
+          let rawAction: String
+
+          switch mouseEvent.content {
+          case let .mouse(button, action):
+            rawButton = button.rawValue
+            rawAction = action.rawValue
+
+          case let .scrollWheel(direction):
+            rawButton = "wheel"
+            rawAction = direction.rawValue
+          }
+
+          do {
+            _ = try await process.api.nvimInputMouse(
+              button: rawButton,
+              action: rawAction,
+              modifier: "",
+              grid: mouseEvent.gridID.rawValue,
+              row: mouseEvent.point.row,
+              col: mouseEvent.point.column
             )
             .get()
 
@@ -119,6 +158,7 @@ public struct Instance: ReducerProtocol {
       return .merge(
         applyUIEventBatches,
         reportKeyPresses,
+        reportMouseEvents,
         requestUIAttach
       )
       .cancellable(id: EffectID.bindProcess)

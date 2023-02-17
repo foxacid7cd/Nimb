@@ -18,7 +18,8 @@ public struct InstanceView: View {
     defaultSpecialColor: Color,
     outerGridSize: IntegerSize,
     highlights: IdentifiedArrayOf<Highlight>,
-    store: StoreOf<Instance>
+    store: StoreOf<Instance>,
+    mouseEventHandler: @escaping (MouseEvent) -> Void
   ) {
     self.font = font
     self.defaultForegroundColor = defaultForegroundColor
@@ -27,6 +28,7 @@ public struct InstanceView: View {
     self.outerGridSize = outerGridSize
     self.highlights = highlights
     self.store = store
+    self.mouseEventHandler = mouseEventHandler
   }
 
   public var font: Font
@@ -36,6 +38,7 @@ public struct InstanceView: View {
   public var outerGridSize: IntegerSize
   public var highlights: IdentifiedArrayOf<Highlight>
   public var store: StoreOf<Instance>
+  public var mouseEventHandler: (MouseEvent) -> Void
 
   public var body: some View {
     WithViewStore(
@@ -56,7 +59,8 @@ public struct InstanceView: View {
           defaultForegroundColor: defaultForegroundColor,
           defaultBackgroundColor: defaultBackgroundColor,
           defaultSpecialColor: defaultSpecialColor,
-          store: store
+          store: store,
+          mouseEventHandler: mouseEventHandler
         )
         .frame(width: outerGridSize.width, height: outerGridSize.height)
         .zIndex(0)
@@ -72,7 +76,8 @@ public struct InstanceView: View {
             defaultForegroundColor: defaultForegroundColor,
             defaultBackgroundColor: defaultBackgroundColor,
             defaultSpecialColor: defaultSpecialColor,
-            store: store
+            store: store,
+            mouseEventHandler: mouseEventHandler
           )
           .frame(width: clippedFrame.width, height: clippedFrame.height)
           .offset(x: clippedFrame.minX, y: clippedFrame.minY)
@@ -98,7 +103,8 @@ public struct InstanceView: View {
             defaultForegroundColor: defaultForegroundColor,
             defaultBackgroundColor: defaultBackgroundColor,
             defaultSpecialColor: defaultSpecialColor,
-            store: store
+            store: store,
+            mouseEventHandler: mouseEventHandler
           )
           .frame(width: clippedFrame.width, height: clippedFrame.height)
           .offset(x: clippedFrame.minX, y: clippedFrame.minY)

@@ -36,9 +36,10 @@ public actor Packer {
 
     case let .string(string):
       string.data(using: .utf8)!
-        .withUnsafeBytes { buffer in let pointer = buffer.baseAddress!
+        .withUnsafeBytes { buffer in
+          let pointer = buffer.baseAddress!
 
-          _ = msgpack_pack_str_with_body(&self.pk, pointer, strlen(pointer))
+          _ = msgpack_pack_str_with_body(&self.pk, pointer, string.count)
         }
 
     case let .float(double): msgpack_pack_float(&pk, Float(double))

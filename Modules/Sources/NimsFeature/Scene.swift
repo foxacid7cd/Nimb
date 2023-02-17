@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AsyncAlgorithms
 import Clocks
 import ComposableArchitecture
 import InstanceFeature
@@ -91,7 +92,12 @@ public extension Nims {
                     defaultSpecialColor: instanceViewModel.defaultSpecialColor,
                     outerGridSize: instanceViewModel.outerGridSize,
                     highlights: instanceViewModel.highlights,
-                    store: instanceStore
+                    store: instanceStore,
+                    mouseEventHandler: { mouseEvent in
+                      Task.detached { @MainActor in
+                        await mouseEventHandler(mouseEvent)
+                      }
+                    }
                   )
                   .navigationTitle(instanceViewModel.title)
                 }
@@ -138,7 +144,8 @@ public extension Nims {
                   "LUNARVIM_CACHE_DIR": "/Users/foxacid/.cache/lvim",
                   "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
                 ],
-                keyPresses: keyPresses
+                keyPresses: keyPresses,
+                mouseEvents: mouseEvents
               )
             )
 
@@ -147,6 +154,8 @@ public extension Nims {
         }
       }
     }
+
+    private let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe(bufferingPolicy: .bufferingNewest(1))
 
     @Environment(\.scenePhase)
     private var scenePhase: ScenePhase

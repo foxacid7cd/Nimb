@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import CasePaths
 import Collections
 import ComposableArchitecture
@@ -18,7 +19,8 @@ public struct GridView: View {
     defaultForegroundColor: Color,
     defaultBackgroundColor: Color,
     defaultSpecialColor: Color,
-    store: StoreOf<Instance>
+    store: StoreOf<Instance>,
+    mouseEventHandler: @escaping (MouseEvent) -> Void
   ) {
     self.gridID = gridID
     self.font = font
@@ -27,6 +29,7 @@ public struct GridView: View {
     self.defaultBackgroundColor = defaultBackgroundColor
     self.defaultSpecialColor = defaultSpecialColor
     self.store = store
+    self.mouseEventHandler = mouseEventHandler
   }
 
   public var gridID: Grid.ID
@@ -36,6 +39,7 @@ public struct GridView: View {
   public var defaultBackgroundColor: Color
   public var defaultSpecialColor: Color
   public var store: StoreOf<Instance>
+  public var mouseEventHandler: (MouseEvent) -> Void
 
   public var body: some SwiftUI.View {
     WithViewStore(
@@ -46,6 +50,15 @@ public struct GridView: View {
       }
     ) { state in
       let grid = state.grids[id: gridID]!
+
+      let overlay = Overlay(font: font) { content, point in
+        let event = MouseEvent(
+          content: content,
+          gridID: gridID,
+          point: point
+        )
+        mouseEventHandler(event)
+      }
 
       Canvas(opaque: true, colorMode: .extendedLinear, rendersAsynchronously: true) { graphicsContext, size in
         graphicsContext.fill(
@@ -141,6 +154,136 @@ public struct GridView: View {
           }
         }
       }
+      .overlay(overlay)
+    }
+  }
+
+  private struct Overlay: NSViewRepresentable {
+    class NSView: AppKit.NSView {
+      var cellSize: CGSize?
+      var handleMouseEvent: ((MouseEvent.Content, IntegerPoint) -> Void)?
+
+      override func mouseDown(with event: NSEvent) {
+        report(event, of: .mouse(button: .left, action: .press))
+      }
+
+      override func mouseDragged(with event: NSEvent) {
+        report(event, of: .mouse(button: .left, action: .drag))
+      }
+
+      override func mouseUp(with event: NSEvent) {
+        report(event, of: .mouse(button: .left, action: .release))
+      }
+
+      override func rightMouseDown(with event: NSEvent) {
+        report(event, of: .mouse(button: .right, action: .press))
+      }
+
+      override func rightMouseDragged(with event: NSEvent) {
+        report(event, of: .mouse(button: .right, action: .drag))
+      }
+
+      override func rightMouseUp(with event: NSEvent) {
+        report(event, of: .mouse(button: .right, action: .release))
+      }
+
+      override func otherMouseDown(with event: NSEvent) {
+        report(event, of: .mouse(button: .middle, action: .press))
+      }
+
+      override func otherMouseDragged(with event: NSEvent) {
+        report(event, of: .mouse(button: .middle, action: .drag))
+      }
+
+      override func otherMouseUp(with event: NSEvent) {
+        report(event, of: .mouse(button: .middle, action: .release))
+      }
+
+      override func scrollWheel(with event: NSEvent) {
+        guard let cellSize else {
+          return
+        }
+
+        let yThreshold = cellSize.height
+        let xThreshold = cellSize.width * 2
+
+        if event.phase == .began {
+          xScrollingAccumulator = 0
+          yScrollingAccumulator = 0
+          isScrollingHorizontal = nil
+        }
+
+        xScrollingAccumulator += event.scrollingDeltaX
+        yScrollingAccumulator += event.scrollingDeltaY
+
+        if isScrollingHorizontal == nil {
+          if abs(yScrollingAccumulator) >= yThreshold {
+            isScrollingHorizontal = false
+
+          } else if abs(xScrollingAccumulator) >= xThreshold * 2 {
+            isScrollingHorizontal = true
+          }
+        }
+
+        if let isScrollingHorizontal {
+          if isScrollingHorizontal {
+            if xScrollingAccumulator > xThreshold {
+              report(event, of: .scrollWheel(direction: .left))
+              xScrollingAccumulator -= xThreshold
+
+            } else if xScrollingAccumulator < -xThreshold {
+              report(event, of: .scrollWheel(direction: .right))
+              xScrollingAccumulator += xThreshold
+            }
+
+          } else {
+            if yScrollingAccumulator > yThreshold {
+              report(event, of: .scrollWheel(direction: .up))
+              yScrollingAccumulator -= yThreshold
+
+            } else if yScrollingAccumulator < -yThreshold {
+              report(event, of: .scrollWheel(direction: .down))
+              yScrollingAccumulator += yThreshold
+            }
+          }
+        }
+      }
+
+      private var xScrollingAccumulator: Double = 0
+      private var yScrollingAccumulator: Double = 0
+      private var isScrollingHorizontal: Bool?
+
+      private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
+        guard let cellSize, let handleMouseEvent else {
+          return
+        }
+
+        let location = convert(nsEvent.locationInWindow, from: nil)
+        let upsideDownLocation = CGPoint(
+          x: location.x,
+          y: bounds.height - location.y
+        )
+        let point = IntegerPoint(
+          column: Int(upsideDownLocation.x / cellSize.width),
+          row: Int(upsideDownLocation.y / cellSize.height)
+        )
+        handleMouseEvent(content, point)
+      }
+    }
+
+    var font: Font
+    var handleMouseEvent: (MouseEvent.Content, IntegerPoint) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+      let view = NSView()
+      view.cellSize = font.cellSize
+      view.handleMouseEvent = handleMouseEvent
+      return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+      nsView.cellSize = font.cellSize
+      nsView.handleMouseEvent = handleMouseEvent
     }
   }
 }
