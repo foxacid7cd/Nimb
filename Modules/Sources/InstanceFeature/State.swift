@@ -22,6 +22,7 @@ public extension Instance {
       grids: IdentifiedArrayOf<Grid> = [],
       windows: IdentifiedArrayOf<Window> = [],
       floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
+      modeInfo: ModeInfo? = nil,
       cursor: Cursor? = nil,
       windowZIndexCounter: Int = 0,
       instanceUpdateFlag: Bool = false,
@@ -35,6 +36,7 @@ public extension Instance {
       self.highlights = highlights
       self.grids = grids
       self.windows = windows
+      self.modeInfo = modeInfo
       self.cursor = cursor
       self.floatingWindows = floatingWindows
       self.windowZIndexCounter = windowZIndexCounter
@@ -53,6 +55,7 @@ public extension Instance {
     public var grids: IdentifiedArrayOf<Grid>
     public var windows: IdentifiedArrayOf<Window>
     public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
+    public var modeInfo: ModeInfo?
     public var cursor: Cursor?
     public var windowZIndexCounter: Int
     public var instanceUpdateFlag: Bool

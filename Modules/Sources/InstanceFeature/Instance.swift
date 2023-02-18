@@ -191,6 +191,48 @@ public struct Instance: ReducerProtocol {
 
             isInstanceUpdated = true
 
+          case let .modeInfoSet(enabled, cursorStyles):
+            state.modeInfo = ModeInfo(
+              enabled: enabled,
+              cursorStyles: cursorStyles
+                .compactMap { rawCursorStyle -> CursorStyle? in
+                  guard
+                    case let .dictionary(rawCursorStyle) = rawCursorStyle,
+                    case let .string(name) = rawCursorStyle["name"],
+                    case let .string(shortName) = rawCursorStyle["short_name"]
+                  else {
+                    assertionFailure("Invalid cursor style raw value")
+                    return nil
+                  }
+
+                  return CursorStyle(
+                    name: name,
+                    shortName: shortName,
+                    mouseShape: rawCursorStyle["mouse_shape"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    blinkOn: rawCursorStyle["blinkon"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    blinkOff: rawCursorStyle["blinkoff"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    blinkWait: rawCursorStyle["blinkwait"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    cellPercentage: rawCursorStyle["cell_percentage"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    cursorShape: rawCursorStyle["cursor_shape"]
+                      .flatMap((/Value.string).extract(from:))
+                      .flatMap(CursorShape.init(rawValue:)),
+                    idLm: rawCursorStyle["id_lm"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    attrID: rawCursorStyle["attr_id"]
+                      .flatMap((/Value.integer).extract(from:)),
+                    attrIDLm: rawCursorStyle["attr_id_lm"]
+                      .flatMap((/Value.integer).extract(from:))
+                  )
+                }
+            )
+
+            isInstanceUpdated = true
+
           case let .optionSet(name, value):
             state.rawOptions.updateValue(
               value,

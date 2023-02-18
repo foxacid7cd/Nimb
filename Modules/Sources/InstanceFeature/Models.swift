@@ -66,6 +66,62 @@ public struct Color: Sendable, Hashable {
   }
 }
 
+public enum CursorShape: String {
+  case block
+  case horizontal
+  case vertical
+}
+
+public struct CursorStyle: Equatable {
+  public init(
+    name: String,
+    shortName: String,
+    mouseShape: Int?,
+    blinkOn: Int?,
+    blinkOff: Int?,
+    blinkWait: Int?,
+    cellPercentage: Int?,
+    cursorShape: CursorShape?,
+    idLm: Int?,
+    attrID: Int?,
+    attrIDLm: Int?
+  ) {
+    self.name = name
+    self.shortName = shortName
+    self.mouseShape = mouseShape
+    self.blinkOn = blinkOn
+    self.blinkOff = blinkOff
+    self.blinkWait = blinkWait
+    self.cellPercentage = cellPercentage
+    self.cursorShape = cursorShape
+    self.idLm = idLm
+    self.attrID = attrID
+    self.attrIDLm = attrIDLm
+  }
+
+  public var name: String
+  public var shortName: String
+  public var mouseShape: Int?
+  public var blinkOn: Int?
+  public var blinkOff: Int?
+  public var blinkWait: Int?
+  public var cellPercentage: Int?
+  public var cursorShape: CursorShape?
+  public var idLm: Int?
+  public var attrID: Int?
+  public var attrIDLm: Int?
+}
+
+public struct ModeInfo: Equatable {
+  public init(enabled: Bool, cursorStyles: [CursorStyle]) {
+    self.enabled = enabled
+    self.cursorStyles = cursorStyles
+  }
+
+  public var enabled: Bool
+  public var cursorStyles: [CursorStyle]
+}
+
 public struct Cursor: Equatable {
   public init(gridID: Grid.ID, position: IntegerPoint) {
     self.gridID = gridID

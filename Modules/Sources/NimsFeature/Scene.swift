@@ -23,7 +23,8 @@ public extension Nims {
         outerGridSize: IntegerSize,
         highlights: IdentifiedArrayOf<Highlight>,
         title: String,
-        instanceUpdateFlag: Bool
+        instanceUpdateFlag: Bool,
+        modeInfo: ModeInfo
       ) {
         self.font = font
         self.defaultForegroundColor = defaultForegroundColor
@@ -33,6 +34,7 @@ public extension Nims {
         self.highlights = highlights
         self.title = title
         self.instanceUpdateFlag = instanceUpdateFlag
+        self.modeInfo = modeInfo
       }
 
       public init?(instance: Instance.State) {
@@ -43,7 +45,8 @@ public extension Nims {
           let defaultBackgroundColor = defaultHighlight.backgroundColor,
           let defaultSpecialColor = defaultHighlight.specialColor,
           let outerGrid = instance.outerGrid,
-          let title = instance.title
+          let title = instance.title,
+          let modeInfo = instance.modeInfo
         else {
           return nil
         }
@@ -56,7 +59,8 @@ public extension Nims {
           outerGridSize: outerGrid.cells.size,
           highlights: instance.highlights,
           title: title,
-          instanceUpdateFlag: instance.instanceUpdateFlag
+          instanceUpdateFlag: instance.instanceUpdateFlag,
+          modeInfo: modeInfo
         )
       }
 
@@ -68,6 +72,7 @@ public extension Nims {
       public var outerGridSize: IntegerSize
       public var title: String
       public var instanceUpdateFlag: Bool
+      public var modeInfo: ModeInfo
     }
 
     public var store: StoreOf<Nims>
