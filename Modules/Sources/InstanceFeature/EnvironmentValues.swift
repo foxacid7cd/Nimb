@@ -2,17 +2,17 @@
 
 import SwiftUI
 
-extension EnvironmentValues {
-  private struct CursorPhaseKey: EnvironmentKey {
-    static let defaultValue = true
+public extension EnvironmentValues {
+  private struct DrawRunCacheKey: EnvironmentKey {
+    static let defaultValue = DrawRunCache()
   }
 
-  var cursorPhase: Bool {
+  var drawRunCache: DrawRunCache {
     get {
-      self[CursorPhaseKey.self]
+      self[DrawRunCacheKey.self]
     }
     set {
-      self[CursorPhaseKey.self] = newValue
+      self[DrawRunCacheKey.self] = newValue
     }
   }
 }

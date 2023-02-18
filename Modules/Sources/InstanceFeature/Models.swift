@@ -138,15 +138,19 @@ public struct Font: Sendable, Equatable {
 
 public struct Grid: Equatable, Identifiable {
   public init(
-    id: ID,
+    id: Grid.ID,
     cells: TwoDimensionalArray<Cell>,
     rowLayouts: [RowLayout],
-    windowID: References.Window?
+    windowID: References.Window? = nil,
+    updates: [IntegerRectangle],
+    updateFlag: Bool
   ) {
     self.id = id
     self.cells = cells
     self.rowLayouts = rowLayouts
     self.windowID = windowID
+    self.updates = updates
+    self.updateFlag = updateFlag
   }
 
   public typealias ID = Tagged<Grid, Int>
@@ -155,6 +159,8 @@ public struct Grid: Equatable, Identifiable {
   public var cells: TwoDimensionalArray<Cell>
   public var rowLayouts: [RowLayout]
   public var windowID: References.Window?
+  public var updates: [IntegerRectangle]
+  public var updateFlag: Bool
 }
 
 public struct Highlight: Equatable, Identifiable {

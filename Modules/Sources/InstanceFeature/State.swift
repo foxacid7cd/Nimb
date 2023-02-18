@@ -25,8 +25,7 @@ public extension Instance {
       cursor: Cursor? = nil,
       windowZIndexCounter: Int = 0,
       instanceUpdateFlag: Bool = false,
-      gridsLayoutUpdateFlag: Bool = false,
-      gridUpdateFlags: OrderedDictionary<Grid.ID, Bool> = [:]
+      gridsLayoutUpdateFlag: Bool = false
     ) {
       self.defaultFont = defaultFont
       self.bufferedUIEvents = bufferedUIEvents
@@ -41,7 +40,6 @@ public extension Instance {
       self.windowZIndexCounter = windowZIndexCounter
       self.instanceUpdateFlag = instanceUpdateFlag
       self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
-      self.gridUpdateFlags = gridUpdateFlags
     }
 
     public typealias ID = Tagged<State, String>
@@ -59,7 +57,6 @@ public extension Instance {
     public var windowZIndexCounter: Int
     public var instanceUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
-    public var gridUpdateFlags: OrderedDictionary<Grid.ID, Bool>
 
     public var outerGrid: Grid? {
       grids[id: .outer]

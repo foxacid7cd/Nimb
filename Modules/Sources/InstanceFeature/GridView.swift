@@ -12,7 +12,7 @@ import Overture
 import SwiftUI
 
 @MainActor
-public struct GridView: NSViewRepresentable {
+public struct GridView: View {
   public init(
     gridID: Grid.ID,
     font: Font,
@@ -34,16 +34,37 @@ public struct GridView: NSViewRepresentable {
   }
 
   @MainActor
+  public struct HostingView: NSViewRepresentable {
+    @Environment(\.drawRunCache)
+    private var drawRunCache: DrawRunCache
+
+    public var gridView: GridView
+
+    public func makeNSView(context: Context) -> NSView {
+      let view = NSView()
+      view.data = (drawRunCache, gridView)
+      return view
+    }
+
+    public func updateNSView(_ nsView: NSView, context: Context) {
+      nsView.data = (drawRunCache, gridView)
+    }
+  }
+
+  @MainActor
   public class NSView: AppKit.NSView {
     override public func draw(_: NSRect) {
-      guard let graphicsContext = NSGraphicsContext.current, let gridView, let state else {
+      guard let graphicsContext = NSGraphicsContext.current, let data, let state else {
         return
       }
+
+      let drawRunCache = data.drawRunCache
+      let gridView = data.gridView
       let cgContext = graphicsContext.cgContext
       let grid = state.grids[id: gridView.gridID]!
 
-      graphicsContext.saveGraphicsState()
-      defer { graphicsContext.restoreGraphicsState() }
+      cgContext.saveGState()
+      defer { cgContext.restoreGState() }
 
       var rects: UnsafePointer<NSRect>!
       var rectsCount = 0
@@ -51,15 +72,22 @@ public struct GridView: NSViewRepresentable {
 
       for rectIndex in 0 ..< rectsCount {
         let rect = rects.advanced(by: rectIndex).pointee
+        let upsideDownRect = CGRect(
+          origin: .init(
+            x: rect.origin.x,
+            y: bounds.height - rect.origin.y - rect.size.height
+          ),
+          size: rect.size
+        )
 
         let integerFrame = IntegerRectangle(
           origin: .init(
-            column: Int(rect.origin.x / gridView.font.cellWidth),
-            row: Int(rect.origin.y / gridView.font.cellHeight)
+            column: Int(upsideDownRect.origin.x / gridView.font.cellWidth),
+            row: Int(upsideDownRect.origin.y / gridView.font.cellHeight)
           ),
           size: .init(
-            columnsCount: Int(ceil(rect.size.width / gridView.font.cellWidth)),
-            rowsCount: Int(ceil(rect.size.height / gridView.font.cellHeight))
+            columnsCount: Int(upsideDownRect.size.width / gridView.font.cellWidth),
+            rowsCount: Int(upsideDownRect.size.height / gridView.font.cellHeight)
           )
         )
         let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
@@ -67,7 +95,7 @@ public struct GridView: NSViewRepresentable {
         for rowOffset in 0 ..< integerFrame.size.rowsCount {
           let row = integerFrame.origin.row + rowOffset
 
-          guard row < grid.cells.size.rowsCount else {
+          guard row >= 0, row < grid.cells.size.rowsCount else {
             continue
           }
 
@@ -90,52 +118,68 @@ public struct GridView: NSViewRepresentable {
               size: partFrame.size
             )
 
+            cgContext.setShouldAntialias(false)
             cgContext.setFillColor(backgroundColor.appKit.cgColor)
             cgContext.fill([upsideDownPartFrame])
 
-            let attributedString = NSAttributedString(
-              string: part.text,
-              attributes: [.font: gridView.font.appKit]
-            )
+            let isBold = highlight?.isBold ?? false
+            let isItalic = highlight?.isItalic ?? false
 
-            let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
-            let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
-            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+            let font: NSFont
+            if isBold, isItalic {
+              font = gridView.font.appKit.boldItalic
 
-            var drawRuns = [([CGPoint], [CGGlyph], CGAffineTransform)]()
+            } else if isBold {
+              font = gridView.font.appKit.bold
 
-            for run in runs {
-              let glyphCount = CTRunGetGlyphCount(run)
+            } else if isItalic {
+              font = gridView.font.appKit.italic
 
-              let glyphPositions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                CTRunGetPositions(run, .init(location: 0, length: 0), buffer.baseAddress!)
-                initializedCount = glyphCount
-              }
-              .map {
-                CGPoint(
-                  x: $0.x + upsideDownPartFrame.origin.x,
-                  y: $0.y + upsideDownPartFrame.origin.y - gridView.font.appKit.descender
+            } else {
+              font = gridView.font.appKit.regular
+            }
+
+            let drawRun = drawRunCache.drawRun(for: part.text, font: font) {
+              let attributedString = NSAttributedString(
+                string: part.text,
+                attributes: [.font: font]
+              )
+
+              let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+              let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
+              let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+
+              var glyphRuns = [GlyphRun]()
+
+              for run in runs {
+                let glyphCount = CTRunGetGlyphCount(run)
+
+                let glyphPositions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                  CTRunGetPositions(run, .init(location: 0, length: 0), buffer.baseAddress!)
+                  initializedCount = glyphCount
+                }
+
+                let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                  CTRunGetGlyphs(run, .init(location: 0, length: 0), buffer.baseAddress!)
+                  initializedCount = glyphCount
+                }
+
+                glyphRuns.append(
+                  .init(
+                    font: font,
+                    textMatrix: CTRunGetTextMatrix(run),
+                    positions: glyphPositions,
+                    glyphs: glyphs
+                  )
                 )
               }
 
-              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                CTRunGetGlyphs(run, .init(location: 0, length: 0), buffer.baseAddress!)
-                initializedCount = glyphCount
-              }
-
-              drawRuns.append((glyphPositions, glyphs, CTRunGetTextMatrix(run)))
+              return DrawRun(text: part.text, size: partFrame.size, glyphRuns: glyphRuns)
             }
 
-            for (glyphPositions, glyphs, textMatrix) in drawRuns {
-              cgContext.textMatrix = textMatrix
-              cgContext.setFillColor(foregroundColor.appKit.cgColor)
-              CTFontDrawGlyphs(
-                gridView.font.appKit,
-                glyphs, glyphPositions,
-                glyphs.count,
-                cgContext
-              )
-            }
+            cgContext.setShouldAntialias(true)
+            cgContext.setFillColor(foregroundColor.appKit.cgColor)
+            drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
             if
               let cursor = state.cursor,
@@ -156,22 +200,17 @@ public struct GridView: NSViewRepresentable {
                 size: cursorFrame.size
               )
 
+              cgContext.saveGState()
+
+              cgContext.setShouldAntialias(false)
               cgContext.setFillColor(.white)
               cgContext.fill([cursorUpsideDownFrame])
 
-              cgContext.saveGState()
               cgContext.clip(to: [cursorUpsideDownFrame])
 
-              for (glyphPositions, glyphs, textMatrix) in drawRuns {
-                cgContext.textMatrix = textMatrix
-                cgContext.setFillColor(.black)
-                CTFontDrawGlyphs(
-                  gridView.font.appKit,
-                  glyphs, glyphPositions,
-                  glyphs.count,
-                  cgContext
-                )
-              }
+              cgContext.setShouldAntialias(true)
+              cgContext.setFillColor(.black)
+              drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
               cgContext.restoreGState()
             }
@@ -217,12 +256,12 @@ public struct GridView: NSViewRepresentable {
     }
 
     override public func scrollWheel(with event: NSEvent) {
-      guard let gridView else {
+      guard let data else {
         return
       }
 
-      let yThreshold = gridView.font.cellHeight
-      let xThreshold = gridView.font.cellWidth * 2
+      let yThreshold = data.gridView.font.cellHeight * 1.5
+      let xThreshold = data.gridView.font.cellWidth * 3
 
       if event.phase == .began {
         xScrollingAccumulator = 0
@@ -266,42 +305,73 @@ public struct GridView: NSViewRepresentable {
       }
     }
 
-    var gridView: GridView? {
+    var data: (drawRunCache: DrawRunCache, gridView: GridView)? {
       didSet {
         cancellable?.cancel()
         cancellable = nil
 
-        if let gridView {
-          let viewStore = ViewStore(
-            gridView.store,
-            observe: { $0 },
-            removeDuplicates: {
-              $0.gridUpdateFlags[gridView.gridID] == $1.gridUpdateFlags[gridView.gridID]
-            }
-          )
+        state = nil
 
-          cancellable = viewStore.publisher
-            .sink { [weak self] state in
-              self?.render(gridView: gridView, state: state)
-            }
+        guard let data else {
+          return
         }
+
+        let id = data.gridView.gridID
+
+        let viewStore = ViewStore(
+          data.gridView.store,
+          observe: { $0 },
+          removeDuplicates: {
+            $0.grids[id: id]?.updateFlag == $1.grids[id: id]?.updateFlag
+          }
+        )
+
+        cancellable = viewStore.publisher
+          .sink { [weak self] state in
+            self?.state = state
+            self?.render()
+          }
       }
     }
 
-    private var cancellable: AnyCancellable?
     private var state: Instance.State?
+    private var cancellable: AnyCancellable?
     private var xScrollingAccumulator: Double = 0
     private var yScrollingAccumulator: Double = 0
     private var isScrollingHorizontal: Bool?
 
-    private func render(gridView: GridView, state: Instance.State) {
-      self.state = state
+    private func render() {
+      guard let data, let state else {
+        return
+      }
 
-      setNeedsDisplay(bounds)
+      let grid = state.grids[id: data.gridView.gridID]!
+
+      if grid.updates.isEmpty {
+        setNeedsDisplay(bounds)
+
+      } else {
+        let dirtyRects = grid.updates
+          .map { rectangle in
+            let rect = rectangle * data.gridView.font.cellSize
+            let upsideDownRect = CGRect(
+              origin: .init(
+                x: rect.origin.x,
+                y: bounds.height - rect.origin.y - rect.size.height
+              ),
+              size: rect.size
+            )
+            return upsideDownRect
+          }
+
+        for dirtyRect in dirtyRects {
+          setNeedsDisplay(dirtyRect)
+        }
+      }
     }
 
     private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
-      guard let gridView else {
+      guard let data else {
         return
       }
 
@@ -311,11 +381,11 @@ public struct GridView: NSViewRepresentable {
         y: bounds.height - location.y
       )
       let point = IntegerPoint(
-        column: Int(upsideDownLocation.x / gridView.font.cellWidth),
-        row: Int(upsideDownLocation.y / gridView.font.cellHeight)
+        column: Int(upsideDownLocation.x / data.gridView.font.cellWidth),
+        row: Int(upsideDownLocation.y / data.gridView.font.cellHeight)
       )
-      let event = MouseEvent(content: content, gridID: gridView.gridID, point: point)
-      gridView.mouseEventHandler(event)
+      let event = MouseEvent(content: content, gridID: data.gridView.gridID, point: point)
+      data.gridView.mouseEventHandler(event)
     }
   }
 
@@ -328,13 +398,7 @@ public struct GridView: NSViewRepresentable {
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
 
-  public func makeNSView(context: Context) -> NSView {
-    let view = NSView()
-    view.gridView = self
-    return view
-  }
-
-  public func updateNSView(_ nsView: NSView, context: Context) {
-    nsView.gridView = self
+  public var body: some View {
+    HostingView(gridView: self)
   }
 }

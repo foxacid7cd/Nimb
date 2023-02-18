@@ -13,15 +13,19 @@ final class FontBridge {
       cellHeight: cellHeight(for: appKit)
     )
 
-    wrapped.append(appKit)
+    let bold = NSFontManager.shared.convert(appKit, toHaveTrait: .boldFontMask)
+    let italic = NSFontManager.shared.convert(appKit, toHaveTrait: .italicFontMask)
+    let boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+
+    wrapped.append((appKit, bold, italic, boldItalic))
     return font
   }
 
-  func unwrap(_ font: Font) -> NSFont {
+  func unwrap(_ font: Font) -> (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
     wrapped[font.id.rawValue]
   }
 
-  private var wrapped = [NSFont]()
+  private var wrapped = [(regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont)]()
 
   private func cellWidth(for appKit: NSFont) -> Double {
     var character = "A".utf16.first!
@@ -50,7 +54,7 @@ public extension Font {
   }
 
   @MainActor
-  var appKit: NSFont {
+  var appKit: (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
     FontBridge.shared.unwrap(self)
   }
 }

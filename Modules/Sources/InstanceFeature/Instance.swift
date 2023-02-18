@@ -169,7 +169,17 @@ public struct Instance: ReducerProtocol {
       if uiEventsBatch.last.flatMap(/UIEvent.flush) != nil {
         var isInstanceUpdated = false
         var isGridsLayoutUpdated = false
-        var updatedGridIDs = Set<Grid.ID>()
+
+        var gridUpdates = [Grid.ID: [IntegerRectangle]]()
+        func appendGridUpdate(gridID: Grid.ID, frame: IntegerRectangle) {
+          update(&gridUpdates[gridID]) { updates in
+            if updates == nil {
+              updates = []
+            }
+
+            updates!.append(frame)
+          }
+        }
 
         var uiEvents = [UIEvent]()
         swap(&uiEvents, &state.bufferedUIEvents)
@@ -268,7 +278,9 @@ public struct Instance: ReducerProtocol {
                   cells: cells,
                   rowLayouts: cells.rows
                     .map(RowLayout.init(rowCells:)),
-                  windowID: nil
+                  windowID: nil,
+                  updates: [],
+                  updateFlag: true
                 )
 
               } else {
@@ -371,7 +383,10 @@ public struct Instance: ReducerProtocol {
               )
             }
 
-            updatedGridIDs.insert(id)
+            appendGridUpdate(gridID: id, frame: .init(
+              origin: .init(column: 0, row: row),
+              size: .init(columnsCount: state.grids[id: id]!.cells.size.columnsCount, rowsCount: 1)
+            ))
 
           case let .gridScroll(rawGridID, top, bottom, _, _, rowsCount, _):
             let gridID = Grid.ID(rawValue: rawGridID)
@@ -391,7 +406,14 @@ public struct Instance: ReducerProtocol {
               }
             }
 
-            updatedGridIDs.insert(gridID)
+            let frame = IntegerRectangle(
+              origin: .init(column: 0, row: top + min(0, rowsCount)),
+              size: .init(
+                columnsCount: state.grids[id: gridID]!.cells.size.columnsCount,
+                rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
+              )
+            )
+            appendGridUpdate(gridID: gridID, frame: frame)
 
           case let .gridClear(rawGridID):
             let gridID = Grid.ID(rawGridID)
@@ -407,7 +429,11 @@ public struct Instance: ReducerProtocol {
                 .map(RowLayout.init(rowCells:))
             }
 
-            updatedGridIDs.insert(gridID)
+            let grid = state.grids[id: gridID]!
+            appendGridUpdate(gridID: gridID, frame: .init(
+              origin: .init(column: 0, row: 0),
+              size: grid.cells.size
+            ))
 
           case let .gridDestroy(rawGridID):
             let gridID = Grid.ID(rawGridID)
@@ -429,21 +455,34 @@ public struct Instance: ReducerProtocol {
             isGridsLayoutUpdated = true
 
           case let .gridCursorGoto(rawGridID, row, column):
-            if let oldGridID = state.cursor?.gridID {
-              updatedGridIDs.insert(oldGridID)
+            if let oldCursor = state.cursor {
+              appendGridUpdate(
+                gridID: oldCursor.gridID,
+                frame: .init(
+                  origin: oldCursor.position,
+                  size: .init(columnsCount: 1, rowsCount: 1)
+                )
+              )
             }
 
             let gridID = Grid.ID(rawGridID)
 
+            let cursorPosition = IntegerPoint(
+              column: column,
+              row: row
+            )
             state.cursor = .init(
               gridID: gridID,
-              position: .init(
-                column: column,
-                row: row
-              )
+              position: cursorPosition
             )
 
-            updatedGridIDs.insert(gridID)
+            appendGridUpdate(
+              gridID: gridID,
+              frame: .init(
+                origin: cursorPosition,
+                size: .init(columnsCount: 1, rowsCount: 1)
+              )
+            )
 
           case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             state.floatingWindows.remove(id: windowID)
@@ -556,14 +595,10 @@ public struct Instance: ReducerProtocol {
           state.gridsLayoutUpdateFlag.toggle()
         }
 
-        for gridID in updatedGridIDs {
-          update(&state.gridUpdateFlags[gridID]) { flag in
-            if let existing = flag {
-              flag = !existing
-
-            } else {
-              flag = true
-            }
+        for (gridID, updates) in gridUpdates {
+          update(&state.grids[id: gridID]) { grid in
+            grid?.updates = updates
+            grid?.updateFlag.toggle()
           }
         }
       }
