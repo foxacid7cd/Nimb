@@ -196,18 +196,16 @@ public struct Instance: ReducerProtocol {
               enabled: enabled,
               cursorStyles: cursorStyles
                 .compactMap { rawCursorStyle -> CursorStyle? in
-                  guard
-                    case let .dictionary(rawCursorStyle) = rawCursorStyle,
-                    case let .string(name) = rawCursorStyle["name"],
-                    case let .string(shortName) = rawCursorStyle["short_name"]
-                  else {
-                    assertionFailure("Invalid cursor style raw value")
+                  guard case let .dictionary(rawCursorStyle) = rawCursorStyle else {
+                    assertionFailure("Invalid cursor style raw value type")
                     return nil
                   }
 
                   return CursorStyle(
-                    name: name,
-                    shortName: shortName,
+                    name: rawCursorStyle["name"]
+                      .flatMap((/Value.string).extract(from:)),
+                    shortName: rawCursorStyle["short_name"]
+                      .flatMap((/Value.string).extract(from:)),
                     mouseShape: rawCursorStyle["mouse_shape"]
                       .flatMap((/Value.integer).extract(from:)),
                     blinkOn: rawCursorStyle["blinkon"]
@@ -241,6 +239,22 @@ public struct Instance: ReducerProtocol {
             )
 
             isInstanceUpdated = true
+
+          case let .modeChange(name, cursorStyleIndex):
+            state.mode = .init(
+              name: name,
+              cursorStyleIndex: cursorStyleIndex
+            )
+
+            if let cursor = state.cursor {
+              appendGridUpdate(
+                gridID: cursor.gridID,
+                frame: .init(
+                  origin: .init(column: cursor.position.column - 1, row: cursor.position.row),
+                  size: .init(columnsCount: 3, rowsCount: 1)
+                )
+              )
+            }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
             state.highlights.updateOrAppend(
@@ -501,8 +515,8 @@ public struct Instance: ReducerProtocol {
               appendGridUpdate(
                 gridID: oldCursor.gridID,
                 frame: .init(
-                  origin: oldCursor.position,
-                  size: .init(columnsCount: 1, rowsCount: 1)
+                  origin: .init(column: oldCursor.position.column - 1, row: oldCursor.position.row),
+                  size: .init(columnsCount: 3, rowsCount: 1)
                 )
               )
             }
@@ -521,8 +535,8 @@ public struct Instance: ReducerProtocol {
             appendGridUpdate(
               gridID: gridID,
               frame: .init(
-                origin: cursorPosition,
-                size: .init(columnsCount: 1, rowsCount: 1)
+                origin: .init(column: cursorPosition.column - 1, row: cursorPosition.row),
+                size: .init(columnsCount: 3, rowsCount: 1)
               )
             )
 

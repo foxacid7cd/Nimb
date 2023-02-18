@@ -12,31 +12,16 @@ import SwiftUI
 @MainActor
 public struct InstanceView: View {
   public init(
-    font: Font,
-    defaultForegroundColor: Color,
-    defaultBackgroundColor: Color,
-    defaultSpecialColor: Color,
-    outerGridSize: IntegerSize,
-    highlights: IdentifiedArrayOf<Highlight>,
+    model: InstanceViewModel,
     store: StoreOf<Instance>,
     mouseEventHandler: @escaping (MouseEvent) -> Void
   ) {
-    self.font = font
-    self.defaultForegroundColor = defaultForegroundColor
-    self.defaultBackgroundColor = defaultBackgroundColor
-    self.defaultSpecialColor = defaultSpecialColor
-    self.outerGridSize = outerGridSize
-    self.highlights = highlights
+    self.model = model
     self.store = store
     self.mouseEventHandler = mouseEventHandler
   }
 
-  public var font: Font
-  public var defaultForegroundColor: Color
-  public var defaultBackgroundColor: Color
-  public var defaultSpecialColor: Color
-  public var outerGridSize: IntegerSize
-  public var highlights: IdentifiedArrayOf<Highlight>
+  public var model: InstanceViewModel
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
 
@@ -48,17 +33,13 @@ public struct InstanceView: View {
         $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
       }
     ) { state in
-      let outerGridSize = outerGridSize * font.cellSize
+      let outerGridSize = model.outerGridSize * model.font.cellSize
       let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
 
       ZStack(alignment: .topLeading) {
         GridView(
           gridID: .outer,
-          font: font,
-          highlights: highlights,
-          defaultForegroundColor: defaultForegroundColor,
-          defaultBackgroundColor: defaultBackgroundColor,
-          defaultSpecialColor: defaultSpecialColor,
+          instanceViewModel: model,
           store: store,
           mouseEventHandler: mouseEventHandler
         )
@@ -66,16 +47,12 @@ public struct InstanceView: View {
         .zIndex(0)
 
         ForEach(state.windows) { window in
-          let frame = window.frame * font.cellSize
+          let frame = window.frame * model.font.cellSize
           let clippedFrame = frame.intersection(outerGridFrame)
 
           GridView(
             gridID: window.gridID,
-            font: font,
-            highlights: highlights,
-            defaultForegroundColor: defaultForegroundColor,
-            defaultBackgroundColor: defaultBackgroundColor,
-            defaultSpecialColor: defaultSpecialColor,
+            instanceViewModel: model,
             store: store,
             mouseEventHandler: mouseEventHandler
           )
@@ -92,17 +69,13 @@ public struct InstanceView: View {
             grids: state.grids,
             windows: state.windows,
             floatingWindows: state.floatingWindows,
-            cellSize: font.cellSize
+            cellSize: model.font.cellSize
           )
           let clippedFrame = frame.intersection(outerGridFrame)
 
           GridView(
             gridID: floatingWindow.gridID,
-            font: font,
-            highlights: highlights,
-            defaultForegroundColor: defaultForegroundColor,
-            defaultBackgroundColor: defaultBackgroundColor,
-            defaultSpecialColor: defaultSpecialColor,
+            instanceViewModel: model,
             store: store,
             mouseEventHandler: mouseEventHandler
           )

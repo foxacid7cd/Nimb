@@ -14,67 +14,6 @@ public extension Nims {
       self.store = store
     }
 
-    public struct InstanceViewModel: Equatable {
-      public init(
-        font: InstanceFeature.Font,
-        defaultForegroundColor: InstanceFeature.Color,
-        defaultBackgroundColor: InstanceFeature.Color,
-        defaultSpecialColor: InstanceFeature.Color,
-        outerGridSize: IntegerSize,
-        highlights: IdentifiedArrayOf<Highlight>,
-        title: String,
-        instanceUpdateFlag: Bool,
-        modeInfo: ModeInfo
-      ) {
-        self.font = font
-        self.defaultForegroundColor = defaultForegroundColor
-        self.defaultBackgroundColor = defaultBackgroundColor
-        self.defaultSpecialColor = defaultSpecialColor
-        self.outerGridSize = outerGridSize
-        self.highlights = highlights
-        self.title = title
-        self.instanceUpdateFlag = instanceUpdateFlag
-        self.modeInfo = modeInfo
-      }
-
-      public init?(instance: Instance.State) {
-        guard
-          let font = instance.font ?? instance.defaultFont,
-          let defaultHighlight = instance.highlights[id: .default],
-          let defaultForegroundColor = defaultHighlight.foregroundColor,
-          let defaultBackgroundColor = defaultHighlight.backgroundColor,
-          let defaultSpecialColor = defaultHighlight.specialColor,
-          let outerGrid = instance.outerGrid,
-          let title = instance.title,
-          let modeInfo = instance.modeInfo
-        else {
-          return nil
-        }
-
-        self.init(
-          font: font,
-          defaultForegroundColor: defaultForegroundColor,
-          defaultBackgroundColor: defaultBackgroundColor,
-          defaultSpecialColor: defaultSpecialColor,
-          outerGridSize: outerGrid.cells.size,
-          highlights: instance.highlights,
-          title: title,
-          instanceUpdateFlag: instance.instanceUpdateFlag,
-          modeInfo: modeInfo
-        )
-      }
-
-      public var font: InstanceFeature.Font
-      public var defaultForegroundColor: InstanceFeature.Color
-      public var defaultBackgroundColor: InstanceFeature.Color
-      public var defaultSpecialColor: InstanceFeature.Color
-      public var highlights: IdentifiedArrayOf<Highlight>
-      public var outerGridSize: IntegerSize
-      public var title: String
-      public var instanceUpdateFlag: Bool
-      public var modeInfo: ModeInfo
-    }
-
     public var store: StoreOf<Nims>
 
     public var body: some SwiftUI.Scene {
@@ -91,12 +30,7 @@ public extension Nims {
                   removeDuplicates: { $0.instanceUpdateFlag == $1.instanceUpdateFlag }
                 ) { instanceViewModel in
                   InstanceView(
-                    font: instanceViewModel.font,
-                    defaultForegroundColor: instanceViewModel.defaultForegroundColor,
-                    defaultBackgroundColor: instanceViewModel.defaultBackgroundColor,
-                    defaultSpecialColor: instanceViewModel.defaultSpecialColor,
-                    outerGridSize: instanceViewModel.outerGridSize,
-                    highlights: instanceViewModel.highlights,
+                    model: instanceViewModel.state,
                     store: instanceStore,
                     mouseEventHandler: { mouseEvent in
                       Task.detached {

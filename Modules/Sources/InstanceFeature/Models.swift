@@ -74,8 +74,8 @@ public enum CursorShape: String {
 
 public struct CursorStyle: Equatable {
   public init(
-    name: String,
-    shortName: String,
+    name: String?,
+    shortName: String?,
     mouseShape: Int?,
     blinkOn: Int?,
     blinkOff: Int?,
@@ -99,8 +99,8 @@ public struct CursorStyle: Equatable {
     self.attrIDLm = attrIDLm
   }
 
-  public var name: String
-  public var shortName: String
+  public var name: String?
+  public var shortName: String?
   public var mouseShape: Int?
   public var blinkOn: Int?
   public var blinkOff: Int?
@@ -120,6 +120,16 @@ public struct ModeInfo: Equatable {
 
   public var enabled: Bool
   public var cursorStyles: [CursorStyle]
+}
+
+public struct Mode: Equatable {
+  public init(name: String, cursorStyleIndex: Int) {
+    self.name = name
+    self.cursorStyleIndex = cursorStyleIndex
+  }
+
+  public var name: String
+  public var cursorStyleIndex: Int
 }
 
 public struct Cursor: Equatable {

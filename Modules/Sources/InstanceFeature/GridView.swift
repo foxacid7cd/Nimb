@@ -15,20 +15,12 @@ import SwiftUI
 public struct GridView: View {
   public init(
     gridID: Grid.ID,
-    font: Font,
-    highlights: IdentifiedArrayOf<Highlight>,
-    defaultForegroundColor: Color,
-    defaultBackgroundColor: Color,
-    defaultSpecialColor: Color,
+    instanceViewModel: InstanceViewModel,
     store: StoreOf<Instance>,
     mouseEventHandler: @escaping (MouseEvent) -> Void
   ) {
     self.gridID = gridID
-    self.font = font
-    self.highlights = highlights
-    self.defaultForegroundColor = defaultForegroundColor
-    self.defaultBackgroundColor = defaultBackgroundColor
-    self.defaultSpecialColor = defaultSpecialColor
+    self.instanceViewModel = instanceViewModel
     self.store = store
     self.mouseEventHandler = mouseEventHandler
   }
@@ -60,6 +52,8 @@ public struct GridView: View {
 
       let drawRunCache = data.drawRunCache
       let gridView = data.gridView
+      let instanceViewModel = gridView.instanceViewModel
+      let cellSize = instanceViewModel.font.cellSize
       let cgContext = graphicsContext.cgContext
       let grid = state.grids[id: gridView.gridID]!
 
@@ -82,12 +76,12 @@ public struct GridView: View {
 
         let integerFrame = IntegerRectangle(
           origin: .init(
-            column: Int(upsideDownRect.origin.x / gridView.font.cellWidth),
-            row: Int(upsideDownRect.origin.y / gridView.font.cellHeight)
+            column: Int(upsideDownRect.origin.x / gridView.instanceViewModel.font.cellWidth),
+            row: Int(upsideDownRect.origin.y / gridView.instanceViewModel.font.cellHeight)
           ),
           size: .init(
-            columnsCount: Int(upsideDownRect.size.width / gridView.font.cellWidth),
-            rowsCount: Int(upsideDownRect.size.height / gridView.font.cellHeight)
+            columnsCount: Int(upsideDownRect.size.width / gridView.instanceViewModel.font.cellWidth),
+            rowsCount: Int(upsideDownRect.size.height / gridView.instanceViewModel.font.cellHeight)
           )
         )
         let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
@@ -101,19 +95,19 @@ public struct GridView: View {
 
           let rowLayout = grid.rowLayouts[row]
           for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
-            let highlight = gridView.highlights[id: part.highlightID]
-            let backgroundColor = highlight?.backgroundColor ?? gridView.defaultBackgroundColor
-            let foregroundColor = highlight?.foregroundColor ?? gridView.defaultForegroundColor
+            let highlight = gridView.instanceViewModel.highlights[id: part.highlightID]
+            let backgroundColor = highlight?.backgroundColor ?? gridView.instanceViewModel.defaultBackgroundColor
+            let foregroundColor = highlight?.foregroundColor ?? gridView.instanceViewModel.defaultForegroundColor
 
             let partIntegerFrame = IntegerRectangle(
               origin: .init(column: part.indices.lowerBound, row: row),
               size: .init(columnsCount: part.indices.count, rowsCount: 1)
             )
-            let partFrame = partIntegerFrame * gridView.font.cellSize
+            let partFrame = partIntegerFrame * gridView.instanceViewModel.font.cellSize
             let upsideDownPartFrame = CGRect(
               origin: .init(
                 x: partFrame.origin.x,
-                y: bounds.height - partFrame.origin.y - gridView.font.cellHeight
+                y: bounds.height - partFrame.origin.y - gridView.instanceViewModel.font.cellHeight
               ),
               size: partFrame.size
             )
@@ -127,16 +121,16 @@ public struct GridView: View {
 
             let font: NSFont
             if isBold, isItalic {
-              font = gridView.font.appKit.boldItalic
+              font = gridView.instanceViewModel.font.appKit.boldItalic
 
             } else if isBold {
-              font = gridView.font.appKit.bold
+              font = gridView.instanceViewModel.font.appKit.bold
 
             } else if isItalic {
-              font = gridView.font.appKit.italic
+              font = gridView.instanceViewModel.font.appKit.italic
 
             } else {
-              font = gridView.font.appKit.regular
+              font = gridView.instanceViewModel.font.appKit.regular
             }
 
             let drawRun = drawRunCache.drawRun(for: part.text, font: font) {
@@ -185,17 +179,41 @@ public struct GridView: View {
               let cursor = state.cursor,
               cursor.gridID == gridView.gridID,
               cursor.position.row == row,
-              part.indices.contains(cursor.position.column)
+              part.indices.contains(cursor.position.column),
+              let mode = state.mode,
+              let cursorShape = instanceViewModel.modeInfo
+                .cursorStyles[mode.cursorStyleIndex]
+                .cursorShape
             {
-              let cursorIntegerFrame = IntegerRectangle(
-                origin: cursor.position,
-                size: .init(columnsCount: 1, rowsCount: 1)
-              )
-              let cursorFrame = cursorIntegerFrame * gridView.font.cellSize
+              let cursorFrame: CGRect
+              switch cursorShape {
+              case .block:
+                cursorFrame = IntegerRectangle(
+                  origin: cursor.position,
+                  size: .init(columnsCount: 1, rowsCount: 1)
+                ) * cellSize
+
+              case .horizontal:
+                let height: Double = 2
+                cursorFrame = CGRect(
+                  x: Double(cursor.position.column) * cellSize.width,
+                  y: Double(cursor.position.row) * cellSize.height - height,
+                  width: cellSize.width,
+                  height: height
+                )
+
+              case .vertical:
+                let width = 1.5
+                cursorFrame = CGRect(
+                  origin: cursor.position * cellSize,
+                  size: .init(width: width, height: cellSize.height)
+                )
+              }
+
               let cursorUpsideDownFrame = CGRect(
                 origin: .init(
                   x: cursorFrame.origin.x,
-                  y: bounds.height - cursorFrame.origin.y - gridView.font.cellSize.height
+                  y: bounds.height - cursorFrame.origin.y - gridView.instanceViewModel.font.cellSize.height
                 ),
                 size: cursorFrame.size
               )
@@ -260,8 +278,8 @@ public struct GridView: View {
         return
       }
 
-      let yThreshold = data.gridView.font.cellHeight * 1.5
-      let xThreshold = data.gridView.font.cellWidth * 3
+      let yThreshold = data.gridView.instanceViewModel.font.cellHeight * 1.5
+      let xThreshold = data.gridView.instanceViewModel.font.cellWidth * 3
 
       if event.phase == .began {
         xScrollingAccumulator = 0
@@ -353,7 +371,7 @@ public struct GridView: View {
       } else {
         let dirtyRects = grid.updates
           .map { rectangle in
-            let rect = rectangle * data.gridView.font.cellSize
+            let rect = rectangle * data.gridView.instanceViewModel.font.cellSize
             let upsideDownRect = CGRect(
               origin: .init(
                 x: rect.origin.x,
@@ -381,8 +399,8 @@ public struct GridView: View {
         y: bounds.height - location.y
       )
       let point = IntegerPoint(
-        column: Int(upsideDownLocation.x / data.gridView.font.cellWidth),
-        row: Int(upsideDownLocation.y / data.gridView.font.cellHeight)
+        column: Int(upsideDownLocation.x / data.gridView.instanceViewModel.font.cellWidth),
+        row: Int(upsideDownLocation.y / data.gridView.instanceViewModel.font.cellHeight)
       )
       let event = MouseEvent(content: content, gridID: data.gridView.gridID, point: point)
       data.gridView.mouseEventHandler(event)
@@ -390,11 +408,7 @@ public struct GridView: View {
   }
 
   public var gridID: Grid.ID
-  public var font: Font
-  public var highlights: IdentifiedArrayOf<Highlight>
-  public var defaultForegroundColor: Color
-  public var defaultBackgroundColor: Color
-  public var defaultSpecialColor: Color
+  public var instanceViewModel: InstanceViewModel
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
 
