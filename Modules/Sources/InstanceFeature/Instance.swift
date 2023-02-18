@@ -222,7 +222,8 @@ public struct Instance: ReducerProtocol {
                     idLm: rawCursorStyle["id_lm"]
                       .flatMap((/Value.integer).extract(from:)),
                     attrID: rawCursorStyle["attr_id"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap((/Value.integer).extract(from:))
+                      .map(Highlight.ID.init(rawValue:)),
                     attrIDLm: rawCursorStyle["attr_id_lm"]
                       .flatMap((/Value.integer).extract(from:))
                   )
@@ -250,8 +251,8 @@ public struct Instance: ReducerProtocol {
               appendGridUpdate(
                 gridID: cursor.gridID,
                 frame: .init(
-                  origin: .init(column: cursor.position.column - 1, row: cursor.position.row),
-                  size: .init(columnsCount: 3, rowsCount: 1)
+                  origin: .init(column: cursor.position.column, row: cursor.position.row),
+                  size: .init(columnsCount: 1, rowsCount: 1)
                 )
               )
             }
@@ -511,15 +512,7 @@ public struct Instance: ReducerProtocol {
             isGridsLayoutUpdated = true
 
           case let .gridCursorGoto(rawGridID, row, column):
-            if let oldCursor = state.cursor {
-              appendGridUpdate(
-                gridID: oldCursor.gridID,
-                frame: .init(
-                  origin: .init(column: oldCursor.position.column - 1, row: oldCursor.position.row),
-                  size: .init(columnsCount: 3, rowsCount: 1)
-                )
-              )
-            }
+            let oldCursor = state.cursor
 
             let gridID = Grid.ID(rawGridID)
 
@@ -532,13 +525,46 @@ public struct Instance: ReducerProtocol {
               position: cursorPosition
             )
 
-            appendGridUpdate(
-              gridID: gridID,
-              frame: .init(
-                origin: .init(column: cursorPosition.column - 1, row: cursorPosition.row),
-                size: .init(columnsCount: 3, rowsCount: 1)
+            if
+              let oldCursor,
+              oldCursor.gridID == gridID,
+              oldCursor.position.row == cursorPosition.row
+            {
+              let originColumn = min(oldCursor.position.column, cursorPosition.column)
+              let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
+              print(originColumn)
+              print(columnsCount)
+
+              appendGridUpdate(
+                gridID: oldCursor.gridID,
+                frame: .init(
+                  origin: .init(column: originColumn, row: cursorPosition.row),
+                  size: .init(
+                    columnsCount: columnsCount,
+                    rowsCount: 1
+                  )
+                )
               )
-            )
+
+            } else {
+              if let oldCursor {
+                appendGridUpdate(
+                  gridID: oldCursor.gridID,
+                  frame: IntegerRectangle(
+                    origin: oldCursor.position,
+                    size: .init(columnsCount: 1, rowsCount: 1)
+                  )
+                )
+              }
+
+              appendGridUpdate(
+                gridID: gridID,
+                frame: IntegerRectangle(
+                  origin: cursorPosition,
+                  size: .init(columnsCount: 1, rowsCount: 1)
+                )
+              )
+            }
 
           case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             state.floatingWindows.remove(id: windowID)

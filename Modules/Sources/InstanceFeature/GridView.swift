@@ -60,12 +60,19 @@ public struct GridView: View {
       cgContext.saveGState()
       defer { cgContext.restoreGState() }
 
-      var rects: UnsafePointer<NSRect>!
+      var rectsPointer: UnsafePointer<NSRect>!
       var rectsCount = 0
-      getRectsBeingDrawn(&rects, count: &rectsCount)
+      getRectsBeingDrawn(&rectsPointer, count: &rectsCount)
 
+      var rects = [NSRect]()
       for rectIndex in 0 ..< rectsCount {
-        let rect = rects.advanced(by: rectIndex).pointee
+        let rect = rectsPointer
+          .advanced(by: rectIndex)
+          .pointee
+        rects.append(rect)
+      }
+
+      for rect in rects {
         let upsideDownRect = CGRect(
           origin: .init(
             x: rect.origin.x,
@@ -80,8 +87,8 @@ public struct GridView: View {
             row: Int(upsideDownRect.origin.y / gridView.instanceViewModel.font.cellHeight)
           ),
           size: .init(
-            columnsCount: Int(upsideDownRect.size.width / gridView.instanceViewModel.font.cellWidth),
-            rowsCount: Int(upsideDownRect.size.height / gridView.instanceViewModel.font.cellHeight)
+            columnsCount: Int(ceil(upsideDownRect.size.width / gridView.instanceViewModel.font.cellWidth)),
+            rowsCount: Int(ceil(upsideDownRect.size.height / gridView.instanceViewModel.font.cellHeight))
           )
         )
         let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
@@ -179,58 +186,80 @@ public struct GridView: View {
               let cursor = state.cursor,
               cursor.gridID == gridView.gridID,
               cursor.position.row == row,
-              part.indices.contains(cursor.position.column),
-              let mode = state.mode,
-              let cursorShape = instanceViewModel.modeInfo
-                .cursorStyles[mode.cursorStyleIndex]
-                .cursorShape
+              cursor.position.column >= part.indices.lowerBound,
+              cursor.position.column < part.indices.upperBound,
+              let mode = state.mode
             {
-              let cursorFrame: CGRect
-              switch cursorShape {
-              case .block:
-                cursorFrame = IntegerRectangle(
-                  origin: cursor.position,
-                  size: .init(columnsCount: 1, rowsCount: 1)
-                ) * cellSize
+              let cursorStyle = instanceViewModel.modeInfo
+                .cursorStyles[mode.cursorStyleIndex]
 
-              case .horizontal:
-                let height: Double = 2
-                cursorFrame = CGRect(
-                  x: Double(cursor.position.column) * cellSize.width,
-                  y: Double(cursor.position.row) * cellSize.height - height,
-                  width: cellSize.width,
-                  height: height
+              if let cursorShape = cursorStyle.cursorShape {
+                let cursorFrame: CGRect
+                switch cursorShape {
+                case .block:
+                  let integerFrame = IntegerRectangle(
+                    origin: cursor.position,
+                    size: .init(columnsCount: 1, rowsCount: 1)
+                  )
+                  cursorFrame = integerFrame * cellSize
+
+                case .horizontal:
+                  let height: Double = 2
+                  cursorFrame = CGRect(
+                    x: Double(cursor.position.column) * cellSize.width,
+                    y: Double(cursor.position.row) * cellSize.height - height,
+                    width: cellSize.width,
+                    height: height
+                  )
+
+                case .vertical:
+                  let width: Double = 2
+                  cursorFrame = CGRect(
+                    origin: cursor.position * cellSize,
+                    size: .init(width: width, height: cellSize.height)
+                  )
+                }
+
+                let cursorUpsideDownFrame = CGRect(
+                  origin: .init(
+                    x: cursorFrame.origin.x,
+                    y: bounds.height - cursorFrame.origin.y - cellSize.height
+                  ),
+                  size: cursorFrame.size
                 )
 
-              case .vertical:
-                let width = 1.5
-                cursorFrame = CGRect(
-                  origin: cursor.position * cellSize,
-                  size: .init(width: width, height: cellSize.height)
-                )
+                let cursorBackgroundColor: Color
+                let cursorForegroundColor: Color
+                if let highlightID = cursorStyle.attrID {
+                  if highlightID == .zero {
+                    cursorBackgroundColor = foregroundColor
+                    cursorForegroundColor = backgroundColor
+
+                  } else {
+                    let highlight = instanceViewModel.highlights[id: highlightID]
+                    cursorBackgroundColor = highlight?.backgroundColor ?? foregroundColor
+                    cursorForegroundColor = highlight?.foregroundColor ?? backgroundColor
+                  }
+
+                } else {
+                  cursorBackgroundColor = foregroundColor
+                  cursorForegroundColor = backgroundColor
+                }
+
+                cgContext.saveGState()
+
+                cgContext.setShouldAntialias(false)
+                cgContext.setFillColor(cursorBackgroundColor.appKit.cgColor)
+                cgContext.fill([cursorUpsideDownFrame])
+
+                cgContext.clip(to: [cursorUpsideDownFrame])
+
+                cgContext.setShouldAntialias(true)
+                cgContext.setFillColor(cursorForegroundColor.appKit.cgColor)
+                drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
+
+                cgContext.restoreGState()
               }
-
-              let cursorUpsideDownFrame = CGRect(
-                origin: .init(
-                  x: cursorFrame.origin.x,
-                  y: bounds.height - cursorFrame.origin.y - gridView.instanceViewModel.font.cellSize.height
-                ),
-                size: cursorFrame.size
-              )
-
-              cgContext.saveGState()
-
-              cgContext.setShouldAntialias(false)
-              cgContext.setFillColor(.white)
-              cgContext.fill([cursorUpsideDownFrame])
-
-              cgContext.clip(to: [cursorUpsideDownFrame])
-
-              cgContext.setShouldAntialias(true)
-              cgContext.setFillColor(.black)
-              drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
-
-              cgContext.restoreGState()
             }
           }
         }

@@ -83,7 +83,7 @@ public struct CursorStyle: Equatable {
     cellPercentage: Int?,
     cursorShape: CursorShape?,
     idLm: Int?,
-    attrID: Int?,
+    attrID: Highlight.ID?,
     attrIDLm: Int?
   ) {
     self.name = name
@@ -108,7 +108,7 @@ public struct CursorStyle: Equatable {
   public var cellPercentage: Int?
   public var cursorShape: CursorShape?
   public var idLm: Int?
-  public var attrID: Int?
+  public var attrID: Highlight.ID?
   public var attrIDLm: Int?
 }
 
