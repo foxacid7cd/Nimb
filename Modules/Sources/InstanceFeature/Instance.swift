@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import AsyncAlgorithms
 import CasePaths
 import ComposableArchitecture
 import IdentifiedCollections
@@ -27,6 +28,8 @@ public struct Instance: ReducerProtocol {
       mouseEvents: AsyncStream<MouseEvent>
     )
     case applyUIEventsBatch([UIEvent])
+    case runCursorBlinking
+    case setCursorBlinkingPhase(Bool)
     case handleError(Error)
     case processFinished(error: Error?)
   }
@@ -74,6 +77,7 @@ public struct Instance: ReducerProtocol {
             return
           }
           await send(.applyUIEventsBatch(value))
+          await send(.runCursorBlinking)
         }
       }
 
@@ -685,6 +689,79 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
+    case .runCursorBlinking:
+      let setInitialCursorBlinkingPhase = EffectTask<Action>.task(
+        operation: { .setCursorBlinkingPhase(true) }
+      )
+
+      guard
+        let modeInfo = state.modeInfo,
+        let mode = state.mode
+      else {
+        return setInitialCursorBlinkingPhase
+      }
+
+      let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
+      guard
+        let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
+        let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
+        let blinkOn = cursorStyle.blinkOn, blinkOn > 0
+      else {
+        return setInitialCursorBlinkingPhase
+      }
+
+      let runCursorBlinking = EffectTask<Action>.run { send in
+        do {
+          try await suspendingClock.sleep(for: .milliseconds(blinkWait))
+          guard !Task.isCancelled else {
+            return
+          }
+          await send(.setCursorBlinkingPhase(false))
+
+          while true {
+            try await suspendingClock.sleep(for: .milliseconds(blinkOff))
+            guard !Task.isCancelled else {
+              return
+            }
+            await send(.setCursorBlinkingPhase(true))
+
+            try await suspendingClock.sleep(for: .milliseconds(blinkOn))
+            guard !Task.isCancelled else {
+              return
+            }
+            await send(.setCursorBlinkingPhase(false))
+          }
+        } catch {
+          let isCancellation = error is CancellationError
+
+          if !isCancellation {
+            assertionFailure("\(error)")
+          }
+        }
+      }
+      .cancellable(id: EffectID.runCursorBlinking)
+
+      return setInitialCursorBlinkingPhase
+        .concatenate(with: .cancel(id: EffectID.runCursorBlinking))
+        .concatenate(with: runCursorBlinking)
+
+    case let .setCursorBlinkingPhase(value):
+      state.cursorBlinkingPhase = value
+
+      if let cursor = state.cursor {
+        update(&state.grids[id: cursor.gridID]!) { grid in
+          grid.updates = [
+            .init(
+              origin: cursor.position,
+              size: .init(columnsCount: 1, rowsCount: 1)
+            ),
+          ]
+          grid.updateFlag.toggle()
+        }
+      }
+
+      return .none
+
     default:
       return .none
     }
@@ -692,5 +769,9 @@ public struct Instance: ReducerProtocol {
 
   private enum EffectID: String, Hashable {
     case bindProcess
+    case runCursorBlinking
   }
+
+  @Dependency(\.suspendingClock)
+  private var suspendingClock: any Clock<Duration>
 }

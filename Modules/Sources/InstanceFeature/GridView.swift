@@ -30,6 +30,9 @@ public struct GridView: View {
     @Environment(\.drawRunCache)
     private var drawRunCache: DrawRunCache
 
+    @Environment(\.suspendingClock)
+    private var suspendingClock: any Clock<Duration>
+
     public var gridView: GridView
 
     public func makeNSView(context: Context) -> NSView {
@@ -183,6 +186,7 @@ public struct GridView: View {
             drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
             if
+              state.cursorBlinkingPhase,
               let cursor = state.cursor,
               cursor.gridID == gridView.gridID,
               cursor.position.row == row,
@@ -254,11 +258,13 @@ public struct GridView: View {
                 cgContext.setFillColor(cursorBackgroundColor.appKit.cgColor)
                 cgContext.fill([cursorUpsideDownFrame])
 
-                cgContext.clip(to: [cursorUpsideDownFrame])
+                if cursorShape == .block {
+                  cgContext.clip(to: [cursorUpsideDownFrame])
 
-                cgContext.setShouldAntialias(true)
-                cgContext.setFillColor(cursorForegroundColor.appKit.cgColor)
-                drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
+                  cgContext.setShouldAntialias(true)
+                  cgContext.setFillColor(cursorForegroundColor.appKit.cgColor)
+                  drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
+                }
 
                 cgContext.restoreGState()
               }

@@ -7,6 +7,7 @@ import IdentifiedCollections
 import InstanceFeature
 import Library
 import Neovim
+import SwiftUI
 
 public struct Nims: ReducerProtocol {
   public init() {}
@@ -78,6 +79,8 @@ public struct Nims: ReducerProtocol {
         }
       }
     }
-    .ifLet(\.instance, action: /Action.instance, then: { Instance() })
+    .ifLet(\.instance, action: /Action.instance, then: {
+      Instance()
+    })
   }
 }
