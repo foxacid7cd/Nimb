@@ -347,6 +347,20 @@ public struct Window: Equatable, Identifiable {
   }
 }
 
+public struct Tab: Hashable, Identifiable {
+  public var name: String
+  public var reference: References.Tabpage
+
+  public var id: some Hashable {
+    reference
+  }
+}
+
+public struct Tabline: Equatable {
+  public var currentTab: References.Tabpage
+  public var tabs: [Tab]
+}
+
 public extension Highlight.ID {
   static var `default`: Self {
     0

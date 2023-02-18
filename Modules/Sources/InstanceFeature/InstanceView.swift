@@ -14,16 +14,19 @@ public struct InstanceView: View {
   public init(
     model: InstanceViewModel,
     store: StoreOf<Instance>,
-    mouseEventHandler: @escaping (MouseEvent) -> Void
+    mouseEventHandler: @escaping (MouseEvent) -> Void,
+    tabSelectionHandler: @escaping (References.Tabpage) -> Void
   ) {
     self.model = model
     self.store = store
     self.mouseEventHandler = mouseEventHandler
+    self.tabSelectionHandler = tabSelectionHandler
   }
 
   public var model: InstanceViewModel
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
+  public var tabSelectionHandler: (References.Tabpage) -> Void
 
   public var body: some View {
     WithViewStore(
@@ -33,56 +36,62 @@ public struct InstanceView: View {
         $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
       }
     ) { state in
-      let outerGridSize = model.outerGridSize * model.font.cellSize
-      let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
+      VStack(spacing: 0) {
+        HeaderView(instanceViewModel: model, tabline: state.tabline, action: tabSelectionHandler)
+          .frame(height: 32)
+          .background(model.defaultBackgroundColor.swiftUI)
 
-      ZStack(alignment: .topLeading) {
-        GridView(
-          gridID: .outer,
-          instanceViewModel: model,
-          store: store,
-          mouseEventHandler: mouseEventHandler
-        )
-        .frame(width: outerGridSize.width, height: outerGridSize.height)
-        .zIndex(0)
+        let outerGridSize = model.outerGridSize * model.font.cellSize
+        let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
 
-        ForEach(state.windows) { window in
-          let frame = window.frame * model.font.cellSize
-          let clippedFrame = frame.intersection(outerGridFrame)
-
+        ZStack(alignment: .topLeading) {
           GridView(
-            gridID: window.gridID,
+            gridID: .outer,
             instanceViewModel: model,
             store: store,
             mouseEventHandler: mouseEventHandler
           )
-          .frame(width: clippedFrame.width, height: clippedFrame.height)
-          .offset(x: clippedFrame.minX, y: clippedFrame.minY)
-          .zIndex(Double(window.zIndex) / 1000 + 1000)
-          .opacity(window.isHidden ? 0 : 1)
-        }
+          .frame(width: outerGridSize.width, height: outerGridSize.height)
+          .zIndex(0)
 
-        ForEach(state.floatingWindows) { floatingWindow in
-          let frame = calculateFrame(
-            for: floatingWindow,
-            grid: state.grids[id: floatingWindow.gridID]!,
-            grids: state.grids,
-            windows: state.windows,
-            floatingWindows: state.floatingWindows,
-            cellSize: model.font.cellSize
-          )
-          let clippedFrame = frame.intersection(outerGridFrame)
+          ForEach(state.windows) { window in
+            let frame = window.frame * model.font.cellSize
+            let clippedFrame = frame.intersection(outerGridFrame)
 
-          GridView(
-            gridID: floatingWindow.gridID,
-            instanceViewModel: model,
-            store: store,
-            mouseEventHandler: mouseEventHandler
-          )
-          .frame(width: clippedFrame.width, height: clippedFrame.height)
-          .offset(x: clippedFrame.minX, y: clippedFrame.minY)
-          .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-          .opacity(floatingWindow.isHidden ? 0 : 1)
+            GridView(
+              gridID: window.gridID,
+              instanceViewModel: model,
+              store: store,
+              mouseEventHandler: mouseEventHandler
+            )
+            .frame(width: clippedFrame.width, height: clippedFrame.height)
+            .offset(x: clippedFrame.minX, y: clippedFrame.minY)
+            .zIndex(Double(window.zIndex) / 1000 + 1000)
+            .opacity(window.isHidden ? 0 : 1)
+          }
+
+          ForEach(state.floatingWindows) { floatingWindow in
+            let frame = calculateFrame(
+              for: floatingWindow,
+              grid: state.grids[id: floatingWindow.gridID]!,
+              grids: state.grids,
+              windows: state.windows,
+              floatingWindows: state.floatingWindows,
+              cellSize: model.font.cellSize
+            )
+            let clippedFrame = frame.intersection(outerGridFrame)
+
+            GridView(
+              gridID: floatingWindow.gridID,
+              instanceViewModel: model,
+              store: store,
+              mouseEventHandler: mouseEventHandler
+            )
+            .frame(width: clippedFrame.width, height: clippedFrame.height)
+            .offset(x: clippedFrame.minX, y: clippedFrame.minY)
+            .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+            .opacity(floatingWindow.isHidden ? 0 : 1)
+          }
         }
       }
     }

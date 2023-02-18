@@ -26,6 +26,7 @@ public extension Instance {
       mode: Mode? = nil,
       cursor: Cursor? = nil,
       cursorBlinkingPhase: Bool = true,
+      tabline: Tabline? = nil,
       windowZIndexCounter: Int = 0,
       instanceUpdateFlag: Bool = false,
       gridsLayoutUpdateFlag: Bool = false
@@ -42,6 +43,7 @@ public extension Instance {
       self.mode = mode
       self.cursor = cursor
       self.cursorBlinkingPhase = cursorBlinkingPhase
+      self.tabline = tabline
       self.floatingWindows = floatingWindows
       self.windowZIndexCounter = windowZIndexCounter
       self.instanceUpdateFlag = instanceUpdateFlag
@@ -64,6 +66,7 @@ public extension Instance {
     public var cursor: Cursor?
     public var cursorBlinkingPhase: Bool
     public var windowZIndexCounter: Int
+    public var tabline: Tabline?
     public var instanceUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
 

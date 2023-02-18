@@ -21,13 +21,13 @@ public struct ReferencesFile: GeneratableFile {
       EnumDecl("public enum References") {
         for type in metadata.types {
           StructDecl("public struct \(type.name): Sendable, Hashable") {
-            "var data: Data" as VariableDecl
+            "public var data: Data" as VariableDecl
 
-            InitializerDecl("init(data: Data)") {
+            InitializerDecl("public init(data: Data)") {
               "self.data = data" as SequenceExprSyntax
             }
 
-            InitializerDecl("init?(type: Int8, data: Data)") {
+            InitializerDecl("public init?(type: Int8, data: Data)") {
               "guard type == Self.type else { return nil }" as GuardStmt
 
               "self.init(data: data)" as FunctionCallExpr

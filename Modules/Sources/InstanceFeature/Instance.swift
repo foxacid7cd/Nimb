@@ -20,12 +20,14 @@ public struct Instance: ReducerProtocol {
       arguments: [String],
       environmentOverlay: [String: String],
       keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>
+      mouseEvents: AsyncStream<MouseEvent>,
+      tabSelections: AsyncStream<References.Tabpage>
     )
     case bindNeovimProcess(
       Neovim.Process,
       keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>
+      mouseEvents: AsyncStream<MouseEvent>,
+      tabSelections: AsyncStream<References.Tabpage>
     )
     case applyUIEventsBatch([UIEvent])
     case runCursorBlinking
@@ -41,7 +43,7 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, mouseEvents):
+    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, mouseEvents, tabSelections):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
@@ -56,7 +58,8 @@ public struct Instance: ReducerProtocol {
                 .bindNeovimProcess(
                   process,
                   keyPresses: keyPresses,
-                  mouseEvents: mouseEvents
+                  mouseEvents: mouseEvents,
+                  tabSelections: tabSelections
                 )
               )
             }
@@ -70,7 +73,7 @@ public struct Instance: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses, mouseEvents):
+    case let .bindNeovimProcess(process, keyPresses, mouseEvents, tabSelections):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -135,19 +138,37 @@ public struct Instance: ReducerProtocol {
         }
       }
 
+      let reportTabSelections = EffectTask<Action>.run { send in
+        for await tabpage in tabSelections {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          do {
+            _ = try await process.api.nvimSetCurrentTabpage(
+              tabpage: tabpage
+            )
+            .get()
+
+          } catch {
+            await send(.handleError(error))
+          }
+        }
+      }
+
       let requestUIAttach = EffectTask<Action>.run { send in
         do {
           let uiOptions: UIOptions = [
             .extMultigrid,
             .extHlstate,
-            .extCmdline,
-            .extMessages,
-            .extPopupmenu,
+//            .extCmdline,
+//            .extMessages,
+//            .extPopupmenu,
             .extTabline,
           ]
 
           _ = try await process.api.nvimUIAttach(
-            width: 200,
+            width: 160,
             height: 60,
             options: uiOptions
               .nvimUIAttachOptions
@@ -163,6 +184,7 @@ public struct Instance: ReducerProtocol {
         applyUIEventBatches,
         reportKeyPresses,
         reportMouseEvents,
+        reportTabSelections,
         requestUIAttach
       )
       .cancellable(id: EffectID.bindProcess)
@@ -663,6 +685,35 @@ public struct Instance: ReducerProtocol {
               grid.windowID = nil
               state.grids.updateOrAppend(grid)
             }
+
+            isGridsLayoutUpdated = true
+
+          case let .tablineUpdate(currentTab, rawTabs, _, _):
+            state.tabline = .init(
+              currentTab: currentTab,
+              tabs: rawTabs
+                .compactMap { rawTab in
+                  guard
+                    case let .dictionary(rawTab) = rawTab,
+                    let name = rawTab["name"]
+                      .flatMap((/Value.string).extract(from:)),
+                    let rawReference = rawTab["tab"]
+                      .flatMap((/Value.ext).extract(from:)),
+                    let reference = References.Tabpage(
+                      type: rawReference.0,
+                      data: rawReference.1
+                    )
+                  else {
+                    assertionFailure("Invalid tabline raw value")
+                    return nil
+                  }
+
+                  return .init(
+                    name: name,
+                    reference: reference
+                  )
+                }
+            )
 
             isGridsLayoutUpdated = true
 

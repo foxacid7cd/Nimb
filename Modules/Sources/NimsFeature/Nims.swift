@@ -17,7 +17,8 @@ public struct Nims: ReducerProtocol {
       arguments: [String],
       environmentOverlay: [String: String],
       keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>
+      mouseEvents: AsyncStream<MouseEvent>,
+      tabSelections: AsyncStream<References.Tabpage>
     )
     case instance(action: Instance.Action)
   }
@@ -33,7 +34,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses, mouseEvents):
+      case let .createInstance(arguments, environmentOverlay, keyPresses, mouseEvents, tabSelections):
         state.instance = .init()
 
         return .run { send in
@@ -52,7 +53,8 @@ public struct Nims: ReducerProtocol {
                 arguments: arguments,
                 environmentOverlay: environmentOverlay,
                 keyPresses: keyPresses,
-                mouseEvents: mouseEvents
+                mouseEvents: mouseEvents,
+                tabSelections: tabSelections
               )
             )
           )

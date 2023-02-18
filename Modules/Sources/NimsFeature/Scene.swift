@@ -28,13 +28,20 @@ public extension Nims {
                   $0,
                   observe: { $0 },
                   removeDuplicates: { $0.instanceUpdateFlag == $1.instanceUpdateFlag }
-                ) { instanceViewModel in
+                ) { viewStore in
+                  let instanceViewModel = viewStore.state
+
                   InstanceView(
-                    model: instanceViewModel.state,
+                    model: instanceViewModel,
                     store: instanceStore,
                     mouseEventHandler: { mouseEvent in
                       Task.detached {
                         await mouseEventHandler(mouseEvent)
+                      }
+                    },
+                    tabSelectionHandler: { reference in
+                      Task.detached {
+                        await tabSelectionHandler(reference)
                       }
                     }
                   )
@@ -84,7 +91,8 @@ public extension Nims {
                   "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
                 ],
                 keyPresses: keyPresses,
-                mouseEvents: mouseEvents
+                mouseEvents: mouseEvents,
+                tabSelections: tabSelections
               )
             )
 
@@ -95,11 +103,9 @@ public extension Nims {
     }
 
     private let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
+    private let (tabSelectionHandler, tabSelections) = AsyncChannel<References.Tabpage>.pipe()
 
     @Environment(\.scenePhase)
     private var scenePhase: ScenePhase
-
-    @Environment(\.suspendingClock)
-    private var suspendingClock: any Clock<Duration>
   }
 }
