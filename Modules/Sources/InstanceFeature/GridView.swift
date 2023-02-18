@@ -3,6 +3,7 @@
 import AppKit
 import CasePaths
 import Collections
+import Combine
 import ComposableArchitecture
 import IdentifiedCollections
 import Library
@@ -11,7 +12,7 @@ import Overture
 import SwiftUI
 
 @MainActor
-public struct GridView: View {
+public struct GridView: NSViewRepresentable {
   public init(
     gridID: Grid.ID,
     font: Font,
@@ -32,6 +33,292 @@ public struct GridView: View {
     self.mouseEventHandler = mouseEventHandler
   }
 
+  @MainActor
+  public class NSView: AppKit.NSView {
+    override public func draw(_: NSRect) {
+      guard let graphicsContext = NSGraphicsContext.current, let gridView, let state else {
+        return
+      }
+      let cgContext = graphicsContext.cgContext
+      let grid = state.grids[id: gridView.gridID]!
+
+      graphicsContext.saveGraphicsState()
+      defer { graphicsContext.restoreGraphicsState() }
+
+      var rects: UnsafePointer<NSRect>!
+      var rectsCount = 0
+      getRectsBeingDrawn(&rects, count: &rectsCount)
+
+      for rectIndex in 0 ..< rectsCount {
+        let rect = rects.advanced(by: rectIndex).pointee
+
+        let integerFrame = IntegerRectangle(
+          origin: .init(
+            column: Int(rect.origin.x / gridView.font.cellWidth),
+            row: Int(rect.origin.y / gridView.font.cellHeight)
+          ),
+          size: .init(
+            columnsCount: Int(ceil(rect.size.width / gridView.font.cellWidth)),
+            rowsCount: Int(ceil(rect.size.height / gridView.font.cellHeight))
+          )
+        )
+        let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
+
+        for rowOffset in 0 ..< integerFrame.size.rowsCount {
+          let row = integerFrame.origin.row + rowOffset
+
+          guard row < grid.cells.size.rowsCount else {
+            continue
+          }
+
+          let rowLayout = grid.rowLayouts[row]
+          for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
+            let highlight = gridView.highlights[id: part.highlightID]
+            let backgroundColor = highlight?.backgroundColor ?? gridView.defaultBackgroundColor
+            let foregroundColor = highlight?.foregroundColor ?? gridView.defaultForegroundColor
+
+            let partIntegerFrame = IntegerRectangle(
+              origin: .init(column: part.indices.lowerBound, row: row),
+              size: .init(columnsCount: part.indices.count, rowsCount: 1)
+            )
+            let partFrame = partIntegerFrame * gridView.font.cellSize
+            let upsideDownPartFrame = CGRect(
+              origin: .init(
+                x: partFrame.origin.x,
+                y: bounds.height - partFrame.origin.y - gridView.font.cellHeight
+              ),
+              size: partFrame.size
+            )
+
+            cgContext.setFillColor(backgroundColor.appKit.cgColor)
+            cgContext.fill([upsideDownPartFrame])
+
+            let attributedString = NSAttributedString(
+              string: part.text,
+              attributes: [.font: gridView.font.appKit]
+            )
+
+            let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+            let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
+            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+
+            var drawRuns = [([CGPoint], [CGGlyph], CGAffineTransform)]()
+
+            for run in runs {
+              let glyphCount = CTRunGetGlyphCount(run)
+
+              let glyphPositions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetPositions(run, .init(location: 0, length: 0), buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+              .map {
+                CGPoint(
+                  x: $0.x + upsideDownPartFrame.origin.x,
+                  y: $0.y + upsideDownPartFrame.origin.y - gridView.font.appKit.descender
+                )
+              }
+
+              let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+                CTRunGetGlyphs(run, .init(location: 0, length: 0), buffer.baseAddress!)
+                initializedCount = glyphCount
+              }
+
+              drawRuns.append((glyphPositions, glyphs, CTRunGetTextMatrix(run)))
+            }
+
+            for (glyphPositions, glyphs, textMatrix) in drawRuns {
+              cgContext.textMatrix = textMatrix
+              cgContext.setFillColor(foregroundColor.appKit.cgColor)
+              CTFontDrawGlyphs(
+                gridView.font.appKit,
+                glyphs, glyphPositions,
+                glyphs.count,
+                cgContext
+              )
+            }
+
+            if
+              let cursor = state.cursor,
+              cursor.gridID == gridView.gridID,
+              cursor.position.row == row,
+              part.indices.contains(cursor.position.column)
+            {
+              let cursorIntegerFrame = IntegerRectangle(
+                origin: cursor.position,
+                size: .init(columnsCount: 1, rowsCount: 1)
+              )
+              let cursorFrame = cursorIntegerFrame * gridView.font.cellSize
+              let cursorUpsideDownFrame = CGRect(
+                origin: .init(
+                  x: cursorFrame.origin.x,
+                  y: bounds.height - cursorFrame.origin.y - gridView.font.cellSize.height
+                ),
+                size: cursorFrame.size
+              )
+
+              cgContext.setFillColor(.white)
+              cgContext.fill([cursorUpsideDownFrame])
+
+              cgContext.saveGState()
+              cgContext.clip(to: [cursorUpsideDownFrame])
+
+              for (glyphPositions, glyphs, textMatrix) in drawRuns {
+                cgContext.textMatrix = textMatrix
+                cgContext.setFillColor(.black)
+                CTFontDrawGlyphs(
+                  gridView.font.appKit,
+                  glyphs, glyphPositions,
+                  glyphs.count,
+                  cgContext
+                )
+              }
+
+              cgContext.restoreGState()
+            }
+          }
+        }
+      }
+    }
+
+    override public func mouseDown(with event: NSEvent) {
+      report(event, of: .mouse(button: .left, action: .press))
+    }
+
+    override public func mouseDragged(with event: NSEvent) {
+      report(event, of: .mouse(button: .left, action: .drag))
+    }
+
+    override public func mouseUp(with event: NSEvent) {
+      report(event, of: .mouse(button: .left, action: .release))
+    }
+
+    override public func rightMouseDown(with event: NSEvent) {
+      report(event, of: .mouse(button: .right, action: .press))
+    }
+
+    override public func rightMouseDragged(with event: NSEvent) {
+      report(event, of: .mouse(button: .right, action: .drag))
+    }
+
+    override public func rightMouseUp(with event: NSEvent) {
+      report(event, of: .mouse(button: .right, action: .release))
+    }
+
+    override public func otherMouseDown(with event: NSEvent) {
+      report(event, of: .mouse(button: .middle, action: .press))
+    }
+
+    override public func otherMouseDragged(with event: NSEvent) {
+      report(event, of: .mouse(button: .middle, action: .drag))
+    }
+
+    override public func otherMouseUp(with event: NSEvent) {
+      report(event, of: .mouse(button: .middle, action: .release))
+    }
+
+    override public func scrollWheel(with event: NSEvent) {
+      guard let gridView else {
+        return
+      }
+
+      let yThreshold = gridView.font.cellHeight
+      let xThreshold = gridView.font.cellWidth * 2
+
+      if event.phase == .began {
+        xScrollingAccumulator = 0
+        yScrollingAccumulator = 0
+        isScrollingHorizontal = nil
+      }
+
+      xScrollingAccumulator += event.scrollingDeltaX
+      yScrollingAccumulator += event.scrollingDeltaY
+
+      if isScrollingHorizontal == nil {
+        if abs(yScrollingAccumulator) >= yThreshold {
+          isScrollingHorizontal = false
+
+        } else if abs(xScrollingAccumulator) >= xThreshold * 2 {
+          isScrollingHorizontal = true
+        }
+      }
+
+      if let isScrollingHorizontal {
+        if isScrollingHorizontal {
+          if xScrollingAccumulator > xThreshold {
+            report(event, of: .scrollWheel(direction: .left))
+            xScrollingAccumulator -= xThreshold
+
+          } else if xScrollingAccumulator < -xThreshold {
+            report(event, of: .scrollWheel(direction: .right))
+            xScrollingAccumulator += xThreshold
+          }
+
+        } else {
+          if yScrollingAccumulator > yThreshold {
+            report(event, of: .scrollWheel(direction: .up))
+            yScrollingAccumulator -= yThreshold
+
+          } else if yScrollingAccumulator < -yThreshold {
+            report(event, of: .scrollWheel(direction: .down))
+            yScrollingAccumulator += yThreshold
+          }
+        }
+      }
+    }
+
+    var gridView: GridView? {
+      didSet {
+        cancellable?.cancel()
+        cancellable = nil
+
+        if let gridView {
+          let viewStore = ViewStore(
+            gridView.store,
+            observe: { $0 },
+            removeDuplicates: {
+              $0.gridUpdateFlags[gridView.gridID] == $1.gridUpdateFlags[gridView.gridID]
+            }
+          )
+
+          cancellable = viewStore.publisher
+            .sink { [weak self] state in
+              self?.render(gridView: gridView, state: state)
+            }
+        }
+      }
+    }
+
+    private var cancellable: AnyCancellable?
+    private var state: Instance.State?
+    private var xScrollingAccumulator: Double = 0
+    private var yScrollingAccumulator: Double = 0
+    private var isScrollingHorizontal: Bool?
+
+    private func render(gridView: GridView, state: Instance.State) {
+      self.state = state
+
+      setNeedsDisplay(bounds)
+    }
+
+    private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
+      guard let gridView else {
+        return
+      }
+
+      let location = convert(nsEvent.locationInWindow, from: nil)
+      let upsideDownLocation = CGPoint(
+        x: location.x,
+        y: bounds.height - location.y
+      )
+      let point = IntegerPoint(
+        column: Int(upsideDownLocation.x / gridView.font.cellWidth),
+        row: Int(upsideDownLocation.y / gridView.font.cellHeight)
+      )
+      let event = MouseEvent(content: content, gridID: gridView.gridID, point: point)
+      gridView.mouseEventHandler(event)
+    }
+  }
+
   public var gridID: Grid.ID
   public var font: Font
   public var highlights: IdentifiedArrayOf<Highlight>
@@ -41,249 +328,13 @@ public struct GridView: View {
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
 
-  public var body: some SwiftUI.View {
-    WithViewStore(
-      store,
-      observe: { $0 },
-      removeDuplicates: {
-        $0.gridUpdateFlags[gridID] == $1.gridUpdateFlags[gridID]
-      }
-    ) { state in
-      let grid = state.grids[id: gridID]!
-
-      let overlay = Overlay(font: font) { content, point in
-        let event = MouseEvent(
-          content: content,
-          gridID: gridID,
-          point: point
-        )
-        mouseEventHandler(event)
-      }
-
-      Canvas(opaque: true, colorMode: .extendedLinear, rendersAsynchronously: true) { graphicsContext, size in
-        graphicsContext.fill(
-          Path(CGRect(origin: .init(), size: size)),
-          with: .color(defaultBackgroundColor.swiftUI),
-          style: .init(antialiased: false)
-        )
-
-        var backgroundRuns = [(frame: CGRect, color: Color)]()
-        var foregroundRuns = [(origin: CGPoint, text: Text)]()
-
-        for (row, rowLayout) in zip(0 ..< grid.rowLayouts.count, grid.rowLayouts) {
-          let rowFrame = CGRect(
-            origin: .init(x: 0, y: Double(row) * font.cellHeight),
-            size: .init(width: size.width, height: font.cellHeight)
-          )
-
-          for rowPart in rowLayout.parts {
-            let frame = CGRect(
-              origin: .init(
-                x: Double(rowPart.indices.lowerBound) * font.cellWidth,
-                y: rowFrame.origin.y
-              ),
-              size: .init(
-                width: Double(rowPart.indices.count) * font.cellWidth,
-                height: rowFrame.size.height
-              )
-            )
-
-            let highlight = highlights[id: rowPart.highlightID]
-
-            let backgroundColor = highlight?.backgroundColor ?? defaultBackgroundColor
-            backgroundRuns.append((frame, backgroundColor))
-
-            let foregroundColor = highlight?.foregroundColor ?? defaultForegroundColor
-
-            let text = Text(rowPart.text)
-              .font(.init(font.appKit))
-              .foregroundColor(foregroundColor.swiftUI)
-              .bold(highlight?.isBold == true)
-              .italic(highlight?.isItalic == true)
-
-            foregroundRuns.append((frame.origin, text))
-          }
-        }
-
-        graphicsContext.drawLayer { backgroundGraphicsContext in
-          for backgroundRun in backgroundRuns {
-            backgroundGraphicsContext.fill(
-              Path(backgroundRun.frame),
-              with: .color(backgroundRun.color.swiftUI),
-              style: .init(antialiased: false)
-            )
-          }
-        }
-
-        graphicsContext.drawLayer { foregroundGraphicsContext in
-          for foregroundRun in foregroundRuns {
-            foregroundGraphicsContext.draw(
-              foregroundRun.text,
-              at: foregroundRun.origin,
-              anchor: .zero
-            )
-          }
-        }
-
-        if let cursor = state.cursor, cursor.gridID == gridID {
-          graphicsContext.drawLayer { cursorGraphicsContext in
-            let rowLayout = grid.rowLayouts[cursor.position.row]
-            let cursorIndices = rowLayout.cellIndices[cursor.position.column]
-
-            let integerFrame = IntegerRectangle(
-              origin: .init(column: cursorIndices.startIndex, row: cursor.position.row),
-              size: .init(columnsCount: cursorIndices.count, rowsCount: 1)
-            )
-            let frame = integerFrame * font.cellSize
-
-            cursorGraphicsContext.fill(
-              Path(frame),
-              with: .color(.white)
-            )
-
-            let cell = grid.cells[cursor.position]
-
-            let text = Text(cell.text)
-              .font(.init(font.appKit))
-              .foregroundColor(.black)
-
-            cursorGraphicsContext.draw(
-              text,
-              at: .init(x: frame.midX, y: frame.midY)
-            )
-          }
-        }
-      }
-      .overlay(overlay)
-    }
+  public func makeNSView(context: Context) -> NSView {
+    let view = NSView()
+    view.gridView = self
+    return view
   }
 
-  private struct Overlay: NSViewRepresentable {
-    class NSView: AppKit.NSView {
-      var cellSize: CGSize?
-      var handleMouseEvent: ((MouseEvent.Content, IntegerPoint) -> Void)?
-
-      override func mouseDown(with event: NSEvent) {
-        report(event, of: .mouse(button: .left, action: .press))
-      }
-
-      override func mouseDragged(with event: NSEvent) {
-        report(event, of: .mouse(button: .left, action: .drag))
-      }
-
-      override func mouseUp(with event: NSEvent) {
-        report(event, of: .mouse(button: .left, action: .release))
-      }
-
-      override func rightMouseDown(with event: NSEvent) {
-        report(event, of: .mouse(button: .right, action: .press))
-      }
-
-      override func rightMouseDragged(with event: NSEvent) {
-        report(event, of: .mouse(button: .right, action: .drag))
-      }
-
-      override func rightMouseUp(with event: NSEvent) {
-        report(event, of: .mouse(button: .right, action: .release))
-      }
-
-      override func otherMouseDown(with event: NSEvent) {
-        report(event, of: .mouse(button: .middle, action: .press))
-      }
-
-      override func otherMouseDragged(with event: NSEvent) {
-        report(event, of: .mouse(button: .middle, action: .drag))
-      }
-
-      override func otherMouseUp(with event: NSEvent) {
-        report(event, of: .mouse(button: .middle, action: .release))
-      }
-
-      override func scrollWheel(with event: NSEvent) {
-        guard let cellSize else {
-          return
-        }
-
-        let yThreshold = cellSize.height
-        let xThreshold = cellSize.width * 2
-
-        if event.phase == .began {
-          xScrollingAccumulator = 0
-          yScrollingAccumulator = 0
-          isScrollingHorizontal = nil
-        }
-
-        xScrollingAccumulator += event.scrollingDeltaX
-        yScrollingAccumulator += event.scrollingDeltaY
-
-        if isScrollingHorizontal == nil {
-          if abs(yScrollingAccumulator) >= yThreshold {
-            isScrollingHorizontal = false
-
-          } else if abs(xScrollingAccumulator) >= xThreshold * 2 {
-            isScrollingHorizontal = true
-          }
-        }
-
-        if let isScrollingHorizontal {
-          if isScrollingHorizontal {
-            if xScrollingAccumulator > xThreshold {
-              report(event, of: .scrollWheel(direction: .left))
-              xScrollingAccumulator -= xThreshold
-
-            } else if xScrollingAccumulator < -xThreshold {
-              report(event, of: .scrollWheel(direction: .right))
-              xScrollingAccumulator += xThreshold
-            }
-
-          } else {
-            if yScrollingAccumulator > yThreshold {
-              report(event, of: .scrollWheel(direction: .up))
-              yScrollingAccumulator -= yThreshold
-
-            } else if yScrollingAccumulator < -yThreshold {
-              report(event, of: .scrollWheel(direction: .down))
-              yScrollingAccumulator += yThreshold
-            }
-          }
-        }
-      }
-
-      private var xScrollingAccumulator: Double = 0
-      private var yScrollingAccumulator: Double = 0
-      private var isScrollingHorizontal: Bool?
-
-      private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
-        guard let cellSize, let handleMouseEvent else {
-          return
-        }
-
-        let location = convert(nsEvent.locationInWindow, from: nil)
-        let upsideDownLocation = CGPoint(
-          x: location.x,
-          y: bounds.height - location.y
-        )
-        let point = IntegerPoint(
-          column: Int(upsideDownLocation.x / cellSize.width),
-          row: Int(upsideDownLocation.y / cellSize.height)
-        )
-        handleMouseEvent(content, point)
-      }
-    }
-
-    var font: Font
-    var handleMouseEvent: (MouseEvent.Content, IntegerPoint) -> Void
-
-    func makeNSView(context: Context) -> NSView {
-      let view = NSView()
-      view.cellSize = font.cellSize
-      view.handleMouseEvent = handleMouseEvent
-      return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-      nsView.cellSize = font.cellSize
-      nsView.handleMouseEvent = handleMouseEvent
-    }
+  public func updateNSView(_ nsView: NSView, context: Context) {
+    nsView.gridView = self
   }
 }

@@ -94,7 +94,7 @@ public extension Nims {
                     highlights: instanceViewModel.highlights,
                     store: instanceStore,
                     mouseEventHandler: { mouseEvent in
-                      Task.detached { @MainActor in
+                      Task.detached {
                         await mouseEventHandler(mouseEvent)
                       }
                     }
@@ -155,7 +155,7 @@ public extension Nims {
       }
     }
 
-    private let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe(bufferingPolicy: .bufferingNewest(1))
+    private let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
 
     @Environment(\.scenePhase)
     private var scenePhase: ScenePhase
