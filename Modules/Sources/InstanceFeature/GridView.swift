@@ -204,16 +204,18 @@ public struct GridView: View {
                   cursorFrame = integerFrame * cellSize
 
                 case .horizontal:
-                  let height: Double = 2
+                  let height = cellSize.height / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+
                   cursorFrame = CGRect(
                     x: Double(cursor.position.column) * cellSize.width,
-                    y: Double(cursor.position.row) * cellSize.height - height,
+                    y: Double(cursor.position.row) * cellSize.height,
                     width: cellSize.width,
                     height: height
                   )
 
                 case .vertical:
-                  let width: Double = 2
+                  let width = cellSize.width / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+
                   cursorFrame = CGRect(
                     origin: cursor.position * cellSize,
                     size: .init(width: width, height: cellSize.height)

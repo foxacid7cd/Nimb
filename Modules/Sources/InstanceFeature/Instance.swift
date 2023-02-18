@@ -532,8 +532,6 @@ public struct Instance: ReducerProtocol {
             {
               let originColumn = min(oldCursor.position.column, cursorPosition.column)
               let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
-              print(originColumn)
-              print(columnsCount)
 
               appendGridUpdate(
                 gridID: oldCursor.gridID,
