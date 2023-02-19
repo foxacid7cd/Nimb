@@ -29,69 +29,86 @@ public struct InstanceView: View {
   public var tabSelectionHandler: (References.Tabpage) -> Void
 
   public var body: some View {
-    WithViewStore(
-      store,
-      observe: { $0 },
-      removeDuplicates: {
-        $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
+    ZStack(alignment: .center) {
+      WithViewStore(
+        store,
+        observe: { $0 },
+        removeDuplicates: {
+          $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
+        }
+      ) { state in
+        VStack(spacing: 0) {
+          HeaderView(instanceViewModel: model, tabline: state.tabline, action: tabSelectionHandler)
+            .frame(height: 32)
+            .background(model.defaultBackgroundColor.swiftUI)
+
+          let outerGridSize = model.outerGridSize * model.font.cellSize
+          let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
+
+          ZStack(alignment: .topLeading) {
+            GridView(
+              gridID: .outer,
+              instanceViewModel: model,
+              store: store,
+              mouseEventHandler: mouseEventHandler
+            )
+            .frame(width: outerGridSize.width, height: outerGridSize.height)
+            .zIndex(0)
+
+            ForEach(state.windows) { window in
+              let frame = window.frame * model.font.cellSize
+              let clippedFrame = frame.intersection(outerGridFrame)
+
+              GridView(
+                gridID: window.gridID,
+                instanceViewModel: model,
+                store: store,
+                mouseEventHandler: mouseEventHandler
+              )
+              .frame(width: clippedFrame.width, height: clippedFrame.height)
+              .offset(x: clippedFrame.minX, y: clippedFrame.minY)
+              .zIndex(Double(window.zIndex) / 1000 + 1000)
+              .opacity(window.isHidden ? 0 : 1)
+            }
+
+            ForEach(state.floatingWindows) { floatingWindow in
+              let frame = calculateFrame(
+                for: floatingWindow,
+                grid: state.grids[id: floatingWindow.gridID]!,
+                grids: state.grids,
+                windows: state.windows,
+                floatingWindows: state.floatingWindows,
+                cellSize: model.font.cellSize
+              )
+              let clippedFrame = frame.intersection(outerGridFrame)
+
+              GridView(
+                gridID: floatingWindow.gridID,
+                instanceViewModel: model,
+                store: store,
+                mouseEventHandler: mouseEventHandler
+              )
+              .frame(width: clippedFrame.width, height: clippedFrame.height)
+              .offset(x: clippedFrame.minX, y: clippedFrame.minY)
+              .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
+              .opacity(floatingWindow.isHidden ? 0 : 1)
+            }
+          }
+        }
       }
-    ) { state in
-      VStack(spacing: 0) {
-        HeaderView(instanceViewModel: model, tabline: state.tabline, action: tabSelectionHandler)
-          .frame(height: 32)
-          .background(model.defaultBackgroundColor.swiftUI)
 
-        let outerGridSize = model.outerGridSize * model.font.cellSize
-        let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
+      WithViewStore(
+        store,
+        observe: { $0 },
+        removeDuplicates: { $0.cmdlineUpdateFlag == $1.cmdlineUpdateFlag }
+      ) { state in
+        ForEach(state.cmdlines) { cmdline in
+          let height: Double = 44
 
-        ZStack(alignment: .topLeading) {
-          GridView(
-            gridID: .outer,
-            instanceViewModel: model,
-            store: store,
-            mouseEventHandler: mouseEventHandler
-          )
-          .frame(width: outerGridSize.width, height: outerGridSize.height)
-          .zIndex(0)
-
-          ForEach(state.windows) { window in
-            let frame = window.frame * model.font.cellSize
-            let clippedFrame = frame.intersection(outerGridFrame)
-
-            GridView(
-              gridID: window.gridID,
-              instanceViewModel: model,
-              store: store,
-              mouseEventHandler: mouseEventHandler
-            )
-            .frame(width: clippedFrame.width, height: clippedFrame.height)
-            .offset(x: clippedFrame.minX, y: clippedFrame.minY)
-            .zIndex(Double(window.zIndex) / 1000 + 1000)
-            .opacity(window.isHidden ? 0 : 1)
-          }
-
-          ForEach(state.floatingWindows) { floatingWindow in
-            let frame = calculateFrame(
-              for: floatingWindow,
-              grid: state.grids[id: floatingWindow.gridID]!,
-              grids: state.grids,
-              windows: state.windows,
-              floatingWindows: state.floatingWindows,
-              cellSize: model.font.cellSize
-            )
-            let clippedFrame = frame.intersection(outerGridFrame)
-
-            GridView(
-              gridID: floatingWindow.gridID,
-              instanceViewModel: model,
-              store: store,
-              mouseEventHandler: mouseEventHandler
-            )
-            .frame(width: clippedFrame.width, height: clippedFrame.height)
-            .offset(x: clippedFrame.minX, y: clippedFrame.minY)
-            .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-            .opacity(floatingWindow.isHidden ? 0 : 1)
-          }
+          Rectangle()
+            .fill(SwiftUI.Color.black)
+            .frame(width: 480, height: height)
+            .offset(x: 0, y: Double(cmdline.level) * height)
         }
       }
     }

@@ -361,6 +361,24 @@ public struct Tabline: Equatable {
   public var tabs: [Tab]
 }
 
+public struct CmdlineContentPart: Equatable {
+  public var highlightID: Highlight.ID
+  public var text: String
+}
+
+public struct Cmdline: Equatable, Identifiable {
+  public var contentParts: [CmdlineContentPart]
+  public var cursorPosition: Int
+  public var firstCharacter: String
+  public var prompt: String
+  public var indent: Int
+  public var level: Int
+
+  public var id: Int {
+    level
+  }
+}
+
 public extension Highlight.ID {
   static var `default`: Self {
     0

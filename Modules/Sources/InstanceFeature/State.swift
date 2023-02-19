@@ -27,6 +27,8 @@ public extension Instance {
       cursor: Cursor? = nil,
       cursorBlinkingPhase: Bool = true,
       tabline: Tabline? = nil,
+      cmdlines: IdentifiedArrayOf<Cmdline> = [],
+      cmdlineUpdateFlag: Bool = false,
       windowZIndexCounter: Int = 0,
       instanceUpdateFlag: Bool = false,
       gridsLayoutUpdateFlag: Bool = false
@@ -44,6 +46,8 @@ public extension Instance {
       self.cursor = cursor
       self.cursorBlinkingPhase = cursorBlinkingPhase
       self.tabline = tabline
+      self.cmdlines = cmdlines
+      self.cmdlineUpdateFlag = cmdlineUpdateFlag
       self.floatingWindows = floatingWindows
       self.windowZIndexCounter = windowZIndexCounter
       self.instanceUpdateFlag = instanceUpdateFlag
@@ -67,6 +71,8 @@ public extension Instance {
     public var cursorBlinkingPhase: Bool
     public var windowZIndexCounter: Int
     public var tabline: Tabline?
+    public var cmdlines: IdentifiedArrayOf<Cmdline>
+    public var cmdlineUpdateFlag: Bool
     public var instanceUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
 

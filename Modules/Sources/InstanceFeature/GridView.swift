@@ -316,7 +316,7 @@ public struct GridView: View {
       }
 
       let yThreshold = data.gridView.instanceViewModel.font.cellHeight * 1.5
-      let xThreshold = data.gridView.instanceViewModel.font.cellWidth * 3
+      let xThreshold = data.gridView.instanceViewModel.font.cellWidth * 2
 
       if event.phase == .began {
         xScrollingAccumulator = 0
@@ -331,7 +331,7 @@ public struct GridView: View {
         if abs(yScrollingAccumulator) >= yThreshold {
           isScrollingHorizontal = false
 
-        } else if abs(xScrollingAccumulator) >= xThreshold * 2 {
+        } else if abs(xScrollingAccumulator) >= xThreshold * 1.5 {
           isScrollingHorizontal = true
         }
       }

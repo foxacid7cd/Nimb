@@ -35,12 +35,12 @@ public extension Nims {
                     model: instanceViewModel,
                     store: instanceStore,
                     mouseEventHandler: { mouseEvent in
-                      Task.detached {
+                      Task.detached { @MainActor in
                         await mouseEventHandler(mouseEvent)
                       }
                     },
                     tabSelectionHandler: { reference in
-                      Task.detached {
+                      Task.detached { @MainActor in
                         await tabSelectionHandler(reference)
                       }
                     }

@@ -161,15 +161,15 @@ public struct Instance: ReducerProtocol {
           let uiOptions: UIOptions = [
             .extMultigrid,
             .extHlstate,
-//            .extCmdline,
-//            .extMessages,
-//            .extPopupmenu,
+            .extCmdline,
+            .extMessages,
+            .extPopupmenu,
             .extTabline,
           ]
 
           _ = try await process.api.nvimUIAttach(
-            width: 160,
-            height: 60,
+            width: 190,
+            height: 56,
             options: uiOptions
               .nvimUIAttachOptions
           )
@@ -195,6 +195,7 @@ public struct Instance: ReducerProtocol {
       if uiEventsBatch.last.flatMap(/UIEvent.flush) != nil {
         var isInstanceUpdated = false
         var isGridsLayoutUpdated = false
+        var isCmdlineUpdated = false
 
         var gridUpdates = [Grid.ID: [IntegerRectangle]]()
         func appendGridUpdate(gridID: Grid.ID, frame: IntegerRectangle) {
@@ -717,6 +718,55 @@ public struct Instance: ReducerProtocol {
 
             isGridsLayoutUpdated = true
 
+          case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
+            state.cmdlines.updateOrAppend(.init(
+              contentParts: content
+                .compactMap { rawContentPart in
+                  guard
+                    case let .array(rawContentPart) = rawContentPart,
+                    rawContentPart.count == 2,
+                    case let .integer(rawHighlightID) = rawContentPart[0],
+                    case let .string(text) = rawContentPart[1]
+                  else {
+                    assertionFailure("Invalid cmdline raw value")
+                    return nil
+                  }
+
+                  return .init(
+                    highlightID: .init(rawHighlightID),
+                    text: text
+                  )
+                },
+              cursorPosition: pos,
+              firstCharacter: firstc,
+              prompt: prompt,
+              indent: indent,
+              level: level
+            ))
+
+            isCmdlineUpdated = true
+
+          case let .cmdlinePos(pos, level):
+            update(&state.cmdlines[id: level]!) { cmdline in
+              cmdline.cursorPosition = pos
+            }
+
+            isCmdlineUpdated = true
+
+//          case let .cmdlineSpecialChar(c, shift, level):
+//            isCmdlineUpdated = true
+
+          case let .cmdlineHide(level):
+            state.cmdlines.remove(id: level)
+
+            isCmdlineUpdated = true
+
+//          case let .cmdlineBlockShow(lines):
+//            isCmdlineUpdated = true
+
+//          case .cmdlineBlockHide:
+//            isCmdlineUpdated = true
+
           default:
             break
           }
@@ -728,6 +778,10 @@ public struct Instance: ReducerProtocol {
 
         if isGridsLayoutUpdated {
           state.gridsLayoutUpdateFlag.toggle()
+        }
+
+        if isCmdlineUpdated {
+          state.cmdlineUpdateFlag.toggle()
         }
 
         for (gridID, updates) in gridUpdates {
