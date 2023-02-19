@@ -689,31 +689,33 @@ public struct Instance: ReducerProtocol {
 
             isGridsLayoutUpdated = true
 
-          case let .tablineUpdate(currentTab, rawTabs, _, _):
-            state.tabline = .init(
-              currentTab: currentTab,
-              tabs: rawTabs
-                .compactMap { rawTab in
-                  guard
-                    case let .dictionary(rawTab) = rawTab,
-                    let name = rawTab["name"]
-                      .flatMap((/Value.string).extract(from:)),
-                    let rawReference = rawTab["tab"]
-                      .flatMap((/Value.ext).extract(from:)),
-                    let reference = References.Tabpage(
-                      type: rawReference.0,
-                      data: rawReference.1
-                    )
-                  else {
-                    assertionFailure("Invalid tabline raw value")
-                    return nil
-                  }
-
-                  return .init(
-                    name: name,
-                    reference: reference
+          case let .tablineUpdate(currentTabID, rawTabs, _, _):
+            let tabs = rawTabs
+              .compactMap { rawTab -> Tab? in
+                guard
+                  case let .dictionary(rawTab) = rawTab,
+                  let name = rawTab["name"]
+                    .flatMap((/Value.string).extract(from:)),
+                  let rawID = rawTab["tab"]
+                    .flatMap((/Value.ext).extract(from:)),
+                  let id = References.Tabpage(
+                    type: rawID.0,
+                    data: rawID.1
                   )
+                else {
+                  assertionFailure("Invalid tabline raw value")
+                  return nil
                 }
+
+                return .init(
+                  id: id,
+                  name: name
+                )
+              }
+
+            state.tabline = .init(
+              currentTabID: currentTabID,
+              tabs: .init(uniqueElements: tabs)
             )
 
             isGridsLayoutUpdated = true
@@ -741,7 +743,10 @@ public struct Instance: ReducerProtocol {
               firstCharacter: firstc,
               prompt: prompt,
               indent: indent,
-              level: level
+              level: level,
+              specialCharacter: "",
+              shiftAfterSpecialCharacter: false,
+              blockLines: []
             ))
 
             isCmdlineUpdated = true
@@ -753,19 +758,59 @@ public struct Instance: ReducerProtocol {
 
             isCmdlineUpdated = true
 
-//          case let .cmdlineSpecialChar(c, shift, level):
-//            isCmdlineUpdated = true
+          case let .cmdlineSpecialChar(c, shift, level):
+            update(&state.cmdlines[id: level]!) { cmdline in
+              cmdline.specialCharacter = c
+              cmdline.shiftAfterSpecialCharacter = shift
+            }
+
+            isCmdlineUpdated = true
 
           case let .cmdlineHide(level):
             state.cmdlines.remove(id: level)
 
             isCmdlineUpdated = true
 
-//          case let .cmdlineBlockShow(lines):
-//            isCmdlineUpdated = true
+          case let .cmdlineBlockShow(lines):
+            var blockLines = [[CmdlineContentPart]]()
 
-//          case .cmdlineBlockHide:
-//            isCmdlineUpdated = true
+            for line in lines {
+              guard case let .array(line) = line else {
+                continue
+              }
+
+              var contentParts = [CmdlineContentPart]()
+
+              for rawContentPart in line {
+                guard
+                  case let .array(rawContentPart) = rawContentPart,
+                  rawContentPart.count == 2,
+                  case let .integer(rawHighlightID) = rawContentPart[0],
+                  case let .string(text) = rawContentPart[1]
+                else {
+                  assertionFailure("Invalid cmdline raw value")
+                  continue
+                }
+
+                contentParts.append(
+                  .init(
+                    highlightID: .init(rawHighlightID),
+                    text: text
+                  )
+                )
+              }
+
+              blockLines.append(contentParts)
+            }
+
+            state.cmdlines[state.cmdlines.count - 1].blockLines = blockLines
+
+            isCmdlineUpdated = true
+
+          case .cmdlineBlockHide:
+            state.cmdlines[state.cmdlines.count - 1].blockLines = []
+
+            isCmdlineUpdated = true
 
           default:
             break

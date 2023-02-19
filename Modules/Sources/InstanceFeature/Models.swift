@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import IdentifiedCollections
 import Library
 import Neovim
 import SwiftUI
@@ -347,18 +348,14 @@ public struct Window: Equatable, Identifiable {
   }
 }
 
-public struct Tab: Hashable, Identifiable {
+public struct Tab: Equatable, Identifiable {
+  public var id: References.Tabpage
   public var name: String
-  public var reference: References.Tabpage
-
-  public var id: some Hashable {
-    reference
-  }
 }
 
 public struct Tabline: Equatable {
-  public var currentTab: References.Tabpage
-  public var tabs: [Tab]
+  public var currentTabID: Tab.ID
+  public var tabs: IdentifiedArrayOf<Tab>
 }
 
 public struct CmdlineContentPart: Equatable {
@@ -373,6 +370,9 @@ public struct Cmdline: Equatable, Identifiable {
   public var prompt: String
   public var indent: Int
   public var level: Int
+  public var specialCharacter: String
+  public var shiftAfterSpecialCharacter: Bool
+  public var blockLines: [[CmdlineContentPart]]
 
   public var id: Int {
     level

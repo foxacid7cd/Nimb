@@ -4,7 +4,7 @@ import Neovim
 import SwiftUI
 
 public struct HeaderView: View {
-  public struct ButtonStyle: SwiftUI.ButtonStyle {
+  public struct TabButtonStyle: SwiftUI.ButtonStyle {
     public var foregroundColor: SwiftUI.Color
     public var isSelected: Bool
 
@@ -18,7 +18,7 @@ public struct HeaderView: View {
 
   public var instanceViewModel: InstanceViewModel
   public var tabline: Tabline?
-  public var action: (References.Tabpage) -> Void
+  public var action: (Tab.ID) -> Void
 
   public var body: some View {
     let foregroundColor = instanceViewModel.defaultForegroundColor.swiftUI
@@ -39,43 +39,27 @@ public struct HeaderView: View {
       if let tabline {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(alignment: .center, spacing: 2) {
-            let items = makeViewItems(for: tabline)
+            ForEach(tabline.tabs) { tab in
+              let isSelected = tab.id == tabline.currentTabID
 
-            ForEach(items, id: \.self) { item in
               Button {
-                action(item.reference)
+                action(tab.id)
 
               } label: {
-                Text(item.name)
+                Text(tab.name)
                   .font(.system(size: 11))
               }
-              .buttonStyle(ButtonStyle(foregroundColor: foregroundColor, isSelected: item.isSelected))
+              .buttonStyle(
+                TabButtonStyle(
+                  foregroundColor: foregroundColor,
+                  isSelected: isSelected
+                )
+              )
             }
           }
         }
       }
     }
     .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
-  }
-
-  private struct TabViewItem: Hashable, Identifiable {
-    public var reference: References.Tabpage
-    public var name: String
-    public var isSelected: Bool
-
-    public var id: some Hashable {
-      reference
-    }
-  }
-
-  private func makeViewItems(for tabline: Tabline) -> [TabViewItem] {
-    tabline.tabs
-      .map { tab in
-        .init(
-          reference: tab.reference,
-          name: tab.name,
-          isSelected: tab.reference == tabline.currentTab
-        )
-      }
   }
 }

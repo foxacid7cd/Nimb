@@ -9,8 +9,8 @@ final class FontBridge {
   func wrap(_ appKit: NSFont) -> Font {
     let font = Font(
       id: .init(wrapped.count),
-      cellWidth: cellWidth(for: appKit),
-      cellHeight: cellHeight(for: appKit)
+      cellWidth: appKit.makeCellWidth(),
+      cellHeight: appKit.makeCellHeight()
     )
 
     let bold = NSFontManager.shared.convert(appKit, toHaveTrait: .boldFontMask)
@@ -26,25 +26,6 @@ final class FontBridge {
   }
 
   private var wrapped = [(regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont)]()
-
-  private func cellWidth(for appKit: NSFont) -> Double {
-    var character = "A".utf16.first!
-
-    var glyph = CGGlyph()
-    var advance = CGSize()
-    CTFontGetGlyphsForCharacters(appKit, &character, &glyph, 1)
-    CTFontGetAdvancesForGlyphs(appKit, .horizontal, &glyph, &advance, 1)
-
-    return advance.width
-  }
-
-  private func cellHeight(for appKit: NSFont) -> Double {
-    let ascent = CTFontGetAscent(appKit)
-    let descent = CTFontGetDescent(appKit)
-    let leading = CTFontGetLeading(appKit)
-
-    return ceil(ascent + descent + leading)
-  }
 }
 
 public extension Font {
@@ -56,5 +37,26 @@ public extension Font {
   @MainActor
   var appKit: (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
     FontBridge.shared.unwrap(self)
+  }
+}
+
+public extension NSFont {
+  func makeCellWidth() -> Double {
+    var character = "A".utf16.first!
+
+    var glyph = CGGlyph()
+    var advance = CGSize()
+    CTFontGetGlyphsForCharacters(self, &character, &glyph, 1)
+    CTFontGetAdvancesForGlyphs(self, .horizontal, &glyph, &advance, 1)
+
+    return advance.width
+  }
+
+  func makeCellHeight() -> Double {
+    let ascent = CTFontGetAscent(self)
+    let descent = CTFontGetDescent(self)
+    let leading = CTFontGetLeading(self)
+
+    return ceil(ascent + descent + leading)
   }
 }

@@ -26,7 +26,7 @@ public struct InstanceView: View {
   public var model: InstanceViewModel
   public var store: StoreOf<Instance>
   public var mouseEventHandler: (MouseEvent) -> Void
-  public var tabSelectionHandler: (References.Tabpage) -> Void
+  public var tabSelectionHandler: (Tab.ID) -> Void
 
   public var body: some View {
     ZStack(alignment: .center) {
@@ -99,16 +99,11 @@ public struct InstanceView: View {
 
       WithViewStore(
         store,
-        observe: { $0 },
-        removeDuplicates: { $0.cmdlineUpdateFlag == $1.cmdlineUpdateFlag }
-      ) { state in
-        ForEach(state.cmdlines) { cmdline in
-          let height: Double = 44
-
-          Rectangle()
-            .fill(SwiftUI.Color.black)
-            .frame(width: 480, height: height)
-            .offset(x: 0, y: Double(cmdline.level) * height)
+        observe: { $0.cmdlines },
+        removeDuplicates: { $0.isEmpty == $1.isEmpty }
+      ) { cmdlines in
+        if !cmdlines.isEmpty {
+          CmdlinesView(instanceViewModel: model, store: store)
         }
       }
     }
