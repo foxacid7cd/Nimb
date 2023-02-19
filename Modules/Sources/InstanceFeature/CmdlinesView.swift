@@ -118,6 +118,31 @@ public struct CmdlineView: View {
   }
 
   private func makeContentAttributedString(font: NSFont) -> AttributedString {
+    var accumulator = AttributedString()
+
+    if !cmdline.blockLines.isEmpty {
+      for blockLine in cmdline.blockLines {
+        var lineAccumulator = AttributedString()
+
+        for contentPart in blockLine {
+          let highlight = instanceViewModel.highlights[id: contentPart.highlightID]
+
+          let attributedString = AttributedString(
+            contentPart.text,
+            attributes: .init([
+              .font: font,
+              .foregroundColor: highlight?.foregroundColor?.appKit ?? instanceViewModel.defaultForegroundColor.appKit,
+              .backgroundColor: highlight?.backgroundColor?.appKit ?? instanceViewModel.defaultBackgroundColor.appKit,
+            ])
+          )
+          lineAccumulator.append(attributedString)
+        }
+
+        accumulator.append(lineAccumulator)
+        accumulator.append(AttributedString("\n"))
+      }
+    }
+
     var attributedString = cmdline.contentParts
       .map { contentPart -> AttributedString in
         let highlight = instanceViewModel.highlights[id: contentPart.highlightID]
@@ -152,6 +177,8 @@ public struct CmdlineView: View {
       )
     }
 
-    return attributedString
+    accumulator.append(attributedString)
+
+    return accumulator
   }
 }

@@ -803,12 +803,16 @@ public struct Instance: ReducerProtocol {
               blockLines.append(contentParts)
             }
 
-            state.cmdlines[state.cmdlines.count - 1].blockLines = blockLines
+            if !state.cmdlines.isEmpty {
+              state.cmdlines[state.cmdlines.count - 1].blockLines = blockLines
+            }
 
             isCmdlineUpdated = true
 
           case .cmdlineBlockHide:
-            state.cmdlines[state.cmdlines.count - 1].blockLines = []
+            if !state.cmdlines.isEmpty {
+              state.cmdlines[state.cmdlines.count - 1].blockLines = []
+            }
 
             isCmdlineUpdated = true
 
