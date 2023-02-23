@@ -3,7 +3,7 @@
 import AppKit
 import IdentifiedCollections
 
-public struct NimsAppearance: Equatable {
+public struct NimsAppearance {
   public init(
     font: NimsFont,
     highlights: IntKeyedDictionary<Highlight>,

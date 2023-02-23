@@ -28,11 +28,11 @@ public struct InstanceView: View {
       modeInfo: ModeInfo,
       mode: Mode,
       tabline: Tabline?,
-      grids: IdentifiedArrayOf<Grid>,
+      grids: IntKeyedDictionary<Grid>,
       windows: IdentifiedArrayOf<Window>,
       floatingWindows: IdentifiedArrayOf<FloatingWindow>,
       cursor: Cursor?,
-      cmdlines: IdentifiedArrayOf<Cmdline>,
+      cmdlines: IntKeyedDictionary<Cmdline>,
       cmdlineUpdateFlag: Bool,
       gridsLayoutUpdateFlag: Bool,
       reportMouseEvent: @escaping (MouseEvent) -> Void
@@ -55,11 +55,11 @@ public struct InstanceView: View {
     public var modeInfo: ModeInfo
     public var mode: Mode
     public var tabline: Tabline?
-    public var grids: IdentifiedArrayOf<Grid>
+    public var grids: IntKeyedDictionary<Grid>
     public var windows: IdentifiedArrayOf<Window>
     public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
     public var cursor: Cursor?
-    public var cmdlines: IdentifiedArrayOf<Cmdline>
+    public var cmdlines: IntKeyedDictionary<Cmdline>
     public var cmdlineUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
     public var reportMouseEvent: (MouseEvent) -> Void
@@ -73,7 +73,7 @@ public struct InstanceView: View {
 
     func gridViewModel(for gridID: Grid.ID) -> GridView.Model {
       .init(
-        grid: grids[id: gridID]!,
+        gridID: gridID,
         grids: grids,
         cursor: cursor,
         modeInfo: modeInfo,
@@ -149,7 +149,7 @@ public struct InstanceView: View {
           }
 
           ForEach(state.floatingWindows) { floatingWindow in
-            let grid = state.grids[id: floatingWindow.gridID]!
+            let grid = state.grids[floatingWindow.gridID]!
             let frame = calculateFrame(
               for: floatingWindow,
               grid: grid
@@ -194,7 +194,7 @@ public struct InstanceView: View {
     -> CGRect
   {
     let grids = viewStore.grids
-    let anchorGrid = grids[id: floatingWindow.anchorGridID]!
+    let anchorGrid = grids[floatingWindow.anchorGridID]!
     let windows = viewStore.windows
     let floatingWindows = viewStore.floatingWindows
     let cellSize = nimsAppearance.cellSize
@@ -209,7 +209,7 @@ public struct InstanceView: View {
 
         anchorGridOrigin = calculateFrame(
           for: floatingWindow,
-          grid: grids[id: floatingWindow.gridID]!
+          grid: grids[floatingWindow.gridID]!
         )
         .origin
       }

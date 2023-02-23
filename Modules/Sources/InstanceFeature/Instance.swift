@@ -292,7 +292,7 @@ public struct Instance: ReducerProtocol {
               rowsCount: height
             )
 
-            update(&state.grids[id: id]) { grid in
+            update(&state.grids[rawID]) { grid in
               if grid == nil {
                 let cells = TwoDimensionalArray<Cell>(
                   size: size,
@@ -348,7 +348,7 @@ public struct Instance: ReducerProtocol {
           case let .gridLine(rawID, row, startColumn, data):
             let id = Grid.ID(rawID)
 
-            update(&state.grids[id: id]!.cells.rows[row]) { rowCells in
+            update(&state.grids[id]!.cells.rows[row]) { rowCells in
               var updatedCellsCount = 0
               var highlightID = Highlight.ID.default
 
@@ -403,7 +403,7 @@ public struct Instance: ReducerProtocol {
               }
             }
 
-            update(&state.grids[id: id]!) { grid in
+            update(&state.grids[id]!) { grid in
               grid.rowLayouts[row] = .init(
                 rowCells: grid.cells.rows[row]
               )
@@ -411,13 +411,13 @@ public struct Instance: ReducerProtocol {
 
             appendGridUpdate(gridID: id, frame: .init(
               origin: .init(column: 0, row: row),
-              size: .init(columnsCount: state.grids[id: id]!.cells.size.columnsCount, rowsCount: 1)
+              size: .init(columnsCount: state.grids[id]!.cells.size.columnsCount, rowsCount: 1)
             ))
 
           case let .gridScroll(rawGridID, top, bottom, _, _, rowsCount, _):
             let gridID = Grid.ID(rawValue: rawGridID)
 
-            update(&state.grids[id: gridID]!) { grid in
+            update(&state.grids[gridID]!) { grid in
               let gridCopy = grid
 
               for fromRow in top ..< bottom {
@@ -435,7 +435,7 @@ public struct Instance: ReducerProtocol {
             let frame = IntegerRectangle(
               origin: .init(column: 0, row: top + min(0, rowsCount)),
               size: .init(
-                columnsCount: state.grids[id: gridID]!.cells.size.columnsCount,
+                columnsCount: state.grids[gridID]!.cells.size.columnsCount,
                 rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
               )
             )
@@ -444,7 +444,7 @@ public struct Instance: ReducerProtocol {
           case let .gridClear(rawGridID):
             let gridID = Grid.ID(rawGridID)
 
-            update(&state.grids[id: gridID]!) { grid in
+            update(&state.grids[gridID]!) { grid in
               let newCells = TwoDimensionalArray<Cell>(
                 size: grid.cells.size,
                 repeatingElement: .default
@@ -455,7 +455,7 @@ public struct Instance: ReducerProtocol {
                 .map(RowLayout.init(rowCells:))
             }
 
-            let grid = state.grids[id: gridID]!
+            let grid = state.grids[gridID]!
             appendGridUpdate(gridID: gridID, frame: .init(
               origin: .init(column: 0, row: 0),
               size: grid.cells.size
@@ -463,7 +463,7 @@ public struct Instance: ReducerProtocol {
 
           case let .gridDestroy(rawGridID):
             let gridID = Grid.ID(rawGridID)
-            guard var grid = state.grids[id: gridID] else {
+            guard var grid = state.grids[gridID] else {
               continue
             }
 
@@ -475,7 +475,7 @@ public struct Instance: ReducerProtocol {
               }
 
               grid.windowID = nil
-              state.grids.updateOrAppend(grid)
+              state.grids[gridID] = grid
             }
 
             isGridsLayoutUpdated = true
@@ -556,7 +556,7 @@ public struct Instance: ReducerProtocol {
                 isHidden: false
               )
             )
-            state.grids[id: gridID]!.windowID = windowID
+            state.grids[gridID]!.windowID = windowID
 
             isGridsLayoutUpdated = true
 
@@ -593,14 +593,14 @@ public struct Instance: ReducerProtocol {
               )
             )
 
-            state.grids[id: gridID]!.windowID = windowID
+            state.grids[gridID]!.windowID = windowID
 
             isGridsLayoutUpdated = true
 
           case let .winHide(rawGridID):
             let gridID = Grid.ID(rawGridID)
 
-            if let windowID = state.grids[id: gridID]!.windowID {
+            if let windowID = state.grids[gridID]!.windowID {
               if let index = state.windows.index(id: windowID) {
                 state.windows[index].isHidden = true
 
@@ -614,7 +614,7 @@ public struct Instance: ReducerProtocol {
           case let .winClose(rawGridID):
             let gridID = Grid.ID(rawGridID)
 
-            guard var grid = state.grids[id: gridID] else {
+            guard var grid = state.grids[gridID] else {
               continue
             }
 
@@ -626,7 +626,7 @@ public struct Instance: ReducerProtocol {
               }
 
               grid.windowID = nil
-              state.grids.updateOrAppend(grid)
+              state.grids[gridID] = grid
             }
 
             isGridsLayoutUpdated = true
@@ -663,7 +663,7 @@ public struct Instance: ReducerProtocol {
             isGridsLayoutUpdated = true
 
           case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-            state.cmdlines.updateOrAppend(.init(
+            state.cmdlines[level] = .init(
               contentParts: content
                 .compactMap { rawContentPart in
                   guard
@@ -689,19 +689,19 @@ public struct Instance: ReducerProtocol {
               specialCharacter: "",
               shiftAfterSpecialCharacter: false,
               blockLines: []
-            ))
+            )
 
             isCmdlineUpdated = true
 
           case let .cmdlinePos(pos, level):
-            update(&state.cmdlines[id: level]!) { cmdline in
+            update(&state.cmdlines[level]!) { cmdline in
               cmdline.cursorPosition = pos
             }
 
             isCmdlineUpdated = true
 
           case let .cmdlineSpecialChar(c, shift, level):
-            update(&state.cmdlines[id: level]!) { cmdline in
+            update(&state.cmdlines[level]!) { cmdline in
               cmdline.specialCharacter = c
               cmdline.shiftAfterSpecialCharacter = shift
             }
@@ -709,7 +709,7 @@ public struct Instance: ReducerProtocol {
             isCmdlineUpdated = true
 
           case let .cmdlineHide(level):
-            state.cmdlines.remove(id: level)
+            state.cmdlines.remove(key: level)
 
             isCmdlineUpdated = true
 
@@ -746,14 +746,18 @@ public struct Instance: ReducerProtocol {
             }
 
             if !state.cmdlines.isEmpty {
-              state.cmdlines[state.cmdlines.count - 1].blockLines = blockLines
+              update(&state.cmdlines[state.cmdlines.count - 1]) { cmdline in
+                cmdline?.blockLines = blockLines
+              }
             }
 
             isCmdlineUpdated = true
 
           case .cmdlineBlockHide:
             if !state.cmdlines.isEmpty {
-              state.cmdlines[state.cmdlines.count - 1].blockLines = []
+              update(&state.cmdlines[state.cmdlines.count - 1]) { cmdline in
+                cmdline?.blockLines = []
+              }
             }
 
             isCmdlineUpdated = true
@@ -776,7 +780,7 @@ public struct Instance: ReducerProtocol {
         }
 
         for (gridID, updates) in gridUpdates {
-          update(&state.grids[id: gridID]) { grid in
+          update(&state.grids[gridID]) { grid in
             grid?.updates = updates
             grid?.updateFlag.toggle()
           }

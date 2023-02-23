@@ -11,12 +11,12 @@ public struct CmdlinesView: View {
   public var store: Store<Model, Action>
 
   public struct Model: Sendable {
-    public init(cmdlines: IdentifiedArrayOf<Cmdline>, cmdlineUpdateFlag: Bool) {
+    public init(cmdlines: IntKeyedDictionary<Cmdline>, cmdlineUpdateFlag: Bool) {
       self.cmdlines = cmdlines
       self.cmdlineUpdateFlag = cmdlineUpdateFlag
     }
 
-    public var cmdlines: IdentifiedArrayOf<Cmdline>
+    public var cmdlines: IntKeyedDictionary<Cmdline>
     public var cmdlineUpdateFlag: Bool
   }
 
@@ -37,7 +37,7 @@ public struct CmdlinesView: View {
       let verticalPadding = nimsAppearance.cellHeight * 2
 
       VStack(alignment: .center, spacing: 0) {
-        ForEach(state.cmdlines) { cmdline in
+        ForEach(state.cmdlines.values) { cmdline in
           CmdlineView(cmdline: cmdline)
         }
         Spacer()

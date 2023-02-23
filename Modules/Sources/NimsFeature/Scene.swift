@@ -150,7 +150,7 @@ public extension Nims {
     }
 
     private func makeInstanceViewModel(from instanceState: InstanceState) -> InstanceView.Model? {
-      guard let outerGrid = instanceState.grids[id: .outer], let modeInfo = instanceState.modeInfo, let mode = instanceState.mode else {
+      guard let outerGrid = instanceState.grids[.outer], let modeInfo = instanceState.modeInfo, let mode = instanceState.mode else {
         return nil
       }
 

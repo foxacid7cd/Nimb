@@ -11,6 +11,7 @@ import Library
 import Neovim
 import Overture
 import SwiftUI
+import Tagged
 
 public struct GridView: View {
   public init(store: Store<Model, Action>) {
@@ -21,14 +22,14 @@ public struct GridView: View {
 
   public struct Model {
     public init(
-      grid: Grid,
-      grids: IdentifiedArrayOf<Grid>,
+      gridID: Grid.ID,
+      grids: IntKeyedDictionary<Grid>,
       cursor: Cursor? = nil,
       modeInfo: ModeInfo,
       mode: Mode,
       reportMouseEvent: @escaping (MouseEvent) -> Void
     ) {
-      self.grid = grid
+      self.gridID = gridID
       self.grids = grids
       self.cursor = cursor
       self.modeInfo = modeInfo
@@ -36,12 +37,16 @@ public struct GridView: View {
       self.reportMouseEvent = reportMouseEvent
     }
 
-    public var grid: Grid
-    public var grids: IdentifiedArrayOf<Grid>
+    public var gridID: Grid.ID
+    public var grids: IntKeyedDictionary<Grid>
     public var cursor: Cursor?
     public var modeInfo: ModeInfo
     public var mode: Mode
     public var reportMouseEvent: (MouseEvent) -> Void
+
+    public var grid: Grid {
+      grids[gridID]!
+    }
   }
 
   public enum Action: Sendable {}

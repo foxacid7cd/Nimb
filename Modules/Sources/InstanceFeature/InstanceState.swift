@@ -21,7 +21,7 @@ public struct InstanceState {
     defaultForegroundColor: NimsColor? = nil,
     defaultBackgroundColor: NimsColor? = nil,
     defaultSpecialColor: NimsColor? = nil,
-    grids: IdentifiedArrayOf<Grid> = [],
+    grids: IntKeyedDictionary<Grid> = [:],
     windows: IdentifiedArrayOf<Window> = [],
     floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
     modeInfo: ModeInfo? = nil,
@@ -29,7 +29,7 @@ public struct InstanceState {
     cursor: Cursor? = nil,
     windowZIndexCounter: Int = 0,
     tabline: Tabline? = nil,
-    cmdlines: IdentifiedArrayOf<Cmdline> = [],
+    cmdlines: IntKeyedDictionary<Cmdline> = [:],
     cmdlineUpdateFlag: Bool = true,
     instanceUpdateFlag: Bool = true,
     gridsLayoutUpdateFlag: Bool = true
@@ -66,7 +66,7 @@ public struct InstanceState {
   public var defaultForegroundColor: NimsColor?
   public var defaultBackgroundColor: NimsColor?
   public var defaultSpecialColor: NimsColor?
-  public var grids: IdentifiedArrayOf<Grid>
+  public var grids: IntKeyedDictionary<Grid>
   public var windows: IdentifiedArrayOf<Window>
   public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
   public var modeInfo: ModeInfo?
@@ -74,13 +74,13 @@ public struct InstanceState {
   public var cursor: Cursor?
   public var windowZIndexCounter: Int
   public var tabline: Tabline?
-  public var cmdlines: IdentifiedArrayOf<Cmdline>
+  public var cmdlines: IntKeyedDictionary<Cmdline>
   public var cmdlineUpdateFlag: Bool
   public var instanceUpdateFlag: Bool
   public var gridsLayoutUpdateFlag: Bool
 
   public var outerGrid: Grid? {
-    grids[id: .outer]
+    grids[Grid.ID.outer.rawValue]
   }
 
   public mutating func nextWindowZIndex() -> Int {
