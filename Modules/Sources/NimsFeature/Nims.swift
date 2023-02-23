@@ -15,15 +15,12 @@ public struct Nims: ReducerProtocol {
   public enum Action {
     case createInstance(
       arguments: [String],
-      environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>,
-      tabSelections: AsyncStream<References.Tabpage>
+      environmentOverlay: [String: String]
     )
     case instance(action: Instance.Action)
   }
 
-  public struct State: Equatable {
+  public struct State {
     public init(instance: Instance.State? = nil) {
       self.instance = instance
     }
@@ -34,27 +31,30 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, keyPresses, mouseEvents, tabSelections):
-        state.instance = .init()
+      case let .createInstance(arguments, environmentOverlay):
+        state.instance = Instance.State(
+          process: nil,
+          bufferedUIEvents: [],
+          rawOptions: [:],
+          font: .init(NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)),
+          highlights: [],
+          grids: [],
+          windows: [],
+          floatingWindows: [],
+          cursorBlinkingPhase: true,
+          windowZIndexCounter: 0,
+          cmdlines: [],
+          cmdlineUpdateFlag: false,
+          instanceUpdateFlag: false,
+          gridsLayoutUpdateFlag: false
+        )
 
         return .run { send in
-          let defaultFont = await InstanceFeature.Font(
-            .init(name: "JetBrainsMono Nerd Font Mono", size: 12)!
-          )
-          await send(
-            .instance(
-              action: .setDefaultFont(defaultFont)
-            )
-          )
-
           await send(
             .instance(
               action: .createNeovimProcess(
                 arguments: arguments,
-                environmentOverlay: environmentOverlay,
-                keyPresses: keyPresses,
-                mouseEvents: mouseEvents,
-                tabSelections: tabSelections
+                environmentOverlay: environmentOverlay
               )
             )
           )

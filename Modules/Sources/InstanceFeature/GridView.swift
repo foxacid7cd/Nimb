@@ -13,52 +13,151 @@ import SwiftUI
 
 @MainActor
 public struct GridView: View {
-  public init(
-    gridID: Grid.ID,
-    instanceViewModel: InstanceViewModel,
-    store: StoreOf<Instance>,
-    mouseEventHandler: @escaping (MouseEvent) -> Void
-  ) {
-    self.gridID = gridID
-    self.instanceViewModel = instanceViewModel
+  public init(store: Store<Model, Action>) {
     self.store = store
-    self.mouseEventHandler = mouseEventHandler
+  }
+
+  public var store: Store<Model, Action>
+
+  public struct Model: Equatable {
+    public init(
+      gridID: Grid.ID,
+      grids: IdentifiedArrayOf<Grid>,
+      cursorBlinkingPhase: Bool,
+      cursor: Cursor? = nil,
+      modeInfo: ModeInfo,
+      mode: Mode
+    ) {
+      self.gridID = gridID
+      self.grids = grids
+      self.cursorBlinkingPhase = cursorBlinkingPhase
+      self.cursor = cursor
+      self.modeInfo = modeInfo
+      self.mode = mode
+    }
+
+    public var gridID: Grid.ID
+    public var grids: IdentifiedArrayOf<Grid>
+    public var cursorBlinkingPhase: Bool
+    public var cursor: Cursor?
+    public var modeInfo: ModeInfo
+    public var mode: Mode
+
+    public var grid: Grid {
+      grids[id: gridID]!
+    }
+  }
+
+  public enum Action: Equatable {
+    case report(mouseEvent: MouseEvent)
+  }
+
+  public var body: some View {
+    HostingView(store: store)
   }
 
   @MainActor
   public struct HostingView: NSViewRepresentable {
+    public var store: Store<GridView.Model, GridView.Action>
+
     @Environment(\.drawRunCache)
     private var drawRunCache: DrawRunCache
 
-    @Environment(\.suspendingClock)
-    private var suspendingClock: any Clock<Duration>
-
-    public var gridView: GridView
+    @Environment(\.nimsAppearance)
+    private var nimsAppearance: NimsAppearance
 
     public func makeNSView(context: Context) -> NSView {
       let view = NSView()
-      view.data = (drawRunCache, gridView)
+      view.drawRunCache = drawRunCache
+      view.nimsAppearance = nimsAppearance
+      view.store = store
       return view
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-      nsView.data = (drawRunCache, gridView)
+      nsView.drawRunCache = drawRunCache
+      nsView.nimsAppearance = context.environment.nimsAppearance
+      nsView.store = store
     }
   }
 
   @MainActor
   public class NSView: AppKit.NSView {
-    override public func draw(_: NSRect) {
-      guard let graphicsContext = NSGraphicsContext.current, let data, let state else {
+    var drawRunCache: DrawRunCache?
+    var nimsAppearance: NimsAppearance?
+    var store: Store<GridView.Model, GridView.Action>? {
+      didSet {
+        viewStore = store.map { store in
+          .init(
+            store,
+            observe: { $0 },
+            removeDuplicates: { $0.grid.updateFlag == $1.grid.updateFlag }
+          )
+        }
+      }
+    }
+
+    private var viewStore: ViewStore<GridView.Model, GridView.Action>? {
+      didSet {
+        cancellable?.cancel()
+        cancellable = nil
+
+        guard let viewStore else {
+          return
+        }
+
+        cancellable = viewStore.publisher
+          .sink { [weak self] model in
+            self?.model = model
+            self?.render()
+          }
+      }
+    }
+
+    private var cancellable: AnyCancellable?
+    private var model: GridView.Model?
+    private var xScrollingAccumulator: Double = 0
+    private var yScrollingAccumulator: Double = 0
+    private var isScrollingHorizontal: Bool?
+
+    private func render() {
+      guard let nimsAppearance, let model else {
         return
       }
 
-      let drawRunCache = data.drawRunCache
-      let gridView = data.gridView
-      let instanceViewModel = gridView.instanceViewModel
-      let cellSize = instanceViewModel.font.cellSize
+      let grid = model.grid
+
+      if grid.updates.isEmpty {
+        setNeedsDisplay(bounds)
+
+      } else {
+        let dirtyRects = grid.updates
+          .map { rectangle in
+            let rect = rectangle * nimsAppearance.cellSize
+            let upsideDownRect = CGRect(
+              origin: .init(
+                x: rect.origin.x,
+                y: bounds.height - rect.origin.y - rect.size.height
+              ),
+              size: rect.size
+            )
+            return upsideDownRect
+          }
+
+        for dirtyRect in dirtyRects {
+          setNeedsDisplay(dirtyRect)
+        }
+      }
+    }
+
+    override public func draw(_: NSRect) {
+      guard let graphicsContext = NSGraphicsContext.current, let drawRunCache, let nimsAppearance, let model else {
+        return
+      }
+
+      let cellSize = nimsAppearance.cellSize
       let cgContext = graphicsContext.cgContext
-      let grid = state.grids[id: gridView.gridID]!
+      let grid = model.grid
 
       cgContext.saveGState()
       defer { cgContext.restoreGState() }
@@ -86,12 +185,12 @@ public struct GridView: View {
 
         let integerFrame = IntegerRectangle(
           origin: .init(
-            column: Int(upsideDownRect.origin.x / gridView.instanceViewModel.font.cellWidth),
-            row: Int(upsideDownRect.origin.y / gridView.instanceViewModel.font.cellHeight)
+            column: Int(upsideDownRect.origin.x / nimsAppearance.cellWidth),
+            row: Int(upsideDownRect.origin.y / nimsAppearance.cellHeight)
           ),
           size: .init(
-            columnsCount: Int(ceil(upsideDownRect.size.width / gridView.instanceViewModel.font.cellWidth)),
-            rowsCount: Int(ceil(upsideDownRect.size.height / gridView.instanceViewModel.font.cellHeight))
+            columnsCount: Int(ceil(upsideDownRect.size.width / nimsAppearance.cellWidth)),
+            rowsCount: Int(ceil(upsideDownRect.size.height / nimsAppearance.cellHeight))
           )
         )
         let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
@@ -105,19 +204,19 @@ public struct GridView: View {
 
           let rowLayout = grid.rowLayouts[row]
           for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
-            let highlight = gridView.instanceViewModel.highlights[id: part.highlightID]
-            let backgroundColor = highlight?.backgroundColor ?? gridView.instanceViewModel.defaultBackgroundColor
-            let foregroundColor = highlight?.foregroundColor ?? gridView.instanceViewModel.defaultForegroundColor
+            let highlight = nimsAppearance.highlights[id: part.highlightID]
+            let backgroundColor = highlight?.backgroundColor ?? nimsAppearance.defaultBackgroundColor
+            let foregroundColor = highlight?.foregroundColor ?? nimsAppearance.defaultForegroundColor
 
             let partIntegerFrame = IntegerRectangle(
               origin: .init(column: part.indices.lowerBound, row: row),
               size: .init(columnsCount: part.indices.count, rowsCount: 1)
             )
-            let partFrame = partIntegerFrame * gridView.instanceViewModel.font.cellSize
+            let partFrame = partIntegerFrame * nimsAppearance.cellSize
             let upsideDownPartFrame = CGRect(
               origin: .init(
                 x: partFrame.origin.x,
-                y: bounds.height - partFrame.origin.y - gridView.instanceViewModel.font.cellHeight
+                y: bounds.height - partFrame.origin.y - nimsAppearance.cellHeight
               ),
               size: partFrame.size
             )
@@ -131,16 +230,16 @@ public struct GridView: View {
 
             let font: NSFont
             if isBold, isItalic {
-              font = gridView.instanceViewModel.font.appKit.boldItalic
+              font = nimsAppearance.font.appKit.boldItalic
 
             } else if isBold {
-              font = gridView.instanceViewModel.font.appKit.bold
+              font = nimsAppearance.font.appKit.bold
 
             } else if isItalic {
-              font = gridView.instanceViewModel.font.appKit.italic
+              font = nimsAppearance.font.appKit.italic
 
             } else {
-              font = gridView.instanceViewModel.font.appKit.regular
+              font = nimsAppearance.font.appKit.regular
             }
 
             let drawRun = drawRunCache.drawRun(for: part.text, font: font) {
@@ -186,16 +285,15 @@ public struct GridView: View {
             drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
             if
-              state.cursorBlinkingPhase,
-              let cursor = state.cursor,
-              cursor.gridID == gridView.gridID,
+              model.cursorBlinkingPhase,
+              let cursor = model.cursor,
+              cursor.gridID == model.grid.id,
               cursor.position.row == row,
               cursor.position.column >= part.indices.lowerBound,
-              cursor.position.column < part.indices.upperBound,
-              let mode = state.mode
+              cursor.position.column < part.indices.upperBound
             {
-              let cursorStyle = instanceViewModel.modeInfo
-                .cursorStyles[mode.cursorStyleIndex]
+              let cursorStyle = model.modeInfo
+                .cursorStyles[model.mode.cursorStyleIndex]
 
               if let cursorShape = cursorStyle.cursorShape {
                 let cursorFrame: CGRect
@@ -234,15 +332,15 @@ public struct GridView: View {
                   size: cursorFrame.size
                 )
 
-                let cursorBackgroundColor: Color
-                let cursorForegroundColor: Color
+                let cursorBackgroundColor: NimsColor
+                let cursorForegroundColor: NimsColor
                 if let highlightID = cursorStyle.attrID {
                   if highlightID == .zero {
                     cursorBackgroundColor = foregroundColor
                     cursorForegroundColor = backgroundColor
 
                   } else {
-                    let highlight = instanceViewModel.highlights[id: highlightID]
+                    let highlight = nimsAppearance.highlights[id: highlightID]
                     cursorBackgroundColor = highlight?.backgroundColor ?? foregroundColor
                     cursorForegroundColor = highlight?.foregroundColor ?? backgroundColor
                   }
@@ -311,12 +409,12 @@ public struct GridView: View {
     }
 
     override public func scrollWheel(with event: NSEvent) {
-      guard let data else {
+      guard let nimsAppearance else {
         return
       }
 
-      let yThreshold = data.gridView.instanceViewModel.font.cellHeight * 1.5
-      let xThreshold = data.gridView.instanceViewModel.font.cellWidth * 2
+      let yThreshold = nimsAppearance.cellHeight * 1.5
+      let xThreshold = nimsAppearance.cellWidth * 2
 
       if event.phase == .began {
         xScrollingAccumulator = 0
@@ -360,73 +458,8 @@ public struct GridView: View {
       }
     }
 
-    var data: (drawRunCache: DrawRunCache, gridView: GridView)? {
-      didSet {
-        cancellable?.cancel()
-        cancellable = nil
-
-        state = nil
-
-        guard let data else {
-          return
-        }
-
-        let id = data.gridView.gridID
-
-        let viewStore = ViewStore(
-          data.gridView.store,
-          observe: { $0 },
-          removeDuplicates: {
-            $0.grids[id: id]?.updateFlag == $1.grids[id: id]?.updateFlag
-          }
-        )
-
-        cancellable = viewStore.publisher
-          .sink { [weak self] state in
-            self?.state = state
-            self?.render()
-          }
-      }
-    }
-
-    private var state: Instance.State?
-    private var cancellable: AnyCancellable?
-    private var xScrollingAccumulator: Double = 0
-    private var yScrollingAccumulator: Double = 0
-    private var isScrollingHorizontal: Bool?
-
-    private func render() {
-      guard let data, let state else {
-        return
-      }
-
-      let grid = state.grids[id: data.gridView.gridID]!
-
-      if grid.updates.isEmpty {
-        setNeedsDisplay(bounds)
-
-      } else {
-        let dirtyRects = grid.updates
-          .map { rectangle in
-            let rect = rectangle * data.gridView.instanceViewModel.font.cellSize
-            let upsideDownRect = CGRect(
-              origin: .init(
-                x: rect.origin.x,
-                y: bounds.height - rect.origin.y - rect.size.height
-              ),
-              size: rect.size
-            )
-            return upsideDownRect
-          }
-
-        for dirtyRect in dirtyRects {
-          setNeedsDisplay(dirtyRect)
-        }
-      }
-    }
-
     private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
-      guard let data else {
+      guard let nimsAppearance, let viewStore, let model else {
         return
       }
 
@@ -436,20 +469,11 @@ public struct GridView: View {
         y: bounds.height - location.y
       )
       let point = IntegerPoint(
-        column: Int(upsideDownLocation.x / data.gridView.instanceViewModel.font.cellWidth),
-        row: Int(upsideDownLocation.y / data.gridView.instanceViewModel.font.cellHeight)
+        column: Int(upsideDownLocation.x / nimsAppearance.font.cellWidth),
+        row: Int(upsideDownLocation.y / nimsAppearance.font.cellHeight)
       )
-      let event = MouseEvent(content: content, gridID: data.gridView.gridID, point: point)
-      data.gridView.mouseEventHandler(event)
+      let mouseEvent = MouseEvent(content: content, gridID: model.grid.id, point: point)
+      viewStore.send(.report(mouseEvent: mouseEvent))
     }
-  }
-
-  public var gridID: Grid.ID
-  public var instanceViewModel: InstanceViewModel
-  public var store: StoreOf<Instance>
-  public var mouseEventHandler: (MouseEvent) -> Void
-
-  public var body: some View {
-    HostingView(gridView: self)
   }
 }

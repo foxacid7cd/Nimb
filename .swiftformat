@@ -36,7 +36,6 @@
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf
---markcategories false
 --markextensions never
 --marktypes never
 --maxwidth 120

@@ -1,14 +1,29 @@
 // SPDX-License-Identifier: MIT
 
 import ComposableArchitecture
+import Foundation
 import IdentifiedCollections
 import Library
 import SwiftUI
 
 @MainActor
 public struct CmdlinesView: View {
-  public var instanceViewModel: InstanceViewModel
-  public var store: StoreOf<Instance>
+  public var store: Store<Model, Action>
+
+  public struct Model: Equatable {
+    public init(cmdlines: IdentifiedArrayOf<Cmdline>, cmdlineUpdateFlag: Bool) {
+      self.cmdlines = cmdlines
+      self.cmdlineUpdateFlag = cmdlineUpdateFlag
+    }
+
+    public var cmdlines: IdentifiedArrayOf<Cmdline>
+    public var cmdlineUpdateFlag: Bool
+  }
+
+  public enum Action: Equatable {}
+
+  @Environment(\.nimsAppearance)
+  private var nimsAppearance: NimsAppearance
 
   public var body: some View {
     WithViewStore(
@@ -18,12 +33,12 @@ public struct CmdlinesView: View {
     ) { viewStore in
       let state = viewStore.state
 
-      let horizontalPadding = instanceViewModel.font.cellWidth * 4
-      let verticalPadding = instanceViewModel.font.cellHeight * 2
+      let horizontalPadding = nimsAppearance.cellWidth * 4
+      let verticalPadding = nimsAppearance.cellHeight * 2
 
       VStack(alignment: .center, spacing: 0) {
         ForEach(state.cmdlines) { cmdline in
-          CmdlineView(cmdline: cmdline, instanceViewModel: instanceViewModel)
+          CmdlineView(cmdline: cmdline)
         }
         Spacer()
       }
@@ -44,7 +59,9 @@ public struct CmdlinesView: View {
 @MainActor
 public struct CmdlineView: View {
   public var cmdline: Cmdline
-  public var instanceViewModel: InstanceViewModel
+
+  @Environment(\.nimsAppearance)
+  private var nimsAppearance: NimsAppearance
 
   public var body: some View {
     let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
@@ -57,9 +74,9 @@ public struct CmdlineView: View {
             cmdline.prompt + "\n",
             attributes: .init([
               .font: font,
-              .foregroundColor: instanceViewModel.defaultForegroundColor.appKit
+              .foregroundColor: nimsAppearance.defaultForegroundColor.appKit
                 .withAlphaComponent(0.6),
-              .backgroundColor: instanceViewModel.defaultBackgroundColor.appKit,
+              .backgroundColor: nimsAppearance.defaultBackgroundColor.appKit,
             ])
           )
           Text(attributedString)
@@ -71,8 +88,8 @@ public struct CmdlineView: View {
               cmdline.firstCharacter,
               attributes: .init([
                 .font: NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask),
-                .foregroundColor: instanceViewModel.defaultForegroundColor.appKit,
-                .backgroundColor: instanceViewModel.defaultBackgroundColor.appKit,
+                .foregroundColor: nimsAppearance.defaultForegroundColor.appKit,
+                .backgroundColor: nimsAppearance.defaultBackgroundColor.appKit,
               ])
             )
             Text(attributedString)
@@ -92,7 +109,7 @@ public struct CmdlineView: View {
             let frame = integerFrame * cellSize
 
             Rectangle()
-              .fill(instanceViewModel.defaultForegroundColor.swiftUI)
+              .fill(nimsAppearance.defaultForegroundColor.swiftUI)
               .frame(width: isBlockCursorShape ? frame.width : frame.width * 0.25, height: frame.height)
               .offset(x: frame.minX, y: frame.minY)
 
@@ -101,7 +118,7 @@ public struct CmdlineView: View {
                 cmdline.specialCharacter,
                 attributes: .init([
                   .font: font,
-                  .foregroundColor: instanceViewModel.defaultBackgroundColor.appKit,
+                  .foregroundColor: nimsAppearance.defaultBackgroundColor.appKit,
                 ])
               )
               Text(attributedString)
@@ -114,7 +131,7 @@ public struct CmdlineView: View {
       Spacer()
     }
     .padding(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
-    .background(instanceViewModel.defaultBackgroundColor.swiftUI)
+    .background(nimsAppearance.defaultBackgroundColor.swiftUI)
   }
 
   private func makeContentAttributedString(font: NSFont) -> AttributedString {
@@ -125,14 +142,14 @@ public struct CmdlineView: View {
         var lineAccumulator = AttributedString()
 
         for contentPart in blockLine {
-          let highlight = instanceViewModel.highlights[id: contentPart.highlightID]
+          let highlight = nimsAppearance.highlights[id: contentPart.highlightID]
 
           let attributedString = AttributedString(
             contentPart.text,
             attributes: .init([
               .font: font,
-              .foregroundColor: highlight?.foregroundColor?.appKit ?? instanceViewModel.defaultForegroundColor.appKit,
-              .backgroundColor: highlight?.backgroundColor?.appKit ?? instanceViewModel.defaultBackgroundColor.appKit,
+              .foregroundColor: highlight?.foregroundColor?.appKit ?? nimsAppearance.defaultForegroundColor.appKit,
+              .backgroundColor: highlight?.backgroundColor?.appKit ?? nimsAppearance.defaultBackgroundColor.appKit,
             ])
           )
           lineAccumulator.append(attributedString)
@@ -145,14 +162,14 @@ public struct CmdlineView: View {
 
     var attributedString = cmdline.contentParts
       .map { contentPart -> AttributedString in
-        let highlight = instanceViewModel.highlights[id: contentPart.highlightID]
+        let highlight = nimsAppearance.highlights[id: contentPart.highlightID]
 
         return AttributedString(
           contentPart.text,
           attributes: .init([
             .font: font,
-            .foregroundColor: highlight?.foregroundColor?.appKit ?? instanceViewModel.defaultForegroundColor.appKit,
-            .backgroundColor: highlight?.backgroundColor?.appKit ?? instanceViewModel.defaultBackgroundColor.appKit,
+            .foregroundColor: highlight?.foregroundColor?.appKit ?? nimsAppearance.defaultForegroundColor.appKit,
+            .backgroundColor: highlight?.backgroundColor?.appKit ?? nimsAppearance.defaultBackgroundColor.appKit,
           ])
         )
       }

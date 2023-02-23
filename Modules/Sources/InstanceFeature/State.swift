@@ -11,57 +11,64 @@ import SwiftUI
 import Tagged
 
 public extension Instance {
-  struct State: Equatable {
+  struct State {
     public init(
-      defaultFont: Font? = nil,
-      bufferedUIEvents: [UIEvent] = [],
-      rawOptions: OrderedDictionary<String, Value> = [:],
-      font: Font? = nil,
+      process: Neovim.Process?,
+      bufferedUIEvents: [UIEvent],
+      rawOptions: OrderedDictionary<String, Value>,
+      font: NimsFont? = nil,
       title: String? = nil,
-      highlights: IdentifiedArrayOf<Highlight> = [],
-      grids: IdentifiedArrayOf<Grid> = [],
-      windows: IdentifiedArrayOf<Window> = [],
-      floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
+      highlights: IdentifiedArrayOf<Highlight>,
+      defaultForegroundColor: NimsColor? = nil,
+      defaultBackgroundColor: NimsColor? = nil,
+      defaultSpecialColor: NimsColor? = nil,
+      grids: IdentifiedArrayOf<Grid>,
+      windows: IdentifiedArrayOf<Window>,
+      floatingWindows: IdentifiedArrayOf<FloatingWindow>,
       modeInfo: ModeInfo? = nil,
       mode: Mode? = nil,
       cursor: Cursor? = nil,
-      cursorBlinkingPhase: Bool = true,
+      cursorBlinkingPhase: Bool,
+      windowZIndexCounter: Int,
       tabline: Tabline? = nil,
-      cmdlines: IdentifiedArrayOf<Cmdline> = [],
-      cmdlineUpdateFlag: Bool = false,
-      windowZIndexCounter: Int = 0,
-      instanceUpdateFlag: Bool = false,
-      gridsLayoutUpdateFlag: Bool = false
+      cmdlines: IdentifiedArrayOf<Cmdline>,
+      cmdlineUpdateFlag: Bool,
+      instanceUpdateFlag: Bool,
+      gridsLayoutUpdateFlag: Bool
     ) {
-      self.defaultFont = defaultFont
+      self.process = process
       self.bufferedUIEvents = bufferedUIEvents
       self.rawOptions = rawOptions
       self.font = font
       self.title = title
       self.highlights = highlights
+      self.defaultForegroundColor = defaultForegroundColor
+      self.defaultBackgroundColor = defaultBackgroundColor
+      self.defaultSpecialColor = defaultSpecialColor
       self.grids = grids
       self.windows = windows
+      self.floatingWindows = floatingWindows
       self.modeInfo = modeInfo
       self.mode = mode
       self.cursor = cursor
       self.cursorBlinkingPhase = cursorBlinkingPhase
+      self.windowZIndexCounter = windowZIndexCounter
       self.tabline = tabline
       self.cmdlines = cmdlines
       self.cmdlineUpdateFlag = cmdlineUpdateFlag
-      self.floatingWindows = floatingWindows
-      self.windowZIndexCounter = windowZIndexCounter
       self.instanceUpdateFlag = instanceUpdateFlag
       self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
     }
 
-    public typealias ID = Tagged<State, String>
-
-    public var defaultFont: Font?
+    public var process: Neovim.Process?
     public var bufferedUIEvents: [UIEvent]
     public var rawOptions: OrderedDictionary<String, Value>
-    public var font: Font?
+    public var font: NimsFont?
     public var title: String?
     public var highlights: IdentifiedArrayOf<Highlight>
+    public var defaultForegroundColor: NimsColor?
+    public var defaultBackgroundColor: NimsColor?
+    public var defaultSpecialColor: NimsColor?
     public var grids: IdentifiedArrayOf<Grid>
     public var windows: IdentifiedArrayOf<Window>
     public var floatingWindows: IdentifiedArrayOf<FloatingWindow>

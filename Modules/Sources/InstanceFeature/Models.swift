@@ -29,44 +29,6 @@ public struct Cell: Equatable {
   public var highlightID: Highlight.ID
 }
 
-public struct Color: Sendable, Hashable {
-  public init(rgb: Int) {
-    self.rgb = rgb
-  }
-
-  public var rgb: Int
-
-  public var swiftUI: SwiftUI.Color {
-    .init(
-      .displayP3,
-      red: red,
-      green: green,
-      blue: blue
-    )
-  }
-
-  public var appKit: NSColor {
-    .init(
-      red: red,
-      green: green,
-      blue: blue,
-      alpha: 1
-    )
-  }
-
-  private var red: Double {
-    Double((rgb >> 16) & 0xFF) / 255
-  }
-
-  private var green: Double {
-    Double((rgb >> 8) & 0xFF) / 255
-  }
-
-  private var blue: Double {
-    Double(rgb & 0xFF) / 255
-  }
-}
-
 public enum CursorShape: String {
   case block
   case horizontal
@@ -181,28 +143,6 @@ public struct FloatingWindow: Equatable, Identifiable {
   }
 }
 
-public struct Font: Sendable, Equatable {
-  init(
-    id: ID,
-    cellWidth: Double,
-    cellHeight: Double
-  ) {
-    self.id = id
-    self.cellWidth = cellWidth
-    self.cellHeight = cellHeight
-  }
-
-  public typealias ID = Tagged<Font, Int>
-
-  public var id: ID
-  public var cellWidth: Double
-  public var cellHeight: Double
-
-  public var cellSize: CGSize {
-    .init(width: cellWidth, height: cellHeight)
-  }
-}
-
 public struct Grid: Equatable, Identifiable {
   public init(
     id: Grid.ID,
@@ -228,33 +168,6 @@ public struct Grid: Equatable, Identifiable {
   public var windowID: References.Window?
   public var updates: [IntegerRectangle]
   public var updateFlag: Bool
-}
-
-public struct Highlight: Equatable, Identifiable {
-  public init(
-    id: ID,
-    isBold: Bool = false,
-    isItalic: Bool = false,
-    foregroundColor: Color? = nil,
-    backgroundColor: Color? = nil,
-    specialColor: Color? = nil
-  ) {
-    self.id = id
-    self.isBold = isBold
-    self.isItalic = isItalic
-    self.foregroundColor = foregroundColor
-    self.backgroundColor = backgroundColor
-    self.specialColor = specialColor
-  }
-
-  public typealias ID = Tagged<Highlight, Int>
-
-  public var id: ID
-  public var isBold: Bool
-  public var isItalic: Bool
-  public var foregroundColor: Color?
-  public var backgroundColor: Color?
-  public var specialColor: Color?
 }
 
 public struct RowLayout: Equatable {

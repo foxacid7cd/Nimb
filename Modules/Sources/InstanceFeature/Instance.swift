@@ -15,53 +15,34 @@ public struct Instance: ReducerProtocol {
   public init() {}
 
   public enum Action {
-    case setDefaultFont(Font)
     case createNeovimProcess(
       arguments: [String],
-      environmentOverlay: [String: String],
-      keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>,
-      tabSelections: AsyncStream<References.Tabpage>
+      environmentOverlay: [String: String]
     )
-    case bindNeovimProcess(
-      Neovim.Process,
-      keyPresses: AsyncStream<KeyPress>,
-      mouseEvents: AsyncStream<MouseEvent>,
-      tabSelections: AsyncStream<References.Tabpage>
-    )
+    case bindNeovimProcess
     case applyUIEventsBatch([UIEvent])
     case runCursorBlinking
     case setCursorBlinkingPhase(Bool)
     case handleError(Error)
     case processFinished(error: Error?)
+    case view(action: InstanceView.Action)
   }
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
     switch action {
-    case let .setDefaultFont(font):
-      state.defaultFont = font
-
-      return .none
-
-    case let .createNeovimProcess(arguments, environmentOverlay, keyPresses, mouseEvents, tabSelections):
+    case let .createNeovimProcess(arguments, environmentOverlay):
       let process = Neovim.Process(
         arguments: arguments,
         environmentOverlay: environmentOverlay
       )
+      state.process = process
 
       return .run { send in
         do {
           for try await state in await process.states {
             switch state {
             case .running:
-              await send(
-                .bindNeovimProcess(
-                  process,
-                  keyPresses: keyPresses,
-                  mouseEvents: mouseEvents,
-                  tabSelections: tabSelections
-                )
-              )
+              await send(.bindNeovimProcess)
             }
           }
 
@@ -73,7 +54,11 @@ public struct Instance: ReducerProtocol {
       }
       .concatenate(with: .cancel(id: EffectID.bindProcess))
 
-    case let .bindNeovimProcess(process, keyPresses, mouseEvents, tabSelections):
+    case .bindNeovimProcess:
+      guard let process = state.process else {
+        return .none
+      }
+
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -84,77 +69,77 @@ public struct Instance: ReducerProtocol {
         }
       }
 
-      let reportKeyPresses = EffectTask<Action>.run { send in
-        for await keyPress in keyPresses {
-          guard !Task.isCancelled else {
-            return
-          }
-
-          do {
-            _ = try await process.api.nvimInput(
-              keys: keyPress.makeNvimKeyCode()
-            )
-            .get()
-
-          } catch {
-            await send(.handleError(error))
-          }
-        }
-      }
-
-      let reportMouseEvents = EffectTask<Action>.run { send in
-        for await mouseEvent in mouseEvents {
-          guard !Task.isCancelled else {
-            return
-          }
-
-          let rawButton: String
-          let rawAction: String
-
-          switch mouseEvent.content {
-          case let .mouse(button, action):
-            rawButton = button.rawValue
-            rawAction = action.rawValue
-
-          case let .scrollWheel(direction):
-            rawButton = "wheel"
-            rawAction = direction.rawValue
-          }
-
-          do {
-            _ = try await process.api.nvimInputMouse(
-              button: rawButton,
-              action: rawAction,
-              modifier: "",
-              grid: mouseEvent.gridID.rawValue,
-              row: mouseEvent.point.row,
-              col: mouseEvent.point.column
-            )
-            .get()
-
-          } catch {
-            await send(.handleError(error))
-          }
-        }
-      }
-
-      let reportTabSelections = EffectTask<Action>.run { send in
-        for await tabpage in tabSelections {
-          guard !Task.isCancelled else {
-            return
-          }
-
-          do {
-            _ = try await process.api.nvimSetCurrentTabpage(
-              tabpage: tabpage
-            )
-            .get()
-
-          } catch {
-            await send(.handleError(error))
-          }
-        }
-      }
+//      let reportKeyPresses = EffectTask<Action>.run { send in
+//        for await keyPress in keyPresses {
+//          guard !Task.isCancelled else {
+//            return
+//          }
+//
+//          do {
+//            _ = try await process.api.nvimInput(
+//              keys: keyPress.makeNvimKeyCode()
+//            )
+//            .get()
+//
+//          } catch {
+//            await send(.handleError(error))
+//          }
+//        }
+//      }
+//
+//      let reportMouseEvents = EffectTask<Action>.run { send in
+//        for await mouseEvent in mouseEvents {
+//          guard !Task.isCancelled else {
+//            return
+//          }
+//
+//          let rawButton: String
+//          let rawAction: String
+//
+//          switch mouseEvent.content {
+//          case let .mouse(button, action):
+//            rawButton = button.rawValue
+//            rawAction = action.rawValue
+//
+//          case let .scrollWheel(direction):
+//            rawButton = "wheel"
+//            rawAction = direction.rawValue
+//          }
+//
+//          do {
+//            _ = try await process.api.nvimInputMouse(
+//              button: rawButton,
+//              action: rawAction,
+//              modifier: "",
+//              grid: mouseEvent.gridID.rawValue,
+//              row: mouseEvent.point.row,
+//              col: mouseEvent.point.column
+//            )
+//            .get()
+//
+//          } catch {
+//            await send(.handleError(error))
+//          }
+//        }
+//      }
+//
+//      let reportTabSelections = EffectTask<Action>.run { send in
+//        for await tabpage in tabSelections {
+//          guard !Task.isCancelled else {
+//            return
+//          }
+//
+//          do {
+//            _ = try await process.api.nvimSetCurrentTabpage(
+//              tabpage: tabpage
+//            )
+//            .get()
+//
+//          } catch {
+//            await send(.handleError(error))
+//          }
+//        }
+//      }
 
       let requestUIAttach = EffectTask<Action>.run { send in
         do {
@@ -182,9 +167,9 @@ public struct Instance: ReducerProtocol {
 
       return .merge(
         applyUIEventBatches,
-        reportKeyPresses,
-        reportMouseEvents,
-        reportTabSelections,
+//        reportKeyPresses,
+//        reportMouseEvents,
+//        reportTabSelections,
         requestUIAttach
       )
       .cancellable(id: EffectID.bindProcess)
@@ -285,14 +270,9 @@ public struct Instance: ReducerProtocol {
             }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
-            state.highlights.updateOrAppend(
-              .init(
-                id: .default,
-                foregroundColor: .init(rgb: rgbFg),
-                backgroundColor: .init(rgb: rgbBg),
-                specialColor: .init(rgb: rgbSp)
-              )
-            )
+            state.defaultForegroundColor = .init(rgb: rgbFg)
+            state.defaultBackgroundColor = .init(rgb: rgbBg)
+            state.defaultSpecialColor = .init(rgb: rgbSp)
 
             isInstanceUpdated = true
 
@@ -915,6 +895,71 @@ public struct Instance: ReducerProtocol {
       }
 
       return .none
+
+    case .processFinished:
+      state.process = nil
+
+      return .none
+
+    case let .view(action):
+      guard let process = state.process else {
+        return .none
+      }
+
+      switch action {
+      case let .header(action):
+        switch action {
+        case let .reportSelectedTab(id):
+          return .run { send in
+            do {
+              _ = try await process.api.nvimSetCurrentTabpage(
+                tabpage: id
+              )
+              .get()
+
+            } catch {
+              await send(.handleError(error))
+            }
+          }
+        }
+
+      case let .grid(action):
+        switch action {
+        case let .report(mouseEvent):
+          return .run { send in
+            let rawButton: String
+            let rawAction: String
+
+            switch mouseEvent.content {
+            case let .mouse(button, action):
+              rawButton = button.rawValue
+              rawAction = action.rawValue
+
+            case let .scrollWheel(direction):
+              rawButton = "wheel"
+              rawAction = direction.rawValue
+            }
+
+            do {
+              _ = try await process.api.nvimInputMouse(
+                button: rawButton,
+                action: rawAction,
+                modifier: "",
+                grid: mouseEvent.gridID.rawValue,
+                row: mouseEvent.point.row,
+                col: mouseEvent.point.column
+              )
+              .get()
+
+            } catch {
+              await send(.handleError(error))
+            }
+          }
+        }
+
+      case .cmdlines:
+        fatalError()
+      }
 
     default:
       return .none
