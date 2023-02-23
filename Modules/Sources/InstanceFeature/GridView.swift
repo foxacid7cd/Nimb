@@ -5,6 +5,7 @@ import CasePaths
 import Collections
 import Combine
 import ComposableArchitecture
+import Dependencies
 import IdentifiedCollections
 import Library
 import Neovim
@@ -56,12 +57,13 @@ public struct GridView: View {
 
     public func makeNSView(context: Context) -> NSView {
       let view = NSView()
+      view.canDrawConcurrently = true
       updateNSView(view, context: context)
       return view
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-      nsView.drawRunCache = context.environment.drawRunCache
+      nsView.drawRunsProvider = drawRunsProvider
       nsView.nimsAppearance = context.environment.nimsAppearance
       nsView.suspendingClock = context.environment.suspendingClock
       nsView.viewStore = .init(
@@ -70,11 +72,13 @@ public struct GridView: View {
         removeDuplicates: { $0.grid.updateFlag == $1.grid.updateFlag }
       )
     }
+
+    @Dependency(\.drawRunsProvider)
+    private var drawRunsProvider: DrawRunsProvider
   }
 
-  @MainActor
   public class NSView: AppKit.NSView {
-    var drawRunCache: DrawRunCache?
+    var drawRunsProvider: DrawRunsProvider?
     var nimsAppearance: NimsAppearance?
     var suspendingClock: (any Clock<Duration>)?
 
@@ -205,7 +209,7 @@ public struct GridView: View {
     }
 
     override public func draw(_: NSRect) {
-      guard let graphicsContext = NSGraphicsContext.current, let drawRunCache, let nimsAppearance, let model else {
+      guard let graphicsContext = NSGraphicsContext.current, let drawRunsProvider, let nimsAppearance, let model else {
         return
       }
 
@@ -296,7 +300,7 @@ public struct GridView: View {
               font = nimsAppearance.font.appKit.regular
             }
 
-            let drawRun = drawRunCache.drawRun(for: part.text, font: font) {
+            let drawRun = drawRunsProvider.drawRun(for: part.text, font: font) {
               let attributedString = NSAttributedString(
                 string: part.text,
                 attributes: [.font: font]

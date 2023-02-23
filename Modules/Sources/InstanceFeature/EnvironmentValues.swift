@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-import SwiftUI
+import Dependencies
 
-public extension EnvironmentValues {
-  private struct DrawRunCacheKey: EnvironmentKey {
-    static let defaultValue = DrawRunCache()
+public extension DependencyValues {
+  private struct DrawRunsProviderKey: DependencyKey {
+    static let liveValue: DrawRunsProvider = .init()
+    static let previewValue: DrawRunsProvider = .init()
+    static let testValue: DrawRunsProvider = .init()
   }
 
-  var drawRunCache: DrawRunCache {
+  var drawRunsProvider: DrawRunsProvider {
     get {
-      self[DrawRunCacheKey.self]
+      self[DrawRunsProviderKey.self]
     }
     set {
-      self[DrawRunCacheKey.self] = newValue
+      self[DrawRunsProviderKey.self] = newValue
     }
   }
 }

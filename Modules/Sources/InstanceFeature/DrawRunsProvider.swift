@@ -4,25 +4,28 @@ import AppKit
 import Collections
 import SwiftUI
 
-public class DrawRunCache {
+public class DrawRunsProvider {
   public init() {}
 
-  @MainActor
   public func drawRun(for text: String, font: NSFont, _ makeDrawRun: () -> DrawRun) -> DrawRun {
     let key = Key(font: font, text: text)
 
-    if let cached = drawRuns[key] {
+    let cached = dispatchQueue.sync {
+      drawRuns[key]
+    }
+    if let cached {
       return cached
     }
 
-    if deque.count >= 500 {
-      drawRuns.removeValue(forKey: deque.popFirst()!)
-    }
-
     let drawRun = makeDrawRun()
-    drawRuns[key] = drawRun
 
-    deque.append(key)
+    dispatchQueue.sync(flags: [.barrier]) {
+      if deque.count >= 500 {
+        drawRuns.removeValue(forKey: deque.popFirst()!)
+      }
+      drawRuns[key] = drawRun
+      deque.append(key)
+    }
 
     return drawRun
   }
@@ -32,6 +35,10 @@ public class DrawRunCache {
     var text: String
   }
 
+  private lazy var dispatchQueue = DispatchQueue(
+    label: "foxacid7cd.DrawRunsProvider.\(ObjectIdentifier(self))",
+    attributes: .concurrent
+  )
   private var drawRuns = TreeDictionary<Key, DrawRun>()
   private var deque = Deque<Key>()
 }
