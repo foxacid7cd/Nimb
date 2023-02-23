@@ -57,19 +57,19 @@ public struct IntKeyedDictionary<Value> {
   }
 
   @discardableResult
-  public mutating func remove(key: Key) -> Value? {
+  public mutating func removeValue(forKey key: Key) -> Value? {
     let value = self[key]
     self[key] = nil
     return value
   }
 
   @discardableResult
-  public mutating func remove(id: Tagged<Value, Int>) -> Value? {
-    remove(key: id.rawValue)
+  public mutating func removeValue(forID id: Tagged<Value, Int>) -> Value? {
+    removeValue(forKey: id.rawValue)
   }
 
   public var values: Values {
-    .init(dictionary: self)
+    .init(self)
   }
 
   public struct Values: RandomAccessCollection {
@@ -85,7 +85,7 @@ public struct IntKeyedDictionary<Value> {
       dictionary.valuesBackingStore
     }
 
-    init(dictionary: IntKeyedDictionary<Value>) {
+    init(_ dictionary: IntKeyedDictionary<Value>) {
       self.dictionary = dictionary
     }
 
@@ -124,11 +124,6 @@ public struct IntKeyedDictionary<Value> {
           return nil
         }
       }
-    }
-
-    public func withContiguousStorageIfAvailable<R>(_ body: (UnsafeBufferPointer<Value>) throws -> R) rethrows -> R? {
-      try Array(self)
-        .withContiguousStorageIfAvailable(body)
     }
 
     public var startIndex: Key {
@@ -195,9 +190,7 @@ extension IntKeyedDictionary: Hashable where Value: Hashable {
 
     for key in keysBackingStore {
       hasher.combine(key)
-
-      let value = valuesBackingStore[key]
-      hasher.combine(value)
+      hasher.combine(valuesBackingStore[key]!)
     }
   }
 }

@@ -709,7 +709,7 @@ public struct Instance: ReducerProtocol {
             isCmdlineUpdated = true
 
           case let .cmdlineHide(level):
-            state.cmdlines.remove(key: level)
+            state.cmdlines.removeValue(forKey: level)
 
             isCmdlineUpdated = true
 

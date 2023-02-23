@@ -80,7 +80,7 @@ public struct InstanceState {
   public var gridsLayoutUpdateFlag: Bool
 
   public var outerGrid: Grid? {
-    grids[Grid.ID.outer.rawValue]
+    grids[.outer]
   }
 
   public mutating func nextWindowZIndex() -> Int {
