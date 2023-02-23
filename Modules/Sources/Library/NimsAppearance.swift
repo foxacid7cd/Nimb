@@ -6,7 +6,7 @@ import IdentifiedCollections
 public struct NimsAppearance: Equatable {
   public init(
     font: NimsFont,
-    highlights: IdentifiedArrayOf<Highlight>,
+    highlights: IntKeyedDictionary<Highlight>,
     defaultForegroundColor: NimsColor,
     defaultBackgroundColor: NimsColor,
     defaultSpecialColor: NimsColor
@@ -19,7 +19,7 @@ public struct NimsAppearance: Equatable {
   }
 
   public var font: NimsFont
-  public var highlights: IdentifiedArrayOf<Highlight>
+  public var highlights: IntKeyedDictionary<Highlight>
   public var defaultForegroundColor: NimsColor
   public var defaultBackgroundColor: NimsColor
   public var defaultSpecialColor: NimsColor
@@ -38,7 +38,7 @@ public struct NimsAppearance: Equatable {
 
   public static let defaultValue = Self(
     font: .init(.monospacedSystemFont(ofSize: 12, weight: .regular)),
-    highlights: [],
+    highlights: [:],
     defaultForegroundColor: .init(rgb: 0xFFFFFF),
     defaultBackgroundColor: .init(rgb: 0x000000),
     defaultSpecialColor: .init(rgb: 0xFF0000)

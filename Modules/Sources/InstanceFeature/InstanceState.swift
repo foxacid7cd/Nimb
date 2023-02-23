@@ -17,7 +17,7 @@ public struct InstanceState {
     rawOptions: OrderedDictionary<String, Value> = [:],
     font: NimsFont,
     title: String? = nil,
-    highlights: IdentifiedArrayOf<Highlight> = [],
+    highlights: IntKeyedDictionary<Highlight> = [:],
     defaultForegroundColor: NimsColor? = nil,
     defaultBackgroundColor: NimsColor? = nil,
     defaultSpecialColor: NimsColor? = nil,
@@ -62,7 +62,7 @@ public struct InstanceState {
   public var rawOptions: OrderedDictionary<String, Value>
   public var font: NimsFont
   public var title: String?
-  public var highlights: IdentifiedArrayOf<Highlight>
+  public var highlights: IntKeyedDictionary<Highlight>
   public var defaultForegroundColor: NimsColor?
   public var defaultBackgroundColor: NimsColor?
   public var defaultSpecialColor: NimsColor?

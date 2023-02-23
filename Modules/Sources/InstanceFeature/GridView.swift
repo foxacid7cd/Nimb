@@ -261,7 +261,7 @@ public struct GridView: View {
 
           let rowLayout = grid.rowLayouts[row]
           for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
-            let highlight = nimsAppearance.highlights[id: part.highlightID]
+            let highlight = nimsAppearance.highlights[part.highlightID.rawValue]
             let backgroundColor = highlight?.backgroundColor ?? nimsAppearance.defaultBackgroundColor
             let foregroundColor = highlight?.foregroundColor ?? nimsAppearance.defaultForegroundColor
 
@@ -351,7 +351,7 @@ public struct GridView: View {
                     cursorForegroundColor = backgroundColor
 
                   } else {
-                    let highlight = nimsAppearance.highlights[id: highlightID]
+                    let highlight = nimsAppearance.highlights[highlightID.rawValue]
                     cursorBackgroundColor = highlight?.backgroundColor ?? foregroundColor
                     cursorForegroundColor = highlight?.foregroundColor ?? backgroundColor
                   }

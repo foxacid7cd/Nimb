@@ -241,7 +241,7 @@ public struct Instance: ReducerProtocol {
           case let .hlAttrDefine(rawID, rgbAttrs, _, _):
             let id = Highlight.ID(rawID)
 
-            update(&state.highlights[id: id]) { highlight in
+            update(&state.highlights[rawID]) { highlight in
               if highlight == nil {
                 highlight = .init(id: id)
               }

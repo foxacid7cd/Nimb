@@ -142,7 +142,7 @@ public struct CmdlineView: View {
         var lineAccumulator = AttributedString()
 
         for contentPart in blockLine {
-          let highlight = nimsAppearance.highlights[id: contentPart.highlightID]
+          let highlight = nimsAppearance.highlights[contentPart.highlightID.rawValue]
 
           let attributedString = AttributedString(
             contentPart.text,
@@ -162,7 +162,7 @@ public struct CmdlineView: View {
 
     var attributedString = cmdline.contentParts
       .map { contentPart -> AttributedString in
-        let highlight = nimsAppearance.highlights[id: contentPart.highlightID]
+        let highlight = nimsAppearance.highlights[contentPart.highlightID.rawValue]
 
         return AttributedString(
           contentPart.text,
