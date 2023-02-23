@@ -284,60 +284,14 @@ public struct GridView: View {
             cgContext.setFillColor(backgroundColor.appKit.cgColor)
             cgContext.fill([upsideDownPartFrame])
 
-            let isBold = highlight?.isBold ?? false
-            let isItalic = highlight?.isItalic ?? false
-
-            let font: NSFont
-            if isBold, isItalic {
-              font = nimsAppearance.font.appKit.boldItalic
-
-            } else if isBold {
-              font = nimsAppearance.font.appKit.bold
-
-            } else if isItalic {
-              font = nimsAppearance.font.appKit.italic
-
-            } else {
-              font = nimsAppearance.font.appKit.regular
-            }
-
-            let drawRun = drawRunsProvider.drawRun(for: part.text, font: font) {
-              let attributedString = NSAttributedString(
-                string: part.text,
-                attributes: [.font: font]
+            let drawRun = drawRunsProvider.drawRun(
+              with: .init(
+                text: part.text,
+                font: nimsAppearance.font,
+                isBold: highlight?.isBold ?? false,
+                isItalic: highlight?.isItalic ?? false
               )
-
-              let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
-              let line = CTTypesetterCreateLine(typesetter, .init(location: 0, length: 0))
-              let runs = CTLineGetGlyphRuns(line) as! [CTRun]
-
-              var glyphRuns = [GlyphRun]()
-
-              for run in runs {
-                let glyphCount = CTRunGetGlyphCount(run)
-
-                let glyphPositions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                  CTRunGetPositions(run, .init(location: 0, length: 0), buffer.baseAddress!)
-                  initializedCount = glyphCount
-                }
-
-                let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-                  CTRunGetGlyphs(run, .init(location: 0, length: 0), buffer.baseAddress!)
-                  initializedCount = glyphCount
-                }
-
-                glyphRuns.append(
-                  .init(
-                    font: font,
-                    textMatrix: CTRunGetTextMatrix(run),
-                    positions: glyphPositions,
-                    glyphs: glyphs
-                  )
-                )
-              }
-
-              return DrawRun(text: part.text, size: partFrame.size, glyphRuns: glyphRuns)
-            }
+            )
 
             cgContext.setShouldAntialias(true)
             cgContext.setFillColor(foregroundColor.appKit.cgColor)

@@ -31,6 +31,23 @@ public struct NimsFont: Sendable, Equatable {
   public var appKit: (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
     FontBridge.shared.unwrap(self)
   }
+
+  public func appKit(isBold: Bool, isItalic: Bool) -> NSFont {
+    let (regular, bold, italic, boldItalic) = appKit
+
+    if isBold, isItalic {
+      return boldItalic
+
+    } else if isBold {
+      return bold
+
+    } else if isItalic {
+      return italic
+
+    } else {
+      return regular
+    }
+  }
 }
 
 final class FontBridge {
