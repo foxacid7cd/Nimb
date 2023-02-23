@@ -22,7 +22,7 @@ public struct HeaderView: View {
     public var gridsLayoutUpdateFlag: Bool
   }
 
-  public enum Action: Equatable {
+  public enum Action: Sendable {
     case reportSelectedTab(id: Tab.ID)
   }
 

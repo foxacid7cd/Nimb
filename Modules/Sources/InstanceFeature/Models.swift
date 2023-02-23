@@ -261,22 +261,22 @@ public struct Window: Equatable, Identifiable {
   }
 }
 
-public struct Tab: Equatable, Identifiable {
+public struct Tab: Equatable, Identifiable, Sendable {
   public var id: References.Tabpage
   public var name: String
 }
 
-public struct Tabline: Equatable {
+public struct Tabline: Equatable, Sendable {
   public var currentTabID: Tab.ID
   public var tabs: IdentifiedArrayOf<Tab>
 }
 
-public struct CmdlineContentPart: Equatable {
+public struct CmdlineContentPart: Equatable, Sendable {
   public var highlightID: Highlight.ID
   public var text: String
 }
 
-public struct Cmdline: Equatable, Identifiable {
+public struct Cmdline: Equatable, Identifiable, Sendable {
   public var contentParts: [CmdlineContentPart]
   public var cursorPosition: Int
   public var firstCharacter: String

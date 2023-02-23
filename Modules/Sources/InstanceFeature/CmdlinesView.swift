@@ -10,7 +10,7 @@ import SwiftUI
 public struct CmdlinesView: View {
   public var store: Store<Model, Action>
 
-  public struct Model: Equatable {
+  public struct Model: Sendable {
     public init(cmdlines: IdentifiedArrayOf<Cmdline>, cmdlineUpdateFlag: Bool) {
       self.cmdlines = cmdlines
       self.cmdlineUpdateFlag = cmdlineUpdateFlag
@@ -20,7 +20,7 @@ public struct CmdlinesView: View {
     public var cmdlineUpdateFlag: Bool
   }
 
-  public enum Action: Equatable {}
+  public enum Action: Sendable {}
 
   @Environment(\.nimsAppearance)
   private var nimsAppearance: NimsAppearance

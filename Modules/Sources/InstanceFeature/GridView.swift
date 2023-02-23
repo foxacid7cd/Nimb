@@ -45,7 +45,7 @@ public struct GridView: View {
     public var reportMouseEvent: (MouseEvent) -> Void
   }
 
-  public enum Action: Equatable {}
+  public enum Action: Sendable {}
 
   public var body: some View {
     HostingView(store: store)
@@ -57,6 +57,7 @@ public struct GridView: View {
 
     public func makeNSView(context: Context) -> NSView {
       let view = NSView()
+      view.wantsLayer = true
       view.canDrawConcurrently = true
       updateNSView(view, context: context)
       return view

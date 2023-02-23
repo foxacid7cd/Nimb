@@ -15,7 +15,7 @@ import Tagged
 public struct Instance: ReducerProtocol {
   public init() {}
 
-  public enum Action {
+  public enum Action: Sendable {
     case bindNeovimProcess(
       mouseEvents: AsyncStream<MouseEvent>,
       keyPresses: AsyncStream<KeyPress>

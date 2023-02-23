@@ -126,7 +126,7 @@ public actor Process {
     }
   }
 
-  public enum State { case running }
+  public enum State: Sendable { case running }
 
   public enum TerminationError: Error {
     case uncaughtSignal

@@ -2,7 +2,7 @@
 
 import Foundation
 
-public protocol Channel {
+public protocol Channel: Sendable {
   associatedtype S: AsyncSequence where S.Element == Data
 
   var dataBatches: S { get async }

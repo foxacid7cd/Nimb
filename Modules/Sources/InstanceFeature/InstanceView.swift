@@ -90,7 +90,7 @@ public struct InstanceView: View {
     }
   }
 
-  public enum Action: Equatable {
+  public enum Action: Sendable {
     case header(action: HeaderView.Action)
     case grid(action: GridView.Action)
     case cmdlines(action: CmdlinesView.Action)

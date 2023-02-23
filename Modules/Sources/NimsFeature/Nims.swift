@@ -12,7 +12,7 @@ import SwiftUI
 public struct Nims: ReducerProtocol {
   public init() {}
 
-  public enum Action {
+  public enum Action: Sendable {
     case createInstance(
       arguments: [String],
       environmentOverlay: [String: String],
