@@ -41,9 +41,7 @@ public struct Nims: ReducerProtocol {
         )
         state.instanceState = .init(
           process: process,
-          font: .init(nsFont),
-          cellWidth: nsFont.makeCellWidth(),
-          cellHeight: nsFont.makeCellHeight()
+          font: .init(nsFont)
         )
 
         return .run { send in

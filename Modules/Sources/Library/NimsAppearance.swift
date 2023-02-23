@@ -1,21 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
+import AppKit
 import IdentifiedCollections
 
 public struct NimsAppearance: Equatable {
   public init(
     font: NimsFont,
-    cellWidth: Double,
-    cellHeight: Double,
     highlights: IdentifiedArrayOf<Highlight>,
     defaultForegroundColor: NimsColor,
     defaultBackgroundColor: NimsColor,
     defaultSpecialColor: NimsColor
   ) {
     self.font = font
-    self.cellWidth = cellWidth
-    self.cellHeight = cellHeight
     self.highlights = highlights
     self.defaultForegroundColor = defaultForegroundColor
     self.defaultBackgroundColor = defaultBackgroundColor
@@ -23,14 +19,28 @@ public struct NimsAppearance: Equatable {
   }
 
   public var font: NimsFont
-  public var cellWidth: Double
-  public var cellHeight: Double
   public var highlights: IdentifiedArrayOf<Highlight>
   public var defaultForegroundColor: NimsColor
   public var defaultBackgroundColor: NimsColor
   public var defaultSpecialColor: NimsColor
 
-  public var cellSize: CGSize {
-    .init(width: cellWidth, height: cellHeight)
+  public var cellWidth: Double {
+    font.cellWidth
   }
+
+  public var cellHeight: Double {
+    font.cellHeight
+  }
+
+  public var cellSize: CGSize {
+    font.cellSize
+  }
+
+  public static let defaultValue = Self(
+    font: .init(.monospacedSystemFont(ofSize: 12, weight: .regular)),
+    highlights: [],
+    defaultForegroundColor: .init(rgb: 0xFFFFFF),
+    defaultBackgroundColor: .init(rgb: 0x000000),
+    defaultSpecialColor: .init(rgb: 0xFF0000)
+  )
 }

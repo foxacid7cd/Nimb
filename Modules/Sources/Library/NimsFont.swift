@@ -16,25 +16,35 @@ public struct NimsFont: Sendable, Equatable {
     self = FontBridge.shared.wrap(appKit)
   }
 
-  public var appKit: (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
-    FontBridge.shared.unwrap(self)
-  }
-
-  public func appKit(isBold: Bool, isItalic: Bool) -> NSFont {
-    let (regular, bold, italic, boldItalic) = appKit
-
+  public func nsFont(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
     if isBold, isItalic {
-      return boldItalic
+      return unwrapped.boldItalic
 
     } else if isBold {
-      return bold
+      return unwrapped.bold
 
     } else if isItalic {
-      return italic
+      return unwrapped.italic
 
     } else {
-      return regular
+      return unwrapped.regular
     }
+  }
+
+  public var cellWidth: Double {
+    unwrapped.cellWidth
+  }
+
+  public var cellHeight: Double {
+    unwrapped.cellHeight
+  }
+
+  public var cellSize: CGSize {
+    .init(width: cellWidth, height: cellHeight)
+  }
+
+  private var unwrapped: FontBridge.WrappedFont {
+    FontBridge.shared.unwrap(self)
   }
 }
 
@@ -45,17 +55,26 @@ final class FontBridge {
     let bold = NSFontManager.shared.convert(appKit, toHaveTrait: .boldFontMask)
     let italic = NSFontManager.shared.convert(appKit, toHaveTrait: .italicFontMask)
     let boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+    let cellWidth = appKit.makeCellWidth()
+    let cellHeight = appKit.makeCellHeight()
 
     return dispatchQueue.sync(flags: [.barrier]) {
-      let font = NimsFont(id: .init(wrapped.count))
-      wrapped.append((appKit, bold, italic, boldItalic))
+      let font = NimsFont(id: .init(wrappedFonts.count))
+      wrappedFonts.append(.init(
+        regular: appKit,
+        bold: bold,
+        italic: italic,
+        boldItalic: boldItalic,
+        cellWidth: cellWidth,
+        cellHeight: cellHeight
+      ))
       return font
     }
   }
 
-  func unwrap(_ font: NimsFont) -> (regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont) {
+  func unwrap(_ font: NimsFont) -> WrappedFont {
     dispatchQueue.sync {
-      wrapped[font.id.rawValue]
+      wrappedFonts[font.id.rawValue]
     }
   }
 
@@ -63,5 +82,14 @@ final class FontBridge {
     label: "foxacid7cd.FontBridge.\(ObjectIdentifier(self))",
     attributes: .concurrent
   )
-  private var wrapped = [(regular: NSFont, bold: NSFont, italic: NSFont, boldItalic: NSFont)]()
+  private var wrappedFonts = [WrappedFont]()
+
+  struct WrappedFont {
+    var regular: NSFont
+    var bold: NSFont
+    var italic: NSFont
+    var boldItalic: NSFont
+    var cellWidth: Double
+    var cellHeight: Double
+  }
 }

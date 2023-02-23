@@ -92,7 +92,7 @@ public struct DrawRunParameters: Hashable {
   }
 
   public var nsFont: NSFont {
-    font.appKit(isBold: isBold, isItalic: isItalic)
+    font.nsFont(isBold: isBold, isItalic: isItalic)
   }
 }
 

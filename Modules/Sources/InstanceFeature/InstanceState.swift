@@ -16,8 +16,6 @@ public struct InstanceState {
     bufferedUIEvents: [UIEvent] = [],
     rawOptions: OrderedDictionary<String, Value> = [:],
     font: NimsFont,
-    cellWidth: Double,
-    cellHeight: Double,
     title: String? = nil,
     highlights: IdentifiedArrayOf<Highlight> = [],
     defaultForegroundColor: NimsColor? = nil,
@@ -40,8 +38,6 @@ public struct InstanceState {
     self.bufferedUIEvents = bufferedUIEvents
     self.rawOptions = rawOptions
     self.font = font
-    self.cellWidth = cellWidth
-    self.cellHeight = cellHeight
     self.title = title
     self.highlights = highlights
     self.defaultForegroundColor = defaultForegroundColor
@@ -65,8 +61,6 @@ public struct InstanceState {
   public var bufferedUIEvents: [UIEvent]
   public var rawOptions: OrderedDictionary<String, Value>
   public var font: NimsFont
-  public var cellWidth: Double
-  public var cellHeight: Double
   public var title: String?
   public var highlights: IdentifiedArrayOf<Highlight>
   public var defaultForegroundColor: NimsColor?
