@@ -142,6 +142,8 @@ public extension Nims {
 
       return .init(
         font: instanceState.font,
+        cellWidth: instanceState.cellWidth,
+        cellHeight: instanceState.cellHeight,
         highlights: instanceState.highlights,
         defaultForegroundColor: defaultForegroundColor,
         defaultBackgroundColor: defaultBackgroundColor,

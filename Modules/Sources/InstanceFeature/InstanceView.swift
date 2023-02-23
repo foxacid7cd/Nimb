@@ -117,7 +117,7 @@ public struct InstanceView: View {
         .frame(height: 32)
         .background(nimsAppearance.defaultBackgroundColor.swiftUI)
 
-        let outerGridSize = state.outerGridSize * nimsAppearance.font.cellSize
+        let outerGridSize = state.outerGridSize * nimsAppearance.cellSize
         let outerGridFrame = CGRect(origin: .init(), size: outerGridSize)
 
         ZStack(alignment: .topLeading) {
@@ -132,7 +132,7 @@ public struct InstanceView: View {
           .zIndex(0)
 
           ForEach(state.windows) { window in
-            let frame = window.frame * nimsAppearance.font.cellSize
+            let frame = window.frame * nimsAppearance.cellSize
             let clippedFrame = frame.intersection(outerGridFrame)
 
             GridView(

@@ -12,7 +12,6 @@ import Neovim
 import Overture
 import SwiftUI
 
-@MainActor
 public struct GridView: View {
   public init(store: Store<Model, Action>) {
     self.store = store
@@ -51,7 +50,6 @@ public struct GridView: View {
     HostingView(store: store)
   }
 
-  @MainActor
   public struct HostingView: NSViewRepresentable {
     public var store: Store<Model, Action>
 
@@ -109,14 +107,17 @@ public struct GridView: View {
     private var isScrollingHorizontal: Bool?
 
     private func render() {
+      guard let suspendingClock, let model else {
+        return
+      }
+
       cursorBlinkingTask?.cancel()
       cursorBlinkingTask = nil
       cursorBlinkingPhase = true
       renderCursorBlinkingPhase()
 
-      guard let suspendingClock, let model else {
-        return
-      }
+      let grid = model.grid
+      render(gridUpdates: grid.updates)
 
       if let cursor = model.cursor, cursor.gridID == model.grid.id {
         let cursorStyle = model.modeInfo.cursorStyles[model.mode.cursorStyleIndex]
@@ -160,9 +161,6 @@ public struct GridView: View {
           }
         }
       }
-
-      let grid = model.grid
-      render(gridUpdates: grid.updates)
     }
 
     private func renderCursorBlinkingPhase() {
@@ -482,8 +480,8 @@ public struct GridView: View {
         y: bounds.height - location.y
       )
       let point = IntegerPoint(
-        column: Int(upsideDownLocation.x / nimsAppearance.font.cellWidth),
-        row: Int(upsideDownLocation.y / nimsAppearance.font.cellHeight)
+        column: Int(upsideDownLocation.x / nimsAppearance.cellWidth),
+        row: Int(upsideDownLocation.y / nimsAppearance.cellHeight)
       )
       model.reportMouseEvent(
         .init(content: content, gridID: model.grid.id, point: point)
