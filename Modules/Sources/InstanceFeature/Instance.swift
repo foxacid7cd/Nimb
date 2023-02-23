@@ -15,10 +15,6 @@ public struct Instance: ReducerProtocol {
   public init() {}
 
   public enum Action {
-    case createNeovimProcess(
-      arguments: [String],
-      environmentOverlay: [String: String]
-    )
     case bindNeovimProcess
     case applyUIEventsBatch([UIEvent])
     case runCursorBlinking
@@ -28,37 +24,11 @@ public struct Instance: ReducerProtocol {
     case view(action: InstanceView.Action)
   }
 
-  public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
+  public func reduce(into state: inout InstanceState, action: Action) -> EffectTask<Action> {
+    let process = state.process
+
     switch action {
-    case let .createNeovimProcess(arguments, environmentOverlay):
-      let process = Neovim.Process(
-        arguments: arguments,
-        environmentOverlay: environmentOverlay
-      )
-      state.process = process
-
-      return .run { send in
-        do {
-          for try await state in await process.states {
-            switch state {
-            case .running:
-              await send(.bindNeovimProcess)
-            }
-          }
-
-          await send(.processFinished(error: nil))
-
-        } catch {
-          await send(.processFinished(error: error))
-        }
-      }
-      .concatenate(with: .cancel(id: EffectID.bindProcess))
-
     case .bindNeovimProcess:
-      guard let process = state.process else {
-        return .none
-      }
-
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
@@ -165,14 +135,15 @@ public struct Instance: ReducerProtocol {
         }
       }
 
-      return .merge(
-        applyUIEventBatches,
-//        reportKeyPresses,
-//        reportMouseEvents,
-//        reportTabSelections,
-        requestUIAttach
-      )
-      .cancellable(id: EffectID.bindProcess)
+      return EffectTask.cancel(id: EffectID.bindProcess)
+        .concatenate(with: .merge(
+          applyUIEventBatches,
+          //        reportKeyPresses,
+          //        reportMouseEvents,
+          //        reportTabSelections,
+          requestUIAttach
+        ))
+        .cancellable(id: EffectID.bindProcess)
 
     case let .applyUIEventsBatch(uiEventsBatch):
       state.bufferedUIEvents += uiEventsBatch
@@ -896,16 +867,7 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
-    case .processFinished:
-      state.process = nil
-
-      return .none
-
     case let .view(action):
-      guard let process = state.process else {
-        return .none
-      }
-
       switch action {
       case let .header(action):
         switch action {

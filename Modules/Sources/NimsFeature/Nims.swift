@@ -18,46 +18,32 @@ public struct Nims: ReducerProtocol {
       environmentOverlay: [String: String]
     )
     case instance(action: Instance.Action)
+    case removeInstance
   }
 
-  public struct State {
-    public init(instance: Instance.State? = nil) {
-      self.instance = instance
-    }
-
-    public var instance: Instance.State?
-  }
-
-  public var body: some ReducerProtocol<State, Action> {
+  public var body: some ReducerProtocol<NimsState, Action> {
     Reduce { state, action in
       switch action {
       case let .createInstance(arguments, environmentOverlay):
-        state.instance = Instance.State(
-          process: nil,
-          bufferedUIEvents: [],
-          rawOptions: [:],
-          font: .init(NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)),
-          highlights: [],
-          grids: [],
-          windows: [],
-          floatingWindows: [],
-          cursorBlinkingPhase: true,
-          windowZIndexCounter: 0,
-          cmdlines: [],
-          cmdlineUpdateFlag: false,
-          instanceUpdateFlag: false,
-          gridsLayoutUpdateFlag: false
+        let process = Neovim.Process(
+          arguments: arguments,
+          environmentOverlay: environmentOverlay
         )
+        state.instanceState = .init(process: process)
 
         return .run { send in
-          await send(
-            .instance(
-              action: .createNeovimProcess(
-                arguments: arguments,
-                environmentOverlay: environmentOverlay
-              )
-            )
-          )
+          do {
+            for try await processState in await process.states {
+              switch processState {
+              case .running:
+                await send(.instance(action: .bindNeovimProcess))
+              }
+            }
+          } catch {
+            assertionFailure("\(error)")
+          }
+
+          await send(.removeInstance)
         }
 
       case let .instance(action):
@@ -68,7 +54,7 @@ public struct Nims: ReducerProtocol {
           }
 
         case let .processFinished(error):
-          state.instance = nil
+          state.instanceState = nil
 
           return .fireAndForget {
             if let error {
@@ -79,9 +65,14 @@ public struct Nims: ReducerProtocol {
         default:
           return .none
         }
+
+      case .removeInstance:
+        state.instanceState = nil
+
+        return .none
       }
     }
-    .ifLet(\.instance, action: /Action.instance, then: {
+    .ifLet(\.instanceState, action: /Action.instance, then: {
       Instance()
     })
   }

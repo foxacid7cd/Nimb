@@ -20,26 +20,35 @@ public extension Nims {
       WindowGroup {
         IfLetStore(
           store.scope(
-            state: Model.init(state:),
+            state: \.instanceState,
             action: Action.instance(action:)
           ),
-          then: { modelStore in
-            WithViewStore(
-              modelStore,
-              observe: { $0 },
-              removeDuplicates: { $0.instance.instanceUpdateFlag == $1.instance.instanceUpdateFlag }
-            ) { modelViewStore in
-              let model = modelViewStore.state
+          then: { instanceStateStore in
+            IfLetStore(
+              instanceStateStore.scope(
+                state: Model.init(instanceState:)
+              ),
+              then: { modelStore in
+                WithViewStore(
+                  modelStore,
+                  observe: { $0 },
+                  removeDuplicates: {
+                    $0.instanceState.instanceUpdateFlag == $1.instanceState.instanceUpdateFlag
+                  }
+                ) { modelViewStore in
+                  let model = modelViewStore.state
 
-              InstanceView(
-                store: modelStore.scope(
-                  state: \.instanceViewModel,
-                  action: Instance.Action.view(action:)
-                )
-              )
-              .navigationTitle(model.title)
-              .environment(\.nimsAppearance, model.nimsAppearance)
-            }
+                  InstanceView(
+                    store: modelStore.scope(
+                      state: \.instanceViewModel,
+                      action: Instance.Action.view(action:)
+                    )
+                  )
+                  .navigationTitle(model.title)
+                  .environment(\.nimsAppearance, model.nimsAppearance)
+                }
+              }
+            )
           }
         )
       }
@@ -50,7 +59,7 @@ public extension Nims {
         switch newValue {
         case .active:
           let viewStore = ViewStore(
-            store.scope(state: \.instance?.process),
+            store.scope(state: \.instanceState?.process),
             observe: { $0 },
             removeDuplicates: {
               $0.map(ObjectIdentifier.init(_:)) == $1.map(ObjectIdentifier.init(_:))
@@ -108,46 +117,51 @@ public extension Nims {
 
     private struct Model {
       init(
-        instance: Instance.State,
+        instanceState: InstanceState,
         nimsAppearance: NimsAppearance,
         instanceViewModel: InstanceView.Model,
         title: String
       ) {
-        self.instance = instance
+        self.instanceState = instanceState
         self.nimsAppearance = nimsAppearance
         self.instanceViewModel = instanceViewModel
         self.title = title
       }
 
-      var instance: Instance.State
+      var instanceState: Instance.State
       var nimsAppearance: NimsAppearance
       var instanceViewModel: InstanceView.Model
       var title: String
 
-      init?(state: State) {
-        guard let instance = state.instance, let nimsAppearance = Model.makeNimsAppearance(from: instance), let instanceViewModel = Model.makeInstanceViewModel(from: instance), let title = instance.title else {
+      init?(instanceState: InstanceState?) {
+        guard let instanceState, let nimsAppearance = Model.makeNimsAppearance(from: instanceState), let instanceViewModel = Model.makeInstanceViewModel(from: instanceState), let title = instanceState.title else {
           return nil
         }
 
-        self.init(instance: instance, nimsAppearance: nimsAppearance, instanceViewModel: instanceViewModel, title: title)
+        self.init(
+          instanceState: instanceState,
+          nimsAppearance: nimsAppearance,
+          instanceViewModel: instanceViewModel,
+          title: title
+        )
       }
 
-      private static func makeNimsAppearance(from instance: Instance.State) -> NimsAppearance? {
-        guard let font = instance.font, let defaultForegroundColor = instance.defaultForegroundColor, let defaultBackgroundColor = instance.defaultBackgroundColor, let defaultSpecialColor = instance.defaultSpecialColor else {
+      private static func makeNimsAppearance(from instanceState: InstanceState) -> NimsAppearance? {
+        guard let font = instanceState.font, let defaultForegroundColor = instanceState.defaultForegroundColor, let defaultBackgroundColor = instanceState.defaultBackgroundColor, let defaultSpecialColor = instanceState.defaultSpecialColor else {
           return nil
         }
 
         return .init(
           font: font,
-          highlights: instance.highlights,
+          highlights: instanceState.highlights,
           defaultForegroundColor: defaultForegroundColor,
           defaultBackgroundColor: defaultBackgroundColor,
           defaultSpecialColor: defaultSpecialColor
         )
       }
 
-      private static func makeInstanceViewModel(from instance: Instance.State) -> InstanceView.Model? {
-        guard let outerGrid = instance.grids[id: .outer], let modeInfo = instance.modeInfo, let mode = instance.mode else {
+      private static func makeInstanceViewModel(from instanceState: InstanceState) -> InstanceView.Model? {
+        guard let outerGrid = instanceState.grids[id: .outer], let modeInfo = instanceState.modeInfo, let mode = instanceState.mode else {
           return nil
         }
 
@@ -155,15 +169,15 @@ public extension Nims {
           outerGridSize: outerGrid.cells.size,
           modeInfo: modeInfo,
           mode: mode,
-          tabline: instance.tabline,
-          grids: instance.grids,
-          windows: instance.windows,
-          floatingWindows: instance.floatingWindows,
-          cursor: instance.cursor,
-          cursorBlinkingPhase: instance.cursorBlinkingPhase,
-          cmdlines: instance.cmdlines,
-          cmdlineUpdateFlag: instance.cmdlineUpdateFlag,
-          gridsLayoutUpdateFlag: instance.gridsLayoutUpdateFlag
+          tabline: instanceState.tabline,
+          grids: instanceState.grids,
+          windows: instanceState.windows,
+          floatingWindows: instanceState.floatingWindows,
+          cursor: instanceState.cursor,
+          cursorBlinkingPhase: instanceState.cursorBlinkingPhase,
+          cmdlines: instanceState.cmdlines,
+          cmdlineUpdateFlag: instanceState.cmdlineUpdateFlag,
+          gridsLayoutUpdateFlag: instanceState.gridsLayoutUpdateFlag
         )
       }
     }
