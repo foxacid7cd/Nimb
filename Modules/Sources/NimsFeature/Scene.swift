@@ -26,7 +26,7 @@ public extension Nims {
           then: { instanceStateStore in
             IfLetStore(
               instanceStateStore.scope(
-                state: Model.init(instanceState:)
+                state: makeModel(for:)
               ),
               then: { modelStore in
                 WithViewStore(
@@ -54,19 +54,30 @@ public extension Nims {
       }
       .windowResizability(.contentSize)
       .onChange(of: scenePhase) { newValue in
-        var eventMonitor: Any?
-
         switch newValue {
         case .active:
-          let viewStore = ViewStore(
-            store.scope(state: \.instanceState?.process),
-            observe: { $0 },
-            removeDuplicates: {
-              $0.map(ObjectIdentifier.init(_:)) == $1.map(ObjectIdentifier.init(_:))
-            }
-          )
+          let keyPresses = AsyncStream<KeyPress> { continuation in
+            let eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+              let keyPress = KeyPress(event: event)
+              continuation.yield(keyPress)
 
-          viewStore
+              return nil
+            }
+
+            continuation.onTermination = { termination in
+              switch termination {
+              case .cancelled:
+                if let eventMonitor {
+                  NSEvent.removeMonitor(eventMonitor)
+                }
+
+              default:
+                break
+              }
+            }
+          }
+
+          ViewStore(store.stateless)
             .send(
               .createInstance(
                 arguments: ["-u", "/Users/foxacid/.local/share/lunarvim/lvim/init.lua"],
@@ -75,33 +86,11 @@ public extension Nims {
                   "LUNARVIM_CONFIG_DIR": "/Users/foxacid/.config/lvim",
                   "LUNARVIM_CACHE_DIR": "/Users/foxacid/.cache/lvim",
                   "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
-                ]
+                ],
+                mouseEvents: mouseEvents,
+                keyPresses: keyPresses
               )
             )
-
-          eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            let keyPress = KeyPress(event: event)
-
-            Task {
-              do {
-                _ = try await viewStore.state?.api.nvimInput(
-                  keys: keyPress.makeNvimKeyCode()
-                )
-                .get()
-
-              } catch {
-                assertionFailure("\(error)")
-              }
-            }
-
-            return nil
-          }
-
-        case .background,
-             .inactive:
-          if let eventMonitor {
-            NSEvent.removeMonitor(eventMonitor)
-          }
 
         default:
           break
@@ -109,8 +98,7 @@ public extension Nims {
       }
     }
 
-    let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
-    let (tabSelectionHandler, tabSelections) = AsyncChannel<References.Tabpage>.pipe()
+    private let (mouseEventHandler, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
 
     @Environment(\.scenePhase)
     private var scenePhase: ScenePhase
@@ -132,54 +120,58 @@ public extension Nims {
       var nimsAppearance: NimsAppearance
       var instanceViewModel: InstanceView.Model
       var title: String
+    }
 
-      init?(instanceState: InstanceState?) {
-        guard let instanceState, let nimsAppearance = Model.makeNimsAppearance(from: instanceState), let instanceViewModel = Model.makeInstanceViewModel(from: instanceState), let title = instanceState.title else {
-          return nil
-        }
-
-        self.init(
-          instanceState: instanceState,
-          nimsAppearance: nimsAppearance,
-          instanceViewModel: instanceViewModel,
-          title: title
-        )
+    private func makeModel(for instanceState: InstanceState) -> Model? {
+      guard let nimsAppearance = makeNimsAppearance(from: instanceState), let instanceViewModel = makeInstanceViewModel(from: instanceState), let title = instanceState.title else {
+        return nil
       }
 
-      private static func makeNimsAppearance(from instanceState: InstanceState) -> NimsAppearance? {
-        guard let font = instanceState.font, let defaultForegroundColor = instanceState.defaultForegroundColor, let defaultBackgroundColor = instanceState.defaultBackgroundColor, let defaultSpecialColor = instanceState.defaultSpecialColor else {
-          return nil
-        }
+      return .init(
+        instanceState: instanceState,
+        nimsAppearance: nimsAppearance,
+        instanceViewModel: instanceViewModel,
+        title: title
+      )
+    }
 
-        return .init(
-          font: font,
-          highlights: instanceState.highlights,
-          defaultForegroundColor: defaultForegroundColor,
-          defaultBackgroundColor: defaultBackgroundColor,
-          defaultSpecialColor: defaultSpecialColor
-        )
+    private func makeNimsAppearance(from instanceState: InstanceState) -> NimsAppearance? {
+      guard let defaultForegroundColor = instanceState.defaultForegroundColor, let defaultBackgroundColor = instanceState.defaultBackgroundColor, let defaultSpecialColor = instanceState.defaultSpecialColor else {
+        return nil
       }
 
-      private static func makeInstanceViewModel(from instanceState: InstanceState) -> InstanceView.Model? {
-        guard let outerGrid = instanceState.grids[id: .outer], let modeInfo = instanceState.modeInfo, let mode = instanceState.mode else {
-          return nil
-        }
+      return .init(
+        font: instanceState.font,
+        highlights: instanceState.highlights,
+        defaultForegroundColor: defaultForegroundColor,
+        defaultBackgroundColor: defaultBackgroundColor,
+        defaultSpecialColor: defaultSpecialColor
+      )
+    }
 
-        return InstanceView.Model(
-          outerGridSize: outerGrid.cells.size,
-          modeInfo: modeInfo,
-          mode: mode,
-          tabline: instanceState.tabline,
-          grids: instanceState.grids,
-          windows: instanceState.windows,
-          floatingWindows: instanceState.floatingWindows,
-          cursor: instanceState.cursor,
-          cursorBlinkingPhase: instanceState.cursorBlinkingPhase,
-          cmdlines: instanceState.cmdlines,
-          cmdlineUpdateFlag: instanceState.cmdlineUpdateFlag,
-          gridsLayoutUpdateFlag: instanceState.gridsLayoutUpdateFlag
-        )
+    private func makeInstanceViewModel(from instanceState: InstanceState) -> InstanceView.Model? {
+      guard let outerGrid = instanceState.grids[id: .outer], let modeInfo = instanceState.modeInfo, let mode = instanceState.mode else {
+        return nil
       }
+
+      return InstanceView.Model(
+        outerGridSize: outerGrid.cells.size,
+        modeInfo: modeInfo,
+        mode: mode,
+        tabline: instanceState.tabline,
+        grids: instanceState.grids,
+        windows: instanceState.windows,
+        floatingWindows: instanceState.floatingWindows,
+        cursor: instanceState.cursor,
+        cmdlines: instanceState.cmdlines,
+        cmdlineUpdateFlag: instanceState.cmdlineUpdateFlag,
+        gridsLayoutUpdateFlag: instanceState.gridsLayoutUpdateFlag,
+        reportMouseEvent: { mouseEvent in
+          Task {
+            await self.mouseEventHandler(mouseEvent)
+          }
+        }
+      )
     }
   }
 }

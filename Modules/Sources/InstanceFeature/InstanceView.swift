@@ -22,7 +22,7 @@ public struct InstanceView: View {
 
   public var store: Store<Model, Action>
 
-  public struct Model: Equatable {
+  public struct Model {
     public init(
       outerGridSize: IntegerSize,
       modeInfo: ModeInfo,
@@ -32,10 +32,10 @@ public struct InstanceView: View {
       windows: IdentifiedArrayOf<Window>,
       floatingWindows: IdentifiedArrayOf<FloatingWindow>,
       cursor: Cursor?,
-      cursorBlinkingPhase: Bool,
       cmdlines: IdentifiedArrayOf<Cmdline>,
       cmdlineUpdateFlag: Bool,
-      gridsLayoutUpdateFlag: Bool
+      gridsLayoutUpdateFlag: Bool,
+      reportMouseEvent: @escaping (MouseEvent) -> Void
     ) {
       self.outerGridSize = outerGridSize
       self.modeInfo = modeInfo
@@ -45,10 +45,10 @@ public struct InstanceView: View {
       self.windows = windows
       self.floatingWindows = floatingWindows
       self.cursor = cursor
-      self.cursorBlinkingPhase = cursorBlinkingPhase
       self.cmdlines = cmdlines
       self.cmdlineUpdateFlag = cmdlineUpdateFlag
       self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
+      self.reportMouseEvent = reportMouseEvent
     }
 
     public var outerGridSize: IntegerSize
@@ -59,10 +59,10 @@ public struct InstanceView: View {
     public var windows: IdentifiedArrayOf<Window>
     public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
     public var cursor: Cursor?
-    public var cursorBlinkingPhase: Bool
     public var cmdlines: IdentifiedArrayOf<Cmdline>
     public var cmdlineUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
+    public var reportMouseEvent: (MouseEvent) -> Void
 
     var headerViewModel: HeaderView.Model {
       .init(
@@ -73,17 +73,20 @@ public struct InstanceView: View {
 
     func gridViewModel(for gridID: Grid.ID) -> GridView.Model {
       .init(
-        gridID: gridID,
+        grid: grids[id: gridID]!,
         grids: grids,
-        cursorBlinkingPhase: cursorBlinkingPhase,
         cursor: cursor,
         modeInfo: modeInfo,
-        mode: mode
+        mode: mode,
+        reportMouseEvent: reportMouseEvent
       )
     }
 
     var cmdlinesViewModel: CmdlinesView.Model {
-      .init(cmdlines: cmdlines, cmdlineUpdateFlag: cmdlineUpdateFlag)
+      .init(
+        cmdlines: cmdlines,
+        cmdlineUpdateFlag: cmdlineUpdateFlag
+      )
     }
   }
 

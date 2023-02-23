@@ -19,38 +19,32 @@ public struct GridView: View {
 
   public var store: Store<Model, Action>
 
-  public struct Model: Equatable {
+  public struct Model {
     public init(
-      gridID: Grid.ID,
+      grid: Grid,
       grids: IdentifiedArrayOf<Grid>,
-      cursorBlinkingPhase: Bool,
       cursor: Cursor? = nil,
       modeInfo: ModeInfo,
-      mode: Mode
+      mode: Mode,
+      reportMouseEvent: @escaping (MouseEvent) -> Void
     ) {
-      self.gridID = gridID
+      self.grid = grid
       self.grids = grids
-      self.cursorBlinkingPhase = cursorBlinkingPhase
       self.cursor = cursor
       self.modeInfo = modeInfo
       self.mode = mode
+      self.reportMouseEvent = reportMouseEvent
     }
 
-    public var gridID: Grid.ID
+    public var grid: Grid
     public var grids: IdentifiedArrayOf<Grid>
-    public var cursorBlinkingPhase: Bool
     public var cursor: Cursor?
     public var modeInfo: ModeInfo
     public var mode: Mode
-
-    public var grid: Grid {
-      grids[id: gridID]!
-    }
+    public var reportMouseEvent: (MouseEvent) -> Void
   }
 
-  public enum Action: Equatable {
-    case report(mouseEvent: MouseEvent)
-  }
+  public enum Action: Equatable {}
 
   public var body: some View {
     HostingView(store: store)
@@ -58,26 +52,23 @@ public struct GridView: View {
 
   @MainActor
   public struct HostingView: NSViewRepresentable {
-    public var store: Store<GridView.Model, GridView.Action>
-
-    @Environment(\.drawRunCache)
-    private var drawRunCache: DrawRunCache
-
-    @Environment(\.nimsAppearance)
-    private var nimsAppearance: NimsAppearance
+    public var store: Store<Model, Action>
 
     public func makeNSView(context: Context) -> NSView {
       let view = NSView()
-      view.drawRunCache = drawRunCache
-      view.nimsAppearance = nimsAppearance
-      view.store = store
+      updateNSView(view, context: context)
       return view
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-      nsView.drawRunCache = drawRunCache
+      nsView.drawRunCache = context.environment.drawRunCache
       nsView.nimsAppearance = context.environment.nimsAppearance
-      nsView.store = store
+      nsView.suspendingClock = context.environment.suspendingClock
+      nsView.viewStore = .init(
+        store,
+        observe: { $0 },
+        removeDuplicates: { $0.grid.updateFlag == $1.grid.updateFlag }
+      )
     }
   }
 
@@ -85,28 +76,18 @@ public struct GridView: View {
   public class NSView: AppKit.NSView {
     var drawRunCache: DrawRunCache?
     var nimsAppearance: NimsAppearance?
-    var store: Store<GridView.Model, GridView.Action>? {
-      didSet {
-        viewStore = store.map { store in
-          .init(
-            store,
-            observe: { $0 },
-            removeDuplicates: { $0.grid.updateFlag == $1.grid.updateFlag }
-          )
-        }
-      }
-    }
+    var suspendingClock: (any Clock<Duration>)?
 
-    private var viewStore: ViewStore<GridView.Model, GridView.Action>? {
+    var viewStore: ViewStore<GridView.Model, GridView.Action>? {
       didSet {
-        cancellable?.cancel()
-        cancellable = nil
+        viewStoreCancellable?.cancel()
+        viewStoreCancellable = nil
 
         guard let viewStore else {
           return
         }
 
-        cancellable = viewStore.publisher
+        viewStoreCancellable = viewStore.publisher
           .sink { [weak self] model in
             self?.model = model
             self?.render()
@@ -114,24 +95,97 @@ public struct GridView: View {
       }
     }
 
-    private var cancellable: AnyCancellable?
+    private var viewStoreCancellable: AnyCancellable?
     private var model: GridView.Model?
+    private var cursorBlinkingTask: Task<Void, Never>?
+    private var cursorBlinkingPhase = true
     private var xScrollingAccumulator: Double = 0
     private var yScrollingAccumulator: Double = 0
     private var isScrollingHorizontal: Bool?
 
     private func render() {
-      guard let nimsAppearance, let model else {
+      cursorBlinkingTask?.cancel()
+      cursorBlinkingTask = nil
+      cursorBlinkingPhase = true
+      renderCursorBlinkingPhase()
+
+      guard let suspendingClock, let model else {
         return
       }
 
-      let grid = model.grid
+      if let cursor = model.cursor, cursor.gridID == model.grid.id {
+        let cursorStyle = model.modeInfo.cursorStyles[model.mode.cursorStyleIndex]
 
-      if grid.updates.isEmpty {
+        if
+          let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
+          let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
+          let blinkOn = cursorStyle.blinkOn, blinkOn > 0
+        {
+          cursorBlinkingTask = Task {
+            do {
+              try await suspendingClock.sleep(for: .milliseconds(blinkWait))
+              guard !Task.isCancelled else {
+                return
+              }
+              self.cursorBlinkingPhase = false
+              self.renderCursorBlinkingPhase()
+
+              while true {
+                try await suspendingClock.sleep(for: .milliseconds(blinkOff))
+                guard !Task.isCancelled else {
+                  return
+                }
+                self.cursorBlinkingPhase = true
+                self.renderCursorBlinkingPhase()
+
+                try await suspendingClock.sleep(for: .milliseconds(blinkOn))
+                guard !Task.isCancelled else {
+                  return
+                }
+                self.cursorBlinkingPhase = false
+                self.renderCursorBlinkingPhase()
+              }
+            } catch {
+              let isCancellation = error is CancellationError
+
+              if !isCancellation {
+                assertionFailure("\(error)")
+              }
+            }
+          }
+        }
+      }
+
+      let grid = model.grid
+      render(gridUpdates: grid.updates)
+    }
+
+    private func renderCursorBlinkingPhase() {
+      guard
+        let model,
+        let cursor = model.cursor,
+        cursor.gridID == model.grid.id
+      else {
+        return
+      }
+
+      let cursorFrame = IntegerRectangle(
+        origin: cursor.position,
+        size: .init(columnsCount: 1, rowsCount: 1)
+      )
+      render(gridUpdates: [cursorFrame])
+    }
+
+    private func render(gridUpdates: [IntegerRectangle]) {
+      guard let nimsAppearance else {
+        return
+      }
+
+      if gridUpdates.isEmpty {
         setNeedsDisplay(bounds)
 
       } else {
-        let dirtyRects = grid.updates
+        let dirtyRects = gridUpdates
           .map { rectangle in
             let rect = rectangle * nimsAppearance.cellSize
             let upsideDownRect = CGRect(
@@ -285,7 +339,7 @@ public struct GridView: View {
             drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
             if
-              model.cursorBlinkingPhase,
+              self.cursorBlinkingPhase,
               let cursor = model.cursor,
               cursor.gridID == model.grid.id,
               cursor.position.row == row,
@@ -459,7 +513,7 @@ public struct GridView: View {
     }
 
     private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
-      guard let nimsAppearance, let viewStore, let model else {
+      guard let nimsAppearance, let model else {
         return
       }
 
@@ -472,8 +526,9 @@ public struct GridView: View {
         column: Int(upsideDownLocation.x / nimsAppearance.font.cellWidth),
         row: Int(upsideDownLocation.y / nimsAppearance.font.cellHeight)
       )
-      let mouseEvent = MouseEvent(content: content, gridID: model.grid.id, point: point)
-      viewStore.send(.report(mouseEvent: mouseEvent))
+      model.reportMouseEvent(
+        .init(content: content, gridID: model.grid.id, point: point)
+      )
     }
   }
 }

@@ -4,6 +4,7 @@ import AppKit
 import AsyncAlgorithms
 import CasePaths
 import ComposableArchitecture
+import Dependencies
 import IdentifiedCollections
 import Library
 import MessagePack
@@ -15,12 +16,11 @@ public struct Instance: ReducerProtocol {
   public init() {}
 
   public enum Action {
-    case bindNeovimProcess
+    case bindNeovimProcess(
+      mouseEvents: AsyncStream<MouseEvent>,
+      keyPresses: AsyncStream<KeyPress>
+    )
     case applyUIEventsBatch([UIEvent])
-    case runCursorBlinking
-    case setCursorBlinkingPhase(Bool)
-    case handleError(Error)
-    case processFinished(error: Error?)
     case view(action: InstanceView.Action)
   }
 
@@ -28,90 +28,74 @@ public struct Instance: ReducerProtocol {
     let process = state.process
 
     switch action {
-    case .bindNeovimProcess:
+    case let .bindNeovimProcess(mouseEvents, keyPresses):
       let applyUIEventBatches = EffectTask<Action>.run { send in
         for try await value in await process.api.uiEventBatches {
           guard !Task.isCancelled else {
             return
           }
           await send(.applyUIEventsBatch(value))
-          await send(.runCursorBlinking)
         }
       }
 
-//      let reportKeyPresses = EffectTask<Action>.run { send in
-//        for await keyPress in keyPresses {
-//          guard !Task.isCancelled else {
-//            return
-//          }
-//
-//          do {
-//            _ = try await process.api.nvimInput(
-//              keys: keyPress.makeNvimKeyCode()
-//            )
-//            .get()
-//
-//          } catch {
-//            await send(.handleError(error))
-//          }
-//        }
-//      }
-//
-//      let reportMouseEvents = EffectTask<Action>.run { send in
-//        for await mouseEvent in mouseEvents {
-//          guard !Task.isCancelled else {
-//            return
-//          }
-//
-//          let rawButton: String
-//          let rawAction: String
-//
-//          switch mouseEvent.content {
-//          case let .mouse(button, action):
-//            rawButton = button.rawValue
-//            rawAction = action.rawValue
-//
-//          case let .scrollWheel(direction):
-//            rawButton = "wheel"
-//            rawAction = direction.rawValue
-//          }
-//
-//          do {
-//            _ = try await process.api.nvimInputMouse(
-//              button: rawButton,
-//              action: rawAction,
-//              modifier: "",
-//              grid: mouseEvent.gridID.rawValue,
-//              row: mouseEvent.point.row,
-//              col: mouseEvent.point.column
-//            )
-//            .get()
-//
-//          } catch {
-//            await send(.handleError(error))
-//          }
-//        }
-//      }
-//
-//      let reportTabSelections = EffectTask<Action>.run { send in
-//        for await tabpage in tabSelections {
-//          guard !Task.isCancelled else {
-//            return
-//          }
-//
-//          do {
-//            _ = try await process.api.nvimSetCurrentTabpage(
-//              tabpage: tabpage
-//            )
-//            .get()
-//
-//          } catch {
-//            await send(.handleError(error))
-//          }
-//        }
-//      }
+      let reportKeyPresses = EffectTask<Action>.run { _ in
+        for await keyPress in keyPresses {
+          guard !Task.isCancelled else {
+            return
+          }
 
-      let requestUIAttach = EffectTask<Action>.run { send in
+          do {
+            _ = try await process.api.nvimInput(
+              keys: keyPress.makeNvimKeyCode()
+            )
+            .get()
+
+          } catch {
+            assertionFailure("\(error)")
+          }
+        }
+      }
+
+      let reportMouseEvents = EffectTask<Action>.run { _ in
+        let throttledMouseEvents = mouseEvents
+          .throttle(for: .milliseconds(5), clock: .suspending)
+
+        for await mouseEvent in throttledMouseEvents {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          let rawButton: String
+          let rawAction: String
+
+          switch mouseEvent.content {
+          case let .mouse(button, action):
+            rawButton = button.rawValue
+            rawAction = action.rawValue
+
+          case let .scrollWheel(direction):
+            rawButton = "wheel"
+            rawAction = direction.rawValue
+          }
+
+          do {
+            _ = try await process.api.nvimInputMouse(
+              button: rawButton,
+              action: rawAction,
+              modifier: "",
+              grid: mouseEvent.gridID.rawValue,
+              row: mouseEvent.point.row,
+              col: mouseEvent.point.column
+            )
+            .get()
+
+          } catch {
+            assertionFailure("\(error)")
+          }
+        }
+      }
+
+      let requestUIAttach = EffectTask<Action>.run { _ in
         do {
           let uiOptions: UIOptions = [
             .extMultigrid,
@@ -123,27 +107,34 @@ public struct Instance: ReducerProtocol {
           ]
 
           _ = try await process.api.nvimUIAttach(
-            width: 190,
-            height: 56,
+            width: 160,
+            height: 50,
             options: uiOptions
               .nvimUIAttachOptions
           )
           .get()
 
         } catch {
-          await send(.handleError(error))
+          assertionFailure("\(error)")
         }
       }
 
-      return EffectTask.cancel(id: EffectID.bindProcess)
-        .concatenate(with: .merge(
-          applyUIEventBatches,
-          //        reportKeyPresses,
-          //        reportMouseEvents,
-          //        reportTabSelections,
-          requestUIAttach
-        ))
-        .cancellable(id: EffectID.bindProcess)
+      let bindProcess = EffectTask<Action>.merge(
+        applyUIEventBatches,
+        requestUIAttach
+          .concatenate(
+            with: .merge(
+              reportKeyPresses,
+              reportMouseEvents
+            )
+          )
+      )
+      .cancellable(id: EffectID.bindProcess)
+
+      return .concatenate(
+        .cancel(id: EffectID.bindProcess),
+        bindProcess
+      )
 
     case let .applyUIEventsBatch(uiEventsBatch):
       state.bufferedUIEvents += uiEventsBatch
@@ -794,85 +785,12 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
-    case .runCursorBlinking:
-      let setInitialCursorBlinkingPhase = EffectTask<Action>.task(
-        operation: { .setCursorBlinkingPhase(true) }
-      )
-
-      guard
-        let modeInfo = state.modeInfo,
-        let mode = state.mode
-      else {
-        return setInitialCursorBlinkingPhase
-      }
-
-      let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
-      guard
-        let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
-        let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
-        let blinkOn = cursorStyle.blinkOn, blinkOn > 0
-      else {
-        return setInitialCursorBlinkingPhase
-      }
-
-      let runCursorBlinking = EffectTask<Action>.run { send in
-        do {
-          try await suspendingClock.sleep(for: .milliseconds(blinkWait))
-          guard !Task.isCancelled else {
-            return
-          }
-          await send(.setCursorBlinkingPhase(false))
-
-          while true {
-            try await suspendingClock.sleep(for: .milliseconds(blinkOff))
-            guard !Task.isCancelled else {
-              return
-            }
-            await send(.setCursorBlinkingPhase(true))
-
-            try await suspendingClock.sleep(for: .milliseconds(blinkOn))
-            guard !Task.isCancelled else {
-              return
-            }
-            await send(.setCursorBlinkingPhase(false))
-          }
-        } catch {
-          let isCancellation = error is CancellationError
-
-          if !isCancellation {
-            assertionFailure("\(error)")
-          }
-        }
-      }
-      .cancellable(id: EffectID.runCursorBlinking)
-
-      return setInitialCursorBlinkingPhase
-        .concatenate(with: .cancel(id: EffectID.runCursorBlinking))
-        .concatenate(with: runCursorBlinking)
-
-    case let .setCursorBlinkingPhase(value):
-      state.cursorBlinkingPhase = value
-
-      if let cursor = state.cursor {
-        update(&state.grids[id: cursor.gridID]!) { grid in
-          grid.updates = [
-            .init(
-              origin: cursor.position,
-              size: .init(columnsCount: 1, rowsCount: 1)
-            ),
-          ]
-          grid.updateFlag.toggle()
-        }
-      }
-
-      return .none
-
     case let .view(action):
       switch action {
       case let .header(action):
         switch action {
         case let .reportSelectedTab(id):
-          return .run { send in
+          return .fireAndForget {
             do {
               _ = try await process.api.nvimSetCurrentTabpage(
                 tabpage: id
@@ -880,59 +798,23 @@ public struct Instance: ReducerProtocol {
               .get()
 
             } catch {
-              await send(.handleError(error))
+              assertionFailure("\(error)")
             }
           }
         }
 
-      case let .grid(action):
-        switch action {
-        case let .report(mouseEvent):
-          return .run { send in
-            let rawButton: String
-            let rawAction: String
-
-            switch mouseEvent.content {
-            case let .mouse(button, action):
-              rawButton = button.rawValue
-              rawAction = action.rawValue
-
-            case let .scrollWheel(direction):
-              rawButton = "wheel"
-              rawAction = direction.rawValue
-            }
-
-            do {
-              _ = try await process.api.nvimInputMouse(
-                button: rawButton,
-                action: rawAction,
-                modifier: "",
-                grid: mouseEvent.gridID.rawValue,
-                row: mouseEvent.point.row,
-                col: mouseEvent.point.column
-              )
-              .get()
-
-            } catch {
-              await send(.handleError(error))
-            }
-          }
-        }
+      case .grid:
+        assertionFailure()
+        return .none
 
       case .cmdlines:
-        fatalError()
+        assertionFailure()
+        return .none
       }
-
-    default:
-      return .none
     }
   }
 
   private enum EffectID: String, Hashable {
     case bindProcess
-    case runCursorBlinking
   }
-
-  @Dependency(\.suspendingClock)
-  private var suspendingClock: any Clock<Duration>
 }

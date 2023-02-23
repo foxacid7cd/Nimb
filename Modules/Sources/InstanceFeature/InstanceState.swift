@@ -15,7 +15,7 @@ public struct InstanceState {
     process: Neovim.Process,
     bufferedUIEvents: [UIEvent] = [],
     rawOptions: OrderedDictionary<String, Value> = [:],
-    font: NimsFont? = .init(NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)),
+    font: NimsFont,
     title: String? = nil,
     highlights: IdentifiedArrayOf<Highlight> = [],
     defaultForegroundColor: NimsColor? = nil,
@@ -27,7 +27,6 @@ public struct InstanceState {
     modeInfo: ModeInfo? = nil,
     mode: Mode? = nil,
     cursor: Cursor? = nil,
-    cursorBlinkingPhase: Bool = true,
     windowZIndexCounter: Int = 0,
     tabline: Tabline? = nil,
     cmdlines: IdentifiedArrayOf<Cmdline> = [],
@@ -50,7 +49,6 @@ public struct InstanceState {
     self.modeInfo = modeInfo
     self.mode = mode
     self.cursor = cursor
-    self.cursorBlinkingPhase = cursorBlinkingPhase
     self.windowZIndexCounter = windowZIndexCounter
     self.tabline = tabline
     self.cmdlines = cmdlines
@@ -62,7 +60,7 @@ public struct InstanceState {
   public var process: Neovim.Process
   public var bufferedUIEvents: [UIEvent]
   public var rawOptions: OrderedDictionary<String, Value>
-  public var font: NimsFont?
+  public var font: NimsFont
   public var title: String?
   public var highlights: IdentifiedArrayOf<Highlight>
   public var defaultForegroundColor: NimsColor?
@@ -74,7 +72,6 @@ public struct InstanceState {
   public var modeInfo: ModeInfo?
   public var mode: Mode?
   public var cursor: Cursor?
-  public var cursorBlinkingPhase: Bool
   public var windowZIndexCounter: Int
   public var tabline: Tabline?
   public var cmdlines: IdentifiedArrayOf<Cmdline>
