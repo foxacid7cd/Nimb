@@ -3,7 +3,7 @@
 import AppKit
 import Tagged
 
-public struct NimsFont: Sendable, Equatable {
+public struct NimsFont: Sendable, Hashable {
   public init(id: ID) {
     self.id = id
   }

@@ -291,6 +291,10 @@ public struct GridView: View {
             let drawRun = drawRunsProvider
               .drawRun(
                 with: .init(
+                  integerSize: .init(
+                    columnsCount: part.indices.count,
+                    rowsCount: 1
+                  ),
                   text: part.text,
                   font: nimsAppearance.font,
                   isItalic: nimsAppearance.isItalic(for: part.highlightID),

@@ -33,6 +33,8 @@ public class DrawRunsProvider {
   }
 
   private func makeDrawRun(with parameters: DrawRunParameters) -> DrawRun {
+    let size = parameters.integerSize * parameters.font.cellSize
+
     let nsFont = parameters.nsFont
     let attributedString = NSAttributedString(
       string: parameters.text,
@@ -41,13 +43,21 @@ public class DrawRunsProvider {
         .ligature: 2,
       ]
     )
+
     let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(attributedString, nil)!
     let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
 
+    var ascent: CGFloat = 0
     var descent: CGFloat = 0
-    CTLineGetTypographicBounds(ctLine, nil, &descent, nil)
+    CTLineGetTypographicBounds(ctLine, &ascent, &descent, nil)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
-    let yOffset = bounds.height - parameters.font.cellHeight - descent
+
+    let xOffset = (bounds.width - size.width) / 2
+    let yOffset = (bounds.height - size.height) / 2 - descent
+
+    var spaceGlyph = CGGlyph()
+    var space = UniChar((" " as Unicode.Scalar).value)
+    CTFontGetGlyphsForCharacters(nsFont, &space, &spaceGlyph, 1)
 
     let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 
@@ -65,15 +75,30 @@ public class DrawRunsProvider {
           initializedCount = glyphCount
         }
 
+        let advances = [CGSize](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+          CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
+
         return .init(
           textMatrix: CTRunGetTextMatrix(ctRun),
           glyphs: glyphs,
           positions: positions
-            .map { .init(x: $0.x, y: $0.y - yOffset) }
+            .map { .init(x: $0.x - xOffset, y: $0.y - yOffset) },
+          advances: advances
         )
       }
 
-    return .init(parameters: parameters, glyphRuns: glyphRuns)
+    var strikethroughPath: CGPath?
+    if parameters.isStrikethrough {
+      let strikethroughY = bounds.height - yOffset - ascent
+      let mutablePath = CGMutablePath()
+      mutablePath.move(to: .init(x: 0, y: strikethroughY))
+      mutablePath.addLine(to: .init(x: size.width, y: strikethroughY))
+      strikethroughPath = mutablePath.copy()
+    }
+
+    return .init(parameters: parameters, glyphRuns: glyphRuns, strikethroughPath: strikethroughPath)
   }
 
   private lazy var dispatchQueue = DispatchQueue(
@@ -85,19 +110,12 @@ public class DrawRunsProvider {
 }
 
 public struct DrawRunParameters: Hashable {
+  var integerSize: IntegerSize
   var text: String
   var font: NimsFont
   var isItalic: Bool
   var isBold: Bool
   var isStrikethrough: Bool
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine("text: \(text)")
-    hasher.combine("font.id: \(font.id)")
-    hasher.combine("isItalic: \(isItalic)")
-    hasher.combine("isBold: \(isBold)")
-    hasher.combine("isStrikethrough: \(isStrikethrough)")
-  }
 
   public var nsFont: NSFont {
     font.nsFont(isBold: isBold, isItalic: isItalic)
@@ -107,6 +125,7 @@ public struct DrawRunParameters: Hashable {
 public struct DrawRun {
   public var parameters: DrawRunParameters
   public var glyphRuns: [GlyphRun]
+  public var strikethroughPath: CGPath?
 
   public func draw(
     at frame: CGRect,
@@ -132,6 +151,21 @@ public struct DrawRun {
         context
       )
     }
+
+    if let strikethroughPath {
+      var offsettingTransform = CGAffineTransform(
+        translationX: frame.origin.x,
+        y: frame.origin.y
+      )
+
+      let translatedPath = strikethroughPath
+        .copy(using: &offsettingTransform)!
+
+      context.addPath(translatedPath)
+      context.setLineWidth(1)
+      context.setStrokeColor(foregroundColor.appKit.cgColor)
+      context.strokePath()
+    }
   }
 }
 
@@ -139,4 +173,5 @@ public struct GlyphRun {
   public var textMatrix: CGAffineTransform
   public var glyphs: [CGGlyph]
   public var positions: [CGPoint]
+  public var advances: [CGSize]
 }
