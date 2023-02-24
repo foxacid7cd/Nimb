@@ -266,9 +266,9 @@ public struct GridView: View {
 
           let rowLayout = grid.rowLayouts[row]
           for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
-            let highlight = nimsAppearance.highlights[part.highlightID.rawValue]
-            let backgroundColor = highlight?.backgroundColor ?? nimsAppearance.defaultBackgroundColor
-            let foregroundColor = highlight?.foregroundColor ?? nimsAppearance.defaultForegroundColor
+            let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
+            let foregroundColor = nimsAppearance.foregroundColor(for: part.highlightID)
+            let specialColor = nimsAppearance.specialColor(for: part.highlightID)
 
             let partIntegerFrame = IntegerRectangle(
               origin: .init(column: part.indices.lowerBound, row: row),
@@ -291,8 +291,10 @@ public struct GridView: View {
               with: .init(
                 text: part.text,
                 font: nimsAppearance.font,
-                isBold: highlight?.isBold ?? false,
-                isItalic: highlight?.isItalic ?? false
+                isItalic: nimsAppearance.isItalic(for: part.highlightID),
+                isBold: nimsAppearance.isBold(for: part.highlightID),
+                isStrikethrough: nimsAppearance.isStrikethrough(for: part.highlightID),
+                underlineStyle: nimsAppearance.underlineStyle(for: part.highlightID)
               )
             )
 

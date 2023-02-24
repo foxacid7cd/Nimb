@@ -2,6 +2,7 @@
 
 import AppKit
 import IdentifiedCollections
+import Tagged
 
 public struct NimsAppearance {
   public init(
@@ -43,4 +44,81 @@ public struct NimsAppearance {
     defaultBackgroundColor: .init(rgb: 0x000000),
     defaultSpecialColor: .init(rgb: 0xFF0000)
   )
+
+  public func isItalic(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isItalic
+  }
+
+  public func isBold(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isBold
+  }
+
+  public func isStrikethrough(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isStrikethrough
+  }
+
+  public func underlineStyle(for highlightID: Highlight.ID) -> NSUnderlineStyle {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return .init()
+    }
+
+    if highlight.isUnderline {
+      return .single
+
+    } else if highlight.isUndercurl {
+      return .patternDashDot
+
+    } else if highlight.isUnderdouble {
+      return .double
+
+    } else if highlight.isUnderdotted {
+      return .patternDot
+
+    } else if highlight.isUnderdashed {
+      return .patternDash
+
+    } else {
+      return .init()
+    }
+  }
+
+  public func foregroundColor(for highlightID: Highlight.ID) -> NimsColor {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultForegroundColor
+    }
+
+    return highlight.isReverse ?
+      highlight.backgroundColor ?? defaultBackgroundColor :
+      highlight.foregroundColor ?? defaultForegroundColor
+  }
+
+  public func backgroundColor(for highlightID: Highlight.ID) -> NimsColor {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultBackgroundColor
+    }
+
+    return highlight.isReverse ?
+      highlight.foregroundColor ?? defaultForegroundColor :
+      highlight.backgroundColor ?? defaultBackgroundColor
+  }
+
+  public func specialColor(for highlightID: Highlight.ID) -> NimsColor {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultSpecialColor
+    }
+
+    return highlight.specialColor ?? (highlight.isReverse ? defaultBackgroundColor : defaultForegroundColor)
+  }
 }

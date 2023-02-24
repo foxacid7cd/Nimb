@@ -243,7 +243,22 @@ public struct Instance: ReducerProtocol {
 
             update(&state.highlights[rawID]) { highlight in
               if highlight == nil {
-                highlight = .init(id: id)
+                highlight = .init(
+                  id: id,
+                  foregroundColor: nil,
+                  backgroundColor: nil,
+                  specialColor: nil,
+                  isReverse: false,
+                  isItalic: false,
+                  isBold: false,
+                  isStrikethrough: false,
+                  isUnderline: false,
+                  isUndercurl: false,
+                  isUnderdouble: false,
+                  isUnderdotted: false,
+                  isUnderdashed: false,
+                  blend: 0
+                )
               }
 
               for (key, value) in rgbAttrs {
@@ -267,14 +282,54 @@ public struct Instance: ReducerProtocol {
                     highlight!.specialColor = .init(rgb: value)
                   }
 
-                case "bold":
+                case "reverse":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.isReverse = value
                   }
 
                 case "italic":
                   if case let .boolean(value) = value {
                     highlight!.isItalic = value
+                  }
+
+                case "bold":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "strikethrough":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "underline":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "undercurl":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "underdouble":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "underdotted":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "underdashed":
+                  if case let .boolean(value) = value {
+                    highlight!.isBold = value
+                  }
+
+                case "blend":
+                  if case let .integer(value) = value {
+                    highlight!.blend = value
                   }
 
                 default:

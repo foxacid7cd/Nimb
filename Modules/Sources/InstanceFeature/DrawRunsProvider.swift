@@ -36,7 +36,15 @@ public class DrawRunsProvider {
     let nsFont = parameters.nsFont
     let attributedString = NSAttributedString(
       string: parameters.text,
-      attributes: [.font: nsFont]
+      attributes: [
+        .foregroundColor: NSColor.green,
+        .font: nsFont,
+        .ligature: NSNumber(value: 1),
+        .strikethroughStyle: NSNumber(value: parameters.isStrikethrough ? 1 : 0),
+        .strikethroughColor: NSColor.white,
+        .underlineStyle: parameters.underlineStyle,
+        .underlineColor: NSColor.brown,
+      ]
     )
 
     let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
@@ -57,6 +65,13 @@ public class DrawRunsProvider {
         CTRunGetGlyphs(run, .init(), buffer.baseAddress!)
         initializedCount = glyphCount
       }
+
+//      let attributes = CTRunGetAttributes(run) as NSDictionary
+//      for (key, value) in attributes {
+//        print("\(key) \(value)")
+//      }
+
+      CTRunGetAttributes(run)
 
       glyphRuns.append(
         .init(
@@ -81,14 +96,18 @@ public class DrawRunsProvider {
 public struct DrawRunParameters: Hashable {
   var text: String
   var font: NimsFont
-  var isBold: Bool
   var isItalic: Bool
+  var isBold: Bool
+  var isStrikethrough: Bool
+  var underlineStyle: NSUnderlineStyle
 
   public func hash(into hasher: inout Hasher) {
     hasher.combine("text: \(text)")
     hasher.combine("font.id: \(font.id)")
-    hasher.combine("isBold: \(isBold)")
     hasher.combine("isItalic: \(isItalic)")
+    hasher.combine("isBold: \(isBold)")
+    hasher.combine("isStrikethrough: \(isStrikethrough)")
+    hasher.combine("underlineStyle: \(underlineStyle.hashValue)")
   }
 
   public var nsFont: NSFont {
