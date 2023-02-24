@@ -90,15 +90,86 @@ public class DrawRunsProvider {
       }
 
     var strikethroughPath: CGPath?
-    if parameters.isStrikethrough {
+
+    if parameters.decorations.isStrikethrough {
       let strikethroughY = bounds.height - yOffset - ascent
       let mutablePath = CGMutablePath()
       mutablePath.move(to: .init(x: 0, y: strikethroughY))
       mutablePath.addLine(to: .init(x: size.width, y: strikethroughY))
-      strikethroughPath = mutablePath.copy()
+
+      strikethroughPath = mutablePath.copy(
+        strokingWithWidth: 1,
+        lineCap: .round,
+        lineJoin: .round,
+        miterLimit: 0
+      )
     }
 
-    return .init(parameters: parameters, glyphRuns: glyphRuns, strikethroughPath: strikethroughPath)
+    var underlinePath: CGPath?
+
+    let underlineY = descent / 2 - 1
+    if parameters.decorations.isUnderdashed {
+      drawUnderlinePath(dashingPattern: [2, 2]) { path in
+        path.move(to: .init(x: xOffset, y: underlineY))
+        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+      }
+
+    } else if parameters.decorations.isUnderdotted {
+      drawUnderlinePath(dashingPattern: [1, 2]) { path in
+        path.move(to: .init(x: xOffset, y: underlineY))
+        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+      }
+
+    } else if parameters.decorations.isUnderdouble {
+      drawUnderlinePath { path in
+        path.move(to: .init(x: xOffset, y: underlineY))
+        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+
+        path.move(to: .init(x: xOffset, y: underlineY + 2))
+        path.addLine(to: .init(x: size.width + xOffset, y: underlineY + 2))
+      }
+
+    } else if parameters.decorations.isUndercurl {
+      drawUnderlinePath { path in
+        let widthDivider = 3
+
+        let xStep = parameters.font.cellWidth / Double(widthDivider)
+        let pointsCount = parameters.integerSize.columnsCount * widthDivider + 2
+
+        let oddUnderlineY = underlineY + 1
+        let evenUnderlineY = underlineY - 1
+        path.move(to: .init(x: xOffset, y: oddUnderlineY))
+        for index in 1 ..< pointsCount - 1 {
+          let isEven = index.isMultiple(of: 2)
+          path.addLine(
+            to: .init(
+              x: Double(index) * xStep + xOffset,
+              y: isEven ? evenUnderlineY : oddUnderlineY
+            )
+          )
+        }
+      }
+
+    } else if parameters.decorations.isUnderline {
+      drawUnderlinePath { path in
+        path.move(to: .init(x: xOffset, y: underlineY))
+        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+      }
+    }
+
+    func drawUnderlinePath(dashingPattern: [CGFloat] = [], with mutatePath: (CGMutablePath) -> Void) {
+      let mutablePath = CGMutablePath()
+      mutatePath(mutablePath)
+
+      underlinePath = mutablePath.copy()
+    }
+
+    return .init(
+      parameters: parameters,
+      glyphRuns: glyphRuns,
+      strikethroughPath: strikethroughPath,
+      underlinePath: underlinePath
+    )
   }
 
   private lazy var dispatchQueue = DispatchQueue(
@@ -115,7 +186,7 @@ public struct DrawRunParameters: Hashable {
   var font: NimsFont
   var isItalic: Bool
   var isBold: Bool
-  var isStrikethrough: Bool
+  var decorations: Highlight.Decorations
 
   public var nsFont: NSFont {
     font.nsFont(isBold: isBold, isItalic: isItalic)
@@ -126,6 +197,7 @@ public struct DrawRun {
   public var parameters: DrawRunParameters
   public var glyphRuns: [GlyphRun]
   public var strikethroughPath: CGPath?
+  public var underlinePath: CGPath?
 
   public func draw(
     at frame: CGRect,
@@ -152,18 +224,28 @@ public struct DrawRun {
       )
     }
 
-    if let strikethroughPath {
-      var offsettingTransform = CGAffineTransform(
-        translationX: frame.origin.x,
-        y: frame.origin.y
-      )
+    context.setShouldAntialias(false)
 
+    var offsettingTransform = CGAffineTransform(
+      translationX: frame.origin.x,
+      y: frame.origin.y
+    )
+
+    if let strikethroughPath {
       let translatedPath = strikethroughPath
         .copy(using: &offsettingTransform)!
 
       context.addPath(translatedPath)
-      context.setLineWidth(1)
-      context.setStrokeColor(foregroundColor.appKit.cgColor)
+      context.setStrokeColor(specialColor.appKit.cgColor)
+      context.strokePath()
+    }
+
+    if let underlinePath {
+      let translatedPath = underlinePath
+        .copy(using: &offsettingTransform)!
+
+      context.addPath(translatedPath)
+      context.setStrokeColor(specialColor.appKit.cgColor)
       context.strokePath()
     }
   }

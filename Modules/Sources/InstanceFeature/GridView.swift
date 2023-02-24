@@ -299,7 +299,7 @@ public struct GridView: View {
                   font: nimsAppearance.font,
                   isItalic: nimsAppearance.isItalic(for: part.highlightID),
                   isBold: nimsAppearance.isBold(for: part.highlightID),
-                  isStrikethrough: nimsAppearance.isStrikethrough(for: part.highlightID)
+                  decorations: nimsAppearance.decorations(for: part.highlightID)
                 )
               )
             drawRun.draw(
@@ -362,17 +362,14 @@ public struct GridView: View {
 
                 let cursorForegroundColor: NimsColor
                 let cursorBackgroundColor: NimsColor
-                let cursorSpecialColor: NimsColor
 
                 if cursorHighlightID.isDefault {
                   cursorForegroundColor = backgroundColor
                   cursorBackgroundColor = foregroundColor
-                  cursorSpecialColor = backgroundColor
 
                 } else {
                   cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorHighlightID)
                   cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
-                  cursorSpecialColor = nimsAppearance.specialColor(for: cursorHighlightID)
                 }
 
                 cgContext.clip(to: [cursorUpsideDownFrame])
@@ -381,7 +378,7 @@ public struct GridView: View {
                   to: cgContext,
                   foregroundColor: cursorForegroundColor,
                   backgroundColor: cursorBackgroundColor,
-                  specialColor: cursorSpecialColor
+                  specialColor: cursorBackgroundColor
                 )
               }
             }

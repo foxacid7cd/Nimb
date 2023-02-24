@@ -61,37 +61,12 @@ public struct NimsAppearance {
     return highlight.isBold
   }
 
-  public func isStrikethrough(for highlightID: Highlight.ID) -> Bool {
+  public func decorations(for highlightID: Highlight.ID) -> Highlight.Decorations {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return false
+      return .init()
     }
 
-    return highlight.isStrikethrough
-  }
-
-  public func underlineStyle(for highlightID: Highlight.ID) -> NSUnderlineStyle {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return []
-    }
-
-    if highlight.isUnderline {
-      return [.single]
-
-    } else if highlight.isUndercurl {
-      return [.single, .patternDashDot]
-
-    } else if highlight.isUnderdouble {
-      return [.double]
-
-    } else if highlight.isUnderdotted {
-      return [.single, .patternDot]
-
-    } else if highlight.isUnderdashed {
-      return [.single, .patternDash]
-
-    } else {
-      return []
-    }
+    return highlight.decorations
   }
 
   public func foregroundColor(for highlightID: Highlight.ID) -> NimsColor {

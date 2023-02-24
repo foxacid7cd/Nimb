@@ -251,12 +251,7 @@ public struct Instance: ReducerProtocol {
                   isReverse: false,
                   isItalic: false,
                   isBold: false,
-                  isStrikethrough: false,
-                  isUnderline: false,
-                  isUndercurl: false,
-                  isUnderdouble: false,
-                  isUnderdotted: false,
-                  isUnderdashed: false,
+                  decorations: .init(),
                   blend: 0
                 )
               }
@@ -299,32 +294,32 @@ public struct Instance: ReducerProtocol {
 
                 case "strikethrough":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isStrikethrough = value
                   }
 
                 case "underline":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isUnderline = value
                   }
 
                 case "undercurl":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isUndercurl = value
                   }
 
                 case "underdouble":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isUnderdouble = value
                   }
 
                 case "underdotted":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isUnderdotted = value
                   }
 
                 case "underdashed":
                   if case let .boolean(value) = value {
-                    highlight!.isBold = value
+                    highlight!.decorations.isUnderdashed = value
                   }
 
                 case "blend":
