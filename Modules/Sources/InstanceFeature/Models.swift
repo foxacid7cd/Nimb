@@ -7,14 +7,14 @@ import Neovim
 import SwiftUI
 import Tagged
 
-public enum Anchor: String, Equatable {
+public enum Anchor: String {
   case northWest = "NW"
   case northEast = "NE"
   case southWest = "SW"
   case southEast = "SE"
 }
 
-public struct Cell: Equatable {
+public struct Cell {
   public init(text: String, highlightID: Highlight.ID) {
     self.text = text
     self.highlightID = highlightID
@@ -35,7 +35,7 @@ public enum CursorShape: String {
   case vertical
 }
 
-public struct CursorStyle: Equatable {
+public struct CursorStyle {
   public init(
     name: String?,
     shortName: String?,
@@ -75,7 +75,7 @@ public struct CursorStyle: Equatable {
   public var attrIDLm: Int?
 }
 
-public struct ModeInfo: Equatable {
+public struct ModeInfo {
   public init(enabled: Bool, cursorStyles: [CursorStyle]) {
     self.enabled = enabled
     self.cursorStyles = cursorStyles
@@ -85,7 +85,7 @@ public struct ModeInfo: Equatable {
   public var cursorStyles: [CursorStyle]
 }
 
-public struct Mode: Equatable {
+public struct Mode {
   public init(name: String, cursorStyleIndex: Int) {
     self.name = name
     self.cursorStyleIndex = cursorStyleIndex
@@ -95,7 +95,7 @@ public struct Mode: Equatable {
   public var cursorStyleIndex: Int
 }
 
-public struct Cursor: Equatable {
+public struct Cursor {
   public init(gridID: Grid.ID, position: IntegerPoint) {
     self.gridID = gridID
     self.position = position
@@ -105,7 +105,7 @@ public struct Cursor: Equatable {
   public var position: IntegerPoint
 }
 
-public struct FloatingWindow: Equatable, Identifiable {
+public struct FloatingWindow: Identifiable {
   public init(
     reference: References.Window,
     gridID: Grid.ID,
@@ -143,7 +143,7 @@ public struct FloatingWindow: Equatable, Identifiable {
   }
 }
 
-public struct Grid: Equatable, Identifiable {
+public struct Grid: Identifiable {
   public init(
     id: Grid.ID,
     cells: TwoDimensionalArray<Cell>,
@@ -170,7 +170,7 @@ public struct Grid: Equatable, Identifiable {
   public var updateFlag: Bool
 }
 
-public struct RowLayout: Equatable {
+public struct RowLayout {
   public init(
     parts: [RowPart],
     cellIndices: [Range<Int>]
@@ -225,7 +225,7 @@ public struct RowLayout: Equatable {
   public var cellIndices: [Range<Int>]
 }
 
-public struct RowPart: Equatable {
+public struct RowPart {
   public init(
     highlightID: Highlight.ID,
     text: String,
@@ -241,7 +241,7 @@ public struct RowPart: Equatable {
   public var indices: Range<Int>
 }
 
-public struct Window: Equatable, Identifiable {
+public struct Window: Identifiable {
   public init(reference: References.Window, gridID: Grid.ID, frame: IntegerRectangle, zIndex: Int, isHidden: Bool) {
     self.reference = reference
     self.gridID = gridID
@@ -261,22 +261,22 @@ public struct Window: Equatable, Identifiable {
   }
 }
 
-public struct Tab: Equatable, Identifiable, Sendable {
+public struct Tab: Identifiable, Sendable {
   public var id: References.Tabpage
   public var name: String
 }
 
-public struct Tabline: Equatable, Sendable {
+public struct Tabline: Sendable {
   public var currentTabID: Tab.ID
   public var tabs: IdentifiedArrayOf<Tab>
 }
 
-public struct CmdlineContentPart: Equatable, Sendable {
+public struct CmdlineContentPart: Sendable {
   public var highlightID: Highlight.ID
   public var text: String
 }
 
-public struct Cmdline: Equatable, Identifiable, Sendable {
+public struct Cmdline: Identifiable, Sendable {
   public var contentParts: [CmdlineContentPart]
   public var cursorPosition: Int
   public var firstCharacter: String

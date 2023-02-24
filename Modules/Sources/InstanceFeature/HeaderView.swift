@@ -17,7 +17,7 @@ public struct HeaderView: View {
 
   public var store: Store<Model, Action>
 
-  public struct Model: Equatable {
+  public struct Model {
     public var tabline: Tabline?
     public var gridsLayoutUpdateFlag: Bool
   }

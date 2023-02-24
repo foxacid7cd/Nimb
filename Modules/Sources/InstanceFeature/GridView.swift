@@ -429,7 +429,7 @@ public struct GridView: View {
         return
       }
 
-      let yThreshold = nimsAppearance.cellHeight * 1.5
+      let yThreshold = nimsAppearance.cellHeight * 2
       let xThreshold = nimsAppearance.cellWidth * 2
 
       if event.phase == .began {

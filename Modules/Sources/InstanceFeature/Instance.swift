@@ -107,8 +107,8 @@ public struct Instance: ReducerProtocol {
           ]
 
           _ = try await process.api.nvimUIAttach(
-            width: 160,
-            height: 50,
+            width: 200,
+            height: 60,
             options: uiOptions
               .nvimUIAttachOptions
           )

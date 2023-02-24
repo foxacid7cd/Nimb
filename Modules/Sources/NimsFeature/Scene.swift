@@ -17,7 +17,7 @@ public extension Nims {
     public var store: StoreOf<Nims>
 
     public var body: some SwiftUI.Scene {
-      WindowGroup {
+      SwiftUI.WindowGroup("Nims", id: "main") {
         IfLetStore(
           store.scope(
             state: \.instanceState,
