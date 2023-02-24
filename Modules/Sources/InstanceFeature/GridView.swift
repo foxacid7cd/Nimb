@@ -67,7 +67,6 @@ public struct GridView: View {
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-      nsView.drawRunsProvider = drawRunsProvider
       nsView.nimsAppearance = context.environment.nimsAppearance
       nsView.suspendingClock = context.environment.suspendingClock
       nsView.viewStore = .init(
@@ -82,7 +81,6 @@ public struct GridView: View {
   }
 
   public class NSView: AppKit.NSView {
-    var drawRunsProvider: DrawRunsProvider?
     var nimsAppearance: NimsAppearance?
     var suspendingClock: (any Clock<Duration>)?
 
@@ -103,6 +101,7 @@ public struct GridView: View {
       }
     }
 
+    private let drawRunsProvider = DrawRunsProvider()
     private var viewStoreCancellable: AnyCancellable?
     private var model: GridView.Model?
     private var cursorBlinkingTask: Task<Void, Never>?
@@ -213,7 +212,7 @@ public struct GridView: View {
     }
 
     override public func draw(_: NSRect) {
-      guard let graphicsContext = NSGraphicsContext.current, let drawRunsProvider, let nimsAppearance, let model else {
+      guard let graphicsContext = NSGraphicsContext.current, let nimsAppearance, let model else {
         return
       }
 
@@ -266,6 +265,8 @@ public struct GridView: View {
 
           let rowLayout = grid.rowLayouts[row]
           for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
+            cgContext.saveGState()
+
             let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
             let foregroundColor = nimsAppearance.foregroundColor(for: part.highlightID)
             let specialColor = nimsAppearance.specialColor(for: part.highlightID)
@@ -287,20 +288,23 @@ public struct GridView: View {
             cgContext.setFillColor(backgroundColor.appKit.cgColor)
             cgContext.fill([upsideDownPartFrame])
 
-            let drawRun = drawRunsProvider.drawRun(
-              with: .init(
-                text: part.text,
-                font: nimsAppearance.font,
-                isItalic: nimsAppearance.isItalic(for: part.highlightID),
-                isBold: nimsAppearance.isBold(for: part.highlightID),
-                isStrikethrough: nimsAppearance.isStrikethrough(for: part.highlightID),
-                underlineStyle: nimsAppearance.underlineStyle(for: part.highlightID)
+            let drawRun = drawRunsProvider
+              .drawRun(
+                with: .init(
+                  text: part.text,
+                  font: nimsAppearance.font,
+                  isItalic: nimsAppearance.isItalic(for: part.highlightID),
+                  isBold: nimsAppearance.isBold(for: part.highlightID),
+                  isStrikethrough: nimsAppearance.isStrikethrough(for: part.highlightID)
+                )
               )
+            drawRun.draw(
+              at: upsideDownPartFrame,
+              to: cgContext,
+              foregroundColor: foregroundColor,
+              backgroundColor: backgroundColor,
+              specialColor: specialColor
             )
-
-            cgContext.setShouldAntialias(true)
-            cgContext.setFillColor(foregroundColor.appKit.cgColor)
-            drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
 
             if
               self.cursorBlinkingPhase,
@@ -350,41 +354,35 @@ public struct GridView: View {
                   size: cursorFrame.size
                 )
 
-                let cursorBackgroundColor: NimsColor
-                let cursorForegroundColor: NimsColor
-                if let highlightID = cursorStyle.attrID {
-                  if highlightID == .zero {
-                    cursorBackgroundColor = foregroundColor
-                    cursorForegroundColor = backgroundColor
+                let cursorHighlightID = cursorStyle.attrID ?? .default
 
-                  } else {
-                    let highlight = nimsAppearance.highlights[highlightID.rawValue]
-                    cursorBackgroundColor = highlight?.backgroundColor ?? foregroundColor
-                    cursorForegroundColor = highlight?.foregroundColor ?? backgroundColor
-                  }
+                let cursorForegroundColor: NimsColor
+                let cursorBackgroundColor: NimsColor
+                let cursorSpecialColor: NimsColor
+
+                if cursorHighlightID.isDefault {
+                  cursorForegroundColor = backgroundColor
+                  cursorBackgroundColor = foregroundColor
+                  cursorSpecialColor = backgroundColor
 
                 } else {
-                  cursorBackgroundColor = foregroundColor
-                  cursorForegroundColor = backgroundColor
+                  cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorHighlightID)
+                  cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
+                  cursorSpecialColor = nimsAppearance.specialColor(for: cursorHighlightID)
                 }
 
-                cgContext.saveGState()
-
-                cgContext.setShouldAntialias(false)
-                cgContext.setFillColor(cursorBackgroundColor.appKit.cgColor)
-                cgContext.fill([cursorUpsideDownFrame])
-
-                if cursorShape == .block {
-                  cgContext.clip(to: [cursorUpsideDownFrame])
-
-                  cgContext.setShouldAntialias(true)
-                  cgContext.setFillColor(cursorForegroundColor.appKit.cgColor)
-                  drawRun.draw(at: upsideDownPartFrame.origin, with: cgContext)
-                }
-
-                cgContext.restoreGState()
+                cgContext.clip(to: [cursorUpsideDownFrame])
+                drawRun.draw(
+                  at: upsideDownPartFrame,
+                  to: cgContext,
+                  foregroundColor: cursorForegroundColor,
+                  backgroundColor: cursorBackgroundColor,
+                  specialColor: cursorSpecialColor
+                )
               }
             }
+
+            cgContext.restoreGState()
           }
         }
       }
@@ -449,6 +447,7 @@ public struct GridView: View {
 
         } else if abs(xScrollingAccumulator) >= xThreshold * 1.5 {
           isScrollingHorizontal = true
+          xScrollingAccumulator = 0
         }
       }
 

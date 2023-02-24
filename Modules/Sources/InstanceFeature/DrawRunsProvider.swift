@@ -37,50 +37,41 @@ public class DrawRunsProvider {
     let attributedString = NSAttributedString(
       string: parameters.text,
       attributes: [
-        .foregroundColor: NSColor.green,
         .font: nsFont,
-        .ligature: NSNumber(value: 1),
-        .strikethroughStyle: NSNumber(value: parameters.isStrikethrough ? 1 : 0),
-        .strikethroughColor: NSColor.white,
-        .underlineStyle: parameters.underlineStyle,
-        .underlineColor: NSColor.brown,
+        .ligature: 2,
       ]
     )
+    let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(attributedString, nil)!
+    let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
 
-    let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
-    let line = CTTypesetterCreateLine(typesetter, .init())
-    let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+    var descent: CGFloat = 0
+    CTLineGetTypographicBounds(ctLine, nil, &descent, nil)
+    let bounds = CTLineGetBoundsWithOptions(ctLine, [])
+    let yOffset = bounds.height - parameters.font.cellHeight - descent
 
-    var glyphRuns = [GlyphRun]()
+    let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 
-    for run in runs {
-      let glyphCount = CTRunGetGlyphCount(run)
+    let glyphRuns = ctRuns
+      .map { ctRun -> GlyphRun in
+        let glyphCount = CTRunGetGlyphCount(ctRun)
 
-      let glyphPositions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-        CTRunGetPositions(run, .init(), buffer.baseAddress!)
-        initializedCount = glyphCount
-      }
+        let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+          CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
 
-      let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-        CTRunGetGlyphs(run, .init(), buffer.baseAddress!)
-        initializedCount = glyphCount
-      }
+        let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+          CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
 
-//      let attributes = CTRunGetAttributes(run) as NSDictionary
-//      for (key, value) in attributes {
-//        print("\(key) \(value)")
-//      }
-
-      CTRunGetAttributes(run)
-
-      glyphRuns.append(
-        .init(
-          textMatrix: CTRunGetTextMatrix(run),
-          positions: glyphPositions,
-          glyphs: glyphs
+        return .init(
+          textMatrix: CTRunGetTextMatrix(ctRun),
+          glyphs: glyphs,
+          positions: positions
+            .map { .init(x: $0.x, y: $0.y - yOffset) }
         )
-      )
-    }
+      }
 
     return .init(parameters: parameters, glyphRuns: glyphRuns)
   }
@@ -99,7 +90,6 @@ public struct DrawRunParameters: Hashable {
   var isItalic: Bool
   var isBold: Bool
   var isStrikethrough: Bool
-  var underlineStyle: NSUnderlineStyle
 
   public func hash(into hasher: inout Hasher) {
     hasher.combine("text: \(text)")
@@ -107,7 +97,6 @@ public struct DrawRunParameters: Hashable {
     hasher.combine("isItalic: \(isItalic)")
     hasher.combine("isBold: \(isBold)")
     hasher.combine("isStrikethrough: \(isStrikethrough)")
-    hasher.combine("underlineStyle: \(underlineStyle.hashValue)")
   }
 
   public var nsFont: NSFont {
@@ -119,21 +108,26 @@ public struct DrawRun {
   public var parameters: DrawRunParameters
   public var glyphRuns: [GlyphRun]
 
-  public func draw(at point: CGPoint, with context: CGContext) {
-    let nsFont = parameters.nsFont
+  public func draw(
+    at frame: CGRect,
+    to context: CGContext,
+    foregroundColor: NimsColor,
+    backgroundColor: NimsColor,
+    specialColor: NimsColor
+  ) {
+    context.setShouldAntialias(false)
+    context.setFillColor(backgroundColor.appKit.cgColor)
+    context.fill([frame])
 
+    context.setShouldAntialias(true)
+    context.setFillColor(foregroundColor.appKit.cgColor)
+    let nsFont = parameters.font.nsFont()
     for glyphRun in glyphRuns {
-      context.textMatrix = glyphRun.textMatrix
       CTFontDrawGlyphs(
         nsFont,
         glyphRun.glyphs,
         glyphRun.positions
-          .map {
-            CGPoint(
-              x: $0.x + point.x,
-              y: $0.y + point.y - nsFont.descender
-            )
-          },
+          .map { .init(x: $0.x + frame.origin.x, y: $0.y + frame.origin.y) },
         glyphRun.glyphs.count,
         context
       )
@@ -143,6 +137,6 @@ public struct DrawRun {
 
 public struct GlyphRun {
   public var textMatrix: CGAffineTransform
-  public var positions: [CGPoint]
   public var glyphs: [CGGlyph]
+  public var positions: [CGPoint]
 }

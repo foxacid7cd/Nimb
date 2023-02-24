@@ -76,4 +76,4 @@
 --xcodeindentation disabled
 --yodaswap always
 --disable sortDeclarations,wrap
---enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,preferDouble,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
+--enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases

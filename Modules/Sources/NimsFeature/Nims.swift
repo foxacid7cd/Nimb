@@ -28,8 +28,8 @@ public struct Nims: ReducerProtocol {
       switch action {
       case let .createInstance(arguments, environmentOverlay, mouseEvents, keyPresses):
         let nsFont: NSFont
-        if let jetBrains = NSFont(name: "JetBrainsMono Nerd Font Mono", size: 12) {
-          nsFont = jetBrains
+        if let meslo = NSFont(name: "MesloLGS NFM", size: 12) {
+          nsFont = meslo
 
         } else {
           nsFont = .monospacedSystemFont(ofSize: 12, weight: .regular)

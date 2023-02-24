@@ -55,6 +55,7 @@ final class FontBridge {
     let bold = NSFontManager.shared.convert(appKit, toHaveTrait: .boldFontMask)
     let italic = NSFontManager.shared.convert(appKit, toHaveTrait: .italicFontMask)
     let boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
+
     let cellWidth = appKit.makeCellWidth()
     let cellHeight = appKit.makeCellHeight()
 

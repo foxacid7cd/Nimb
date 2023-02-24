@@ -71,26 +71,26 @@ public struct NimsAppearance {
 
   public func underlineStyle(for highlightID: Highlight.ID) -> NSUnderlineStyle {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return .init()
+      return []
     }
 
     if highlight.isUnderline {
-      return .single
+      return [.single]
 
     } else if highlight.isUndercurl {
-      return .patternDashDot
+      return [.single, .patternDashDot]
 
     } else if highlight.isUnderdouble {
-      return .double
+      return [.double]
 
     } else if highlight.isUnderdotted {
-      return .patternDot
+      return [.single, .patternDot]
 
     } else if highlight.isUnderdashed {
-      return .patternDash
+      return [.single, .patternDash]
 
     } else {
-      return .init()
+      return []
     }
   }
 
