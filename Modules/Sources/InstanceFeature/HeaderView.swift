@@ -8,16 +8,16 @@ import SwiftUI
 public struct HeaderView: View {
   public init(store: Store<Model, Action>) {
     self.store = store
-    viewStore = ViewStore(
-      store,
-      observe: { $0 },
-      removeDuplicates: { $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag }
-    )
   }
 
   public var store: Store<Model, Action>
 
   public struct Model {
+    public init(tabline: Tabline? = nil, gridsLayoutUpdateFlag: Bool) {
+      self.tabline = tabline
+      self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
+    }
+
     public var tabline: Tabline?
     public var gridsLayoutUpdateFlag: Bool
   }
@@ -29,48 +29,57 @@ public struct HeaderView: View {
   @Environment(\.nimsAppearance)
   private var nimsAppearance: NimsAppearance
 
-  @ObservedObject
-  private var viewStore: ViewStore<Model, Action>
-
   public var body: some View {
     let foregroundColor = nimsAppearance.defaultForegroundColor.swiftUI
 
-    HStack(alignment: .center) {
-      Button {
-        print()
+    WithViewStore(
+      store,
+      observe: { $0 },
+      removeDuplicates: { $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag },
+      content: { viewStore in
+        let model = viewStore.state
 
-      } label: {
-        Image(systemName: "sidebar.left", variableValue: nil)
-      }
-      .tint(foregroundColor)
-      .buttonStyle(.borderless)
-      .frame(width: 24, height: 24)
+        HStack(alignment: .center) {
+          Button {
+            print()
 
-      if let tabline = viewStore.tabline {
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(alignment: .center, spacing: 2) {
-            ForEach(tabline.tabs) { tab in
-              let isSelected = tab.id == tabline.currentTabID
+          } label: {
+            Image(systemName: "sidebar.left", variableValue: 1)
+          }
+          .tint(foregroundColor)
+          .buttonStyle(.borderless)
+          .frame(width: 32, height: 44)
+          .frame(maxHeight: .infinity)
+          .fixedSize(horizontal: true, vertical: false)
 
-              Button {
-                viewStore.send(.reportSelectedTab(id: tab.id))
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+              let tabs = model.tabline?.tabs ?? []
 
-              } label: {
-                Text(tab.name)
-                  .font(.system(size: 11))
-              }
-              .buttonStyle(
-                TabButtonStyle(
-                  foregroundColor: foregroundColor,
-                  isSelected: isSelected
+              ForEach(tabs) { tab in
+                Button {
+                  viewStore.send(.reportSelectedTab(id: tab.id))
+
+                } label: {
+                  Text(tab.name)
+                    .font(.system(size: 11))
+                }
+                .buttonStyle(
+                  TabButtonStyle(
+                    foregroundColor: foregroundColor,
+                    isSelected: tab.id == model.tabline?.currentTabID
+                  )
                 )
-              )
+              }
             }
           }
+          .frame(height: 44)
         }
+        .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
       }
-    }
-    .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+    )
+
+    .background(nimsAppearance.defaultBackgroundColor.swiftUI)
   }
 
   public struct TabButtonStyle: SwiftUI.ButtonStyle {
@@ -79,7 +88,7 @@ public struct HeaderView: View {
 
     public func makeBody(configuration: Configuration) -> some View {
       configuration.label
-        .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
+        .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
         .foregroundColor(foregroundColor)
         .opacity(isSelected ? 1 : 0.5)
     }

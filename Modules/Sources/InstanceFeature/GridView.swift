@@ -14,20 +14,21 @@ import SwiftUI
 import Tagged
 
 public struct GridView: View {
-  public init(store: Store<Model, Action>) {
+  public init(store: Store<Model, Action>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
     self.store = store
+    self.reportMouseEvent = reportMouseEvent
   }
 
   public var store: Store<Model, Action>
+  public var reportMouseEvent: (MouseEvent) -> Void
 
   public struct Model {
     public init(
       gridID: Grid.ID,
       grids: IntKeyedDictionary<Grid>,
       cursor: Cursor? = nil,
-      modeInfo: ModeInfo,
-      mode: Mode,
-      reportMouseEvent: @escaping (MouseEvent) -> Void,
+      modeInfo: ModeInfo?,
+      mode: Mode?,
       cursorBlinkingPhase: Bool
     ) {
       self.gridID = gridID
@@ -35,16 +36,14 @@ public struct GridView: View {
       self.cursor = cursor
       self.modeInfo = modeInfo
       self.mode = mode
-      self.reportMouseEvent = reportMouseEvent
       self.cursorBlinkingPhase = cursorBlinkingPhase
     }
 
     public var gridID: Grid.ID
     public var grids: IntKeyedDictionary<Grid>
     public var cursor: Cursor?
-    public var modeInfo: ModeInfo
-    public var mode: Mode
-    public var reportMouseEvent: (MouseEvent) -> Void
+    public var modeInfo: ModeInfo?
+    public var mode: Mode?
     public var cursorBlinkingPhase: Bool
 
     public var grid: Grid {
@@ -55,11 +54,20 @@ public struct GridView: View {
   public enum Action: Sendable {}
 
   public var body: some View {
-    HostingView(store: store)
+    HostingView(
+      store: store,
+      reportMouseEvent: reportMouseEvent
+    )
   }
 
   public struct HostingView: NSViewRepresentable {
+    public init(store: Store<GridView.Model, GridView.Action>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
+      self.store = store
+      self.reportMouseEvent = reportMouseEvent
+    }
+
     public var store: Store<Model, Action>
+    public var reportMouseEvent: (MouseEvent) -> Void
 
     public func makeNSView(context: Context) -> NSView {
       let view = NSView()
@@ -71,10 +79,13 @@ public struct GridView: View {
 
     public func updateNSView(_ nsView: NSView, context: Context) {
       nsView.nimsAppearance = context.environment.nimsAppearance
-      nsView.viewStore = .init(
+      nsView.reportMouseEvent = reportMouseEvent
+      nsView.viewStore = ViewStore(
         store,
         observe: { $0 },
-        removeDuplicates: { $0.grid.updateFlag == $1.grid.updateFlag }
+        removeDuplicates: {
+          $0.grid.updateFlag == $1.grid.updateFlag
+        }
       )
     }
 
@@ -84,7 +95,7 @@ public struct GridView: View {
 
   public class NSView: AppKit.NSView {
     var nimsAppearance: NimsAppearance?
-
+    var reportMouseEvent: ((MouseEvent) -> Void)?
     var viewStore: ViewStore<GridView.Model, GridView.Action>? {
       didSet {
         viewStoreCancellable?.cancel()
@@ -114,13 +125,11 @@ public struct GridView: View {
         return
       }
 
-      let updates = model.grid.updates
-
-      if updates.isEmpty {
+      if model.grid.updates.isEmpty {
         setNeedsDisplay(bounds)
 
       } else {
-        let dirtyRects = updates
+        let dirtyRects = model.grid.updates
           .map { rectangle in
             let rect = rectangle * nimsAppearance.cellSize
             let upsideDownRect = CGRect(
@@ -232,7 +241,7 @@ public struct GridView: View {
               )
             drawRun.draw(
               at: upsideDownPartFrame,
-              to: cgContext,
+              to: graphicsContext,
               foregroundColor: foregroundColor,
               backgroundColor: backgroundColor,
               specialColor: specialColor
@@ -241,13 +250,15 @@ public struct GridView: View {
             if
               model.cursorBlinkingPhase,
               let cursor = model.cursor,
-              cursor.gridID == model.grid.id,
+              cursor.gridID == model.gridID,
               cursor.position.row == row,
               cursor.position.column >= part.indices.lowerBound,
-              cursor.position.column < part.indices.upperBound
+              cursor.position.column < part.indices.upperBound,
+              let modeInfo = model.modeInfo,
+              let mode = model.mode
             {
-              let cursorStyle = model.modeInfo
-                .cursorStyles[model.mode.cursorStyleIndex]
+              let cursorStyle = modeInfo
+                .cursorStyles[mode.cursorStyleIndex]
 
               if let cursorShape = cursorStyle.cursorShape {
                 let cursorFrame: CGRect
@@ -303,7 +314,7 @@ public struct GridView: View {
                 cgContext.clip(to: [cursorUpsideDownFrame])
                 drawRun.draw(
                   at: upsideDownPartFrame,
-                  to: cgContext,
+                  to: graphicsContext,
                   foregroundColor: cursorForegroundColor,
                   backgroundColor: cursorBackgroundColor,
                   specialColor: cursorBackgroundColor
@@ -418,9 +429,7 @@ public struct GridView: View {
         column: Int(upsideDownLocation.x / nimsAppearance.cellWidth),
         row: Int(upsideDownLocation.y / nimsAppearance.cellHeight)
       )
-      model.reportMouseEvent(
-        .init(content: content, gridID: model.grid.id, point: point)
-      )
+      reportMouseEvent?(.init(content: content, gridID: model.gridID, point: point))
     }
   }
 }

@@ -5,14 +5,17 @@ import InstanceFeature
 import NimsFeature
 import SwiftUI
 
-@main @MainActor
+@main
 struct App: SwiftUI.App {
-  var body: some Scene {
-    Nims.Scene(store)
-  }
-
-  private var store = StoreOf<Nims>(
-    initialState: .init(),
+  private let store = StoreOf<Nims>(
+    initialState: .init(
+      reportMouseEvent: { _ in
+      }
+    ),
     reducer: Nims()
   )
+
+  var body: some Scene {
+    NimsScene(store: store)
+  }
 }

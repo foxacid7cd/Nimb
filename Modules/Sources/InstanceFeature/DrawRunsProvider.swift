@@ -89,44 +89,47 @@ public class DrawRunsProvider {
         )
       }
 
-    var strikethroughPath: CGPath?
+    var strikethroughPath: Path?
 
     if parameters.decorations.isStrikethrough {
       let strikethroughY = bounds.height - yOffset - ascent
-      let mutablePath = CGMutablePath()
-      mutablePath.move(to: .init(x: 0, y: strikethroughY))
-      mutablePath.addLine(to: .init(x: size.width, y: strikethroughY))
 
-      strikethroughPath = mutablePath.copy(
-        strokingWithWidth: 1,
-        lineCap: .round,
-        lineJoin: .round,
-        miterLimit: 0
-      )
+      var path = Path()
+      path.move(to: .init(x: 0, y: strikethroughY))
+      path.addLine(to: .init(x: size.width, y: strikethroughY))
+
+      strikethroughPath = path
     }
 
-    var underlinePath: CGPath?
+    var underlinePath: Path?
 
     let underlineY = descent / 2 - 1
     if parameters.decorations.isUnderdashed {
       drawUnderlinePath(dashingPattern: [2, 2]) { path in
-        path.move(to: .init(x: xOffset, y: underlineY))
-        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+        path.addLines([
+          .init(x: xOffset, y: underlineY),
+          .init(x: size.width + xOffset, y: underlineY),
+        ])
       }
 
     } else if parameters.decorations.isUnderdotted {
       drawUnderlinePath(dashingPattern: [1, 2]) { path in
-        path.move(to: .init(x: xOffset, y: underlineY))
-        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+        path.addLines([
+          .init(x: 0, y: underlineY),
+          .init(x: size.width, y: underlineY),
+        ])
       }
 
     } else if parameters.decorations.isUnderdouble {
       drawUnderlinePath { path in
-        path.move(to: .init(x: xOffset, y: underlineY))
-        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
-
-        path.move(to: .init(x: xOffset, y: underlineY + 2))
-        path.addLine(to: .init(x: size.width + xOffset, y: underlineY + 2))
+        path.addLines([
+          .init(x: 0, y: underlineY),
+          .init(x: size.width, y: underlineY),
+        ])
+        path.addLines([
+          .init(x: 0, y: underlineY + 2),
+          .init(x: size.width, y: underlineY + 2),
+        ])
       }
 
     } else if parameters.decorations.isUndercurl {
@@ -138,9 +141,11 @@ public class DrawRunsProvider {
 
         let oddUnderlineY = underlineY + 1
         let evenUnderlineY = underlineY - 1
+
         path.move(to: .init(x: xOffset, y: oddUnderlineY))
         for index in 1 ..< pointsCount - 1 {
           let isEven = index.isMultiple(of: 2)
+
           path.addLine(
             to: .init(
               x: Double(index) * xStep + xOffset,
@@ -152,16 +157,16 @@ public class DrawRunsProvider {
 
     } else if parameters.decorations.isUnderline {
       drawUnderlinePath { path in
-        path.move(to: .init(x: xOffset, y: underlineY))
-        path.addLine(to: .init(x: size.width + xOffset, y: underlineY))
+        path.move(to: .init(x: 0, y: underlineY))
+        path.addLine(to: .init(x: size.width, y: underlineY))
       }
     }
 
-    func drawUnderlinePath(dashingPattern: [CGFloat] = [], with mutatePath: (CGMutablePath) -> Void) {
-      let mutablePath = CGMutablePath()
-      mutatePath(mutablePath)
+    func drawUnderlinePath(dashingPattern: [CGFloat] = [], with body: (inout Path) -> Void) {
+      var path = Path()
+      body(&path)
 
-      underlinePath = mutablePath.copy()
+      underlinePath = path
     }
 
     return .init(
@@ -196,57 +201,61 @@ public struct DrawRunParameters: Hashable {
 public struct DrawRun {
   public var parameters: DrawRunParameters
   public var glyphRuns: [GlyphRun]
-  public var strikethroughPath: CGPath?
-  public var underlinePath: CGPath?
+  public var strikethroughPath: Path?
+  public var underlinePath: Path?
 
   public func draw(
     at frame: CGRect,
-    to context: CGContext,
+    to graphicsContext: NSGraphicsContext,
     foregroundColor: NimsColor,
     backgroundColor: NimsColor,
     specialColor: NimsColor
   ) {
-    context.setShouldAntialias(false)
-    context.setFillColor(backgroundColor.appKit.cgColor)
-    context.fill([frame])
+    graphicsContext.saveGraphicsState()
+    defer { graphicsContext.restoreGraphicsState() }
 
-    context.setShouldAntialias(true)
-    context.setFillColor(foregroundColor.appKit.cgColor)
+    let cgContext = graphicsContext.cgContext
     let nsFont = parameters.font.nsFont()
-    for glyphRun in glyphRuns {
-      CTFontDrawGlyphs(
-        nsFont,
-        glyphRun.glyphs,
-        glyphRun.positions
-          .map { .init(x: $0.x + frame.origin.x, y: $0.y + frame.origin.y) },
-        glyphRun.glyphs.count,
-        context
-      )
-    }
 
-    context.setShouldAntialias(false)
-
-    var offsettingTransform = CGAffineTransform(
-      translationX: frame.origin.x,
-      y: frame.origin.y
-    )
+    graphicsContext.shouldAntialias = false
+    backgroundColor.appKit.setFill()
+    frame.fill()
 
     if let strikethroughPath {
-      let translatedPath = strikethroughPath
-        .copy(using: &offsettingTransform)!
-
-      context.addPath(translatedPath)
-      context.setStrokeColor(specialColor.appKit.cgColor)
-      context.strokePath()
+      cgContext.addPath(
+        strikethroughPath
+          .offsetBy(dx: frame.origin.x, dy: frame.origin.y)
+          .cgPath
+      )
+      cgContext.setStrokeColor(foregroundColor.appKit.cgColor)
+      cgContext.setLineWidth(1)
+      cgContext.strokePath()
     }
 
     if let underlinePath {
-      let translatedPath = underlinePath
-        .copy(using: &offsettingTransform)!
+      cgContext.addPath(
+        underlinePath
+          .offsetBy(dx: frame.origin.x, dy: frame.origin.y)
+          .cgPath
+      )
+      cgContext.setStrokeColor(specialColor.appKit.cgColor)
+      cgContext.setLineWidth(1)
+      cgContext.strokePath()
+    }
 
-      context.addPath(translatedPath)
-      context.setStrokeColor(specialColor.appKit.cgColor)
-      context.strokePath()
+    graphicsContext.shouldAntialias = true
+    for glyphRun in glyphRuns {
+      cgContext.textMatrix = glyphRun.textMatrix
+      cgContext.textPosition = frame.origin
+      cgContext.setFillColor(foregroundColor.appKit.cgColor)
+
+      CTFontDrawGlyphs(
+        nsFont,
+        glyphRun.glyphs,
+        glyphRun.positions,
+        glyphRun.glyphs.count,
+        cgContext
+      )
     }
   }
 }

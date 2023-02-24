@@ -14,8 +14,6 @@ public struct Nims: ReducerProtocol {
 
   public enum Action: Sendable {
     case createInstance(
-      arguments: [String],
-      environmentOverlay: [String: String],
       mouseEvents: AsyncStream<MouseEvent>,
       keyPresses: AsyncStream<KeyPress>
     )
@@ -26,7 +24,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<NimsState, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(arguments, environmentOverlay, mouseEvents, keyPresses):
+      case let .createInstance(mouseEvents, keyPresses):
         let nsFont: NSFont
         if let meslo = NSFont(name: "MesloLGS NFM", size: 12) {
           nsFont = meslo
@@ -36,8 +34,13 @@ public struct Nims: ReducerProtocol {
         }
 
         let process = Neovim.Process(
-          arguments: arguments,
-          environmentOverlay: environmentOverlay
+          arguments: ["-u", "/Users/foxacid/.local/share/lunarvim/lvim/init.lua"],
+          environmentOverlay: [
+            "LUNARVIM_RUNTIME_DIR": "/Users/foxacid/.local/share/lunarvim",
+            "LUNARVIM_CONFIG_DIR": "/Users/foxacid/.config/lvim",
+            "LUNARVIM_CACHE_DIR": "/Users/foxacid/.cache/lvim",
+            "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
+          ]
         )
         state.instanceState = .init(
           process: process,
@@ -62,8 +65,6 @@ public struct Nims: ReducerProtocol {
           } catch {
             assertionFailure("\(error)")
           }
-
-          await send(.removeInstance)
         }
 
       case .instance:
