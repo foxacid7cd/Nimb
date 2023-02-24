@@ -170,7 +170,8 @@ public extension Nims {
           Task {
             await self.mouseEventHandler(mouseEvent)
           }
-        }
+        },
+        cursorBlinkingPhase: instanceState.cursorBlinkingPhase
       )
     }
   }

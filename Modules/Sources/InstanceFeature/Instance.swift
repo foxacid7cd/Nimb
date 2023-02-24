@@ -21,6 +21,8 @@ public struct Instance: ReducerProtocol {
       keyPresses: AsyncStream<KeyPress>
     )
     case applyUIEventsBatch([UIEvent])
+    case restartCursorBlinking
+    case setCursorBlinkingPhase(Bool)
     case view(action: InstanceView.Action)
   }
 
@@ -143,6 +145,7 @@ public struct Instance: ReducerProtocol {
         var isInstanceUpdated = false
         var isGridsLayoutUpdated = false
         var isCmdlineUpdated = false
+        var isCursorUpdated = false
 
         var gridUpdates = [Grid.ID: [IntegerRectangle]]()
         func appendGridUpdate(gridID: Grid.ID, frame: IntegerRectangle) {
@@ -206,6 +209,8 @@ public struct Instance: ReducerProtocol {
 
             isInstanceUpdated = true
 
+            isCursorUpdated = true
+
           case let .optionSet(name, value):
             state.rawOptions.updateValue(
               value,
@@ -229,6 +234,8 @@ public struct Instance: ReducerProtocol {
                   size: .init(columnsCount: 1, rowsCount: 1)
                 )
               )
+
+              isCursorUpdated = true
             }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
@@ -387,6 +394,8 @@ public struct Instance: ReducerProtocol {
               cursor.position.row >= size.rowsCount
             {
               state.cursor = nil
+
+              isCursorUpdated = true
             }
 
             if id == .outer {
@@ -582,6 +591,8 @@ public struct Instance: ReducerProtocol {
                 )
               )
             }
+
+            isCursorUpdated = true
 
           case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             state.floatingWindows.remove(id: windowID)
@@ -835,6 +846,82 @@ public struct Instance: ReducerProtocol {
             grid?.updateFlag.toggle()
           }
         }
+
+        if isCursorUpdated {
+          return .send(.restartCursorBlinking)
+
+        } else {
+          return .none
+        }
+      }
+
+      return .none
+
+    case .restartCursorBlinking:
+      state.cursorBlinkingPhase = true
+
+      let cancelPreviousTask = EffectTask<Action>.cancel(id: EffectID.cursorBlinking)
+
+      guard state.cursor != nil, let modeInfo = state.modeInfo, let mode = state.mode else {
+        return cancelPreviousTask
+      }
+      let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
+
+      guard
+        let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
+        let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
+        let blinkOn = cursorStyle.blinkOn, blinkOn > 0
+      else {
+        return cancelPreviousTask
+      }
+
+      let task = EffectTask<Action>.run { send in
+        do {
+          try await suspendingClock.sleep(for: .milliseconds(blinkWait))
+          guard !Task.isCancelled else {
+            return
+          }
+          await send(.setCursorBlinkingPhase(false))
+
+          while true {
+            try await suspendingClock.sleep(for: .milliseconds(blinkOff))
+            guard !Task.isCancelled else {
+              return
+            }
+            await send(.setCursorBlinkingPhase(true))
+
+            try await suspendingClock.sleep(for: .milliseconds(blinkOn))
+            guard !Task.isCancelled else {
+              return
+            }
+            await send(.setCursorBlinkingPhase(false))
+          }
+
+        } catch {
+          let isCancellation = error is CancellationError
+
+          if !isCancellation {
+            assertionFailure("\(error)")
+          }
+        }
+      }
+      .cancellable(id: EffectID.cursorBlinking)
+
+      return .concatenate(cancelPreviousTask, task)
+
+    case let .setCursorBlinkingPhase(value):
+      state.cursorBlinkingPhase = value
+
+      if let cursor = state.cursor {
+        update(&state.grids[cursor.gridID]!) { grid in
+          grid.updates.append(
+            .init(
+              origin: cursor.position,
+              size: .init(columnsCount: 1, rowsCount: 1)
+            )
+          )
+          grid.updateFlag.toggle()
+        }
       }
 
       return .none
@@ -870,5 +957,9 @@ public struct Instance: ReducerProtocol {
 
   private enum EffectID: String, Hashable {
     case bindProcess
+    case cursorBlinking
   }
+
+  @Dependency(\.suspendingClock)
+  private var suspendingClock: any Clock<Duration>
 }

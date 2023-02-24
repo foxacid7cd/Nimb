@@ -32,7 +32,8 @@ public struct InstanceState {
     cmdlines: IntKeyedDictionary<Cmdline> = [:],
     cmdlineUpdateFlag: Bool = true,
     instanceUpdateFlag: Bool = true,
-    gridsLayoutUpdateFlag: Bool = true
+    gridsLayoutUpdateFlag: Bool = true,
+    cursorBlinkingPhase: Bool = true
   ) {
     self.process = process
     self.bufferedUIEvents = bufferedUIEvents
@@ -55,6 +56,7 @@ public struct InstanceState {
     self.cmdlineUpdateFlag = cmdlineUpdateFlag
     self.instanceUpdateFlag = instanceUpdateFlag
     self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
+    self.cursorBlinkingPhase = cursorBlinkingPhase
   }
 
   public var process: Neovim.Process
@@ -78,6 +80,7 @@ public struct InstanceState {
   public var cmdlineUpdateFlag: Bool
   public var instanceUpdateFlag: Bool
   public var gridsLayoutUpdateFlag: Bool
+  public var cursorBlinkingPhase: Bool
 
   public var outerGrid: Grid? {
     grids[.outer]

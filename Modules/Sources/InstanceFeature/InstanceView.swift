@@ -13,6 +13,7 @@ import SwiftUI
 public struct InstanceView: View {
   public init(store: Store<Model, Action>) {
     self.store = store
+
     viewStore = .init(
       store,
       observe: { $0 },
@@ -35,7 +36,8 @@ public struct InstanceView: View {
       cmdlines: IntKeyedDictionary<Cmdline>,
       cmdlineUpdateFlag: Bool,
       gridsLayoutUpdateFlag: Bool,
-      reportMouseEvent: @escaping (MouseEvent) -> Void
+      reportMouseEvent: @escaping (MouseEvent) -> Void,
+      cursorBlinkingPhase: Bool
     ) {
       self.outerGridSize = outerGridSize
       self.modeInfo = modeInfo
@@ -49,6 +51,7 @@ public struct InstanceView: View {
       self.cmdlineUpdateFlag = cmdlineUpdateFlag
       self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
       self.reportMouseEvent = reportMouseEvent
+      self.cursorBlinkingPhase = cursorBlinkingPhase
     }
 
     public var outerGridSize: IntegerSize
@@ -63,6 +66,7 @@ public struct InstanceView: View {
     public var cmdlineUpdateFlag: Bool
     public var gridsLayoutUpdateFlag: Bool
     public var reportMouseEvent: (MouseEvent) -> Void
+    public var cursorBlinkingPhase: Bool
 
     var headerViewModel: HeaderView.Model {
       .init(
@@ -78,7 +82,8 @@ public struct InstanceView: View {
         cursor: cursor,
         modeInfo: modeInfo,
         mode: mode,
-        reportMouseEvent: reportMouseEvent
+        reportMouseEvent: reportMouseEvent,
+        cursorBlinkingPhase: cursorBlinkingPhase
       )
     }
 
