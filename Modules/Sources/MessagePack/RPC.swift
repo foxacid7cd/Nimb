@@ -104,13 +104,27 @@ public actor RPC {
         let id = await store.announceRequest { response in
           continuation.resume(returning: response)
         }
-        let request: Value = .array([
-          .integer(MessageType.request.rawValue), .integer(id), .string(method), .array(parameters),
-        ])
+        let request = makeRequestValue(id: id, method: method, parameters: parameters)
         let data = await packer.pack(request)
-        return try await channel.write(data)
+        try await channel.write(data)
       }
     }
+  }
+
+  public func fastCall(method: String, withParameters parameters: [Value]) async throws {
+    let id = await store.announceFastRequest()
+    let request = makeRequestValue(id: id, method: method, parameters: parameters)
+    let data = await packer.pack(request)
+    try await channel.write(data)
+  }
+
+  private func makeRequestValue(id: Int, method: String, parameters: [Value]) -> Value {
+    .array([
+      .integer(MessageType.request.rawValue),
+      .integer(id),
+      .string(method),
+      .array(parameters),
+    ])
   }
 
   private actor Store {
@@ -122,9 +136,15 @@ public actor RPC {
       return id
     }
 
+    func announceFastRequest() -> Int {
+      let id = announcedRequestsCount
+      announcedRequestsCount += 1
+
+      return id
+    }
+
     func responseReceived(_ response: Result<Value, RemoteError>, forRequestWithID id: Int) {
       guard let handler = currentRequests.removeValue(forKey: id) else {
-        assertionFailure("Missing response handler for request with id \(id).")
         return
       }
 
@@ -132,9 +152,7 @@ public actor RPC {
     }
 
     private var announcedRequestsCount = 0
-    private var currentRequests = TreeDictionary<
-    Int, @Sendable (Result<Value, RemoteError>) -> Void
-    >()
+    private var currentRequests = TreeDictionary < Int, @Sendable (Result<Value, RemoteError>) -> Void > ()
   }
 
   private enum MessageType: Int {

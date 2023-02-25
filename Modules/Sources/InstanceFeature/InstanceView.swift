@@ -201,7 +201,7 @@ public struct InstanceView: View {
         cursor: state.cursor,
         modeInfo: state.modeInfo,
         mode: state.mode,
-        cursorBlinkingPhase: state.cursorBlinkingPhase
+        cursorBlinkingPhase: !state.cmdlines.isEmpty || state.cursorBlinkingPhase
       )
     }
   }

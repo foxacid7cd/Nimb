@@ -19,18 +19,21 @@ public struct APIFunctionsFile: GeneratableFile {
         "import MessagePack" as DeclSyntax
 
         try ExtensionDeclSyntax("public extension API") {
-          for function in metadata.functions {
+          let validFunctions = metadata.functions
+            .filter { $0.deprecatedSince == nil }
+
+          for function in validFunctions {
             let parametersInSignature = function.parameters
               .map {
-                "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \($0.type.swift.signature)"
+                let name = $0.name.camelCasedAssumingSnakeCased(capitalized: false)
+                return "\(name): \($0.type.swift.signature)"
               }
               .joined(separator: ", ")
 
-            let functionNameInSignature = function.name.camelCasedAssumingSnakeCased(
-              capitalized: false
-            )
+            let functionNameInSignature = function.name
+              .camelCasedAssumingSnakeCased(capitalized: false)
             try FunctionDeclSyntax(
-              /* "\(raw: function.deprecatedSince != nil ? "@available(*, deprecated" : "") */ "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> Result<\(raw: function.returnType.swift.signature), RemoteError>"
+              "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> Result<\(raw: function.returnType.swift.signature), RemoteError>"
             ) {
               let parametersInArray = function.parameters
                 .map { parameter in
@@ -49,6 +52,30 @@ public struct APIFunctionsFile: GeneratableFile {
                   ]
                 )
                 .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
+                """
+              )
+            }
+
+            let fastFunctionNameInSignature = functionNameInSignature + "Fast"
+            try FunctionDeclSyntax(
+              "func \(raw: fastFunctionNameInSignature)(\(raw: parametersInSignature)) async throws"
+            ) {
+              let parametersInArray = function.parameters
+                .map { parameter in
+                  let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+
+                  return parameter.type.wrapWithValueEncoder(String(name))
+                }
+                .joined(separator: ",\n")
+
+              ExprSyntax(
+                """
+                try await rpc.fastCall(
+                  method: \(literal: function.name),
+                  withParameters: [
+                    \(raw: parametersInArray)
+                  ]
+                )
                 """
               )
             }

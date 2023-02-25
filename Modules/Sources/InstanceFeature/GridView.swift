@@ -120,7 +120,7 @@ public struct GridView: View {
     private var viewStoreCancellable: AnyCancellable?
     private var model: GridView.Model?
     private var xScrollingAccumulator: Double = 0
-    private var yScrollingAccumulator: Double = 0
+
     private var isScrollingHorizontal: Bool?
 
     private func render() {
@@ -198,22 +198,37 @@ public struct GridView: View {
           )
         )
         .intersection(with: integerBounds)
-        let columns = integerFrame.columns
 
         var drawRuns = [(origin: CGPoint, highlightID: Highlight.ID, drawRun: DrawRun)]()
-        var cursorDrawRun: (
-          frame: CGRect,
-          highlightID: Highlight.ID,
-          parentOrigin: CGPoint,
-          parentDrawRun: DrawRun,
-          parentHighlightID: Highlight.ID
-        )?
+        var cursorDrawRun: CursorDrawRun?
+
+        struct CursorDrawRun {
+          internal init(
+            frame: CGRect,
+            highlightID: Highlight.ID,
+            parentOrigin: CGPoint,
+            parentDrawRun: DrawRun,
+            parentHighlightID: Highlight.ID
+          ) {
+            self.frame = frame
+            self.highlightID = highlightID
+            self.parentOrigin = parentOrigin
+            self.parentDrawRun = parentDrawRun
+            self.parentHighlightID = parentHighlightID
+          }
+
+          var frame: CGRect
+          var highlightID: Highlight.ID
+          var parentOrigin: CGPoint
+          var parentDrawRun: DrawRun
+          var parentHighlightID: Highlight.ID
+        }
 
         graphicsContext.shouldAntialias = false
         for row in integerFrame.rows {
           let rowLayout = grid.rowLayouts[row]
 
-          for part in rowLayout.parts where part.indices.overlaps(columns) {
+          for part in rowLayout.parts {
             let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
 
             let partIntegerFrame = IntegerRectangle(
@@ -305,7 +320,7 @@ public struct GridView: View {
 
                 let cursorHighlightID = cursorStyle.attrID ?? .default
 
-                cursorDrawRun = (
+                cursorDrawRun = .init(
                   frame: cursorUpsideDownFrame,
                   highlightID: cursorHighlightID,
                   parentOrigin: upsideDownPartFrame.origin,
@@ -329,28 +344,26 @@ public struct GridView: View {
           )
         }
 
-        if let (cursorFrame, cursorHighlightID, parentOrigin, parentDrawRun, parentHighlightID) = cursorDrawRun {
+        if let cursorDrawRun {
           graphicsContext.saveGraphicsState()
-
-          cursorFrame.clip()
 
           let cursorForegroundColor: NimsColor
           let cursorBackgroundColor: NimsColor
 
-          if cursorHighlightID.isDefault {
-            cursorForegroundColor = nimsAppearance.backgroundColor(for: parentHighlightID)
-            cursorBackgroundColor = nimsAppearance.foregroundColor(for: parentHighlightID)
+          if cursorDrawRun.highlightID.isDefault {
+            cursorForegroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
+            cursorBackgroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
 
           } else {
-            cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorHighlightID)
-            cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
+            cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.highlightID)
+            cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.highlightID)
           }
 
+          cursorDrawRun.frame.clip()
           cursorBackgroundColor.appKit.setFill()
-          cursorFrame.fill()
 
-          parentDrawRun.draw(
-            at: parentOrigin,
+          cursorDrawRun.parentDrawRun.draw(
+            at: cursorDrawRun.parentOrigin,
             to: graphicsContext,
             foregroundColor: cursorForegroundColor,
             specialColor: cursorBackgroundColor
@@ -397,56 +410,59 @@ public struct GridView: View {
       report(event, of: .mouse(button: .middle, action: .release))
     }
 
+    private var yScrollingAccumulator: Double = 0
+
     override public func scrollWheel(with event: NSEvent) {
       guard let nimsAppearance else {
         return
       }
-
-      let yThreshold = nimsAppearance.cellHeight * 2
-      let xThreshold = nimsAppearance.cellWidth * 2
+      let cellHeight = nimsAppearance.cellHeight
 
       if event.phase == .began {
-        xScrollingAccumulator = 0
         yScrollingAccumulator = 0
-        isScrollingHorizontal = nil
       }
 
-      xScrollingAccumulator += event.scrollingDeltaX
-      yScrollingAccumulator += event.scrollingDeltaY
+      yScrollingAccumulator -= event.scrollingDeltaY
 
-      if isScrollingHorizontal == nil {
-        if abs(yScrollingAccumulator) >= yThreshold {
-          isScrollingHorizontal = false
-
-        } else if abs(xScrollingAccumulator) >= xThreshold * 1.5 {
-          isScrollingHorizontal = true
-          xScrollingAccumulator = 0
-        }
-      }
-
-      if let isScrollingHorizontal {
-        if isScrollingHorizontal {
-          if xScrollingAccumulator > xThreshold {
-            report(event, of: .scrollWheel(direction: .left))
-            xScrollingAccumulator -= xThreshold
-
-          } else if xScrollingAccumulator < -xThreshold {
-            report(event, of: .scrollWheel(direction: .right))
-            xScrollingAccumulator += xThreshold
-          }
+      let threshold = cellHeight * 3
+      while abs(yScrollingAccumulator) > threshold {
+        if yScrollingAccumulator > 0 {
+          yScrollingAccumulator -= threshold
+          report(event, of: .scrollWheel(direction: .down))
 
         } else {
-          if yScrollingAccumulator > yThreshold {
-            report(event, of: .scrollWheel(direction: .up))
-            yScrollingAccumulator -= yThreshold
-
-          } else if yScrollingAccumulator < -yThreshold {
-            report(event, of: .scrollWheel(direction: .down))
-            yScrollingAccumulator += yThreshold
-          }
+          yScrollingAccumulator += threshold
+          report(event, of: .scrollWheel(direction: .up))
         }
       }
     }
+
+//        event.trackSwipeEvent(
+//          options: [],
+//          dampenAmountThresholdMin: -cellHeight,
+//          max: cellHeight
+//        ) { [unowned self] gestureAmount, _, _, stop in
+//          if shouldStop {
+//            stop.initialize(to: true)
+//            return
+//          }
+//
+//          var delta = gestureAmount - yScrollingAccumulator
+//          let threshold = 0.025
+//
+//          while abs(delta) >= threshold {
+//            if delta > 0 {
+//              yScrollingAccumulator += threshold
+//              report(event, of: .scrollWheel(direction: .down))
+//
+//            } else {
+//              yScrollingAccumulator -= threshold
+//              report(event, of: .scrollWheel(direction: .up))
+//            }
+//
+//            delta = gestureAmount - yScrollingAccumulator
+//          }
+//        }
 
     private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
       guard let nimsAppearance, let model else {

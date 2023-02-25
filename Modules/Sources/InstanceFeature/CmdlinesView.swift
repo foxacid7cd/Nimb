@@ -127,7 +127,7 @@ public struct CmdlineView: View {
         }
       }
       .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
-      .frame(maxWidth: 640, minHeight: 44)
+      .frame(maxWidth: 860, minHeight: 44)
       .background(nimsAppearance.defaultBackgroundColor.swiftUI)
 
       Spacer()

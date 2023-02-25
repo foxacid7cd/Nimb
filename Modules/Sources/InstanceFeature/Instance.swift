@@ -50,10 +50,9 @@ public struct Instance: ReducerProtocol {
           }
 
           do {
-            _ = try await process.api.nvimInput(
+            try await process.api.nvimInputFast(
               keys: keyPress.makeNvimKeyCode()
             )
-            .get()
 
           } catch {
             assertionFailure("\(error)")
@@ -62,10 +61,7 @@ public struct Instance: ReducerProtocol {
       }
 
       let reportMouseEvents = EffectTask<Action>.run { _ in
-        let throttledMouseEvents = mouseEvents
-          .throttle(for: .milliseconds(5), clock: .suspending)
-
-        for await mouseEvent in throttledMouseEvents {
+        for await mouseEvent in mouseEvents {
           guard !Task.isCancelled else {
             return
           }
@@ -84,7 +80,7 @@ public struct Instance: ReducerProtocol {
           }
 
           do {
-            _ = try await process.api.nvimInputMouse(
+            try await process.api.nvimInputMouseFast(
               button: rawButton,
               action: rawAction,
               modifier: "",
@@ -92,8 +88,6 @@ public struct Instance: ReducerProtocol {
               row: mouseEvent.point.row,
               col: mouseEvent.point.column
             )
-            .get()
-
           } catch {
             assertionFailure("\(error)")
           }
@@ -111,13 +105,11 @@ public struct Instance: ReducerProtocol {
             .extTabline,
           ]
 
-          _ = try await process.api.nvimUIAttach(
+          try await process.api.nvimUIAttachFast(
             width: 200,
             height: 60,
-            options: uiOptions
-              .nvimUIAttachOptions
+            options: uiOptions.nvimUIAttachOptions
           )
-          .get()
 
         } catch {
           assertionFailure("\(error)")
@@ -850,7 +842,7 @@ public struct Instance: ReducerProtocol {
           }
         }
 
-        if isCursorUpdated {
+        if isCursorUpdated || isCmdlineUpdated {
           return .send(.restartCursorBlinking)
 
         } else {
@@ -915,7 +907,7 @@ public struct Instance: ReducerProtocol {
     case let .setCursorBlinkingPhase(value):
       state.cursorBlinkingPhase = value
 
-      if let cursor = state.cursor {
+      if let cursor = state.cursor, state.cmdlines.isEmpty {
         update(&state.grids[cursor.gridID]!) { grid in
           grid.updates.append(
             .init(
