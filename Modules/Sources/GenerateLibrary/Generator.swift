@@ -13,7 +13,7 @@ private let generatableFileTypes: [GeneratableFile.Type] = [
 ]
 
 public actor Generator {
-  public init<S: AsyncSequence>(
+  public init<S: AsyncSequence & Sendable>(
     _ dataBatches: S
   ) where S.Element == Data {
     metadataTask = Task<Metadata, Error> {

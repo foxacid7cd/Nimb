@@ -18,12 +18,16 @@ public struct UIOptionFile: GeneratableFile {
     "UIOption"
   }
 
-  public var sourceFile: SourceFile {
-    .init {
-      EnumDecl("public enum UIOption: String") {
-        for uiOption in metadata.uiOptions {
-          let camelCased = uiOption.camelCasedAssumingSnakeCased(capitalized: false)
-          "case \(raw: camelCased) = \(literal: uiOption)" as EnumCaseDecl
+  public var sourceFile: SourceFileSyntax {
+    get throws {
+      try .init {
+        try .init {
+          try EnumDeclSyntax("public enum UIOption: String") {
+            for uiOption in metadata.uiOptions {
+              let camelCased = uiOption.camelCasedAssumingSnakeCased(capitalized: false)
+              "case \(raw: camelCased) = \(literal: uiOption)" as DeclSyntax
+            }
+          }
         }
       }
     }

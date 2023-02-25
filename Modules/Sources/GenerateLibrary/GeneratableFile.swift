@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-import SwiftSyntaxBuilder
+import SwiftSyntax
 
 public protocol GeneratableFile {
   init(metadata: Metadata)
 
   var name: String { get }
-  var sourceFile: SourceFile { get }
+  var sourceFile: SourceFileSyntax { get throws }
 }

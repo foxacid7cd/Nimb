@@ -14,158 +14,163 @@ public struct UIEventFile: GeneratableFile {
 
   public var name: String { "UIEvent" }
 
-  public var sourceFile: SourceFile {
-    SourceFile {
-      "import MessagePack" as ImportDecl
-      "import CasePaths" as ImportDecl
+  public var sourceFile: SourceFileSyntax {
+    get throws {
+      try .init {
+        try .init {
+          "import MessagePack" as DeclSyntax
+          "import CasePaths" as DeclSyntax
 
-      EnumDecl("public enum UIEvent: Sendable, Equatable") {
-        for uiEvent in metadata.uiEvents {
-          let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
+          try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
+            for uiEvent in metadata.uiEvents {
+              let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
 
-          if !uiEvent.parameters.isEmpty {
-            let parametersSignature: String = uiEvent.parameters
-              .map { parameter in
-                let name = parameter.name.camelCasedAssumingSnakeCased(
-                  capitalized: false
-                )
-                let type = parameter.type.swift.signature
-                return "\(name): \(type)"
+              if !uiEvent.parameters.isEmpty {
+                let parametersSignature: String = uiEvent.parameters
+                  .map { parameter in
+                    let name = parameter.name.camelCasedAssumingSnakeCased(
+                      capitalized: false
+                    )
+                    let type = parameter.type.swift.signature
+                    return "\(name): \(type)"
+                  }
+                  .joined(separator: ", ")
+
+                "case \(raw: caseName)(\(raw: parametersSignature))" as DeclSyntax
+
+              } else {
+                "case \(raw: caseName)" as DeclSyntax
               }
-              .joined(separator: ", ")
-
-            "case \(raw: caseName)(\(raw: parametersSignature))" as EnumCaseDecl
-
-          } else {
-            "case \(raw: caseName)" as EnumCaseDecl
+            }
           }
-        }
-      }
 
-      ExtensionDecl("public extension Array<UIEvent>") {
-        InitializerDecl("init(rawRedrawNotificationParameters: [Value]) throws") {
-          "var accumulator = [UIEvent]()" as VariableDecl
-          ForInStmt("for rawParameter in rawRedrawNotificationParameters") {
-            GuardStmt(
-              """
-              guard let rawParameter = (/Value.array).extract(from: rawParameter) else {
-                throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
-              }
-              """
-            )
+          try ExtensionDeclSyntax("public extension Array<UIEvent>") {
+            try InitializerDeclSyntax("init(rawRedrawNotificationParameters: [Value]) throws") {
+              "var accumulator = [UIEvent]()" as DeclSyntax
 
-            GuardStmt(
-              """
-              guard let uiEventName = rawParameter.first.flatMap(/Value.string) else {
-                throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
-              }
-              """
-            )
+              try ForInStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
+                StmtSyntax(
+                  """
+                  guard let rawParameter = (/Value.array).extract(from: rawParameter) else {
+                    throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                  }
+                  """
+                )
 
-            SwitchStmt(
-              switchKeyword: .switch,
-              expression: "uiEventName" as IdentifierExpr,
-              leftBrace: .leftBrace,
-              cases: .init {
-                SwitchCaseList {
-                  for uiEvent in metadata.uiEvents {
-                    SwitchCase("case \(literal: uiEvent.name):") {
-                      let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
+                StmtSyntax(
+                  """
+                  guard let uiEventName = rawParameter.first.flatMap(/Value.string) else {
+                    throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                  }
+                  """
+                )
 
-                      ForInStmt("for rawUIEvent in rawParameter.dropFirst()") {
-                        Stmt(
-                          """
-                          guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
-                            throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
-                          }
-                          """
-                        )
+                try SwitchExprSyntax("switch uiEventName") {
+                  try SwitchCaseListSyntax {
+                    for uiEvent in metadata.uiEvents {
+                      try SwitchCaseSyntax("case \(literal: uiEvent.name):") {
+                        let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
 
-                        let parametersCountCondition = "rawUIEventParameters.count == \(uiEvent.parameters.count)"
-                        let (valueParameters, otherParameters) = uiEvent.parameters
-                          .enumerated()
-                          .partitioned(by: {
-                            (/ValueType.SwiftType.value)
-                              .extract(from: $0.element.type.swift) == nil
-                          })
-
-                        let parameterTypeConditions = otherParameters
-                          .map { index, parameter -> String in
-                            let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                            let initializer = parameter.type.wrapWithValueDecoder("rawUIEventParameters[\(index)]")
-                            return "let \(identifier) = \(initializer)"
-                          }
-
-                        let guardConditions = [
-                          [parametersCountCondition],
-                          parameterTypeConditions,
-                        ]
-                        .flatMap { $0 }
-                        .joined(separator: ", ")
-
-                        Stmt(
-                          """
-                          guard \(raw: guardConditions) else {
-                            throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
-                          }
-                          """
-                        )
-
-                        for (index, parameter) in valueParameters {
-                          let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                          "let \(raw: identifier) = rawUIEventParameters[\(raw: index)]" as VariableDecl
-                        }
-
-                        if !uiEvent.parameters.isEmpty {
-                          let associatedValuesSignature = uiEvent.parameters
-                            .map { parameter in
-                              let name = parameter.name.camelCasedAssumingSnakeCased(
-                                capitalized: false
-                              )
-                              return "\(name): \(name)"
-                            }
-                            .joined(separator: ", ")
-
-                          Expr(
+                        try ForInStmtSyntax("for rawUIEvent in rawParameter.dropFirst()") {
+                          StmtSyntax(
                             """
-                            accumulator.append(
-                              .\(raw: caseName)(\(raw: associatedValuesSignature))
-                            )
+                            guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
+                              throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                            }
                             """
                           )
 
-                        } else {
-                          "accumulator.append(.\(raw: caseName))" as Expr
+                          let parametersCountCondition = "rawUIEventParameters.count == \(uiEvent.parameters.count)"
+                          let (valueParameters, otherParameters) = uiEvent.parameters
+                            .enumerated()
+                            .partitioned(by: {
+                              (/ValueType.SwiftType.value)
+                                .extract(from: $0.element.type.swift) == nil
+                            })
+
+                          let parameterTypeConditions = otherParameters
+                            .map { index, parameter -> String in
+                              let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                              let initializer = parameter.type.wrapWithValueDecoder("rawUIEventParameters[\(index)]")
+                              return "let \(identifier) = \(initializer)"
+                            }
+
+                          let guardConditions = [
+                            [parametersCountCondition],
+                            parameterTypeConditions,
+                          ]
+                          .flatMap { $0 }
+                          .joined(separator: ", ")
+
+                          StmtSyntax(
+                            """
+                            guard \(raw: guardConditions) else {
+                              throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                            }
+                            """
+                          )
+
+                          for (index, parameter) in valueParameters {
+                            let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                            DeclSyntax(
+                              "let \(raw: identifier) = rawUIEventParameters[\(raw: index)]"
+                            )
+                          }
+
+                          if !uiEvent.parameters.isEmpty {
+                            let associatedValuesSignature = uiEvent.parameters
+                              .map { parameter in
+                                let name = parameter.name.camelCasedAssumingSnakeCased(
+                                  capitalized: false
+                                )
+                                return "\(name): \(name)"
+                              }
+                              .joined(separator: ", ")
+
+                            ExprSyntax(
+                              """
+                              accumulator.append(
+                                .\(raw: caseName)(\(raw: associatedValuesSignature))
+                              )
+                              """
+                            )
+
+                          } else {
+                            ExprSyntax(
+                              "accumulator.append(.\(raw: caseName))"
+                            )
+                          }
                         }
                       }
                     }
-                  }
 
-                  SwitchCase("default:") {
-                    "throw UIEventsDecodingFailure(rawRedrawNotificationParameters)" as Stmt
+                    SwitchCaseSyntax("default:") {
+                      "throw UIEventsDecodingFailure(rawRedrawNotificationParameters)" as StmtSyntax
+                    }
                   }
                 }
               }
-            )
-          }
 
-          "self = accumulator" as SequenceExpr
+              ExprSyntax(
+                "self = accumulator"
+              )
+            }
+          }
+          DeclSyntax(
+            """
+            public struct UIEventsDecodingFailure: Error {
+              public init(_ rawRedrawNotificationParameters: [Value], lineNumber: UInt = #line) {
+                self.rawRedrawNotificationParameters = rawRedrawNotificationParameters
+                self.lineNumber = lineNumber
+              }
+
+              public var rawRedrawNotificationParameters: [Value]
+              public var lineNumber: UInt
+            }
+            """
+          )
         }
       }
-
-      StructDecl(
-        """
-        public struct UIEventsDecodingFailure: Error {
-          public init(_ rawRedrawNotificationParameters: [Value], lineNumber: UInt = #line) {
-            self.rawRedrawNotificationParameters = rawRedrawNotificationParameters
-            self.lineNumber = lineNumber
-          }
-
-          public var rawRedrawNotificationParameters: [Value]
-          public var lineNumber: UInt
-        }
-        """
-      )
     }
   }
 }

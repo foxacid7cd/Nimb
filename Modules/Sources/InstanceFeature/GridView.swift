@@ -160,9 +160,9 @@ public struct GridView: View {
       let cgContext = graphicsContext.cgContext
       let grid = model.grid
       let integerBounds = IntegerRectangle(
-        origin: .init(),
         size: model.integerSize
       )
+      let bounds = integerBounds * nimsAppearance.cellSize
 
       cgContext.saveGState()
       defer { cgContext.restoreGState() }

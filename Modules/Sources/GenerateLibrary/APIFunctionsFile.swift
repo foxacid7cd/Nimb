@@ -12,52 +12,47 @@ public struct APIFunctionsFile: GeneratableFile {
 
   public var name: String { "APIFunctions" }
 
-  public var sourceFile: SourceFile {
-    .init {
-      "import CasePaths" as ImportDecl
-      "import MessagePack" as ImportDecl
+  public var sourceFile: SourceFileSyntax {
+    get throws {
+      try .init {
+        "import CasePaths" as DeclSyntax
+        "import MessagePack" as DeclSyntax
 
-      ExtensionDecl(modifiers: [.init(name: .public)], extendedType: "API" as Type) {
-        for function in metadata.functions {
-          let parametersInSignature = function.parameters
-            .map {
-              "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \($0.type.swift.signature)"
-            }
-            .joined(separator: ", ")
-
-          let functionNameInSignature = function.name.camelCasedAssumingSnakeCased(
-            capitalized: false
-          )
-          FunctionDecl(
-            "func \(functionNameInSignature)(\(parametersInSignature)) async throws -> Result<\(function.returnType.swift.signature), RemoteError>"
-          ) {
-            let parametersInArray = function.parameters
-              .map { parameter in
-                let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-
-                return parameter.type.wrapWithValueEncoder(String(name))
+        try ExtensionDeclSyntax("public extension API") {
+          for function in metadata.functions {
+            let parametersInSignature = function.parameters
+              .map {
+                "\($0.name.camelCasedAssumingSnakeCased(capitalized: false)): \($0.type.swift.signature)"
               }
-              .joined(separator: ",\n")
+              .joined(separator: ", ")
 
-            ReturnStmt(
-              """
-              return try await rpc.call(
-                method: \(literal: function.name),
-                withParameters: [
-                  \(raw: parametersInArray)
-                ]
-              )
-              .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
-              """
+            let functionNameInSignature = function.name.camelCasedAssumingSnakeCased(
+              capitalized: false
             )
-          }
-          .withUnexpectedBeforeAttributes(
-            .init {
-              if function.deprecatedSince != nil {
-                StringSegment(content: "@available(*, deprecated) ")
-              }
+            try FunctionDeclSyntax(
+              /* "\(raw: function.deprecatedSince != nil ? "@available(*, deprecated" : "") */ "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> Result<\(raw: function.returnType.swift.signature), RemoteError>"
+            ) {
+              let parametersInArray = function.parameters
+                .map { parameter in
+                  let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+
+                  return parameter.type.wrapWithValueEncoder(String(name))
+                }
+                .joined(separator: ",\n")
+
+              StmtSyntax(
+                """
+                return try await rpc.call(
+                  method: \(literal: function.name),
+                  withParameters: [
+                    \(raw: parametersInArray)
+                  ]
+                )
+                .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
+                """
+              )
             }
-          )
+          }
         }
       }
     }
