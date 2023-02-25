@@ -49,6 +49,10 @@ public struct IntegerRectangle: Sendable, Hashable {
     )
     return .init(origin: origin, size: size)
   }
+
+  public mutating func crop(to rectangle: IntegerRectangle) {
+    self = intersection(with: rectangle)
+  }
 }
 
 public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
@@ -76,8 +80,16 @@ public func + (lhs: IntegerPoint, rhs: IntegerPoint) -> IntegerPoint {
   .init(column: lhs.column + rhs.column, row: lhs.row + rhs.row)
 }
 
+public func + (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+  .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
+}
+
 public prefix func - (point: IntegerPoint) -> IntegerPoint {
   .init(column: -point.column, row: -point.row)
+}
+
+public prefix func - (point: CGPoint) -> CGPoint {
+  .init(x: -point.x, y: -point.y)
 }
 
 public func * (first: IntegerPoint, second: CGSize) -> CGPoint {

@@ -20,7 +20,7 @@ public class DrawRunsProvider {
     let drawRun = makeDrawRun(with: parameters)
 
     dispatchQueue.sync(flags: [.barrier]) {
-      if deque.count >= 1000 {
+      if deque.count >= 500 {
         drawRuns.removeValue(
           forKey: deque.popFirst()!
         )
@@ -52,12 +52,9 @@ public class DrawRunsProvider {
     CTLineGetTypographicBounds(ctLine, &ascent, &descent, nil)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-    let xOffset = (bounds.width - size.width) / 2
-    let yOffset = (bounds.height - size.height) / 2 - descent
-
-    var spaceGlyph = CGGlyph()
-    var space = UniChar((" " as Unicode.Scalar).value)
-    CTFontGetGlyphsForCharacters(nsFont, &space, &spaceGlyph, 1)
+    let xOffset = (size.width - bounds.width) / 2
+    let yOffset = (size.height - bounds.height) / 2 + descent
+    let offset = CGPoint(x: xOffset, y: yOffset)
 
     let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 
@@ -74,6 +71,7 @@ public class DrawRunsProvider {
           CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
           initializedCount = glyphCount
         }
+        .map { $0 + offset }
 
         let advances = [CGSize](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
           CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
@@ -83,8 +81,7 @@ public class DrawRunsProvider {
         return .init(
           textMatrix: CTRunGetTextMatrix(ctRun),
           glyphs: glyphs,
-          positions: positions
-            .map { .init(x: $0.x - xOffset, y: $0.y - yOffset) },
+          positions: positions,
           advances: advances
         )
       }
@@ -92,7 +89,7 @@ public class DrawRunsProvider {
     var strikethroughPath: Path?
 
     if parameters.decorations.isStrikethrough {
-      let strikethroughY = bounds.height - yOffset - ascent
+      let strikethroughY = bounds.height + yOffset - ascent
 
       var path = Path()
       path.move(to: .init(x: 0, y: strikethroughY))
@@ -105,7 +102,7 @@ public class DrawRunsProvider {
 
     let underlineY = descent / 2
     if parameters.decorations.isUnderdashed {
-      drawUnderlinePath(dashingPattern: [2, 2]) { path in
+      drawUnderlinePath(dashingPattern: [3, 3]) { path in
         path.addLines([
           .init(x: 0, y: underlineY),
           .init(x: size.width, y: underlineY),
@@ -113,7 +110,7 @@ public class DrawRunsProvider {
       }
 
     } else if parameters.decorations.isUnderdotted {
-      drawUnderlinePath(dashingPattern: [1, 2]) { path in
+      drawUnderlinePath(dashingPattern: [1, 1]) { path in
         path.addLines([
           .init(x: 0, y: underlineY),
           .init(x: size.width, y: underlineY),
@@ -137,7 +134,7 @@ public class DrawRunsProvider {
         let widthDivider = 3
 
         let xStep = parameters.font.cellWidth / Double(widthDivider)
-        let pointsCount = parameters.integerSize.columnsCount * widthDivider
+        let pointsCount = parameters.integerSize.columnsCount * widthDivider + 3
 
         let oddUnderlineY = underlineY + 1
         let evenUnderlineY = underlineY - 1
@@ -205,7 +202,7 @@ public struct DrawRun {
   public var underlinePath: Path?
 
   public func draw(
-    at frame: CGRect,
+    at origin: CGPoint,
     to graphicsContext: NSGraphicsContext,
     foregroundColor: NimsColor,
     specialColor: NimsColor
@@ -216,13 +213,17 @@ public struct DrawRun {
     let cgContext = graphicsContext.cgContext
     let nsFont = parameters.font.nsFont()
 
-    frame.clip()
+    CGRect(
+      origin: origin,
+      size: parameters.integerSize * parameters.font.cellSize
+    )
+    .clip()
 
     cgContext.setLineWidth(1)
     if let strikethroughPath {
       cgContext.addPath(
         strikethroughPath
-          .offsetBy(dx: frame.origin.x, dy: frame.origin.y)
+          .offsetBy(dx: origin.x, dy: origin.y)
           .cgPath
       )
       cgContext.setStrokeColor(foregroundColor.appKit.cgColor)
@@ -232,7 +233,7 @@ public struct DrawRun {
     if let underlinePath {
       cgContext.addPath(
         underlinePath
-          .offsetBy(dx: frame.origin.x, dy: frame.origin.y)
+          .offsetBy(dx: origin.x, dy: origin.y)
           .cgPath
       )
       cgContext.setStrokeColor(specialColor.appKit.cgColor)
@@ -242,7 +243,7 @@ public struct DrawRun {
     graphicsContext.shouldAntialias = true
     for glyphRun in glyphRuns {
       cgContext.textMatrix = glyphRun.textMatrix
-      cgContext.textPosition = frame.origin
+      cgContext.textPosition = origin
       cgContext.setFillColor(foregroundColor.appKit.cgColor)
 
       CTFontDrawGlyphs(

@@ -156,7 +156,6 @@ public struct GridView: View {
         return
       }
 
-      let cellSize = nimsAppearance.cellSize
       let cgContext = graphicsContext.cgContext
       let grid = model.grid
       let integerBounds = IntegerRectangle(
@@ -188,7 +187,7 @@ public struct GridView: View {
           size: rect.size
         )
 
-        var integerFrame = IntegerRectangle(
+        let integerFrame = IntegerRectangle(
           origin: .init(
             column: Int(upsideDownRect.origin.x / nimsAppearance.cellWidth),
             row: Int(upsideDownRect.origin.y / nimsAppearance.cellHeight)
@@ -198,17 +197,23 @@ public struct GridView: View {
             rowsCount: Int(ceil(upsideDownRect.size.height / nimsAppearance.cellHeight))
           )
         )
-        update(&integerFrame) {
-          $0 = $0.intersection(with: integerBounds)
-        }
-
+        .intersection(with: integerBounds)
         let columns = integerFrame.columns
 
+        var drawRuns = [(origin: CGPoint, highlightID: Highlight.ID, drawRun: DrawRun)]()
+        var cursorDrawRun: (
+          frame: CGRect,
+          highlightID: Highlight.ID,
+          parentOrigin: CGPoint,
+          parentDrawRun: DrawRun,
+          parentHighlightID: Highlight.ID
+        )?
+
+        graphicsContext.shouldAntialias = false
         for row in integerFrame.rows {
           let rowLayout = grid.rowLayouts[row]
-          for part in rowLayout.parts where part.indices.overlaps(columns) {
-            cgContext.saveGState()
 
+          for part in rowLayout.parts where part.indices.overlaps(columns) {
             let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
 
             let partIntegerFrame = IntegerRectangle(
@@ -224,35 +229,8 @@ public struct GridView: View {
               size: partFrame.size
             )
 
-            cgContext.setShouldAntialias(false)
-            cgContext.setFillColor(backgroundColor.appKit.cgColor)
+            backgroundColor.appKit.setFill()
             cgContext.fill([upsideDownPartFrame])
-
-            cgContext.restoreGState()
-          }
-        }
-
-        for row in integerFrame.rows {
-          let rowLayout = grid.rowLayouts[row]
-          for part in rowLayout.parts where part.indices.overlaps(columns) {
-            cgContext.saveGState()
-
-            let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
-            let foregroundColor = nimsAppearance.foregroundColor(for: part.highlightID)
-            let specialColor = nimsAppearance.specialColor(for: part.highlightID)
-
-            let partIntegerFrame = IntegerRectangle(
-              origin: .init(column: part.indices.lowerBound, row: row),
-              size: .init(columnsCount: part.indices.count, rowsCount: 1)
-            )
-            let partFrame = partIntegerFrame * nimsAppearance.cellSize
-            let upsideDownPartFrame = CGRect(
-              origin: .init(
-                x: partFrame.origin.x,
-                y: bounds.height - partFrame.origin.y - nimsAppearance.cellHeight
-              ),
-              size: partFrame.size
-            )
 
             let drawRun = drawRunsProvider
               .drawRun(
@@ -268,22 +246,22 @@ public struct GridView: View {
                   decorations: nimsAppearance.decorations(for: part.highlightID)
                 )
               )
-            drawRun.draw(
-              at: upsideDownPartFrame,
-              to: graphicsContext,
-              foregroundColor: foregroundColor,
-              specialColor: specialColor
+            drawRuns.append(
+              (
+                origin: upsideDownPartFrame.origin,
+                highlightID: part.highlightID,
+                drawRun: drawRun
+              )
             )
 
             if
+              let modeInfo = model.modeInfo,
+              let mode = model.mode,
               model.cursorBlinkingPhase,
               let cursor = model.cursor,
               cursor.gridID == model.gridID,
               cursor.position.row == row,
-              cursor.position.column >= part.indices.lowerBound,
-              cursor.position.column < part.indices.upperBound,
-              let modeInfo = model.modeInfo,
-              let mode = model.mode
+              part.indices.contains(cursor.position.column)
             {
               let cursorStyle = modeInfo
                 .cursorStyles[mode.cursorStyleIndex]
@@ -296,66 +274,89 @@ public struct GridView: View {
                     origin: cursor.position,
                     size: .init(columnsCount: 1, rowsCount: 1)
                   )
-                  cursorFrame = integerFrame * cellSize
+                  cursorFrame = integerFrame * nimsAppearance.cellSize
 
                 case .horizontal:
-                  let height = cellSize.height / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                  let height = nimsAppearance.cellSize.height / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                   cursorFrame = CGRect(
-                    x: Double(cursor.position.column) * cellSize.width,
-                    y: Double(cursor.position.row) * cellSize.height,
-                    width: cellSize.width,
+                    x: Double(cursor.position.column) * nimsAppearance.cellSize.width,
+                    y: Double(cursor.position.row) * nimsAppearance.cellSize.height,
+                    width: nimsAppearance.cellSize.width,
                     height: height
                   )
 
                 case .vertical:
-                  let width = cellSize.width / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                  let width = nimsAppearance.cellSize.width / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                   cursorFrame = CGRect(
-                    origin: cursor.position * cellSize,
-                    size: .init(width: width, height: cellSize.height)
+                    origin: cursor.position * nimsAppearance.cellSize,
+                    size: .init(width: width, height: nimsAppearance.cellSize.height)
                   )
                 }
 
                 let cursorUpsideDownFrame = CGRect(
                   origin: .init(
                     x: cursorFrame.origin.x,
-                    y: bounds.height - cursorFrame.origin.y - cellSize.height
+                    y: bounds.height - cursorFrame.origin.y - nimsAppearance.cellSize.height
                   ),
                   size: cursorFrame.size
                 )
 
                 let cursorHighlightID = cursorStyle.attrID ?? .default
 
-                let cursorForegroundColor: NimsColor
-                let cursorBackgroundColor: NimsColor
-
-                if cursorHighlightID.isDefault {
-                  cursorForegroundColor = backgroundColor
-                  cursorBackgroundColor = foregroundColor
-
-                } else {
-                  cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorHighlightID)
-                  cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
-                }
-
-                cgContext.setShouldAntialias(false)
-                cgContext.setFillColor(cursorBackgroundColor.appKit.cgColor)
-                cgContext.fill([cursorUpsideDownFrame])
-
-                cgContext.setShouldAntialias(true)
-                cgContext.clip(to: [cursorUpsideDownFrame])
-                drawRun.draw(
-                  at: upsideDownPartFrame,
-                  to: graphicsContext,
-                  foregroundColor: cursorForegroundColor,
-                  specialColor: cursorBackgroundColor
+                cursorDrawRun = (
+                  frame: cursorUpsideDownFrame,
+                  highlightID: cursorHighlightID,
+                  parentOrigin: upsideDownPartFrame.origin,
+                  parentDrawRun: drawRun,
+                  parentHighlightID: part.highlightID
                 )
               }
             }
-
-            cgContext.restoreGState()
           }
+        }
+
+        for (origin, highlightID, drawRun) in drawRuns {
+          let foregroundColor = nimsAppearance.foregroundColor(for: highlightID)
+          let specialColor = nimsAppearance.specialColor(for: highlightID)
+
+          drawRun.draw(
+            at: origin,
+            to: graphicsContext,
+            foregroundColor: foregroundColor,
+            specialColor: specialColor
+          )
+        }
+
+        if let (cursorFrame, cursorHighlightID, parentOrigin, parentDrawRun, parentHighlightID) = cursorDrawRun {
+          graphicsContext.saveGraphicsState()
+
+          cursorFrame.clip()
+
+          let cursorForegroundColor: NimsColor
+          let cursorBackgroundColor: NimsColor
+
+          if cursorHighlightID.isDefault {
+            cursorForegroundColor = nimsAppearance.backgroundColor(for: parentHighlightID)
+            cursorBackgroundColor = nimsAppearance.foregroundColor(for: parentHighlightID)
+
+          } else {
+            cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorHighlightID)
+            cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
+          }
+
+          cursorBackgroundColor.appKit.setFill()
+          cursorFrame.fill()
+
+          parentDrawRun.draw(
+            at: parentOrigin,
+            to: graphicsContext,
+            foregroundColor: cursorForegroundColor,
+            specialColor: cursorBackgroundColor
+          )
+
+          graphicsContext.restoreGraphicsState()
         }
       }
     }
