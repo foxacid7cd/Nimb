@@ -26,7 +26,7 @@ public struct Nims: ReducerProtocol {
       switch action {
       case let .createInstance(mouseEvents, keyPresses):
         let nsFont: NSFont
-        if let meslo = NSFont(name: "MesloLGS NFM", size: 12) {
+        if let meslo = NSFont(name: "SFMono Nerd Font Mono", size: 12) {
           nsFont = meslo
 
         } else {

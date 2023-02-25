@@ -25,6 +25,7 @@ public struct GridView: View {
   public struct Model {
     public init(
       gridID: Grid.ID,
+      integerSize: IntegerSize,
       grids: IntKeyedDictionary<Grid>,
       cursor: Cursor? = nil,
       modeInfo: ModeInfo?,
@@ -32,6 +33,7 @@ public struct GridView: View {
       cursorBlinkingPhase: Bool
     ) {
       self.gridID = gridID
+      self.integerSize = integerSize
       self.grids = grids
       self.cursor = cursor
       self.modeInfo = modeInfo
@@ -40,6 +42,7 @@ public struct GridView: View {
     }
 
     public var gridID: Grid.ID
+    public var integerSize: IntegerSize
     public var grids: IntKeyedDictionary<Grid>
     public var cursor: Cursor?
     public var modeInfo: ModeInfo?
@@ -156,6 +159,10 @@ public struct GridView: View {
       let cellSize = nimsAppearance.cellSize
       let cgContext = graphicsContext.cgContext
       let grid = model.grid
+      let integerBounds = IntegerRectangle(
+        origin: .init(),
+        size: model.integerSize
+      )
 
       cgContext.saveGState()
       defer { cgContext.restoreGState() }
@@ -181,7 +188,7 @@ public struct GridView: View {
           size: rect.size
         )
 
-        let integerFrame = IntegerRectangle(
+        var integerFrame = IntegerRectangle(
           origin: .init(
             column: Int(upsideDownRect.origin.x / nimsAppearance.cellWidth),
             row: Int(upsideDownRect.origin.y / nimsAppearance.cellHeight)
@@ -191,17 +198,43 @@ public struct GridView: View {
             rowsCount: Int(ceil(upsideDownRect.size.height / nimsAppearance.cellHeight))
           )
         )
-        let columnsRange = integerFrame.origin.column ..< integerFrame.origin.column + integerFrame.size.columnsCount
+        update(&integerFrame) {
+          $0 = $0.intersection(with: integerBounds)
+        }
 
-        for rowOffset in 0 ..< integerFrame.size.rowsCount {
-          let row = integerFrame.origin.row + rowOffset
+        let columns = integerFrame.columns
 
-          guard row >= 0, row < grid.cells.size.rowsCount else {
-            continue
-          }
-
+        for row in integerFrame.rows {
           let rowLayout = grid.rowLayouts[row]
-          for part in rowLayout.parts where part.indices.overlaps(columnsRange) {
+          for part in rowLayout.parts where part.indices.overlaps(columns) {
+            cgContext.saveGState()
+
+            let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
+
+            let partIntegerFrame = IntegerRectangle(
+              origin: .init(column: part.indices.lowerBound, row: row),
+              size: .init(columnsCount: part.indices.count, rowsCount: 1)
+            )
+            let partFrame = partIntegerFrame * nimsAppearance.cellSize
+            let upsideDownPartFrame = CGRect(
+              origin: .init(
+                x: partFrame.origin.x,
+                y: bounds.height - partFrame.origin.y - nimsAppearance.cellHeight
+              ),
+              size: partFrame.size
+            )
+
+            cgContext.setShouldAntialias(false)
+            cgContext.setFillColor(backgroundColor.appKit.cgColor)
+            cgContext.fill([upsideDownPartFrame])
+
+            cgContext.restoreGState()
+          }
+        }
+
+        for row in integerFrame.rows {
+          let rowLayout = grid.rowLayouts[row]
+          for part in rowLayout.parts where part.indices.overlaps(columns) {
             cgContext.saveGState()
 
             let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
@@ -221,10 +254,6 @@ public struct GridView: View {
               size: partFrame.size
             )
 
-            cgContext.setShouldAntialias(false)
-            cgContext.setFillColor(backgroundColor.appKit.cgColor)
-            cgContext.fill([upsideDownPartFrame])
-
             let drawRun = drawRunsProvider
               .drawRun(
                 with: .init(
@@ -243,7 +272,6 @@ public struct GridView: View {
               at: upsideDownPartFrame,
               to: graphicsContext,
               foregroundColor: foregroundColor,
-              backgroundColor: backgroundColor,
               specialColor: specialColor
             )
 
@@ -311,12 +339,16 @@ public struct GridView: View {
                   cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorHighlightID)
                 }
 
+                cgContext.setShouldAntialias(false)
+                cgContext.setFillColor(cursorBackgroundColor.appKit.cgColor)
+                cgContext.fill([cursorUpsideDownFrame])
+
+                cgContext.setShouldAntialias(true)
                 cgContext.clip(to: [cursorUpsideDownFrame])
                 drawRun.draw(
                   at: upsideDownPartFrame,
                   to: graphicsContext,
                   foregroundColor: cursorForegroundColor,
-                  backgroundColor: cursorBackgroundColor,
                   specialColor: cursorBackgroundColor
                 )
               }

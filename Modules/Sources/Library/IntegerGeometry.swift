@@ -13,6 +13,42 @@ public struct IntegerRectangle: Sendable, Hashable {
 
   public var origin: IntegerPoint
   public var size: IntegerSize
+
+  public var minColumn: Int {
+    origin.column
+  }
+
+  public var maxColumn: Int {
+    origin.column + size.columnsCount
+  }
+
+  public var minRow: Int {
+    origin.row
+  }
+
+  public var maxRow: Int {
+    origin.row + size.rowsCount
+  }
+
+  public var columns: Range<Int> {
+    minColumn ..< maxColumn
+  }
+
+  public var rows: Range<Int> {
+    minRow ..< maxRow
+  }
+
+  public func intersection(with rectangle: IntegerRectangle) -> IntegerRectangle {
+    let origin = IntegerPoint(
+      column: max(minColumn, rectangle.minColumn),
+      row: max(minRow, rectangle.minRow)
+    )
+    let size = IntegerSize(
+      columnsCount: max(0, min(maxColumn, rectangle.maxColumn) - origin.column),
+      rowsCount: max(0, min(maxRow, rectangle.maxRow) - origin.row)
+    )
+    return .init(origin: origin, size: size)
+  }
 }
 
 public func * (first: IntegerRectangle, second: CGSize) -> CGRect {

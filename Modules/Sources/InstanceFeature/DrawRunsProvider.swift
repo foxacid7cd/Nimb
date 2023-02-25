@@ -103,12 +103,12 @@ public class DrawRunsProvider {
 
     var underlinePath: Path?
 
-    let underlineY = descent / 2 - 1
+    let underlineY = descent / 2
     if parameters.decorations.isUnderdashed {
       drawUnderlinePath(dashingPattern: [2, 2]) { path in
         path.addLines([
-          .init(x: xOffset, y: underlineY),
-          .init(x: size.width + xOffset, y: underlineY),
+          .init(x: 0, y: underlineY),
+          .init(x: size.width, y: underlineY),
         ])
       }
 
@@ -137,18 +137,18 @@ public class DrawRunsProvider {
         let widthDivider = 3
 
         let xStep = parameters.font.cellWidth / Double(widthDivider)
-        let pointsCount = parameters.integerSize.columnsCount * widthDivider + 2
+        let pointsCount = parameters.integerSize.columnsCount * widthDivider
 
         let oddUnderlineY = underlineY + 1
         let evenUnderlineY = underlineY - 1
 
-        path.move(to: .init(x: xOffset, y: oddUnderlineY))
+        path.move(to: .init(x: 0, y: oddUnderlineY))
         for index in 1 ..< pointsCount - 1 {
           let isEven = index.isMultiple(of: 2)
 
           path.addLine(
             to: .init(
-              x: Double(index) * xStep + xOffset,
+              x: Double(index) * xStep,
               y: isEven ? evenUnderlineY : oddUnderlineY
             )
           )
@@ -208,7 +208,6 @@ public struct DrawRun {
     at frame: CGRect,
     to graphicsContext: NSGraphicsContext,
     foregroundColor: NimsColor,
-    backgroundColor: NimsColor,
     specialColor: NimsColor
   ) {
     graphicsContext.saveGraphicsState()
@@ -217,10 +216,9 @@ public struct DrawRun {
     let cgContext = graphicsContext.cgContext
     let nsFont = parameters.font.nsFont()
 
-    graphicsContext.shouldAntialias = false
-    backgroundColor.appKit.setFill()
-    frame.fill()
+    frame.clip()
 
+    cgContext.setLineWidth(1)
     if let strikethroughPath {
       cgContext.addPath(
         strikethroughPath
@@ -228,7 +226,6 @@ public struct DrawRun {
           .cgPath
       )
       cgContext.setStrokeColor(foregroundColor.appKit.cgColor)
-      cgContext.setLineWidth(1)
       cgContext.strokePath()
     }
 
@@ -239,7 +236,6 @@ public struct DrawRun {
           .cgPath
       )
       cgContext.setStrokeColor(specialColor.appKit.cgColor)
-      cgContext.setLineWidth(1)
       cgContext.strokePath()
     }
 

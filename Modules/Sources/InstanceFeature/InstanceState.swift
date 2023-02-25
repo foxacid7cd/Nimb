@@ -82,7 +82,7 @@ public struct InstanceState {
   public var gridsLayoutUpdateFlag: Bool
   public var cursorBlinkingPhase: Bool
 
-  public var outerGrid: Grid? {
+  public var outerGrid: Grid! {
     grids[.outer]
   }
 
