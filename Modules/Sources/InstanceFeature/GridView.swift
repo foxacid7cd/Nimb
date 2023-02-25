@@ -119,9 +119,6 @@ public struct GridView: View {
     private let drawRunsProvider = DrawRunsProvider()
     private var viewStoreCancellable: AnyCancellable?
     private var model: GridView.Model?
-    private var xScrollingAccumulator: Double = 0
-
-    private var isScrollingHorizontal: Bool?
 
     private func render() {
       guard let nimsAppearance, let model else {
@@ -359,9 +356,10 @@ public struct GridView: View {
             cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.highlightID)
           }
 
-          cursorDrawRun.frame.clip()
           cursorBackgroundColor.appKit.setFill()
+          cursorDrawRun.frame.fill()
 
+          cursorDrawRun.frame.clip()
           cursorDrawRun.parentDrawRun.draw(
             at: cursorDrawRun.parentOrigin,
             to: graphicsContext,
@@ -410,59 +408,62 @@ public struct GridView: View {
       report(event, of: .mouse(button: .middle, action: .release))
     }
 
+    private var isScrollingHorizontal: Bool?
+    private var xScrollingAccumulator: Double = 0
     private var yScrollingAccumulator: Double = 0
 
     override public func scrollWheel(with event: NSEvent) {
       guard let nimsAppearance else {
         return
       }
-      let cellHeight = nimsAppearance.cellHeight
+      let cellSize = nimsAppearance.cellSize
 
       if event.phase == .began {
+        isScrollingHorizontal = nil
+        xScrollingAccumulator = 0
         yScrollingAccumulator = 0
       }
 
+      xScrollingAccumulator -= event.scrollingDeltaX / 1.5
       yScrollingAccumulator -= event.scrollingDeltaY
 
-      let threshold = cellHeight * 3
-      while abs(yScrollingAccumulator) > threshold {
-        if yScrollingAccumulator > 0 {
-          yScrollingAccumulator -= threshold
-          report(event, of: .scrollWheel(direction: .down))
+      let xThreshold = cellSize.width * 3
+      let yThreshold = cellSize.height * 3
 
-        } else {
-          yScrollingAccumulator += threshold
-          report(event, of: .scrollWheel(direction: .up))
+      if isScrollingHorizontal != false {
+        while abs(xScrollingAccumulator) > xThreshold {
+          if isScrollingHorizontal == nil {
+            isScrollingHorizontal = true
+          }
+
+          if xScrollingAccumulator > 0 {
+            xScrollingAccumulator -= xThreshold
+            report(event, of: .scrollWheel(direction: .right))
+
+          } else {
+            xScrollingAccumulator += xThreshold
+            report(event, of: .scrollWheel(direction: .left))
+          }
+        }
+      }
+
+      if isScrollingHorizontal != true {
+        while abs(yScrollingAccumulator) > yThreshold {
+          if isScrollingHorizontal == nil {
+            isScrollingHorizontal = false
+          }
+
+          if yScrollingAccumulator > 0 {
+            yScrollingAccumulator -= yThreshold
+            report(event, of: .scrollWheel(direction: .down))
+
+          } else {
+            yScrollingAccumulator += yThreshold
+            report(event, of: .scrollWheel(direction: .up))
+          }
         }
       }
     }
-
-//        event.trackSwipeEvent(
-//          options: [],
-//          dampenAmountThresholdMin: -cellHeight,
-//          max: cellHeight
-//        ) { [unowned self] gestureAmount, _, _, stop in
-//          if shouldStop {
-//            stop.initialize(to: true)
-//            return
-//          }
-//
-//          var delta = gestureAmount - yScrollingAccumulator
-//          let threshold = 0.025
-//
-//          while abs(delta) >= threshold {
-//            if delta > 0 {
-//              yScrollingAccumulator += threshold
-//              report(event, of: .scrollWheel(direction: .down))
-//
-//            } else {
-//              yScrollingAccumulator -= threshold
-//              report(event, of: .scrollWheel(direction: .up))
-//            }
-//
-//            delta = gestureAmount - yScrollingAccumulator
-//          }
-//        }
 
     private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
       guard let nimsAppearance, let model else {
