@@ -33,24 +33,19 @@ public struct CmdlinesView: View {
     ) { viewStore in
       let state = viewStore.state
 
-      let horizontalPadding = nimsAppearance.cellWidth * 4
-      let verticalPadding = nimsAppearance.cellHeight * 2
-
       VStack(alignment: .center, spacing: 0) {
+        Spacer()
+          .frame(height: 88)
+
         ForEach(state.cmdlines.values) { cmdline in
           CmdlineView(cmdline: cmdline)
         }
+
         Spacer()
       }
-      .padding(EdgeInsets(
-        top: verticalPadding + 32,
-        leading: horizontalPadding,
-        bottom: verticalPadding,
-        trailing: horizontalPadding
-      ))
       .background {
         Rectangle()
-          .fill(.black.opacity(0.5))
+          .fill(.black.opacity(0.75))
       }
     }
   }
@@ -64,39 +59,41 @@ public struct CmdlineView: View {
   private var nimsAppearance: NimsAppearance
 
   public var body: some View {
-    let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-    let cellSize = CGSize(width: font.makeCellWidth(), height: font.makeCellHeight())
-
     HStack {
-      VStack(alignment: .leading, spacing: 0) {
+      Spacer()
+
+      VStack(alignment: .leading, spacing: 4) {
         if !cmdline.prompt.isEmpty {
           let attributedString = AttributedString(
-            cmdline.prompt + "\n",
+            cmdline.prompt,
             attributes: .init([
-              .font: font,
+              .font: nimsAppearance.font.nsFont(isItalic: true),
               .foregroundColor: nimsAppearance.defaultForegroundColor.appKit
                 .withAlphaComponent(0.6),
-              .backgroundColor: nimsAppearance.defaultBackgroundColor.appKit,
             ])
           )
           Text(attributedString)
         }
 
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
           if !cmdline.firstCharacter.isEmpty {
             let attributedString = AttributedString(
               cmdline.firstCharacter,
               attributes: .init([
-                .font: NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask),
+                .font: nimsAppearance.font.nsFont(isBold: true),
                 .foregroundColor: nimsAppearance.defaultForegroundColor.appKit,
-                .backgroundColor: nimsAppearance.defaultBackgroundColor.appKit,
               ])
             )
             Text(attributedString)
+              .frame(width: 20, height: 20)
+              .background(
+                nimsAppearance.defaultForegroundColor.swiftUI
+                  .opacity(0.2)
+              )
           }
 
-          ZStack(alignment: .topLeading) {
-            let attributedString = makeContentAttributedString(font: font)
+          ZStack(alignment: .leading) {
+            let attributedString = makeContentAttributedString(font: nimsAppearance.font.nsFont())
             Text(attributedString)
 
             let isCursorAtEnd = cmdline.cursorPosition == attributedString.characters.count
@@ -106,7 +103,7 @@ public struct CmdlineView: View {
               origin: .init(column: cmdline.cursorPosition, row: 0),
               size: .init(columnsCount: 1, rowsCount: 1)
             )
-            let frame = integerFrame * cellSize
+            let frame = integerFrame * nimsAppearance.cellSize
 
             Rectangle()
               .fill(nimsAppearance.defaultForegroundColor.swiftUI)
@@ -125,13 +122,16 @@ public struct CmdlineView: View {
                 .offset(x: frame.minX, y: frame.minY)
             }
           }
+
+          Spacer()
         }
       }
+      .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
+      .frame(maxWidth: 640, minHeight: 44)
+      .background(nimsAppearance.defaultBackgroundColor.swiftUI)
 
       Spacer()
     }
-    .padding(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
-    .background(nimsAppearance.defaultBackgroundColor.swiftUI)
   }
 
   private func makeContentAttributedString(font: NSFont) -> AttributedString {
