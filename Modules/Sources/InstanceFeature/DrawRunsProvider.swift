@@ -52,9 +52,8 @@ public class DrawRunsProvider {
     CTLineGetTypographicBounds(ctLine, &ascent, &descent, nil)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-    let xOffset = (size.width - bounds.width) / 2
     let yOffset = (size.height - bounds.height) / 2 + descent
-    let offset = CGPoint(x: xOffset, y: yOffset)
+    let offset = CGPoint(x: 0, y: yOffset)
 
     let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 
@@ -99,10 +98,12 @@ public class DrawRunsProvider {
     }
 
     var underlinePath: Path?
+    var underlineLineDashLengths = [CGFloat]()
 
-    let underlineY = descent / 2
+    let underlineY: CGFloat = 0.5
     if parameters.decorations.isUnderdashed {
-      drawUnderlinePath(dashingPattern: [3, 3]) { path in
+      underlineLineDashLengths = [2, 2]
+      drawUnderlinePath { path in
         path.addLines([
           .init(x: 0, y: underlineY),
           .init(x: size.width, y: underlineY),
@@ -110,7 +111,8 @@ public class DrawRunsProvider {
       }
 
     } else if parameters.decorations.isUnderdotted {
-      drawUnderlinePath(dashingPattern: [1, 1]) { path in
+      underlineLineDashLengths = [1, 1]
+      drawUnderlinePath { path in
         path.addLines([
           .init(x: 0, y: underlineY),
           .init(x: size.width, y: underlineY),
@@ -124,8 +126,8 @@ public class DrawRunsProvider {
           .init(x: size.width, y: underlineY),
         ])
         path.addLines([
-          .init(x: 0, y: underlineY + 2),
-          .init(x: size.width, y: underlineY + 2),
+          .init(x: 0, y: underlineY + 3),
+          .init(x: size.width, y: underlineY + 3),
         ])
       }
 
@@ -136,11 +138,11 @@ public class DrawRunsProvider {
         let xStep = parameters.font.cellWidth / Double(widthDivider)
         let pointsCount = parameters.integerSize.columnsCount * widthDivider + 3
 
-        let oddUnderlineY = underlineY + 1
-        let evenUnderlineY = underlineY - 1
+        let oddUnderlineY = underlineY + 3
+        let evenUnderlineY = underlineY
 
         path.move(to: .init(x: 0, y: oddUnderlineY))
-        for index in 1 ..< pointsCount - 1 {
+        for index in 1 ..< pointsCount {
           let isEven = index.isMultiple(of: 2)
 
           path.addLine(
@@ -159,7 +161,7 @@ public class DrawRunsProvider {
       }
     }
 
-    func drawUnderlinePath(dashingPattern: [CGFloat] = [], with body: (inout Path) -> Void) {
+    func drawUnderlinePath(with body: (inout Path) -> Void) {
       var path = Path()
       body(&path)
 
@@ -170,7 +172,8 @@ public class DrawRunsProvider {
       parameters: parameters,
       glyphRuns: glyphRuns,
       strikethroughPath: strikethroughPath,
-      underlinePath: underlinePath
+      underlinePath: underlinePath,
+      underlineLineDashLengths: underlineLineDashLengths
     )
   }
 
@@ -200,6 +203,7 @@ public struct DrawRun {
   public var glyphRuns: [GlyphRun]
   public var strikethroughPath: Path?
   public var underlinePath: Path?
+  public var underlineLineDashLengths: [CGFloat]
 
   public func draw(
     at origin: CGPoint,
@@ -220,6 +224,7 @@ public struct DrawRun {
     .clip()
 
     cgContext.setLineWidth(1)
+
     if let strikethroughPath {
       cgContext.addPath(
         strikethroughPath
@@ -231,6 +236,11 @@ public struct DrawRun {
     }
 
     if let underlinePath {
+      cgContext.saveGState()
+
+      if !underlineLineDashLengths.isEmpty {
+        cgContext.setLineDash(phase: 0.5, lengths: underlineLineDashLengths)
+      }
       cgContext.addPath(
         underlinePath
           .offsetBy(dx: origin.x, dy: origin.y)
@@ -238,6 +248,8 @@ public struct DrawRun {
       )
       cgContext.setStrokeColor(specialColor.appKit.cgColor)
       cgContext.strokePath()
+
+      cgContext.restoreGState()
     }
 
     graphicsContext.shouldAntialias = true
