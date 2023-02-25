@@ -9,6 +9,7 @@ import IdentifiedCollections
 import Library
 import MessagePack
 import Neovim
+import OSLog
 import Overture
 import Tagged
 
@@ -940,6 +941,9 @@ public struct Instance: ReducerProtocol {
             assertionFailure("\(error)")
           }
         }
+
+      case .sideMenuButtonPressed:
+        return .none
       }
 
     case .gridView:

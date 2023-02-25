@@ -24,6 +24,7 @@ public struct HeaderView: View {
 
   public enum Action: Sendable {
     case reportSelectedTab(id: Tab.ID)
+    case sideMenuButtonPressed
   }
 
   @Environment(\.nimsAppearance)
@@ -41,7 +42,7 @@ public struct HeaderView: View {
 
         HStack(alignment: .center) {
           Button {
-            print()
+            viewStore.send(.sideMenuButtonPressed)
 
           } label: {
             Image(systemName: "sidebar.left", variableValue: 1)
