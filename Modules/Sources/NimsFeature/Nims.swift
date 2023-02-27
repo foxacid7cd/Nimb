@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AsyncAlgorithms
 import CasePaths
 import ComposableArchitecture
 import Foundation
@@ -13,10 +14,7 @@ public struct Nims: ReducerProtocol {
   public init() {}
 
   public enum Action: Sendable {
-    case createInstance(
-      mouseEvents: AsyncStream<MouseEvent>,
-      keyPresses: AsyncStream<KeyPress>
-    )
+    case createInstance(keyPresses: AsyncStream<KeyPress>)
     case instance(action: Instance.Action)
     case removeInstance
   }
@@ -24,7 +22,7 @@ public struct Nims: ReducerProtocol {
   public var body: some ReducerProtocol<NimsState, Action> {
     Reduce { state, action in
       switch action {
-      case let .createInstance(mouseEvents, keyPresses):
+      case let .createInstance(keyPresses):
         let nsFont: NSFont
         if let meslo = NSFont(name: "SFMono Nerd Font Mono", size: 12) {
           nsFont = meslo
@@ -42,9 +40,16 @@ public struct Nims: ReducerProtocol {
             "LUNARVIM_BASE_DIR": "/Users/foxacid/.local/share/lunarvim/lvim",
           ]
         )
+
+        let (sendMouseEvent, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
         state.instanceState = .init(
           process: process,
-          font: .init(nsFont)
+          font: .init(nsFont),
+          reportMouseEvent: { mouseEvent in
+            Task {
+              await sendMouseEvent(mouseEvent)
+            }
+          }
         )
 
         return .run { send in

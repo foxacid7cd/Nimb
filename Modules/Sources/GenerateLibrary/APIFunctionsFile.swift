@@ -17,6 +17,7 @@ public struct APIFunctionsFile: GeneratableFile {
       try .init {
         "import CasePaths" as DeclSyntax
         "import MessagePack" as DeclSyntax
+        "import Tagged" as DeclSyntax
 
         try ExtensionDeclSyntax("public extension API") {
           let validFunctions = metadata.functions

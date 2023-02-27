@@ -25,7 +25,6 @@ public struct GridView: View {
   public struct Model {
     public init(
       gridID: Grid.ID,
-      integerSize: IntegerSize,
       grids: IntKeyedDictionary<Grid>,
       cursor: Cursor? = nil,
       modeInfo: ModeInfo?,
@@ -33,7 +32,6 @@ public struct GridView: View {
       cursorBlinkingPhase: Bool
     ) {
       self.gridID = gridID
-      self.integerSize = integerSize
       self.grids = grids
       self.cursor = cursor
       self.modeInfo = modeInfo
@@ -42,7 +40,6 @@ public struct GridView: View {
     }
 
     public var gridID: Grid.ID
-    public var integerSize: IntegerSize
     public var grids: IntKeyedDictionary<Grid>
     public var cursor: Cursor?
     public var modeInfo: ModeInfo?
@@ -155,10 +152,6 @@ public struct GridView: View {
 
       let cgContext = graphicsContext.cgContext
       let grid = model.grid
-      let integerBounds = IntegerRectangle(
-        size: model.integerSize
-      )
-      let bounds = integerBounds * nimsAppearance.cellSize
 
       cgContext.saveGState()
       defer { cgContext.restoreGState() }
@@ -194,7 +187,7 @@ public struct GridView: View {
             rowsCount: Int(ceil(upsideDownRect.size.height / nimsAppearance.cellHeight))
           )
         )
-        .intersection(with: integerBounds)
+        .intersection(with: .init(size: grid.cells.size))
 
         var drawRuns = [(origin: CGPoint, highlightID: Highlight.ID, drawRun: DrawRun)]()
         var cursorDrawRun: CursorDrawRun?

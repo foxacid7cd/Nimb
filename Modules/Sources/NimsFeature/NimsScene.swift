@@ -22,35 +22,35 @@ public struct NimsScene: SwiftUI.Scene {
           state: \.instanceState,
           action: Nims.Action.instance(action:)
         )
-      ) { instanceStore in
+      ) { store in
         IfLetStore(
-          instanceStore.scope(state: \.outerGrid)
-        ) { _ in
+          store.scope(
+            state: \.instanceViewState,
+            action: Instance.Action.instanceView(action:)
+          )
+        ) { store in
           WithViewStore(
-            instanceStore,
+            store,
             observe: { $0 },
             removeDuplicates: {
               $0.instanceUpdateFlag == $1.instanceUpdateFlag
             }
-          ) { viewStore in
+          ) { state in
             InstanceView(
-              store: instanceStore,
-              reportMouseEvent: { mouseEvent in
-                Task { await reportMouseEvent(mouseEvent) }
-              }
+              store: store
             )
-            .navigationTitle(viewStore.title ?? "Nims")
+            .navigationTitle(state.title ?? "Nims")
             .transformEnvironment(\.nimsAppearance) { nimsAppearance in
-              nimsAppearance.font = viewStore.font
-              nimsAppearance.highlights = viewStore.highlights
+              nimsAppearance.font = state.font
+              nimsAppearance.highlights = state.highlights
 
-              viewStore.defaultForegroundColor
+              state.defaultForegroundColor
                 .map { nimsAppearance.defaultForegroundColor = $0 }
 
-              viewStore.defaultBackgroundColor
+              state.defaultBackgroundColor
                 .map { nimsAppearance.defaultBackgroundColor = $0 }
 
-              viewStore.defaultSpecialColor
+              state.defaultSpecialColor
                 .map { nimsAppearance.defaultSpecialColor = $0 }
             }
           }
@@ -88,10 +88,7 @@ public struct NimsScene: SwiftUI.Scene {
 
         ViewStore(store.stateless)
           .send(
-            .createInstance(
-              mouseEvents: mouseEvents,
-              keyPresses: keyPresses
-            )
+            .createInstance(keyPresses: keyPresses)
           )
 
       default:
@@ -99,8 +96,6 @@ public struct NimsScene: SwiftUI.Scene {
       }
     }
   }
-
-  private let (reportMouseEvent, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
 
   @Environment(\.scenePhase)
   private var scenePhase: ScenePhase

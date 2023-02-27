@@ -11,205 +11,91 @@ import SwiftUI
 import Tagged
 
 public struct InstanceView: View {
-  public init(store: StoreOf<Instance>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
+  public init(store: Store<State, Action>) {
     self.store = store
-    self.reportMouseEvent = reportMouseEvent
   }
 
-  public var store: StoreOf<Instance>
-  public var reportMouseEvent: (MouseEvent) -> Void
+  public var store: Store<State, Action>
 
-  @Environment(\.nimsAppearance)
-  private var nimsAppearance: NimsAppearance
+  @dynamicMemberLookup
+  public struct State {
+    public init(instanceState: InstanceState, reportMouseEvent: @escaping (MouseEvent) -> Void, outerGrid: Grid) {
+      self.instanceState = instanceState
+      self.reportMouseEvent = reportMouseEvent
+      self.outerGrid = outerGrid
+    }
+
+    public var instanceState: InstanceState
+    public var reportMouseEvent: (MouseEvent) -> Void
+    public var outerGrid: Grid
+
+    public subscript<Value>(dynamicMember keyPath: KeyPath<InstanceState, Value>) -> Value {
+      instanceState[keyPath: keyPath]
+    }
+
+    var headerViewModel: HeaderView.Model {
+      .init(
+        tabline: self.tabline,
+        gridsLayoutUpdateFlag: self.gridsLayoutUpdateFlag
+      )
+    }
+
+    var cmdlinesViewModel: CmdlinesView.Model {
+      .init(
+        cmdlines: self.cmdlines,
+        cmdlineUpdateFlag: self.cmdlineUpdateFlag
+      )
+    }
+  }
+
+  public enum Action: Sendable {
+    case headerView(action: HeaderView.Action)
+  }
 
   public var body: some View {
     WithViewStore(
       store,
       observe: { $0 },
       removeDuplicates: {
-        $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
-      }
-    ) { viewStore in
-      let state = viewStore.state
-
-      let outerGridIntegerSize = state.outerGrid.cells.size
-      let outerGridIntegerBounds = IntegerRectangle(size: outerGridIntegerSize)
-      let outerGridSize = outerGridIntegerSize * nimsAppearance.cellSize
-      let outerGridBounds = CGRect(origin: .init(), size: outerGridSize)
-
-      ZStack(alignment: .topLeading) {
+        $0.instanceState.gridsLayoutUpdateFlag == $1.instanceState.gridsLayoutUpdateFlag
+      },
+      content: { state in
         VStack(spacing: 0) {
           HeaderView(
             store: store
               .scope(
-                state: makeHeaderViewModel(from:),
-                action: Instance.Action.headerView(action:)
+                state: \.headerViewModel,
+                action: Action.headerView(action:)
               )
           )
+          .frame(idealHeight: 44, alignment: .topLeading)
+          .fixedSize(horizontal: false, vertical: true)
 
-          ZStack(alignment: .topLeading) {
-            GridView(
-              store: store
-                .scope(
-                  state: makeGridViewModel(gridID: .outer, integerSize: outerGridIntegerSize),
-                  action: Instance.Action.gridView(action:)
-                ),
-              reportMouseEvent: reportMouseEvent
-            )
-            .frame(width: outerGridSize.width, height: outerGridSize.height)
-            .zIndex(0)
-
-            ForEach(state.windows) { window in
-              let integerFrame = window.frame.intersection(
-                with: outerGridIntegerBounds)
-              let frame = integerFrame * nimsAppearance.cellSize
-
-              GridView(
-                store: store
-                  .scope(
-                    state: makeGridViewModel(gridID: window.gridID, integerSize: integerFrame.size),
-                    action: Instance.Action.gridView(action:)
-                  ),
-                reportMouseEvent: reportMouseEvent
-              )
-              .frame(width: frame.width, height: frame.height)
-              .offset(x: frame.minX, y: frame.minY)
-              .zIndex(Double(window.zIndex) / 1000 + 1000)
-              .opacity(window.isHidden ? 0 : 1)
-            }
-
-            ForEach(state.floatingWindows) { floatingWindow in
-              let frame = calculateFrame(
-                for: floatingWindow,
-                grids: state.grids,
-                windows: state.windows,
-                floatingWindows: state.floatingWindows
-              )
-              .intersection(outerGridBounds)
-
-              GridView(
-                store: store
-                  .scope(
-                    state: makeGridViewModel(
-                      gridID: floatingWindow.gridID,
-                      integerSize: .init(
-                        columnsCount: Int(ceil(frame.width / nimsAppearance.cellWidth)),
-                        rowsCount: Int(ceil(frame.height / nimsAppearance.cellHeight))
-                      )
-                    ),
-                    action: Instance.Action.gridView(action:)
-                  ),
-                reportMouseEvent: reportMouseEvent
-              )
-              .frame(width: frame.width, height: frame.height)
-              .offset(x: frame.minX, y: frame.minY)
-              .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-              .opacity(floatingWindow.isHidden ? 0 : 1)
-            }
-          }
+          GridsView(store: store)
+            .frame(size: state.outerGrid.cells.size * nimsAppearance.cellSize, alignment: .topLeading)
+            .fixedSize()
         }
-
-        let cmdlinesStore = store.scope(
-          state: makeCmdlinesViewModel(for:),
-          action: Instance.Action.cmdlinesView(action:)
-        )
-        WithViewStore(
-          cmdlinesStore,
-          observe: { $0 },
-          removeDuplicates: { $0.cmdlines.isEmpty == $1.cmdlines.isEmpty }
-        ) { cmdlinesViewStore in
-          if !cmdlinesViewStore.cmdlines.isEmpty {
-            CmdlinesView(store: cmdlinesStore)
-          }
-        }
+//        .overlay {
+//          let cmdlinesStore = store
+//            .scope(state: CmdlinesView.Model.init(model:))
+//
+//          WithViewStore(
+//            cmdlinesStore,
+//            observe: { $0 },
+//            removeDuplicates: {
+//              $0.cmdlineUpdateFlag == $1.cmdlineUpdateFlag
+//            },
+//            content: { viewStore in
+//              if !viewStore.instanceState.cmdlines.isEmpty {
+//                CmdlinesView(store: cmdlinesStore)
+//              }
+//            }
+//          )
+//        }
       }
-    }
-  }
-
-  private func calculateFrame(
-    for floatingWindow: FloatingWindow,
-    grids: IntKeyedDictionary<Grid>,
-    windows: IdentifiedArrayOf<Window>,
-    floatingWindows: IdentifiedArrayOf<FloatingWindow>
-  )
-    -> CGRect
-  {
-    let grid = grids[floatingWindow.gridID]!
-    let anchorGrid = grids[floatingWindow.anchorGridID]!
-    let cellSize = nimsAppearance.cellSize
-
-    let anchorGridOrigin: CGPoint
-    if let windowID = anchorGrid.windowID {
-      if let window = windows[id: windowID] {
-        anchorGridOrigin = window.frame.origin * cellSize
-
-      } else {
-        let floatingWindow = floatingWindows[id: windowID]!
-
-        anchorGridOrigin = calculateFrame(
-          for: floatingWindow,
-          grids: grids,
-          windows: windows,
-          floatingWindows: floatingWindows
-        )
-        .origin
-      }
-
-    } else {
-      anchorGridOrigin = .init()
-    }
-
-    var frame = CGRect(
-      origin: .init(
-        x: anchorGridOrigin.x + (floatingWindow.anchorColumn * cellSize.width),
-        y: anchorGridOrigin.y + (floatingWindow.anchorRow * cellSize.height)
-      ),
-      size: grid.cells.size * cellSize
-    )
-
-    switch floatingWindow.anchor {
-    case .northWest:
-      break
-
-    case .northEast:
-      frame.origin.x -= frame.size.width
-
-    case .southWest:
-      frame.origin.y -= frame.size.height
-
-    case .southEast:
-      frame.origin.x -= frame.size.width
-      frame.origin.y -= frame.size.height
-    }
-
-    return frame
-  }
-
-  private func makeHeaderViewModel(from state: InstanceState) -> HeaderView.Model {
-    .init(
-      tabline: state.tabline,
-      gridsLayoutUpdateFlag: state.gridsLayoutUpdateFlag
     )
   }
 
-  public func makeGridViewModel(gridID: Grid.ID, integerSize: IntegerSize) -> (InstanceState) -> GridView.Model {
-    { state in
-      .init(
-        gridID: gridID,
-        integerSize: integerSize,
-        grids: state.grids,
-        cursor: state.cursor,
-        modeInfo: state.modeInfo,
-        mode: state.mode,
-        cursorBlinkingPhase: !state.cmdlines.isEmpty || state.cursorBlinkingPhase
-      )
-    }
-  }
-
-  public func makeCmdlinesViewModel(for state: InstanceState) -> CmdlinesView.Model {
-    .init(
-      cmdlines: state.cmdlines,
-      cmdlineUpdateFlag: state.cmdlineUpdateFlag
-    )
-  }
+  @Environment(\.nimsAppearance)
+  private var nimsAppearance: NimsAppearance
 }

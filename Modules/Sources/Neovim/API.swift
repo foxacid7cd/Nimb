@@ -17,6 +17,7 @@ public actor API {
             }
 
             guard method == "redraw" else {
+              assertionFailure("Unknown neovim API method \(method)")
               continue
             }
 

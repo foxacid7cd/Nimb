@@ -28,10 +28,9 @@ public struct IntKeyedDictionary<Value> {
         )
       }
 
+      keysBackingStore.remove(key)
       if newValue != nil {
         keysBackingStore.updateOrAppend(key)
-      } else {
-        keysBackingStore.remove(key)
       }
 
       valuesBackingStore[key] = newValue

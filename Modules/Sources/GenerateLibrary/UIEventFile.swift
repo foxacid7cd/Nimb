@@ -20,6 +20,7 @@ public struct UIEventFile: GeneratableFile {
         try .init {
           "import MessagePack" as DeclSyntax
           "import CasePaths" as DeclSyntax
+          "import Tagged" as DeclSyntax
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {

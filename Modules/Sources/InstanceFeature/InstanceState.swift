@@ -33,7 +33,8 @@ public struct InstanceState {
     cmdlineUpdateFlag: Bool = true,
     instanceUpdateFlag: Bool = true,
     gridsLayoutUpdateFlag: Bool = true,
-    cursorBlinkingPhase: Bool = true
+    cursorBlinkingPhase: Bool = true,
+    reportMouseEvent: @escaping (MouseEvent) -> Void
   ) {
     self.process = process
     self.bufferedUIEvents = bufferedUIEvents
@@ -57,6 +58,7 @@ public struct InstanceState {
     self.instanceUpdateFlag = instanceUpdateFlag
     self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
     self.cursorBlinkingPhase = cursorBlinkingPhase
+    self.reportMouseEvent = reportMouseEvent
   }
 
   public var process: Neovim.Process
@@ -81,13 +83,22 @@ public struct InstanceState {
   public var instanceUpdateFlag: Bool
   public var gridsLayoutUpdateFlag: Bool
   public var cursorBlinkingPhase: Bool
-
-  public var outerGrid: Grid! {
-    grids[.outer]
-  }
+  public var reportMouseEvent: (MouseEvent) -> Void
 
   public mutating func nextWindowZIndex() -> Int {
     windowZIndexCounter += 1
     return windowZIndexCounter
+  }
+
+  public var instanceViewState: InstanceView.State? {
+    guard let outerGrid = grids[.outer] else {
+      return nil
+    }
+
+    return .init(
+      instanceState: self,
+      reportMouseEvent: reportMouseEvent,
+      outerGrid: outerGrid
+    )
   }
 }

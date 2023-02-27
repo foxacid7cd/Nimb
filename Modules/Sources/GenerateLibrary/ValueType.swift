@@ -103,7 +103,7 @@ public struct ValueType: Sendable, Equatable {
       return ".binary(\(expr))"
 
     case let .reference(type):
-      return ".ext(type: References.\(type.name).type, data: \(expr).data)"
+      return ".ext(type: References.\(type.name).type, data: .init(externalReferenceID: UInt(\(expr).rawValue)))"
 
     case .value:
       return expr

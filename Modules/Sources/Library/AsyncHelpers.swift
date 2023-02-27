@@ -97,8 +97,24 @@ public extension AsyncThrowingChannel where Failure == Error {
 
 public extension FileHandle {
   var dataBatches: AsyncStream<Data> {
-    .init { continuation in
-      readabilityHandler = { fileHandle in let data = fileHandle.availableData
+    //     struct AsyncBytes: AsyncSequence {
+    //       public typealias Element = UInt8
+    //       var handle: ReadableThing
+    //
+    //       internal init(_ readable: ReadableThing) {
+    //         handle = readable
+    //       }
+    //
+    //       public func makeAsyncIterator() -> AsyncBufferedByteIterator {
+    //         return AsyncBufferedByteIterator(capacity: 16384) { buffer in
+    //           // This runs once every 16384 invocations of next()
+    //           return try await handle.read(into: buffer)
+    //         }
+    //       }
+    //     }\
+    AsyncStream<Data> { continuation in
+      readabilityHandler = { fileHandle in
+        let data = fileHandle.availableData
 
         if data.isEmpty {
           continuation.finish()

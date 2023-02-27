@@ -24,9 +24,7 @@ public struct Instance: ReducerProtocol {
     case applyUIEventsBatch([UIEvent])
     case restartCursorBlinking
     case setCursorBlinkingPhase(Bool)
-    case headerView(action: HeaderView.Action)
-    case gridView(action: GridView.Action)
-    case cmdlinesView(action: CmdlinesView.Action)
+    case instanceView(action: InstanceView.Action)
   }
 
   public func reduce(into state: inout InstanceState, action: Action) -> EffectTask<Action> {
@@ -921,30 +919,25 @@ public struct Instance: ReducerProtocol {
 
       return .none
 
-    case let .headerView(action):
+    case let .instanceView(action):
       switch action {
-      case let .reportSelectedTab(id):
-        return .fireAndForget {
-          do {
-            _ = try await process.api.nvimSetCurrentTabpage(tabpage: id)
-              .get()
+      case let .headerView(action):
+        switch action {
+        case let .reportSelectedTab(id):
+          return .fireAndForget {
+            do {
+              _ = try await process.api.nvimSetCurrentTabpage(tabpage: id)
+                .get()
 
-          } catch {
-            assertionFailure("\(error)")
+            } catch {
+              assertionFailure("\(error)")
+            }
           }
+
+        case .sideMenuButtonPressed:
+          return .none
         }
-
-      case .sideMenuButtonPressed:
-        return .none
       }
-
-    case .gridView:
-      assertionFailure()
-      return .none
-
-    case .cmdlinesView:
-      assertionFailure()
-      return .none
     }
   }
 

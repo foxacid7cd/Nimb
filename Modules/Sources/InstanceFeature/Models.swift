@@ -12,6 +12,25 @@ public enum Anchor: String {
   case northEast = "NE"
   case southWest = "SW"
   case southEast = "SE"
+
+  public func applying(to frame: CGRect) -> CGRect {
+    var frame = frame
+    switch self {
+    case .northWest:
+      frame.origin.y -= frame.size.height
+
+    case .northEast:
+      frame.origin.x -= frame.size.width
+      frame.origin.y -= frame.size.height
+
+    case .southWest:
+      break
+
+    case .southEast:
+      frame.origin.x -= frame.size.width
+    }
+    return frame
+  }
 }
 
 public struct Cell {

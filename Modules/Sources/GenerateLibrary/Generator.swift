@@ -2,6 +2,7 @@
 
 import Foundation
 import MessagePack
+import OSLog
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

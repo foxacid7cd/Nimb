@@ -49,7 +49,6 @@ public struct HeaderView: View {
           }
           .tint(foregroundColor)
           .buttonStyle(.borderless)
-          .frame(width: 32, height: 44)
           .frame(maxHeight: .infinity)
           .fixedSize(horizontal: true, vertical: false)
 
@@ -74,7 +73,6 @@ public struct HeaderView: View {
               }
             }
           }
-          .frame(height: 44)
         }
         .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
       }

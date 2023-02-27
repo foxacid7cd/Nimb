@@ -10,13 +10,15 @@ public struct NimsAppearance {
     highlights: IntKeyedDictionary<Highlight>,
     defaultForegroundColor: NimsColor,
     defaultBackgroundColor: NimsColor,
-    defaultSpecialColor: NimsColor
+    defaultSpecialColor: NimsColor,
+    outerGridSize: IntegerSize
   ) {
     self.font = font
     self.highlights = highlights
     self.defaultForegroundColor = defaultForegroundColor
     self.defaultBackgroundColor = defaultBackgroundColor
     self.defaultSpecialColor = defaultSpecialColor
+    self.outerGridSize = outerGridSize
   }
 
   public var font: NimsFont
@@ -24,6 +26,7 @@ public struct NimsAppearance {
   public var defaultForegroundColor: NimsColor
   public var defaultBackgroundColor: NimsColor
   public var defaultSpecialColor: NimsColor
+  public var outerGridSize: IntegerSize
 
   public var cellWidth: Double {
     font.cellWidth
@@ -42,7 +45,8 @@ public struct NimsAppearance {
     highlights: [:],
     defaultForegroundColor: .init(rgb: 0xFFFFFF),
     defaultBackgroundColor: .init(rgb: 0x000000),
-    defaultSpecialColor: .init(rgb: 0xFF0000)
+    defaultSpecialColor: .init(rgb: 0xFF0000),
+    outerGridSize: .init(columnsCount: 24, rowsCount: 40)
   )
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
