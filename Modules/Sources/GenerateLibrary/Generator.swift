@@ -2,9 +2,9 @@
 
 import Foundation
 import MessagePack
-import OSLog
 import SwiftSyntax
 import SwiftSyntaxBuilder
+import CustomDump
 
 private let generatableFileTypes: [GeneratableFile.Type] = [
   APIFunctionsFile.self,
@@ -27,10 +27,21 @@ public actor Generator {
 
           accumulator += values
         }
+        guard let value = accumulator.first else {
+          throw GeneratorError.invalidData(details: "No MessagePack value.")
+        }
 
-        guard let value = accumulator.first, let metadata = Metadata(value) else {
+        var valueDump = ""
+        customDump(value, to: &valueDump)
+        print("Raw MessagePack output:\n\(valueDump)\n")
+
+        guard let metadata = Metadata(value) else {
           throw GeneratorError.invalidData(details: "No API metadata.")
         }
+
+        var metadataDump = ""
+        customDump(metadata, to: &metadataDump)
+        print("Parsed API metadata:\n\(metadataDump)")
 
         return metadata
 
