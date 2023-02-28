@@ -1,14 +1,9 @@
-//
-//  File.swift
-//  
-//
-//  Created by Yevhenii Matviienko on 28.02.2023.
-//
+// SPDX-License-Identifier: MIT
 
 import Collections
 import Library
-import Tagged
 import MessagePack
+import Tagged
 
 public struct InstanceState: Sendable {
   public var bufferedUIEvents: [UIEvent]

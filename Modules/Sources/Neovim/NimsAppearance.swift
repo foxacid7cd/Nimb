@@ -2,8 +2,8 @@
 
 import AppKit
 import IdentifiedCollections
-import Tagged
 import Library
+import Tagged
 
 public struct NimsAppearance {
   public init(

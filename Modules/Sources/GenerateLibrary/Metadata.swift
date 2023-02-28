@@ -7,7 +7,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import Tagged
 
-public struct Metadata: Sendable, Equatable {
+public struct Metadata: Sendable {
   public init(functions: [Function], uiEvents: [UIEvent], types: [Type], uiOptions: [String]) {
     self.functions = functions
     self.uiEvents = uiEvents
@@ -52,7 +52,7 @@ public struct Metadata: Sendable, Equatable {
           let name = dictionary["name"].flatMap(/Value.string),
           let returnType = dictionary["return_type"]
             .flatMap(/Value.string)
-            .map({ ValueType(rawValue: $0, types: types) }),
+            .map({ ValueType(rawValue: $0) }),
           let method = dictionary["method"].flatMap(/Value.boolean),
           let since = dictionary["since"].flatMap(/Value.integer)
         else {
@@ -102,7 +102,7 @@ public struct Metadata: Sendable, Equatable {
     }
   }
 
-  public struct Function: Sendable, Equatable {
+  public struct Function: Sendable {
     public init(
       name: String,
       parameters: [Parameter],
@@ -127,29 +127,57 @@ public struct Metadata: Sendable, Equatable {
     public var deprecatedSince: Int?
   }
 
-  public struct Parameter: Sendable, Equatable {
+  public struct Parameter: Sendable {
     public init(name: String, type: ValueType) {
       self.name = name
       self.type = type
     }
 
+    public var name: String
+    public var type: ValueType
+
     public init?(_ value: Value, types: [Metadata.`Type`]) {
       guard
         let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
         let rawType = (/Value.string).extract(from: arrayValue[0]),
-        let name = (/Value.string).extract(from: arrayValue[1])
+        var name = (/Value.string).extract(from: arrayValue[1])
       else {
         return nil
       }
 
-      self.init(name: name, type: .init(rawValue: rawType, types: types))
-    }
+      var custom: ValueType.Custom?
+      if name == "grid", rawType == "Integer" {
+        name = "gridID"
+        custom = .init(
+          signature: "Grid.ID",
+          valueEncoder: (".integer(", ".rawValue)"),
+          valueDecoder: ("(/Value.integer).extract(from: ", ").map(Grid.ID.init(rawValue:))")
+        )
 
-    public var name: String
-    public var type: ValueType
+      } else if let type = types.first(where: { $0.name == rawType }) {
+        name = type.name.prefix(1).lowercased() + type.name.dropFirst(1) + "ID"
+
+        custom = .init(
+          signature: "\(type.name).ID",
+          valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".rawValue.data)"),
+          valueDecoder: (
+            "(/Value.ext).extract(from:",
+            ").flatMap(References.\(type.name).init(type:data:)).map(\(type.name).ID.init(rawValue:))"
+          )
+        )
+      }
+
+      self.init(
+        name: name,
+        type: .init(
+          rawValue: rawType,
+          custom: custom
+        )
+      )
+    }
   }
 
-  public struct UIEvent: Sendable, Equatable {
+  public struct UIEvent: Sendable {
     public init(name: String, parameters: [Parameter]) {
       self.name = name
       self.parameters = parameters
@@ -159,7 +187,7 @@ public struct Metadata: Sendable, Equatable {
     public var parameters: [Parameter]
   }
 
-  public struct `Type`: Sendable, Equatable {
+  public struct `Type`: Sendable {
     public init(id: ID, name: String, prefix: String) {
       self.id = id
       self.name = name

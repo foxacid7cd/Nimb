@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+import Algorithms
 import Library
 import Tagged
-import Algorithms
 
 public struct Grid: Sendable, Identifiable {
   public var id: ID
@@ -33,38 +33,7 @@ public struct Grid: Sendable, Identifiable {
   public enum AssociatedWindow: Sendable {
     case plain(Window)
     case floating(FloatingWindow)
-    case external(reference: References.Window)
-  }
-
-  public struct Window: Sendable, Identifiable {
-    public var reference: References.Window
-    public var frame: IntegerRectangle
-    public var zIndex: Int
-
-    public var id: References.Window {
-      reference
-    }
-  }
-
-  public struct FloatingWindow: Identifiable, Sendable {
-    public var reference: References.Window
-    public var anchor: Anchor
-    public var anchorGridID: Grid.ID
-    public var anchorRow: Double
-    public var anchorColumn: Double
-    public var isFocusable: Bool
-    public var zIndex: Int
-
-    public var id: References.Window {
-      reference
-    }
-
-    public enum Anchor: String, Sendable {
-      case northWest = "NW"
-      case northEast = "NE"
-      case southWest = "SW"
-      case southEast = "SE"
-    }
+    case external(ExternalWindow)
   }
 
   public struct RowLayout: Sendable {

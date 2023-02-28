@@ -1,12 +1,7 @@
-//
-//  File.swift
-//  
-//
-//  Created by Yevhenii Matviienko on 28.02.2023.
-//
+// SPDX-License-Identifier: MIT
 
-import Tagged
 import Library
+import Tagged
 
 public struct Cursor: Sendable {
   public init(gridID: Grid.ID, position: IntegerPoint) {
@@ -37,7 +32,6 @@ public struct ModeInfo: Sendable {
   public var enabled: Bool
   public var cursorStyles: [CursorStyle]
 }
-
 
 public enum CursorShape: String, Sendable {
   case block

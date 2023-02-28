@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-public struct ValueType: Sendable, Equatable {
-  public init(rawValue: String, types: [Metadata.`Type`]) {
-    self.rawValue = rawValue
-    self.types = types
+public struct ValueType: Sendable {
+  public var rawValue: String
+  public var custom: Custom?
+
+  public struct Custom: Sendable {
+    public var signature: String
+    public var valueEncoder: (prefix: String, suffix: String)
+    public var valueDecoder: (prefix: String, suffix: String)
   }
 
   public enum SwiftType {
@@ -14,7 +18,7 @@ public struct ValueType: Sendable, Equatable {
     case dictionary
     case array
     case binary
-    case reference(Metadata.`Type`)
+    case custom(Custom)
     case value
 
     public var signature: String {
@@ -40,8 +44,8 @@ public struct ValueType: Sendable, Equatable {
       case .binary:
         return "Data"
 
-      case let .reference(type):
-        return "References.\(type.name)"
+      case let .custom(custom):
+        return custom.signature
 
       case .value:
         return "Value"
@@ -49,11 +53,11 @@ public struct ValueType: Sendable, Equatable {
     }
   }
 
-  public var rawValue: String
-  public var types: [Metadata.`Type`]
-
   public var swift: SwiftType {
-    if rawValue.starts(with: "Array") {
+    if let custom {
+      return .custom(custom)
+
+    } else if rawValue.starts(with: "Array") {
       return .array
 
     } else if rawValue == "Dictionary" {
@@ -70,9 +74,6 @@ public struct ValueType: Sendable, Equatable {
 
     } else if rawValue == "Boolean" {
       return .boolean
-
-    } else if let type = types.first(where: { rawValue == $0.name }) {
-      return .reference(type)
 
     } else {
       return .value
@@ -102,8 +103,8 @@ public struct ValueType: Sendable, Equatable {
     case .binary:
       return ".binary(\(expr))"
 
-    case let .reference(type):
-      return ".ext(type: References.\(type.name).type, data: .init(externalReferenceID: UInt(\(expr).rawValue)))"
+    case let .custom(custom):
+      return custom.valueEncoder.prefix + expr + custom.valueEncoder.suffix
 
     case .value:
       return expr
@@ -135,8 +136,8 @@ public struct ValueType: Sendable, Equatable {
     case .binary:
       return "(/Value.binary).extract(from: \(expr))\(forceUnwrapSuffix)"
 
-    case let .reference(type):
-      return "(/Value.ext).extract(from: \(expr)).flatMap(References.\(type.name).init)\(forceUnwrapSuffix)"
+    case let .custom(custom):
+      return custom.valueDecoder.prefix + expr + custom.valueDecoder.suffix + forceUnwrapSuffix
 
     case .value:
       return expr
