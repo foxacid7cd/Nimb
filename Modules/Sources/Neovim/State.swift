@@ -4,19 +4,674 @@ import Collections
 import Library
 import MessagePack
 import Tagged
+import CasePaths
+import Overture
 
-public struct InstanceState: Sendable {
+public struct State: Sendable {
   public var bufferedUIEvents: [UIEvent]
   public var rawOptions: OrderedDictionary<String, Value>
   public var title: String?
   public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: Neovim.Color?
-  public var defaultBackgroundColor: Neovim.Color?
-  public var defaultSpecialColor: Neovim.Color?
+  public var defaultForegroundColor: Color?
+  public var defaultBackgroundColor: Color?
+  public var defaultSpecialColor: Color?
   public var modeInfo: ModeInfo?
   public var mode: Mode?
   public var cursor: Cursor?
-  public var grids: IntKeyedDictionary<Neovim.Grid>
   public var tabline: Tabline?
   public var cmdlines: IntKeyedDictionary<Cmdline>
+  public var grids: IntKeyedDictionary<Grid>
+}
+
+public extension State {
+  struct Updates {
+    public var isTitleUpdated = false
+    public var isAppearanceUpdated = false
+    public var isCmdlineUpdated = false
+    public var isCursorUpdated = false
+    public var updatedLayoutGridIDs = Set<Grid.ID>()
+    public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
+  }
+
+  mutating func apply(uiEvents: [UIEvent]) -> Updates {
+      bufferedUIEvents += uiEvents
+
+    var updates = Updates()
+
+    func titleUpdated() {
+      updates.isTitleUpdated = true
+    }
+
+    func appearanceUpdated() {
+      updates.isAppearanceUpdated = true
+    }
+
+    func cmdlineUpdated() {
+      updates.isCmdlineUpdated = true
+    }
+
+    func cursorUpdated() {
+      updates.isCursorUpdated = true
+    }
+
+    func updatedLayout(forGridWithID gridID: Grid.ID) {
+      updates.updatedLayoutGridIDs.insert(gridID)
+    }
+
+    func updatedCells(inGridWithID gridID: Grid.ID, rectangles: [IntegerRectangle]) {
+      update(&updates.gridUpdatedRectangles[gridID]) { accumulator in
+        accumulator = (accumulator ?? []) + rectangles
+      }
+    }
+
+    func updatedAllCells(inGrid grid: Grid) {
+      updates.gridUpdatedRectangles.removeValue(forKey: grid.id)
+
+      updatedCells(
+        inGridWithID: grid.id,
+        rectangles: [
+          .init(
+            origin: .init(),
+            size: grid.cells.size
+          )
+        ]
+      )
+    }
+
+    if uiEvents.last.flatMap(/UIEvent.flush) != nil {
+      var uiEvents = [UIEvent]()
+      swap(&uiEvents, &bufferedUIEvents)
+
+      for uiEvent in uiEvents {
+        switch uiEvent {
+        case let .setTitle(title):
+          self.title = title
+
+          titleUpdated()
+
+        case let .modeInfoSet(enabled, cursorStyles):
+          modeInfo = ModeInfo(
+            enabled: enabled,
+            cursorStyles: cursorStyles
+              .compactMap { rawCursorStyle -> CursorStyle? in
+                guard case let .dictionary(rawCursorStyle) = rawCursorStyle else {
+                  assertionFailure("Invalid cursor style raw value type")
+                  return nil
+                }
+
+                return CursorStyle(
+                  name: rawCursorStyle["name"]
+                    .flatMap((/Value.string).extract(from:)),
+                  shortName: rawCursorStyle["short_name"]
+                    .flatMap((/Value.string).extract(from:)),
+                  mouseShape: rawCursorStyle["mouse_shape"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  blinkOn: rawCursorStyle["blinkon"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  blinkOff: rawCursorStyle["blinkoff"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  blinkWait: rawCursorStyle["blinkwait"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  cellPercentage: rawCursorStyle["cell_percentage"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  cursorShape: rawCursorStyle["cursor_shape"]
+                    .flatMap((/Value.string).extract(from:))
+                    .flatMap(CursorShape.init(rawValue:)),
+                  idLm: rawCursorStyle["id_lm"]
+                    .flatMap((/Value.integer).extract(from:)),
+                  attrID: rawCursorStyle["attr_id"]
+                    .flatMap((/Value.integer).extract(from:))
+                    .map(Highlight.ID.init(rawValue:)),
+                  attrIDLm: rawCursorStyle["attr_id_lm"]
+                    .flatMap((/Value.integer).extract(from:))
+                )
+              }
+          )
+
+          cursorUpdated()
+
+        case let .optionSet(name, value):
+          rawOptions.updateValue(
+            value,
+            forKey: name,
+            insertingAt: rawOptions.count
+          )
+
+        case let .modeChange(name, cursorStyleIndex):
+          mode = .init(
+            name: name,
+            cursorStyleIndex: cursorStyleIndex
+          )
+
+          if let cursor = cursor {
+            updatedCells(
+              inGridWithID: cursor.gridID,
+              rectangles: [.init(
+                origin: .init(column: max(0, cursor.position.column - 1), row: cursor.position.row),
+                size: .init(columnsCount: 3, rowsCount: 1)
+              )]
+            )
+
+            cursorUpdated()
+          }
+
+        case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
+          defaultForegroundColor = .init(rgb: rgbFg)
+          defaultBackgroundColor = .init(rgb: rgbBg)
+          defaultSpecialColor = .init(rgb: rgbSp)
+
+          appearanceUpdated()
+
+        case let .hlAttrDefine(rawHighlightID, rgbAttrs, _, _):
+          let highlightID = Highlight.ID(rawHighlightID)
+
+          update(&highlights[highlightID]) { highlight in
+            if highlight == nil {
+              highlight = .init(
+                id: highlightID,
+                foregroundColor: nil,
+                backgroundColor: nil,
+                specialColor: nil,
+                isReverse: false,
+                isItalic: false,
+                isBold: false,
+                decorations: .init(),
+                blend: 0
+              )
+            }
+
+            for (key, value) in rgbAttrs {
+              guard case let .string(key) = key else {
+                continue
+              }
+
+              switch key {
+              case "foreground":
+                if case let .integer(value) = value {
+                  highlight!.foregroundColor = .init(rgb: value)
+                }
+
+              case "background":
+                if case let .integer(value) = value {
+                  highlight!.backgroundColor = .init(rgb: value)
+                }
+
+              case "special":
+                if case let .integer(value) = value {
+                  highlight!.specialColor = .init(rgb: value)
+                }
+
+              case "reverse":
+                if case let .boolean(value) = value {
+                  highlight!.isReverse = value
+                }
+
+              case "italic":
+                if case let .boolean(value) = value {
+                  highlight!.isItalic = value
+                }
+
+              case "bold":
+                if case let .boolean(value) = value {
+                  highlight!.isBold = value
+                }
+
+              case "strikethrough":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isStrikethrough = value
+                }
+
+              case "underline":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isUnderline = value
+                }
+
+              case "undercurl":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isUndercurl = value
+                }
+
+              case "underdouble":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isUnderdouble = value
+                }
+
+              case "underdotted":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isUnderdotted = value
+                }
+
+              case "underdashed":
+                if case let .boolean(value) = value {
+                  highlight!.decorations.isUnderdashed = value
+                }
+
+              case "blend":
+                if case let .integer(value) = value {
+                  highlight!.blend = value
+                }
+
+              default:
+                break
+              }
+            }
+          }
+
+          appearanceUpdated()
+
+        case let .gridResize(gridID, width, height):
+          let size = IntegerSize(
+            columnsCount: width,
+            rowsCount: height
+          )
+
+          update(&grids[gridID]) { grid in
+            if grid == nil {
+              let cells = TwoDimensionalArray<Grid.Cell>(
+                size: size,
+                repeatingElement: .default
+              )
+
+              grid = .init(
+                id: gridID,
+                cells: cells,
+                rowLayouts: cells.rows
+                  .map(Grid.RowLayout.init(rowCells:)),
+                updates: [],
+                updateFlag: true,
+                asssociatedWindow: nil,
+                isHidden: false
+              )
+
+            } else {
+              let newCells = TwoDimensionalArray<Grid.Cell>(
+                size: size,
+                elementAtPoint: { point in
+                  guard
+                    point.row < grid!.cells.rowsCount,
+                    point.column < grid!.cells.columnsCount
+                  else {
+                    return .default
+                  }
+
+                  return grid!.cells[point]
+                }
+              )
+
+              grid!.cells = newCells
+              grid!.rowLayouts = newCells.rows
+                .map(Grid.RowLayout.init(rowCells:))
+            }
+          }
+
+          if
+            let cursor = cursor,
+            cursor.gridID == gridID,
+            cursor.position.column >= size.columnsCount,
+            cursor.position.row >= size.rowsCount
+          {
+            self.cursor = nil
+
+            cursorUpdated()
+          }
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .gridLine(gridID, row, startColumn, data):
+          var updatedCellsCount = 0
+          var highlightID = Highlight.ID.default
+
+          update(&grids[gridID]!.cells.rows[row]) { rowCells in
+            for value in data {
+              guard
+                let arrayValue = (/Value.array).extract(from: value),
+                !arrayValue.isEmpty,
+                let text = (/Value.string).extract(from: arrayValue[0])
+              else {
+                assertionFailure("Raw value is not an array or first element is not a text")
+                continue
+              }
+
+              var repeatCount = 1
+
+              if arrayValue.count > 1 {
+                guard
+                  let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                else {
+                  assertionFailure("Second array element is not an integer highlight id")
+                  continue
+                }
+
+                highlightID = .init(rawValue: newHighlightID)
+
+                if arrayValue.count > 2 {
+                  guard
+                    let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                  else {
+                    assertionFailure("Third array element is not an integer repeat count")
+                    continue
+                  }
+
+                  repeatCount = newRepeatCount
+                }
+              }
+
+              for _ in 0 ..< repeatCount {
+                let cell = Grid.Cell(
+                  text: text,
+                  highlightID: highlightID
+                )
+
+                let index = rowCells.index(
+                  rowCells.startIndex,
+                  offsetBy: startColumn + updatedCellsCount
+                )
+                rowCells[index] = cell
+
+                updatedCellsCount += 1
+              }
+            }
+          }
+
+          update(&grids[gridID]!) { grid in
+            grid.rowLayouts[row] = .init(
+              rowCells: grid.cells.rows[row]
+            )
+          }
+
+          updatedCells(inGridWithID: gridID, rectangles: [.init(
+            origin: .init(column: startColumn, row: row),
+            size: .init(columnsCount: updatedCellsCount, rowsCount: 1)
+          )])
+
+        case let .gridScroll(gridID, top, bottom, _, _, rowsCount, _):
+          update(&grids[gridID]!) { grid in
+            let gridCopy = grid
+
+            for fromRow in top ..< bottom {
+              let toRow = fromRow - rowsCount
+
+              guard toRow >= 0, toRow < grid.cells.rowsCount else {
+                continue
+              }
+
+              grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
+              grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
+            }
+          }
+
+          let rectangle = IntegerRectangle(
+            origin: .init(column: 0, row: top + min(0, rowsCount)),
+            size: .init(
+              columnsCount: grids[gridID]!.cells.size.columnsCount,
+              rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
+            )
+          )
+          updatedCells(inGridWithID: gridID, rectangles: [rectangle])
+
+        case let .gridClear(gridID):
+          update(&grids[gridID]!) { grid in
+            let newCells = TwoDimensionalArray<Grid.Cell>(
+              size: grid.cells.size,
+              repeatingElement: .default
+            )
+
+            grid.cells = newCells
+            grid.rowLayouts = newCells.rows
+              .map(Grid.RowLayout.init(rowCells:))
+
+            updatedAllCells(inGrid: grid)
+          }
+
+        case let .gridDestroy(gridID):
+          grids[gridID]?.asssociatedWindow = nil
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .gridCursorGoto(gridID, row, column):
+          let oldCursor = cursor
+
+          let cursorPosition = IntegerPoint(
+            column: column,
+            row: row
+          )
+          cursor = .init(
+            gridID: gridID,
+            position: cursorPosition
+          )
+
+          if
+            let oldCursor,
+            oldCursor.gridID == gridID,
+            oldCursor.position.row == cursorPosition.row
+          {
+            let originColumn = min(oldCursor.position.column, cursorPosition.column)
+            let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
+            updatedCells(inGridWithID: oldCursor.gridID, rectangles: [.init(
+              origin: .init(column: originColumn, row: cursorPosition.row),
+              size: .init(
+                columnsCount: columnsCount,
+                rowsCount: 1
+              )
+            )])
+
+          } else {
+            if let oldCursor {
+              updatedCells(
+                inGridWithID: oldCursor.gridID,
+                rectangles: [.init(
+                  origin: oldCursor.position,
+                  size: .init(columnsCount: 1, rowsCount: 1)
+                )]
+              )
+            }
+
+            updatedCells(
+              inGridWithID: gridID,
+              rectangles: [.init(
+                origin: cursorPosition,
+                size: .init(columnsCount: 1, rowsCount: 1)
+              )]
+            )
+          }
+
+          cursorUpdated()
+
+        case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
+          grids[gridID]?.asssociatedWindow = .plain(
+            .init(
+              id: windowID,
+              frame: .init(
+                origin: .init(
+                  column: originColumn,
+                  row: originRow
+                ),
+                size: .init(
+                  columnsCount: columnsCount,
+                  rowsCount: rowsCount
+                )
+              ),
+              zIndex: 0
+            )
+          )
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .winFloatPos(
+          gridID,
+          windowID,
+          rawAnchor,
+          rawAnchorGridID,
+          anchorRow,
+          anchorColumn,
+          isFocusable,
+          zIndex
+        ):
+          guard let anchor = FloatingWindow.Anchor(rawValue: rawAnchor) else {
+            assertionFailure("Invalid anchor value: \(rawAnchor)")
+            continue
+          }
+
+          grids[gridID]?.asssociatedWindow = .floating(
+            .init(
+              id: windowID,
+              anchor: anchor,
+              anchorGridID: .init(rawAnchorGridID),
+              anchorRow: anchorRow,
+              anchorColumn: anchorColumn,
+              isFocusable: isFocusable,
+              zIndex: zIndex
+            )
+          )
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .winHide(gridID):
+          grids[gridID]?.isHidden = true
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .winClose(gridID):
+          grids[gridID]?.asssociatedWindow = nil
+
+          updatedLayout(forGridWithID: gridID)
+
+        case let .tablineUpdate(currentTabpageID, rawTabpages, _, _):
+          let tabpages = rawTabpages
+            .compactMap { rawTabpage -> Tabpage? in
+              guard
+                case let .dictionary(rawTab) = rawTabpage,
+                let name = rawTab["name"]
+                  .flatMap((/Value.string).extract(from:)),
+                let rawID = rawTab["tab"]
+                  .flatMap((/Value.ext).extract(from:))
+              else {
+                assertionFailure("Invalid tabline raw value")
+                return nil
+              }
+
+              return .init(
+                id: .init(
+                  .init(
+                    type: rawID.0,
+                    data: rawID.1
+                  )!
+                ),
+                name: name
+              )
+            }
+
+          tabline = .init(
+            currentTabpageID: currentTabpageID,
+            tabpages: .init(uniqueElements: tabpages)
+          )
+
+        case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
+          cmdlines[level] = .init(
+            contentParts: content
+              .compactMap { rawContentPart in
+                guard
+                  case let .array(rawContentPart) = rawContentPart,
+                  rawContentPart.count == 2,
+                  case let .integer(rawHighlightID) = rawContentPart[0],
+                  case let .string(text) = rawContentPart[1]
+                else {
+                  assertionFailure("Invalid cmdline raw value")
+                  return nil
+                }
+
+                return .init(
+                  highlightID: .init(rawHighlightID),
+                  text: text
+                )
+              },
+            cursorPosition: pos,
+            firstCharacter: firstc,
+            prompt: prompt,
+            indent: indent,
+            level: level,
+            specialCharacter: "",
+            shiftAfterSpecialCharacter: false,
+            blockLines: []
+          )
+
+          cmdlineUpdated()
+
+        case let .cmdlinePos(pos, level):
+          update(&cmdlines[level]!) { cmdline in
+            cmdline.cursorPosition = pos
+          }
+
+          cmdlineUpdated()
+
+        case let .cmdlineSpecialChar(c, shift, level):
+          update(&cmdlines[level]!) { cmdline in
+            cmdline.specialCharacter = c
+            cmdline.shiftAfterSpecialCharacter = shift
+          }
+
+          cmdlineUpdated()
+
+        case let .cmdlineHide(level):
+          cmdlines.removeValue(forKey: level)
+
+          cmdlineUpdated()
+
+        case let .cmdlineBlockShow(lines):
+          var blockLines = [[Cmdline.ContentPart]]()
+
+          for line in lines {
+            guard case let .array(line) = line else {
+              continue
+            }
+
+            var contentParts = [Cmdline.ContentPart]()
+
+            for rawContentPart in line {
+              guard
+                case let .array(rawContentPart) = rawContentPart,
+                rawContentPart.count == 2,
+                case let .integer(rawHighlightID) = rawContentPart[0],
+                case let .string(text) = rawContentPart[1]
+              else {
+                assertionFailure("Invalid cmdline raw value")
+                continue
+              }
+
+              contentParts.append(
+                .init(
+                  highlightID: .init(rawHighlightID),
+                  text: text
+                )
+              )
+            }
+
+            blockLines.append(contentParts)
+          }
+
+          if !cmdlines.isEmpty {
+            update(&cmdlines[cmdlines.count - 1]) { cmdline in
+              cmdline?.blockLines = blockLines
+            }
+          }
+
+          cmdlineUpdated()
+
+        case .cmdlineBlockHide:
+          if !cmdlines.isEmpty {
+            update(&cmdlines[cmdlines.count - 1]) { cmdline in
+              cmdline?.blockLines = []
+            }
+          }
+
+          cmdlineUpdated()
+
+        default:
+          break
+        }
+      }
+    }
+
+    return updates
+  }
 }
