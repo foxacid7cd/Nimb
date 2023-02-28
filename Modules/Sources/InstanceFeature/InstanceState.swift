@@ -18,12 +18,10 @@ public struct InstanceState {
     font: NimsFont,
     title: String? = nil,
     highlights: IntKeyedDictionary<Highlight> = [:],
-    defaultForegroundColor: NimsColor? = nil,
-    defaultBackgroundColor: NimsColor? = nil,
-    defaultSpecialColor: NimsColor? = nil,
-    grids: IntKeyedDictionary<Grid> = [:],
-    windows: IdentifiedArrayOf<Window> = [],
-    floatingWindows: IdentifiedArrayOf<FloatingWindow> = [],
+    defaultForegroundColor: Neovim.Color? = nil,
+    defaultBackgroundColor: Neovim.Color? = nil,
+    defaultSpecialColor: Neovim.Color? = nil,
+    grids: IntKeyedDictionary<Neovim.Grid> = [:],
     modeInfo: ModeInfo? = nil,
     mode: Mode? = nil,
     cursor: Cursor? = nil,
@@ -32,7 +30,8 @@ public struct InstanceState {
     cmdlines: IntKeyedDictionary<Cmdline> = [:],
     cmdlineUpdateFlag: Bool = true,
     instanceUpdateFlag: Bool = true,
-    gridsLayoutUpdateFlag: Bool = true,
+    gridsUpdateFlag: Bool = true,
+    updatedGridIDs: Set<Neovim.Grid.ID> = [],
     cursorBlinkingPhase: Bool = true,
     reportMouseEvent: @escaping (MouseEvent) -> Void
   ) {
@@ -46,8 +45,6 @@ public struct InstanceState {
     self.defaultBackgroundColor = defaultBackgroundColor
     self.defaultSpecialColor = defaultSpecialColor
     self.grids = grids
-    self.windows = windows
-    self.floatingWindows = floatingWindows
     self.modeInfo = modeInfo
     self.mode = mode
     self.cursor = cursor
@@ -56,7 +53,8 @@ public struct InstanceState {
     self.cmdlines = cmdlines
     self.cmdlineUpdateFlag = cmdlineUpdateFlag
     self.instanceUpdateFlag = instanceUpdateFlag
-    self.gridsLayoutUpdateFlag = gridsLayoutUpdateFlag
+    self.gridsUpdateFlag = gridsUpdateFlag
+    self.updatedGridIDs = updatedGridIDs
     self.cursorBlinkingPhase = cursorBlinkingPhase
     self.reportMouseEvent = reportMouseEvent
   }
@@ -67,12 +65,10 @@ public struct InstanceState {
   public var font: NimsFont
   public var title: String?
   public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: NimsColor?
-  public var defaultBackgroundColor: NimsColor?
-  public var defaultSpecialColor: NimsColor?
-  public var grids: IntKeyedDictionary<Grid>
-  public var windows: IdentifiedArrayOf<Window>
-  public var floatingWindows: IdentifiedArrayOf<FloatingWindow>
+  public var defaultForegroundColor: Neovim.Color?
+  public var defaultBackgroundColor: Neovim.Color?
+  public var defaultSpecialColor: Neovim.Color?
+  public var grids: IntKeyedDictionary<Neovim.Grid>
   public var modeInfo: ModeInfo?
   public var mode: Mode?
   public var cursor: Cursor?
@@ -81,7 +77,8 @@ public struct InstanceState {
   public var cmdlines: IntKeyedDictionary<Cmdline>
   public var cmdlineUpdateFlag: Bool
   public var instanceUpdateFlag: Bool
-  public var gridsLayoutUpdateFlag: Bool
+  public var gridsUpdateFlag: Bool
+  public var updatedGridIDs: Set<Neovim.Grid.ID>
   public var cursorBlinkingPhase: Bool
   public var reportMouseEvent: (MouseEvent) -> Void
 

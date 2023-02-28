@@ -36,7 +36,8 @@ public struct InstanceView: View {
     var headerViewModel: HeaderView.Model {
       .init(
         tabline: self.tabline,
-        gridsLayoutUpdateFlag: self.gridsLayoutUpdateFlag
+        gridsLayoutUpdateFlag: true
+//        gridsLayoutUpdateFlag: self.gridsLayoutUpdateFlag
       )
     }
 
@@ -57,7 +58,7 @@ public struct InstanceView: View {
       store,
       observe: { $0 },
       removeDuplicates: {
-        $0.instanceState.gridsLayoutUpdateFlag == $1.instanceState.gridsLayoutUpdateFlag
+        $0.gridsUpdateFlag == $1.gridsUpdateFlag
       },
       content: { state in
         VStack(spacing: 0) {

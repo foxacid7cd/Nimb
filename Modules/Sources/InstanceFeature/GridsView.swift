@@ -56,7 +56,7 @@ public struct GridsView: NSViewRepresentable {
         store,
         observe: { $0 },
         removeDuplicates: {
-          $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
+          $0.gridsUpdateFlag == $1.gridsUpdateFlag
         }
       )
 
@@ -69,13 +69,13 @@ public struct GridsView: NSViewRepresentable {
     private var gridViews = IntKeyedDictionary<GridView.NSView>()
 
     private func render() {
-      let outerGridView = gridViews[Grid.ID.outer.rawValue] ?? {
-        let view = GridView.NSView()
-        self.addSubview(view)
-        gridViews[Grid.ID.outer.rawValue] = view
-
-        return view
-      }()
+//      let outerGridView = gridViews[Grid.ID.outer] ?? {
+//        let view = GridView.NSView()
+//        self.addSubview(view)
+//        gridViews[Grid.ID.outer.rawValue] = view
+//
+//        return view
+//      }()
     }
 
     override public func layout() {}

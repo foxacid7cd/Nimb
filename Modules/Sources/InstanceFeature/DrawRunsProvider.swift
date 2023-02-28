@@ -208,8 +208,8 @@ public struct DrawRun {
   public func draw(
     at origin: CGPoint,
     to graphicsContext: NSGraphicsContext,
-    foregroundColor: NimsColor,
-    specialColor: NimsColor
+    foregroundColor: Neovim.Color,
+    specialColor: Neovim.Color
   ) {
     graphicsContext.saveGraphicsState()
     defer { graphicsContext.restoreGraphicsState() }

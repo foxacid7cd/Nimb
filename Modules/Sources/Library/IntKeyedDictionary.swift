@@ -37,7 +37,7 @@ public struct IntKeyedDictionary<Value> {
     }
   }
 
-  public subscript(id: Tagged<Value, Int>) -> Value? {
+  public subscript(id: Tagged<some Any, Int>) -> Value? {
     get {
       self[id.rawValue]
     }
@@ -63,7 +63,7 @@ public struct IntKeyedDictionary<Value> {
   }
 
   @discardableResult
-  public mutating func removeValue(forID id: Tagged<Value, Int>) -> Value? {
+  public mutating func removeValue(forID id: Tagged<some Any, Int>) -> Value? {
     removeValue(forKey: id.rawValue)
   }
 

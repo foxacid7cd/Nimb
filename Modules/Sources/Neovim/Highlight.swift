@@ -2,12 +2,12 @@
 
 import Tagged
 
-public struct Highlight: Identifiable {
+public struct Highlight: Identifiable, Sendable {
   public init(
     id: Highlight.ID,
-    foregroundColor: NimsColor? = nil,
-    backgroundColor: NimsColor? = nil,
-    specialColor: NimsColor? = nil,
+    foregroundColor: Color? = nil,
+    backgroundColor: Color? = nil,
+    specialColor: Color? = nil,
     isReverse: Bool,
     isItalic: Bool,
     isBold: Bool,
@@ -28,16 +28,16 @@ public struct Highlight: Identifiable {
   public typealias ID = Tagged<Self, Int>
 
   public var id: ID
-  public var foregroundColor: NimsColor?
-  public var backgroundColor: NimsColor?
-  public var specialColor: NimsColor?
+  public var foregroundColor: Color?
+  public var backgroundColor: Color?
+  public var specialColor: Color?
   public var isReverse: Bool
   public var isItalic: Bool
   public var isBold: Bool
   public var decorations: Decorations
   public var blend: Int
 
-  public struct Decorations: Hashable {
+  public struct Decorations: Hashable, Sendable {
     public init(
       isStrikethrough: Bool = false,
       isUnderline: Bool = false,
@@ -60,5 +60,15 @@ public struct Highlight: Identifiable {
     public var isUnderdouble: Bool
     public var isUnderdotted: Bool
     public var isUnderdashed: Bool
+  }
+}
+
+public extension Highlight.ID {
+  static var `default`: Self {
+    0
+  }
+
+  var isDefault: Bool {
+    self == .default
   }
 }

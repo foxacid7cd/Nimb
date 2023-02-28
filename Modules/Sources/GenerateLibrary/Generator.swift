@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+import CustomDump
 import Foundation
 import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
-import CustomDump
 
 private let generatableFileTypes: [GeneratableFile.Type] = [
   APIFunctionsFile.self,

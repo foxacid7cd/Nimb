@@ -3,7 +3,7 @@
 import AppKit
 import SwiftUI
 
-public struct NimsColor: Sendable, Hashable {
+public struct Color: Sendable, Hashable {
   public init(rgb: Int) {
     self.rgb = rgb
   }

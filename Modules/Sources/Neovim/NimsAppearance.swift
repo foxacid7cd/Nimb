@@ -3,14 +3,15 @@
 import AppKit
 import IdentifiedCollections
 import Tagged
+import Library
 
 public struct NimsAppearance {
   public init(
     font: NimsFont,
     highlights: IntKeyedDictionary<Highlight>,
-    defaultForegroundColor: NimsColor,
-    defaultBackgroundColor: NimsColor,
-    defaultSpecialColor: NimsColor,
+    defaultForegroundColor: Color,
+    defaultBackgroundColor: Color,
+    defaultSpecialColor: Color,
     outerGridSize: IntegerSize
   ) {
     self.font = font
@@ -23,9 +24,9 @@ public struct NimsAppearance {
 
   public var font: NimsFont
   public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: NimsColor
-  public var defaultBackgroundColor: NimsColor
-  public var defaultSpecialColor: NimsColor
+  public var defaultForegroundColor: Color
+  public var defaultBackgroundColor: Color
+  public var defaultSpecialColor: Color
   public var outerGridSize: IntegerSize
 
   public var cellWidth: Double {
@@ -73,7 +74,7 @@ public struct NimsAppearance {
     return highlight.decorations
   }
 
-  public func foregroundColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func foregroundColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultForegroundColor
     }
@@ -83,7 +84,7 @@ public struct NimsAppearance {
       highlight.foregroundColor ?? defaultForegroundColor
   }
 
-  public func backgroundColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func backgroundColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultBackgroundColor
     }
@@ -93,7 +94,7 @@ public struct NimsAppearance {
       highlight.backgroundColor ?? defaultBackgroundColor
   }
 
-  public func specialColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func specialColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultSpecialColor
     }

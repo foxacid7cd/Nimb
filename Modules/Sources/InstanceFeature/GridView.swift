@@ -24,8 +24,8 @@ public struct GridView: View {
 
   public struct Model {
     public init(
-      gridID: Grid.ID,
-      grids: IntKeyedDictionary<Grid>,
+      gridID: Neovim.Grid.ID,
+      grids: IntKeyedDictionary<Neovim.Grid>,
       cursor: Cursor? = nil,
       modeInfo: ModeInfo?,
       mode: Mode?,
@@ -39,14 +39,14 @@ public struct GridView: View {
       self.cursorBlinkingPhase = cursorBlinkingPhase
     }
 
-    public var gridID: Grid.ID
-    public var grids: IntKeyedDictionary<Grid>
+    public var gridID: Neovim.Grid.ID
+    public var grids: IntKeyedDictionary<Neovim.Grid>
     public var cursor: Cursor?
     public var modeInfo: ModeInfo?
     public var mode: Mode?
     public var cursorBlinkingPhase: Bool
 
-    public var grid: Grid {
+    public var grid: Neovim.Grid {
       grids[gridID]!
     }
   }
@@ -337,8 +337,8 @@ public struct GridView: View {
         if let cursorDrawRun {
           graphicsContext.saveGraphicsState()
 
-          let cursorForegroundColor: NimsColor
-          let cursorBackgroundColor: NimsColor
+          let cursorForegroundColor: Neovim.Color
+          let cursorBackgroundColor: Neovim.Color
 
           if cursorDrawRun.highlightID.isDefault {
             cursorForegroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.parentHighlightID)

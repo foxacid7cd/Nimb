@@ -136,20 +136,10 @@ public struct Instance: ReducerProtocol {
 
       if uiEventsBatch.last.flatMap(/UIEvent.flush) != nil {
         var isInstanceUpdated = false
-        var isGridsLayoutUpdated = false
         var isCmdlineUpdated = false
         var isCursorUpdated = false
 
-        var gridUpdates = [Grid.ID: [IntegerRectangle]]()
-        func appendGridUpdate(gridID: Grid.ID, frame: IntegerRectangle) {
-          update(&gridUpdates[gridID]) { updates in
-            if updates == nil {
-              updates = []
-            }
-
-            updates!.append(frame)
-          }
-        }
+        var updatedGridIDs = Set<Grid.ID>()
 
         var uiEvents = [UIEvent]()
         swap(&uiEvents, &state.bufferedUIEvents)
@@ -220,13 +210,13 @@ public struct Instance: ReducerProtocol {
             )
 
             if let cursor = state.cursor {
-              appendGridUpdate(
-                gridID: cursor.gridID,
-                frame: .init(
-                  origin: .init(column: cursor.position.column, row: cursor.position.row),
-                  size: .init(columnsCount: 1, rowsCount: 1)
-                )
-              )
+//              appendGridUpdate(
+//                gridID: cursor.gridID,
+//                frame: .init(
+//                  origin: .init(column: cursor.position.column, row: cursor.position.row),
+//                  size: .init(columnsCount: 1, rowsCount: 1)
+//                )
+//              )
 
               isCursorUpdated = true
             }
@@ -344,7 +334,7 @@ public struct Instance: ReducerProtocol {
 
             update(&state.grids[rawID]) { grid in
               if grid == nil {
-                let cells = TwoDimensionalArray<Cell>(
+                let cells = TwoDimensionalArray<Grid.Cell>(
                   size: size,
                   repeatingElement: .default
                 )
@@ -353,14 +343,15 @@ public struct Instance: ReducerProtocol {
                   id: id,
                   cells: cells,
                   rowLayouts: cells.rows
-                    .map(RowLayout.init(rowCells:)),
-                  windowID: nil,
+                    .map(Grid.RowLayout.init(rowCells:)),
                   updates: [],
-                  updateFlag: true
+                  updateFlag: true,
+                  asssociatedWindow: nil,
+                  isHidden: false
                 )
 
               } else {
-                let newCells = TwoDimensionalArray<Cell>(
+                let newCells = TwoDimensionalArray<Grid.Cell>(
                   size: size,
                   elementAtPoint: { point in
                     guard
@@ -376,7 +367,7 @@ public struct Instance: ReducerProtocol {
 
                 grid!.cells = newCells
                 grid!.rowLayouts = newCells.rows
-                  .map(RowLayout.init(rowCells:))
+                  .map(Grid.RowLayout.init(rowCells:))
               }
             }
 
@@ -395,7 +386,7 @@ public struct Instance: ReducerProtocol {
               isInstanceUpdated = true
             }
 
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(id)
 
           case let .gridLine(rawID, row, startColumn, data):
             let id = Grid.ID(rawID)
@@ -439,7 +430,7 @@ public struct Instance: ReducerProtocol {
                 }
 
                 for _ in 0 ..< repeatCount {
-                  let cell = Cell(
+                  let cell = Grid.Cell(
                     text: text,
                     highlightID: highlightID
                   )
@@ -461,10 +452,10 @@ public struct Instance: ReducerProtocol {
               )
             }
 
-            appendGridUpdate(gridID: id, frame: .init(
-              origin: .init(column: 0, row: row),
-              size: .init(columnsCount: state.grids[id]!.cells.size.columnsCount, rowsCount: 1)
-            ))
+//            appendGridUpdate(gridID: id, frame: .init(
+//              origin: .init(column: 0, row: row),
+//              size: .init(columnsCount: state.grids[id]!.cells.size.columnsCount, rowsCount: 1)
+//            ))
 
           case let .gridScroll(rawGridID, top, bottom, _, _, rowsCount, _):
             let gridID = Grid.ID(rawValue: rawGridID)
@@ -484,53 +475,41 @@ public struct Instance: ReducerProtocol {
               }
             }
 
-            let frame = IntegerRectangle(
-              origin: .init(column: 0, row: top + min(0, rowsCount)),
-              size: .init(
-                columnsCount: state.grids[gridID]!.cells.size.columnsCount,
-                rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
-              )
-            )
-            appendGridUpdate(gridID: gridID, frame: frame)
+//            let frame = IntegerRectangle(
+//              origin: .init(column: 0, row: top + min(0, rowsCount)),
+//              size: .init(
+//                columnsCount: state.grids[gridID]!.cells.size.columnsCount,
+//                rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
+//              )
+//            )
+//            appendGridUpdate(gridID: gridID, frame: frame)
 
           case let .gridClear(rawGridID):
             let gridID = Grid.ID(rawGridID)
 
             update(&state.grids[gridID]!) { grid in
-              let newCells = TwoDimensionalArray<Cell>(
+              let newCells = TwoDimensionalArray<Grid.Cell>(
                 size: grid.cells.size,
                 repeatingElement: .default
               )
 
               grid.cells = newCells
               grid.rowLayouts = newCells.rows
-                .map(RowLayout.init(rowCells:))
+                .map(Grid.RowLayout.init(rowCells:))
             }
 
-            let grid = state.grids[gridID]!
-            appendGridUpdate(gridID: gridID, frame: .init(
-              origin: .init(column: 0, row: 0),
-              size: grid.cells.size
-            ))
+//            let grid = state.grids[gridID]!
+//            appendGridUpdate(gridID: gridID, frame: .init(
+//              origin: .init(column: 0, row: 0),
+//              size: grid.cells.size
+//            ))
 
           case let .gridDestroy(rawGridID):
             let gridID = Grid.ID(rawGridID)
-            guard var grid = state.grids[gridID] else {
-              continue
-            }
 
-            if let windowID = grid.windowID {
-              let window = state.windows.remove(id: windowID)
+            state.grids[gridID]?.asssociatedWindow = nil
 
-              if window == nil {
-                state.floatingWindows.remove(id: windowID)
-              }
-
-              grid.windowID = nil
-              state.grids[gridID] = grid
-            }
-
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(gridID)
 
           case let .gridCursorGoto(rawGridID, row, column):
             let oldCursor = state.cursor
@@ -551,51 +530,49 @@ public struct Instance: ReducerProtocol {
               oldCursor.gridID == gridID,
               oldCursor.position.row == cursorPosition.row
             {
-              let originColumn = min(oldCursor.position.column, cursorPosition.column)
-              let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
-
-              appendGridUpdate(
-                gridID: oldCursor.gridID,
-                frame: .init(
-                  origin: .init(column: originColumn, row: cursorPosition.row),
-                  size: .init(
-                    columnsCount: columnsCount,
-                    rowsCount: 1
-                  )
-                )
-              )
+//              let originColumn = min(oldCursor.position.column, cursorPosition.column)
+//              let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
+//
+//              appendGridUpdate(
+//                gridID: oldCursor.gridID,
+//                frame: .init(
+//                  origin: .init(column: originColumn, row: cursorPosition.row),
+//                  size: .init(
+//                    columnsCount: columnsCount,
+//                    rowsCount: 1
+//                  )
+//                )
+//              )
 
             } else {
-              if let oldCursor {
-                appendGridUpdate(
-                  gridID: oldCursor.gridID,
-                  frame: IntegerRectangle(
-                    origin: oldCursor.position,
-                    size: .init(columnsCount: 1, rowsCount: 1)
-                  )
-                )
-              }
-
-              appendGridUpdate(
-                gridID: gridID,
-                frame: IntegerRectangle(
-                  origin: cursorPosition,
-                  size: .init(columnsCount: 1, rowsCount: 1)
-                )
-              )
+//              if let oldCursor {
+//                appendGridUpdate(
+//                  gridID: oldCursor.gridID,
+//                  frame: IntegerRectangle(
+//                    origin: oldCursor.position,
+//                    size: .init(columnsCount: 1, rowsCount: 1)
+//                  )
+//                )
+//              }
+//
+//              appendGridUpdate(
+//                gridID: gridID,
+//                frame: IntegerRectangle(
+//                  origin: cursorPosition,
+//                  size: .init(columnsCount: 1, rowsCount: 1)
+//                )
+//              )
             }
 
             isCursorUpdated = true
 
           case let .winPos(rawGridID, windowID, originRow, originColumn, columnsCount, rowsCount):
-            state.floatingWindows.remove(id: windowID)
-
             let gridID = Grid.ID(rawGridID)
 
-            state.windows.updateOrAppend(
+            let zIndex = state.nextWindowZIndex()
+            state.grids[gridID]?.asssociatedWindow = .plain(
               .init(
                 reference: windowID,
-                gridID: gridID,
                 frame: .init(
                   origin: .init(
                     column: originColumn,
@@ -606,13 +583,11 @@ public struct Instance: ReducerProtocol {
                     rowsCount: rowsCount
                   )
                 ),
-                zIndex: state.nextWindowZIndex(),
-                isHidden: false
+                zIndex: zIndex
               )
             )
-            state.grids[gridID]!.windowID = windowID
 
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(gridID)
 
           case let .winFloatPos(
             rawGridID,
@@ -629,61 +604,35 @@ public struct Instance: ReducerProtocol {
               continue
             }
 
-            state.windows.remove(id: windowID)
-
             let gridID = Grid.ID(rawGridID)
 
-            state.floatingWindows.updateOrAppend(
+            state.grids[gridID]?.asssociatedWindow = .floating(
               .init(
                 reference: windowID,
-                gridID: gridID,
                 anchor: anchor,
                 anchorGridID: Grid.ID(rawAnchorGridID),
                 anchorRow: anchorRow,
                 anchorColumn: anchorColumn,
                 isFocusable: isFocusable,
-                zIndex: zIndex,
-                isHidden: false
+                zIndex: zIndex
               )
             )
 
-            state.grids[gridID]!.windowID = windowID
-
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(gridID)
 
           case let .winHide(rawGridID):
             let gridID = Grid.ID(rawGridID)
 
-            if let windowID = state.grids[gridID]!.windowID {
-              if let index = state.windows.index(id: windowID) {
-                state.windows[index].isHidden = true
+            state.grids[rawGridID]?.isHidden = true
 
-              } else if let index = state.floatingWindows.index(id: windowID) {
-                state.floatingWindows[index].isHidden = true
-              }
-            }
-
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(gridID)
 
           case let .winClose(rawGridID):
-            let gridID = Grid.ID(rawGridID)
+            let gridID = Grid.ID(rawValue: rawGridID)
 
-            guard var grid = state.grids[gridID] else {
-              continue
-            }
+            state.grids[rawGridID]?.asssociatedWindow = nil
 
-            if let windowID = grid.windowID {
-              let window = state.windows.remove(id: windowID)
-
-              if window == nil {
-                state.floatingWindows.remove(id: windowID)
-              }
-
-              grid.windowID = nil
-              state.grids[gridID] = grid
-            }
-
-            isGridsLayoutUpdated = true
+            updatedGridIDs.insert(gridID)
 
           case let .tablineUpdate(currentTabID, rawTabs, _, _):
             let tabs = rawTabs
@@ -714,7 +663,7 @@ public struct Instance: ReducerProtocol {
               tabs: .init(uniqueElements: tabs)
             )
 
-            isGridsLayoutUpdated = true
+//            isGridsLayoutUpdated = true
 
           case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
             state.cmdlines[level] = .init(
@@ -825,19 +774,13 @@ public struct Instance: ReducerProtocol {
           state.instanceUpdateFlag.toggle()
         }
 
-        if isGridsLayoutUpdated {
-          state.gridsLayoutUpdateFlag.toggle()
-        }
-
         if isCmdlineUpdated {
           state.cmdlineUpdateFlag.toggle()
         }
 
-        for (gridID, updates) in gridUpdates {
-          update(&state.grids[gridID]) { grid in
-            grid?.updates = updates
-            grid?.updateFlag.toggle()
-          }
+        if !state.updatedGridIDs.isEmpty {
+          state.updatedGridIDs = updatedGridIDs
+          state.gridsUpdateFlag.toggle()
         }
 
         if isCursorUpdated || isCmdlineUpdated {
