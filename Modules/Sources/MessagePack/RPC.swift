@@ -5,145 +5,117 @@ import CasePaths
 import Collections
 import Foundation
 import Library
+import Tagged
+import CustomDump
 
-public struct RemoteError: Error { public var value: Value }
+public struct RPC<Target: Channel>: AsyncSequence, Sendable {
+  public init(target: Target) {
+    self.target = target
+    self.messageBatches = .init(dataBatches: target.dataBatches)
+  }
 
-public actor RPC {
-  public init(
-    _ channel: some Channel
-  ) {
-    self.channel = channel
+  public var target: Target
 
-    let packer = Packer()
-    self.packer = packer
+  private let packer = Packer()
+  private let store = Store()
+  private let messageBatches: AsyncMessageBatches<Target.S>
 
-    let unpacker = Unpacker()
-    self.unpacker = unpacker
+  public typealias Element = [Notification]
 
-    let store = Store()
-    self.store = store
+  public func makeAsyncIterator() -> AsyncIterator {
+    .init(
+      store: store,
+      messageBatchesIterator: messageBatches.makeAsyncIterator()
+    )
+  }
 
-    notifications = .init { continuation in
-      let task = Task {
-        do {
-          for try await data in await channel.dataBatches {
-            if Task.isCancelled {
-              break
-            }
+  public struct AsyncIterator: AsyncIteratorProtocol {
+    let store: Store
+    var messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
 
-            for message in try await unpacker.unpack(data) {
-              guard
-                let array = (/Value.array).extract(from: message), !array.isEmpty,
-                let integer = (/Value.integer).extract(from: array[0]),
-                let messageType = MessageType(rawValue: integer)
-              else {
-                throw ParsingFailed.messageType(rawMessage: "\(message)")
-              }
+    public mutating func next() async throws -> [Notification]? {
+      var accumulator = [Notification]()
 
-              switch messageType {
-              case .request: assertionFailure("Unpacked unexpected request message (\(array)).")
-
-              case .response:
-                guard array.count == 4, let id = (/Value.integer).extract(from: array[1]) else {
-                  throw ParsingFailed.response(rawResponse: "\(array)")
-                }
-
-                let result: Result<Value, RemoteError>
-                if array[2] != .nil {
-                  result = .failure(.init(value: array[2]))
-
-                } else {
-                  result = .success(array[3])
-                }
-
-                await store.responseReceived(result, forRequestWithID: id)
-
-              case .notification:
-                guard
-                  array.count == 3, let method = (/Value.string).extract(from: array[1]),
-                  let parameters = (/Value.array).extract(from: array[2])
-                else {
-                  throw ParsingFailed.notification(rawNotification: "\(array)")
-                }
-
-                continuation.yield((method, parameters))
-              }
-            }
-          }
-
-          continuation.finish()
-
-        } catch {
-          continuation.finish(throwing: error)
+      while true {
+        guard let messages = try await messageBatchesIterator.next() else {
+          return nil
         }
-      }
 
-      continuation.onTermination = { termination in
-        if case .cancelled = termination {
-          task.cancel()
+        try Task.checkCancellation()
+
+        for message in messages {
+          switch message {
+          case let .request(request):
+            assertionFailure("Unexpected request message: \(request)")
+
+          case let .response(response):
+            await store.responseReceived(
+              response,
+              forRequestWithID: .init(
+                rawValue: response.id.rawValue
+              )
+            )
+
+          case let .notification(notification):
+            accumulator.append(notification)
+          }
+        }
+
+        if !accumulator.isEmpty {
+          return accumulator
         }
       }
     }
   }
-
-  public enum ParsingFailed: Error {
-    case messageType(rawMessage: String)
-    case response(rawResponse: String)
-    case notification(rawNotification: String)
-  }
-
-  public let notifications: AsyncThrowingStream<(method: String, parameters: [Value]), Error>
 
   @discardableResult
   public func call(
     method: String,
     withParameters parameters: [Value]
-  ) async throws -> Result<Value, RemoteError> {
+  ) async throws -> Response.Result {
     await withUnsafeContinuation { continuation in
       Task {
-        let id = await store.announceRequest { response in
-          continuation.resume(returning: response)
-        }
-        let request = makeRequestValue(id: id, method: method, parameters: parameters)
-        let data = await packer.pack(request)
-        try await channel.write(data)
+        try await send(
+          request: .init(
+            id: await store.announceRequest {
+              continuation.resume(returning: $0.result)
+            },
+            method: method,
+            parameters: parameters
+          ))
       }
     }
   }
 
   public func fastCall(method: String, withParameters parameters: [Value]) async throws {
-    let id = await store.announceFastRequest()
-    let request = makeRequestValue(id: id, method: method, parameters: parameters)
-    let data = await packer.pack(request)
-    try await channel.write(data)
+    try await send(
+      request: .init(
+        id: await store.announceRequest(),
+        method: method,
+        parameters: parameters
+      )
+    )
   }
 
-  private func makeRequestValue(id: Int, method: String, parameters: [Value]) -> Value {
-    .array([
-      .integer(MessageType.request.rawValue),
-      .integer(id),
-      .string(method),
-      .array(parameters),
-    ])
+  public func send(request: Request) async throws {
+    let data = await packer.pack(
+      request.makeValue()
+    )
+    try await target.write(data)
   }
 
-  private actor Store {
-    func announceRequest(_ handler: @escaping @Sendable (Result<Value, RemoteError>) -> Void) -> Int {
-      let id = announcedRequestsCount
+  actor Store {
+    func announceRequest(_ handler: (@Sendable (Response) -> Void)? = nil) -> Request.ID {
+      let id = Request.ID(announcedRequestsCount)
       announcedRequestsCount += 1
 
-      currentRequests[id] = handler
+      if let handler {
+        currentRequests[id] = handler
+      }
       return id
     }
 
-    func announceFastRequest() -> Int {
-      let id = announcedRequestsCount
-      announcedRequestsCount += 1
-
-      return id
-    }
-
-    func responseReceived(_ response: Result<Value, RemoteError>, forRequestWithID id: Int) {
+    func responseReceived(_ response: Response, forRequestWithID id: Request.ID) {
       guard let handler = currentRequests.removeValue(forKey: id) else {
         return
       }
@@ -152,7 +124,7 @@ public actor RPC {
     }
 
     private var announcedRequestsCount = 0
-    private var currentRequests = TreeDictionary < Int, @Sendable (Result<Value, RemoteError>) -> Void > ()
+    private var currentRequests = TreeDictionary < Request.ID, @Sendable (Response) -> Void > ()
   }
 
   private enum MessageType: Int {
@@ -161,8 +133,183 @@ public actor RPC {
     case notification
   }
 
-  private let channel: any Channel
-  private let packer: Packer
-  private let unpacker: Unpacker
-  private let store: Store
+  public enum ParsingFailed: Error {
+    case messageType(rawMessage: Value)
+    case request(rawRequest: [Value])
+    case response(rawResponse: [Value])
+    case notification(rawNotification: [Value])
+  }
+
+  public struct RemoteError: Error, Hashable {
+    public var value: Value
+  }
+
+  public enum Message: Sendable, Hashable {
+    case request(Request)
+    case response(Response)
+    case notification(Notification)
+
+    init(value: Value) throws {
+      guard
+        let arrayValue = (/Value.array).extract(from: value),
+        !arrayValue.isEmpty,
+        let integer = (/Value.integer).extract(from: arrayValue[0]),
+        let messageType = MessageType(rawValue: integer)
+      else {
+        throw ParsingFailed.messageType(rawMessage: value)
+      }
+
+      switch messageType {
+      case .request:
+        self = .request(
+          try Request(arrayValue: arrayValue)
+        )
+
+      case .response:
+        self = .response(
+          try Response(arrayValue: arrayValue)
+        )
+
+      case .notification:
+        self = .notification(
+          try Notification(arrayValue: arrayValue)
+        )
+      }
+    }
+  }
+
+  public struct Request: Sendable, Hashable {
+    public init(id: ID, method: String, parameters: [Value]) {
+      self.id = id
+      self.method = method
+      self.parameters = parameters
+    }
+
+    public var id: ID
+    public var method: String
+    public var parameters: [Value]
+
+    public typealias ID = Tagged<Self, Int>
+
+    func makeValue() -> Value {
+      .array([
+        .integer(MessageType.request.rawValue),
+        .integer(id.rawValue),
+        .string(method),
+        .array(parameters),
+      ])
+    }
+
+    init(arrayValue: [Value]) throws {
+      guard
+        arrayValue.count == 4,
+        let id = (/Value.integer)
+          .extract(from: arrayValue[1])
+          .map(ID.init(rawValue:)),
+        let method = (/Value.string).extract(from: arrayValue[2]),
+        let parameters = (/Value.array).extract(from: arrayValue[3])
+      else {
+        throw ParsingFailed.request(rawRequest: arrayValue)
+      }
+
+      self.init(
+        id: id,
+        method: method,
+        parameters: parameters
+      )
+    }
+  }
+
+  public struct Response: Sendable, Hashable {
+    public init(id: ID, result: Result) {
+      self.id = id
+      self.result = result
+    }
+
+    public var id: ID
+    public var result: Result
+
+    public typealias ID = Tagged<Self, Int>
+
+    public enum Result: Sendable, Hashable {
+      case success(Value)
+      case failure(RemoteError)
+    }
+
+    init(arrayValue: [Value]) throws {
+      guard
+        arrayValue.count == 4,
+        let id = (/Value.integer)
+          .extract(from: arrayValue[1])
+          .map(Response.ID.init(rawValue:))
+      else {
+        throw ParsingFailed.response(rawResponse: arrayValue)
+      }
+
+      let result: Result
+      if arrayValue[2] != .nil {
+        result = .failure(.init(value: arrayValue[2]))
+
+      } else {
+        result = .success(arrayValue[3])
+      }
+
+      self.init(id: id, result: result)
+    }
+  }
+
+  public struct Notification: Sendable, Hashable {
+    public init(method: String, parameters: [Value]) {
+      self.method = method
+      self.parameters = parameters
+    }
+
+    public var method: String
+    public var parameters: [Value]
+
+    init(arrayValue: [Value]) throws {
+      guard
+        arrayValue.count == 3,
+        let method = (/Value.string).extract(from: arrayValue[1]),
+        let parameters = (/Value.array).extract(from: arrayValue[2])
+      else {
+        throw ParsingFailed.notification(rawNotification: arrayValue)
+      }
+
+      self.init(method: method, parameters: parameters)
+    }
+  }
+
+  struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence, Sendable where DataBatches.Element == Data, DataBatches: Sendable {
+    var dataBatches: DataBatches
+
+    private let unpacker: Unpacker = .init()
+
+    typealias Element = [Message]
+
+    func makeAsyncIterator() -> AsyncIterator {
+      .init(
+        unpacker: unpacker,
+        dataBatchesIterator: dataBatches.makeAsyncIterator()
+      )
+    }
+
+    struct AsyncIterator: AsyncIteratorProtocol {
+      let unpacker: Unpacker
+      var dataBatchesIterator: DataBatches.AsyncIterator
+
+      typealias Element = [Message]
+
+      mutating func next() async throws -> [Message]? {
+        guard let data = try await dataBatchesIterator.next() else {
+          return nil
+        }
+
+        try Task.checkCancellation()
+
+        return try await unpacker.unpack(data)
+          .map(Message.init(value:))
+      }
+    }
+  }
 }

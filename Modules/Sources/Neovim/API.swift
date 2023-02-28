@@ -2,45 +2,48 @@
 
 import MessagePack
 
-public actor API {
-  public init(_ channel: some Channel) {
-    rpc = .init(channel)
+public struct API<Target: Channel>: AsyncSequence {
+  public init(rpc: RPC<Target>) {
+    self.rpc = rpc
   }
 
-  public var uiEventBatches: AsyncThrowingStream<[UIEvent], Error> {
-    .init { continuation in
-      let task = Task {
-        do {
-          for try await (method, parameters) in await rpc.notifications {
-            guard !Task.isCancelled else {
-              return
-            }
+  private var rpc: RPC<Target>
 
-            guard method == "redraw" else {
-              assertionFailure("Unknown neovim API method \(method)")
-              continue
-            }
+  public typealias Element = [UIEvent]
 
-            let uiEvents = try [UIEvent](
-              rawRedrawNotificationParameters: parameters
-            )
-            continuation.yield(uiEvents)
+  public func makeAsyncIterator() -> AsyncIterator {
+    .init(rpcIterator: rpc.makeAsyncIterator())
+  }
+
+  public struct AsyncIterator: AsyncIteratorProtocol {
+    var rpcIterator: RPC<Target>.AsyncIterator
+
+    public mutating func next() async throws -> [UIEvent]? {
+      var accumulator = [UIEvent]()
+
+      while true {
+        guard let notifications = try await rpcIterator.next() else {
+          return nil
+        }
+
+        try Task.checkCancellation()
+
+        for notification in notifications {
+          guard notification.method == "redraw" else {
+            assertionFailure("Unknown neovim API method \(notification.method).")
+            continue
           }
 
-          continuation.finish()
-
-        } catch {
-          continuation.finish(throwing: error)
+          let uiEvents = try [UIEvent](
+            rawRedrawNotificationParameters: notification.parameters
+          )
+          accumulator += uiEvents
         }
-      }
 
-      continuation.onTermination = { termination in
-        if case .cancelled = termination {
-          task.cancel()
+        if !accumulator.isEmpty {
+          return accumulator
         }
       }
     }
   }
-
-  let rpc: RPC
 }

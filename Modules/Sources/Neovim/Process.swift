@@ -10,6 +10,8 @@ import OSLog
 public actor ProcessActor { public static let shared = ProcessActor() }
 
 public actor Process {
+  public let api: API<ProcessChannel>
+  
   public init(
     arguments: [String] = [],
     environmentOverlay: [String: String] = [:]
@@ -17,7 +19,8 @@ public actor Process {
     let processChannel = ProcessChannel()
     processErrorMessages = processChannel.errorMessages
 
-    let api = API(processChannel)
+    let rpc = RPC(target: processChannel)
+    let api = API(rpc: rpc)
     self.api = api
 
     let terminateCalls: AsyncStream<Void>
@@ -133,14 +136,13 @@ public actor Process {
     case exitWithNonzeroCode(Int)
   }
 
-  public let api: API
   public let states: AsyncThrowingStream<State, Error>
   public let processErrorMessages: AsyncStream<String>
 
   public func terminate() async { await _terminate(()) }
 
-  private struct ProcessChannel: Channel, Sendable {
-    var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
+  public struct ProcessChannel: Channel, Sendable {
+    public var dataBatches: AsyncStream<Data> { outputPipe.fileHandleForReading.dataBatches }
 
     var errorMessages: AsyncStream<String> {
       .init { continuation in
@@ -166,7 +168,7 @@ public actor Process {
       }
     }
 
-    func write(_ data: Data) async throws {
+    public func write(_ data: Data) async throws {
       try inputPipe.fileHandleForWriting.write(contentsOf: data)
     }
 

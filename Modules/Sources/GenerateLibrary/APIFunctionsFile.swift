@@ -34,7 +34,7 @@ public struct APIFunctionsFile: GeneratableFile {
             let functionNameInSignature = function.name
               .camelCasedAssumingSnakeCased(capitalized: false)
             try FunctionDeclSyntax(
-              "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> Result<\(raw: function.returnType.swift.signature), RemoteError>"
+              "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> RPC<Target>.Response.Result"
             ) {
               let parametersInArray = function.parameters
                 .map { parameter in
@@ -52,9 +52,9 @@ public struct APIFunctionsFile: GeneratableFile {
                     \(raw: parametersInArray)
                   ]
                 )
-                .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
                 """
               )
+              //.map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
             }
 
             let fastFunctionNameInSignature = functionNameInSignature + "Fast"
