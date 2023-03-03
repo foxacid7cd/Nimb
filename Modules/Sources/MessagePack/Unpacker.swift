@@ -43,9 +43,11 @@ public actor Unpacker {
 
       case MSGPACK_UNPACK_CONTINUE: isCancelled = true
 
-      case MSGPACK_UNPACK_PARSE_ERROR: throw MessageUnpackError.parseError
+      case MSGPACK_UNPACK_PARSE_ERROR:
+        throw Failure("Msgpack unpacking parse error")
 
-      default: throw MessageUnpackError.unexpectedResult
+      default:
+        throw Failure("Invalid msgpack unpacking result \(result)")
       }
 
       result = msgpack_unpacker_next(&mpac, &unpacked)
@@ -56,10 +58,4 @@ public actor Unpacker {
 
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
-}
-
-public enum MessageUnpackError: Error {
-  case parseError
-  case unexpectedResult
-  case unexpectedValueType
 }

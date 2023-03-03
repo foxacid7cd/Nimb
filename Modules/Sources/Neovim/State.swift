@@ -1,13 +1,43 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import Collections
 import Library
 import MessagePack
-import Tagged
-import CasePaths
 import Overture
+import Tagged
 
 public struct State: Sendable {
+  public init(
+    bufferedUIEvents: [UIEvent] = [],
+    rawOptions: OrderedDictionary<String, Value> = [:],
+    title: String? = nil,
+    highlights: IntKeyedDictionary<Highlight> = [:],
+    defaultForegroundColor: Color? = nil,
+    defaultBackgroundColor: Color? = nil,
+    defaultSpecialColor: Color? = nil,
+    modeInfo: ModeInfo? = nil,
+    mode: Mode? = nil,
+    cursor: Cursor? = nil,
+    tabline: Tabline? = nil,
+    cmdlines: IntKeyedDictionary<Cmdline> = [:],
+    grids: IntKeyedDictionary<Grid> = [:]
+  ) {
+    self.bufferedUIEvents = bufferedUIEvents
+    self.rawOptions = rawOptions
+    self.title = title
+    self.highlights = highlights
+    self.defaultForegroundColor = defaultForegroundColor
+    self.defaultBackgroundColor = defaultBackgroundColor
+    self.defaultSpecialColor = defaultSpecialColor
+    self.modeInfo = modeInfo
+    self.mode = mode
+    self.cursor = cursor
+    self.tabline = tabline
+    self.cmdlines = cmdlines
+    self.grids = grids
+  }
+
   public var bufferedUIEvents: [UIEvent]
   public var rawOptions: OrderedDictionary<String, Value>
   public var title: String?
@@ -24,7 +54,7 @@ public struct State: Sendable {
 }
 
 public extension State {
-  struct Updates {
+  struct Updates: Sendable {
     public var isTitleUpdated = false
     public var isAppearanceUpdated = false
     public var isCmdlineUpdated = false
@@ -34,7 +64,7 @@ public extension State {
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates {
-      bufferedUIEvents += uiEvents
+    bufferedUIEvents += uiEvents
 
     var updates = Updates()
 
@@ -73,7 +103,7 @@ public extension State {
           .init(
             origin: .init(),
             size: grid.cells.size
-          )
+          ),
         ]
       )
     }
@@ -143,7 +173,7 @@ public extension State {
             cursorStyleIndex: cursorStyleIndex
           )
 
-          if let cursor = cursor {
+          if let cursor {
             updatedCells(
               inGridWithID: cursor.gridID,
               rectangles: [.init(
@@ -305,7 +335,7 @@ public extension State {
           }
 
           if
-            let cursor = cursor,
+            let cursor,
             cursor.gridID == gridID,
             cursor.position.column >= size.columnsCount,
             cursor.position.row >= size.rowsCount

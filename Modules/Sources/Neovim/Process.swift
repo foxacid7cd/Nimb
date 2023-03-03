@@ -11,7 +11,7 @@ public actor ProcessActor { public static let shared = ProcessActor() }
 
 public actor Process {
   public let api: API<ProcessChannel>
-  
+
   public init(
     arguments: [String] = [],
     environmentOverlay: [String: String] = [:]
@@ -19,8 +19,8 @@ public actor Process {
     let processChannel = ProcessChannel()
     processErrorMessages = processChannel.errorMessages
 
-    let rpc = RPC(target: processChannel)
-    let api = API(rpc: rpc)
+    let rpc = RPC(processChannel)
+    let api = API(rpc)
     self.api = api
 
     let terminateCalls: AsyncStream<Void>

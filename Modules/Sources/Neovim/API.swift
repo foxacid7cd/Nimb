@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: MIT
 
+import Library
 import MessagePack
 
-public struct API<Target: Channel>: AsyncSequence {
-  public init(rpc: RPC<Target>) {
+public struct API<Target: Channel>: Sendable {
+  public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
   }
 
-  private var rpc: RPC<Target>
+  let rpc: RPC<Target>
+}
 
+extension API: AsyncSequence {
   public typealias Element = [UIEvent]
 
   public func makeAsyncIterator() -> AsyncIterator {
-    .init(rpcIterator: rpc.makeAsyncIterator())
+    .init(rpc.makeAsyncIterator())
   }
 
   public struct AsyncIterator: AsyncIteratorProtocol {
-    var rpcIterator: RPC<Target>.AsyncIterator
+    init(_ rpcIterator: RPC<Target>.AsyncIterator) {
+      self.rpcIterator = rpcIterator
+    }
+
+    private var rpcIterator: RPC<Target>.AsyncIterator
 
     public mutating func next() async throws -> [UIEvent]? {
       var accumulator = [UIEvent]()
@@ -30,8 +37,7 @@ public struct API<Target: Channel>: AsyncSequence {
 
         for notification in notifications {
           guard notification.method == "redraw" else {
-            assertionFailure("Unknown neovim API method \(notification.method).")
-            continue
+            throw Failure("Unknown neovim API method \(notification.method)")
           }
 
           let uiEvents = try [UIEvent](
