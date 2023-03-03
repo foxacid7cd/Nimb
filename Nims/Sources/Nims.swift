@@ -23,22 +23,31 @@ struct Nims: App {
             action: InstanceReducer.Action.phase
           )
         ) {
-          CaseLet(state: /InstanceReducer.State.Phase.pending, action: InstanceReducer.Action.Phase.pending) { _ in
+          CaseLet(
+            state: /InstanceReducer.State.Phase.pending,
+            action: InstanceReducer.Action.Phase.pending
+          ) { _ in
             EmptyView()
           }
-          CaseLet(state: /InstanceReducer.State.Phase.running, action: InstanceReducer.Action.Phase.running) { runningStore in
+
+          CaseLet(
+            state: /InstanceReducer.State.Phase.running,
+            action: InstanceReducer.Action.Phase.running
+          ) { runningStore in
             WithViewStore(
               runningStore,
               observe: { $0 },
-              removeDuplicates: { $0.updateFlag == $1.updateFlag }
+              removeDuplicates: { $0.titleUpdateFlag == $1.titleUpdateFlag }
             ) { runningState in
-              Text(verbatim: "\(runningState.title ?? "")")
-                .fixedSize()
-                .frame(width: 640, height: 480, alignment: .topLeading)
+              RunningInstanceView(store: runningStore)
                 .navigationTitle(runningState.title ?? "")
             }
           }
-          CaseLet(state: /InstanceReducer.State.Phase.finished, action: InstanceReducer.Action.Phase.finished) { finishedStore in
+
+          CaseLet(
+            state: /InstanceReducer.State.Phase.finished,
+            action: InstanceReducer.Action.Phase.finished
+          ) { finishedStore in
             WithViewStore(
               finishedStore,
               observe: { $0 }

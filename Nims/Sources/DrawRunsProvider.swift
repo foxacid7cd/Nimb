@@ -3,6 +3,7 @@
 import AppKit
 import Collections
 import Library
+import Neovim
 import SwiftUI
 
 public class DrawRunsProvider {

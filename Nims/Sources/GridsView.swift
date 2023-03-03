@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import Combine
 import ComposableArchitecture
+import CustomDump
 import IdentifiedCollections
 import Library
 import Neovim
@@ -9,76 +11,147 @@ import Overture
 import SwiftUI
 
 public struct GridsView: NSViewRepresentable {
-  public init(store: Store<InstanceView.State, InstanceView.Action>) {
+  public init(store: StoreOf<RunningInstanceReducer>) {
     self.store = store
   }
 
-  private var store: Store<InstanceView.State, InstanceView.Action>
+  private var store: StoreOf<RunningInstanceReducer>
 
-  @Environment(\.nimsAppearance)
-  private var nimsAppearance: NimsAppearance
+  @Environment(\.nimsFont)
+  private var nimsFont: NimsFont
 
   public func makeNSView(context: Context) -> NSView {
     let view = NSView()
-    view.bind(
-      nimsAppearance: nimsAppearance,
-      store: store
-    )
+    view.bind(font: nimsFont, store: store)
 
     return view
   }
 
-  public func updateNSView(_ nsView: NSView, context: Context) {
-    nsView.bind(
-      nimsAppearance: nimsAppearance,
-      store: store
-    )
-  }
+  public func updateNSView(_ nsView: NSView, context: Context) {}
 
   public final class NSView: AppKit.NSView {
     private var stateCancellable: AnyCancellable?
+    private var font: NimsFont!
+    private var store: StoreOf<RunningInstanceReducer>!
+    private var viewStore: ViewStoreOf<RunningInstanceReducer>!
 
-    private var nimsAppearance: NimsAppearance!
-    private var store: Store<InstanceView.State, InstanceView.Action>!
+    private var state: Neovim.State {
+      viewStore.state.stateContainer.state
+    }
 
-    private var state: ViewStore<InstanceView.State, InstanceView.Action>!
-
-    public func bind(
-      nimsAppearance: NimsAppearance,
-      store: Store<InstanceView.State, InstanceView.Action>
-    ) {
+    public func bind(font: NimsFont, store: StoreOf<RunningInstanceReducer>) {
       stateCancellable?.cancel()
 
-      self.nimsAppearance = nimsAppearance
+      self.font = font
       self.store = store
 
-      state = ViewStore(
+      viewStore = ViewStore(
         store,
         observe: { $0 },
-        removeDuplicates: {
-          $0.gridsUpdateFlag == $1.gridsUpdateFlag
-        }
+        removeDuplicates: { _, _ in true }
       )
 
-      stateCancellable = state.publisher
-        .sink { [weak self] _ in
-          self?.render()
+      stateCancellable = viewStore.publisher
+        .sink { [weak self] state in
+          state.stateContainer.observe { updates in
+            self?.render(updates: updates)
+          }
+
+          self?.render(updates: nil)
         }
     }
 
-    private var gridViews = IntKeyedDictionary<GridView.NSView>()
+    private var gridViews = IntKeyedDictionary<GridView>()
 
-    private func render() {
-//      let outerGridView = gridViews[Grid.ID.outer] ?? {
-//        let view = GridView.NSView()
-//        self.addSubview(view)
-//        gridViews[Grid.ID.outer.rawValue] = view
-//
-//        return view
-//      }()
+    private func render(updates: Neovim.State.Updates?) {
+      guard let outerGridIntegerSize = state.grids[.outer]?.cells.size else {
+        return
+      }
+      let outerGridSize = outerGridIntegerSize * font.cellSize
+
+      let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
+        .translatedBy(x: 0, y: -outerGridSize.height)
+
+      let updatedLayoutGridIDs: Set<Neovim.Grid.ID>
+      if let updates {
+        updatedLayoutGridIDs = updates.updatedLayoutGridIDs
+
+      } else {
+        updatedLayoutGridIDs = .init(
+          state.grids.keys
+            .map(Grid.ID.init(_:))
+        )
+      }
+
+      for gridID in updatedLayoutGridIDs {
+        if let grid = state.grids[gridID] {
+          let gridView = gridViews[gridID] ?? {
+            let new = GridView()
+            new.font = self.font
+            new.stateContainer = self.viewStore.stateContainer
+            new.gridID = gridID
+            self.addSubview(new)
+
+            self.sortSubviews(
+              { firstView, secondView, _ in
+                let firstOrdinal = (firstView as! GridView).ordinal
+                let secondOrdinal = (secondView as! GridView).ordinal
+                if firstOrdinal == secondOrdinal {
+                  return .orderedSame
+
+                } else if firstOrdinal < secondOrdinal {
+                  return .orderedAscending
+
+                } else {
+                  return .orderedDescending
+                }
+              },
+              context: nil
+            )
+
+            gridViews[gridID] = new
+            return new
+          }()
+
+          if gridID == .outer {
+            gridView.frame = .init(
+              origin: .init(),
+              size: outerGridSize
+            )
+
+          } else if let asssociatedWindow = grid.asssociatedWindow {
+            switch asssociatedWindow {
+            case let .plain(window):
+              gridView.frame = (window.frame * font.cellSize)
+                .applying(upsideDownTransform)
+
+            default:
+              gridView.frame = .init()
+            }
+
+          } else {
+            gridView.frame = .init()
+          }
+
+          gridView.isHidden = grid.isHidden
+
+          if let updatedRectangles = updates?.gridUpdatedRectangles[gridID] {
+            for rectangle in updatedRectangles {
+              let rect = rectangle * font.cellSize
+                .applying(
+                  .init(scaleX: 1, y: -1)
+                    .translatedBy(x: 0, y: -gridView.frame.size.height)
+                )
+              gridView.setNeedsDisplay(rect)
+            }
+          }
+
+        } else {
+          gridViews[gridID]?.removeFromSuperview()
+          gridViews.removeValue(forID: gridID)
+        }
+      }
     }
-
-    override public func layout() {}
   }
 
   //  public var body: some View {

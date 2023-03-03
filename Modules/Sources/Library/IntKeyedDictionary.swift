@@ -67,6 +67,10 @@ public struct IntKeyedDictionary<Value> {
     removeValue(forKey: id.rawValue)
   }
 
+  public var keys: OrderedSet<Key> {
+    keysBackingStore
+  }
+
   public var values: Values {
     .init(self)
   }

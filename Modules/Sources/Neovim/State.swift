@@ -13,9 +13,9 @@ public struct State: Sendable {
     rawOptions: OrderedDictionary<String, Value> = [:],
     title: String? = nil,
     highlights: IntKeyedDictionary<Highlight> = [:],
-    defaultForegroundColor: Color? = nil,
-    defaultBackgroundColor: Color? = nil,
-    defaultSpecialColor: Color? = nil,
+    defaultForegroundColor: Color = .init(rgb: 0xFFFFFF),
+    defaultBackgroundColor: Color = .init(rgb: 0x000000),
+    defaultSpecialColor: Color = .init(rgb: 0xFF00FF),
     modeInfo: ModeInfo? = nil,
     mode: Mode? = nil,
     cursor: Cursor? = nil,
@@ -42,15 +42,67 @@ public struct State: Sendable {
   public var rawOptions: OrderedDictionary<String, Value>
   public var title: String?
   public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: Color?
-  public var defaultBackgroundColor: Color?
-  public var defaultSpecialColor: Color?
+  public var defaultForegroundColor: Color
+  public var defaultBackgroundColor: Color
+  public var defaultSpecialColor: Color
   public var modeInfo: ModeInfo?
   public var mode: Mode?
   public var cursor: Cursor?
   public var tabline: Tabline?
   public var cmdlines: IntKeyedDictionary<Cmdline>
   public var grids: IntKeyedDictionary<Grid>
+
+  public func isItalic(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isItalic
+  }
+
+  public func isBold(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isBold
+  }
+
+  public func decorations(for highlightID: Highlight.ID) -> Highlight.Decorations {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return .init()
+    }
+
+    return highlight.decorations
+  }
+
+  public func foregroundColor(for highlightID: Highlight.ID) -> Color {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultForegroundColor
+    }
+
+    return highlight.isReverse ?
+      highlight.backgroundColor ?? defaultBackgroundColor :
+      highlight.foregroundColor ?? defaultForegroundColor
+  }
+
+  public func backgroundColor(for highlightID: Highlight.ID) -> Color {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultBackgroundColor
+    }
+
+    return highlight.isReverse ?
+      highlight.foregroundColor ?? defaultForegroundColor :
+      highlight.backgroundColor ?? defaultBackgroundColor
+  }
+
+  public func specialColor(for highlightID: Highlight.ID) -> Color {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return defaultSpecialColor
+    }
+
+    return highlight.specialColor ?? (highlight.isReverse ? defaultBackgroundColor : defaultForegroundColor)
+  }
 }
 
 public extension State {

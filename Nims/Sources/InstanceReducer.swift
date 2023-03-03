@@ -16,14 +16,8 @@ public struct InstanceReducer: ReducerProtocol {
 
     public enum Phase: Sendable {
       case pending
-      case running(Running)
+      case running(RunningInstanceReducer.State)
       case finished(message: String)
-
-      public struct Running: Sendable {
-        public let stateContainer: Neovim.Instance.StateContainer
-        public var title: String?
-        public var updateFlag = false
-      }
     }
   }
 
@@ -35,14 +29,10 @@ public struct InstanceReducer: ReducerProtocol {
 
     public enum Phase: Sendable {
       case pending(Pending)
-      case running(Running)
+      case running(RunningInstanceReducer.Action)
       case finished(Finished)
 
       public enum Pending: Sendable {}
-
-      public enum Running: Sendable {
-        case setTitle(String?)
-      }
 
       public enum Finished: Sendable {
         case close
@@ -74,6 +64,16 @@ public struct InstanceReducer: ReducerProtocol {
                     .phase(
                       .running(
                         .setTitle(state.title)
+                      )
+                    )
+                  )
+                }
+
+                if value.updatedLayoutGridIDs.contains(.outer) {
+                  send(
+                    .phase(
+                      .running(
+                        .setOuterGridSize(state.grids[.outer]?.cells.size)
                       )
                     )
                   )
@@ -132,15 +132,7 @@ public struct InstanceReducer: ReducerProtocol {
     Scope(state: \.phase, action: /Action.phase) {
       EmptyReducer()
         .ifCaseLet(/State.Phase.running, action: /Action.Phase.running) {
-          Reduce<State.Phase.Running, Action.Phase.Running> { state, action in
-            switch action {
-            case let .setTitle(title):
-              state.title = title
-              state.updateFlag.toggle()
-
-              return .none
-            }
-          }
+          RunningInstanceReducer()
         }
     }
   }

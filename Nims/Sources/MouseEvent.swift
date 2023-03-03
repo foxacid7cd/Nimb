@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Library
+import Neovim
 import Tagged
 
 public struct MouseEvent: Equatable, Sendable {
