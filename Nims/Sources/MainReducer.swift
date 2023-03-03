@@ -1,65 +1,37 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import ComposableArchitecture
+import Library
 import Neovim
 
 struct MainReducer: ReducerProtocol {
   struct State {
-    enum Instance {
-      case created
-      case running(stateContainer: Neovim.Instance.StateContainer)
-      case finished(error: Error?)
-    }
-
-    var instance: Instance?
-    var instanceUpdateFlag = false
+    var instances: IdentifiedArrayOf<InstanceReducer.State> = []
   }
 
   enum Action {
     case createNeovimInstance
-    case instanceRunning(stateContainer: Neovim.Instance.StateContainer)
-    case instanceFinished(error: Error?)
+    case instance(id: InstanceReducer.State.ID, action: InstanceReducer.Action)
   }
 
-  func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
-    switch action {
-    case .createNeovimInstance:
-      state.instance = .created
-      state.instanceUpdateFlag.toggle()
+  var body: some ReducerProtocol<State, Action> {
+    Reduce { state, action in
+      switch action {
+      case .createNeovimInstance:
+        let id = InstanceReducer.State.ID(state.instances.count)
+        state.instances.updateOrAppend(.init(id: id))
 
-      let task = EffectTask<Action>.run { send in
-        let instance = Instance()
-
-        await send(.instanceRunning(stateContainer: instance.stateContainer))
-
-        do {
-          for try await element in instance {
-            switch element {
-            case let .stateUpdates(value):
-              customDump(value)
-            }
-          }
-
-          await send(.instanceFinished(error: nil))
-
-        } catch {
-          await send(.instanceFinished(error: error))
+        return .task {
+          .instance(id: id, action: .start)
         }
+
+      default:
+        return .none
       }
-
-      return task
-
-    case let .instanceRunning(stateContainer):
-      state.instance = .running(stateContainer: stateContainer)
-      state.instanceUpdateFlag.toggle()
-
-      return .none
-
-    case let .instanceFinished(error):
-      state.instance = .finished(error: error)
-      state.instanceUpdateFlag.toggle()
-
-      return .none
+    }
+    .forEach(\.instances, action: /Action.instance(id:action:)) {
+      InstanceReducer()
     }
   }
 }

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import Clocks
 import ComposableArchitecture
+import CustomDump
 import Neovim
 import SwiftUI
 
@@ -9,15 +11,49 @@ import SwiftUI
 struct Nims: App {
   var body: some Scene {
     WindowGroup {
-      WithViewStore(
-        store,
-        observe: { $0 },
-        removeDuplicates: { $0.instanceUpdateFlag == $1.instanceUpdateFlag }
-      ) { state in
-        if let instanceState = state.instance {
-          Text(verbatim: "\(instanceState)")
-            .fixedSize()
-            .frame(width: 640, height: 480, alignment: .topLeading)
+      ForEachStore(
+        store.scope(
+          state: \.instances,
+          action: MainReducer.Action.instance(id:action:)
+        )
+      ) { store in
+        SwitchStore(
+          store.scope(
+            state: \.phase,
+            action: InstanceReducer.Action.phase
+          )
+        ) {
+          CaseLet(state: /InstanceReducer.State.Phase.pending, action: InstanceReducer.Action.Phase.pending) { _ in
+            EmptyView()
+          }
+          CaseLet(state: /InstanceReducer.State.Phase.running, action: InstanceReducer.Action.Phase.running) { runningStore in
+            WithViewStore(
+              runningStore,
+              observe: { $0 },
+              removeDuplicates: { $0.updateFlag == $1.updateFlag }
+            ) { runningState in
+              Text(verbatim: "\(runningState.title ?? "")")
+                .fixedSize()
+                .frame(width: 640, height: 480, alignment: .topLeading)
+                .navigationTitle(runningState.title ?? "")
+            }
+          }
+          CaseLet(state: /InstanceReducer.State.Phase.finished, action: InstanceReducer.Action.Phase.finished) { finishedStore in
+            WithViewStore(
+              finishedStore,
+              observe: { $0 }
+            ) { finishedState in
+              VStack {
+                Text("Neovim Instance Finished\n\(finishedState.state)")
+                Button {
+                  finishedState.send(.close)
+
+                } label: {
+                  Text("Close")
+                }
+              }
+            }
+          }
         }
       }
     }

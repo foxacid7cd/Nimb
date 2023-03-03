@@ -8,7 +8,8 @@ import Foundation
 import Library
 import MessagePack
 
-public struct Instance {
+@MainActor
+public struct Instance: Sendable {
   public let stateContainer = StateContainer()
 
   private let process = Foundation.Process()
@@ -36,7 +37,8 @@ public struct Instance {
     api = .init(rpc)
   }
 
-  public actor StateContainer: Sendable {
+  @MainActor
+  public final class StateContainer: Sendable {
     public private(set) var state = State()
 
     private var observerBody: ((State.Updates) -> Void)?
@@ -72,7 +74,7 @@ public struct Instance {
 }
 
 extension Instance: AsyncSequence {
-  public enum Element {
+  public enum Element: Sendable {
     case stateUpdates(State.Updates)
   }
 
