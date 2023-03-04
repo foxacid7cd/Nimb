@@ -8,7 +8,7 @@ import Neovim
 import SwiftUI
 
 @MainActor
-struct CmdlinesView: View {
+struct OverlayView: View {
   init(store: StoreOf<RunningInstanceReducer>) {
     self.store = store
   }
@@ -19,11 +19,18 @@ struct CmdlinesView: View {
     WithViewStore(
       store,
       observe: { $0 },
-      removeDuplicates: { $0.cmdlinesUpdateFlag == $1.cmdlinesUpdateFlag }
-    ) { viewStore in
-      let state = viewStore.state
+      removeDuplicates: { lhs, rhs in
+        guard
+          lhs.cmdlinesUpdateFlag == rhs.cmdlinesUpdateFlag,
+          lhs.msgShowsUpdateFlag == rhs.msgShowsUpdateFlag
+        else {
+          return false
+        }
 
-      VStack(alignment: .center, spacing: 0) {
+        return true
+      }
+    ) { state in
+      let contentView = VStack(alignment: .center, spacing: 0) {
         Spacer()
           .frame(height: 88)
 
@@ -31,11 +38,22 @@ struct CmdlinesView: View {
           CmdlineView(cmdline: cmdline)
         }
 
+        if !state.msgShows.isEmpty {
+          MsgShowsView(msgShows: state.msgShows)
+        }
+
         Spacer()
       }
-      .background {
-        Rectangle()
-          .fill(.black.opacity(0.75))
+
+      if state.cmdlines.isEmpty {
+        contentView
+
+      } else {
+        contentView
+          .background {
+            Rectangle()
+              .fill(.black.opacity(0.75))
+          }
       }
     }
   }
@@ -188,6 +206,65 @@ struct CmdlineView: View {
     }
 
     accumulator.append(attributedString)
+
+    return accumulator
+  }
+}
+
+@MainActor
+struct MsgShowsView: View {
+  init(msgShows: IntKeyedDictionary<MsgShow>) {
+    self.msgShows = msgShows
+  }
+
+  private var msgShows: IntKeyedDictionary<MsgShow>
+
+  @Environment(\.nimsFont)
+  private var font: NimsFont
+
+  @Environment(\.appearance)
+  private var appearance: Appearance
+
+  var body: some View {
+    HStack {
+      Spacer()
+
+      VStack(alignment: .leading, spacing: 2) {
+        ForEach(self.msgShows.values) { msgShow in
+          HStack(alignment: .center) {
+            Text(makeContentAttributedString(msgShow: msgShow))
+
+            Spacer()
+          }
+        }
+      }
+      .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
+      .frame(maxWidth: 860, minHeight: 44)
+      .background(
+        Rectangle()
+          .fill(appearance.defaultBackgroundColor.swiftUI.opacity(0.9))
+          .border(appearance.defaultForegroundColor.swiftUI.opacity(0.2), width: 1)
+      )
+
+      Spacer()
+    }
+  }
+
+  private func makeContentAttributedString(msgShow: MsgShow) -> AttributedString {
+    var accumulator = AttributedString()
+
+    msgShow.contentParts
+      .map { contentPart -> AttributedString in
+        AttributedString(
+          contentPart.text,
+          attributes: .init([
+            .font: font.nsFont(),
+            .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).swiftUI,
+            .backgroundColor: contentPart.highlightID.isDefault ? SwiftUI.Color.clear : appearance.backgroundColor(for: contentPart.highlightID).swiftUI,
+          ])
+        )
+      }
+      .forEach { accumulator.append($0) }
 
     return accumulator
   }

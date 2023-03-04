@@ -99,30 +99,37 @@ public struct GridsView: NSViewRepresentable {
         )
       }
 
+      func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
+        if let gridView = gridViews[gridID] {
+          return gridView
+
+        } else {
+          let gridView = GridView()
+          gridView.translatesAutoresizingMaskIntoConstraints = false
+          gridView.font = font
+          gridView.stateContainer = viewStore.stateContainer
+          gridView.gridID = gridID
+          gridView.reportMouseEvent = reportMouseEvent
+          addSubview(gridView)
+
+          let widthConstraint = gridView.widthAnchor.constraint(equalToConstant: 0)
+          widthConstraint.priority = .defaultHigh
+          widthConstraint.isActive = true
+
+          let heightConstraint = gridView.heightAnchor.constraint(equalToConstant: 0)
+          heightConstraint.priority = .defaultHigh
+          heightConstraint.isActive = true
+
+          gridView.sizeConstraints = (widthConstraint, heightConstraint)
+
+          gridViews[gridID] = gridView
+          return gridView
+        }
+      }
+
       for gridID in updatedLayoutGridIDs {
         if let grid = state.grids[gridID] {
-          let gridView = gridViews[gridID] ?? {
-            let new = GridView()
-            new.translatesAutoresizingMaskIntoConstraints = false
-            new.font = self.font
-            new.stateContainer = self.viewStore.stateContainer
-            new.gridID = gridID
-            new.reportMouseEvent = reportMouseEvent
-            self.addSubview(new)
-
-            let widthConstraint = new.widthAnchor.constraint(equalToConstant: 0)
-            widthConstraint.priority = .defaultHigh
-            widthConstraint.isActive = true
-
-            let heightConstraint = new.heightAnchor.constraint(equalToConstant: 0)
-            heightConstraint.priority = .defaultHigh
-            heightConstraint.isActive = true
-
-            new.sizeConstraints = (widthConstraint, heightConstraint)
-
-            gridViews[gridID] = new
-            return new
-          }()
+          let gridView = gridViewOrCreate(for: gridID)
 
           if gridID == .outer {
             gridView.sizeConstraints!.width.constant = outerGridSize.width
@@ -196,7 +203,7 @@ public struct GridsView: NSViewRepresentable {
               gridView.floatingWindowConstraints?.vertical.isActive = false
               gridView.floatingWindowConstraints = nil
 
-              let anchorGridView = gridViews[value.anchorGridID]!
+              let anchorGridView = gridViewOrCreate(for: value.anchorGridID)
 
               let horizontalConstant: Double = value.anchorColumn * font.cellWidth
               let verticalConstant: Double = value.anchorRow * font.cellHeight

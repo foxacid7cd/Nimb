@@ -22,7 +22,7 @@
 		68EF608F29B2AC4B0056E48D /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF608E29B2AC4B0056E48D /* EnvironmentValues.swift */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
 		68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* DrawRunsProvider.swift */; };
-		68EF609729B2E3380056E48D /* CmdlinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609629B2E3380056E48D /* CmdlinesView.swift */; };
+		68EF609729B2E3380056E48D /* OverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609629B2E3380056E48D /* OverlayView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -77,7 +77,7 @@
 		68EF608E29B2AC4B0056E48D /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridView.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* DrawRunsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRunsProvider.swift; sourceTree = "<group>"; };
-		68EF609629B2E3380056E48D /* CmdlinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesView.swift; sourceTree = "<group>"; };
+		68EF609629B2E3380056E48D /* OverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,7 +106,7 @@
 				68EF608629B2AA790056E48D /* RunningInstanceReducer.swift */,
 				68EF608A29B2AB880056E48D /* RunningInstanceView.swift */,
 				68EF608C29B2ABD10056E48D /* HeaderView.swift */,
-				68EF609629B2E3380056E48D /* CmdlinesView.swift */,
+				68EF609629B2E3380056E48D /* OverlayView.swift */,
 				68EF608E29B2AC4B0056E48D /* EnvironmentValues.swift */,
 			);
 			path = Sources;
@@ -269,7 +269,7 @@
 				68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */,
 				68EF608D29B2ABD10056E48D /* HeaderView.swift in Sources */,
 				68EF609129B2B6D20056E48D /* GridView.swift in Sources */,
-				68EF609729B2E3380056E48D /* CmdlinesView.swift in Sources */,
+				68EF609729B2E3380056E48D /* OverlayView.swift in Sources */,
 				68EF608F29B2AC4B0056E48D /* EnvironmentValues.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -99,6 +99,16 @@ public struct InstanceReducer: ReducerProtocol {
                   )
                 }
 
+                if value.isMsgShowsUpdated {
+                  send(
+                    .phase(
+                      .running(
+                        .setMsgShows(state.msgShows)
+                      )
+                    )
+                  )
+                }
+
                 if value.isTablineUpdated {
                   send(
                     .phase(

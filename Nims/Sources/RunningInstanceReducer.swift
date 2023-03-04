@@ -24,6 +24,9 @@ public struct RunningInstanceReducer: ReducerProtocol {
 
     public var cmdlines = IntKeyedDictionary<Cmdline>()
     public var cmdlinesUpdateFlag = false
+
+    public var msgShows = IntKeyedDictionary<MsgShow>()
+    public var msgShowsUpdateFlag = false
   }
 
   public enum Action: Sendable {
@@ -32,6 +35,7 @@ public struct RunningInstanceReducer: ReducerProtocol {
     case setAppearance(Appearance)
     case setTabline(Tabline?)
     case setCmdlines(IntKeyedDictionary<Cmdline>)
+    case setMsgShows(IntKeyedDictionary<MsgShow>)
     case sideMenuButtonPressed
     case reportSelectedTabpage(id: Tabpage.ID)
   }
@@ -65,6 +69,12 @@ public struct RunningInstanceReducer: ReducerProtocol {
     case let .setCmdlines(value):
       state.cmdlines = value
       state.cmdlinesUpdateFlag.toggle()
+
+      return .none
+
+    case let .setMsgShows(value):
+      state.msgShows = value
+      state.msgShowsUpdateFlag.toggle()
 
       return .none
 

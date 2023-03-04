@@ -18,6 +18,7 @@ public struct State: Sendable {
     cursor: Cursor? = nil,
     tabline: Tabline? = nil,
     cmdlines: IntKeyedDictionary<Cmdline> = [:],
+    msgShows: IntKeyedDictionary<MsgShow> = [:],
     grids: IntKeyedDictionary<Grid> = [:]
   ) {
     self.bufferedUIEvents = bufferedUIEvents
@@ -29,6 +30,7 @@ public struct State: Sendable {
     self.cursor = cursor
     self.tabline = tabline
     self.cmdlines = cmdlines
+    self.msgShows = msgShows
     self.grids = grids
   }
 
@@ -41,6 +43,7 @@ public struct State: Sendable {
   public var cursor: Cursor?
   public var tabline: Tabline?
   public var cmdlines: IntKeyedDictionary<Cmdline>
+  public var msgShows: IntKeyedDictionary<MsgShow>
   public var grids: IntKeyedDictionary<Grid>
   public var windowZIndexCounter = 0
 
@@ -56,6 +59,7 @@ public extension State {
     public var isAppearanceUpdated = false
     public var isTablineUpdated = false
     public var isCmdlinesUpdated = false
+    public var isMsgShowsUpdated = false
     public var isCursorUpdated = false
     public var updatedLayoutGridIDs = Set<Grid.ID>()
     public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
@@ -80,6 +84,10 @@ public extension State {
 
     func cmdlinesUpdated() {
       updates.isCmdlinesUpdated = true
+    }
+
+    func msgShowsUpdated() {
+      updates.isMsgShowsUpdated = true
     }
 
     func cursorUpdated() {
@@ -705,6 +713,40 @@ public extension State {
           }
 
           cmdlinesUpdated()
+
+        case let .msgShow(kind, content, replaceLast):
+          if replaceLast, let lastKey = msgShows.keys.max() {
+            msgShows.removeValue(forKey: lastKey)
+          }
+
+          msgShows[msgShows.count] = .init(
+            index: msgShows.count,
+            kind: kind,
+            contentParts: content
+              .compactMap { rawContentPart in
+                guard
+                  case let .array(rawContentPart) = rawContentPart,
+                  rawContentPart.count == 2,
+                  case let .integer(rawHighlightID) = rawContentPart[0],
+                  case let .string(text) = rawContentPart[1]
+                else {
+                  assertionFailure("Invalid msgShow content raw value")
+                  return nil
+                }
+
+                return .init(
+                  highlightID: .init(rawHighlightID),
+                  text: text
+                )
+              }
+          )
+
+          msgShowsUpdated()
+
+        case .msgClear:
+          msgShows = [:]
+
+          msgShowsUpdated()
 
         default:
           break

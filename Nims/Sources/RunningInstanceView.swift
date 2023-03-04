@@ -26,8 +26,15 @@ public struct RunningInstanceView: View {
     WithViewStore(
       store,
       observe: { $0 },
-      removeDuplicates: {
-        $0.cmdlinesUpdateFlag == $1.cmdlinesUpdateFlag
+      removeDuplicates: { lhs, rhs in
+        guard
+          lhs.cmdlinesUpdateFlag == rhs.cmdlinesUpdateFlag,
+          lhs.msgShowsUpdateFlag == rhs.msgShowsUpdateFlag
+        else {
+          return true
+        }
+
+        return false
       },
       content: { state in
         let mainView = WithViewStore(
@@ -51,12 +58,15 @@ public struct RunningInstanceView: View {
           }
         )
 
-        if state.cmdlines.isEmpty {
+        if
+          state.cmdlines.isEmpty,
+          state.msgShows.isEmpty
+        {
           mainView
 
         } else {
           mainView
-            .overlay { CmdlinesView(store: store) }
+            .overlay { OverlayView(store: store) }
         }
       }
     )
