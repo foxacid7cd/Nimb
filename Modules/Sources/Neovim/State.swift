@@ -65,64 +65,61 @@ public extension State {
     public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
   }
 
-  mutating func apply(uiEvents: [UIEvent]) -> Updates {
+  mutating func apply(uiEvents: [UIEvent]) -> Updates? {
     bufferedUIEvents += uiEvents
 
-    var updates = Updates()
-
-    func titleUpdated() {
-      updates.isTitleUpdated = true
-    }
-
-    func appearanceUpdated() {
-      updates.isAppearanceUpdated = true
-    }
-
-    func tablineUpdated() {
-      updates.isTablineUpdated = true
-    }
-
-    func cmdlinesUpdated() {
-      updates.isCmdlinesUpdated = true
-    }
-
-    func msgShowsUpdated() {
-      updates.isMsgShowsUpdated = true
-    }
-
-    func cursorUpdated() {
-      updates.isCursorUpdated = true
-    }
-
-    func updatedLayout(forGridWithID gridID: Grid.ID) {
-      updates.updatedLayoutGridIDs.insert(gridID)
-    }
-
-    func updatedCells(inGridWithID gridID: Grid.ID, rectangles: [IntegerRectangle]) {
-      update(&updates.gridUpdatedRectangles[gridID]) { accumulator in
-        accumulator = (accumulator ?? []) + rectangles
-      }
-    }
-
-    func updatedAllCells(inGrid grid: Grid) {
-      updates.gridUpdatedRectangles.removeValue(forKey: grid.id)
-
-      updatedCells(
-        inGridWithID: grid.id,
-        rectangles: [
-          .init(
-            origin: .init(),
-            size: grid.cells.size
-          ),
-        ]
-      )
-    }
-
     if uiEvents.last.flatMap(/UIEvent.flush) != nil {
-      var uiEvents = [UIEvent]()
-      swap(&uiEvents, &bufferedUIEvents)
+      var updates = Updates()
 
-      for uiEvent in uiEvents {
+      func titleUpdated() {
+        updates.isTitleUpdated = true
+      }
+
+      func appearanceUpdated() {
+        updates.isAppearanceUpdated = true
+      }
+
+      func tablineUpdated() {
+        updates.isTablineUpdated = true
+      }
+
+      func cmdlinesUpdated() {
+        updates.isCmdlinesUpdated = true
+      }
+
+      func msgShowsUpdated() {
+        updates.isMsgShowsUpdated = true
+      }
+
+      func cursorUpdated() {
+        updates.isCursorUpdated = true
+      }
+
+      func updatedLayout(forGridWithID gridID: Grid.ID) {
+        updates.updatedLayoutGridIDs.insert(gridID)
+      }
+
+      func updatedCells(inGridWithID gridID: Grid.ID, rectangles: [IntegerRectangle]) {
+        update(&updates.gridUpdatedRectangles[gridID]) { accumulator in
+          accumulator = (accumulator ?? []) + rectangles
+        }
+      }
+
+      func updatedAllCells(inGrid grid: Grid) {
+        updates.gridUpdatedRectangles.removeValue(forKey: grid.id)
+
+        updatedCells(
+          inGridWithID: grid.id,
+          rectangles: [
+            .init(
+              origin: .init(),
+              size: grid.cells.size
+            ),
+          ]
+        )
+      }
+
+      for uiEvent in bufferedUIEvents {
         switch uiEvent {
         case let .setTitle(title):
           self.title = title
@@ -317,8 +314,6 @@ public extension State {
                 cells: cells,
                 rowLayouts: cells.rows
                   .map(Grid.RowLayout.init(rowCells:)),
-                updates: [],
-                updateFlag: true,
                 associatedWindow: nil,
                 isHidden: false
               )
@@ -752,8 +747,12 @@ public extension State {
           break
         }
       }
+
+      bufferedUIEvents = []
+
+      return updates
     }
 
-    return updates
+    return nil
   }
 }

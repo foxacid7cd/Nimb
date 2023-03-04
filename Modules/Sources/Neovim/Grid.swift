@@ -8,8 +8,6 @@ public struct Grid: Sendable, Identifiable {
   public var id: ID
   public var cells: TwoDimensionalArray<Cell>
   public var rowLayouts: [RowLayout]
-  public var updates: [IntegerRectangle]
-  public var updateFlag: Bool
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
 

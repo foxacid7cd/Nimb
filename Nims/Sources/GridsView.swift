@@ -326,12 +326,12 @@ public struct GridsView: NSViewRepresentable {
               continue
             }
 
+            let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
+              .translatedBy(x: 0, y: -gridView.frame.height)
+
             for rectangle in updatedRectangles {
               let rect = (rectangle * font.cellSize)
-                .applying(
-                  .init(scaleX: 1, y: -1)
-                    .translatedBy(x: 0, y: -gridView.frame.height)
-                )
+                .applying(upsideDownTransform)
 
               gridView.setNeedsDisplay(rect)
             }

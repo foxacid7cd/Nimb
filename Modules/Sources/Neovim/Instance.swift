@@ -58,7 +58,10 @@ public struct Instance: Sendable {
     }
 
     reportMouseEventsTask = Task {
-      for await mouseEvent in mouseEvents {
+      let throttledMouseEvents = mouseEvents
+        .throttle(for: .milliseconds(10), latest: true)
+
+      for await mouseEvent in throttledMouseEvents {
         guard !Task.isCancelled else {
           return
         }
@@ -98,9 +101,12 @@ public struct Instance: Sendable {
 
     private var observerBody: ((State.Updates) -> Void)?
 
-    public func apply(uiEvents: [UIEvent]) -> State.Updates {
+    public func apply(uiEvents: [UIEvent]) -> State.Updates? {
       let updates = state.apply(uiEvents: uiEvents)
-      observerBody?(updates)
+
+      if let updates {
+        observerBody?(updates)
+      }
 
       return updates
     }
@@ -167,13 +173,15 @@ extension Instance: AsyncSequence {
         try await startProcess()
       }
 
-      guard let uiEvents = try await apiIterator.next() else {
-        return nil
-      }
+      while true {
+        guard let uiEvents = try await apiIterator.next() else {
+          return nil
+        }
 
-      return .stateUpdates(
-        await stateContainer.apply(uiEvents: uiEvents)
-      )
+        if let updates = await stateContainer.apply(uiEvents: uiEvents) {
+          return .stateUpdates(updates)
+        }
+      }
     }
   }
 }

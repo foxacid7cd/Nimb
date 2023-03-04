@@ -6,8 +6,7 @@ import Library
 import Neovim
 import SwiftUI
 
-@MainActor
-public final class DrawRunsProvider: Sendable {
+public final class DrawRunsProvider {
   public init() {}
 
   public func drawRun(with parameters: DrawRunParameters) -> DrawRun {
