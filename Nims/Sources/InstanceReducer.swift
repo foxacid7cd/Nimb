@@ -22,8 +22,8 @@ public struct InstanceReducer: ReducerProtocol {
   }
 
   public enum Action: Sendable {
-    case start
-    case started(Neovim.Instance.StateContainer)
+    case start(keyPresses: AsyncStream<KeyPress>, mouseEvents: AsyncStream<MouseEvent>)
+    case started(Instance.StateContainer)
     case finished(Error?)
     case phase(Phase)
 
@@ -43,13 +43,13 @@ public struct InstanceReducer: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case .start:
+      case let .start(keyPresses, mouseEvents):
         guard case .pending = state.phase else {
           return .none
         }
 
-        return .run { @MainActor send in
-          let instance = Neovim.Instance()
+        return EffectTask<Action>.run { @MainActor send in
+          let instance = Neovim.Instance(keyPresses: keyPresses, mouseEvents: mouseEvents)
 
           send(.started(instance.stateContainer))
 

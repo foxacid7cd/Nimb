@@ -15,8 +15,13 @@ public struct Instance: Sendable {
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var apiIterator: API<ProcessChannel>.AsyncIterator?
+  private var reportKeyPressesTask: Task<Void, Never>?
+  private var reportMouseEventsTask: Task<Void, Never>?
 
-  public init() {
+  public init(
+    keyPresses: AsyncStream<KeyPress>,
+    mouseEvents: AsyncStream<MouseEvent>
+  ) {
     let nvimExecutableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutableURL.relativePath] + nvimArguments)
@@ -34,7 +39,57 @@ public struct Instance: Sendable {
 
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel)
-    api = .init(rpc)
+    let api = API(rpc)
+    self.api = api
+
+    reportKeyPressesTask = Task {
+      for await keyPress in keyPresses {
+        guard !Task.isCancelled else {
+          return
+        }
+
+        do {
+          try await api.nvimInputFast(keys: keyPress.makeNvimKeyCode())
+
+        } catch {
+          assertionFailure("\(error)")
+        }
+      }
+    }
+
+    reportMouseEventsTask = Task {
+      for await mouseEvent in mouseEvents {
+        guard !Task.isCancelled else {
+          return
+        }
+
+        let rawButton: String
+        let rawAction: String
+
+        switch mouseEvent.content {
+        case let .mouse(button, action):
+          rawButton = button.rawValue
+          rawAction = action.rawValue
+
+        case let .scrollWheel(direction):
+          rawButton = "wheel"
+          rawAction = direction.rawValue
+        }
+
+        do {
+          try await api.nvimInputMouseFast(
+            button: rawButton,
+            action: rawAction,
+            modifier: "",
+            gridID: mouseEvent.gridID,
+            row: mouseEvent.point.row,
+            col: mouseEvent.point.column
+          )
+        } catch {
+          assertionFailure("\(error)")
+        }
+      }
+    }
   }
 
   @MainActor

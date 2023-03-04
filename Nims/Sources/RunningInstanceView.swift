@@ -11,11 +11,13 @@ import SwiftUI
 import Tagged
 
 public struct RunningInstanceView: View {
-  public init(store: StoreOf<RunningInstanceReducer>) {
+  public init(store: StoreOf<RunningInstanceReducer>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
     self.store = store
+    self.reportMouseEvent = reportMouseEvent
   }
 
-  public var store: StoreOf<RunningInstanceReducer>
+  private var store: StoreOf<RunningInstanceReducer>
+  private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
   private var nimsFont: NimsFont
@@ -34,7 +36,7 @@ public struct RunningInstanceView: View {
             .fixedSize(horizontal: false, vertical: true)
 
           if let outerGridSize = state.outerGridSize {
-            GridsView(store: store)
+            GridsView(store: store, reportMouseEvent: reportMouseEvent)
               .frame(size: outerGridSize * nimsFont.cellSize, alignment: .topLeading)
               .fixedSize()
           }

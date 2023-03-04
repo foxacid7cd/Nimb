@@ -51,6 +51,12 @@ public struct State: Sendable {
   public var tabline: Tabline?
   public var cmdlines: IntKeyedDictionary<Cmdline>
   public var grids: IntKeyedDictionary<Grid>
+  public var windowZIndexCounter = 0
+
+  public mutating func nextWindowZIndex() -> Int {
+    windowZIndexCounter += 1
+    return windowZIndexCounter
+  }
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
@@ -361,7 +367,7 @@ public extension State {
                   .map(Grid.RowLayout.init(rowCells:)),
                 updates: [],
                 updateFlag: true,
-                asssociatedWindow: nil,
+                associatedWindow: nil,
                 isHidden: false
               )
 
@@ -506,7 +512,7 @@ public extension State {
           }
 
         case let .gridDestroy(gridID):
-          grids[gridID]?.asssociatedWindow = nil
+          grids[gridID]?.associatedWindow = nil
 
           updatedLayout(forGridWithID: gridID)
 
@@ -560,7 +566,9 @@ public extension State {
           cursorUpdated()
 
         case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
-          grids[gridID]?.asssociatedWindow = .plain(
+          let zIndex = nextWindowZIndex()
+
+          grids[gridID]?.associatedWindow = .plain(
             .init(
               id: windowID,
               frame: .init(
@@ -573,7 +581,7 @@ public extension State {
                   rowsCount: rowsCount
                 )
               ),
-              zIndex: 0
+              zIndex: zIndex
             )
           )
 
@@ -587,14 +595,16 @@ public extension State {
           anchorRow,
           anchorColumn,
           isFocusable,
-          zIndex
+          _
         ):
           guard let anchor = FloatingWindow.Anchor(rawValue: rawAnchor) else {
             assertionFailure("Invalid anchor value: \(rawAnchor)")
             continue
           }
 
-          grids[gridID]?.asssociatedWindow = .floating(
+          let zIndex = nextWindowZIndex()
+
+          grids[gridID]?.associatedWindow = .floating(
             .init(
               id: windowID,
               anchor: anchor,
@@ -614,7 +624,7 @@ public extension State {
           updatedLayout(forGridWithID: gridID)
 
         case let .winClose(gridID):
-          grids[gridID]?.asssociatedWindow = nil
+          grids[gridID]?.associatedWindow = nil
 
           updatedLayout(forGridWithID: gridID)
 

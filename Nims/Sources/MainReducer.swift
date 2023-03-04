@@ -11,19 +11,25 @@ struct MainReducer: ReducerProtocol {
   }
 
   enum Action {
-    case createNeovimInstance
+    case createNeovimInstance(keyPresses: AsyncStream<KeyPress>, mouseEvents: AsyncStream<MouseEvent>)
     case instance(id: InstanceReducer.State.ID, action: InstanceReducer.Action)
   }
 
   var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
-      case .createNeovimInstance:
+      case let .createNeovimInstance(keyPresses, mouseEvents):
         let id = InstanceReducer.State.ID(state.instances.count)
         state.instances.updateOrAppend(.init(id: id))
 
         return .task {
-          .instance(id: id, action: .start)
+          .instance(
+            id: id,
+            action: .start(
+              keyPresses: keyPresses,
+              mouseEvents: mouseEvents
+            )
+          )
         }
 
       default:

@@ -10,29 +10,16 @@ public final class GridView: NSView {
   var gridID: Neovim.Grid.ID!
   var reportMouseEvent: ((MouseEvent) -> Void)?
 
+  var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
+  var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
+
   var state: Neovim.State {
     stateContainer.state
   }
 
   var ordinal: Double {
-    if gridID == .outer {
-      return 0
-
-    } else if let associatedWindow = state.grids[gridID]?.asssociatedWindow {
-      switch associatedWindow {
-      case let .plain(value):
-        return 100 + Double(value.zIndex) / 100
-
-      case let .floating(value):
-        return 10000 + Double(value.zIndex) / 100
-
-      case .external:
-        return 1_000_000
-      }
-
-    } else {
-      return -1
-    }
+    stateContainer.state.grids[gridID]?.ordinal ?? -1
   }
 
   private let drawRunsProvider = DrawRunsProvider()

@@ -10,7 +10,7 @@ public struct Grid: Sendable, Identifiable {
   public var rowLayouts: [RowLayout]
   public var updates: [IntegerRectangle]
   public var updateFlag: Bool
-  public var asssociatedWindow: AssociatedWindow?
+  public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
 
   public typealias ID = Tagged<Grid, Int>
@@ -105,6 +105,27 @@ public struct Grid: Sendable, Identifiable {
     public var highlightID: Highlight.ID
     public var text: String
     public var indices: Range<Int>
+  }
+
+  public var ordinal: Double {
+    if id == .outer {
+      return 0
+
+    } else if let associatedWindow {
+      switch associatedWindow {
+      case let .plain(value):
+        return 100 + Double(value.zIndex) / 100
+
+      case let .floating(value):
+        return 10000 + Double(value.zIndex) / 100
+
+      case .external:
+        return 1_000_000
+      }
+
+    } else {
+      return -1
+    }
   }
 }
 

@@ -11,18 +11,20 @@ import Overture
 import SwiftUI
 
 public struct GridsView: NSViewRepresentable {
-  public init(store: StoreOf<RunningInstanceReducer>) {
+  public init(store: StoreOf<RunningInstanceReducer>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
     self.store = store
+    self.reportMouseEvent = reportMouseEvent
   }
 
   private var store: StoreOf<RunningInstanceReducer>
+  private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
   private var nimsFont: NimsFont
 
   public func makeNSView(context: Context) -> NSView {
     let view = NSView()
-    view.bind(font: nimsFont, store: store)
+    view.bind(font: nimsFont, store: store, reportMouseEvent: reportMouseEvent)
 
     return view
   }
@@ -33,17 +35,23 @@ public struct GridsView: NSViewRepresentable {
     private var stateCancellable: AnyCancellable?
     private var font: NimsFont!
     private var store: StoreOf<RunningInstanceReducer>!
+    private var reportMouseEvent: ((MouseEvent) -> Void)!
     private var viewStore: ViewStoreOf<RunningInstanceReducer>!
 
     private var state: Neovim.State {
       viewStore.state.stateContainer.state
     }
 
-    public func bind(font: NimsFont, store: StoreOf<RunningInstanceReducer>) {
+    public func bind(
+      font: NimsFont,
+      store: StoreOf<RunningInstanceReducer>,
+      reportMouseEvent: @escaping (MouseEvent) -> Void
+    ) {
       stateCancellable?.cancel()
 
       self.font = font
       self.store = store
+      self.reportMouseEvent = reportMouseEvent
 
       viewStore = ViewStore(
         store,
@@ -69,9 +77,6 @@ public struct GridsView: NSViewRepresentable {
       }
       let outerGridSize = outerGridIntegerSize * font.cellSize
 
-      let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-        .translatedBy(x: 0, y: -outerGridSize.height)
-
       let updatedLayoutGridIDs: Set<Neovim.Grid.ID>
       if let updates {
         updatedLayoutGridIDs = updates.updatedLayoutGridIDs
@@ -87,68 +92,218 @@ public struct GridsView: NSViewRepresentable {
         if let grid = state.grids[gridID] {
           let gridView = gridViews[gridID] ?? {
             let new = GridView()
+            new.translatesAutoresizingMaskIntoConstraints = false
             new.font = self.font
             new.stateContainer = self.viewStore.stateContainer
             new.gridID = gridID
+            new.reportMouseEvent = reportMouseEvent
             self.addSubview(new)
 
-            self.sortSubviews(
-              { firstView, secondView, _ in
-                let firstOrdinal = (firstView as! GridView).ordinal
-                let secondOrdinal = (secondView as! GridView).ordinal
-                if firstOrdinal == secondOrdinal {
-                  return .orderedSame
+            let widthConstraint = new.widthAnchor.constraint(equalToConstant: 0)
+            widthConstraint.priority = .defaultHigh
+            widthConstraint.isActive = true
 
-                } else if firstOrdinal < secondOrdinal {
-                  return .orderedAscending
+            let heightConstraint = new.heightAnchor.constraint(equalToConstant: 0)
+            heightConstraint.priority = .defaultHigh
+            heightConstraint.isActive = true
 
-                } else {
-                  return .orderedDescending
-                }
-              },
-              context: nil
-            )
+            new.sizeConstraints = (widthConstraint, heightConstraint)
 
             gridViews[gridID] = new
             return new
           }()
 
           if gridID == .outer {
-            gridView.frame = .init(
-              origin: .init(),
-              size: outerGridSize
-            )
+            gridView.sizeConstraints!.width.constant = outerGridSize.width
+            gridView.sizeConstraints!.height.constant = outerGridSize.height
 
-          } else if let asssociatedWindow = grid.asssociatedWindow {
-            switch asssociatedWindow {
-            case let .plain(window):
-              gridView.frame = (window.frame * font.cellSize)
-                .applying(upsideDownTransform)
+            gridView.floatingWindowConstraints?.horizontal.isActive = false
+            gridView.floatingWindowConstraints?.vertical.isActive = false
+            gridView.floatingWindowConstraints = nil
 
-            default:
-              gridView.frame = .init()
+            if let constraints = gridView.windowConstraints {
+              constraints.leading.constant = 0
+              constraints.top.constant = 0
+
+            } else {
+              let leadingConstraint = gridView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0)
+              leadingConstraint.priority = .defaultHigh
+              leadingConstraint.isActive = true
+
+              let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: 0)
+              topConstraint.priority = .defaultHigh
+              topConstraint.isActive = true
+
+              gridView.windowConstraints = (leadingConstraint, topConstraint)
+            }
+
+          } else if let associatedWindow = grid.associatedWindow {
+            switch associatedWindow {
+            case let .plain(value):
+              let windowFrame = (value.frame * font.cellSize)
+
+              gridView.sizeConstraints!.width.constant = windowFrame.width
+              gridView.sizeConstraints!.height.constant = windowFrame.height
+
+              gridView.floatingWindowConstraints?.horizontal.isActive = false
+              gridView.floatingWindowConstraints?.vertical.isActive = false
+              gridView.floatingWindowConstraints = nil
+
+              if let constraints = gridView.windowConstraints {
+                constraints.leading.constant = windowFrame.minX
+                constraints.top.constant = windowFrame.minY
+
+              } else {
+                let leadingConstraint = gridView.leadingAnchor.constraint(
+                  equalTo: leadingAnchor,
+                  constant: windowFrame.minX
+                )
+                leadingConstraint.priority = .defaultHigh
+                leadingConstraint.isActive = true
+
+                let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: windowFrame.minY)
+                topConstraint.priority = .defaultHigh
+                topConstraint.isActive = true
+
+                gridView.windowConstraints = (leadingConstraint, topConstraint)
+              }
+
+            case let .floating(value):
+              let windowSize = grid.cells.size * font.cellSize
+              gridView.sizeConstraints!.width.constant = windowSize.width
+              gridView.sizeConstraints!.height.constant = windowSize.height
+
+              gridView.windowConstraints?.leading.isActive = false
+              gridView.windowConstraints?.top.isActive = false
+              gridView.windowConstraints = nil
+
+              gridView.floatingWindowConstraints?.horizontal.isActive = false
+              gridView.floatingWindowConstraints?.vertical.isActive = false
+              gridView.floatingWindowConstraints = nil
+
+              let anchorGridView = gridViews[value.anchorGridID]!
+
+              let horizontalConstant: Double = value.anchorColumn * font.cellWidth
+              let verticalConstant: Double = value.anchorRow * font.cellHeight
+
+              let horizontal: NSLayoutConstraint
+              let vertical: NSLayoutConstraint
+
+              switch value.anchor {
+              case .northWest:
+                horizontal = gridView.leadingAnchor.constraint(
+                  equalTo: anchorGridView.leadingAnchor,
+                  constant: horizontalConstant
+                )
+                vertical = gridView.topAnchor.constraint(
+                  equalTo: anchorGridView.topAnchor,
+                  constant: verticalConstant
+                )
+
+              case .northEast:
+                horizontal = gridView.trailingAnchor.constraint(
+                  equalTo: anchorGridView.leadingAnchor,
+                  constant: horizontalConstant
+                )
+                vertical = gridView.topAnchor.constraint(
+                  equalTo: anchorGridView.topAnchor,
+                  constant: verticalConstant
+                )
+
+              case .southWest:
+                horizontal = gridView.leadingAnchor.constraint(
+                  equalTo: anchorGridView.leadingAnchor,
+                  constant: horizontalConstant
+                )
+                vertical = gridView.bottomAnchor.constraint(
+                  equalTo: anchorGridView.topAnchor,
+                  constant: verticalConstant
+                )
+
+              case .southEast:
+                horizontal = gridView.trailingAnchor.constraint(
+                  equalTo: anchorGridView.leadingAnchor,
+                  constant: horizontalConstant
+                )
+                vertical = gridView.bottomAnchor.constraint(
+                  equalTo: anchorGridView.topAnchor,
+                  constant: verticalConstant
+                )
+              }
+
+              horizontal.isActive = true
+              vertical.isActive = true
+              gridView.floatingWindowConstraints = (horizontal, vertical)
+
+            case .external:
+              gridView.sizeConstraints!.width.constant = 0
+              gridView.sizeConstraints!.height.constant = 0
+
+              gridView.windowConstraints?.leading.isActive = false
+              gridView.windowConstraints?.top.isActive = false
+              gridView.windowConstraints = nil
+
+              gridView.floatingWindowConstraints?.horizontal.isActive = false
+              gridView.floatingWindowConstraints?.vertical.isActive = false
+              gridView.floatingWindowConstraints = nil
             }
 
           } else {
-            gridView.frame = .init()
+            gridView.sizeConstraints!.width.constant = 0
+            gridView.sizeConstraints!.height.constant = 0
+
+            gridView.windowConstraints?.leading.isActive = false
+            gridView.windowConstraints?.top.isActive = false
+            gridView.windowConstraints = nil
+
+            gridView.floatingWindowConstraints?.horizontal.isActive = false
+            gridView.floatingWindowConstraints?.vertical.isActive = false
+            gridView.floatingWindowConstraints = nil
           }
 
           gridView.isHidden = grid.isHidden
 
-          if let updatedRectangles = updates?.gridUpdatedRectangles[gridID] {
-            for rectangle in updatedRectangles {
-              let rect = rectangle * font.cellSize
-                .applying(
-                  .init(scaleX: 1, y: -1)
-                    .translatedBy(x: 0, y: -gridView.frame.size.height)
-                )
-              gridView.setNeedsDisplay(rect)
-            }
-          }
-
         } else {
           gridViews[gridID]?.removeFromSuperview()
           gridViews.removeValue(forID: gridID)
+        }
+      }
+
+      if !updatedLayoutGridIDs.isEmpty {
+        sortSubviews(
+          { firstView, secondView, _ in
+            let firstOrdinal = (firstView as! GridView).ordinal
+            let secondOrdinal = (secondView as! GridView).ordinal
+
+            if firstOrdinal == secondOrdinal {
+              return .orderedSame
+
+            } else if firstOrdinal < secondOrdinal {
+              return .orderedAscending
+
+            } else {
+              return .orderedDescending
+            }
+          },
+          context: nil
+        )
+      }
+
+      if let updates {
+        for (gridID, updatedRectangles) in updates.gridUpdatedRectangles {
+          guard let gridView = gridViews[gridID] else {
+            continue
+          }
+
+          for rectangle in updatedRectangles {
+            let rect = (rectangle * font.cellSize)
+              .applying(
+                .init(scaleX: 1, y: -1)
+                  .translatedBy(x: 0, y: -gridView.frame.height)
+              )
+
+            gridView.setNeedsDisplay(rect)
+          }
         }
       }
     }

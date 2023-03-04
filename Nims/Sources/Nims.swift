@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AsyncAlgorithms
 import CasePaths
 import Clocks
 import ComposableArchitecture
@@ -39,8 +40,15 @@ struct Nims: App {
               observe: { $0 },
               removeDuplicates: { $0.titleUpdateFlag == $1.titleUpdateFlag }
             ) { runningState in
-              RunningInstanceView(store: runningStore)
-                .navigationTitle(runningState.title ?? "")
+              RunningInstanceView(
+                store: runningStore,
+                reportMouseEvent: { mouseEvent in
+                  Task {
+                    await reportMouseEvent(mouseEvent)
+                  }
+                }
+              )
+              .navigationTitle(runningState.title ?? "")
             }
           }
 
@@ -69,8 +77,26 @@ struct Nims: App {
     .onChange(of: scenePhase) { newValue in
       switch newValue {
       case .active:
-        let viewStore = ViewStore(store.stateless)
-        viewStore.send(.createNeovimInstance)
+        let keyPresses = AsyncStream<KeyPress> { continuation in
+          NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.command) {
+              return event
+            }
+
+            let keyPress = KeyPress(event: event)
+            continuation.yield(keyPress)
+
+            return nil
+          }
+        }
+
+        ViewStore(store.stateless)
+          .send(
+            .createNeovimInstance(
+              keyPresses: keyPresses,
+              mouseEvents: mouseEvents
+            )
+          )
 
       default:
         break
@@ -85,4 +111,5 @@ struct Nims: App {
     initialState: .init(),
     reducer: MainReducer()
   )
+  private let (reportMouseEvent, mouseEvents) = AsyncChannel<MouseEvent>.pipe()
 }
