@@ -54,6 +54,7 @@ public extension State {
   struct Updates: Sendable {
     public var isTitleUpdated = false
     public var isAppearanceUpdated = false
+    public var isTablineUpdated = false
     public var isCmdlinesUpdated = false
     public var isCursorUpdated = false
     public var updatedLayoutGridIDs = Set<Grid.ID>()
@@ -71,6 +72,10 @@ public extension State {
 
     func appearanceUpdated() {
       updates.isAppearanceUpdated = true
+    }
+
+    func tablineUpdated() {
+      updates.isTablineUpdated = true
     }
 
     func cmdlinesUpdated() {
@@ -523,6 +528,7 @@ public extension State {
               zIndex: zIndex
             )
           )
+          grids[gridID]?.isHidden = false
 
           updatedLayout(forGridWithID: gridID)
 
@@ -554,6 +560,7 @@ public extension State {
               zIndex: zIndex
             )
           )
+          grids[gridID]?.isHidden = false
 
           updatedLayout(forGridWithID: gridID)
 
@@ -596,6 +603,8 @@ public extension State {
             currentTabpageID: currentTabpageID,
             tabpages: .init(uniqueElements: tabpages)
           )
+
+          tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
           cmdlines[level] = .init(

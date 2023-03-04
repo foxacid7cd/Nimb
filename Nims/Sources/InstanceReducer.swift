@@ -98,6 +98,16 @@ public struct InstanceReducer: ReducerProtocol {
                     )
                   )
                 }
+
+                if value.isTablineUpdated {
+                  send(
+                    .phase(
+                      .running(
+                        .setTabline(state.tabline)
+                      )
+                    )
+                  )
+                }
               }
             }
 

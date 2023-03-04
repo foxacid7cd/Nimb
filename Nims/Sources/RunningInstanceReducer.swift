@@ -19,6 +19,9 @@ public struct RunningInstanceReducer: ReducerProtocol {
     public var appearance = Appearance()
     public var appearanceUpdateFlag = false
 
+    public var tabline: Tabline?
+    public var tablineUpdateFlag = false
+
     public var cmdlines = IntKeyedDictionary<Cmdline>()
     public var cmdlinesUpdateFlag = false
   }
@@ -27,7 +30,10 @@ public struct RunningInstanceReducer: ReducerProtocol {
     case setTitle(String?)
     case setOuterGridSize(IntegerSize?)
     case setAppearance(Appearance)
+    case setTabline(Tabline?)
     case setCmdlines(IntKeyedDictionary<Cmdline>)
+    case sideMenuButtonPressed
+    case reportSelectedTabpage(id: Tabpage.ID)
   }
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
@@ -50,10 +56,19 @@ public struct RunningInstanceReducer: ReducerProtocol {
 
       return .none
 
+    case let .setTabline(value):
+      state.tabline = value
+      state.tablineUpdateFlag.toggle()
+
+      return .none
+
     case let .setCmdlines(value):
       state.cmdlines = value
       state.cmdlinesUpdateFlag.toggle()
 
+      return .none
+
+    default:
       return .none
     }
   }

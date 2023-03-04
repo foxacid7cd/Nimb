@@ -97,9 +97,6 @@ public struct GridsView: NSViewRepresentable {
           state.grids.keys
             .map(Grid.ID.init(_:))
         )
-
-        gridViews.values.forEach { $0.removeFromSuperview() }
-        gridViews = [:]
       }
 
       for gridID in updatedLayoutGridIDs {
@@ -151,6 +148,8 @@ public struct GridsView: NSViewRepresentable {
               gridView.windowConstraints = (leadingConstraint, topConstraint)
             }
 
+            gridView.isHidden = false
+
           } else if let associatedWindow = grid.associatedWindow {
             switch associatedWindow {
             case let .plain(value):
@@ -181,6 +180,8 @@ public struct GridsView: NSViewRepresentable {
 
                 gridView.windowConstraints = (leadingConstraint, topConstraint)
               }
+
+              gridView.isHidden = grid.isHidden
 
             case let .floating(value):
               let windowSize = grid.cells.size * font.cellSize
@@ -249,6 +250,8 @@ public struct GridsView: NSViewRepresentable {
               vertical.isActive = true
               gridView.floatingWindowConstraints = (horizontal, vertical)
 
+              gridView.isHidden = grid.isHidden
+
             case .external:
               gridView.sizeConstraints!.width.constant = 0
               gridView.sizeConstraints!.height.constant = 0
@@ -260,6 +263,8 @@ public struct GridsView: NSViewRepresentable {
               gridView.floatingWindowConstraints?.horizontal.isActive = false
               gridView.floatingWindowConstraints?.vertical.isActive = false
               gridView.floatingWindowConstraints = nil
+
+              gridView.isHidden = true
             }
 
           } else {
@@ -273,9 +278,9 @@ public struct GridsView: NSViewRepresentable {
             gridView.floatingWindowConstraints?.horizontal.isActive = false
             gridView.floatingWindowConstraints?.vertical.isActive = false
             gridView.floatingWindowConstraints = nil
-          }
 
-          gridView.isHidden = grid.isHidden
+            gridView.isHidden = true
+          }
 
         } else {
           gridViews[gridID]?.isHidden = true
