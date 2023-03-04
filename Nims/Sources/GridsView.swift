@@ -20,20 +20,33 @@ public struct GridsView: NSViewRepresentable {
   private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
-  private var nimsFont: NimsFont
+  private var font: NimsFont
+
+  @Environment(\.appearance)
+  private var appearance: Appearance
 
   public func makeNSView(context: Context) -> NSView {
     let view = NSView()
-    view.bind(font: nimsFont, store: store, reportMouseEvent: reportMouseEvent)
+    view.font = font
+    view.nimsAppearance = appearance
+
+    view.bind(store: store, reportMouseEvent: reportMouseEvent)
 
     return view
   }
 
-  public func updateNSView(_ nsView: NSView, context: Context) {}
+  public func updateNSView(_ nsView: NSView, context: Context) {
+    nsView.font = font
+    nsView.nimsAppearance = appearance
+
+    nsView.setNeedsDisplay(nsView.bounds)
+  }
 
   public final class NSView: AppKit.NSView {
+    var font: NimsFont!
+    var nimsAppearance: Appearance!
+
     private var stateCancellable: AnyCancellable?
-    private var font: NimsFont!
     private var store: StoreOf<RunningInstanceReducer>!
     private var reportMouseEvent: ((MouseEvent) -> Void)!
     private var viewStore: ViewStoreOf<RunningInstanceReducer>!
@@ -43,13 +56,11 @@ public struct GridsView: NSViewRepresentable {
     }
 
     public func bind(
-      font: NimsFont,
       store: StoreOf<RunningInstanceReducer>,
       reportMouseEvent: @escaping (MouseEvent) -> Void
     ) {
       stateCancellable?.cancel()
 
-      self.font = font
       self.store = store
       self.reportMouseEvent = reportMouseEvent
 
@@ -86,6 +97,9 @@ public struct GridsView: NSViewRepresentable {
           state.grids.keys
             .map(Grid.ID.init(_:))
         )
+
+        gridViews.values.forEach { $0.removeFromSuperview() }
+        gridViews = [:]
       }
 
       for gridID in updatedLayoutGridIDs {
@@ -264,8 +278,7 @@ public struct GridsView: NSViewRepresentable {
           gridView.isHidden = grid.isHidden
 
         } else {
-          gridViews[gridID]?.removeFromSuperview()
-          gridViews.removeValue(forID: gridID)
+          gridViews[gridID]?.isHidden = true
         }
       }
 
@@ -290,141 +303,29 @@ public struct GridsView: NSViewRepresentable {
       }
 
       if let updates {
-        for (gridID, updatedRectangles) in updates.gridUpdatedRectangles {
-          guard let gridView = gridViews[gridID] else {
-            continue
+        if updates.isAppearanceUpdated {
+          for gridView in gridViews.values {
+            gridView.setNeedsDisplay(gridView.bounds)
           }
 
-          for rectangle in updatedRectangles {
-            let rect = (rectangle * font.cellSize)
-              .applying(
-                .init(scaleX: 1, y: -1)
-                  .translatedBy(x: 0, y: -gridView.frame.height)
-              )
+        } else {
+          for (gridID, updatedRectangles) in updates.gridUpdatedRectangles {
+            guard let gridView = gridViews[gridID] else {
+              continue
+            }
 
-            gridView.setNeedsDisplay(rect)
+            for rectangle in updatedRectangles {
+              let rect = (rectangle * font.cellSize)
+                .applying(
+                  .init(scaleX: 1, y: -1)
+                    .translatedBy(x: 0, y: -gridView.frame.height)
+                )
+
+              gridView.setNeedsDisplay(rect)
+            }
           }
         }
       }
     }
   }
-
-  //  public var body: some View {
-//    WithViewStore(
-//      store,
-//      observe: { $0 },
-//      removeDuplicates: {
-//        $0.gridsLayoutUpdateFlag == $1.gridsLayoutUpdateFlag
-//      },
-//      content: { _ in
-//        GeometryReader { _ in
-//          let frame = geometryProxy.frame(in: .local)
-//
-//          GridView(
-//            store: store
-//              .scope(
-//                state: { model in
-//                  makeGridViewModel(
-//                    gridID: .outer,
-//                    model: model
-//                  )
-//                },
-//                action: Action.gridView(action:)
-//              ),
-//            reportMouseEvent: viewStore.reportMouseEvent
-//          )
-//          .frame(size: frame.size, alignment: .topLeading)
-//          .fixedSize()
-//          .offset(frame.origin)
-//          .zIndex(0)
-//          .coordinateSpace(name: Grid.ID.outer)
-//
-//          ForEach(viewStore.windows) { window in
-//            let frame = window.frame * nimsAppearance.cellSize
-//
-//            GridView(
-//              store: store
-//                .scope(
-//                  state: { model in
-//                    makeGridViewModel(
-//                      gridID: window.gridID,
-//                      model: model
-//                    )
-//                  },
-//                  action: Action.gridView(action:)
-//                ),
-//              reportMouseEvent: viewStore.reportMouseEvent
-//            )
-//            .frame(size: frame.size, alignment: .topLeading)
-//            .fixedSize()
-//            .offset(frame.origin)
-//            .zIndex(Double(window.zIndex) / 1000 + 1000)
-//            .opacity(window.isHidden ? 0 : 1)
-//            .coordinateSpace(name: window.gridID)
-//          }
-
-//          ForEachStore(
-//            store.scope(state: \.floatingWindows, action: GridsView.Action.floatingWindow(id:action:)),
-//            content: { store in
-//              WithViewStore(
-//                store,
-//                observe: { $0 },
-//                removeDuplicates: { $0.updateFlag == $1.updateFlag },
-//                content: { floatingWindow in
-//                  Text("\(floatingWindow.reference)")
-  //                  let anchorGridFrame = geometryProxy.frame(
-//                    in: .named(floatingWindow.anchorGridID)
-//                  )
-//                  let originOffset = CGPoint(
-//                    x: floatingWindow.anchorColumn * nimsAppearance.cellWidth,
-//                    y: floatingWindow.anchorRow * nimsAppearance.cellHeight
-//                  )
-//                  let grid = viewStore.grids[floatingWindow.gridID]!
-//                  let size = grid.cells.size * nimsAppearance.cellSize
-//
-//                  let frame = CGRect(
-//                    origin: anchorGridFrame.origin + originOffset,
-//                    size: size
-//                  )
-
-//                  GridView(
-//                    store: self.store
-//                      .scope(
-//                        state: { model in
-//                          makeGridViewModel(
-//                            gridID: floatingWindow.gridID,
-//                            model: model
-//                          )
-//                        },
-//                        action: Action.gridView(action:)
-//                      ),
-//                    reportMouseEvent: viewStore.reportMouseEvent
-//                  )
-//                  .frame(size: frame.size, alignment: .topLeading)
-//                  .fixedSize()
-//                  .offset(frame.origin)
-//                  .zIndex(Double(floatingWindow.zIndex) / 1000 + 1_000_000)
-//                  .opacity(floatingWindow.isHidden ? 0 : 1)
-//                  .coordinateSpace(name: floatingWindow.gridID)
-//                })
-//            }
-//          )
-//        }
-//      }
-//    )
-//  }
-//
-//  @Environment(\.nimsAppearance)
-//  private var nimsAppearance: NimsAppearance
-
-//  private func makeGridViewModel(gridID: Grid.ID, model: Model) -> GridView.Model {
-//    .init(
-//      gridID: gridID,
-//      grids: model.grids,
-//      cursor: model.cursor,
-//      modeInfo: model.modeInfo,
-//      mode: model.mode,
-//      cursorBlinkingPhase: model.cursorBlinkingPhase
-//
-//  }
 }

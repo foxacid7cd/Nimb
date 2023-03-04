@@ -1,54 +1,25 @@
 // SPDX-License-Identifier: MIT
 
-import AppKit
-import IdentifiedCollections
 import Library
 import Tagged
 
-public struct NimsAppearance {
+public struct Appearance: Sendable {
   public init(
-    font: NimsFont,
-    highlights: IntKeyedDictionary<Highlight>,
-    defaultForegroundColor: Color,
-    defaultBackgroundColor: Color,
-    defaultSpecialColor: Color,
-    outerGridSize: IntegerSize
+    highlights: IntKeyedDictionary<Highlight> = [:],
+    defaultForegroundColor: Color = .init(rgb: 0xFFFFFF),
+    defaultBackgroundColor: Color = .init(rgb: 0x000000),
+    defaultSpecialColor: Color = .init(rgb: 0xFF00FF)
   ) {
-    self.font = font
     self.highlights = highlights
     self.defaultForegroundColor = defaultForegroundColor
     self.defaultBackgroundColor = defaultBackgroundColor
     self.defaultSpecialColor = defaultSpecialColor
-    self.outerGridSize = outerGridSize
   }
 
-  public var font: NimsFont
   public var highlights: IntKeyedDictionary<Highlight>
   public var defaultForegroundColor: Color
   public var defaultBackgroundColor: Color
   public var defaultSpecialColor: Color
-  public var outerGridSize: IntegerSize
-
-  public var cellWidth: Double {
-    font.cellWidth
-  }
-
-  public var cellHeight: Double {
-    font.cellHeight
-  }
-
-  public var cellSize: CGSize {
-    font.cellSize
-  }
-
-  public static let defaultValue = Self(
-    font: .init(.monospacedSystemFont(ofSize: 12, weight: .regular)),
-    highlights: [:],
-    defaultForegroundColor: .init(rgb: 0xFFFFFF),
-    defaultBackgroundColor: .init(rgb: 0x000000),
-    defaultSpecialColor: .init(rgb: 0xFF0000),
-    outerGridSize: .init(columnsCount: 24, rowsCount: 40)
-  )
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {

@@ -12,10 +12,7 @@ public struct State: Sendable {
     bufferedUIEvents: [UIEvent] = [],
     rawOptions: OrderedDictionary<String, Value> = [:],
     title: String? = nil,
-    highlights: IntKeyedDictionary<Highlight> = [:],
-    defaultForegroundColor: Color = .init(rgb: 0xFFFFFF),
-    defaultBackgroundColor: Color = .init(rgb: 0x000000),
-    defaultSpecialColor: Color = .init(rgb: 0xFF00FF),
+    appearance: Appearance = .init(),
     modeInfo: ModeInfo? = nil,
     mode: Mode? = nil,
     cursor: Cursor? = nil,
@@ -26,10 +23,7 @@ public struct State: Sendable {
     self.bufferedUIEvents = bufferedUIEvents
     self.rawOptions = rawOptions
     self.title = title
-    self.highlights = highlights
-    self.defaultForegroundColor = defaultForegroundColor
-    self.defaultBackgroundColor = defaultBackgroundColor
-    self.defaultSpecialColor = defaultSpecialColor
+    self.appearance = appearance
     self.modeInfo = modeInfo
     self.mode = mode
     self.cursor = cursor
@@ -41,10 +35,7 @@ public struct State: Sendable {
   public var bufferedUIEvents: [UIEvent]
   public var rawOptions: OrderedDictionary<String, Value>
   public var title: String?
-  public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: Color
-  public var defaultBackgroundColor: Color
-  public var defaultSpecialColor: Color
+  public var appearance: Appearance
   public var modeInfo: ModeInfo?
   public var mode: Mode?
   public var cursor: Cursor?
@@ -57,65 +48,13 @@ public struct State: Sendable {
     windowZIndexCounter += 1
     return windowZIndexCounter
   }
-
-  public func isItalic(for highlightID: Highlight.ID) -> Bool {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return false
-    }
-
-    return highlight.isItalic
-  }
-
-  public func isBold(for highlightID: Highlight.ID) -> Bool {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return false
-    }
-
-    return highlight.isBold
-  }
-
-  public func decorations(for highlightID: Highlight.ID) -> Highlight.Decorations {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return .init()
-    }
-
-    return highlight.decorations
-  }
-
-  public func foregroundColor(for highlightID: Highlight.ID) -> Color {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return defaultForegroundColor
-    }
-
-    return highlight.isReverse ?
-      highlight.backgroundColor ?? defaultBackgroundColor :
-      highlight.foregroundColor ?? defaultForegroundColor
-  }
-
-  public func backgroundColor(for highlightID: Highlight.ID) -> Color {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return defaultBackgroundColor
-    }
-
-    return highlight.isReverse ?
-      highlight.foregroundColor ?? defaultForegroundColor :
-      highlight.backgroundColor ?? defaultBackgroundColor
-  }
-
-  public func specialColor(for highlightID: Highlight.ID) -> Color {
-    guard highlightID != .zero, let highlight = highlights[highlightID] else {
-      return defaultSpecialColor
-    }
-
-    return highlight.specialColor ?? (highlight.isReverse ? defaultBackgroundColor : defaultForegroundColor)
-  }
 }
 
 public extension State {
   struct Updates: Sendable {
     public var isTitleUpdated = false
     public var isAppearanceUpdated = false
-    public var isCmdlineUpdated = false
+    public var isCmdlinesUpdated = false
     public var isCursorUpdated = false
     public var updatedLayoutGridIDs = Set<Grid.ID>()
     public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
@@ -134,8 +73,8 @@ public extension State {
       updates.isAppearanceUpdated = true
     }
 
-    func cmdlineUpdated() {
-      updates.isCmdlineUpdated = true
+    func cmdlinesUpdated() {
+      updates.isCmdlinesUpdated = true
     }
 
     func cursorUpdated() {
@@ -244,16 +183,16 @@ public extension State {
           }
 
         case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
-          defaultForegroundColor = .init(rgb: rgbFg)
-          defaultBackgroundColor = .init(rgb: rgbBg)
-          defaultSpecialColor = .init(rgb: rgbSp)
+          appearance.defaultForegroundColor = .init(rgb: rgbFg)
+          appearance.defaultBackgroundColor = .init(rgb: rgbBg)
+          appearance.defaultSpecialColor = .init(rgb: rgbSp)
 
           appearanceUpdated()
 
         case let .hlAttrDefine(rawHighlightID, rgbAttrs, _, _):
           let highlightID = Highlight.ID(rawHighlightID)
 
-          update(&highlights[highlightID]) { highlight in
+          update(&appearance.highlights[highlightID]) { highlight in
             if highlight == nil {
               highlight = .init(
                 id: highlightID,
@@ -687,14 +626,14 @@ public extension State {
             blockLines: []
           )
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         case let .cmdlinePos(pos, level):
           update(&cmdlines[level]!) { cmdline in
             cmdline.cursorPosition = pos
           }
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
           update(&cmdlines[level]!) { cmdline in
@@ -702,12 +641,12 @@ public extension State {
             cmdline.shiftAfterSpecialCharacter = shift
           }
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         case let .cmdlineHide(level):
           cmdlines.removeValue(forKey: level)
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         case let .cmdlineBlockShow(lines):
           var blockLines = [[Cmdline.ContentPart]]()
@@ -747,7 +686,7 @@ public extension State {
             }
           }
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         case .cmdlineBlockHide:
           if !cmdlines.isEmpty {
@@ -756,7 +695,7 @@ public extension State {
             }
           }
 
-          cmdlineUpdated()
+          cmdlinesUpdated()
 
         default:
           break

@@ -14,15 +14,24 @@ public final class GridView: NSView {
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
-  var state: Neovim.State {
-    stateContainer.state
-  }
-
   var ordinal: Double {
     stateContainer.state.grids[gridID]?.ordinal ?? -1
   }
 
   private let drawRunsProvider = DrawRunsProvider()
+
+  private var state: Neovim.State {
+    stateContainer.state
+  }
+
+  private var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -bounds.size.height)
+  }
+
+  private var nimsAppearance: Appearance {
+    state.appearance
+  }
 
   override public func draw(_: NSRect) {
     guard let graphicsContext = NSGraphicsContext.current, let grid = state.grids[gridID] else {
@@ -47,13 +56,8 @@ public final class GridView: NSView {
     }
 
     for rect in rects {
-      let upsideDownRect = CGRect(
-        origin: .init(
-          x: rect.origin.x,
-          y: bounds.height - rect.origin.y - rect.size.height
-        ),
-        size: rect.size
-      )
+      let upsideDownRect = rect
+        .applying(upsideDownTransform)
 
       let integerFrame = IntegerRectangle(
         origin: .init(
@@ -97,20 +101,15 @@ public final class GridView: NSView {
         let rowLayout = grid.rowLayouts[row]
 
         for part in rowLayout.parts {
-          let backgroundColor = state.backgroundColor(for: part.highlightID)
+          let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
 
           let partIntegerFrame = IntegerRectangle(
             origin: .init(column: part.indices.lowerBound, row: row),
             size: .init(columnsCount: part.indices.count, rowsCount: 1)
           )
           let partFrame = partIntegerFrame * font.cellSize
-          let upsideDownPartFrame = CGRect(
-            origin: .init(
-              x: partFrame.origin.x,
-              y: bounds.height - partFrame.origin.y - font.cellHeight
-            ),
-            size: partFrame.size
-          )
+          let upsideDownPartFrame = partFrame
+            .applying(upsideDownTransform)
 
           backgroundColor.appKit.setFill()
           cgContext.fill([upsideDownPartFrame])
@@ -124,9 +123,9 @@ public final class GridView: NSView {
                 ),
                 text: part.text,
                 font: font,
-                isItalic: state.isItalic(for: part.highlightID),
-                isBold: state.isBold(for: part.highlightID),
-                decorations: state.decorations(for: part.highlightID)
+                isItalic: nimsAppearance.isItalic(for: part.highlightID),
+                isBold: nimsAppearance.isBold(for: part.highlightID),
+                decorations: nimsAppearance.decorations(for: part.highlightID)
               )
             )
           drawRuns.append(
@@ -178,13 +177,8 @@ public final class GridView: NSView {
                 )
               }
 
-              let cursorUpsideDownFrame = CGRect(
-                origin: .init(
-                  x: cursorFrame.origin.x,
-                  y: bounds.height - cursorFrame.origin.y - font.cellHeight
-                ),
-                size: cursorFrame.size
-              )
+              let cursorUpsideDownFrame = cursorFrame
+                .applying(upsideDownTransform)
 
               let cursorHighlightID = cursorStyle.attrID ?? .default
 
@@ -201,8 +195,8 @@ public final class GridView: NSView {
       }
 
       for (origin, highlightID, drawRun) in drawRuns {
-        let foregroundColor = state.foregroundColor(for: highlightID)
-        let specialColor = state.specialColor(for: highlightID)
+        let foregroundColor = nimsAppearance.foregroundColor(for: highlightID)
+        let specialColor = nimsAppearance.specialColor(for: highlightID)
 
         drawRun.draw(
           at: origin,
@@ -219,12 +213,12 @@ public final class GridView: NSView {
         let cursorBackgroundColor: Neovim.Color
 
         if cursorDrawRun.highlightID.isDefault {
-          cursorForegroundColor = state.backgroundColor(for: cursorDrawRun.parentHighlightID)
-          cursorBackgroundColor = state.foregroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorForegroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorBackgroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
 
         } else {
-          cursorForegroundColor = state.foregroundColor(for: cursorDrawRun.highlightID)
-          cursorBackgroundColor = state.backgroundColor(for: cursorDrawRun.highlightID)
+          cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.highlightID)
+          cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.highlightID)
         }
 
         cursorBackgroundColor.appKit.setFill()
@@ -334,11 +328,8 @@ public final class GridView: NSView {
   }
 
   private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
-    let location = convert(nsEvent.locationInWindow, from: nil)
-    let upsideDownLocation = CGPoint(
-      x: location.x,
-      y: bounds.height - location.y
-    )
+    let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)
+      .applying(upsideDownTransform)
     let point = IntegerPoint(
       column: Int(upsideDownLocation.x / font.cellWidth),
       row: Int(upsideDownLocation.y / font.cellHeight)

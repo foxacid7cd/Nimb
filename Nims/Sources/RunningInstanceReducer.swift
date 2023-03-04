@@ -15,11 +15,19 @@ public struct RunningInstanceReducer: ReducerProtocol {
 
     public var outerGridSize: IntegerSize?
     public var outerGridSizeUpdateFlag = false
+
+    public var appearance = Appearance()
+    public var appearanceUpdateFlag = false
+
+    public var cmdlines = IntKeyedDictionary<Cmdline>()
+    public var cmdlinesUpdateFlag = false
   }
 
   public enum Action: Sendable {
     case setTitle(String?)
     case setOuterGridSize(IntegerSize?)
+    case setAppearance(Appearance)
+    case setCmdlines(IntKeyedDictionary<Cmdline>)
   }
 
   public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
@@ -33,6 +41,18 @@ public struct RunningInstanceReducer: ReducerProtocol {
     case let .setOuterGridSize(value):
       state.outerGridSize = value
       state.outerGridSizeUpdateFlag.toggle()
+
+      return .none
+
+    case let .setAppearance(value):
+      state.appearance = value
+      state.appearanceUpdateFlag.toggle()
+
+      return .none
+
+    case let .setCmdlines(value):
+      state.cmdlines = value
+      state.cmdlinesUpdateFlag.toggle()
 
       return .none
     }

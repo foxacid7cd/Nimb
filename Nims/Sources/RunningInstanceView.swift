@@ -20,44 +20,44 @@ public struct RunningInstanceView: View {
   private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
-  private var nimsFont: NimsFont
+  private var font: NimsFont
 
   public var body: some View {
     WithViewStore(
       store,
       observe: { $0 },
       removeDuplicates: {
-        $0.outerGridSize == $1.outerGridSize
+        $0.cmdlinesUpdateFlag == $1.cmdlinesUpdateFlag
       },
       content: { state in
-        VStack(spacing: 0) {
-          HeaderView(store: store)
-            .frame(idealHeight: 44, alignment: .topLeading)
-            .fixedSize(horizontal: false, vertical: true)
+        let mainView = WithViewStore(
+          store,
+          observe: { $0 },
+          removeDuplicates: {
+            $0.outerGridSizeUpdateFlag == $1.outerGridSizeUpdateFlag
+          },
+          content: { state in
+            VStack(spacing: 0) {
+              HeaderView(store: store)
+                .frame(idealHeight: 44, alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: true)
 
-          if let outerGridSize = state.outerGridSize {
-            GridsView(store: store, reportMouseEvent: reportMouseEvent)
-              .frame(size: outerGridSize * nimsFont.cellSize, alignment: .topLeading)
-              .fixedSize()
+              if let outerGridSize = state.outerGridSize {
+                GridsView(store: store, reportMouseEvent: reportMouseEvent)
+                  .frame(size: outerGridSize * font.cellSize, alignment: .topLeading)
+                  .fixedSize()
+              }
+            }
           }
+        )
+
+        if state.cmdlines.isEmpty {
+          mainView
+
+        } else {
+          mainView
+            .overlay { CmdlinesView(store: store) }
         }
-//        .overlay {
-//          let cmdlinesStore = store
-//            .scope(state: CmdlinesView.Model.init(model:))
-//
-//          WithViewStore(
-//            cmdlinesStore,
-//            observe: { $0 },
-//            removeDuplicates: {
-//              $0.cmdlineUpdateFlag == $1.cmdlineUpdateFlag
-//            },
-//            content: { viewStore in
-//              if !viewStore.instanceState.cmdlines.isEmpty {
-//                CmdlinesView(store: cmdlinesStore)
-//              }
-//            }
-//          )
-//        }
       }
     )
   }

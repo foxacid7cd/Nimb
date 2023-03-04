@@ -78,6 +78,26 @@ public struct InstanceReducer: ReducerProtocol {
                     )
                   )
                 }
+
+                if value.isAppearanceUpdated {
+                  send(
+                    .phase(
+                      .running(
+                        .setAppearance(state.appearance)
+                      )
+                    )
+                  )
+                }
+
+                if value.isCmdlinesUpdated {
+                  send(
+                    .phase(
+                      .running(
+                        .setCmdlines(state.cmdlines)
+                      )
+                    )
+                  )
+                }
               }
             }
 

@@ -38,7 +38,16 @@ struct Nims: App {
             WithViewStore(
               runningStore,
               observe: { $0 },
-              removeDuplicates: { $0.titleUpdateFlag == $1.titleUpdateFlag }
+              removeDuplicates: { lhs, rhs in
+                guard
+                  lhs.titleUpdateFlag == rhs.titleUpdateFlag,
+                  lhs.appearanceUpdateFlag == rhs.appearanceUpdateFlag
+                else {
+                  return false
+                }
+
+                return true
+              }
             ) { runningState in
               RunningInstanceView(
                 store: runningStore,
@@ -49,6 +58,7 @@ struct Nims: App {
                 }
               )
               .navigationTitle(runningState.title ?? "")
+              .environment(\.appearance, runningState.appearance)
             }
           }
 
