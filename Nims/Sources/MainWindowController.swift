@@ -3,7 +3,15 @@
 import AppKit
 
 class MainWindowController: NSWindowController {
-  init(viewController: NSViewController) {
+  var windowTitle = "" {
+    didSet {
+      if isWindowLoaded {
+        window?.title = windowTitle
+      }
+    }
+  }
+
+  init(_ viewController: NSViewController) {
     let window = NSWindow(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable]
 
@@ -13,5 +21,11 @@ class MainWindowController: NSWindowController {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func windowDidLoad() {
+    super.windowDidLoad()
+
+    window?.title = windowTitle
   }
 }

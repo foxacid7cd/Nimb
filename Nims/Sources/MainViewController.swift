@@ -1,10 +1,21 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Library
+import Neovim
 
 class MainViewController: NSViewController {
-  init() {
+  private let instance: Instance
+  private var task: Task<Void, Never>?
+  private let font = NimsFont()
+
+  init(instance: Instance) {
+    self.instance = instance
     super.init(nibName: nil, bundle: nil)
+  }
+
+  deinit {
+    task?.cancel()
   }
 
   @available(*, unavailable)
@@ -23,6 +34,23 @@ class MainViewController: NSViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    preferredContentSize = .init(width: 200, height: 200)
+    updatePreferredContentSize()
+
+    task = Task {
+      for await stateUpdates in instance.stateUpdatesStream() {
+        if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
+          updatePreferredContentSize()
+        }
+      }
+    }
+  }
+
+  private func updatePreferredContentSize() {
+    if let outerGridSize = instance.state.grids[.outer]?.cells.size {
+      preferredContentSize = outerGridSize * font.cellSize
+
+    } else {
+      preferredContentSize = .init()
+    }
   }
 }

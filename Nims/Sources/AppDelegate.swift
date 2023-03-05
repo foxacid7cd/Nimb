@@ -23,8 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let state = instance!.state
 
         if updates.isTitleUpdated {
-          customDump(state.title)
+          mainWindowController?.windowTitle = state.title ?? ""
         }
+
+        if updates.updatedLayoutGridIDs.contains(.outer) {}
       }
     }
 
@@ -35,9 +37,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func showMainWindowController() {
-    let mainViewController = MainViewController()
+    let mainViewController = MainViewController(instance: instance!)
 
-    mainWindowController = MainWindowController(viewController: mainViewController)
+    mainWindowController = MainWindowController(mainViewController)
     mainWindowController!.showWindow(nil)
   }
 
