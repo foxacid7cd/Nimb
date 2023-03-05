@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import IdentifiedCollections
 import Library
 import Neovim
 import SwiftUI
@@ -13,18 +14,20 @@ class CmdlinesWindowController: NSWindowController {
     self.store = store
 
     viewController = NSHostingController<CmdlinesView>(
-      rootView: .init(cmdlines: store.state.cmdlines, font: store.state.font, appearance: store.state.appearance)
+      rootView: .init(cmdlines: store.cmdlines, font: store.state.font, appearance: store.appearance)
     )
     viewController.sizingOptions = .preferredContentSize
 
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.borderless, .utilityWindow]
-    window.isMovableByWindowBackground = true
+    let window = NSWindow(contentViewController: viewController)
+    window.styleMask = [.borderless]
+    window.isMovableByWindowBackground = false
     window.isOpaque = false
     window.backgroundColor = .clear
-    window.setFrameOrigin(.init(x: 1200, y: 200))
+    window.level = .floating
 
     super.init(window: window)
+
+    window.delegate = self
 
     task = Task {
       for await stateUpdates in store.stateUpdatesStream() {
@@ -34,18 +37,17 @@ class CmdlinesWindowController: NSWindowController {
 
         if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
           viewController.rootView = .init(
-            cmdlines: store.state.cmdlines,
+            cmdlines: store.cmdlines,
             font: store.state.font,
-            appearance: store.state.appearance
+            appearance: store.appearance
           )
         }
 
         if stateUpdates.isCmdlinesUpdated {
-          if store.state.cmdlines.isEmpty {
-            self.close()
+          self.window!.setIsVisible(!store.cmdlines.isEmpty)
 
-          } else {
-            self.showWindow(nil)
+          if !store.cmdlines.isEmpty {
+            self.window!.orderFront(nil)
           }
         }
       }
@@ -62,96 +64,107 @@ class CmdlinesWindowController: NSWindowController {
   }
 }
 
+extension CmdlinesWindowController: NSWindowDelegate {
+  func windowDidResize(_: Notification) {
+    guard let window, let screen = window.screen else {
+      return
+    }
+
+    window.setFrameOrigin(
+      .init(
+        x: (screen.frame.width - window.frame.width) / 2,
+        y: (screen.frame.height - window.frame.height) / 2
+      )
+    )
+  }
+}
+
 struct CmdlinesView: View {
-  var cmdlines: [Cmdline]
+  var cmdlines: IdentifiedArrayOf<Cmdline>
   var font: NimsFont
   var appearance: Appearance
 
   var body: some View {
-    VStack(alignment: .center, spacing: 0) {
-      ForEach(cmdlines) { cmdline in
-        HStack {
-          VStack(alignment: .leading, spacing: 4) {
-            if !cmdline.prompt.isEmpty {
+    ForEach(cmdlines, id: \.level) { cmdline in
+      VStack(alignment: .leading, spacing: 4) {
+        if !cmdline.prompt.isEmpty {
+          let attributedString = AttributedString(
+            cmdline.prompt,
+            attributes: .init([
+              .font: font.nsFont(isItalic: true),
+              .foregroundColor: appearance.defaultForegroundColor.appKit
+                .withAlphaComponent(0.6),
+            ])
+          )
+          Text(attributedString)
+        }
+
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+          if !cmdline.firstCharacter.isEmpty {
+            let attributedString = AttributedString(
+              cmdline.firstCharacter,
+              attributes: .init([
+                .font: font.nsFont(isBold: true),
+                .foregroundColor: appearance.defaultForegroundColor.appKit,
+              ])
+            )
+            Text(attributedString)
+              .frame(width: 20, height: 20)
+              .background(
+                appearance.defaultForegroundColor.swiftUI
+                  .opacity(0.2)
+              )
+          }
+
+          ZStack(alignment: .leading) {
+            let attributedString = makeContentAttributedString(cmdline: cmdline)
+            Text(attributedString)
+
+            let isCursorAtEnd = cmdline.cursorPosition == attributedString.characters.count
+            let isBlockCursorShape = isCursorAtEnd || !cmdline.specialCharacter.isEmpty
+
+            let integerFrame = IntegerRectangle(
+              origin: .init(column: cmdline.cursorPosition, row: 0),
+              size: .init(columnsCount: 1, rowsCount: 1)
+            )
+            let frame = integerFrame * font.cellSize
+
+            Rectangle()
+              .fill(appearance.defaultForegroundColor.swiftUI)
+              .frame(width: isBlockCursorShape ? frame.width : frame.width * 0.25, height: frame.height)
+              .offset(x: frame.minX, y: frame.minY)
+
+            if !cmdline.specialCharacter.isEmpty {
               let attributedString = AttributedString(
-                cmdline.prompt,
+                cmdline.specialCharacter,
                 attributes: .init([
-                  .font: font.nsFont(isItalic: true),
-                  .foregroundColor: appearance.defaultForegroundColor.appKit
-                    .withAlphaComponent(0.6),
+                  .font: font.nsFont(),
+                  .foregroundColor: appearance.defaultForegroundColor.appKit,
                 ])
               )
               Text(attributedString)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-              if !cmdline.firstCharacter.isEmpty {
-                let attributedString = AttributedString(
-                  cmdline.firstCharacter,
-                  attributes: .init([
-                    .font: font.nsFont(isBold: true),
-                    .foregroundColor: appearance.defaultForegroundColor.appKit,
-                  ])
-                )
-                Text(attributedString)
-                  .frame(width: 20, height: 20)
-                  .background(
-                    appearance.defaultForegroundColor.swiftUI
-                      .opacity(0.2)
-                  )
-              }
-
-              ZStack(alignment: .leading) {
-                let attributedString = makeContentAttributedString(cmdline: cmdline)
-                Text(attributedString)
-
-                let isCursorAtEnd = cmdline.cursorPosition == attributedString.characters.count
-                let isBlockCursorShape = isCursorAtEnd || !cmdline.specialCharacter.isEmpty
-
-                let integerFrame = IntegerRectangle(
-                  origin: .init(column: cmdline.cursorPosition, row: 0),
-                  size: .init(columnsCount: 1, rowsCount: 1)
-                )
-                let frame = integerFrame * font.cellSize
-
-                Rectangle()
-                  .fill(appearance.defaultForegroundColor.swiftUI)
-                  .frame(width: isBlockCursorShape ? frame.width : frame.width * 0.25, height: frame.height)
-                  .offset(x: frame.minX, y: frame.minY)
-
-                if !cmdline.specialCharacter.isEmpty {
-                  let attributedString = AttributedString(
-                    cmdline.specialCharacter,
-                    attributes: .init([
-                      .font: font.nsFont(),
-                      .foregroundColor: appearance.defaultForegroundColor.appKit,
-                    ])
-                  )
-                  Text(attributedString)
-                    .offset(x: frame.minX, y: frame.minY)
-                }
-              }
-
-              Spacer()
+                .offset(x: frame.minX, y: frame.minY)
             }
           }
-          .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
-          .frame(idealWidth: 640, minHeight: 44)
-          .background {
-            let rectangle = Rectangle()
 
-            rectangle
-              .fill(
-                appearance.defaultBackgroundColor.swiftUI.opacity(0.9)
-              )
-
-            rectangle
-              .stroke(
-                appearance.defaultForegroundColor.swiftUI.opacity(0.1),
-                lineWidth: 1
-              )
-          }
+          Spacer()
         }
+      }
+      .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
+      .frame(idealWidth: 640)
+      .background {
+        let rectangle = Rectangle()
+
+        rectangle
+          .fill(
+            appearance.defaultBackgroundColor.swiftUI.opacity(0.9)
+          )
+
+        rectangle
+          .stroke(
+            appearance.defaultForegroundColor.swiftUI.opacity(0.1),
+            lineWidth: 1
+          )
       }
     }
   }
@@ -207,7 +220,10 @@ struct CmdlinesView: View {
       attributedString.insert(
         AttributedString(
           "".padding(toLength: cmdline.specialCharacter.count, withPad: " ", startingAt: 0),
-          attributes: .init([.font: font])
+          attributes: .init([
+            .font: font,
+            .foregroundColor: appearance.defaultSpecialColor,
+          ])
         ),
         at: insertPosition
       )

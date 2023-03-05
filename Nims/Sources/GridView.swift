@@ -25,11 +25,7 @@ public final class GridView: NSView {
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
   var ordinal: Double {
-    state.grids[gridID]?.ordinal ?? -1
-  }
-
-  private var state: Store.State {
-    store.state
+    store.grids[gridID]?.ordinal ?? -1
   }
 
   private var upsideDownTransform: CGAffineTransform {
@@ -38,7 +34,7 @@ public final class GridView: NSView {
   }
 
   override public func draw(_: NSRect) {
-    guard let graphicsContext = NSGraphicsContext.current, let grid = state.grids[gridID] else {
+    guard let graphicsContext = NSGraphicsContext.current, let grid = store.grids[gridID] else {
       return
     }
 
@@ -65,12 +61,12 @@ public final class GridView: NSView {
 
       let integerFrame = IntegerRectangle(
         origin: .init(
-          column: Int(upsideDownRect.origin.x / state.font.cellWidth),
-          row: Int(upsideDownRect.origin.y / state.font.cellHeight)
+          column: Int(upsideDownRect.origin.x / store.font.cellWidth),
+          row: Int(upsideDownRect.origin.y / store.font.cellHeight)
         ),
         size: .init(
-          columnsCount: Int(ceil(upsideDownRect.size.width / state.font.cellWidth)),
-          rowsCount: Int(ceil(upsideDownRect.size.height / state.font.cellHeight))
+          columnsCount: Int(ceil(upsideDownRect.size.width / store.font.cellWidth)),
+          rowsCount: Int(ceil(upsideDownRect.size.height / store.font.cellHeight))
         )
       )
       .intersection(with: .init(size: grid.cells.size))
@@ -105,13 +101,13 @@ public final class GridView: NSView {
         let rowLayout = grid.rowLayouts[row]
 
         for part in rowLayout.parts {
-          let backgroundColor = state.appearance.backgroundColor(for: part.highlightID)
+          let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
 
           let partIntegerFrame = IntegerRectangle(
             origin: .init(column: part.indices.lowerBound, row: row),
             size: .init(columnsCount: part.indices.count, rowsCount: 1)
           )
-          let partFrame = partIntegerFrame * state.font.cellSize
+          let partFrame = partIntegerFrame * store.font.cellSize
           let upsideDownPartFrame = partFrame
             .applying(upsideDownTransform)
 
@@ -126,10 +122,10 @@ public final class GridView: NSView {
                   rowsCount: 1
                 ),
                 text: part.text,
-                font: state.font,
-                isItalic: state.appearance.isItalic(for: part.highlightID),
-                isBold: state.appearance.isBold(for: part.highlightID),
-                decorations: state.appearance.decorations(for: part.highlightID)
+                font: store.font,
+                isItalic: store.appearance.isItalic(for: part.highlightID),
+                isBold: store.appearance.isBold(for: part.highlightID),
+                decorations: store.appearance.decorations(for: part.highlightID)
               )
             )
           drawRuns.append(
@@ -141,10 +137,10 @@ public final class GridView: NSView {
           )
 
           if
-            let modeInfo = state.modeInfo,
-            let mode = state.mode,
+            let modeInfo = store.modeInfo,
+            let mode = store.mode,
 //            model.cursorBlinkingPhase,
-            let cursor = state.cursor,
+            let cursor = store.cursor,
             cursor.gridID == gridID,
             cursor.position.row == row,
             part.indices.contains(cursor.position.column)
@@ -160,24 +156,24 @@ public final class GridView: NSView {
                   origin: cursor.position,
                   size: .init(columnsCount: 1, rowsCount: 1)
                 )
-                cursorFrame = integerFrame * state.font.cellSize
+                cursorFrame = integerFrame * store.font.cellSize
 
               case .horizontal:
-                let height = state.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                let height = store.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                 cursorFrame = CGRect(
-                  x: Double(cursor.position.column) * state.font.cellWidth,
-                  y: Double(cursor.position.row) * state.font.cellHeight,
-                  width: state.font.cellWidth,
+                  x: Double(cursor.position.column) * store.font.cellWidth,
+                  y: Double(cursor.position.row) * store.font.cellHeight,
+                  width: store.font.cellWidth,
                   height: height
                 )
 
               case .vertical:
-                let width = state.font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                let width = store.font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                 cursorFrame = CGRect(
-                  origin: cursor.position * state.font.cellSize,
-                  size: .init(width: width, height: state.font.cellHeight)
+                  origin: cursor.position * store.font.cellSize,
+                  size: .init(width: width, height: store.font.cellHeight)
                 )
               }
 
@@ -199,8 +195,8 @@ public final class GridView: NSView {
       }
 
       for (origin, highlightID, drawRun) in drawRuns {
-        let foregroundColor = state.appearance.foregroundColor(for: highlightID)
-        let specialColor = state.appearance.specialColor(for: highlightID)
+        let foregroundColor = store.appearance.foregroundColor(for: highlightID)
+        let specialColor = store.appearance.specialColor(for: highlightID)
 
         drawRun.draw(
           at: origin,
@@ -217,12 +213,12 @@ public final class GridView: NSView {
         let cursorBackgroundColor: Neovim.Color
 
         if cursorDrawRun.highlightID.isDefault {
-          cursorForegroundColor = state.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
-          cursorBackgroundColor = state.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorForegroundColor = store.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
 
         } else {
-          cursorForegroundColor = state.appearance.foregroundColor(for: cursorDrawRun.highlightID)
-          cursorBackgroundColor = state.appearance.backgroundColor(for: cursorDrawRun.highlightID)
+          cursorForegroundColor = store.appearance.foregroundColor(for: cursorDrawRun.highlightID)
+          cursorBackgroundColor = store.appearance.backgroundColor(for: cursorDrawRun.highlightID)
         }
 
         cursorBackgroundColor.appKit.setFill()
@@ -282,7 +278,7 @@ public final class GridView: NSView {
   private var yScrollingAccumulator: Double = 0
 
   override public func scrollWheel(with event: NSEvent) {
-    let cellSize = state.font.cellSize
+    let cellSize = store.font.cellSize
 
     if event.phase == .began {
       isScrollingHorizontal = nil
@@ -335,8 +331,8 @@ public final class GridView: NSView {
     let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     let point = IntegerPoint(
-      column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight)
+      column: Int(upsideDownLocation.x / store.font.cellWidth),
+      row: Int(upsideDownLocation.y / store.font.cellHeight)
     )
     let mouseEvent = MouseEvent(
       content: content,

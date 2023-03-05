@@ -16,6 +16,8 @@ class MainWindowController: NSWindowController {
     window.styleMask = [.titled, .miniaturizable]
 
     super.init(window: window)
+
+    windowFrameAutosaveName = "Main"
   }
 
   @available(*, unavailable)

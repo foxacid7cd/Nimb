@@ -2,6 +2,8 @@
 
 import CasePaths
 import Collections
+import CustomDump
+import IdentifiedCollections
 import Library
 import MessagePack
 import Overture
@@ -17,7 +19,7 @@ public struct State: Sendable {
     mode: Mode? = nil,
     cursor: Cursor? = nil,
     tabline: Tabline? = nil,
-    cmdlines: [Cmdline] = [],
+    cmdlines: IdentifiedArrayOf<Cmdline> = [],
     msgShows: [MsgShow] = [],
     grids: IntKeyedDictionary<Grid> = [:]
   ) {
@@ -42,7 +44,7 @@ public struct State: Sendable {
   public var mode: Mode?
   public var cursor: Cursor?
   public var tabline: Tabline?
-  public var cmdlines: [Cmdline]
+  public var cmdlines: IdentifiedArrayOf<Cmdline>
   public var msgShows: [MsgShow]
   public var grids: IntKeyedDictionary<Grid>
   public var windowZIndexCounter = 0
@@ -630,7 +632,7 @@ public extension State {
           tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-          var cmdline = Cmdline(
+          let cmdline = Cmdline(
             contentParts: content
               .compactMap { rawContentPart in
                 guard
@@ -657,24 +659,19 @@ public extension State {
             shiftAfterSpecialCharacter: false,
             blockLines: []
           )
-          if level - 1 == cmdlines.count {
-            cmdlines.append(cmdline)
-
-          } else {
-            swap(&cmdlines[level - 1], &cmdline)
-          }
+          cmdlines.updateOrAppend(cmdline)
 
           cmdlinesUpdated()
 
         case let .cmdlinePos(pos, level):
-          update(&cmdlines[level - 1]) { cmdline in
+          update(&cmdlines[id: level]!) { cmdline in
             cmdline.cursorPosition = pos
           }
 
           cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
-          update(&cmdlines[level - 1]) { cmdline in
+          update(&cmdlines[id: level]!) { cmdline in
             cmdline.specialCharacter = c
             cmdline.shiftAfterSpecialCharacter = shift
           }
@@ -682,7 +679,7 @@ public extension State {
           cmdlinesUpdated()
 
         case let .cmdlineHide(level):
-          cmdlines.remove(at: level - 1)
+          cmdlines.remove(id: level)
 
           cmdlinesUpdated()
 
@@ -718,8 +715,8 @@ public extension State {
             blockLines.append(contentParts)
           }
 
-          if !cmdlines.isEmpty {
-            update(&cmdlines[cmdlines.count - 1]) { cmdline in
+          if let lastID = cmdlines.ids.max() {
+            update(&cmdlines[id: lastID]!) { cmdline in
               cmdline.blockLines = blockLines
             }
           }
@@ -727,8 +724,8 @@ public extension State {
           cmdlinesUpdated()
 
         case .cmdlineBlockHide:
-          if !cmdlines.isEmpty {
-            update(&cmdlines[cmdlines.count - 1]) { cmdline in
+          if let lastID = cmdlines.ids.max() {
+            update(&cmdlines[id: lastID]!) { cmdline in
               cmdline.blockLines = []
             }
           }

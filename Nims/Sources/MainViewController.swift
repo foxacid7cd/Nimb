@@ -58,7 +58,7 @@ class MainViewController: NSViewController {
   }
 
   private func updatePreferredContentSize() {
-    if let outerGridSize = store.state.grids[.outer]?.cells.size {
+    if let outerGridSize = store.grids[.outer]?.cells.size {
       preferredContentSize = outerGridSize * font.cellSize
 
     } else {

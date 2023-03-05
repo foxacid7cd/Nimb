@@ -53,7 +53,7 @@ public struct InstanceReducer: ReducerProtocol {
 
         return .none
 
-      case let .start(keyPresses, mouseEvents):
+      case .start:
         guard case .pending = state.phase else {
           return .none
         }

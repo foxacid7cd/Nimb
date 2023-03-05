@@ -85,7 +85,7 @@ let package = Package(
     ),
     .systemLibrary(
       name: "msgpack",
-      pkgConfig: "msgpack",
+      pkgConfig: "msgpack-c",
       providers: [
         .brewItem(["msgpack"])
       ]

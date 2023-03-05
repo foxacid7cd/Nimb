@@ -31,10 +31,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       for await updates in store!.stateUpdatesStream() {
-        let state = store!.state
-
         if updates.isTitleUpdated {
-          mainWindowController?.windowTitle = state.title ?? ""
+          mainWindowController?.windowTitle = store!.title ?? ""
         }
       }
     }

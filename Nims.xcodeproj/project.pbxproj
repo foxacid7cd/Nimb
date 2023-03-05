@@ -25,6 +25,7 @@
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BE6A6F29AED4EB008593A6 /* MainReducer.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
+		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
 		68EF608529B2A7EA0056E48D /* GridsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF608429B2A7EA0056E48D /* GridsView.swift */; };
 		68EF608729B2AA790056E48D /* RunningInstanceReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF608629B2AA790056E48D /* RunningInstanceReducer.swift */; };
 		68EF608B29B2AB880056E48D /* RunningInstanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF608A29B2AB880056E48D /* RunningInstanceView.swift */; };
@@ -89,6 +90,7 @@
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		68EED23829BD8B0600568EA0 /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		68EF608429B2A7EA0056E48D /* GridsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridsView.swift; sourceTree = "<group>"; };
 		68EF608629B2AA790056E48D /* RunningInstanceReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningInstanceReducer.swift; sourceTree = "<group>"; };
 		68EF608A29B2AB880056E48D /* RunningInstanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningInstanceView.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				689D9E2629B4FA7000345713 /* main.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
+				68EED23829BD8B0600568EA0 /* State.swift */,
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */,
 				689D9E3229B5326300345713 /* CmdlinesWindowController.swift */,
@@ -311,6 +314,7 @@
 				689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				689D9E2729B4FA7000345713 /* main.swift in Sources */,
+				68EED23929BD8B0600568EA0 /* State.swift in Sources */,
 				689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */,
 				68A8C918294D154600BD3EC1 /* Nims.swift in Sources */,
 				68EF608729B2AA790056E48D /* RunningInstanceReducer.swift in Sources */,
@@ -477,7 +481,6 @@
 				INFOPLIST_FILE = Nims/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -513,7 +516,6 @@
 				INFOPLIST_FILE = Nims/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

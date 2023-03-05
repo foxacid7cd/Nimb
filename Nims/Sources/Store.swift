@@ -3,33 +3,36 @@
 import Foundation
 import Neovim
 
-@MainActor
+@MainActor @dynamicMemberLookup
 final class Store {
-  public private(set) var state: State
+  let instance: Instance
+  private(set) var state = State()
 
-  private let instance: Instance
-  private var observers = [UUID: @MainActor (State.Updates) -> Void]()
+  private var observers = [UUID: @MainActor (Updates) -> Void]()
 
   init(instance: Instance) {
-    state = .init(instance: instance)
     self.instance = instance
   }
 
   func set(font: NimsFont) {
     state.font = font
 
-    let updates = State.Updates(isFontUpdated: true)
+    let stateUpdates = State.Updates(isFontUpdated: true)
 
     for (_, body) in observers {
-      body(updates)
+      body(.init(stateUpdates: stateUpdates))
     }
   }
 
-  func stateUpdatesStream() -> AsyncStream<State.Updates> {
+  func stateUpdatesStream() -> AsyncStream<Updates> {
     .init { continuation in
       let observeWrappedTask = Task {
         for await instanceStateUpdates in instance.stateUpdatesStream() {
-          continuation.yield(.init(wrapped: instanceStateUpdates))
+          guard !Task.isCancelled else {
+            return
+          }
+
+          continuation.yield(.init(instanceStateUpdates: instanceStateUpdates))
         }
       }
 
@@ -56,23 +59,25 @@ final class Store {
     await instance.report(mouseEvent: mouseEvent)
   }
 
-  @MainActor @dynamicMemberLookup
-  struct State: Sendable {
-    var instance: Instance
-    var font = NimsFont()
+  subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State, Value>) -> Value {
+    instance.state[keyPath: keyPath]
+  }
 
-    subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State, Value>) -> Value {
-      instance.state[keyPath: keyPath]
+  subscript<Value>(dynamicMember keyPath: KeyPath<State, Value>) -> Value {
+    state[keyPath: keyPath]
+  }
+
+  @dynamicMemberLookup
+  struct Updates {
+    var instanceStateUpdates = Neovim.State.Updates()
+    var stateUpdates = State.Updates()
+
+    subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State.Updates, Value>) -> Value {
+      instanceStateUpdates[keyPath: keyPath]
     }
 
-    @dynamicMemberLookup
-    struct Updates: Sendable {
-      var wrapped = Neovim.State.Updates()
-      var isFontUpdated = false
-
-      subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State.Updates, Value>) -> Value {
-        wrapped[keyPath: keyPath]
-      }
+    subscript<Value>(dynamicMember keyPath: KeyPath<State.Updates, Value>) -> Value {
+      stateUpdates[keyPath: keyPath]
     }
   }
 }

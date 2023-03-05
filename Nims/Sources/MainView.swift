@@ -30,22 +30,18 @@ class MainView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private var state: Store.State {
-    store.state
-  }
-
   private var gridViews = IntKeyedDictionary<GridView>()
 
-  public func render(_ stateUpdates: Store.State.Updates?) {
-    guard let outerGridIntegerSize = state.grids[.outer]?.cells.size else {
+  public func render(_ stateUpdates: Store.Updates?) {
+    guard let outerGridIntegerSize = store.grids[.outer]?.cells.size else {
       return
     }
-    let outerGridSize = outerGridIntegerSize * state.font.cellSize
+    let outerGridSize = outerGridIntegerSize * store.font.cellSize
 
     let updatedLayoutGridIDs = if let stateUpdates {
       stateUpdates.updatedLayoutGridIDs
     } else {
-      Set(state.grids.keys.map(Grid.ID.init(rawValue:)))
+      Set(store.grids.keys.map(Grid.ID.init(rawValue:)))
     }
 
     func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
@@ -73,7 +69,7 @@ class MainView: NSView {
     }
 
     for gridID in updatedLayoutGridIDs {
-      if let grid = state.grids[gridID] {
+      if let grid = store.grids[gridID] {
         let gridView = gridViewOrCreate(for: gridID)
 
         if gridID == .outer {
@@ -105,7 +101,7 @@ class MainView: NSView {
         } else if let associatedWindow = grid.associatedWindow {
           switch associatedWindow {
           case let .plain(value):
-            let windowFrame = (value.frame * state.font.cellSize)
+            let windowFrame = (value.frame * store.font.cellSize)
 
             gridView.sizeConstraints!.width.constant = windowFrame.width
             gridView.sizeConstraints!.height.constant = windowFrame.height
@@ -136,7 +132,7 @@ class MainView: NSView {
             gridView.isHidden = grid.isHidden
 
           case let .floating(value):
-            let windowSize = grid.cells.size * state.font.cellSize
+            let windowSize = grid.cells.size * store.font.cellSize
             gridView.sizeConstraints!.width.constant = windowSize.width
             gridView.sizeConstraints!.height.constant = windowSize.height
 
@@ -150,8 +146,8 @@ class MainView: NSView {
 
             let anchorGridView = gridViewOrCreate(for: value.anchorGridID)
 
-            let horizontalConstant: Double = value.anchorColumn * state.font.cellWidth
-            let verticalConstant: Double = value.anchorRow * state.font.cellHeight
+            let horizontalConstant: Double = value.anchorColumn * store.font.cellWidth
+            let verticalConstant: Double = value.anchorRow * store.font.cellHeight
 
             let horizontal: NSLayoutConstraint
             let vertical: NSLayoutConstraint
@@ -275,7 +271,7 @@ class MainView: NSView {
             .translatedBy(x: 0, y: -gridView.frame.height)
 
           for rectangle in updatedRectangles {
-            let rect = (rectangle * state.font.cellSize)
+            let rect = (rectangle * store.font.cellSize)
               .applying(upsideDownTransform)
 
             gridView.setNeedsDisplay(rect)

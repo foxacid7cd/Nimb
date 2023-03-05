@@ -14,18 +14,19 @@ class MsgShowsWindowController: NSWindowController {
     self.store = store
 
     viewController = NSHostingController<MsgShowsView>(
-      rootView: .init(msgShows: store.state.msgShows, font: store.state.font, appearance: store.state.appearance)
+      rootView: .init(msgShows: store.msgShows, font: store.font, appearance: store.appearance)
     )
     viewController.sizingOptions = .preferredContentSize
 
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.borderless, .utilityWindow]
-    window.isMovableByWindowBackground = true
+    let window = NSWindow(contentViewController: viewController)
+    window.styleMask = [.borderless]
+    window.isMovableByWindowBackground = false
     window.isOpaque = false
     window.backgroundColor = .clear
-    window.setFrameOrigin(.init(x: 1200, y: 200))
 
     super.init(window: window)
+
+    window.delegate = self
 
     task = Task {
       for await stateUpdates in store.stateUpdatesStream() {
@@ -35,18 +36,17 @@ class MsgShowsWindowController: NSWindowController {
 
         if stateUpdates.isMsgShowsUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
           viewController.rootView = .init(
-            msgShows: store.state.msgShows,
-            font: store.state.font,
-            appearance: store.state.appearance
+            msgShows: store.msgShows,
+            font: store.font,
+            appearance: store.appearance
           )
         }
 
         if stateUpdates.isMsgShowsUpdated {
-          if store.state.msgShows.isEmpty {
-            self.close()
+          self.window!.setIsVisible(!store.msgShows.isEmpty)
 
-          } else {
-            self.showWindow(nil)
+          if !store.msgShows.isEmpty {
+            self.window!.orderFront(nil)
           }
         }
       }
@@ -60,6 +60,21 @@ class MsgShowsWindowController: NSWindowController {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+}
+
+extension MsgShowsWindowController: NSWindowDelegate {
+  func windowDidResize(_: Notification) {
+    guard let window else {
+      return
+    }
+
+    window.setFrameOrigin(
+      .init(
+        x: 0,
+        y: 0
+      )
+    )
   }
 }
 
