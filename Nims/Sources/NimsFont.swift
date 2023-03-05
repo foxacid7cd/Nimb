@@ -4,7 +4,7 @@ import AppKit
 import Tagged
 
 public struct NimsFont: Sendable, Hashable {
-  public init(id: ID) {
+  public init(id: ID = .zero) {
     self.id = id
   }
 
@@ -12,10 +12,12 @@ public struct NimsFont: Sendable, Hashable {
 
   public var id: ID
 
+  @MainActor
   public init(_ appKit: NSFont) {
     self = FontBridge.shared.wrap(appKit)
   }
 
+  @MainActor
   public func nsFont(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
     if isBold, isItalic {
       return unwrapped.boldItalic
@@ -31,23 +33,28 @@ public struct NimsFont: Sendable, Hashable {
     }
   }
 
+  @MainActor
   public var cellWidth: Double {
     unwrapped.cellWidth
   }
 
+  @MainActor
   public var cellHeight: Double {
     unwrapped.cellHeight
   }
 
+  @MainActor
   public var cellSize: CGSize {
     .init(width: cellWidth, height: cellHeight)
   }
 
+  @MainActor
   private var unwrapped: FontBridge.WrappedFont {
     FontBridge.shared.unwrap(self)
   }
 }
 
+@MainActor
 final class FontBridge {
   static let shared = FontBridge()
 
@@ -59,30 +66,28 @@ final class FontBridge {
     let cellWidth = appKit.makeCellWidth()
     let cellHeight = appKit.makeCellHeight()
 
-    return dispatchQueue.sync(flags: [.barrier]) {
-      let font = NimsFont(id: .init(wrappedFonts.count))
-      wrappedFonts.append(.init(
-        regular: appKit,
-        bold: bold,
-        italic: italic,
-        boldItalic: boldItalic,
-        cellWidth: cellWidth,
-        cellHeight: cellHeight
-      ))
-      return font
-    }
+    let font = NimsFont(id: .init(wrappedFonts.count))
+    wrappedFonts.append(.init(
+      regular: appKit,
+      bold: bold,
+      italic: italic,
+      boldItalic: boldItalic,
+      cellWidth: cellWidth,
+      cellHeight: cellHeight
+    ))
+    return font
   }
 
   func unwrap(_ font: NimsFont) -> WrappedFont {
-    dispatchQueue.sync {
-      wrappedFonts[font.id.rawValue]
+    if font.id == .zero, wrappedFonts.isEmpty {
+      _ = wrap(
+        .monospacedSystemFont(ofSize: 12, weight: .regular)
+      )
     }
+
+    return wrappedFonts[font.id.rawValue]
   }
 
-  private lazy var dispatchQueue = DispatchQueue(
-    label: "foxacid7cd.FontBridge.\(ObjectIdentifier(self))",
-    attributes: .concurrent
-  )
   private var wrappedFonts = [WrappedFont]()
 
   struct WrappedFont {

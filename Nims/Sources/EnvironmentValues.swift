@@ -5,10 +5,7 @@ import SwiftUI
 
 extension EnvironmentValues {
   private struct NimsFontKey: EnvironmentKey {
-    static let defaultValue = NimsFont(
-      NSFont(name: "SFMono Nerd Font Mono", size: 12) ??
-        NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-    )
+    static let defaultValue = NimsFont(id: .zero)
   }
 
   private struct AppearanceKey: EnvironmentKey {

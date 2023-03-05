@@ -21,72 +21,81 @@ struct Nims: App {
           action: MainReducer.Action.instance(id:action:)
         )
       ) { store in
-        SwitchStore(
-          store.scope(
-            state: \.phase,
-            action: InstanceReducer.Action.phase
-          )
-        ) {
-          CaseLet(
-            state: /InstanceReducer.State.Phase.pending,
-            action: InstanceReducer.Action.Phase.pending
-          ) { _ in
-            EmptyView()
+        WithViewStore(
+          store,
+          observe: { $0 },
+          removeDuplicates: {
+            $0.fontUpdateFlag == $1.fontUpdateFlag
           }
+        ) { state in
+          SwitchStore(
+            store.scope(
+              state: \.phase,
+              action: InstanceReducer.Action.phase
+            )
+          ) {
+            CaseLet(
+              state: /InstanceReducer.State.Phase.pending,
+              action: InstanceReducer.Action.Phase.pending
+            ) { _ in
+              EmptyView()
+            }
 
-          CaseLet(
-            state: /InstanceReducer.State.Phase.running,
-            action: InstanceReducer.Action.Phase.running
-          ) { runningStore in
-            WithViewStore(
-              runningStore,
-              observe: { $0 },
-              removeDuplicates: { lhs, rhs in
-                guard
-                  lhs.titleUpdateFlag == rhs.titleUpdateFlag,
-                  lhs.appearanceUpdateFlag == rhs.appearanceUpdateFlag
-                else {
-                  return false
+            CaseLet(
+              state: /InstanceReducer.State.Phase.running,
+              action: InstanceReducer.Action.Phase.running
+            ) { runningStore in
+              WithViewStore(
+                runningStore,
+                observe: { $0 },
+                removeDuplicates: { lhs, rhs in
+                  guard
+                    lhs.titleUpdateFlag == rhs.titleUpdateFlag,
+                    lhs.appearanceUpdateFlag == rhs.appearanceUpdateFlag
+                  else {
+                    return false
+                  }
+
+                  return true
                 }
-
-                return true
+              ) { runningState in
+                RunningInstanceView(
+                  store: runningStore,
+                  reportMouseEvent: { mouseEvent in
+                    Task {
+                      await reportMouseEvent(mouseEvent)
+                    }
+                  }
+                )
+                .onAppear {
+                  appDelegate.bind(store: runningStore)
+                }
+                .navigationTitle(runningState.title ?? "")
+                .environment(\.appearance, runningState.appearance)
               }
-            ) { runningState in
-              RunningInstanceView(
-                store: runningStore,
-                reportMouseEvent: { mouseEvent in
-                  Task {
-                    await reportMouseEvent(mouseEvent)
+            }
+
+            CaseLet(
+              state: /InstanceReducer.State.Phase.finished,
+              action: InstanceReducer.Action.Phase.finished
+            ) { finishedStore in
+              WithViewStore(
+                finishedStore,
+                observe: { $0 }
+              ) { finishedState in
+                VStack {
+                  Text("Neovim Instance Finished\n\(finishedState.state)")
+                  Button {
+                    finishedState.send(.close)
+
+                  } label: {
+                    Text("Close")
                   }
                 }
-              )
-              .onAppear {
-                appDelegate.bind(store: runningStore)
-              }
-              .navigationTitle(runningState.title ?? "")
-              .environment(\.appearance, runningState.appearance)
-            }
-          }
-
-          CaseLet(
-            state: /InstanceReducer.State.Phase.finished,
-            action: InstanceReducer.Action.Phase.finished
-          ) { finishedStore in
-            WithViewStore(
-              finishedStore,
-              observe: { $0 }
-            ) { finishedState in
-              VStack {
-                Text("Neovim Instance Finished\n\(finishedState.state)")
-                Button {
-                  finishedState.send(.close)
-
-                } label: {
-                  Text("Close")
-                }
               }
             }
           }
+          .environment(\.nimsFont, state.font)
         }
       }
     }
@@ -106,7 +115,9 @@ struct Nims: App {
           }
         }
 
-        ViewStore(store.stateless)
+        let viewStore = ViewStore(store.stateless)
+
+        viewStore
           .send(
             .createNeovimInstance(
               keyPresses: keyPresses,

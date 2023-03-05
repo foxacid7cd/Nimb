@@ -48,7 +48,9 @@ public struct Instance: Sendable {
         }
 
         do {
-          try await api.nvimInputFast(keys: keyPress.makeNvimKeyCode())
+          _ = try await api.nvimInput(
+            keys: keyPress.makeNvimKeyCode()
+          )
 
         } catch {
           assertionFailure("\(error)")

@@ -12,6 +12,7 @@
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6837727F29B2846A00320350 /* InstanceReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837727E29B2846A00320350 /* InstanceReducer.swift */; };
+		6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* NimsFont.swift */; };
 		689B64C829B43D2E0062C485 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 689B64C729B43D2B0062C485 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BE6A6F29AED4EB008593A6 /* MainReducer.swift */; };
@@ -66,6 +67,7 @@
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6837727E29B2846A00320350 /* InstanceReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceReducer.swift; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6861FA6129B462B8002C3C0B /* NimsFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsFont.swift; sourceTree = "<group>"; };
 		689B64C729B43D2B0062C485 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		68A8C917294D154600BD3EC1 /* Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nims.swift; sourceTree = "<group>"; };
 		68BE6A6F29AED4EB008593A6 /* MainReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainReducer.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				68EF608A29B2AB880056E48D /* RunningInstanceView.swift */,
 				68EF608C29B2ABD10056E48D /* HeaderView.swift */,
 				68EF609629B2E3380056E48D /* OverlayView.swift */,
+				6861FA6129B462B8002C3C0B /* NimsFont.swift */,
 				68EF608E29B2AC4B0056E48D /* EnvironmentValues.swift */,
 			);
 			path = Sources;
@@ -287,6 +290,7 @@
 				68A8C918294D154600BD3EC1 /* Nims.swift in Sources */,
 				68EF608729B2AA790056E48D /* RunningInstanceReducer.swift in Sources */,
 				6837727F29B2846A00320350 /* InstanceReducer.swift in Sources */,
+				6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */,
 				68EF608529B2A7EA0056E48D /* GridsView.swift in Sources */,
 				68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */,
 				68EF608B29B2AB880056E48D /* RunningInstanceView.swift in Sources */,

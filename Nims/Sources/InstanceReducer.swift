@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import CasePaths
 import ComposableArchitecture
 import CustomDump
@@ -11,6 +12,8 @@ public struct InstanceReducer: ReducerProtocol {
     public let id: ID
     public var phase = Phase.pending
     public var phaseUpdateFlag = false
+    public var font = NimsFont()
+    public var fontUpdateFlag = false
 
     public typealias ID = Tagged<Self, Int>
 
@@ -22,6 +25,7 @@ public struct InstanceReducer: ReducerProtocol {
   }
 
   public enum Action: Sendable {
+    case setFont(NimsFont)
     case start(keyPresses: AsyncStream<KeyPress>, mouseEvents: AsyncStream<MouseEvent>)
     case started(Instance.StateContainer)
     case finished(Error?)
@@ -43,12 +47,23 @@ public struct InstanceReducer: ReducerProtocol {
   public var body: some ReducerProtocol<State, Action> {
     Reduce { state, action in
       switch action {
+      case let .setFont(font):
+        state.font = font
+        state.fontUpdateFlag.toggle()
+
+        return .none
+
       case let .start(keyPresses, mouseEvents):
         guard case .pending = state.phase else {
           return .none
         }
 
         return EffectTask<Action>.run { @MainActor send in
+          if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 12) {
+            let font = NimsFont(sfMonoNFM)
+            send(.setFont(font))
+          }
+
           let instance = Neovim.Instance(keyPresses: keyPresses, mouseEvents: mouseEvents)
 
           send(.started(instance.stateContainer))
