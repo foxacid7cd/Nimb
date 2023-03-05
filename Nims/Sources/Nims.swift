@@ -68,7 +68,7 @@ struct Nims: App {
                   }
                 )
                 .onAppear {
-                  appDelegate.bind(store: runningStore)
+                  appDelegate.bind(font: state.font, store: runningStore)
                 }
                 .navigationTitle(runningState.title ?? "")
                 .environment(\.appearance, runningState.appearance)

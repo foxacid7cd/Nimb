@@ -26,45 +26,20 @@ public struct RunningInstanceView: View {
     WithViewStore(
       store,
       observe: { $0 },
-      removeDuplicates: { lhs, rhs in
-        guard
-          lhs.cmdlinesUpdateFlag == rhs.cmdlinesUpdateFlag
-        else {
-          return true
-        }
-
-        return false
+      removeDuplicates: {
+        $0.outerGridSizeUpdateFlag == $1.outerGridSizeUpdateFlag
       },
       content: { state in
-        let mainView = WithViewStore(
-          store,
-          observe: { $0 },
-          removeDuplicates: {
-            $0.outerGridSizeUpdateFlag == $1.outerGridSizeUpdateFlag
-          },
-          content: { state in
-            VStack(spacing: 0) {
-              HeaderView(store: store)
-                .frame(idealHeight: 44, alignment: .topLeading)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 0) {
+          HeaderView(store: store)
+            .frame(idealHeight: 44, alignment: .topLeading)
+            .fixedSize(horizontal: false, vertical: true)
 
-              if let outerGridSize = state.outerGridSize {
-                GridsView(store: store, reportMouseEvent: reportMouseEvent)
-                  .frame(size: outerGridSize * font.cellSize, alignment: .topLeading)
-                  .fixedSize()
-              }
-            }
+          if let outerGridSize = state.outerGridSize {
+            GridsView(store: store, reportMouseEvent: reportMouseEvent)
+              .frame(size: outerGridSize * font.cellSize, alignment: .topLeading)
+              .fixedSize()
           }
-        )
-
-        if
-          state.cmdlines.isEmpty
-        {
-          mainView
-
-        } else {
-          mainView
-            .overlay { OverlayView(store: store) }
         }
       }
     )
