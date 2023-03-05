@@ -34,7 +34,7 @@ public struct KeyPress: Sendable {
     }
 
     let specialKey: String? = {
-      if self.keyCode == kVK_Escape {
+      if keyCode == kVK_Escape {
         return "Esc"
       } else {
         return specialKeys[Int(unicodeScalar.value)]

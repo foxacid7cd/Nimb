@@ -6,7 +6,7 @@ import Neovim
 
 public final class GridView: NSView {
   var font: NimsFont!
-  var stateContainer: Neovim.Instance.StateContainer!
+  var instance: Neovim.Instance!
   var gridID: Neovim.Grid.ID!
   var reportMouseEvent: ((MouseEvent) -> Void)?
 
@@ -15,13 +15,13 @@ public final class GridView: NSView {
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
   var ordinal: Double {
-    stateContainer.state.grids[gridID]?.ordinal ?? -1
+    state.grids[gridID]?.ordinal ?? -1
   }
 
   private let drawRunsProvider = DrawRunsProvider()
 
   private var state: Neovim.State {
-    stateContainer.state
+    instance.state
   }
 
   private var upsideDownTransform: CGAffineTransform {

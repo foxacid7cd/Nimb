@@ -30,7 +30,7 @@ public struct RPC<Target: Channel>: Sendable {
       Task {
         try await send(
           request: .init(
-            id: await store.announceRequest {
+            id: store.announceRequest {
               continuation.resume(returning: $0.result)
             },
             method: method,
@@ -43,7 +43,7 @@ public struct RPC<Target: Channel>: Sendable {
   public func fastCall(method: String, withParameters parameters: [Value]) async throws {
     try await send(
       request: .init(
-        id: await store.announceRequest(),
+        id: store.announceRequest(),
         method: method,
         parameters: parameters
       )

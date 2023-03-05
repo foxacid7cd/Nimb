@@ -1,27 +1,23 @@
 // SPDX-License-Identifier: MIT
 
+import AsyncAlgorithms
 import CasePaths
 import Collections
-import Combine
 import CustomDump
 import Foundation
 import Library
 import MessagePack
 
 @MainActor
-public struct Instance: Sendable {
-  public let stateContainer = StateContainer()
+public final class Instance: Sendable {
+  public private(set) var state = State()
 
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
-  private var apiIterator: API<ProcessChannel>.AsyncIterator?
-  private var reportKeyPressesTask: Task<Void, Never>?
-  private var reportMouseEventsTask: Task<Void, Never>?
+  private var observers = [UUID: @MainActor (State.Updates) -> Void]()
+  private var task: Task<Error?, Never>?
 
-  public init(
-    keyPresses: AsyncStream<KeyPress>,
-    mouseEvents: AsyncStream<MouseEvent>
-  ) {
+  public init() {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutablePath] + nvimArguments)
@@ -39,150 +35,95 @@ public struct Instance: Sendable {
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel)
     let api = API(rpc)
+
     self.api = api
 
-    reportKeyPressesTask = Task {
-      for await keyPress in keyPresses {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        do {
-          _ = try await api.nvimInput(
-            keys: keyPress.makeNvimKeyCode()
-          )
-
-        } catch {
-          assertionFailure("\(error)")
-        }
-      }
-    }
-
-    reportMouseEventsTask = Task {
-      let throttledMouseEvents = mouseEvents
-        .throttle(for: .milliseconds(10), latest: true)
-
-      for await mouseEvent in throttledMouseEvents {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        let rawButton: String
-        let rawAction: String
-
-        switch mouseEvent.content {
-        case let .mouse(button, action):
-          rawButton = button.rawValue
-          rawAction = action.rawValue
-
-        case let .scrollWheel(direction):
-          rawButton = "wheel"
-          rawAction = direction.rawValue
-        }
-
-        do {
-          try await api.nvimInputMouseFast(
-            button: rawButton,
-            action: rawAction,
-            modifier: "",
-            gridID: mouseEvent.gridID,
-            row: mouseEvent.point.row,
-            col: mouseEvent.point.column
-          )
-        } catch {
-          assertionFailure("\(error)")
-        }
-      }
-    }
-  }
-
-  @MainActor
-  public final class StateContainer: Sendable {
-    public private(set) var state = State()
-
-    private var observerBody: ((State.Updates) -> Void)?
-
-    public func apply(uiEvents: [UIEvent]) -> State.Updates? {
-      let updates = state.apply(uiEvents: uiEvents)
-
-      if let updates {
-        observerBody?(updates)
-      }
-
-      return updates
-    }
-
-    public func observe(with body: @escaping (State.Updates) -> Void) {
-      observerBody = body
-    }
-  }
-
-  private func attach() async throws {
-    let uiOptions: UIOptions = [
-      .extMultigrid,
-      .extHlstate,
-      .extCmdline,
-      .extMessages,
-      .extPopupmenu,
-      .extTabline,
-    ]
-
-    try await api.nvimUIAttachFast(
-      width: 200,
-      height: 60,
-      options: uiOptions.nvimUIAttachOptions
-    )
-  }
-}
-
-extension Instance: AsyncSequence {
-  public enum Element: Sendable {
-    case stateUpdates(State.Updates)
-  }
-
-  public func makeAsyncIterator() -> AsyncIterator {
-    .init(
-      startProcess: {
+    task = Task {
+      do {
         try process.run()
-        try await attach()
-      },
-      stateContainer: stateContainer,
-      apiIterator: api.makeAsyncIterator()
-    )
+
+        let uiOptions: UIOptions = [
+          .extMultigrid,
+          .extHlstate,
+          .extCmdline,
+          .extMessages,
+          .extPopupmenu,
+          .extTabline,
+        ]
+
+        try await api.nvimUIAttachFast(
+          width: 200,
+          height: 60,
+          options: uiOptions.nvimUIAttachOptions
+        )
+
+        for try await uiEvents in api {
+          if let stateUpdates = state.apply(uiEvents: uiEvents) {
+            for (_, body) in observers {
+              body(stateUpdates)
+            }
+          }
+        }
+
+        return nil
+
+      } catch {
+        return error
+      }
+    }
   }
 
-  public struct AsyncIterator: AsyncIteratorProtocol {
-    fileprivate init(
-      startProcess: @escaping () async throws -> Void,
-      stateContainer: StateContainer,
-      apiIterator: API<ProcessChannel>.AsyncIterator
-    ) {
-      self.startProcess = startProcess
-      self.stateContainer = stateContainer
-      self.apiIterator = apiIterator
+  public func stateUpdatesStream() -> AsyncStream<State.Updates> {
+    .init(bufferingPolicy: .bufferingNewest(1)) { continuation in
+      let id = UUID()
+
+      observers[id] = { newValue in
+        continuation.yield(newValue)
+      }
+
+      continuation.onTermination = { _ in
+        Task { @MainActor in
+          self.observers.removeValue(forKey: id)
+        }
+      }
+    }
+  }
+
+  public func finishedResult() async -> Error? {
+    await task!.value
+  }
+
+  public func report(keyPress: KeyPress) async {
+    do {
+      _ = try await api.nvimInput(
+        keys: keyPress.makeNvimKeyCode()
+      )
+
+    } catch {
+      assertionFailure("\(error)")
+    }
+  }
+
+  public func report(mouseEvent: MouseEvent) async {
+    let (rawButton, rawAction) = switch mouseEvent.content {
+    case let .mouse(button, action):
+      (button.rawValue, action.rawValue)
+
+    case let .scrollWheel(direction):
+      ("wheel", direction.rawValue)
     }
 
-    private let startProcess: () async throws -> Void
-    private let stateContainer: StateContainer
-    private var apiIterator: API<ProcessChannel>.AsyncIterator
-    private var isFirstIteration = true
-
-    public mutating func next() async throws -> Element? {
-      if isFirstIteration {
-        isFirstIteration = false
-
-        try await startProcess()
-      }
-
-      while true {
-        guard let uiEvents = try await apiIterator.next() else {
-          return nil
-        }
-
-        if let updates = await stateContainer.apply(uiEvents: uiEvents) {
-          return .stateUpdates(updates)
-        }
-      }
+    do {
+      try await api.nvimInputMouseFast(
+        button: rawButton,
+        action: rawAction,
+        modifier: "",
+        gridID: mouseEvent.gridID,
+        row: mouseEvent.point.row,
+        col: mouseEvent.point.column
+      )
+    } catch {
+      assertionFailure("\(error)")
     }
   }
 }

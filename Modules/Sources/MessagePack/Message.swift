@@ -17,18 +17,18 @@ public enum Message: Sendable, Hashable {
     let rawMessageType = (/Value.integer).extract(from: arrayValue[0])
     switch rawMessageType {
     case Request.rawMessageType:
-      self = .request(
-        try Request(arrayValue: arrayValue)
+      self = try .request(
+        Request(arrayValue: arrayValue)
       )
 
     case Response.rawMessageType:
-      self = .response(
-        try Response(arrayValue: arrayValue)
+      self = try .response(
+        Response(arrayValue: arrayValue)
       )
 
     case Notification.rawMessageType:
-      self = .notification(
-        try Notification(arrayValue: arrayValue)
+      self = try .notification(
+        Notification(arrayValue: arrayValue)
       )
 
     default:

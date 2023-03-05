@@ -11,12 +11,18 @@ import Overture
 import SwiftUI
 
 public struct GridsView: NSViewRepresentable {
-  public init(store: StoreOf<RunningInstanceReducer>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
+  public init(
+    store: StoreOf<RunningInstanceReducer>,
+    instance: Instance,
+    reportMouseEvent: @escaping (MouseEvent) -> Void
+  ) {
     self.store = store
+    self.instance = instance
     self.reportMouseEvent = reportMouseEvent
   }
 
   private var store: StoreOf<RunningInstanceReducer>
+  private var instance: Instance
   private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
@@ -52,7 +58,7 @@ public struct GridsView: NSViewRepresentable {
     private var viewStore: ViewStoreOf<RunningInstanceReducer>!
 
     private var state: Neovim.State {
-      viewStore.state.stateContainer.state
+      viewStore.state.instance.state
     }
 
     public func bind(
@@ -70,33 +76,25 @@ public struct GridsView: NSViewRepresentable {
         removeDuplicates: { _, _ in true }
       )
 
-      stateCancellable = viewStore.publisher
-        .sink { [weak self] state in
-          state.stateContainer.observe { updates in
-            self?.render(updates: updates)
-          }
+//      stateCancellable = viewStore.instance.observe { [weak self] updates in
+//        self?.render(updates: updates)
+//      }
 
-          self?.render(updates: nil)
-        }
+      render(updates: nil)
     }
 
     private var gridViews = IntKeyedDictionary<GridView>()
 
-    private func render(updates: Neovim.State.Updates?) {
+    public func render(updates: Neovim.State.Updates?) {
       guard let outerGridIntegerSize = state.grids[.outer]?.cells.size else {
         return
       }
       let outerGridSize = outerGridIntegerSize * font.cellSize
 
-      let updatedLayoutGridIDs: Set<Neovim.Grid.ID>
-      if let updates {
-        updatedLayoutGridIDs = updates.updatedLayoutGridIDs
-
+      let updatedLayoutGridIDs = if let updates {
+        updates.updatedLayoutGridIDs
       } else {
-        updatedLayoutGridIDs = .init(
-          state.grids.keys
-            .map(Grid.ID.init(_:))
-        )
+        Set(state.grids.keys.map { Grid.ID($0) })
       }
 
       func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
@@ -107,7 +105,7 @@ public struct GridsView: NSViewRepresentable {
           let gridView = GridView()
           gridView.translatesAutoresizingMaskIntoConstraints = false
           gridView.font = font
-          gridView.stateContainer = viewStore.stateContainer
+          gridView.instance = viewStore.instance
           gridView.gridID = gridID
           gridView.reportMouseEvent = reportMouseEvent
           addSubview(gridView)

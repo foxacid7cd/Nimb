@@ -27,7 +27,7 @@ public struct InstanceReducer: ReducerProtocol {
   public enum Action: Sendable {
     case setFont(NimsFont)
     case start(keyPresses: AsyncStream<KeyPress>, mouseEvents: AsyncStream<MouseEvent>)
-    case started(Instance.StateContainer)
+    case started(Instance)
     case finished(Error?)
     case phase(Phase)
 
@@ -64,88 +64,12 @@ public struct InstanceReducer: ReducerProtocol {
             send(.setFont(font))
           }
 
-          let instance = Neovim.Instance(keyPresses: keyPresses, mouseEvents: mouseEvents)
-
-          send(.started(instance.stateContainer))
-
-          do {
-            for try await element in instance {
-              switch element {
-              case let .stateUpdates(value):
-                let state = instance.stateContainer.state
-
-                if value.isTitleUpdated {
-                  send(
-                    .phase(
-                      .running(
-                        .setTitle(state.title)
-                      )
-                    )
-                  )
-                }
-
-                if value.updatedLayoutGridIDs.contains(.outer) {
-                  send(
-                    .phase(
-                      .running(
-                        .setOuterGridSize(state.grids[.outer]?.cells.size)
-                      )
-                    )
-                  )
-                }
-
-                if value.isAppearanceUpdated {
-                  send(
-                    .phase(
-                      .running(
-                        .setAppearance(state.appearance)
-                      )
-                    )
-                  )
-                }
-
-                if value.isCmdlinesUpdated {
-                  send(
-                    .phase(
-                      .running(
-                        .setCmdlines(state.cmdlines)
-                      )
-                    )
-                  )
-                }
-
-                if value.isMsgShowsUpdated {
-                  send(
-                    .phase(
-                      .running(
-                        .setMsgShows(state.msgShows)
-                      )
-                    )
-                  )
-                }
-
-                if value.isTablineUpdated {
-                  send(
-                    .phase(
-                      .running(
-                        .setTabline(state.tabline)
-                      )
-                    )
-                  )
-                }
-              }
-            }
-
-            send(.finished(nil))
-
-          } catch {
-            send(.finished(error))
-          }
+          send(.finished(nil))
         }
 
-      case let .started(stateContainer):
+      case let .started(instance):
         state.phase = .running(
-          .init(stateContainer: stateContainer)
+          .init(instance: instance)
         )
         state.phaseUpdateFlag.toggle()
 
@@ -175,13 +99,13 @@ public struct InstanceReducer: ReducerProtocol {
           case .close:
             state.phase = .pending
             state.phaseUpdateFlag.toggle()
+
+            return .none
           }
 
         default:
-          break
+          return .none
         }
-
-        return .none
       }
     }
     Scope(state: \.phase, action: /Action.phase) {

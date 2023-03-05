@@ -6,11 +6,13 @@ import Neovim
 import SwiftUI
 
 public struct HeaderView: View {
-  public init(store: StoreOf<RunningInstanceReducer>) {
+  public init(store: StoreOf<RunningInstanceReducer>, instance: Instance) {
     self.store = store
+    self.instance = instance
   }
 
   private var store: StoreOf<RunningInstanceReducer>
+  private var instance: Instance
 
   @Environment(\.nimsFont)
   private var font: NimsFont
@@ -21,50 +23,42 @@ public struct HeaderView: View {
   public var body: some View {
     let foregroundColor = appearance.defaultForegroundColor.swiftUI
 
-    WithViewStore(
-      store,
-      observe: { $0 },
-      removeDuplicates: {
-        $0.tablineUpdateFlag == $1.tablineUpdateFlag
+    HStack(alignment: .center) {
+      Button {
+//          instance.state.send(.sideMenuButtonPressed)
+
+      } label: {
+        Image(systemName: "sidebar.left", variableValue: 1)
       }
-    ) { state in
-      HStack(alignment: .center) {
-        Button {
-          state.send(.sideMenuButtonPressed)
+      .tint(foregroundColor)
+      .buttonStyle(.borderless)
+      .padding(.init(top: 0, leading: 4, bottom: 0, trailing: 4))
+      .frame(maxHeight: .infinity)
+      .fixedSize(horizontal: true, vertical: false)
 
-        } label: {
-          Image(systemName: "sidebar.left", variableValue: 1)
-        }
-        .tint(foregroundColor)
-        .buttonStyle(.borderless)
-        .padding(.init(top: 0, leading: 4, bottom: 0, trailing: 4))
-        .frame(maxHeight: .infinity)
-        .fixedSize(horizontal: true, vertical: false)
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+          let tabpages = instance.state.tabline?.tabpages ?? []
 
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(alignment: .firstTextBaseline, spacing: 2) {
-            let tabpages = state.tabline?.tabpages ?? []
+          ForEach(tabpages) { tabpage in
+            Button {
+//                state.send(.reportSelectedTabpage(id: tabpage.id))
 
-            ForEach(tabpages) { tabpage in
-              Button {
-                state.send(.reportSelectedTabpage(id: tabpage.id))
-
-              } label: {
-                Text(tabpage.name)
-                  .font(.system(size: 11))
-              }
-              .buttonStyle(
-                TabButtonStyle(
-                  foregroundColor: foregroundColor,
-                  isSelected: tabpage.id == state.tabline?.currentTabpageID
-                )
-              )
+            } label: {
+              Text(tabpage.name)
+                .font(.system(size: 11))
             }
+            .buttonStyle(
+              TabButtonStyle(
+                foregroundColor: foregroundColor,
+                isSelected: tabpage.id == instance.state.tabline?.currentTabpageID
+              )
+            )
           }
         }
       }
-      .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
     }
+    .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
     .background(appearance.defaultBackgroundColor.swiftUI)
   }
 

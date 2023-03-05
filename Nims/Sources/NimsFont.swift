@@ -20,16 +20,16 @@ public struct NimsFont: Sendable, Hashable {
   @MainActor
   public func nsFont(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
     if isBold, isItalic {
-      return unwrapped.boldItalic
+      unwrapped.boldItalic
 
     } else if isBold {
-      return unwrapped.bold
+      unwrapped.bold
 
     } else if isItalic {
-      return unwrapped.italic
+      unwrapped.italic
 
     } else {
-      return unwrapped.regular
+      unwrapped.regular
     }
   }
 

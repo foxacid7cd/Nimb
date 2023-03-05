@@ -710,8 +710,8 @@ public extension State {
           cmdlinesUpdated()
 
         case let .msgShow(kind, content, replaceLast):
-          if replaceLast, let lastKey = msgShows.keys.max() {
-            msgShows.removeValue(forKey: lastKey)
+          if replaceLast, !msgShows.isEmpty {
+            msgShows.removeValue(forKey: msgShows.count - 1)
           }
 
           if !content.isEmpty {
@@ -741,9 +741,10 @@ public extension State {
           msgShowsUpdated()
 
         case .msgClear:
-          msgShows = [:]
-
-          msgShowsUpdated()
+          if !msgShows.isEmpty {
+            msgShows = [:]
+            msgShowsUpdated()
+          }
 
         default:
           break

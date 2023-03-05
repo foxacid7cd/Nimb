@@ -11,37 +11,34 @@ import SwiftUI
 import Tagged
 
 public struct RunningInstanceView: View {
-  public init(store: StoreOf<RunningInstanceReducer>, reportMouseEvent: @escaping (MouseEvent) -> Void) {
+  public init(
+    store: StoreOf<RunningInstanceReducer>,
+    instance: Instance,
+    reportMouseEvent: @escaping (MouseEvent) -> Void
+  ) {
     self.store = store
+    self.instance = instance
     self.reportMouseEvent = reportMouseEvent
   }
 
   private var store: StoreOf<RunningInstanceReducer>
+  private var instance: Instance
   private var reportMouseEvent: (MouseEvent) -> Void
 
   @Environment(\.nimsFont)
   private var font: NimsFont
 
   public var body: some View {
-    WithViewStore(
-      store,
-      observe: { $0 },
-      removeDuplicates: {
-        $0.outerGridSizeUpdateFlag == $1.outerGridSizeUpdateFlag
-      },
-      content: { state in
-        VStack(spacing: 0) {
-          HeaderView(store: store)
-            .frame(idealHeight: 44, alignment: .topLeading)
-            .fixedSize(horizontal: false, vertical: true)
+    VStack(spacing: 0) {
+      HeaderView(store: store, instance: instance)
+        .frame(idealHeight: 44, alignment: .topLeading)
+        .fixedSize(horizontal: false, vertical: true)
 
-          if let outerGridSize = state.outerGridSize {
-            GridsView(store: store, reportMouseEvent: reportMouseEvent)
-              .frame(size: outerGridSize * font.cellSize, alignment: .topLeading)
-              .fixedSize()
-          }
-        }
+      if let outerGridSize = instance.state.grids[.outer]?.cells.size {
+        GridsView(store: store, instance: instance, reportMouseEvent: reportMouseEvent)
+          .frame(size: outerGridSize * font.cellSize, alignment: .topLeading)
+          .fixedSize()
       }
-    )
+    }
   }
 }
