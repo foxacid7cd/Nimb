@@ -28,8 +28,7 @@ public struct RunningInstanceView: View {
       observe: { $0 },
       removeDuplicates: { lhs, rhs in
         guard
-          lhs.cmdlinesUpdateFlag == rhs.cmdlinesUpdateFlag,
-          lhs.msgShowsUpdateFlag == rhs.msgShowsUpdateFlag
+          lhs.cmdlinesUpdateFlag == rhs.cmdlinesUpdateFlag
         else {
           return true
         }
@@ -59,8 +58,7 @@ public struct RunningInstanceView: View {
         )
 
         if
-          state.cmdlines.isEmpty,
-          state.msgShows.isEmpty
+          state.cmdlines.isEmpty
         {
           mainView
 

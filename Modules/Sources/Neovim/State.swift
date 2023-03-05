@@ -714,27 +714,29 @@ public extension State {
             msgShows.removeValue(forKey: lastKey)
           }
 
-          msgShows[msgShows.count] = .init(
-            index: msgShows.count,
-            kind: kind,
-            contentParts: content
-              .compactMap { rawContentPart in
-                guard
-                  case let .array(rawContentPart) = rawContentPart,
-                  rawContentPart.count == 2,
-                  case let .integer(rawHighlightID) = rawContentPart[0],
-                  case let .string(text) = rawContentPart[1]
-                else {
-                  assertionFailure("Invalid msgShow content raw value")
-                  return nil
-                }
+          if !content.isEmpty {
+            msgShows[msgShows.count] = .init(
+              index: msgShows.count,
+              kind: kind,
+              contentParts: content
+                .compactMap { rawContentPart in
+                  guard
+                    case let .array(rawContentPart) = rawContentPart,
+                    rawContentPart.count == 2,
+                    case let .integer(rawHighlightID) = rawContentPart[0],
+                    case let .string(text) = rawContentPart[1]
+                  else {
+                    assertionFailure("Invalid msgShow content raw value")
+                    return nil
+                  }
 
-                return .init(
-                  highlightID: .init(rawHighlightID),
-                  text: text
-                )
-              }
-          )
+                  return .init(
+                    highlightID: .init(rawHighlightID),
+                    text: text
+                  )
+                }
+            )
+          }
 
           msgShowsUpdated()
 

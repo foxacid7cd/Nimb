@@ -22,9 +22,9 @@ public struct Instance: Sendable {
     keyPresses: AsyncStream<KeyPress>,
     mouseEvents: AsyncStream<MouseEvent>
   ) {
-    let nvimExecutableURL = Bundle.main.url(forAuxiliaryExecutable: "nvim")!
+    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
-    let nvimCommand = ([nvimExecutableURL.relativePath] + nvimArguments)
+    let nvimCommand = ([nvimExecutablePath] + nvimArguments)
       .joined(separator: " ")
 
     process.executableURL = URL(filePath: "/bin/zsh")
@@ -33,7 +33,6 @@ public struct Instance: Sendable {
     let environmentOverlay = [String: String]()
 
     var environment = ProcessInfo.processInfo.environment
-    environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
     environment.merge(environmentOverlay, uniquingKeysWith: { $1 })
     process.environment = environment
 

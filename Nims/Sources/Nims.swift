@@ -10,6 +10,9 @@ import SwiftUI
 
 @main
 struct Nims: App {
+  @NSApplicationDelegateAdaptor(AppDelegate.self)
+  private var appDelegate: AppDelegate
+
   var body: some Scene {
     WindowGroup {
       ForEachStore(
@@ -57,6 +60,9 @@ struct Nims: App {
                   }
                 }
               )
+              .onAppear {
+                appDelegate.bind(store: runningStore)
+              }
               .navigationTitle(runningState.title ?? "")
               .environment(\.appearance, runningState.appearance)
             }

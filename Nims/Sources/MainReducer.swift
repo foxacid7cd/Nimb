@@ -11,7 +11,10 @@ struct MainReducer: ReducerProtocol {
   }
 
   enum Action {
-    case createNeovimInstance(keyPresses: AsyncStream<KeyPress>, mouseEvents: AsyncStream<MouseEvent>)
+    case createNeovimInstance(
+      keyPresses: AsyncStream<KeyPress>,
+      mouseEvents: AsyncStream<MouseEvent>
+    )
     case instance(id: InstanceReducer.State.ID, action: InstanceReducer.Action)
   }
 
