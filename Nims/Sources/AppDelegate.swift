@@ -4,15 +4,23 @@ import AppKit
 import CustomDump
 import Neovim
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+  private var instance: Instance?
   private var mainWindowController: MainWindowController?
 
   func applicationDidFinishLaunching(_: Notification) {
-    let instance = Instance()
+    setupNeovimInstance()
+    showMainWindowController()
+    setupKeyDownLocalMonitor()
+  }
+
+  private func setupNeovimInstance() {
+    instance = Instance()
 
     Task {
-      for await updates in instance.stateUpdatesStream() {
-        let state = instance.state
+      for await updates in instance!.stateUpdatesStream() {
+        let state = instance!.state
 
         if updates.isTitleUpdated {
           customDump(state.title)
@@ -21,14 +29,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     Task {
-      let finishedResult = await instance.finishedResult()
+      let finishedResult = await instance!.finishedResult()
       customDump(finishedResult)
     }
+  }
 
+  private func showMainWindowController() {
     let mainViewController = MainViewController()
 
     mainWindowController = MainWindowController(viewController: mainViewController)
     mainWindowController!.showWindow(nil)
+  }
+
+  private func setupKeyDownLocalMonitor() {
+    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+      if event.modifierFlags.contains(.command) {
+        return event
+      }
+
+      let keyPress = KeyPress(event: event)
+      let instance = self.instance!
+
+      Task {
+        await instance.report(keyPress: keyPress)
+      }
+
+      return nil
+    }
   }
 }
 
