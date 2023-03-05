@@ -630,7 +630,7 @@ public extension State {
           tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-          let cmdline = Cmdline(
+          var cmdline = Cmdline(
             contentParts: content
               .compactMap { rawContentPart in
                 guard
@@ -657,19 +657,24 @@ public extension State {
             shiftAfterSpecialCharacter: false,
             blockLines: []
           )
-          cmdlines.insert(cmdline, at: level - 1)
+          if level - 1 == cmdlines.count {
+            cmdlines.append(cmdline)
+
+          } else {
+            swap(&cmdlines[level - 1], &cmdline)
+          }
 
           cmdlinesUpdated()
 
         case let .cmdlinePos(pos, level):
-          update(&cmdlines[level]) { cmdline in
+          update(&cmdlines[level - 1]) { cmdline in
             cmdline.cursorPosition = pos
           }
 
           cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
-          update(&cmdlines[level]) { cmdline in
+          update(&cmdlines[level - 1]) { cmdline in
             cmdline.specialCharacter = c
             cmdline.shiftAfterSpecialCharacter = shift
           }
@@ -677,7 +682,7 @@ public extension State {
           cmdlinesUpdated()
 
         case let .cmdlineHide(level):
-          cmdlines.remove(at: level)
+          cmdlines.remove(at: level - 1)
 
           cmdlinesUpdated()
 

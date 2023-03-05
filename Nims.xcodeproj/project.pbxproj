@@ -21,6 +21,7 @@
 		689D9E2D29B50BF400345713 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2C29B50BF400345713 /* MainView.swift */; };
 		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */; };
+		689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3229B5326300345713 /* CmdlinesWindowController.swift */; };
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BE6A6F29AED4EB008593A6 /* MainReducer.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
@@ -82,6 +83,7 @@
 		689D9E2C29B50BF400345713 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsWindowController.swift; sourceTree = "<group>"; };
+		689D9E3229B5326300345713 /* CmdlinesWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesWindowController.swift; sourceTree = "<group>"; };
 		68A8C917294D154600BD3EC1 /* Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nims.swift; sourceTree = "<group>"; };
 		68BE6A6F29AED4EB008593A6 /* MainReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainReducer.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,6 +120,7 @@
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */,
+				689D9E3229B5326300345713 /* CmdlinesWindowController.swift */,
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* MainView.swift */,
 				68A8C917294D154600BD3EC1 /* Nims.swift */,
@@ -308,6 +311,7 @@
 				689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				689D9E2729B4FA7000345713 /* main.swift in Sources */,
+				689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */,
 				68A8C918294D154600BD3EC1 /* Nims.swift in Sources */,
 				68EF608729B2AA790056E48D /* RunningInstanceReducer.swift in Sources */,
 				6837727F29B2846A00320350 /* InstanceReducer.swift in Sources */,

@@ -2,7 +2,7 @@
 
 import Tagged
 
-public struct Cmdline: Identifiable, Sendable {
+public struct Cmdline: Identifiable, Sendable, Hashable {
   public var contentParts: [ContentPart]
   public var cursorPosition: Int
   public var firstCharacter: String
@@ -13,7 +13,7 @@ public struct Cmdline: Identifiable, Sendable {
   public var shiftAfterSpecialCharacter: Bool
   public var blockLines: [[ContentPart]]
 
-  public struct ContentPart: Sendable {
+  public struct ContentPart: Sendable, Hashable {
     public var highlightID: Highlight.ID
     public var text: String
   }
