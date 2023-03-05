@@ -38,7 +38,6 @@ public actor Process {
         process.arguments = ["-l", "-c", command]
 
         var environment = ProcessInfo.processInfo.environment
-        environment["VIMRUNTIME"] = "/opt/homebrew/share/nvim/runtime"
         environment.merge(environmentOverlay, uniquingKeysWith: { $1 })
         process.environment = environment
 

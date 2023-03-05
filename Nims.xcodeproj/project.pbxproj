@@ -10,9 +10,9 @@
 		682272BB293DD63800A36AB9 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BA293DD63800A36AB9 /* Library */; };
 		682272BD293DD63800A36AB9 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BC293DD63800A36AB9 /* MessagePack */; };
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
-		6837091629B4168200E02348 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 6837091529B4167E00E02348 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6837727F29B2846A00320350 /* InstanceReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837727E29B2846A00320350 /* InstanceReducer.swift */; };
+		689B64C829B43D2E0062C485 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 689B64C729B43D2B0062C485 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BE6A6F29AED4EB008593A6 /* MainReducer.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
@@ -53,7 +53,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				6837091629B4168200E02348 /* nvim in Copy nvim Executable */,
+				689B64C829B43D2E0062C485 /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -63,10 +63,10 @@
 /* Begin PBXFileReference section */
 		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
-		6837091529B4167E00E02348 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/bin/nvim; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6837727E29B2846A00320350 /* InstanceReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceReducer.swift; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		689B64C729B43D2B0062C485 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		68A8C917294D154600BD3EC1 /* Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nims.swift; sourceTree = "<group>"; };
 		68BE6A6F29AED4EB008593A6 /* MainReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainReducer.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -125,7 +125,7 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
-				6837091529B4167E00E02348 /* nvim */,
+				689B64C729B43D2B0062C485 /* nvim */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
 			name = Locations;
@@ -255,7 +255,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "#() {\n  #local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n\n  #if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n  #  >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n  #  exit 1\n  #fi\n  \n  #local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  #mkdir \"$DESTINATION_DIR\"\n\n  #setopt extendedglob\n  #cp -R $NVIM_INSTALL_DIR/^bin \"$DESTINATION_DIR\"\n#}\n";
+			shellScript = "() {\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R $NVIM_INSTALL_DIR/^bin \"$DESTINATION_DIR\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
