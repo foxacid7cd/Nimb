@@ -5,10 +5,21 @@ import Library
 import Neovim
 
 public final class GridView: NSView {
-  var font: NimsFont!
-  var instance: Neovim.Instance!
-  var gridID: Neovim.Grid.ID!
-  var reportMouseEvent: ((MouseEvent) -> Void)?
+  private let instance: Instance
+  private let gridID: Grid.ID
+  private let font = NimsFont()
+  private let drawRunsProvider = DrawRunsProvider()
+
+  init(instance: Instance, gridID: Grid.ID) {
+    self.instance = instance
+    self.gridID = gridID
+    super.init(frame: .init())
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
 
   var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
@@ -18,8 +29,6 @@ public final class GridView: NSView {
     state.grids[gridID]?.ordinal ?? -1
   }
 
-  private let drawRunsProvider = DrawRunsProvider()
-
   private var state: Neovim.State {
     instance.state
   }
@@ -27,10 +36,6 @@ public final class GridView: NSView {
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -bounds.size.height)
-  }
-
-  private var nimsAppearance: Appearance {
-    state.appearance
   }
 
   override public func draw(_: NSRect) {
@@ -101,7 +106,7 @@ public final class GridView: NSView {
         let rowLayout = grid.rowLayouts[row]
 
         for part in rowLayout.parts {
-          let backgroundColor = nimsAppearance.backgroundColor(for: part.highlightID)
+          let backgroundColor = state.appearance.backgroundColor(for: part.highlightID)
 
           let partIntegerFrame = IntegerRectangle(
             origin: .init(column: part.indices.lowerBound, row: row),
@@ -123,9 +128,9 @@ public final class GridView: NSView {
                 ),
                 text: part.text,
                 font: font,
-                isItalic: nimsAppearance.isItalic(for: part.highlightID),
-                isBold: nimsAppearance.isBold(for: part.highlightID),
-                decorations: nimsAppearance.decorations(for: part.highlightID)
+                isItalic: state.appearance.isItalic(for: part.highlightID),
+                isBold: state.appearance.isBold(for: part.highlightID),
+                decorations: state.appearance.decorations(for: part.highlightID)
               )
             )
           drawRuns.append(
@@ -195,8 +200,8 @@ public final class GridView: NSView {
       }
 
       for (origin, highlightID, drawRun) in drawRuns {
-        let foregroundColor = nimsAppearance.foregroundColor(for: highlightID)
-        let specialColor = nimsAppearance.specialColor(for: highlightID)
+        let foregroundColor = state.appearance.foregroundColor(for: highlightID)
+        let specialColor = state.appearance.specialColor(for: highlightID)
 
         drawRun.draw(
           at: origin,
@@ -213,12 +218,12 @@ public final class GridView: NSView {
         let cursorBackgroundColor: Neovim.Color
 
         if cursorDrawRun.highlightID.isDefault {
-          cursorForegroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
-          cursorBackgroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorForegroundColor = state.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
+          cursorBackgroundColor = state.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
 
         } else {
-          cursorForegroundColor = nimsAppearance.foregroundColor(for: cursorDrawRun.highlightID)
-          cursorBackgroundColor = nimsAppearance.backgroundColor(for: cursorDrawRun.highlightID)
+          cursorForegroundColor = state.appearance.foregroundColor(for: cursorDrawRun.highlightID)
+          cursorBackgroundColor = state.appearance.backgroundColor(for: cursorDrawRun.highlightID)
         }
 
         cursorBackgroundColor.appKit.setFill()
@@ -334,6 +339,14 @@ public final class GridView: NSView {
       column: Int(upsideDownLocation.x / font.cellWidth),
       row: Int(upsideDownLocation.y / font.cellHeight)
     )
-    reportMouseEvent?(.init(content: content, gridID: gridID, point: point))
+    let mouseEvent = MouseEvent(
+      content: content,
+      gridID: gridID,
+      point: point
+    )
+
+    Task {
+      await instance.report(mouseEvent: mouseEvent)
+    }
   }
 }

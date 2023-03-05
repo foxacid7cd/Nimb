@@ -31,8 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     Task {
-      let finishedResult = await instance!.finishedResult()
-      customDump(finishedResult)
+      if let finishedResult = await instance!.finishedResult() {
+        NSAlert(error: finishedResult)
+          .runModal()
+      }
     }
   }
 

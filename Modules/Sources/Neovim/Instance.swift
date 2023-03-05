@@ -15,7 +15,9 @@ public final class Instance: Sendable {
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var observers = [UUID: @MainActor (State.Updates) -> Void]()
+  private var reportMouseEventsTask: Task<Void, Never>?
   private var task: Task<Error?, Never>?
+  private var mouseEventsChannel = AsyncChannel<MouseEvent>()
 
   public init() {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
@@ -37,6 +39,35 @@ public final class Instance: Sendable {
     let api = API(rpc)
 
     self.api = api
+
+    reportMouseEventsTask = Task {
+      for await mouseEvent in mouseEventsChannel.throttle(for: .milliseconds(10), latest: true) {
+        guard !Task.isCancelled else {
+          return
+        }
+
+        let (rawButton, rawAction) = switch mouseEvent.content {
+        case let .mouse(button, action):
+          (button.rawValue, action.rawValue)
+
+        case let .scrollWheel(direction):
+          ("wheel", direction.rawValue)
+        }
+
+        do {
+          try await api.nvimInputMouseFast(
+            button: rawButton,
+            action: rawAction,
+            modifier: "",
+            gridID: mouseEvent.gridID,
+            row: mouseEvent.point.row,
+            col: mouseEvent.point.column
+          )
+        } catch {
+          assertionFailure("\(error)")
+        }
+      }
+    }
 
     task = Task {
       do {
@@ -73,6 +104,10 @@ public final class Instance: Sendable {
     }
   }
 
+  deinit {
+    reportMouseEventsTask?.cancel()
+  }
+
   public func stateUpdatesStream() -> AsyncStream<State.Updates> {
     .init(bufferingPolicy: .bufferingNewest(1)) { continuation in
       let id = UUID()
@@ -105,25 +140,6 @@ public final class Instance: Sendable {
   }
 
   public func report(mouseEvent: MouseEvent) async {
-    let (rawButton, rawAction) = switch mouseEvent.content {
-    case let .mouse(button, action):
-      (button.rawValue, action.rawValue)
-
-    case let .scrollWheel(direction):
-      ("wheel", direction.rawValue)
-    }
-
-    do {
-      try await api.nvimInputMouseFast(
-        button: rawButton,
-        action: rawAction,
-        modifier: "",
-        gridID: mouseEvent.gridID,
-        row: mouseEvent.point.row,
-        col: mouseEvent.point.column
-      )
-    } catch {
-      assertionFailure("\(error)")
-    }
+    await mouseEventsChannel.send(mouseEvent)
   }
 }

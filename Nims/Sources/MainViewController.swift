@@ -25,9 +25,17 @@ class MainViewController: NSViewController {
 
   override func loadView() {
     let view = NSView()
-    view.translatesAutoresizingMaskIntoConstraints = false
-    view.wantsLayer = true
-    view.layer!.backgroundColor = .black
+
+    let mainView = MainView(instance: instance)
+    mainView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(mainView)
+    view.addConstraints([
+      mainView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      mainView.topAnchor.constraint(equalTo: view.topAnchor),
+      mainView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      mainView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+    ])
+
     self.view = view
   }
 
@@ -38,6 +46,10 @@ class MainViewController: NSViewController {
 
     task = Task {
       for await stateUpdates in instance.stateUpdatesStream() {
+        guard !Task.isCancelled else {
+          return
+        }
+
         if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
           updatePreferredContentSize()
         }
