@@ -19,6 +19,7 @@
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
 		689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2A29B4FBA700345713 /* MainViewController.swift */; };
 		689D9E2D29B50BF400345713 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2C29B50BF400345713 /* MainView.swift */; };
+		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		68A8C918294D154600BD3EC1 /* Nims.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8C917294D154600BD3EC1 /* Nims.swift */; };
 		68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BE6A6F29AED4EB008593A6 /* MainReducer.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
@@ -78,6 +79,7 @@
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		689D9E2A29B4FBA700345713 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		689D9E2C29B50BF400345713 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		68A8C917294D154600BD3EC1 /* Nims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nims.swift; sourceTree = "<group>"; };
 		68BE6A6F29AED4EB008593A6 /* MainReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainReducer.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -111,6 +113,7 @@
 			children = (
 				689D9E2629B4FA7000345713 /* main.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
+				689D9E2E29B5127F00345713 /* Store.swift */,
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* MainView.swift */,
@@ -309,6 +312,7 @@
 				68BE6A7029AED4EB008593A6 /* MainReducer.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				689D9E2D29B50BF400345713 /* MainView.swift in Sources */,
+				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68EF608B29B2AB880056E48D /* RunningInstanceView.swift in Sources */,
 				68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */,

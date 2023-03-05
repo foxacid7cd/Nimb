@@ -109,7 +109,7 @@ public final class Instance: Sendable {
   }
 
   public func stateUpdatesStream() -> AsyncStream<State.Updates> {
-    .init(bufferingPolicy: .bufferingNewest(1)) { continuation in
+    .init(bufferingPolicy: .unbounded) { continuation in
       let id = UUID()
 
       observers[id] = { newValue in

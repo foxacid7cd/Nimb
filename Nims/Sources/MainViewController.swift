@@ -5,12 +5,12 @@ import Library
 import Neovim
 
 class MainViewController: NSViewController {
-  private let instance: Instance
+  private let store: Store
   private var task: Task<Void, Never>?
   private let font = NimsFont()
 
-  init(instance: Instance) {
-    self.instance = instance
+  init(store: Store) {
+    self.store = store
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -26,7 +26,7 @@ class MainViewController: NSViewController {
   override func loadView() {
     let view = NSView()
 
-    let mainView = MainView(instance: instance)
+    let mainView = MainView(store: store)
     mainView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(mainView)
     view.addConstraints([
@@ -45,7 +45,7 @@ class MainViewController: NSViewController {
     updatePreferredContentSize()
 
     task = Task {
-      for await stateUpdates in instance.stateUpdatesStream() {
+      for await stateUpdates in store.stateUpdatesStream() {
         guard !Task.isCancelled else {
           return
         }
@@ -58,7 +58,7 @@ class MainViewController: NSViewController {
   }
 
   private func updatePreferredContentSize() {
-    if let outerGridSize = instance.state.grids[.outer]?.cells.size {
+    if let outerGridSize = store.state.grids[.outer]?.cells.size {
       preferredContentSize = outerGridSize * font.cellSize
 
     } else {

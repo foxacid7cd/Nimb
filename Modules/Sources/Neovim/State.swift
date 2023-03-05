@@ -55,6 +55,26 @@ public struct State: Sendable {
 
 public extension State {
   struct Updates: Sendable {
+    public init(
+      isTitleUpdated: Bool = false,
+      isAppearanceUpdated: Bool = false,
+      isTablineUpdated: Bool = false,
+      isCmdlinesUpdated: Bool = false,
+      isMsgShowsUpdated: Bool = false,
+      isCursorUpdated: Bool = false,
+      updatedLayoutGridIDs: Set<Grid.ID> = Set<Grid.ID>(),
+      gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [Grid.ID: [IntegerRectangle]]()
+    ) {
+      self.isTitleUpdated = isTitleUpdated
+      self.isAppearanceUpdated = isAppearanceUpdated
+      self.isTablineUpdated = isTablineUpdated
+      self.isCmdlinesUpdated = isCmdlinesUpdated
+      self.isMsgShowsUpdated = isMsgShowsUpdated
+      self.isCursorUpdated = isCursorUpdated
+      self.updatedLayoutGridIDs = updatedLayoutGridIDs
+      self.gridUpdatedRectangles = gridUpdatedRectangles
+    }
+
     public var isTitleUpdated = false
     public var isAppearanceUpdated = false
     public var isTablineUpdated = false

@@ -5,13 +5,12 @@ import Library
 import Neovim
 
 public final class GridView: NSView {
-  private let instance: Instance
+  private let store: Store
   private let gridID: Grid.ID
-  private let font = NimsFont()
   private let drawRunsProvider = DrawRunsProvider()
 
-  init(instance: Instance, gridID: Grid.ID) {
-    self.instance = instance
+  init(store: Store, gridID: Grid.ID) {
+    self.store = store
     self.gridID = gridID
     super.init(frame: .init())
   }
@@ -29,8 +28,8 @@ public final class GridView: NSView {
     state.grids[gridID]?.ordinal ?? -1
   }
 
-  private var state: Neovim.State {
-    instance.state
+  private var state: Store.State {
+    store.state
   }
 
   private var upsideDownTransform: CGAffineTransform {
@@ -66,12 +65,12 @@ public final class GridView: NSView {
 
       let integerFrame = IntegerRectangle(
         origin: .init(
-          column: Int(upsideDownRect.origin.x / font.cellWidth),
-          row: Int(upsideDownRect.origin.y / font.cellHeight)
+          column: Int(upsideDownRect.origin.x / state.font.cellWidth),
+          row: Int(upsideDownRect.origin.y / state.font.cellHeight)
         ),
         size: .init(
-          columnsCount: Int(ceil(upsideDownRect.size.width / font.cellWidth)),
-          rowsCount: Int(ceil(upsideDownRect.size.height / font.cellHeight))
+          columnsCount: Int(ceil(upsideDownRect.size.width / state.font.cellWidth)),
+          rowsCount: Int(ceil(upsideDownRect.size.height / state.font.cellHeight))
         )
       )
       .intersection(with: .init(size: grid.cells.size))
@@ -112,7 +111,7 @@ public final class GridView: NSView {
             origin: .init(column: part.indices.lowerBound, row: row),
             size: .init(columnsCount: part.indices.count, rowsCount: 1)
           )
-          let partFrame = partIntegerFrame * font.cellSize
+          let partFrame = partIntegerFrame * state.font.cellSize
           let upsideDownPartFrame = partFrame
             .applying(upsideDownTransform)
 
@@ -127,7 +126,7 @@ public final class GridView: NSView {
                   rowsCount: 1
                 ),
                 text: part.text,
-                font: font,
+                font: state.font,
                 isItalic: state.appearance.isItalic(for: part.highlightID),
                 isBold: state.appearance.isBold(for: part.highlightID),
                 decorations: state.appearance.decorations(for: part.highlightID)
@@ -161,24 +160,24 @@ public final class GridView: NSView {
                   origin: cursor.position,
                   size: .init(columnsCount: 1, rowsCount: 1)
                 )
-                cursorFrame = integerFrame * font.cellSize
+                cursorFrame = integerFrame * state.font.cellSize
 
               case .horizontal:
-                let height = font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                let height = state.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                 cursorFrame = CGRect(
-                  x: Double(cursor.position.column) * font.cellWidth,
-                  y: Double(cursor.position.row) * font.cellHeight,
-                  width: font.cellWidth,
+                  x: Double(cursor.position.column) * state.font.cellWidth,
+                  y: Double(cursor.position.row) * state.font.cellHeight,
+                  width: state.font.cellWidth,
                   height: height
                 )
 
               case .vertical:
-                let width = font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                let width = state.font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
 
                 cursorFrame = CGRect(
-                  origin: cursor.position * font.cellSize,
-                  size: .init(width: width, height: font.cellHeight)
+                  origin: cursor.position * state.font.cellSize,
+                  size: .init(width: width, height: state.font.cellHeight)
                 )
               }
 
@@ -283,7 +282,7 @@ public final class GridView: NSView {
   private var yScrollingAccumulator: Double = 0
 
   override public func scrollWheel(with event: NSEvent) {
-    let cellSize = font.cellSize
+    let cellSize = state.font.cellSize
 
     if event.phase == .began {
       isScrollingHorizontal = nil
@@ -336,8 +335,8 @@ public final class GridView: NSView {
     let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     let point = IntegerPoint(
-      column: Int(upsideDownLocation.x / font.cellWidth),
-      row: Int(upsideDownLocation.y / font.cellHeight)
+      column: Int(upsideDownLocation.x / state.font.cellWidth),
+      row: Int(upsideDownLocation.y / state.font.cellHeight)
     )
     let mouseEvent = MouseEvent(
       content: content,
@@ -346,7 +345,7 @@ public final class GridView: NSView {
     )
 
     Task {
-      await instance.report(mouseEvent: mouseEvent)
+      await store.report(mouseEvent: mouseEvent)
     }
   }
 }

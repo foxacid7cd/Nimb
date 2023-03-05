@@ -6,32 +6,36 @@ import Neovim
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-  private var instance: Instance?
+  private var store: Store?
   private var mainWindowController: MainWindowController?
 
   func applicationDidFinishLaunching(_: Notification) {
-    setupNeovimInstance()
+    setupStore()
     showMainWindowController()
     setupKeyDownLocalMonitor()
   }
 
-  private func setupNeovimInstance() {
-    instance = Instance()
+  private func setupStore() {
+    let instance = Instance()
+    store = Store(instance: instance)
+
+    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 12) {
+      let font = NimsFont(sfMonoNFM)
+      store!.set(font: font)
+    }
 
     Task {
-      for await updates in instance!.stateUpdatesStream() {
-        let state = instance!.state
+      for await updates in store!.stateUpdatesStream() {
+        let state = store!.state
 
         if updates.isTitleUpdated {
           mainWindowController?.windowTitle = state.title ?? ""
         }
-
-        if updates.updatedLayoutGridIDs.contains(.outer) {}
       }
     }
 
     Task {
-      if let finishedResult = await instance!.finishedResult() {
+      if let finishedResult = await instance.finishedResult() {
         NSAlert(error: finishedResult)
           .runModal()
       }
@@ -39,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func showMainWindowController() {
-    let mainViewController = MainViewController(instance: instance!)
+    let mainViewController = MainViewController(store: store!)
 
     mainWindowController = MainWindowController(mainViewController)
     mainWindowController!.showWindow(nil)
@@ -52,10 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       let keyPress = KeyPress(event: event)
-      let instance = self.instance!
+      let store = self.store!
 
       Task {
-        await instance.report(keyPress: keyPress)
+        await store.report(keyPress: keyPress)
       }
 
       return nil
