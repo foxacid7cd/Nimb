@@ -17,8 +17,8 @@ public struct State: Sendable {
     mode: Mode? = nil,
     cursor: Cursor? = nil,
     tabline: Tabline? = nil,
-    cmdlines: IntKeyedDictionary<Cmdline> = [:],
-    msgShows: IntKeyedDictionary<MsgShow> = [:],
+    cmdlines: [Cmdline] = [],
+    msgShows: [MsgShow] = [],
     grids: IntKeyedDictionary<Grid> = [:]
   ) {
     self.bufferedUIEvents = bufferedUIEvents
@@ -42,8 +42,8 @@ public struct State: Sendable {
   public var mode: Mode?
   public var cursor: Cursor?
   public var tabline: Tabline?
-  public var cmdlines: IntKeyedDictionary<Cmdline>
-  public var msgShows: IntKeyedDictionary<MsgShow>
+  public var cmdlines: [Cmdline]
+  public var msgShows: [MsgShow]
   public var grids: IntKeyedDictionary<Grid>
   public var windowZIndexCounter = 0
 
@@ -630,7 +630,7 @@ public extension State {
           tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-          cmdlines[level] = .init(
+          let cmdline = Cmdline(
             contentParts: content
               .compactMap { rawContentPart in
                 guard
@@ -657,18 +657,19 @@ public extension State {
             shiftAfterSpecialCharacter: false,
             blockLines: []
           )
+          cmdlines.insert(cmdline, at: level - 1)
 
           cmdlinesUpdated()
 
         case let .cmdlinePos(pos, level):
-          update(&cmdlines[level]!) { cmdline in
+          update(&cmdlines[level]) { cmdline in
             cmdline.cursorPosition = pos
           }
 
           cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
-          update(&cmdlines[level]!) { cmdline in
+          update(&cmdlines[level]) { cmdline in
             cmdline.specialCharacter = c
             cmdline.shiftAfterSpecialCharacter = shift
           }
@@ -676,7 +677,7 @@ public extension State {
           cmdlinesUpdated()
 
         case let .cmdlineHide(level):
-          cmdlines.removeValue(forKey: level)
+          cmdlines.remove(at: level)
 
           cmdlinesUpdated()
 
@@ -714,7 +715,7 @@ public extension State {
 
           if !cmdlines.isEmpty {
             update(&cmdlines[cmdlines.count - 1]) { cmdline in
-              cmdline?.blockLines = blockLines
+              cmdline.blockLines = blockLines
             }
           }
 
@@ -723,7 +724,7 @@ public extension State {
         case .cmdlineBlockHide:
           if !cmdlines.isEmpty {
             update(&cmdlines[cmdlines.count - 1]) { cmdline in
-              cmdline?.blockLines = []
+              cmdline.blockLines = []
             }
           }
 
@@ -731,11 +732,11 @@ public extension State {
 
         case let .msgShow(kind, content, replaceLast):
           if replaceLast, !msgShows.isEmpty {
-            msgShows.removeValue(forKey: msgShows.count - 1)
+            msgShows.removeLast()
           }
 
           if !content.isEmpty {
-            msgShows[msgShows.count] = .init(
+            let msgShow = MsgShow(
               index: msgShows.count,
               kind: kind,
               contentParts: content
@@ -756,13 +757,14 @@ public extension State {
                   )
                 }
             )
+            msgShows.append(msgShow)
           }
 
           msgShowsUpdated()
 
         case .msgClear:
           if !msgShows.isEmpty {
-            msgShows = [:]
+            msgShows = []
             msgShowsUpdated()
           }
 
