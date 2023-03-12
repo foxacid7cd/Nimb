@@ -43,7 +43,7 @@ public struct Grid: Sendable, Identifiable {
       self.cellIndices = cellIndices
     }
 
-    public init(rowCells: ArraySlice<Cell>) {
+    public init(rowCells: [Cell]) {
       let chunks = rowCells.chunked {
         $0.highlightID == $1.highlightID && !$0.text.utf16.isEmpty
       }

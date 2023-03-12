@@ -73,7 +73,7 @@ extension CmdlinesWindowController: NSWindowDelegate {
     window.setFrameOrigin(
       .init(
         x: (screen.frame.width - window.frame.width) / 2,
-        y: (screen.frame.height - window.frame.height) / 2
+        y: (screen.frame.height - window.frame.height) / 1.5
       )
     )
   }

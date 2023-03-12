@@ -345,7 +345,7 @@ public extension State {
                 size: size,
                 elementAtPoint: { point in
                   guard
-                    point.row < grid!.cells.rowsCount,
+                    point.row < grid!.cells.rows.count,
                     point.column < grid!.cells.columnsCount
                   else {
                     return .default
@@ -448,7 +448,7 @@ public extension State {
             for fromRow in top ..< bottom {
               let toRow = fromRow - rowsCount
 
-              guard toRow >= 0, toRow < grid.cells.rowsCount else {
+              guard toRow >= 0, toRow < grid.cells.rows.count else {
                 continue
               }
 
