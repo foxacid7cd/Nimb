@@ -46,7 +46,14 @@ public struct KeyPress: Sendable {
     if let modifier, let specialKey {
       return "<\(modifier)-\(specialKey)>"
     } else if let modifier {
-      return "<\(modifier)-\(Character(unicodeScalar))>"
+      let character = Character(unicodeScalar)
+
+      if modifierFlags.contains(.shift) {
+        return "\(character)"
+
+      } else {
+        return "<\(modifier)-\(character)>"
+      }
     } else if let specialKey {
       return "<\(specialKey)>"
     } else {
@@ -73,7 +80,7 @@ private extension NSEvent.ModifierFlags {
 
 private let specialKeys = [
   NSEnterCharacter: "CR", NSDeleteCharacter: "BS", NSBackspaceCharacter: "BS",
-  NSDeleteCharFunctionKey: "Del", NSTabCharacter: "Tab", NSCarriageReturnCharacter: "CR",
+  NSDeleteCharFunctionKey: "Del", NSTabCharacter: "Tab", NSBackTabCharacter: "Tab", NSCarriageReturnCharacter: "CR",
   NSUpArrowFunctionKey: "Up", NSDownArrowFunctionKey: "Down", NSLeftArrowFunctionKey: "Left",
   NSRightArrowFunctionKey: "Right", NSInsertFunctionKey: "Insert", NSHomeFunctionKey: "Home",
   NSBeginFunctionKey: "Begin", NSEndFunctionKey: "End", NSPageUpFunctionKey: "PageUp",
