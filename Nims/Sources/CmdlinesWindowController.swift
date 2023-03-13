@@ -7,11 +7,13 @@ import SwiftUI
 
 class CmdlinesWindowController: NSWindowController {
   private let store: Store
+  private let parentWindow: NSWindow
   private let viewController: NSHostingController<CmdlinesView>
   private var task: Task<Void, Never>?
 
-  init(store: Store) {
+  init(store: Store, parentWindow: NSWindow) {
     self.store = store
+    self.parentWindow = parentWindow
 
     viewController = NSHostingController<CmdlinesView>(
       rootView: .init(cmdlines: store.cmdlines, font: store.state.font, appearance: store.appearance)
@@ -44,6 +46,8 @@ class CmdlinesWindowController: NSWindowController {
         }
 
         if stateUpdates.isCmdlinesUpdated {
+          updateWindowOrigin()
+
           self.window!.setIsVisible(!store.cmdlines.isEmpty)
 
           if !store.cmdlines.isEmpty {
@@ -62,11 +66,9 @@ class CmdlinesWindowController: NSWindowController {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-}
 
-extension CmdlinesWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {
-    guard let window, let screen = window.screen else {
+  private func updateWindowOrigin() {
+    guard let window, let screen = parentWindow.screen else {
       return
     }
 
@@ -76,6 +78,12 @@ extension CmdlinesWindowController: NSWindowDelegate {
         y: (screen.frame.height - window.frame.height) / 1.5
       )
     )
+  }
+}
+
+extension CmdlinesWindowController: NSWindowDelegate {
+  func windowDidResize(_: Notification) {
+    updateWindowOrigin()
   }
 }
 
@@ -151,13 +159,13 @@ struct CmdlinesView: View {
         }
       }
       .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
-      .frame(idealWidth: 640)
+      .frame(minWidth: 640)
       .background {
         let rectangle = Rectangle()
 
         rectangle
           .fill(
-            appearance.defaultBackgroundColor.swiftUI.opacity(0.9)
+            appearance.defaultBackgroundColor.swiftUI.opacity(0.95)
           )
 
         rectangle

@@ -53,8 +53,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func setupSecondaryWindowControllers() {
-    msgShowsWindowController = MsgShowsWindowController(store: store!)
-    cmdlinesWindowController = CmdlinesWindowController(store: store!)
+    msgShowsWindowController = MsgShowsWindowController(store: store!, parentWindow: mainWindowController!.window!)
+    cmdlinesWindowController = CmdlinesWindowController(store: store!, parentWindow: mainWindowController!.window!)
   }
 
   private func setupKeyDownLocalMonitor() {
