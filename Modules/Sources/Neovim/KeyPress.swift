@@ -41,30 +41,27 @@ public struct KeyPress: Sendable {
       }
     }()
 
-    let modifier = modifierFlags.modifier
+    let modifier = modifierFlags.makeModifier(isSpecialKey: specialKey != nil)
 
     if let modifier, let specialKey {
       return "<\(modifier)-\(specialKey)>"
     } else if let modifier {
-      let character = Character(unicodeScalar)
-
-      if modifierFlags.contains(.shift) {
-        return "\(character)"
-
-      } else {
-        return "<\(modifier)-\(character)>"
-      }
+      return "<\(modifier)-\(Character(unicodeScalar))>"
     } else if let specialKey {
       return "<\(specialKey)>"
     } else {
-      return characters.replacingOccurrences(of: "<", with: "<lt>")
+      var string = "\(Character(unicodeScalar))"
+      if modifierFlags.contains(.shift) {
+        string = string.uppercased()
+      }
+      return string.replacingOccurrences(of: "<", with: "<lt>")
     }
   }
 }
 
 private extension NSEvent.ModifierFlags {
-  var modifier: String? {
-    if contains(.shift) {
+  func makeModifier(isSpecialKey: Bool) -> String? {
+    if contains(.shift), isSpecialKey {
       return "S"
     } else if contains(.control) {
       return "C"

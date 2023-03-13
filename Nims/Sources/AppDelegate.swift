@@ -59,10 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupKeyDownLocalMonitor() {
     NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      if event.modifierFlags.contains(.command) {
-        return event
-      }
-
       let keyPress = KeyPress(event: event)
       let store = self.store!
 
