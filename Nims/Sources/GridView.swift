@@ -286,28 +286,11 @@ public final class GridView: NSView {
       yScrollingAccumulator = 0
     }
 
-    xScrollingAccumulator -= event.scrollingDeltaX / 1.5
+    xScrollingAccumulator -= event.scrollingDeltaX
     yScrollingAccumulator -= event.scrollingDeltaY
 
     let xThreshold = cellSize.width * 3
     let yThreshold = cellSize.height * 3
-
-    if isScrollingHorizontal != false {
-      while abs(xScrollingAccumulator) > xThreshold {
-        if isScrollingHorizontal == nil {
-          isScrollingHorizontal = true
-        }
-
-        if xScrollingAccumulator > 0 {
-          xScrollingAccumulator -= xThreshold
-          report(event, of: .scrollWheel(direction: .right))
-
-        } else {
-          xScrollingAccumulator += xThreshold
-          report(event, of: .scrollWheel(direction: .left))
-        }
-      }
-    }
 
     if isScrollingHorizontal != true {
       while abs(yScrollingAccumulator) > yThreshold {
@@ -322,6 +305,23 @@ public final class GridView: NSView {
         } else {
           yScrollingAccumulator += yThreshold
           report(event, of: .scrollWheel(direction: .up))
+        }
+      }
+    }
+
+    if isScrollingHorizontal != false {
+      while abs(xScrollingAccumulator) > xThreshold {
+        if isScrollingHorizontal == nil {
+          isScrollingHorizontal = true
+        }
+
+        if xScrollingAccumulator > 0 {
+          xScrollingAccumulator -= xThreshold
+          report(event, of: .scrollWheel(direction: .right))
+
+        } else {
+          xScrollingAccumulator += xThreshold
+          report(event, of: .scrollWheel(direction: .left))
         }
       }
     }
