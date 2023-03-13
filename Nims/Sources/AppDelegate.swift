@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidFinishLaunching(_: Notification) {
     setupStore()
+    setupMainMenu()
     showMainWindowController()
     setupSecondaryWindowControllers()
     setupKeyDownLocalMonitor()
@@ -43,6 +44,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           .runModal()
       }
     }
+  }
+
+  private func setupMainMenu() {
+    let appMenu = NSMenu()
+    let fileMenu = NSMenu(title: "File")
+    let editMenu = NSMenu(title: "Edit")
+    let formatMenu = NSMenu(title: "Format")
+    let viewMenu = NSMenu(title: "View")
+    let windowMenu = NSMenu(title: "Window")
+    let helpMenu = NSMenu(title: "Help")
+
+    let submenus = [appMenu, fileMenu, editMenu, formatMenu, viewMenu, windowMenu, helpMenu]
+
+    let mainMenu = NSMenu()
+
+    for submenu in submenus {
+      let menuItem = NSMenuItem()
+      menuItem.submenu = submenu
+      mainMenu.addItem(menuItem)
+    }
+
+    NSApplication.shared.mainMenu = mainMenu
   }
 
   private func showMainWindowController() {
