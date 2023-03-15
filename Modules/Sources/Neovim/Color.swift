@@ -4,11 +4,19 @@ import AppKit
 import SwiftUI
 
 public struct Color: Sendable, Hashable {
-  public init(rgb: Int) {
+  public init(rgb: Int, alpha: Double = 1) {
     self.rgb = rgb
+    self.alpha = alpha
   }
 
   public var rgb: Int
+  public var alpha: Double
+
+  public func with(alpha: Double) -> Color {
+    var copy = self
+    copy.alpha = alpha
+    return copy
+  }
 
   public var swiftUI: SwiftUI.Color {
     .init(
@@ -17,6 +25,7 @@ public struct Color: Sendable, Hashable {
       green: green,
       blue: blue
     )
+    .opacity(alpha)
   }
 
   public var appKit: NSColor {
@@ -24,7 +33,7 @@ public struct Color: Sendable, Hashable {
       red: red,
       green: green,
       blue: blue,
-      alpha: 1
+      alpha: alpha
     )
   }
 

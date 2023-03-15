@@ -11,7 +11,16 @@ class MainWindowController: NSWindowController {
     }
   }
 
-  init(_ viewController: NSViewController) {
+  var windowBackgroundColor: NSColor? {
+    get {
+      window?.backgroundColor
+    }
+    set {
+      window?.backgroundColor = newValue
+    }
+  }
+
+  init(store: Store, viewController: NSViewController) {
     let window = NSWindow(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable]
 

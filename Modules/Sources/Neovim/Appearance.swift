@@ -60,9 +60,12 @@ public struct Appearance: Sendable {
       return defaultBackgroundColor
     }
 
-    return highlight.isReverse ?
+    let color = highlight.isReverse ?
       highlight.foregroundColor ?? defaultForegroundColor :
       highlight.backgroundColor ?? defaultBackgroundColor
+
+    let alpha = max(0, min(1, 1 - Double(highlight.blend) / 100))
+    return color.with(alpha: alpha)
   }
 
   public func specialColor(for highlightID: Highlight.ID) -> Color {

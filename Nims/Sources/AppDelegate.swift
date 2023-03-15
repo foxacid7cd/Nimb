@@ -35,6 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if updates.isTitleUpdated {
           mainWindowController?.windowTitle = store!.title ?? ""
         }
+        if updates.isAppearanceUpdated {
+          mainWindowController?.windowBackgroundColor = store!.appearance.defaultBackgroundColor.appKit
+        }
       }
     }
 
@@ -71,8 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func showMainWindowController() {
     let mainViewController = MainViewController(store: store!)
 
-    mainWindowController = MainWindowController(mainViewController)
+    mainWindowController = MainWindowController(store: store!, viewController: mainViewController)
     mainWindowController!.showWindow(nil)
+    mainWindowController!.windowBackgroundColor = store!.appearance.defaultBackgroundColor.appKit
   }
 
   private func setupSecondaryWindowControllers() {
