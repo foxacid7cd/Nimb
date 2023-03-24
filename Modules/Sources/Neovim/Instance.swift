@@ -83,8 +83,8 @@ public final class Instance: Sendable {
         ]
 
         try await api.nvimUIAttachFast(
-          width: 220,
-          height: 68,
+          width: 214,
+          height: 65,
           options: uiOptions.nvimUIAttachOptions
         )
 
@@ -131,7 +131,7 @@ public final class Instance: Sendable {
   public func report(keyPress: KeyPress) async {
     do {
       let keys = keyPress.makeNvimKeyCode()
-      _ = try await api.nvimInput(keys: keys)
+      _ = try await api.nvimInputFast(keys: keys)
 
     } catch {
       assertionFailure("\(error)")
