@@ -71,7 +71,7 @@
 /* Begin PBXFileReference section */
 		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
-		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6837727E29B2846A00320350 /* InstanceReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceReducer.swift; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* NimsFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsFont.swift; sourceTree = "<group>"; };
@@ -223,7 +223,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1410;
-				LastUpgradeCheck = 1420;
+				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					68BFEF402934CF6100564FE2 = {
 						CreatedOnToolsVersion = 14.1;
@@ -279,7 +279,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R $NVIM_INSTALL_DIR/^bin \"$DESTINATION_DIR\"\n}\n";
+			shellScript = "() {\n  exit 0\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_INSTALL_DIR\"/^bin \"$DESTINATION_DIR\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -370,6 +370,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -436,6 +437,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

@@ -374,7 +374,7 @@ public extension State {
 
           updatedLayout(forGridWithID: gridID)
 
-        case let .gridLine(gridID, row, startColumn, data):
+        case let .gridLine(gridID, row, startColumn, data, _):
           var updatedCellsCount = 0
           var highlightID = Highlight.ID.default
 

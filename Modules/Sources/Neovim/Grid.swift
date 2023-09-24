@@ -107,22 +107,22 @@ public struct Grid: Sendable, Identifiable {
 
   public var ordinal: Double {
     if id == .outer {
-      return 0
+      0
 
     } else if let associatedWindow {
       switch associatedWindow {
       case let .plain(value):
-        return 100 + Double(value.zIndex) / 100
+        100 + Double(value.zIndex) / 100
 
       case let .floating(value):
-        return 10000 + Double(value.zIndex) / 100
+        10000 + Double(value.zIndex) / 100
 
       case .external:
-        return 1_000_000
+        1_000_000
       }
 
     } else {
-      return -1
+      -1
     }
   }
 }

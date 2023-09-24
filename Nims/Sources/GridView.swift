@@ -75,7 +75,7 @@ public final class GridView: NSView {
       var cursorDrawRun: CursorDrawRun?
 
       struct CursorDrawRun {
-        internal init(
+        init(
           frame: CGRect,
           highlightID: Highlight.ID,
           parentOrigin: CGPoint,

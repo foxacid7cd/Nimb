@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let instance = Instance()
     store = Store(instance: instance)
 
-    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 13) {
+    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font", size: 13) {
       let font = NimsFont(sfMonoNFM)
       store!.set(font: font)
     }
@@ -43,8 +43,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     Task {
       if let finishedResult = await instance.finishedResult() {
-        NSAlert(error: finishedResult)
-          .runModal()
+        var dump = ""
+        customDump(finishedResult, to: &dump, maxDepth: 10)
+
+        let alert = NSAlert(error: finishedResult)
+        alert.informativeText = dump
+        alert.runModal()
       }
     }
   }

@@ -1,4 +1,3 @@
 #!/bin/sh
-
-cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/Applications/Nims.app
+cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/homebrew
 cmake --build .build

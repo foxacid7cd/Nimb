@@ -24,31 +24,31 @@ public struct ValueType: Sendable {
     public var signature: String {
       switch self {
       case .integer:
-        return "Int"
+        "Int"
 
       case .float:
-        return "Double"
+        "Double"
 
       case .string:
-        return "String"
+        "String"
 
       case .boolean:
-        return "Bool"
+        "Bool"
 
       case .dictionary:
-        return "[Value: Value]"
+        "[Value: Value]"
 
       case .array:
-        return "[Value]"
+        "[Value]"
 
       case .binary:
-        return "Data"
+        "Data"
 
       case let .custom(custom):
-        return custom.signature
+        custom.signature
 
       case .value:
-        return "Value"
+        "Value"
       }
     }
   }
@@ -83,31 +83,31 @@ public struct ValueType: Sendable {
   public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
     case .integer:
-      return ".integer(\(expr))"
+      ".integer(\(expr))"
 
     case .float:
-      return ".float(\(expr))"
+      ".float(\(expr))"
 
     case .string:
-      return ".string(\(expr))"
+      ".string(\(expr))"
 
     case .boolean:
-      return ".boolean(\(expr))"
+      ".boolean(\(expr))"
 
     case .dictionary:
-      return ".dictionary(\(expr))"
+      ".dictionary(\(expr))"
 
     case .array:
-      return ".array(\(expr))"
+      ".array(\(expr))"
 
     case .binary:
-      return ".binary(\(expr))"
+      ".binary(\(expr))"
 
     case let .custom(custom):
-      return custom.valueEncoder.prefix + expr + custom.valueEncoder.suffix
+      custom.valueEncoder.prefix + expr + custom.valueEncoder.suffix
 
     case .value:
-      return expr
+      expr
     }
   }
 
