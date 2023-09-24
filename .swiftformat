@@ -1,6 +1,7 @@
 --acronyms ID,IDX,RPC,UI,URL,UUID
 --allman false
 --assetliterals visual-width
+--asynccapturing 
 --beforemarks 
 --binarygrouping 4,8
 --categorymark "MARK: %c"
@@ -36,6 +37,7 @@
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf
+--markcategories true
 --markextensions never
 --marktypes never
 --maxwidth 120
@@ -54,11 +56,12 @@
 --semicolons inline
 --shortoptionals always
 --smarttabs enabled
---someAny true
+--someany true
 --stripunusedargs unnamed-only
 --structthreshold 0
---swiftversion 5.8
+--swiftversion 5.9
 --tabwidth unspecified
+--throwcapturing 
 --trailingclosures 
 --trimwhitespace always
 --typeattributes preserve
@@ -69,6 +72,8 @@
 --wraparguments before-first
 --wrapcollections before-first
 --wrapconditions before-first
+--wrapeffects preserve
+--wrapenumcases always
 --wrapparameters before-first
 --wrapreturntype if-multiline
 --wrapternary default
@@ -76,4 +81,4 @@
 --xcodeindentation disabled
 --yodaswap always
 --disable sortDeclarations,wrap
---enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,sortedSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
+--enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
