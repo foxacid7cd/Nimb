@@ -13,7 +13,7 @@
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6837727F29B2846A00320350 /* InstanceReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837727E29B2846A00320350 /* InstanceReducer.swift */; };
 		6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* NimsFont.swift */; };
-		689B64C829B43D2E0062C485 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 689B64C729B43D2B0062C485 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		687B53712A4B5B930015FC94 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687B536F2A4B5B8C0015FC94 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		689D9E2729B4FA7000345713 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2629B4FA7000345713 /* main.swift */; };
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
 		689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2A29B4FBA700345713 /* MainViewController.swift */; };
@@ -61,7 +61,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				689B64C829B43D2E0062C485 /* nvim in Copy nvim Executable */,
+				687B53712A4B5B930015FC94 /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,7 +75,7 @@
 		6837727E29B2846A00320350 /* InstanceReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceReducer.swift; sourceTree = "<group>"; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* NimsFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsFont.swift; sourceTree = "<group>"; };
-		689B64C729B43D2B0062C485 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
+		687B536F2A4B5B8C0015FC94 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/bin/nvim; sourceTree = "<group>"; };
 		689D9E2629B4FA7000345713 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		689D9E2A29B4FBA700345713 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -149,7 +149,7 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
-				689B64C729B43D2B0062C485 /* nvim */,
+				687B536F2A4B5B8C0015FC94 /* nvim */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
 			name = Locations;
@@ -279,7 +279,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R $NVIM_INSTALL_DIR/^bin \"$DESTINATION_DIR\"\n}\n";
+			shellScript = "() {\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R $NVIM_INSTALL_DIR/^bin \"$DESTINATION_DIR\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -466,7 +466,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
 				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -501,7 +501,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
 				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
