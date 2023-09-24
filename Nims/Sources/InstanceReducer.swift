@@ -7,7 +7,7 @@ import CustomDump
 import Neovim
 import Tagged
 
-public struct InstanceReducer: ReducerProtocol {
+public struct InstanceReducer: Reducer {
   public struct State: Sendable, Identifiable {
     public let id: ID
     public var phase = Phase.pending
@@ -44,7 +44,7 @@ public struct InstanceReducer: ReducerProtocol {
     }
   }
 
-  public var body: some ReducerProtocol<State, Action> {
+  public var body: some Reducer<State, Action> {
     Reduce { state, action in
       switch action {
       case let .setFont(font):
@@ -58,7 +58,7 @@ public struct InstanceReducer: ReducerProtocol {
           return .none
         }
 
-        return EffectTask<Action>.run { @MainActor send in
+        return Effect<Action>.run { @MainActor send in
           if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 12) {
             let font = NimsFont(sfMonoNFM)
             send(.setFont(font))

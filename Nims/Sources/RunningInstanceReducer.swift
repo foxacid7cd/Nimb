@@ -7,7 +7,7 @@ import CustomDump
 import Library
 import Neovim
 
-public struct RunningInstanceReducer: ReducerProtocol {
+public struct RunningInstanceReducer: Reducer {
   public struct State: Sendable {
     public let instance: Neovim.Instance
   }
@@ -17,7 +17,7 @@ public struct RunningInstanceReducer: ReducerProtocol {
     case reportSelectedTabpage(id: Tabpage.ID)
   }
 
-  public func reduce(into state: inout State, action: Action) -> EffectTask<Action> {
+  public func reduce(into state: inout State, action: Action) -> Effect<Action> {
     .none
   }
 }
