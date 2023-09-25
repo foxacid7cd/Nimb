@@ -1,17 +1,57 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import Library
 import Neovim
 
 @MainActor @dynamicMemberLookup
 final class Store {
   let instance: Instance
+  let cursorBlinker: CursorBlinker
   private(set) var state = State()
 
   private var observers = [UUID: @MainActor (Updates) -> Void]()
+  private var observeCursorUpdatesTask: Task<Void, Never>?
 
-  init(instance: Instance) {
+  init(instance: Instance, cursorBlinker: CursorBlinker) {
     self.instance = instance
+    self.cursorBlinker = cursorBlinker
+
+    cursorBlinker.observer = { [weak self] in
+      guard let self, let cursor = self.instance.state.cursor else {
+        return
+      }
+
+      let cursorFrame = IntegerRectangle(
+        origin: cursor.position,
+        size: .init(columnsCount: 1, rowsCount: 1)
+      )
+      let updates = Updates(
+        instanceStateUpdates: .init(
+          isCursorUpdated: true,
+          gridUpdatedRectangles: [cursor.gridID: [cursorFrame]]
+        )
+      )
+      self.observers
+        .forEach { $1(updates) }
+    }
+
+    let stateUpdatesStream = instance.stateUpdatesStream()
+    observeCursorUpdatesTask = Task { @MainActor [weak self] in
+      for await updates in stateUpdatesStream {
+        guard !Task.isCancelled else {
+          break
+        }
+
+        if updates.isCursorUpdated, let cursor = self?.cursor {
+          self?.cursorBlinker.set(cursor: cursor)
+        }
+      }
+    }
+  }
+
+  deinit {
+    observeCursorUpdatesTask?.cancel()
   }
 
   func set(font: NimsFont) {
@@ -57,6 +97,10 @@ final class Store {
 
   func report(mouseEvent: MouseEvent) async {
     await instance.report(mouseEvent: mouseEvent)
+  }
+
+  var cursor: Cursor? {
+    cursorBlinker.cursorBlinkingPhase ? instance.state.cursor : nil
   }
 
   subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State, Value>) -> Value {

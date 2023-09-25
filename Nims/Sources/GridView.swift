@@ -139,7 +139,6 @@ public final class GridView: NSView {
           if
             let modeInfo = store.modeInfo,
             let mode = store.mode,
-//            model.cursorBlinkingPhase,
             let cursor = store.cursor,
             cursor.gridID == gridID,
             cursor.position.row == row,

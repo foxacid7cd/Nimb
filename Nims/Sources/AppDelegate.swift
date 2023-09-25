@@ -23,7 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupStore() {
     let instance = Instance()
-    store = Store(instance: instance)
+    let cursorBlinker = CursorBlinker()
+    store = Store(instance: instance, cursorBlinker: cursorBlinker)
 
     if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 13) {
       let font = NimsFont(sfMonoNFM)
