@@ -48,6 +48,7 @@ public struct State: Sendable {
   public var msgShows: [MsgShow]
   public var grids: IntKeyedDictionary<Grid>
   public var windowZIndexCounter = 0
+  public var popupmenu: Popupmenu?
 
   public mutating func nextWindowZIndex() -> Int {
     windowZIndexCounter += 1
@@ -73,7 +74,8 @@ public extension State {
       isMsgShowsUpdated: Bool = false,
       isCursorUpdated: Bool = false,
       updatedLayoutGridIDs: Set<Grid.ID> = Set<Grid.ID>(),
-      gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [Grid.ID: [IntegerRectangle]]()
+      gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [Grid.ID: [IntegerRectangle]](),
+      isPopupmenuUpdated: Bool = false
     ) {
       self.isTitleUpdated = isTitleUpdated
       self.isAppearanceUpdated = isAppearanceUpdated
@@ -83,6 +85,7 @@ public extension State {
       self.isCursorUpdated = isCursorUpdated
       self.updatedLayoutGridIDs = updatedLayoutGridIDs
       self.gridUpdatedRectangles = gridUpdatedRectangles
+      self.isPopupmenuUpdated = isPopupmenuUpdated
     }
 
     public var isTitleUpdated = false
@@ -93,6 +96,7 @@ public extension State {
     public var isCursorUpdated = false
     public var updatedLayoutGridIDs = Set<Grid.ID>()
     public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
+    public var isPopupmenuUpdated = false
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
@@ -147,6 +151,10 @@ public extension State {
             ),
           ]
         )
+      }
+
+      func popupmenuUpdated() {
+        updates.isPopupmenuUpdated = true
       }
 
       for uiEvent in bufferedUIEvents {
@@ -776,6 +784,38 @@ public extension State {
           if !msgShows.isEmpty {
             msgShows = []
             msgShowsUpdated()
+          }
+
+        case let .popupmenuShow(rawItems, selected, row, col, gridID):
+          var items = [PopupmenuItem]()
+
+          for rawItem in rawItems {
+            if let item = PopupmenuItem(rawItem: rawItem) {
+              items.append(item)
+
+            } else {
+              var dump = ""
+              customDump(rawItem, to: &dump)
+              assertionFailure("Failed decoding PopupmenuItem:\n\(dump)")
+
+              items.append(.init(word: "ERROR", kind: "", menu: "", info: ""))
+            }
+          }
+
+          popupmenu = .init(items: items, selected: selected, row: row, col: col, gridID: gridID)
+
+          popupmenuUpdated()
+
+        case let .popupmenuSelect(selected):
+          if popupmenu != nil {
+            popupmenu!.selected = selected
+            popupmenuUpdated()
+          }
+
+        case .popupmenuHide:
+          if popupmenu != nil {
+            popupmenu = nil
+            popupmenuUpdated()
           }
 
         default:

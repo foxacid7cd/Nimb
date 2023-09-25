@@ -30,7 +30,7 @@ public struct Color: Sendable, Hashable {
 
   public var appKit: NSColor {
     .init(
-      red: red,
+      displayP3Red: red,
       green: green,
       blue: blue,
       alpha: alpha
