@@ -109,16 +109,16 @@ public final class Instance: Sendable {
   }
 
   public func stateUpdatesStream() -> AsyncStream<State.Updates> {
-    .init(bufferingPolicy: .unbounded) { continuation in
+    .init(bufferingPolicy: .unbounded) { [weak self] continuation in
       let id = UUID()
 
-      observers[id] = { newValue in
+      self?.observers[id] = { newValue in
         continuation.yield(newValue)
       }
 
       continuation.onTermination = { _ in
         Task { @MainActor in
-          self.observers.removeValue(forKey: id)
+          self?.observers.removeValue(forKey: id)
         }
       }
     }

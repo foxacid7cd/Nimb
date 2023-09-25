@@ -36,6 +36,8 @@ final class Store {
         .forEach { $1(updates) }
     }
 
+    cursorBlinker.cursorUpdated(state: instance.state)
+
     let stateUpdatesStream = instance.stateUpdatesStream()
     observeCursorUpdatesTask = Task { @MainActor [weak self] in
       for await updates in stateUpdatesStream {
@@ -43,8 +45,8 @@ final class Store {
           break
         }
 
-        if updates.isCursorUpdated, let cursor = self?.cursor {
-          self?.cursorBlinker.set(cursor: cursor)
+        if updates.isCursorUpdated, let state = self?.instance.state {
+          self?.cursorBlinker.cursorUpdated(state: state)
         }
       }
     }

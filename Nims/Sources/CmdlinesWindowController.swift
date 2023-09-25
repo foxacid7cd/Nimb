@@ -20,7 +20,7 @@ class CmdlinesWindowController: NSWindowController {
     )
     viewController.sizingOptions = .preferredContentSize
 
-    let window = NSWindow(contentViewController: viewController)
+    let window = Window(contentViewController: viewController)
     window.styleMask = [.borderless]
     window.isMovableByWindowBackground = false
     window.isOpaque = false
@@ -84,6 +84,16 @@ class CmdlinesWindowController: NSWindowController {
 extension CmdlinesWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
     updateWindowOrigin()
+  }
+}
+
+private final class Window: NSWindow {
+  override var canBecomeKey: Bool {
+    false
+  }
+
+  override var canBecomeMain: Bool {
+    false
   }
 }
 

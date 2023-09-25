@@ -14,7 +14,7 @@ final class CursorBlinker {
     task?.cancel()
   }
 
-  func set(cursor: Cursor) {
+  func cursorUpdated(state: Neovim.State) {
     task?.cancel()
 
     if !cursorBlinkingPhase {
@@ -22,14 +22,26 @@ final class CursorBlinker {
       observer?()
     }
 
-    task = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .seconds(1))
+    if
+      let cursorStyle = state.currentCursorStyle,
+      let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
+      let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
+      let blinkOn = cursorStyle.blinkOn, blinkOn > 0
+    {
+      task = Task { @MainActor [weak self] in
+        try? await Task.sleep(for: .milliseconds(blinkWait))
 
-      while !Task.isCancelled {
-        self?.cursorBlinkingPhase.toggle()
-        self?.observer?()
+        while !Task.isCancelled {
+          self?.cursorBlinkingPhase = false
+          self?.observer?()
 
-        try? await Task.sleep(for: .milliseconds(500))
+          try? await Task.sleep(for: .milliseconds(blinkOff))
+
+          self?.cursorBlinkingPhase = true
+          self?.observer?()
+
+          try? await Task.sleep(for: .milliseconds(blinkOn))
+        }
       }
     }
   }

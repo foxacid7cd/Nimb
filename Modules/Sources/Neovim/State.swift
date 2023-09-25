@@ -53,6 +53,14 @@ public struct State: Sendable {
     windowZIndexCounter += 1
     return windowZIndexCounter
   }
+
+  public var currentCursorStyle: CursorStyle? {
+    guard let modeInfo, let mode, mode.cursorStyleIndex < modeInfo.cursorStyles.count else {
+      return nil
+    }
+
+    return modeInfo.cursorStyles[mode.cursorStyleIndex]
+  }
 }
 
 public extension State {
