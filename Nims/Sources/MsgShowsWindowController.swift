@@ -27,9 +27,9 @@ class MsgShowsWindowController: NSWindowController {
 
     window.delegate = self
 
-    task = Task {
+    task = Task { [weak self] in
       for await stateUpdates in store.stateUpdatesStream() {
-        guard !Task.isCancelled else {
+        guard let self, !Task.isCancelled else {
           return
         }
 
@@ -174,6 +174,8 @@ final class MsgShowsViewController: NSViewController {
   func update(msgShows: [MsgShow], font: NimsFont, appearance: Appearance, maxSize: CGSize) {
     self.maxSize = maxSize
 
+    scrollView.backgroundColor = appearance.defaultBackgroundColor.appKit
+
     let horizontalInset: CGFloat = 8
     let verticalInset: CGFloat = 8
     scrollView.contentInsets = .init(
@@ -245,6 +247,9 @@ private final class DocumentView: NSView {
 
     let graphicsContext = NSGraphicsContext.current!
     graphicsContext.cgContext.clip(to: [dirtyRect])
+
+    NSColor.clear.setFill()
+    dirtyRect.fill()
 
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
 
