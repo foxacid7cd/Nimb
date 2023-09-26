@@ -91,6 +91,13 @@ final class PopupmenuWindowController: NSWindowController {
         }
 
         viewController.preferredContentSize = size
+        window!.setFrame(
+          CGRect(
+            origin: origin + parentWindow.frame.origin,
+            size: size
+          ),
+          display: true
+        )
         window!.setFrameOrigin(
           origin.applying(.init(translationX: parentWindow.frame.origin.x, y: parentWindow.frame.origin.y))
         )
@@ -239,7 +246,12 @@ private final class PopupmenuItemView: NSView {
   }
 
   func set(item: PopupmenuItem, isSelected: Bool, font: NimsFont) {
-    let rgb = item.kind.hashValue
+    let secondaryText = [item.kind, item.menu, item.info]
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+      .joined(separator: " ")
+
+    let rgb = secondaryText.hashValue
       .remainderReportingOverflow(dividingBy: 0xFFFFFF)
       .partialValue
 
@@ -265,7 +277,7 @@ private final class PopupmenuItemView: NSView {
       .font: font.nsFont(),
     ])
 
-    secondTextField.attributedStringValue = .init(string: item.kind, attributes: [
+    secondTextField.attributedStringValue = .init(string: secondaryText, attributes: [
       .foregroundColor: isSelected ? NSColor.textColor : accentColor,
       .font: font.nsFont(isItalic: true),
     ])

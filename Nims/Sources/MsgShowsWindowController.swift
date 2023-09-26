@@ -202,6 +202,7 @@ private func makeContentAttributedString(msgShows: [MsgShow], font: NimsFont, ap
 
   let paragraphStyle = NSMutableParagraphStyle()
   paragraphStyle.lineBreakMode = .byWordWrapping
-  accumulator.addAttributes([.paragraphStyle: paragraphStyle], range: .init(location: 0, length: accumulator.length))
+  accumulator.addAttribute(.paragraphStyle, value: paragraphStyle, range: .init(location: 0, length: accumulator.length))
+
   return .init(attributedString: accumulator)
 }
