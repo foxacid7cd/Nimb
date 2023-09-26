@@ -266,7 +266,7 @@ private final class CmdlinesViewController: NSViewController {
     let ctFrame = CTFramesetterCreateFrame(
       framesetter,
       .init(location: 0, length: attributedString.length),
-      .init(rect: .init(origin: .zero, size: size), transform: nil),
+      .init(rect: .init(origin: .zero, size: .init(width: ceil(size.width), height: ceil(size.height))), transform: nil),
       nil
     )
 
@@ -359,6 +359,15 @@ private final class CmdlinesViewController: NSViewController {
         accumulator.append(.init(string: "\n"))
       }
     }
+
+    let paragraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.lineBreakMode = .byCharWrapping
+    paragraphStyle.allowsDefaultTighteningForTruncation = false
+    accumulator.addAttribute(
+      .paragraphStyle,
+      value: paragraphStyle,
+      range: .init(location: 0, length: accumulator.length)
+    )
 
     return .init(attributedString: accumulator)
   }
