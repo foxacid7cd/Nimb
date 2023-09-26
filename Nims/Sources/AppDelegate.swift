@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var mainWindowController: MainWindowController?
   private var msgShowsWindowController: MsgShowsWindowController?
   private var cmdlinesWindowController: CmdlinesWindowController?
+  private var popupmenuWindowController: PopupmenuWindowController?
 
   func applicationDidFinishLaunching(_: Notification) {
     setupStore()
@@ -87,6 +88,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func setupSecondaryWindowControllers() {
     msgShowsWindowController = MsgShowsWindowController(store: store!, parentWindow: mainWindowController!.window!)
     cmdlinesWindowController = CmdlinesWindowController(store: store!, parentWindow: mainWindowController!.window!)
+    popupmenuWindowController = PopupmenuWindowController(
+      store: store!,
+      parentWindow: mainWindowController!.window!,
+      gridWindowFrameTransformer: mainWindowController!
+    )
   }
 
   private func setupKeyDownLocalMonitor() {

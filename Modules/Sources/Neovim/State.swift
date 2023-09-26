@@ -802,13 +802,23 @@ public extension State {
             }
           }
 
-          popupmenu = .init(items: items, selected: selected, row: row, col: col, gridID: gridID)
+          let selectedItemIndex: Int? = selected >= 0 ? selected : nil
+
+          let anchor: Popupmenu.Anchor = switch gridID.rawValue {
+          case -1:
+            .cmdline(origin: col)
+
+          default:
+            .grid(id: gridID, origin: .init(column: col, row: row))
+          }
+
+          popupmenu = .init(items: items, selectedItemIndex: selectedItemIndex, anchor: anchor)
 
           popupmenuUpdated()
 
         case let .popupmenuSelect(selected):
           if popupmenu != nil {
-            popupmenu!.selected = selected
+            popupmenu!.selectedItemIndex = selected >= 0 ? selected : nil
             popupmenuUpdated()
           }
 

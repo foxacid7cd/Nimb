@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 
+import Library
 import MessagePack
 
 public struct Popupmenu: Sendable, Hashable {
   public var items: [PopupmenuItem]
-  public var selected: Int
-  public var row: Int
-  public var col: Int
-  public var gridID: Grid.ID
+  public var selectedItemIndex: Int?
+  public var anchor: Anchor
+
+  public enum Anchor: Sendable, Hashable {
+    case grid(id: Grid.ID, origin: IntegerPoint)
+    case cmdline(origin: Int)
+  }
 }
 
 public struct PopupmenuItem: Sendable, Hashable {

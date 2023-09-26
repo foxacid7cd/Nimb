@@ -141,4 +141,13 @@ public final class Instance: Sendable {
   public func report(mouseEvent: MouseEvent) async {
     await mouseEventsChannel.send(mouseEvent)
   }
+
+  public func reportPumBounds(gridFrame: CGRect) async {
+    try? await api.nvimUIPumSetBoundsFast(
+      width: gridFrame.width,
+      height: gridFrame.height,
+      row: gridFrame.origin.y,
+      col: gridFrame.origin.x
+    )
+  }
 }

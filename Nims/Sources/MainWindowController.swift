@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Library
+import Neovim
 
-class MainWindowController: NSWindowController {
+final class MainWindowController: NSWindowController {
+  private let viewController: MainViewController
+
   var windowTitle = "" {
     didSet {
       if isWindowLoaded {
@@ -20,7 +24,9 @@ class MainWindowController: NSWindowController {
     }
   }
 
-  init(store: Store, viewController: NSViewController) {
+  init(store: Store, viewController: MainViewController) {
+    self.viewController = viewController
+
     let window = Window(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable]
 
@@ -48,5 +54,16 @@ private final class Window: NSWindow {
 
   override var canBecomeMain: Bool {
     true
+  }
+}
+
+extension MainWindowController: GridWindowFrameTransformer {
+  func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+    guard let window, let frame = viewController.frame(forGridID: gridID, gridFrame: gridFrame) else {
+      return nil
+    }
+
+    return frame
+      .applying(.init(translationX: window.frame.origin.x, y: window.frame.origin.y))
   }
 }

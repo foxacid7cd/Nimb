@@ -31,10 +31,10 @@ class CmdlinesWindowController: NSWindowController {
 
     window.delegate = self
 
-    task = Task {
+    task = Task { [weak self] in
       for await stateUpdates in store.stateUpdatesStream() {
-        guard !Task.isCancelled else {
-          return
+        guard let self, !Task.isCancelled else {
+          break
         }
 
         if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
@@ -48,10 +48,10 @@ class CmdlinesWindowController: NSWindowController {
         if stateUpdates.isCmdlinesUpdated {
           updateWindowOrigin()
 
-          self.window!.setIsVisible(!store.cmdlines.isEmpty)
+          window.setIsVisible(!store.cmdlines.isEmpty)
 
           if !store.cmdlines.isEmpty {
-            self.window!.orderFront(nil)
+            window.orderFront(nil)
           }
         }
       }

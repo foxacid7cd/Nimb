@@ -4,13 +4,15 @@ import AppKit
 import Library
 import Neovim
 
-class MainViewController: NSViewController {
+final class MainViewController: NSViewController {
   private let store: Store
+  private let mainView: MainView
   private var task: Task<Void, Never>?
   private let font = NimsFont()
 
   init(store: Store) {
     self.store = store
+    mainView = .init(store: store)
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -26,7 +28,6 @@ class MainViewController: NSViewController {
   override func loadView() {
     let view = NSView()
 
-    let mainView = MainView(store: store)
     mainView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(mainView)
     view.addConstraints([
@@ -64,5 +65,9 @@ class MainViewController: NSViewController {
     } else {
       preferredContentSize = .init()
     }
+  }
+
+  public func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+    mainView.frame(forGridID: gridID, gridFrame: gridFrame)
   }
 }

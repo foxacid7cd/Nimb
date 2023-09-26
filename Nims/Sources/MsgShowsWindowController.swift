@@ -22,6 +22,7 @@ class MsgShowsWindowController: NSWindowController {
     window.isMovableByWindowBackground = true
     window.isOpaque = false
     window.backgroundColor = .clear
+    window.setIsVisible(false)
 
     super.init(window: window)
 
@@ -30,7 +31,7 @@ class MsgShowsWindowController: NSWindowController {
     task = Task { [weak self] in
       for await stateUpdates in store.stateUpdatesStream() {
         guard let self, !Task.isCancelled else {
-          return
+          break
         }
 
         if stateUpdates.isMsgShowsUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
@@ -45,10 +46,11 @@ class MsgShowsWindowController: NSWindowController {
         if stateUpdates.isMsgShowsUpdated {
           updateWindowOrigin()
 
-          self.window!.setIsVisible(!store.msgShows.isEmpty)
-
-          if !store.msgShows.isEmpty {
-            self.window!.orderFront(nil)
+          if store.msgShows.isEmpty {
+            parentWindow.removeChildWindow(self.window!)
+            self.window?.setIsVisible(false)
+          } else {
+            parentWindow.addChildWindow(self.window!, ordered: .above)
           }
         }
       }

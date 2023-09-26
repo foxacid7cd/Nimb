@@ -28,7 +28,7 @@ public final class GridView: NSView {
     store.grids[gridID]?.ordinal ?? -1
   }
 
-  private var upsideDownTransform: CGAffineTransform {
+  var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -bounds.size.height)
   }
