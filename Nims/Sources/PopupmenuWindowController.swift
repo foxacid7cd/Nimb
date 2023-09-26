@@ -20,10 +20,10 @@ final class PopupmenuWindowController: NSWindowController {
     self.store = store
     self.parentWindow = parentWindow
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
-    viewController = .init()
+    viewController = .init(store: store)
 
     let window = NSWindow(contentViewController: viewController)
-    window.styleMask = []
+    window.styleMask = [.borderless]
     window.isOpaque = false
     window.setIsVisible(false)
     window.alphaValue = 0.95
@@ -38,18 +38,15 @@ final class PopupmenuWindowController: NSWindowController {
           break
         }
 
-        if updates.isPopupmenuUpdated {
+        if updates.isPopupmenuUpdated || updates.isAppearanceUpdated || updates.isFontUpdated {
           updateWindow()
 
-        } else if
-          let popupmenu = store.popupmenu,
-          case let .grid(anchorGridID, _) = popupmenu.anchor,
-          updates.updatedLayoutGridIDs.contains(anchorGridID)
-        {
-          updateWindow()
+        } else if updates.isPopupmenuSelectionUpdated {
+          viewController.reloadData()
 
-        } else if updates.isFontUpdated {
-          updateWindow()
+          if let selectedItemIndex = self.store.popupmenu?.selectedItemIndex {
+            viewController.scrollTo(itemAtIndex: selectedItemIndex)
+          }
         }
       }
     }
@@ -62,7 +59,7 @@ final class PopupmenuWindowController: NSWindowController {
 
   private func updateWindow() {
     if let popupmenu = store.popupmenu {
-      viewController.popupmenu = popupmenu
+      viewController.reloadData()
 
       switch popupmenu.anchor {
       case let .grid(id, origin):
@@ -79,8 +76,8 @@ final class PopupmenuWindowController: NSWindowController {
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
 
         let size = CGSize(
-          width: 40 * store.font.cellWidth,
-          height: 14 * store.font.cellHeight
+          width: 360,
+          height: 160
         )
         let origin = CGPoint(
           x: originFrame.minX,
@@ -102,6 +99,10 @@ final class PopupmenuWindowController: NSWindowController {
         window!.setFrameOrigin(origin)
         parentWindow.addChildWindow(window!, ordered: .above)
 
+        if let selectedItemIndex = popupmenu.selectedItemIndex {
+          viewController.scrollTo(itemAtIndex: selectedItemIndex)
+        }
+
       case .cmdline:
         break
       }
@@ -114,21 +115,29 @@ final class PopupmenuWindowController: NSWindowController {
 }
 
 private final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
-  var popupmenu: Popupmenu? {
-    didSet {
-      tableView.reloadData()
-
-      if let selectedItemIndex = popupmenu?.selectedItemIndex {
-        tableView.selectRowIndexes([selectedItemIndex], byExtendingSelection: false)
-        tableView.scrollRowToVisible(selectedItemIndex)
-      }
-    }
+  func reloadData() {
+    tableView.reloadData()
   }
 
+  func scrollTo(itemAtIndex index: Int) {
+    tableView.scrollRowToVisible(index)
+  }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
   private let tableView = NSTableView()
 
+  init(store: Store) {
+    self.store = store
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   override func loadView() {
-    let scrollView = NSScrollView()
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init()
 
@@ -138,14 +147,16 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
     tableView.addTableColumn(
       .init(identifier: PopupmenuItemView.ReuseIdentifier)
     )
-    tableView.style = .fullWidth
+    tableView.rowHeight = 20
+    tableView.style = .plain
+    tableView.selectionHighlightStyle = .none
     scrollView.documentView = tableView
 
     view = scrollView
   }
 
   func numberOfRows(in tableView: NSTableView) -> Int {
-    popupmenu?.items.count ?? 0
+    store.popupmenu?.items.count ?? 0
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -156,18 +167,17 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
       itemView!.identifier = PopupmenuItemView.ReuseIdentifier
     }
 
-    itemView!.set(item: popupmenu!.items[row], isSelected: tableView.isRowSelected(row))
+    if let popupmenu = store.popupmenu, row < popupmenu.items.count {
+      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row)
+    }
     return itemView
-  }
-
-  func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-    false
   }
 }
 
 private final class PopupmenuItemView: NSView {
   private let textField = NSTextField(labelWithString: "")
   private let secondTextField = NSTextField(labelWithString: "")
+  private var isSelected = false
 
   static let ReuseIdentifier = NSUserInterfaceItemIdentifier(.init(describing: PopupmenuItemView.self))
 
@@ -199,7 +209,18 @@ private final class PopupmenuItemView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override func draw(_ dirtyRect: NSRect) {
+    let backgroundColor: NSColor = isSelected ? .textColor : .clear
+    backgroundColor.setFill()
+    dirtyRect.fill()
+
+    super.draw(dirtyRect)
+  }
+
   func set(item: PopupmenuItem, isSelected: Bool) {
+    self.isSelected = isSelected
+    needsDisplay = true
+
     textField.attributedStringValue = .init(string: item.word, attributes: [
       .foregroundColor: isSelected ? NSColor.black : NSColor.white,
       .font: NSFont(name: "SFMono Nerd Font Mono", size: 12)!,

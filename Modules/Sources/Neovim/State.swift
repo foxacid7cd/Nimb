@@ -97,6 +97,7 @@ public extension State {
     public var updatedLayoutGridIDs = Set<Grid.ID>()
     public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
     public var isPopupmenuUpdated = false
+    public var isPopupmenuSelectionUpdated = false
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
@@ -155,6 +156,10 @@ public extension State {
 
       func popupmenuUpdated() {
         updates.isPopupmenuUpdated = true
+      }
+
+      func popupmenuSelectionUpdated() {
+        updates.isPopupmenuSelectionUpdated = true
       }
 
       for uiEvent in bufferedUIEvents {
@@ -819,7 +824,7 @@ public extension State {
         case let .popupmenuSelect(selected):
           if popupmenu != nil {
             popupmenu!.selectedItemIndex = selected >= 0 ? selected : nil
-            popupmenuUpdated()
+            popupmenuSelectionUpdated()
           }
 
         case .popupmenuHide:
