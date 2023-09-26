@@ -15,14 +15,17 @@ class MsgShowsWindowController: NSWindowController {
     self.store = store
     self.parentWindow = parentWindow
 
-    viewController = MsgShowsViewController()
+    viewController = MsgShowsViewController(store: store)
 
     let window = Window(contentViewController: viewController)
-    window.styleMask = [.borderless]
-    window.isMovableByWindowBackground = true
+    window.styleMask = [.titled, .fullSizeContentView]
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
+    window.isMovable = false
     window.isOpaque = false
-    window.backgroundColor = .clear
     window.setIsVisible(false)
+    window.alphaValue = 0.95
+    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -35,23 +38,7 @@ class MsgShowsWindowController: NSWindowController {
         }
 
         if stateUpdates.isMsgShowsUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
-          viewController.update(
-            msgShows: store.msgShows,
-            font: store.font,
-            appearance: store.appearance,
-            maxSize: parentWindow.frame.size
-          )
-        }
-
-        if stateUpdates.isMsgShowsUpdated {
-          updateWindowOrigin()
-
-          if store.msgShows.isEmpty {
-            parentWindow.removeChildWindow(self.window!)
-            self.window?.setIsVisible(false)
-          } else {
-            parentWindow.addChildWindow(self.window!, ordered: .above)
-          }
+          updateWindow()
         }
       }
     }
@@ -66,12 +53,54 @@ class MsgShowsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private func updateWindowOrigin() {
-    guard let window else {
-      return
-    }
+  private func updateWindow() {
+    let maxSize = CGSize(width: 1024, height: 768)
 
-    window.setFrameOrigin(
+    let attributedString = makeContentAttributedString(
+      msgShows: store.msgShows,
+      font: store.font,
+      appearance: store.appearance
+    )
+    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
+    let size = CTFramesetterSuggestFrameSizeWithConstraints(
+      framesetter,
+      .init(location: 0, length: attributedString.length),
+      nil,
+      .init(width: maxSize.width, height: .greatestFiniteMagnitude),
+      nil
+    )
+
+    viewController.preferredContentSize = .init(
+      width: min(maxSize.width, size.width) + 10,
+      height: min(maxSize.height, size.height) + 10
+    )
+
+    let ctFrame = CTFramesetterCreateFrame(
+      framesetter,
+      .init(location: 0, length: attributedString.length),
+      CGPath(
+        rect: .init(
+          origin: .zero,
+          size: .init(width: ceil(size.width), height: ceil(size.height))
+        ),
+        transform: nil
+      ),
+      nil
+    )
+    viewController.update(contentSize: size, ctFrame: ctFrame)
+
+    updateWindowOrigin()
+
+    if store.msgShows.isEmpty {
+      parentWindow.removeChildWindow(window!)
+      window?.setIsVisible(false)
+    } else {
+      parentWindow.addChildWindow(window!, ordered: .above)
+    }
+  }
+
+  private func updateWindowOrigin() {
+    window!.setFrameOrigin(
       .init(
         x: parentWindow.frame.minX,
         y: parentWindow.frame.minY
@@ -86,73 +115,14 @@ extension MsgShowsWindowController: NSWindowDelegate {
   }
 }
 
-struct MsgShowsView: View {
-  var msgShows: [MsgShow]
-  var font: NimsFont
-  var appearance: Appearance
-  var maxWidth: Double
-
-  var body: some View {
-    Text(makeContentAttributedString())
-      .lineLimit(3)
-      .padding(
-        .init(
-          top: font.cellHeight,
-          leading: font.cellWidth * 2.5,
-          bottom: font.cellHeight,
-          trailing: font.cellWidth * 2.5
-        )
-      )
-      .background {
-        let rectangle = Rectangle()
-
-        rectangle
-          .fill(
-            appearance.defaultBackgroundColor.swiftUI.opacity(0.95)
-          )
-
-        rectangle
-          .stroke(
-            appearance.defaultForegroundColor.swiftUI.opacity(0.1),
-            lineWidth: 1
-          )
-      }
-      .frame(maxWidth: maxWidth)
-  }
-
-  @MainActor
-  private func makeContentAttributedString() -> AttributedString {
-    var accumulator = AttributedString()
-
-    for (index, msgShow) in msgShows.enumerated() {
-      msgShow.contentParts
-        .map { contentPart -> AttributedString in
-          AttributedString(
-            contentPart.text,
-            attributes: .init([
-              .font: font.nsFont(),
-              .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).swiftUI,
-              .backgroundColor: contentPart.highlightID.isDefault ? SwiftUI.Color.clear : appearance.backgroundColor(for: contentPart.highlightID).swiftUI,
-            ])
-          )
-        }
-        .forEach { accumulator.append($0) }
-
-      if index < msgShows.count - 1 {
-        accumulator.append("\n" as AttributedString)
-      }
-    }
-
-    return accumulator
-  }
-}
-
 final class MsgShowsViewController: NSViewController {
+  private let store: Store
   private let scrollView = NSScrollView()
   private let documentView = DocumentView()
   private var maxSize = CGSize(width: 0, height: 0)
 
-  init() {
+  init(store: Store) {
+    self.store = store
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -162,69 +132,19 @@ final class MsgShowsViewController: NSViewController {
   }
 
   override func loadView() {
-    let view = NSView()
-
-    scrollView.allowsMagnification = false
     scrollView.scrollsDynamically = false
     scrollView.horizontalScrollElasticity = .none
+    scrollView.automaticallyAdjustsContentInsets = false
+    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
     scrollView.documentView = documentView
-    view.addSubview(scrollView)
 
-    self.view = view
+    view = scrollView
   }
 
-  func update(msgShows: [MsgShow], font: NimsFont, appearance: Appearance, maxSize: CGSize) {
-    self.maxSize = maxSize
-
-    scrollView.backgroundColor = appearance.defaultBackgroundColor.appKit
-
-    let horizontalInset: CGFloat = 8
-    let verticalInset: CGFloat = 8
-    scrollView.contentInsets = .init(
-      top: verticalInset,
-      left: horizontalInset,
-      bottom: verticalInset,
-      right: horizontalInset
-    )
-
-    let containerSize = NSSize(
-      width: maxSize.width - horizontalInset * 2,
-      height: CGFloat.greatestFiniteMagnitude
-    )
-    documentView.containerSize = containerSize
-
-    let attributedString = makeContentAttributedString(msgShows: msgShows, font: font, appearance: appearance)
-    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      nil,
-      containerSize,
-      nil
-    )
-    documentView.setFrameSize(boundingSize)
-
-    let frame = CTFramesetterCreateFrame(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      CGPath(
-        rect: .init(
-          origin: .init(x: horizontalInset, y: verticalInset),
-          size: boundingSize
-        ),
-        transform: nil
-      ),
-      nil
-    )
-    documentView.ctFrame = frame
+  func update(contentSize: CGSize, ctFrame: CTFrame) {
+    documentView.setFrameSize(contentSize)
+    documentView.ctFrame = ctFrame
     documentView.needsDisplay = true
-
-    let size = CGSize(
-      width: min(maxSize.width, boundingSize.width + horizontalInset * 2),
-      height: min(maxSize.height, boundingSize.height + verticalInset * 2)
-    )
-    preferredContentSize = size
-    scrollView.frame.size = size
   }
 }
 
@@ -240,7 +160,6 @@ private final class Window: NSWindow {
 
 private final class DocumentView: NSView {
   var ctFrame: CTFrame?
-  var containerSize = CGSize()
 
   override func draw(_ dirtyRect: NSRect) {
     guard let ctFrame else {
@@ -248,14 +167,15 @@ private final class DocumentView: NSView {
     }
 
     let graphicsContext = NSGraphicsContext.current!
-    graphicsContext.cgContext.clip(to: [dirtyRect])
+    let cgContext = graphicsContext.cgContext
 
-    NSColor.clear.setFill()
-    dirtyRect.fill()
+    cgContext.saveGState()
+
+    dirtyRect.clip()
 
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
 
-    graphicsContext.flushGraphics()
+    cgContext.restoreGState()
   }
 }
 

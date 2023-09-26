@@ -743,8 +743,8 @@ public extension State {
           cmdlinesUpdated()
 
         case let .cmdlineHide(level):
-          update(&cmdlines[id: level]!) { cmdline in
-            cmdline.isVisible = false
+          update(&cmdlines[id: level]) { cmdline in
+            cmdline?.isVisible = false
           }
 
           cmdlinesUpdated()
