@@ -174,7 +174,7 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
     }
 
     if let popupmenu = store.popupmenu, row < popupmenu.items.count {
-      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row)
+      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row, font: store.font)
     }
     return itemView
   }
@@ -250,7 +250,7 @@ private final class PopupmenuItemView: NSView {
     super.draw(dirtyRect)
   }
 
-  func set(item: PopupmenuItem, isSelected: Bool) {
+  func set(item: PopupmenuItem, isSelected: Bool, font: NimsFont) {
     let rgb = item.kind.hashValue
       .remainderReportingOverflow(dividingBy: 0xFFFFFF)
       .partialValue
@@ -274,12 +274,12 @@ private final class PopupmenuItemView: NSView {
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
       .foregroundColor: NSColor.white,
-      .font: NSFont(name: "SFMono Nerd Font Mono", size: 13)!,
+      .font: font.nsFont(),
     ])
 
     secondTextField.attributedStringValue = .init(string: item.kind, attributes: [
       .foregroundColor: isSelected ? NSColor.textColor : accentColor,
-      .font: NSFont(name: "SFMono Nerd Font Mono Italic", size: 12)!,
+      .font: font.nsFont(isItalic: true),
     ])
   }
 }

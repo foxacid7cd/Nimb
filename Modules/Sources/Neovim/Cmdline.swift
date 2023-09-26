@@ -12,6 +12,7 @@ public struct Cmdline: Identifiable, Sendable, Hashable {
   public var specialCharacter: String
   public var shiftAfterSpecialCharacter: Bool
   public var blockLines: [[ContentPart]]
+  public var isVisible: Bool
 
   public struct ContentPart: Sendable, Hashable {
     public var highlightID: Highlight.ID

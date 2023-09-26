@@ -5,28 +5,27 @@ import Library
 import Neovim
 import SwiftUI
 
-class CmdlinesWindowController: NSWindowController {
+class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
   private let store: Store
   private let parentWindow: NSWindow
-  private let viewController: NSHostingController<CmdlinesView>
+  private let viewController: CmdlinesViewController
   private var task: Task<Void, Never>?
 
   init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
 
-    viewController = NSHostingController<CmdlinesView>(
-      rootView: .init(cmdlines: store.cmdlines, font: store.state.font, appearance: store.appearance)
-    )
-    viewController.sizingOptions = .preferredContentSize
+    viewController = CmdlinesViewController(store: store)
 
     let window = Window(contentViewController: viewController)
-    window.styleMask = [.borderless]
-    window.isMovableByWindowBackground = false
+    window.styleMask = [.titled, .fullSizeContentView]
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
+    window.isMovable = false
     window.isOpaque = false
-    window.backgroundColor = .clear
-    window.level = .floating
     window.setIsVisible(false)
+    window.alphaValue = 0.95
+    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -39,23 +38,7 @@ class CmdlinesWindowController: NSWindowController {
         }
 
         if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
-          viewController.rootView = .init(
-            cmdlines: store.cmdlines,
-            font: store.state.font,
-            appearance: store.appearance
-          )
-        }
-
-        if stateUpdates.isCmdlinesUpdated {
-          updateWindowOrigin()
-
-          if store.cmdlines.isEmpty {
-            parentWindow.removeChildWindow(window)
-            window.setIsVisible(false)
-
-          } else {
-            parentWindow.addChildWindow(window, ordered: .above)
-          }
+          updateWindow()
         }
       }
     }
@@ -70,23 +53,29 @@ class CmdlinesWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private func updateWindowOrigin() {
+  private func updateWindow() {
     guard let window else {
       return
     }
 
-    window.setFrameOrigin(
+    viewController.reloadData()
+
+    if store.cmdlines.filter(\.isVisible).isEmpty {
+      parentWindow.removeChildWindow(window)
+      window.setIsVisible(false)
+
+    } else {
+      parentWindow.addChildWindow(window, ordered: .above)
+    }
+  }
+
+  func windowDidResize(_: Notification) {
+    window!.setFrameOrigin(
       .init(
-        x: parentWindow.frame.origin.x + (parentWindow.frame.width / 2) - (window.frame.width / 2),
-        y: parentWindow.frame.origin.y + (parentWindow.frame.height / 1.5) - (window.frame.height / 2)
+        x: parentWindow.frame.origin.x + (parentWindow.frame.width / 2) - (window!.frame.width / 2),
+        y: parentWindow.frame.origin.y + (parentWindow.frame.height / 1.5) - (window!.frame.height / 2)
       )
     )
-  }
-}
-
-extension CmdlinesWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {
-    updateWindowOrigin()
   }
 }
 
@@ -253,5 +242,147 @@ struct CmdlinesView: View {
     accumulator.append(attributedString)
 
     return accumulator
+  }
+}
+
+private final class CmdlinesViewController: NSViewController {
+  func reloadData() {
+    let containerSize = CGSize(width: 400, height: Double.greatestFiniteMagnitude)
+
+    let attributedString = makeAttributedString()
+
+    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
+    let size = CTFramesetterSuggestFrameSizeWithConstraints(
+      framesetter,
+      .init(location: 0, length: attributedString.length),
+      nil,
+      containerSize,
+      nil
+    )
+
+    contentView.setFrameSize(size)
+    preferredContentSize = .init(width: 500, height: min(size.height + 10, 200))
+
+    let ctFrame = CTFramesetterCreateFrame(
+      framesetter,
+      .init(location: 0, length: attributedString.length),
+      .init(rect: .init(origin: .zero, size: size), transform: nil),
+      nil
+    )
+
+    contentView.ctFrame = ctFrame
+    contentView.needsDisplay = true
+  }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
+  private let contentView = CmdlinesContentView()
+
+  init(store: Store) {
+    self.store = store
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func loadView() {
+    scrollView.automaticallyAdjustsContentInsets = false
+    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.documentView = contentView
+
+    view = scrollView
+  }
+
+  private func makeAttributedString() -> NSAttributedString {
+    let accumulator = NSMutableAttributedString()
+
+    let sortedCmdlines = store.cmdlines.filter(\.isVisible).sorted(by: { $0.level < $1.level })
+    for (cmdlineIndex, cmdline) in sortedCmdlines.enumerated() {
+      let firstCharacter = NSAttributedString(string: cmdline.firstCharacter, attributes: [
+        .font: store.font.nsFont(),
+        .foregroundColor: store.appearance.defaultForegroundColor.appKit.withAlphaComponent(0.5),
+      ])
+
+      if !cmdline.blockLines.isEmpty {
+        for blockLine in cmdline.blockLines {
+          let lineAccumulator = firstCharacter.mutableCopy() as! NSMutableAttributedString
+
+          for contentPart in blockLine {
+            lineAccumulator.append(
+              .init(
+                string: contentPart.text,
+                attributes: .init([
+                  .font: store.font.nsFont(),
+                  .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+                ])
+              )
+            )
+          }
+
+          accumulator.append(lineAccumulator)
+          accumulator.append(.init(string: "\n"))
+        }
+      }
+
+      let attributedString = firstCharacter.mutableCopy() as! NSMutableAttributedString
+      attributedString.append(
+        .init(
+          string: "".padding(toLength: cmdline.indent, withPad: " ", startingAt: 0),
+          attributes: [.font: store.font.nsFont()]
+        )
+      )
+      for contentPart in cmdline.contentParts {
+        attributedString.append(
+          .init(string: contentPart.text, attributes: [
+            .font: store.font.nsFont(),
+            .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+          ])
+        )
+      }
+
+      if !cmdline.specialCharacter.isEmpty, cmdline.shiftAfterSpecialCharacter {
+        attributedString.insert(
+          .init(
+            string: "".padding(toLength: cmdline.specialCharacter.count, withPad: " ", startingAt: 0),
+            attributes: [.font: store.font.nsFont(), .foregroundColor: store.appearance.defaultSpecialColor.appKit]
+          ),
+          at: cmdline.cursorPosition + 1
+        )
+      }
+
+      accumulator.append(attributedString)
+
+      if cmdlineIndex < store.cmdlines.count - 1 {
+        accumulator.append(.init(string: "\n"))
+      }
+    }
+
+    return .init(attributedString: accumulator)
+  }
+}
+
+private final class CmdlinesContentView: NSView {
+  var ctFrame: CTFrame?
+
+  override func draw(_ dirtyRect: NSRect) {
+    guard let ctFrame else {
+      return
+    }
+
+    let graphicsContext = NSGraphicsContext.current!
+    let cgContext = graphicsContext.cgContext
+
+    cgContext.saveGState()
+
+    dirtyRect.clip()
+
+    CTFrameDraw(ctFrame, cgContext)
+
+    cgContext.restoreGState()
+
+    graphicsContext.flushGraphics()
   }
 }
