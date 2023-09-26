@@ -10,7 +10,7 @@ public struct Popupmenu: Sendable, Hashable {
 
   public enum Anchor: Sendable, Hashable {
     case grid(id: Grid.ID, origin: IntegerPoint)
-    case cmdline(origin: Int)
+    case cmdline(column: Int)
   }
 }
 

@@ -119,7 +119,6 @@ final class MsgShowsViewController: NSViewController {
   private let store: Store
   private let scrollView = NSScrollView()
   private let documentView = DocumentView()
-  private var maxSize = CGSize(width: 0, height: 0)
 
   init(store: Store) {
     self.store = store

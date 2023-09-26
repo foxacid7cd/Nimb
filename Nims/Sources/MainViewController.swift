@@ -67,7 +67,7 @@ final class MainViewController: NSViewController {
     }
   }
 
-  public func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    mainView.frame(forGridID: gridID, gridFrame: gridFrame)
+  public func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    mainView.point(forGridID: gridID, gridPoint: gridPoint)
   }
 }

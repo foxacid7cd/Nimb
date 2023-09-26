@@ -147,7 +147,7 @@ private final class CmdlinesViewController: NSViewController {
     for (cmdlineIndex, cmdline) in sortedCmdlines.enumerated() {
       let firstCharacter = NSAttributedString(string: cmdline.firstCharacter, attributes: [
         .font: store.font.nsFont(),
-        .foregroundColor: store.appearance.defaultForegroundColor.appKit.withAlphaComponent(0.5),
+        .foregroundColor: NSColor.textColor.withAlphaComponent(0.5),
       ])
 
       if !cmdline.blockLines.isEmpty {
@@ -215,7 +215,9 @@ private final class CmdlinesViewController: NSViewController {
         }
 
       } else if cmdline.cursorPosition > 0 {
-        if cmdline.cursorPosition == attributedString.length {
+        let cursorPosition = cmdline.cursorPosition + cmdline.indent
+
+        if cursorPosition == attributedString.length {
           attributedString.append(.init(string: " "))
         }
 
@@ -224,7 +226,7 @@ private final class CmdlinesViewController: NSViewController {
             .foregroundColor: store.appearance.defaultBackgroundColor.appKit,
             .backgroundColor: store.appearance.defaultForegroundColor.appKit,
           ],
-          range: .init(location: cmdline.cursorPosition, length: 1)
+          range: .init(location: cursorPosition, length: 1)
         )
       }
 

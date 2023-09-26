@@ -828,7 +828,7 @@ public extension State {
 
           let anchor: Popupmenu.Anchor = switch gridID.rawValue {
           case -1:
-            .cmdline(origin: col)
+            .cmdline(column: col)
 
           default:
             .grid(id: gridID, origin: .init(column: col, row: row))

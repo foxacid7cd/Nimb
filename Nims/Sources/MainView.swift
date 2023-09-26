@@ -281,12 +281,12 @@ class MainView: NSView {
     }
   }
 
-  public func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+  public func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     guard let gridView = gridViews[gridID] else {
       return nil
     }
 
-    return (gridFrame * store.font.cellSize)
+    return (gridPoint * store.font.cellSize)
       .applying(gridView.upsideDownTransform)
       .applying(.init(translationX: gridView.frame.origin.x, y: gridView.frame.origin.y))
   }

@@ -91,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     popupmenuWindowController = PopupmenuWindowController(
       store: store!,
       parentWindow: mainWindowController!.window!,
-      gridWindowFrameTransformer: mainWindowController!
+      gridWindowFrameTransformer: self
     )
   }
 
@@ -105,6 +105,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       return nil
+    }
+  }
+}
+
+extension AppDelegate: GridWindowFrameTransformer {
+  func anchorOrigin(for anchor: Popupmenu.Anchor) -> CGPoint? {
+    switch anchor {
+    case let .grid(gridID, gridPoint):
+      return mainWindowController?.point(forGridID: gridID, gridPoint: gridPoint)
+
+    case let .cmdline(column):
+      let visibleCmdlines = store!.cmdlines.filter(\.isVisible)
+      let lastCmdline = visibleCmdlines.ids.max().flatMap { store!.cmdlines[id: $0] }
+
+      if let lastCmdline {
+        return (IntegerPoint(column: column + 1 + lastCmdline.indent, row: 0) * store!.font.cellSize)
+          .applying(.init(
+            translationX: cmdlinesWindowController!.window!.frame.minX - 3,
+            y: cmdlinesWindowController!.window!.frame.minY
+          ))
+
+      } else {
+        return nil
+      }
     }
   }
 }

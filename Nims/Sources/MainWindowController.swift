@@ -5,6 +5,7 @@ import Library
 import Neovim
 
 final class MainWindowController: NSWindowController {
+  private let store: Store
   private let viewController: MainViewController
 
   var windowTitle = "" {
@@ -25,6 +26,7 @@ final class MainWindowController: NSWindowController {
   }
 
   init(store: Store, viewController: MainViewController) {
+    self.store = store
     self.viewController = viewController
 
     let window = Window(contentViewController: viewController)
@@ -45,6 +47,10 @@ final class MainWindowController: NSWindowController {
 
     window?.title = windowTitle
   }
+
+  func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    viewController.point(forGridID: gridID, gridPoint: gridPoint)
+  }
 }
 
 private final class Window: NSWindow {
@@ -54,15 +60,5 @@ private final class Window: NSWindow {
 
   override var canBecomeMain: Bool {
     true
-  }
-}
-
-extension MainWindowController: GridWindowFrameTransformer {
-  func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    guard let window, let frame = viewController.frame(forGridID: gridID, gridFrame: gridFrame) else {
-      return nil
-    }
-
-    return window.frameRect(forContentRect: frame)
   }
 }

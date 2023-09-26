@@ -6,7 +6,7 @@ import Neovim
 
 @MainActor
 protocol GridWindowFrameTransformer: AnyObject {
-  func frame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect?
+  func anchorOrigin(for anchor: Popupmenu.Anchor) -> CGPoint?
 }
 
 final class PopupmenuWindowController: NSWindowController {
@@ -65,16 +65,7 @@ final class PopupmenuWindowController: NSWindowController {
     if let popupmenu = store.popupmenu {
       viewController.reloadData()
 
-      switch popupmenu.anchor {
-      case let .grid(id, origin):
-        let originGridFrame = IntegerRectangle(
-          origin: origin,
-          size: .init(columnsCount: 1, rowsCount: 1)
-        )
-        guard let originFrame = gridWindowFrameTransformer?.frame(forGridID: id, gridFrame: originGridFrame) else {
-          break
-        }
-
+      if let anchorOrigin = gridWindowFrameTransformer?.anchorOrigin(for: popupmenu.anchor) {
         let outerGrid = store.grids[.outer]!
         let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
@@ -84,8 +75,8 @@ final class PopupmenuWindowController: NSWindowController {
           height: 176
         )
         let origin = CGPoint(
-          x: originFrame.minX - 13,
-          y: originFrame.minY - size.height
+          x: anchorOrigin.x - 13,
+          y: anchorOrigin.y - size.height - store.font.cellHeight
         )
         let gridFrame = CGRect(
           x: floor(origin.x / store.font.cellWidth),
@@ -108,9 +99,6 @@ final class PopupmenuWindowController: NSWindowController {
         if let selectedItemIndex = popupmenu.selectedItemIndex {
           viewController.scrollTo(itemAtIndex: selectedItemIndex)
         }
-
-      case .cmdline:
-        break
       }
 
     } else {
