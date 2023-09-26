@@ -26,6 +26,7 @@ class CmdlinesWindowController: NSWindowController {
     window.isOpaque = false
     window.backgroundColor = .clear
     window.level = .floating
+    window.setIsVisible(false)
 
     super.init(window: window)
 
@@ -48,10 +49,12 @@ class CmdlinesWindowController: NSWindowController {
         if stateUpdates.isCmdlinesUpdated {
           updateWindowOrigin()
 
-          window.setIsVisible(!store.cmdlines.isEmpty)
+          if store.cmdlines.isEmpty {
+            parentWindow.removeChildWindow(window)
+            window.setIsVisible(false)
 
-          if !store.cmdlines.isEmpty {
-            window.orderFront(nil)
+          } else {
+            parentWindow.addChildWindow(window, ordered: .above)
           }
         }
       }
@@ -68,14 +71,14 @@ class CmdlinesWindowController: NSWindowController {
   }
 
   private func updateWindowOrigin() {
-    guard let window, let screen = parentWindow.screen else {
+    guard let window else {
       return
     }
 
     window.setFrameOrigin(
       .init(
-        x: (screen.frame.width - window.frame.width) / 2,
-        y: (screen.frame.height - window.frame.height) / 1.5
+        x: parentWindow.frame.origin.x + (parentWindow.frame.width / 2) - (window.frame.width / 2),
+        y: parentWindow.frame.origin.y + (parentWindow.frame.height / 1.5) - (window.frame.height / 2)
       )
     )
   }

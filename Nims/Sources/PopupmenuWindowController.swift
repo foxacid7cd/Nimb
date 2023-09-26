@@ -80,7 +80,7 @@ final class PopupmenuWindowController: NSWindowController {
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
 
         let size = CGSize(
-          width: 400,
+          width: 394,
           height: 176
         )
         let origin = CGPoint(
@@ -178,12 +178,22 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
     }
     return itemView
   }
+
+  func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+    Task {
+      await store.instance.reportPopupmenuItemSelected(atIndex: row)
+    }
+
+    return false
+  }
 }
 
 private final class PopupmenuItemView: NSView {
   private let textField = NSTextField(labelWithString: "")
   private let secondTextField = NSTextField(labelWithString: "")
   private var isSelected = false
+  private var accentColor = NSColor.white
+  private var darkerAccentColor = NSColor.white
 
   static let ReuseIdentifier = NSUserInterfaceItemIdentifier(.init(describing: PopupmenuItemView.self))
 
@@ -223,9 +233,8 @@ private final class PopupmenuItemView: NSView {
 
     dirtyRect.clip()
 
-    let backgroundColor: NSColor = isSelected ? .textColor : .clear
-    backgroundColor.setFill()
-    backgroundColor.set()
+    (isSelected ? darkerAccentColor : .clear)
+      .setFill()
 
     let roundedRectPath = CGPath(
       roundedRect: bounds.insetBy(dx: -8, dy: 0),
@@ -242,15 +251,34 @@ private final class PopupmenuItemView: NSView {
   }
 
   func set(item: PopupmenuItem, isSelected: Bool) {
+    let rgb = item.kind.hashValue
+      .remainderReportingOverflow(dividingBy: 0xFFFFFF)
+      .partialValue
+
+    var hue: CGFloat = 0
+    Color(rgb: rgb)
+      .appKit
+      .getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
+
+    accentColor = NSColor(
+      colorSpace: .displayP3,
+      hue: hue,
+      saturation: 0.6,
+      brightness: 0.9,
+      alpha: 1
+    )
+    darkerAccentColor = accentColor.withAlphaComponent(0.5)
+
     self.isSelected = isSelected
     needsDisplay = true
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
-      .foregroundColor: isSelected ? NSColor.black : NSColor.white,
+      .foregroundColor: NSColor.white,
       .font: NSFont(name: "SFMono Nerd Font Mono", size: 13)!,
     ])
+
     secondTextField.attributedStringValue = .init(string: item.kind, attributes: [
-      .foregroundColor: isSelected ? NSColor.black : NSColor.textColor.withAlphaComponent(0.6),
+      .foregroundColor: isSelected ? NSColor.textColor : accentColor,
       .font: NSFont(name: "SFMono Nerd Font Mono Italic", size: 12)!,
     ])
   }

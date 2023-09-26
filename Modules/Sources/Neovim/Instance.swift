@@ -150,4 +150,8 @@ public final class Instance: Sendable {
       col: gridFrame.origin.x
     )
   }
+
+  public func reportPopupmenuItemSelected(atIndex index: Int) async {
+    try? await api.nvimSelectPopupmenuItemFast(item: index, insert: false, finish: false, opts: [:])
+  }
 }
