@@ -247,7 +247,7 @@ struct CmdlinesView: View {
 
 private final class CmdlinesViewController: NSViewController {
   func reloadData() {
-    let containerSize = CGSize(width: 400, height: Double.greatestFiniteMagnitude)
+    let containerSize = CGSize(width: 490, height: Double.greatestFiniteMagnitude)
 
     let attributedString = makeAttributedString()
 
@@ -261,7 +261,7 @@ private final class CmdlinesViewController: NSViewController {
     )
 
     contentView.setFrameSize(size)
-    preferredContentSize = .init(width: 500, height: min(size.height + 10, 200))
+    preferredContentSize = .init(width: 500, height: min(size.height + 10, 240))
 
     let ctFrame = CTFramesetterCreateFrame(
       framesetter,
