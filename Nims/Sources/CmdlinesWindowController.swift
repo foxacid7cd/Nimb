@@ -89,162 +89,6 @@ private final class Window: NSWindow {
   }
 }
 
-struct CmdlinesView: View {
-  var cmdlines: IdentifiedArrayOf<Cmdline>
-  var font: NimsFont
-  var appearance: Appearance
-
-  var body: some View {
-    ForEach(cmdlines, id: \.level) { cmdline in
-      VStack(alignment: .leading, spacing: 4) {
-        if !cmdline.prompt.isEmpty {
-          let attributedString = AttributedString(
-            cmdline.prompt,
-            attributes: .init([
-              .font: font.nsFont(isItalic: true),
-              .foregroundColor: appearance.defaultForegroundColor.appKit
-                .withAlphaComponent(0.6),
-            ])
-          )
-          Text(attributedString)
-        }
-
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-          if !cmdline.firstCharacter.isEmpty {
-            let attributedString = AttributedString(
-              cmdline.firstCharacter,
-              attributes: .init([
-                .font: font.nsFont(isBold: true),
-                .foregroundColor: appearance.defaultForegroundColor.appKit,
-              ])
-            )
-            Text(attributedString)
-              .frame(width: 20, height: 20)
-              .background(
-                appearance.defaultForegroundColor.swiftUI
-                  .opacity(0.2)
-              )
-          }
-
-          ZStack(alignment: .leading) {
-            let attributedString = makeContentAttributedString(cmdline: cmdline)
-            Text(attributedString)
-
-            let isCursorAtEnd = cmdline.cursorPosition == attributedString.characters.count
-            let isBlockCursorShape = isCursorAtEnd || !cmdline.specialCharacter.isEmpty
-
-            let integerFrame = IntegerRectangle(
-              origin: .init(column: cmdline.cursorPosition, row: 0),
-              size: .init(columnsCount: 1, rowsCount: 1)
-            )
-            let frame = integerFrame * font.cellSize
-
-            Rectangle()
-              .fill(appearance.defaultForegroundColor.swiftUI)
-              .frame(width: isBlockCursorShape ? frame.width : frame.width * 0.25, height: frame.height)
-              .offset(x: frame.minX, y: frame.minY)
-
-            if !cmdline.specialCharacter.isEmpty {
-              let attributedString = AttributedString(
-                cmdline.specialCharacter,
-                attributes: .init([
-                  .font: font.nsFont(),
-                  .foregroundColor: appearance.defaultForegroundColor.appKit,
-                ])
-              )
-              Text(attributedString)
-                .offset(x: frame.minX, y: frame.minY)
-            }
-          }
-
-          Spacer()
-        }
-      }
-      .padding(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
-      .frame(minWidth: 640)
-      .background {
-        let rectangle = Rectangle()
-
-        rectangle
-          .fill(
-            appearance.defaultBackgroundColor.swiftUI.opacity(0.95)
-          )
-
-        rectangle
-          .stroke(
-            appearance.defaultForegroundColor.swiftUI.opacity(0.1),
-            lineWidth: 1
-          )
-      }
-    }
-  }
-
-  @MainActor
-  private func makeContentAttributedString(cmdline: Cmdline) -> AttributedString {
-    var accumulator = AttributedString()
-
-    if !cmdline.blockLines.isEmpty {
-      for blockLine in cmdline.blockLines {
-        var lineAccumulator = AttributedString()
-
-        for contentPart in blockLine {
-          let attributedString = AttributedString(
-            contentPart.text,
-            attributes: .init([
-              .font: font.nsFont(),
-              .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).swiftUI,
-              .backgroundColor: appearance.backgroundColor(for: contentPart.highlightID).swiftUI,
-            ])
-          )
-          lineAccumulator.append(attributedString)
-        }
-
-        accumulator.append(lineAccumulator)
-        accumulator.append(AttributedString("\n"))
-      }
-    }
-
-    var attributedString = cmdline.contentParts
-      .map { contentPart -> AttributedString in
-        AttributedString(
-          contentPart.text,
-          attributes: .init([
-            .font: font.nsFont(),
-            .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).swiftUI,
-            .backgroundColor: appearance.backgroundColor(for: contentPart.highlightID).swiftUI,
-          ])
-        )
-      }
-      .reduce(AttributedString()) { result, next in
-        var copy = result
-        copy.append(next)
-        return copy
-      }
-
-    if !cmdline.specialCharacter.isEmpty, cmdline.shiftAfterSpecialCharacter {
-      let insertPosition = attributedString.index(
-        attributedString.startIndex,
-        offsetByCharacters: cmdline.cursorPosition
-      )
-
-      attributedString.insert(
-        AttributedString(
-          "".padding(toLength: cmdline.specialCharacter.count, withPad: " ", startingAt: 0),
-          attributes: .init([
-            .font: font,
-            .foregroundColor: appearance.defaultSpecialColor,
-          ])
-        ),
-        at: insertPosition
-      )
-    }
-
-    accumulator.append(attributedString)
-
-    return accumulator
-  }
-}
-
 private final class CmdlinesViewController: NSViewController {
   func reloadData() {
     let containerSize = CGSize(width: 490, height: Double.greatestFiniteMagnitude)
@@ -327,7 +171,7 @@ private final class CmdlinesViewController: NSViewController {
         }
       }
 
-      let attributedString = firstCharacter.mutableCopy() as! NSMutableAttributedString
+      let attributedString = NSMutableAttributedString()
       attributedString.append(
         .init(
           string: "".padding(toLength: cmdline.indent, withPad: " ", startingAt: 0),
@@ -343,16 +187,48 @@ private final class CmdlinesViewController: NSViewController {
         )
       }
 
-      if !cmdline.specialCharacter.isEmpty, cmdline.shiftAfterSpecialCharacter {
-        attributedString.insert(
-          .init(
-            string: "".padding(toLength: cmdline.specialCharacter.count, withPad: " ", startingAt: 0),
-            attributes: [.font: store.font.nsFont(), .foregroundColor: store.appearance.defaultSpecialColor.appKit]
-          ),
-          at: cmdline.cursorPosition + 1
+      if !cmdline.specialCharacter.isEmpty {
+        let attributes: [NSAttributedString.Key: Any] = [
+          .font: store.font.nsFont(),
+          .foregroundColor: store.appearance.defaultSpecialColor.appKit,
+        ]
+
+        if cmdline.shiftAfterSpecialCharacter {
+          attributedString.insert(
+            .init(
+              string: cmdline.specialCharacter,
+              attributes: attributes
+            ),
+            at: cmdline.cursorPosition
+          )
+
+        } else {
+          let range = NSRange(
+            location: cmdline.cursorPosition,
+            length: cmdline.specialCharacter.count
+          )
+          attributedString.replaceCharacters(
+            in: range,
+            with: cmdline.specialCharacter
+          )
+          attributedString.addAttributes(attributes, range: range)
+        }
+
+      } else if cmdline.cursorPosition > 0 {
+        if cmdline.cursorPosition == attributedString.length {
+          attributedString.append(.init(string: " "))
+        }
+
+        attributedString.addAttributes(
+          [
+            .foregroundColor: store.appearance.defaultBackgroundColor.appKit,
+            .backgroundColor: store.appearance.defaultForegroundColor.appKit,
+          ],
+          range: .init(location: cmdline.cursorPosition, length: 1)
         )
       }
 
+      accumulator.append(firstCharacter)
       accumulator.append(attributedString)
 
       if cmdlineIndex < store.cmdlines.count - 1 {
