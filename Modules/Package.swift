@@ -27,7 +27,6 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-identified-collections", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-overture", branch: "main"),
-    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-tagged", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-custom-dump", branch: "main")
   ],
@@ -78,7 +77,6 @@ let package = Package(
         .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Overture", package: "swift-overture"),
-        .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
         .product(name: "Tagged", package: "swift-tagged"),
         .product(name: "CustomDump", package: "swift-custom-dump")
       ]
