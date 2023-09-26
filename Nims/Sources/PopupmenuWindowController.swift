@@ -100,7 +100,9 @@ final class PopupmenuWindowController: NSWindowController {
         }
 
         viewController.preferredContentSize = size
-        window!.setFrameOrigin(origin)
+        window!.setFrameOrigin(
+          origin.applying(.init(translationX: parentWindow.frame.origin.x, y: parentWindow.frame.origin.y))
+        )
         parentWindow.addChildWindow(window!, ordered: .above)
 
         if let selectedItemIndex = popupmenu.selectedItemIndex {
@@ -223,6 +225,7 @@ private final class PopupmenuItemView: NSView {
 
     let backgroundColor: NSColor = isSelected ? .textColor : .clear
     backgroundColor.setFill()
+    backgroundColor.set()
 
     let roundedRectPath = CGPath(
       roundedRect: bounds.insetBy(dx: -8, dy: 0),

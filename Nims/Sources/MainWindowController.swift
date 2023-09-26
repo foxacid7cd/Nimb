@@ -63,7 +63,6 @@ extension MainWindowController: GridWindowFrameTransformer {
       return nil
     }
 
-    return frame
-      .applying(.init(translationX: window.frame.origin.x, y: window.frame.origin.y))
+    return window.frameRect(forContentRect: frame)
   }
 }
