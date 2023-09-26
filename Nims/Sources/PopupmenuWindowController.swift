@@ -23,10 +23,14 @@ final class PopupmenuWindowController: NSWindowController {
     viewController = .init(store: store)
 
     let window = NSWindow(contentViewController: viewController)
-    window.styleMask = [.borderless]
+    window.styleMask = [.titled, .fullSizeContentView]
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
+    window.isMovable = false
     window.isOpaque = false
     window.setIsVisible(false)
     window.alphaValue = 0.95
+    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -76,11 +80,11 @@ final class PopupmenuWindowController: NSWindowController {
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
 
         let size = CGSize(
-          width: 360,
-          height: 160
+          width: 400,
+          height: 176
         )
         let origin = CGPoint(
-          x: originFrame.minX,
+          x: originFrame.minX - 13,
           y: originFrame.minY - size.height
         )
         let gridFrame = CGRect(
@@ -139,7 +143,7 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
 
   override func loadView() {
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init()
+    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
 
     tableView.headerView = nil
     tableView.delegate = self
@@ -210,9 +214,26 @@ private final class PopupmenuItemView: NSView {
   }
 
   override func draw(_ dirtyRect: NSRect) {
+    let graphicsContext = NSGraphicsContext.current!
+    let cgContext = graphicsContext.cgContext
+
+    cgContext.saveGState()
+
+    dirtyRect.clip()
+
     let backgroundColor: NSColor = isSelected ? .textColor : .clear
     backgroundColor.setFill()
-    dirtyRect.fill()
+
+    let roundedRectPath = CGPath(
+      roundedRect: bounds.insetBy(dx: -8, dy: 0),
+      cornerWidth: 5,
+      cornerHeight: 5,
+      transform: nil
+    )
+    cgContext.addPath(roundedRectPath)
+    cgContext.drawPath(using: .fill)
+
+    cgContext.restoreGState()
 
     super.draw(dirtyRect)
   }
@@ -223,11 +244,11 @@ private final class PopupmenuItemView: NSView {
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
       .foregroundColor: isSelected ? NSColor.black : NSColor.white,
-      .font: NSFont(name: "SFMono Nerd Font Mono", size: 12)!,
+      .font: NSFont(name: "SFMono Nerd Font Mono", size: 13)!,
     ])
     secondTextField.attributedStringValue = .init(string: item.kind, attributes: [
-      .foregroundColor: isSelected ? NSColor.black : NSColor.textColor,
-      .font: NSFont(name: "SFMono Nerd Font Mono", size: 11)!,
+      .foregroundColor: isSelected ? NSColor.black : NSColor.textColor.withAlphaComponent(0.6),
+      .font: NSFont(name: "SFMono Nerd Font Mono Italic", size: 12)!,
     ])
   }
 }
