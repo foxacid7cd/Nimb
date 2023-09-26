@@ -24,8 +24,6 @@ class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
     window.isMovable = false
     window.isOpaque = false
     window.setIsVisible(false)
-    window.alphaValue = 0.95
-    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -133,11 +131,24 @@ private final class CmdlinesViewController: NSViewController {
   }
 
   override func loadView() {
+    let view = NSView()
+
+    let blurView = NSVisualEffectView()
+    blurView.blendingMode = .behindWindow
+    blurView.state = .active
+    blurView.frame = view.bounds
+    blurView.autoresizingMask = [.width, .height]
+    view.addSubview(blurView)
+
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.drawsBackground = false
     scrollView.documentView = contentView
+    scrollView.frame = view.bounds
+    scrollView.autoresizingMask = [.width, .height]
+    view.addSubview(scrollView)
 
-    view = scrollView
+    self.view = view
   }
 
   private func makeAttributedString() -> NSAttributedString {

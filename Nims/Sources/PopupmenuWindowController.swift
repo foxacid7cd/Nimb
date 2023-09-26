@@ -29,8 +29,6 @@ final class PopupmenuWindowController: NSWindowController {
     window.isMovable = false
     window.isOpaque = false
     window.setIsVisible(false)
-    window.alphaValue = 0.95
-    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -139,12 +137,26 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
   }
 
   override func loadView() {
+    let view = NSView()
+
+    let blurView = NSVisualEffectView()
+    blurView.blendingMode = .behindWindow
+    blurView.state = .active
+    blurView.frame = view.bounds
+    blurView.autoresizingMask = [.width, .height]
+    view.addSubview(blurView)
+
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.frame = view.bounds
+    scrollView.autoresizingMask = [.width, .height]
+    scrollView.drawsBackground = false
+    view.addSubview(scrollView)
 
     tableView.headerView = nil
     tableView.delegate = self
     tableView.dataSource = self
+    tableView.backgroundColor = .clear
     tableView.addTableColumn(
       .init(identifier: PopupmenuItemView.ReuseIdentifier)
     )
@@ -153,7 +165,7 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
     tableView.selectionHighlightStyle = .none
     scrollView.documentView = tableView
 
-    view = scrollView
+    self.view = view
   }
 
   func numberOfRows(in tableView: NSTableView) -> Int {

@@ -24,8 +24,6 @@ class MsgShowsWindowController: NSWindowController {
     window.isMovable = false
     window.isOpaque = false
     window.setIsVisible(false)
-    window.alphaValue = 0.95
-    window.backgroundColor = .underPageBackgroundColor
 
     super.init(window: window)
 
@@ -131,13 +129,26 @@ final class MsgShowsViewController: NSViewController {
   }
 
   override func loadView() {
+    let view = NSView()
+
+    let blurView = NSVisualEffectView()
+    blurView.blendingMode = .behindWindow
+    blurView.state = .active
+    blurView.frame = view.bounds
+    blurView.autoresizingMask = [.width, .height]
+    view.addSubview(blurView)
+
+    scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
     scrollView.horizontalScrollElasticity = .none
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
     scrollView.documentView = documentView
+    scrollView.frame = view.bounds
+    scrollView.autoresizingMask = [.width, .height]
+    view.addSubview(scrollView)
 
-    view = scrollView
+    self.view = view
   }
 
   func update(contentSize: CGSize, ctFrame: CTFrame) {
@@ -185,7 +196,8 @@ private func makeContentAttributedString(msgShows: [MsgShow], font: NimsFont, ap
   for (index, msgShow) in msgShows.enumerated() {
     for contentPart in msgShow.contentParts {
       let attributedString = NSAttributedString(
-        string: contentPart.text,
+        string: contentPart.text
+          .trimmingCharacters(in: .whitespaces),
         attributes: [
           .font: font.nsFont(),
           .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).appKit,
