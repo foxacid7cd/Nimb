@@ -4,6 +4,7 @@ import IdentifiedCollections
 import Library
 import Neovim
 import SwiftUI
+import TinyConstraints
 
 class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
   private let store: Store
@@ -24,6 +25,7 @@ class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
     window.isMovable = false
     window.isOpaque = false
     window.setIsVisible(false)
+    window.contentMaxSize = CGSize(width: Double.greatestFiniteMagnitude, height: 200)
 
     super.init(window: window)
 
@@ -58,7 +60,7 @@ class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     viewController.reloadData()
 
-    if store.cmdlines.filter(\.isVisible).isEmpty {
+    if store.cmdlines.dictionary.isEmpty {
       parentWindow.removeChildWindow(window)
       window.setIsVisible(false)
 
@@ -89,36 +91,33 @@ private final class Window: NSWindow {
 
 private final class CmdlinesViewController: NSViewController {
   func reloadData() {
-    let containerSize = CGSize(width: 490, height: Double.greatestFiniteMagnitude)
+    contentView.arrangedSubviews
+      .forEach(contentView.removeView(_:))
 
-    let attributedString = makeAttributedString()
+    let cmdlines = store.cmdlines.dictionary.values
+    for (cmdlineIndex, cmdline) in cmdlines.enumerated() {
+      let blockLines = store.cmdlines.blockLines[cmdline.level] ?? []
 
-    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let size = CTFramesetterSuggestFrameSizeWithConstraints(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      nil,
-      containerSize,
-      nil
-    )
+      let cmdlineView = CmdlineView(store: store)
+      cmdlineView.update(cmdline: cmdline, blockLines: blockLines)
+      contentView.addArrangedSubview(cmdlineView)
+      cmdlineView.width(to: contentView)
 
-    contentView.setFrameSize(size)
-    preferredContentSize = .init(width: 500, height: min(size.height + 10, 240))
-
-    let ctFrame = CTFramesetterCreateFrame(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      .init(rect: .init(origin: .zero, size: .init(width: ceil(size.width), height: ceil(size.height))), transform: nil),
-      nil
-    )
-
-    contentView.ctFrame = ctFrame
-    contentView.needsDisplay = true
+      if cmdlineIndex < cmdlines.count - 1 {
+        let separatorView = NSView()
+        separatorView.alphaValue = 0.15
+        separatorView.wantsLayer = true
+        separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
+        contentView.addArrangedSubview(separatorView)
+        separatorView.height(1)
+        separatorView.width(to: contentView)
+      }
+    }
   }
 
   private let store: Store
   private let scrollView = NSScrollView()
-  private let contentView = CmdlinesContentView()
+  private let contentView = NSStackView(views: [])
 
   init(store: Store) {
     self.store = store
@@ -131,123 +130,160 @@ private final class CmdlinesViewController: NSViewController {
   }
 
   override func loadView() {
-    let view = NSView()
+    let view = NSView(frame: .zero)
 
     let blurView = NSVisualEffectView()
     blurView.blendingMode = .behindWindow
     blurView.state = .active
-    blurView.frame = view.bounds
-    blurView.autoresizingMask = [.width, .height]
     view.addSubview(blurView)
+    blurView.edgesToSuperview()
 
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.contentInsets = .init()
     scrollView.drawsBackground = false
-    scrollView.documentView = contentView
-    scrollView.frame = view.bounds
-    scrollView.autoresizingMask = [.width, .height]
     view.addSubview(scrollView)
+    scrollView.edgesToSuperview()
+
+    let scrollViewHeightConstraint = scrollView.height(to: view)
+    scrollViewHeightConstraint.priority = .defaultLow
+
+    contentView.orientation = .vertical
+    contentView.spacing = 0
+    contentView.distribution = .fill
+    contentView.edgeInsets = .init()
+    scrollView.documentView = contentView
+
+    contentView.width(to: scrollView)
+    scrollView.width(500)
+    scrollView.height(max: 160)
+    let scrollViewToContentHeightConstraint = scrollView.height(to: contentView)
+    scrollViewToContentHeightConstraint.priority = .init(rawValue: 749)
 
     self.view = view
   }
+}
 
-  private func makeAttributedString() -> NSAttributedString {
-    let accumulator = NSMutableAttributedString()
+private final class CmdlineView: NSView {
+  private let store: Store
 
-    let sortedCmdlines = store.cmdlines.filter(\.isVisible).sorted(by: { $0.level < $1.level })
-    for (cmdlineIndex, cmdline) in sortedCmdlines.enumerated() {
-      let firstCharacter = NSAttributedString(string: cmdline.firstCharacter, attributes: [
-        .font: store.font.nsFont(),
-        .foregroundColor: NSColor.textColor.withAlphaComponent(0.5),
+  private let promptTextField = NSTextField(labelWithString: "")
+  private let firstCharacterView: CmdlineFirstCharacterView
+  private let contentTextView: CmdlineTextView
+
+  private var promptToContentConstraint: NSLayoutConstraint?
+  private var firstCharacterToContentConstraint: NSLayoutConstraint?
+  private var contentToTopConstraint: NSLayoutConstraint?
+  private var contentToLeadingConstraint: NSLayoutConstraint?
+
+  init(store: Store) {
+    self.store = store
+    contentTextView = .init(store: store)
+    firstCharacterView = .init(store: store)
+    super.init(frame: .zero)
+
+    promptTextField.translatesAutoresizingMaskIntoConstraints = false
+    addSubview(promptTextField)
+
+    firstCharacterView.translatesAutoresizingMaskIntoConstraints = false
+    addSubview(firstCharacterView)
+
+    contentTextView.translatesAutoresizingMaskIntoConstraints = false
+    contentTextView.setContentHuggingPriority(.init(rawValue: 999), for: .vertical)
+    addSubview(contentTextView)
+
+    addConstraints([
+      promptTextField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+      promptTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 8),
+      promptTextField.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+
+      firstCharacterView.widthAnchor.constraint(equalToConstant: 20),
+      firstCharacterView.heightAnchor.constraint(equalToConstant: 20),
+      firstCharacterView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+      firstCharacterView.firstBaselineAnchor.constraint(equalTo: contentTextView.firstBaselineAnchor),
+
+      contentTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+      contentTextView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+    ])
+
+    promptToContentConstraint = promptTextField.bottomAnchor.constraint(equalTo: contentTextView.topAnchor, constant: 8)
+    promptToContentConstraint!.priority = .defaultHigh
+
+    firstCharacterToContentConstraint = firstCharacterView.trailingAnchor.constraint(
+      equalTo: contentTextView.leadingAnchor,
+      constant: -8
+    )
+    firstCharacterToContentConstraint!.priority = .defaultHigh
+
+    contentToTopConstraint = contentTextView.topAnchor.constraint(equalTo: topAnchor, constant: 8)
+    contentToTopConstraint!.priority = .defaultHigh
+
+    contentToLeadingConstraint = contentTextView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8)
+    contentToLeadingConstraint!.priority = .defaultHigh
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  func update(cmdline: Cmdline, blockLines: [[Cmdline.ContentPart]]) {
+    if !cmdline.prompt.isEmpty {
+      promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
+        .foregroundColor: NSColor.textColor,
+        .font: store.font.nsFont(isItalic: true),
       ])
 
-      if !cmdline.blockLines.isEmpty {
-        for blockLine in cmdline.blockLines {
-          let lineAccumulator = firstCharacter.mutableCopy() as! NSMutableAttributedString
+      firstCharacterView.isHidden = true
+      promptTextField.isHidden = false
 
-          for contentPart in blockLine {
-            lineAccumulator.append(
-              .init(
-                string: contentPart.text,
-                attributes: .init([
-                  .font: store.font.nsFont(),
-                  .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
-                ])
-              )
-            )
-          }
+      promptToContentConstraint!.isActive = true
+      firstCharacterToContentConstraint!.isActive = false
+      contentToTopConstraint!.isActive = false
+      contentToLeadingConstraint!.isActive = true
 
-          accumulator.append(lineAccumulator)
-          accumulator.append(.init(string: "\n"))
-        }
-      }
+    } else {
+      firstCharacterView.firstCharacter = cmdline.firstCharacter
+      firstCharacterView.render()
 
-      let attributedString = NSMutableAttributedString()
-      attributedString.append(
-        .init(
-          string: "".padding(toLength: cmdline.indent, withPad: " ", startingAt: 0),
-          attributes: [.font: store.font.nsFont()]
-        )
-      )
-      for contentPart in cmdline.contentParts {
-        attributedString.append(
-          .init(string: contentPart.text, attributes: [
-            .font: store.font.nsFont(),
-            .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
-          ])
-        )
-      }
+      firstCharacterView.isHidden = false
+      promptTextField.isHidden = true
 
-      if !cmdline.specialCharacter.isEmpty {
-        let attributes: [NSAttributedString.Key: Any] = [
-          .font: store.font.nsFont(),
-          .foregroundColor: store.appearance.defaultSpecialColor.appKit,
-        ]
-
-        if cmdline.shiftAfterSpecialCharacter {
-          attributedString.insert(
-            .init(
-              string: cmdline.specialCharacter,
-              attributes: attributes
-            ),
-            at: cmdline.cursorPosition
-          )
-
-        } else {
-          let range = NSRange(
-            location: cmdline.cursorPosition,
-            length: cmdline.specialCharacter.count
-          )
-          attributedString.replaceCharacters(
-            in: range,
-            with: cmdline.specialCharacter
-          )
-          attributedString.addAttributes(attributes, range: range)
-        }
-
-      } else if cmdline.cursorPosition > 0 {
-        let cursorPosition = cmdline.cursorPosition + cmdline.indent
-
-        if cursorPosition == attributedString.length {
-          attributedString.append(.init(string: " "))
-        }
-
-        attributedString.addAttributes(
-          [
-            .foregroundColor: store.appearance.defaultBackgroundColor.appKit,
-            .backgroundColor: store.appearance.defaultForegroundColor.appKit,
-          ],
-          range: .init(location: cursorPosition, length: 1)
-        )
-      }
-
-      accumulator.append(firstCharacter)
-      accumulator.append(attributedString)
-
-      if cmdlineIndex < store.cmdlines.count - 1 {
-        accumulator.append(.init(string: "\n"))
-      }
+      promptToContentConstraint!.isActive = false
+      firstCharacterToContentConstraint!.isActive = true
+      contentToTopConstraint!.isActive = true
+      contentToLeadingConstraint!.isActive = false
     }
+
+    let accumulator = NSMutableAttributedString()
+
+    for blockLine in blockLines {
+      let lineAccumulator = NSMutableAttributedString()
+
+      for contentPart in blockLine {
+        lineAccumulator.append(
+          attributedString(forContentPart: contentPart)
+        )
+      }
+
+      accumulator.append(lineAccumulator)
+      accumulator.append(.init(string: "\n"))
+    }
+
+    let lineAccumulator = NSMutableAttributedString()
+    lineAccumulator.append(.init(
+      string: "".padding(
+        toLength: cmdline.indent,
+        withPad: " ",
+        startingAt: 0
+      )
+    ))
+    for contentPart in cmdline.contentParts {
+      lineAccumulator.append(
+        attributedString(forContentPart: contentPart)
+      )
+    }
+    lineAccumulator.append(.init(string: " "))
+    accumulator.append(lineAccumulator)
 
     let paragraphStyle = NSMutableParagraphStyle()
     paragraphStyle.lineBreakMode = .byCharWrapping
@@ -258,29 +294,269 @@ private final class CmdlinesViewController: NSViewController {
       range: .init(location: 0, length: accumulator.length)
     )
 
-    return .init(attributedString: accumulator)
+    contentTextView.blockLines = blockLines
+    contentTextView.cmdline = cmdline
+    contentTextView.render()
+  }
+
+  private func attributedString(forContentPart contentPart: Cmdline.ContentPart) -> NSAttributedString {
+    .init(
+      string: contentPart.text,
+      attributes: .init([
+        .font: store.font.nsFont(),
+        .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+      ])
+    )
   }
 }
 
-private final class CmdlinesContentView: NSView {
-  var ctFrame: CTFrame?
+private final class CmdlineFirstCharacterView: NSView {
+  var firstCharacter = ""
 
-  override func draw(_ dirtyRect: NSRect) {
-    guard let ctFrame else {
-      return
+  func render() {
+    let attributedString = NSAttributedString(string: firstCharacter, attributes: [
+      .font: store.font.nsFont(isBold: true),
+      .foregroundColor: NSColor.textColor,
+    ])
+    let stringRange = CFRange(location: 0, length: attributedString.length)
+    let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
+    let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
+      ctFramesetter,
+      stringRange,
+      nil,
+      bounds.size,
+      nil
+    )
+
+    let size = CGSize(
+      width: bounds.width,
+      height: ceil(boundingSize.height)
+    )
+    let origin = CGPoint(
+      x: (bounds.width - boundingSize.width) / 2,
+      y: (bounds.height - size.height) / 2
+    )
+    ctFrameYOffset = origin.y
+
+    ctFrame = CTFramesetterCreateFrame(
+      ctFramesetter,
+      stringRange,
+      .init(
+        rect: .init(origin: origin, size: size),
+        transform: nil
+      ),
+      nil
+    )
+
+    backgroundColor = .init(hueSource: firstCharacter, saturation: 0.95, brightness: 0.8, alpha: 0.6)
+  }
+
+  override var frame: NSRect {
+    didSet {
+      if frame.size != oldValue.size {
+        render()
+      }
     }
+  }
 
+  private let store: Store
+  private var ctFrame: CTFrame?
+  private var backgroundColor: NSColor?
+  private var ctFrameYOffset: Double = 0
+
+  init(store: Store) {
+    self.store = store
+    super.init(frame: .zero)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func draw(_: NSRect) {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
     cgContext.saveGState()
+    defer { cgContext.restoreGState() }
 
-    dirtyRect.clip()
+    if let backgroundColor {
+      backgroundColor.setFill()
+      cgContext.addPath(
+        .init(roundedRect: bounds, cornerWidth: 5, cornerHeight: 5, transform: nil)
+      )
+      cgContext.fillPath()
+    }
 
-    CTFrameDraw(ctFrame, cgContext)
+    if let ctFrame {
+      cgContext.textMatrix = .identity
+      CTFrameDraw(ctFrame, cgContext)
+    }
+  }
 
-    cgContext.restoreGState()
+  override var firstBaselineOffsetFromTop: CGFloat {
+    store.font.nsFont().ascender + ctFrameYOffset
+  }
+}
 
-    graphicsContext.flushGraphics()
+private final class CmdlineTextView: NSView {
+  var blockLines = [[Cmdline.ContentPart]]()
+  var cmdline: Cmdline?
+
+  func render() {
+    guard let cmdline else {
+      return
+    }
+
+    let attributedString = NSMutableAttributedString()
+
+    for contentParts in blockLines {
+      let lineAttributedString = NSMutableAttributedString()
+
+      for contentPart in contentParts {
+        lineAttributedString.append(.init(
+          string: contentPart.text,
+          attributes: .init([
+            .font: store.font.nsFont(),
+            .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+          ])
+        ))
+      }
+
+      attributedString.append(lineAttributedString)
+      lineAttributedString.append(
+        .init(string: "\n", attributes: [.font: store.font.nsFont()])
+      )
+    }
+
+    if cmdline.indent > 0 {
+      let prefix = "".padding(
+        toLength: cmdline.indent,
+        withPad: " ",
+        startingAt: 0
+      )
+      attributedString.append(
+        .init(string: prefix, attributes: [.font: store.font.nsFont()])
+      )
+    }
+
+    let lineAttributedString = NSMutableAttributedString()
+    for contentPart in cmdline.contentParts {
+      lineAttributedString.append(.init(
+        string: contentPart.text,
+        attributes: .init([
+          .font: store.font.nsFont(),
+          .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+        ])
+      ))
+    }
+    lineAttributedString.append(
+      .init(string: " ", attributes: [.font: store.font.nsFont()])
+    )
+    if !cmdline.specialCharacter.isEmpty {
+      lineAttributedString.insert(
+        .init(
+          string: cmdline.specialCharacter,
+          attributes: [
+            .font: store.font.nsFont(),
+            .foregroundColor: store.appearance.defaultSpecialColor.appKit,
+          ]
+        ),
+        at: cmdline.cursorPosition
+      )
+    } else {
+      lineAttributedString.addAttributes(
+        [
+          .foregroundColor: store.appearance.defaultBackgroundColor.appKit,
+          .backgroundColor: store.appearance.defaultForegroundColor.appKit,
+        ],
+        range: .init(location: cmdline.cursorPosition, length: 1)
+      )
+    }
+    attributedString.append(lineAttributedString)
+
+    let paragraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.lineBreakMode = .byCharWrapping
+    paragraphStyle.allowsDefaultTighteningForTruncation = false
+    attributedString.addAttribute(
+      .paragraphStyle,
+      value: paragraphStyle,
+      range: .init(location: 0, length: attributedString.length)
+    )
+
+    let stringRange = CFRange(location: 0, length: attributedString.length)
+    let containerSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
+
+    let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
+    let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
+      ctFramesetter,
+      stringRange,
+      nil,
+      containerSize,
+      nil
+    )
+    invalidateIntrinsicContentSize()
+
+    let path = CGPath(
+      rect: .init(
+        origin: .zero,
+        size: .init(width: containerSize.width, height: ceil(boundingSize.height))
+      ),
+      transform: nil
+    )
+    let ctFrame = CTFramesetterCreateFrame(ctFramesetter, stringRange, path, nil)
+    ctLines = CTFrameGetLines(ctFrame) as! [CTLine]
+
+    setNeedsDisplay(bounds)
+  }
+
+  private let store: Store
+  private var ctLines = [CTLine]()
+
+  init(store: Store) {
+    self.store = store
+    super.init(frame: .zero)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func draw(_: NSRect) {
+    let graphicsContext = NSGraphicsContext.current!
+    let cgContext = graphicsContext.cgContext
+
+    cgContext.saveGState()
+    defer { cgContext.restoreGState() }
+
+    let font = store.font.nsFont()
+    for (offset, ctLine) in ctLines.reversed().enumerated() {
+      cgContext.textMatrix = .init(
+        translationX: 0,
+        y: Double(offset) * store.font.cellHeight - font.descender
+      )
+      CTLineDraw(ctLine, cgContext)
+    }
+  }
+
+  override var intrinsicContentSize: NSSize {
+    .init(
+      width: frame.width,
+      height: Double(ctLines.count) * store.font.cellHeight
+    )
+  }
+
+  override var frame: NSRect {
+    didSet {
+      if oldValue.width != frame.width {
+        render()
+      }
+    }
+  }
+
+  override var firstBaselineOffsetFromTop: CGFloat {
+    store.font.nsFont().ascender
   }
 }

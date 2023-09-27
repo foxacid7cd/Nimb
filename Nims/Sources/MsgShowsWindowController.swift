@@ -201,7 +201,6 @@ private func makeContentAttributedString(msgShows: [MsgShow], font: NimsFont, ap
         attributes: [
           .font: font.nsFont(),
           .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).appKit,
-          .backgroundColor: contentPart.highlightID.isDefault ? NSColor.clear : appearance.backgroundColor(for: contentPart.highlightID).appKit,
         ]
       )
       accumulator.append(attributedString)

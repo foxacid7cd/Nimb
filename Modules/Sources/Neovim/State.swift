@@ -19,8 +19,7 @@ public struct State: Sendable {
   public var mode: Mode? = nil
   public var cursor: Cursor? = nil
   public var tabline: Tabline? = nil
-  public var cmdlines: IdentifiedArrayOf<Cmdline> = []
-  public var lastCmdlineLevel: Int? = nil
+  public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var windowZIndexCounter: Int = 0
@@ -117,39 +116,34 @@ public extension State {
         updates.isPopupmenuSelectionUpdated = true
       }
 
-      func blockLines(fromRawLines rawLines: [Value]) -> [[Cmdline.ContentPart]] {
-        var blockLines = [[Cmdline.ContentPart]]()
-
-        for line in rawLines {
-          guard case let .array(line) = line else {
-            continue
-          }
-
-          var contentParts = [Cmdline.ContentPart]()
-
-          for rawContentPart in line {
-            guard
-              case let .array(rawContentPart) = rawContentPart,
-              rawContentPart.count == 2,
-              case let .integer(rawHighlightID) = rawContentPart[0],
-              case let .string(text) = rawContentPart[1]
-            else {
-              assertionFailure("Invalid cmdline raw value")
-              continue
-            }
-
-            contentParts.append(
-              .init(
-                highlightID: .init(rawHighlightID),
-                text: text
-              )
-            )
-          }
-
-          blockLines.append(contentParts)
+      func blockLine(fromRawLine rawLine: Value) -> [Cmdline.ContentPart] {
+        guard case let .array(rawLine) = rawLine else {
+          assertionFailure("Invalid cmdline raw value type")
+          return []
         }
 
-        return blockLines
+        var contentParts = [Cmdline.ContentPart]()
+
+        for rawContentPart in rawLine {
+          guard
+            case let .array(rawContentPart) = rawContentPart,
+            rawContentPart.count == 2,
+            case let .integer(rawHighlightID) = rawContentPart[0],
+            case let .string(text) = rawContentPart[1]
+          else {
+            assertionFailure("Invalid cmdline raw value array content")
+            return []
+          }
+
+          contentParts.append(
+            .init(
+              highlightID: .init(rawHighlightID),
+              text: text
+            )
+          )
+        }
+
+        return contentParts
       }
 
       for uiEvent in bufferedUIEvents {
@@ -633,8 +627,6 @@ public extension State {
           tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-          let oldCmdline = cmdlines[id: level]
-
           let cmdline = Cmdline(
             contentParts: content
               .compactMap { rawContentPart in
@@ -659,58 +651,48 @@ public extension State {
             indent: indent,
             level: level,
             specialCharacter: "",
-            shiftAfterSpecialCharacter: false,
-            blockLines: oldCmdline?.blockLines ?? [],
-            isVisible: true
+            shiftAfterSpecialCharacter: false
           )
 
-          lastCmdlineLevel = level
+          cmdlines.dictionary[level] = cmdline
+          cmdlines.lastCmdlineLevel = level
 
-          cmdlines[id: level] = cmdline
           cmdlinesUpdated()
 
         case let .cmdlinePos(pos, level):
-          update(&cmdlines[id: level]!) { cmdline in
-            cmdline.cursorPosition = pos
+          update(&cmdlines.dictionary[level]) {
+            $0?.cursorPosition = pos
           }
-
-          lastCmdlineLevel = level
 
           cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
-          update(&cmdlines[id: level]!) { cmdline in
-            cmdline.specialCharacter = c
-            cmdline.shiftAfterSpecialCharacter = shift
+          update(&cmdlines.dictionary[level]) {
+            $0?.specialCharacter = c
+            $0?.shiftAfterSpecialCharacter = shift
           }
 
           cmdlinesUpdated()
 
         case let .cmdlineHide(level):
-          update(&cmdlines[id: level]) { cmdline in
-            cmdline?.isVisible = false
-          }
+          cmdlines.dictionary.removeValue(forKey: level)
 
           cmdlinesUpdated()
 
         case let .cmdlineBlockShow(rawLines):
-          cmdlines[id: lastCmdlineLevel!]!.blockLines = blockLines(fromRawLines: rawLines)
+          cmdlines.blockLines[cmdlines.lastCmdlineLevel!] = rawLines
+            .map { blockLine(fromRawLine: $0) }
 
           cmdlinesUpdated()
 
         case let .cmdlineBlockAppend(rawLine):
-          update(&cmdlines[id: lastCmdlineLevel!]!) { cmdline in
-            cmdline.blockLines += blockLines(fromRawLines: [.array(rawLine)])
-          }
+          cmdlines.blockLines[cmdlines.lastCmdlineLevel!]!
+            .append(blockLine(fromRawLine: .array(rawLine)))
 
           cmdlinesUpdated()
 
         case .cmdlineBlockHide:
-          if let lastCmdlineLevel {
-            update(&cmdlines[id: lastCmdlineLevel]!) { cmdline in
-              cmdline.blockLines = []
-            }
-          }
+          cmdlines.blockLines.removeValue(forKey: cmdlines.lastCmdlineLevel!)
 
           cmdlinesUpdated()
 

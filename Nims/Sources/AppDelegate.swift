@@ -116,8 +116,7 @@ extension AppDelegate: GridWindowFrameTransformer {
       return mainWindowController?.point(forGridID: gridID, gridPoint: gridPoint)
 
     case let .cmdline(column):
-      let visibleCmdlines = store!.cmdlines.filter(\.isVisible)
-      let lastCmdline = visibleCmdlines.ids.max().flatMap { store!.cmdlines[id: $0] }
+      let lastCmdline = store!.cmdlines.dictionary.keys.max().flatMap { store!.cmdlines.dictionary[$0] }
 
       if let lastCmdline {
         return (IntegerPoint(column: column + 1 + lastCmdline.indent, row: 0) * store!.font.cellSize)
