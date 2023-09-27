@@ -26,12 +26,9 @@ final class Store {
         origin: cursor.position,
         size: .init(columnsCount: 1, rowsCount: 1)
       )
-      let updates = Updates(
-        instanceStateUpdates: .init(
-          isCursorUpdated: true,
-          gridUpdatedRectangles: [cursor.gridID: [cursorFrame]]
-        )
-      )
+      var updates = Updates()
+      updates.instanceStateUpdates.isCursorUpdated = true
+      updates.instanceStateUpdates.gridUpdatedRectangles = [cursor.gridID: [cursorFrame]]
       self.observers
         .forEach { $1(updates) }
     }
@@ -113,10 +110,11 @@ final class Store {
     state[keyPath: keyPath]
   }
 
+  @PublicInit
   @dynamicMemberLookup
-  struct Updates {
-    var instanceStateUpdates = Neovim.State.Updates()
-    var stateUpdates = State.Updates()
+  struct Updates: Sendable {
+    var instanceStateUpdates: Neovim.State.Updates = .init()
+    var stateUpdates: State.Updates = .init()
 
     subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State.Updates, Value>) -> Value {
       instanceStateUpdates[keyPath: keyPath]

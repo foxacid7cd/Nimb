@@ -3,23 +3,12 @@
 import Library
 import Tagged
 
+@PublicInit
 public struct Appearance: Sendable {
-  public init(
-    highlights: IntKeyedDictionary<Highlight> = [:],
-    defaultForegroundColor: Color = .init(rgb: 0xFFFFFF),
-    defaultBackgroundColor: Color = .init(rgb: 0x000000),
-    defaultSpecialColor: Color = .init(rgb: 0xFF00FF)
-  ) {
-    self.highlights = highlights
-    self.defaultForegroundColor = defaultForegroundColor
-    self.defaultBackgroundColor = defaultBackgroundColor
-    self.defaultSpecialColor = defaultSpecialColor
-  }
-
-  public var highlights: IntKeyedDictionary<Highlight>
-  public var defaultForegroundColor: Color
-  public var defaultBackgroundColor: Color
-  public var defaultSpecialColor: Color
+  public var highlights: IntKeyedDictionary<Highlight> = [:]
+  public var defaultForegroundColor: Color = .black
+  public var defaultBackgroundColor: Color = .black
+  public var defaultSpecialColor: Color = .black
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {

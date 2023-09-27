@@ -1,71 +1,36 @@
 // SPDX-License-Identifier: MIT
 
+import Library
 import Tagged
 
+@PublicInit
 public struct Highlight: Identifiable, Sendable {
-  public init(
-    id: Highlight.ID,
-    foregroundColor: Color? = nil,
-    backgroundColor: Color? = nil,
-    specialColor: Color? = nil,
-    isReverse: Bool,
-    isItalic: Bool,
-    isBold: Bool,
-    decorations: Decorations,
-    blend: Int
-  ) {
-    self.id = id
-    self.foregroundColor = foregroundColor
-    self.backgroundColor = backgroundColor
-    self.specialColor = specialColor
-    self.isReverse = isReverse
-    self.isItalic = isItalic
-    self.isBold = isBold
-    self.decorations = decorations
-    self.blend = blend
-  }
+  public var id: HighlightID
+  public var foregroundColor: Color? = nil
+  public var backgroundColor: Color? = nil
+  public var specialColor: Color? = nil
+  public var isReverse: Bool = false
+  public var isItalic: Bool = false
+  public var isBold: Bool = false
+  public var decorations: Decorations = .init()
+  public var blend: Int = 0
 
-  public typealias ID = Tagged<Self, Int>
-
-  public var id: ID
-  public var foregroundColor: Color?
-  public var backgroundColor: Color?
-  public var specialColor: Color?
-  public var isReverse: Bool
-  public var isItalic: Bool
-  public var isBold: Bool
-  public var decorations: Decorations
-  public var blend: Int
-
+  @PublicInit
   public struct Decorations: Hashable, Sendable {
-    public init(
-      isStrikethrough: Bool = false,
-      isUnderline: Bool = false,
-      isUndercurl: Bool = false,
-      isUnderdouble: Bool = false,
-      isUnderdotted: Bool = false,
-      isUnderdashed: Bool = false
-    ) {
-      self.isStrikethrough = isStrikethrough
-      self.isUnderline = isUnderline
-      self.isUndercurl = isUndercurl
-      self.isUnderdouble = isUnderdouble
-      self.isUnderdotted = isUnderdotted
-      self.isUnderdashed = isUnderdashed
-    }
-
-    public var isStrikethrough: Bool
-    public var isUnderline: Bool
-    public var isUndercurl: Bool
-    public var isUnderdouble: Bool
-    public var isUnderdotted: Bool
-    public var isUnderdashed: Bool
+    public var isStrikethrough: Bool = false
+    public var isUnderline: Bool = false
+    public var isUndercurl: Bool = false
+    public var isUnderdouble: Bool = false
+    public var isUnderdotted: Bool = false
+    public var isUnderdashed: Bool = false
   }
 }
 
-public extension Highlight.ID {
-  static var `default`: Self {
-    0
+public typealias HighlightID = Tagged<Highlight, Int>
+
+public extension HighlightID {
+  static var `default`: HighlightID {
+    .init(rawValue: 0)
   }
 
   var isDefault: Bool {

@@ -2,7 +2,9 @@
 
 import AppKit
 import Carbon
+import Library
 
+@PublicInit
 public struct KeyPress: Sendable {
   public init(
     event: NSEvent
@@ -12,16 +14,6 @@ public struct KeyPress: Sendable {
       characters: event.charactersIgnoringModifiers?.lowercased() ?? "",
       modifierFlags: event.modifierFlags
     )
-  }
-
-  public init(
-    keyCode: Int,
-    characters: String,
-    modifierFlags: NSEvent.ModifierFlags
-  ) {
-    self.keyCode = keyCode
-    self.characters = characters
-    self.modifierFlags = modifierFlags
   }
 
   public var keyCode: Int

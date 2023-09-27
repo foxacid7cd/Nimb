@@ -37,6 +37,8 @@ public struct Color: Sendable, Hashable {
     )
   }
 
+  public static let black = Color(rgb: 0)
+
   private var red: Double {
     Double((rgb >> 16) & 0xFF) / 255
   }

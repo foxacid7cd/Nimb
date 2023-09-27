@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 
+import Library
 import Neovim
 
+@PublicInit
 struct State: Sendable {
-  var font = NimsFont()
+  var font: NimsFont = .init()
 
+  @PublicInit
   struct Updates: Sendable {
-    var isFontUpdated = false
+    var isFontUpdated: Bool = false
   }
 }

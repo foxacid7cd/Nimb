@@ -3,32 +3,20 @@
 import Library
 import Tagged
 
+@PublicInit
 public struct Cursor: Sendable {
-  public init(gridID: Grid.ID, position: IntegerPoint) {
-    self.gridID = gridID
-    self.position = position
-  }
-
   public var gridID: Grid.ID
   public var position: IntegerPoint
 }
 
+@PublicInit
 public struct Mode: Sendable {
-  public init(name: String, cursorStyleIndex: Int) {
-    self.name = name
-    self.cursorStyleIndex = cursorStyleIndex
-  }
-
   public var name: String
   public var cursorStyleIndex: Int
 }
 
+@PublicInit
 public struct ModeInfo: Sendable {
-  public init(enabled: Bool, cursorStyles: [CursorStyle]) {
-    self.enabled = enabled
-    self.cursorStyles = cursorStyles
-  }
-
   public var enabled: Bool
   public var cursorStyles: [CursorStyle]
 }
@@ -39,33 +27,8 @@ public enum CursorShape: String, Sendable {
   case vertical
 }
 
+@PublicInit
 public struct CursorStyle: Sendable {
-  public init(
-    name: String?,
-    shortName: String?,
-    mouseShape: Int?,
-    blinkOn: Int?,
-    blinkOff: Int?,
-    blinkWait: Int?,
-    cellPercentage: Int?,
-    cursorShape: CursorShape?,
-    idLm: Int?,
-    attrID: Highlight.ID?,
-    attrIDLm: Int?
-  ) {
-    self.name = name
-    self.shortName = shortName
-    self.mouseShape = mouseShape
-    self.blinkOn = blinkOn
-    self.blinkOff = blinkOff
-    self.blinkWait = blinkWait
-    self.cellPercentage = cellPercentage
-    self.cursorShape = cursorShape
-    self.idLm = idLm
-    self.attrID = attrID
-    self.attrIDLm = attrIDLm
-  }
-
   public var name: String?
   public var shortName: String?
   public var mouseShape: Int?

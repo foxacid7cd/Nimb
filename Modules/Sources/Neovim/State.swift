@@ -9,47 +9,22 @@ import MessagePack
 import Overture
 import Tagged
 
+@PublicInit
 public struct State: Sendable {
-  public init(
-    bufferedUIEvents: [UIEvent] = [],
-    rawOptions: OrderedDictionary<String, Value> = [:],
-    title: String? = nil,
-    appearance: Appearance = .init(),
-    modeInfo: ModeInfo? = nil,
-    mode: Mode? = nil,
-    cursor: Cursor? = nil,
-    tabline: Tabline? = nil,
-    cmdlines: IdentifiedArrayOf<Cmdline> = [],
-    msgShows: [MsgShow] = [],
-    grids: IntKeyedDictionary<Grid> = [:]
-  ) {
-    self.bufferedUIEvents = bufferedUIEvents
-    self.rawOptions = rawOptions
-    self.title = title
-    self.appearance = appearance
-    self.modeInfo = modeInfo
-    self.mode = mode
-    self.cursor = cursor
-    self.tabline = tabline
-    self.cmdlines = cmdlines
-    self.msgShows = msgShows
-    self.grids = grids
-  }
-
-  public var bufferedUIEvents: [UIEvent]
-  public var rawOptions: OrderedDictionary<String, Value>
-  public var title: String?
-  public var appearance: Appearance
-  public var modeInfo: ModeInfo?
-  public var mode: Mode?
-  public var cursor: Cursor?
-  public var tabline: Tabline?
-  public var cmdlines: IdentifiedArrayOf<Cmdline>
-  public var lastCmdlineLevel: Int?
-  public var msgShows: [MsgShow]
-  public var grids: IntKeyedDictionary<Grid>
-  public var windowZIndexCounter = 0
-  public var popupmenu: Popupmenu?
+  public var bufferedUIEvents: [UIEvent] = []
+  public var rawOptions: OrderedDictionary<String, Value> = [:]
+  public var title: String? = nil
+  public var appearance: Appearance = .init()
+  public var modeInfo: ModeInfo? = nil
+  public var mode: Mode? = nil
+  public var cursor: Cursor? = nil
+  public var tabline: Tabline? = nil
+  public var cmdlines: IdentifiedArrayOf<Cmdline> = []
+  public var lastCmdlineLevel: Int? = nil
+  public var msgShows: [MsgShow] = []
+  public var grids: IntKeyedDictionary<Grid> = [:]
+  public var windowZIndexCounter: Int = 0
+  public var popupmenu: Popupmenu? = nil
 
   public mutating func nextWindowZIndex() -> Int {
     windowZIndexCounter += 1
@@ -66,39 +41,18 @@ public struct State: Sendable {
 }
 
 public extension State {
+  @PublicInit
   struct Updates: Sendable {
-    public init(
-      isTitleUpdated: Bool = false,
-      isAppearanceUpdated: Bool = false,
-      isTablineUpdated: Bool = false,
-      isCmdlinesUpdated: Bool = false,
-      isMsgShowsUpdated: Bool = false,
-      isCursorUpdated: Bool = false,
-      updatedLayoutGridIDs: Set<Grid.ID> = Set<Grid.ID>(),
-      gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [Grid.ID: [IntegerRectangle]](),
-      isPopupmenuUpdated: Bool = false
-    ) {
-      self.isTitleUpdated = isTitleUpdated
-      self.isAppearanceUpdated = isAppearanceUpdated
-      self.isTablineUpdated = isTablineUpdated
-      self.isCmdlinesUpdated = isCmdlinesUpdated
-      self.isMsgShowsUpdated = isMsgShowsUpdated
-      self.isCursorUpdated = isCursorUpdated
-      self.updatedLayoutGridIDs = updatedLayoutGridIDs
-      self.gridUpdatedRectangles = gridUpdatedRectangles
-      self.isPopupmenuUpdated = isPopupmenuUpdated
-    }
-
-    public var isTitleUpdated = false
-    public var isAppearanceUpdated = false
-    public var isTablineUpdated = false
-    public var isCmdlinesUpdated = false
-    public var isMsgShowsUpdated = false
-    public var isCursorUpdated = false
-    public var updatedLayoutGridIDs = Set<Grid.ID>()
-    public var gridUpdatedRectangles = [Grid.ID: [IntegerRectangle]]()
-    public var isPopupmenuUpdated = false
-    public var isPopupmenuSelectionUpdated = false
+    public var isTitleUpdated: Bool = false
+    public var isAppearanceUpdated: Bool = false
+    public var isTablineUpdated: Bool = false
+    public var isCmdlinesUpdated: Bool = false
+    public var isMsgShowsUpdated: Bool = false
+    public var isCursorUpdated: Bool = false
+    public var updatedLayoutGridIDs: Set<Grid.ID> = []
+    public var gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [:]
+    public var isPopupmenuUpdated: Bool = false
+    public var isPopupmenuSelectionUpdated: Bool = false
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
@@ -283,17 +237,7 @@ public extension State {
 
           update(&appearance.highlights[highlightID]) { highlight in
             if highlight == nil {
-              highlight = .init(
-                id: highlightID,
-                foregroundColor: nil,
-                backgroundColor: nil,
-                specialColor: nil,
-                isReverse: false,
-                isItalic: false,
-                isBold: false,
-                decorations: .init(),
-                blend: 0
-              )
+              highlight = .init(id: highlightID)
             }
 
             for (key, value) in rgbAttrs {

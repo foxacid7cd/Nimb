@@ -1,6 +1,7 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.9
 
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
   name: "Modules",
@@ -71,6 +72,7 @@ let package = Package(
     .target(
       name: "Library",
       dependencies: [
+        .target(name: "Macros"),
         .product(name: "Collections", package: "swift-collections"),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Algorithms", package: "swift-algorithms"),
@@ -88,5 +90,14 @@ let package = Package(
         .brewItem(["msgpack"])
       ]
     ),
+    .macro(
+      name: "Macros",
+      dependencies: [
+        .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftDiagnostics", package: "swift-syntax"),
+      ]
+    )
   ]
 )

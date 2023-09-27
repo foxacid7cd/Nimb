@@ -50,7 +50,7 @@
 --organizetypes actor,class,enum,struct
 --patternlet hoist
 --ranges spaced
---redundanttype inferred
+--redundanttype explicit
 --self remove
 --selfrequired 
 --semicolons inline

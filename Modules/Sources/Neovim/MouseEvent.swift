@@ -3,12 +3,11 @@
 import Library
 import Tagged
 
+@PublicInit
 public struct MouseEvent: Equatable, Sendable {
-  public init(content: MouseEvent.Content, gridID: Grid.ID, point: IntegerPoint) {
-    self.content = content
-    self.gridID = gridID
-    self.point = point
-  }
+  public var content: Content
+  public var gridID: Grid.ID
+  public var point: IntegerPoint
 
   public enum Content: Equatable, Sendable {
     case mouse(button: MouseButton, action: MouseAction)
@@ -33,8 +32,4 @@ public struct MouseEvent: Equatable, Sendable {
       case right
     }
   }
-
-  public var content: Content
-  public var gridID: Grid.ID
-  public var point: IntegerPoint
 }
