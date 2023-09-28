@@ -102,17 +102,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       let keyPress = KeyPress(event: event)
 
       Task { @MainActor in
-        guard let self else {
+        guard let self, self.mainWindowController!.window!.isMainWindow else {
           return
         }
 
-        if self.mainWindowController!.window!.isMainWindow || self.store!.hasModalMsgShows {
-          await self.store!.report(keyPress: keyPress)
-
-        } else if self.msgShowsWindowController!.window!.isMainWindow, keyPress.keyCode == kVK_Escape {
-          self.mainWindowController!.window!.orderFront(nil)
-          self.mainWindowController!.window!.makeMain()
-        }
+        await self.store!.report(keyPress: keyPress)
       }
 
       return nil

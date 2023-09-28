@@ -6,7 +6,7 @@ import Neovim
 import SwiftUI
 import TinyConstraints
 
-class MsgShowsWindowController: NSWindowController {
+final class MsgShowsWindowController: NSWindowController {
   private let store: Store
   private let parentWindow: NSWindow
   private let viewController: MsgShowsViewController
@@ -18,10 +18,14 @@ class MsgShowsWindowController: NSWindowController {
 
     viewController = MsgShowsViewController(store: store)
 
-    let window = NSWindow(contentViewController: viewController)
-    window.styleMask = [.titled, .fullSizeContentView, .resizable]
-    window.title = "Messages"
+    let window = NimsNSWindow(contentViewController: viewController)
+    window._canBecomeKey = false
+    window._canBecomeMain = false
+    window.styleMask = [.titled, .fullSizeContentView]
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
     window.isOpaque = false
+    window.isMovable = false
     window.setIsVisible(false)
 
     super.init(window: window)
@@ -53,20 +57,28 @@ class MsgShowsWindowController: NSWindowController {
   private func updateWindow() {
     viewController.render()
 
-    window!.level = store.hasModalMsgShows ? .modalPanel : .normal
-
     if store.msgShows.isEmpty {
+      parentWindow.removeChildWindow(window!)
       window!.setIsVisible(false)
 
     } else {
-      window!.setIsVisible(true)
-      window!.makeMain()
+      updateWindowOrigin()
+      parentWindow.addChildWindow(window!, ordered: .above)
     }
+  }
+
+  private func updateWindowOrigin() {
+    window!.setFrameOrigin(.init(
+      x: parentWindow.frame.origin.x + 10,
+      y: parentWindow.frame.origin.y + 10
+    ))
   }
 }
 
 extension MsgShowsWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {}
+  func windowDidResize(_: Notification) {
+    updateWindowOrigin()
+  }
 }
 
 final class MsgShowsViewController: NSViewController {
@@ -86,8 +98,8 @@ final class MsgShowsViewController: NSViewController {
 
   override func loadView() {
     let view = NSView()
-    view.width(600)
-    view.height(min: 400)
+    view.width(max: 640)
+    view.height(max: 480)
 
     let blurView = NSVisualEffectView()
     blurView.blendingMode = .behindWindow
@@ -97,17 +109,19 @@ final class MsgShowsViewController: NSViewController {
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
+    scrollView.automaticallyAdjustsContentInsets = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
 
-    contentView.setContentHuggingPriority(.init(rawValue: 700), for: .vertical)
-    contentView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
+    contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .horizontal)
     contentView.orientation = .vertical
     contentView.edgeInsets = .init()
     contentView.spacing = 0
+    contentView.distribution = .fill
     scrollView.documentView = contentView
-    contentView.width(to: view)
+
+    scrollView.size(to: contentView, priority: .init(rawValue: 800))
 
     self.view = view
   }
@@ -119,9 +133,14 @@ final class MsgShowsViewController: NSViewController {
     for (msgShowIndex, msgShow) in store.msgShows.enumerated() {
       let msgShowView = MsgShowView(store: store)
       msgShowView.msgShow = msgShow
+      msgShowView.preferredMaxWidth = 640
       msgShowView.render()
       contentView.addArrangedSubview(msgShowView)
       msgShowView.width(to: view)
+      msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .horizontal)
+      msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .vertical)
+      msgShowView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
+      msgShowView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
 
       if msgShowIndex < store.msgShows.count - 1 {
         let separatorView = NSView()
@@ -138,24 +157,17 @@ final class MsgShowsViewController: NSViewController {
 
 private final class MsgShowView: NSView {
   var msgShow: MsgShow?
+  var preferredMaxWidth: Double = 0
 
   override var intrinsicContentSize: NSSize {
     .init(
-      width: bounds.width,
-      height: (boundingSize?.height ?? 0) + 20
+      width: boundingSize.width + 20,
+      height: boundingSize.height + 20
     )
   }
 
-  override var frame: NSRect {
-    didSet {
-      if frame.width != oldValue.width {
-        invalidateIntrinsicContentSize()
-      }
-    }
-  }
-
   private let store: Store
-  private var boundingSize: CGSize?
+  private var boundingSize = CGSize()
   private var ctFrame: CTFrame?
 
   init(store: Store) {
@@ -190,7 +202,7 @@ private final class MsgShowView: NSView {
 
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let containerSize = CGSize(width: bounds.width - 20, height: .greatestFiniteMagnitude)
+    let containerSize = CGSize(width: preferredMaxWidth - 20, height: .greatestFiniteMagnitude)
     boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
       framesetter,
       stringRange,
@@ -208,7 +220,7 @@ private final class MsgShowView: NSView {
           origin: .init(x: 10, y: 10),
           size: .init(
             width: containerSize.width,
-            height: ceil(boundingSize!.height)
+            height: ceil(boundingSize.height)
           )
         ),
         transform: nil
