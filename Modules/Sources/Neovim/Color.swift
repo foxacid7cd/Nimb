@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Library
 import SwiftUI
 
+@PublicInit
 public struct Color: Sendable, Hashable {
-  public init(rgb: Int, alpha: Double = 1) {
-    self.rgb = rgb
-    self.alpha = alpha
-  }
-
   public var rgb: Int
-  public var alpha: Double
+  public var alpha: Double = 1
 
   public func with(alpha: Double) -> Color {
     var copy = self

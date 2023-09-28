@@ -118,7 +118,7 @@ extension AppDelegate: GridWindowFrameTransformer {
   func anchorOrigin(for anchor: Popupmenu.Anchor) -> CGPoint? {
     switch anchor {
     case let .grid(gridID, gridPoint):
-      mainWindowController?.point(forGridID: gridID, gridPoint: gridPoint)
+      mainWindowController!.point(forGridID: gridID, gridPoint: gridPoint)
 
     case let .cmdline(location):
       cmdlinesWindowController!.point(forCharacterLocation: location)

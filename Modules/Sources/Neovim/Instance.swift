@@ -158,4 +158,8 @@ public final class Instance: Sendable {
   public func reportTablineBufferSelected(withID id: Buffer.ID) async {
     try? await api.nvimSetCurrentBufFast(bufferID: id)
   }
+
+  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async {
+    try? await api.nvimSetCurrentTabpageFast(tabpageID: id)
+  }
 }

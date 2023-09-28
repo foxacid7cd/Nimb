@@ -18,7 +18,7 @@ final class TablineView: NSView {
     super.init(frame: .zero)
 
     buffersStackView.orientation = .horizontal
-    buffersStackView.spacing = 12
+    buffersStackView.spacing = 16
     buffersStackView.edgeInsets = .init()
     addSubview(buffersStackView)
     buffersStackView.leading(to: self, offset: 4)
@@ -55,15 +55,45 @@ final class TablineView: NSView {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
+    let instance = store.instance
+
     if let tabline = store.tabline {
-      for (bufferIndex, buffer) in tabline.buffers.enumerated() {
-        let bufferView = TablineBufferView(store: store)
-        bufferView.buffer = buffer
-        bufferView.index = bufferIndex
-        bufferView.render()
-        buffersStackView.addArrangedSubview(bufferView)
-        bufferView.heightToSuperview()
-        bufferView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
+      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+        let itemView = TablineItemView(store: store)
+        itemView.text = "\(tabpageIndex + 1)"
+        itemView.isSelected = tabpage.id == store.tabline?.currentTabpageID
+        itemView.isFirst = tabpageIndex == 0
+        itemView.mouseDownObserver = {
+          Task {
+            await instance.reportTablineTabpageSelected(withID: tabpage.id)
+          }
+        }
+        itemView.render()
+        buffersStackView.addArrangedSubview(itemView)
+
+        itemView.heightToSuperview()
+        itemView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
+
+        if tabpageIndex < tabline.tabpages.count - 1 {
+          buffersStackView.setCustomSpacing(8, after: itemView)
+        }
+      }
+
+      for buffer in tabline.buffers {
+        let itemView = TablineItemView(store: store)
+        itemView.text = buffer.name
+        itemView.isSelected = buffer.id == store.tabline?.currentBufferID
+        itemView.isFirst = false
+        itemView.mouseDownObserver = {
+          Task {
+            await instance.reportTablineBufferSelected(withID: buffer.id)
+          }
+        }
+        itemView.render()
+        buffersStackView.addArrangedSubview(itemView)
+
+        itemView.heightToSuperview()
+        itemView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
       }
     }
   }

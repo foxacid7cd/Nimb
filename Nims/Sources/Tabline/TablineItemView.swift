@@ -3,22 +3,17 @@
 import AppKit
 import Neovim
 
-final class TablineBufferView: NSView {
-  var buffer: Neovim.Buffer?
-  var index = 0
+final class TablineItemView: NSView {
+  var text = ""
+  var isSelected = false
+  var isFirst = false
+  var mouseDownObserver: (() -> Void)?
 
   private let store: Store
   private let backgroundImageView = NSImageView()
   private let textField = NSTextField(labelWithString: "")
   private var trackingArea: NSTrackingArea?
   private var isMouseInside = false
-
-  private var isSelected: Bool {
-    guard let buffer, let tabline = store.tabline else {
-      return false
-    }
-    return buffer.id == tabline.currentBufferID
-  }
 
   init(store: Store) {
     self.store = store
@@ -54,15 +49,7 @@ final class TablineBufferView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard let buffer else {
-      return
-    }
-
-    Task {
-      await store.instance.reportTablineBufferSelected(
-        withID: buffer.id
-      )
-    }
+    mouseDownObserver?()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -76,10 +63,6 @@ final class TablineBufferView: NSView {
   }
 
   func render() {
-    guard let buffer else {
-      return
-    }
-
     renderBackgroundImage()
 
     let foregroundColor = if isSelected {
@@ -90,7 +73,7 @@ final class TablineBufferView: NSView {
       NSColor.textColor.withAlphaComponent(0.3)
     }
     textField.attributedStringValue = .init(
-      string: buffer.name,
+      string: text,
       attributes: [
         .font: store.font.nsFont(),
         .foregroundColor: foregroundColor,
@@ -106,7 +89,7 @@ final class TablineBufferView: NSView {
 
   private func makeBackgroundImage(color: NSColor) -> NSImage {
     let bounds = bounds
-    let index = index
+    let isFirst = isFirst
 
     return .init(size: .init(width: bounds.width + 16, height: bounds.height), flipped: false) { _ in
       let graphicsContext = NSGraphicsContext.current!
@@ -114,7 +97,7 @@ final class TablineBufferView: NSView {
 
       cgContext.beginPath()
       cgContext.move(to: .init())
-      cgContext.addLine(to: .init(x: index != 0 ? 8 : 0, y: bounds.height))
+      cgContext.addLine(to: .init(x: isFirst ? 0 : 8, y: bounds.height))
       cgContext.addLine(to: .init(x: bounds.width + 16, y: bounds.height))
       cgContext.addLine(to: .init(x: bounds.width + 8, y: 0))
       cgContext.closePath()
