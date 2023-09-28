@@ -23,6 +23,7 @@ final class CursorBlinker {
     }
 
     if
+      state.cmdlines.dictionary.isEmpty,
       let cursorStyle = state.currentCursorStyle,
       let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
       let blinkOff = cursorStyle.blinkOff, blinkOff > 0,

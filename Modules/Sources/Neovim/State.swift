@@ -704,6 +704,7 @@ public extension State {
 
           if cmdline != oldCmdline {
             cmdlines.dictionary[level] = cmdline
+            cursorUpdated()
             cmdlinesUpdated()
           }
 
@@ -725,6 +726,7 @@ public extension State {
         case let .cmdlineHide(level):
           cmdlines.dictionary.removeValue(forKey: level)
 
+          cursorUpdated()
           cmdlinesUpdated()
 
         case let .cmdlineBlockShow(rawLines):
