@@ -639,15 +639,15 @@ public extension State {
 
           updatedLayout(forGridWithID: gridID)
 
-        case let .tablineUpdate(currentTabpageID, rawTabpages, _, _):
+        case let .tablineUpdate(currentTabpageID, rawTabpages, currentBufferID, rawBuffers):
           let tabpages = rawTabpages
             .compactMap { rawTabpage -> Tabpage? in
               guard
-                case let .dictionary(rawTab) = rawTabpage,
-                let name = rawTab["name"]
-                  .flatMap((/Value.string).extract(from:)),
-                let rawID = rawTab["tab"]
-                  .flatMap((/Value.ext).extract(from:))
+                case let .dictionary(rawTabpage) = rawTabpage,
+                let rawID = rawTabpage["tab"]
+                  .flatMap((/Value.ext).extract(from:)),
+                let name = rawTabpage["name"]
+                  .flatMap((/Value.string).extract(from:))
               else {
                 assertionFailure("Invalid tabline raw value")
                 return nil
@@ -664,9 +664,35 @@ public extension State {
               )
             }
 
+          let buffers = rawBuffers
+            .compactMap { rawBuffer -> Buffer? in
+              guard
+                case let .dictionary(rawBuffer) = rawBuffer,
+                let rawID = rawBuffer["buffer"]
+                  .flatMap((/Value.ext).extract(from:)),
+                let name = rawBuffer["name"]
+                  .flatMap((/Value.string).extract(from:))
+              else {
+                assertionFailure("Invalid buffer raw value")
+                return nil
+              }
+
+              return .init(
+                id: .init(
+                  .init(
+                    type: rawID.0,
+                    data: rawID.1
+                  )!
+                ),
+                name: name
+              )
+            }
+
           tabline = .init(
             currentTabpageID: currentTabpageID,
-            tabpages: .init(uniqueElements: tabpages)
+            tabpages: .init(uniqueElements: tabpages),
+            currentBufferID: currentBufferID,
+            buffers: .init(uniqueElements: buffers)
           )
 
           tablineUpdated()
@@ -830,6 +856,9 @@ public extension State {
             popupmenu = nil
             popupmenuUpdated()
           }
+
+        case let .tablineUpdate(tabpageID, tabs, bufferID, buffers):
+          print("\(tabpageID) \(tabs) \(bufferID) \(buffers)")
 
         default:
           break

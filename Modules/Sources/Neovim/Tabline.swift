@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: MIT
+
+import IdentifiedCollections
+import Library
+import Tagged
+
+@PublicInit
+public struct Tabline: Sendable, Hashable {
+  public var currentTabpageID: Tabpage.ID
+  public var tabpages: IdentifiedArrayOf<Tabpage>
+  public var currentBufferID: Buffer.ID
+  public var buffers: IdentifiedArrayOf<Buffer>
+}
+
+@PublicInit
+public struct Tabpage: Identifiable, Sendable, Hashable {
+  public var id: ID
+  public var name: String
+
+  public typealias ID = Tagged<Self, References.Tabpage>
+}
+
+@PublicInit
+public struct Buffer: Identifiable, Sendable, Hashable {
+  public var id: ID
+  public var name: String
+
+  public typealias ID = Tagged<Self, References.Buffer>
+}
