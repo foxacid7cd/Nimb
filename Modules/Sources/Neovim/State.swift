@@ -655,11 +655,9 @@ public extension State {
 
               return .init(
                 id: .init(
-                  .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!
-                ),
+                  type: rawID.0,
+                  data: rawID.1
+                )!,
                 name: name
               )
             }
@@ -679,11 +677,9 @@ public extension State {
 
               return .init(
                 id: .init(
-                  .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!
-                ),
+                  type: rawID.0,
+                  data: rawID.1
+                )!,
                 name: name
               )
             }
@@ -856,9 +852,6 @@ public extension State {
             popupmenu = nil
             popupmenuUpdated()
           }
-
-        case let .tablineUpdate(tabpageID, tabs, bufferID, buffers):
-          print("\(tabpageID) \(tabs) \(bufferID) \(buffers)")
 
         default:
           break

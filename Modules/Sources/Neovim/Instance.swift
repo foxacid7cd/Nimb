@@ -41,7 +41,7 @@ public final class Instance: Sendable {
     self.api = api
 
     reportMouseEventsTask = Task {
-      for await mouseEvent in mouseEventsChannel.throttle(for: .milliseconds(10), latest: true) {
+      for await mouseEvent in mouseEventsChannel._throttle(for: .milliseconds(10), latest: true) {
         guard !Task.isCancelled else {
           return
         }
@@ -84,7 +84,7 @@ public final class Instance: Sendable {
 
         try await api.nvimUIAttachFast(
           width: 190,
-          height: 65,
+          height: 64,
           options: uiOptions.nvimUIAttachOptions
         )
 
@@ -153,5 +153,9 @@ public final class Instance: Sendable {
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async {
     try? await api.nvimSelectPopupmenuItemFast(item: index, insert: false, finish: false, opts: [:])
+  }
+
+  public func reportTablineBufferSelected(withID id: Buffer.ID) async {
+    try? await api.nvimSetCurrentBufFast(bufferID: id)
   }
 }

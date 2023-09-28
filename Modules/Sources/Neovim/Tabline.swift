@@ -14,16 +14,12 @@ public struct Tabline: Sendable, Hashable {
 
 @PublicInit
 public struct Tabpage: Identifiable, Sendable, Hashable {
-  public var id: ID
+  public var id: References.Tabpage
   public var name: String
-
-  public typealias ID = Tagged<Self, References.Tabpage>
 }
 
 @PublicInit
 public struct Buffer: Identifiable, Sendable, Hashable {
-  public var id: ID
+  public var id: References.Buffer
   public var name: String
-
-  public typealias ID = Tagged<Self, References.Buffer>
 }

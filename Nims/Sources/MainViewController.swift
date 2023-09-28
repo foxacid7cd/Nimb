@@ -32,6 +32,7 @@ final class MainViewController: NSViewController {
     stackView.spacing = 0
     stackView.orientation = .vertical
 
+    tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     stackView.addArrangedSubview(tablineView)
 
     stackView.addArrangedSubview(mainView)
@@ -59,7 +60,13 @@ final class MainViewController: NSViewController {
 
   private func updatePreferredContentSize() {
     if let outerGridSize = store.grids[.outer]?.cells.size {
-      preferredContentSize = outerGridSize * font.cellSize
+      let mainViewSize = outerGridSize * font.cellSize
+      let tablineHeight = tablineView.intrinsicContentSize.height
+
+      preferredContentSize = .init(
+        width: mainViewSize.width,
+        height: mainViewSize.height + tablineHeight
+      )
 
     } else {
       preferredContentSize = .init()

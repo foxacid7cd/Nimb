@@ -159,10 +159,10 @@ public struct Metadata: Sendable {
 
         custom = .init(
           signature: "\(type.name).ID",
-          valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".rawValue.data)"),
+          valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".data)"),
           valueDecoder: (
             "(/Value.ext).extract(from:",
-            ").flatMap(References.\(type.name).init(type:data:)).map(\(type.name).ID.init(rawValue:))"
+            ").flatMap(References.\(type.name).init(type:data:))"
           )
         )
       }
