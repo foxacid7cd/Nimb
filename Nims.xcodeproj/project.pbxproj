@@ -23,6 +23,8 @@
 		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */; };
 		689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3229B5326300345713 /* CmdlinesWindowController.swift */; };
+		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
+		689ECE612AC4FF20008D6A02 /* CmdlinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
@@ -80,6 +82,8 @@
 		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsWindowController.swift; sourceTree = "<group>"; };
 		689D9E3229B5326300345713 /* CmdlinesWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesWindowController.swift; sourceTree = "<group>"; };
+		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
+		689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesView.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -107,13 +111,13 @@
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				689D9E2629B4FA7000345713 /* main.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				68EED23829BD8B0600568EA0 /* State.swift */,
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */,
-				689D9E3229B5326300345713 /* CmdlinesWindowController.swift */,
 				68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */,
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* MainView.swift */,
@@ -131,6 +135,16 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		689ECE5D2AC4FE9F008D6A02 /* Cmdlines */ = {
+			isa = PBXGroup;
+			children = (
+				689D9E3229B5326300345713 /* CmdlinesWindowController.swift */,
+				689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */,
+				689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */,
+			);
+			path = Cmdlines;
 			sourceTree = "<group>";
 		};
 		68A323CF293B93070028A87D /* Locations */ = {
@@ -303,6 +317,7 @@
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				689D9E2729B4FA7000345713 /* main.swift in Sources */,
 				68EED23929BD8B0600568EA0 /* State.swift in Sources */,
+				689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */,
 				689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */,
 				6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
@@ -312,6 +327,7 @@
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,
 				68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */,
 				68EF609129B2B6D20056E48D /* GridView.swift in Sources */,
+				689ECE612AC4FF20008D6A02 /* CmdlinesView.swift in Sources */,
 				6895C20D2AC42006006122D5 /* NSColorExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

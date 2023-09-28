@@ -26,9 +26,12 @@ final class Store {
         origin: cursor.position,
         size: .init(columnsCount: 1, rowsCount: 1)
       )
-      var updates = Store.Updates()
-      updates.instanceStateUpdates.isCursorUpdated = true
-      updates.instanceStateUpdates.gridUpdatedRectangles = [cursor.gridID: [cursorFrame]]
+      let updates = Store.Updates(
+        instanceStateUpdates: .init(
+          isCursorUpdated: true,
+          gridUpdatedRectangles: [cursor.gridID: [cursorFrame]]
+        )
+      )
       self.observers
         .forEach { $1(updates) }
     }

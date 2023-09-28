@@ -4,6 +4,7 @@ import AppKit
 import Library
 import Neovim
 import SwiftUI
+import TinyConstraints
 
 class MsgShowsWindowController: NSWindowController {
   private let store: Store
@@ -52,7 +53,7 @@ class MsgShowsWindowController: NSWindowController {
   }
 
   private func updateWindow() {
-    let maxSize = CGSize(width: 1024, height: 768)
+    let containerSize = CGSize(width: 1004, height: Double.greatestFiniteMagnitude)
 
     let attributedString = makeContentAttributedString(
       msgShows: store.msgShows,
@@ -60,17 +61,12 @@ class MsgShowsWindowController: NSWindowController {
       appearance: store.appearance
     )
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let size = CTFramesetterSuggestFrameSizeWithConstraints(
+    let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
       framesetter,
       .init(location: 0, length: attributedString.length),
       nil,
-      .init(width: maxSize.width, height: .greatestFiniteMagnitude),
+      containerSize,
       nil
-    )
-
-    viewController.preferredContentSize = .init(
-      width: min(maxSize.width, size.width) + 10,
-      height: min(maxSize.height, size.height) + 10
     )
 
     let ctFrame = CTFramesetterCreateFrame(
@@ -79,13 +75,13 @@ class MsgShowsWindowController: NSWindowController {
       CGPath(
         rect: .init(
           origin: .zero,
-          size: .init(width: ceil(size.width), height: ceil(size.height))
+          size: .init(width: containerSize.width, height: ceil(boundingSize.height))
         ),
         transform: nil
       ),
       nil
     )
-    viewController.update(contentSize: size, ctFrame: ctFrame)
+    viewController.update(contentSize: boundingSize, ctFrame: ctFrame)
 
     updateWindowOrigin()
 
@@ -134,19 +130,25 @@ final class MsgShowsViewController: NSViewController {
     let blurView = NSVisualEffectView()
     blurView.blendingMode = .behindWindow
     blurView.state = .active
-    blurView.frame = view.bounds
-    blurView.autoresizingMask = [.width, .height]
     view.addSubview(blurView)
+    blurView.edgesToSuperview()
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
-    scrollView.horizontalScrollElasticity = .none
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.contentInsets = .init(top: 10, left: 10, bottom: 10, right: 10)
     scrollView.documentView = documentView
-    scrollView.frame = view.bounds
-    scrollView.autoresizingMask = [.width, .height]
     view.addSubview(scrollView)
+
+    scrollView.edgesToSuperview()
+    scrollView.width(max: 1024)
+    scrollView.height(max: 768)
+
+    let scrollViewToDocumentWidthConstraint = scrollView.width(to: documentView)
+    scrollViewToDocumentWidthConstraint.priority = .init(rawValue: 751)
+
+    let scrollViewToDocumentHeightConstraint = scrollView.height(to: documentView)
+    scrollViewToDocumentHeightConstraint.priority = .init(rawValue: 751)
 
     self.view = view
   }

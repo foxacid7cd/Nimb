@@ -11,14 +11,21 @@ protocol GridWindowFrameTransformer: AnyObject {
 
 final class PopupmenuWindowController: NSWindowController {
   private let store: Store
-  private let parentWindow: NSWindow
+  private let mainWindow: NSWindow
+  private let cmdlinesWindow: NSWindow
   private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
   private let viewController: PopupmenuViewController
   private var task: Task<Void, Never>?
 
-  init(store: Store, parentWindow: NSWindow, gridWindowFrameTransformer: GridWindowFrameTransformer) {
+  init(
+    store: Store,
+    mainWindow: NSWindow,
+    cmdlinesWindow: NSWindow,
+    gridWindowFrameTransformer: GridWindowFrameTransformer
+  ) {
     self.store = store
-    self.parentWindow = parentWindow
+    self.mainWindow = mainWindow
+    self.cmdlinesWindow = cmdlinesWindow
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
     viewController = .init(store: store)
 
@@ -88,16 +95,25 @@ final class PopupmenuWindowController: NSWindowController {
           await store.instance.reportPumBounds(gridFrame: gridFrame)
         }
 
+        let parentWindow = switch popupmenu.anchor {
+        case .grid:
+          mainWindow
+
+        case .cmdline:
+          cmdlinesWindow
+        }
+
         viewController.preferredContentSize = size
         window!.setFrame(
           CGRect(
-            origin: origin + parentWindow.frame.origin,
+            //            origin: origin.applying(.init(
+//              translationX: parentWindow.frame.origin.x,
+//              y: parentWindow.frame.origin.y
+//            )),
+            origin: origin,
             size: size
           ),
           display: true
-        )
-        window!.setFrameOrigin(
-          origin.applying(.init(translationX: parentWindow.frame.origin.x, y: parentWindow.frame.origin.y))
         )
         parentWindow.addChildWindow(window!, ordered: .above)
 
@@ -107,7 +123,7 @@ final class PopupmenuWindowController: NSWindowController {
       }
 
     } else {
-      parentWindow.removeChildWindow(window!)
+      window!.parent?.removeChildWindow(window!)
       window!.setIsVisible(false)
     }
   }

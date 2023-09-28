@@ -653,11 +653,14 @@ public extension State {
             specialCharacter: "",
             shiftAfterSpecialCharacter: false
           )
+          let oldCmdline = cmdlines.dictionary[level]
 
-          cmdlines.dictionary[level] = cmdline
           cmdlines.lastCmdlineLevel = level
 
-          cmdlinesUpdated()
+          if cmdline != oldCmdline {
+            cmdlines.dictionary[level] = cmdline
+            cmdlinesUpdated()
+          }
 
         case let .cmdlinePos(pos, level):
           update(&cmdlines.dictionary[level]) {
@@ -754,7 +757,7 @@ public extension State {
 
           let anchor: Popupmenu.Anchor = switch gridID.rawValue {
           case -1:
-            .cmdline(column: col)
+            .cmdline(location: col)
 
           default:
             .grid(id: gridID, origin: .init(column: col, row: row))

@@ -50,6 +50,12 @@ final class MainWindowController: NSWindowController {
 
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     viewController.point(forGridID: gridID, gridPoint: gridPoint)
+      .map {
+        $0.applying(.init(
+          translationX: window!.frame.origin.x,
+          y: window!.frame.origin.y
+        ))
+      }
   }
 }
 
