@@ -6,12 +6,14 @@ import Neovim
 
 final class MainViewController: NSViewController {
   private let store: Store
+  private let tablineView: TablineView
   private let mainView: MainView
   private var task: Task<Void, Never>?
   private let font = NimsFont()
 
   init(store: Store) {
     self.store = store
+    tablineView = .init(store: store)
     mainView = .init(store: store)
     super.init(nibName: nil, bundle: nil)
   }
@@ -26,18 +28,15 @@ final class MainViewController: NSViewController {
   }
 
   override func loadView() {
-    let view = NSView()
+    let stackView = NSStackView(views: [])
+    stackView.spacing = 0
+    stackView.orientation = .vertical
 
-    mainView.translatesAutoresizingMaskIntoConstraints = false
-    view.addSubview(mainView)
-    view.addConstraints([
-      mainView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      mainView.topAnchor.constraint(equalTo: view.topAnchor),
-      mainView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-      mainView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-    ])
+    stackView.addArrangedSubview(tablineView)
 
-    self.view = view
+    stackView.addArrangedSubview(mainView)
+
+    view = stackView
   }
 
   override func viewDidLoad() {

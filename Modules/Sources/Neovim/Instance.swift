@@ -79,7 +79,7 @@ public final class Instance: Sendable {
           .extCmdline,
           .extMessages,
           .extPopupmenu,
-          // .extTabline,
+          .extTabline,
         ]
 
         try await api.nvimUIAttachFast(
