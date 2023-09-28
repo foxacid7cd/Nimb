@@ -37,6 +37,51 @@ public struct State: Sendable {
 
     return modeInfo.cursorStyles[mode.cursorStyleIndex]
   }
+
+  public var hasModalMsgShows: Bool {
+    msgShows.contains {
+      switch $0.kind {
+      case .empty:
+        false
+
+      case .confirm:
+        true
+
+      case .confirmSub:
+        true
+
+      case .emsg:
+        false
+
+      case .echo:
+        false
+
+      case .echomsg:
+        false
+
+      case .echoerr:
+        false
+
+      case .luaError:
+        false
+
+      case .rpcError:
+        false
+
+      case .returnPrompt:
+        true
+
+      case .quickfix:
+        true
+
+      case .searchCount:
+        false
+
+      case .wmsg:
+        true
+      }
+    }
+  }
 }
 
 public extension State {
@@ -699,15 +744,20 @@ public extension State {
 
           cmdlinesUpdated()
 
-        case let .msgShow(kind, content, replaceLast):
+        case let .msgShow(rawKind, content, replaceLast):
           if replaceLast, !msgShows.isEmpty {
             msgShows.removeLast()
+          }
+
+          let kind = MsgShow.Kind(rawValue: rawKind)
+          if kind == nil {
+            assertionFailure("Unknown msg_show kind \(rawKind)")
           }
 
           if !content.isEmpty {
             let msgShow = MsgShow(
               index: msgShows.count,
-              kind: kind,
+              kind: kind ?? .empty,
               contentParts: content
                 .compactMap { rawContentPart in
                   guard

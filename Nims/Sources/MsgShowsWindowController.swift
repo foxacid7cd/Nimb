@@ -18,11 +18,9 @@ class MsgShowsWindowController: NSWindowController {
 
     viewController = MsgShowsViewController(store: store)
 
-    let window = Window(contentViewController: viewController)
-    window.styleMask = [.titled, .fullSizeContentView]
-    window.titleVisibility = .hidden
-    window.titlebarAppearsTransparent = true
-    window.isMovable = false
+    let window = NSWindow(contentViewController: viewController)
+    window.styleMask = [.titled, .fullSizeContentView, .resizable]
+    window.title = "Messages"
     window.isOpaque = false
     window.setIsVisible(false)
 
@@ -53,66 +51,28 @@ class MsgShowsWindowController: NSWindowController {
   }
 
   private func updateWindow() {
-    let containerSize = CGSize(width: 1004, height: Double.greatestFiniteMagnitude)
+    viewController.render()
 
-    let attributedString = makeContentAttributedString(
-      msgShows: store.msgShows,
-      font: store.font,
-      appearance: store.appearance
-    )
-    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      nil,
-      containerSize,
-      nil
-    )
-
-    let ctFrame = CTFramesetterCreateFrame(
-      framesetter,
-      .init(location: 0, length: attributedString.length),
-      CGPath(
-        rect: .init(
-          origin: .zero,
-          size: .init(width: containerSize.width, height: ceil(boundingSize.height))
-        ),
-        transform: nil
-      ),
-      nil
-    )
-    viewController.update(contentSize: boundingSize, ctFrame: ctFrame)
-
-    updateWindowOrigin()
+    window!.level = store.hasModalMsgShows ? .modalPanel : .normal
 
     if store.msgShows.isEmpty {
-      parentWindow.removeChildWindow(window!)
-      window?.setIsVisible(false)
-    } else {
-      parentWindow.addChildWindow(window!, ordered: .above)
-    }
-  }
+      window!.setIsVisible(false)
 
-  private func updateWindowOrigin() {
-    window!.setFrameOrigin(
-      .init(
-        x: parentWindow.frame.minX,
-        y: parentWindow.frame.minY
-      )
-    )
+    } else {
+      window!.setIsVisible(true)
+      window!.makeMain()
+    }
   }
 }
 
 extension MsgShowsWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {
-    updateWindowOrigin()
-  }
+  func windowDidResize(_: Notification) {}
 }
 
 final class MsgShowsViewController: NSViewController {
   private let store: Store
   private let scrollView = NSScrollView()
-  private let documentView = DocumentView()
+  private let contentView = NSStackView(views: [])
 
   init(store: Store) {
     self.store = store
@@ -126,6 +86,8 @@ final class MsgShowsViewController: NSViewController {
 
   override func loadView() {
     let view = NSView()
+    view.width(600)
+    view.height(min: 400)
 
     let blurView = NSVisualEffectView()
     blurView.blendingMode = .behindWindow
@@ -135,45 +97,128 @@ final class MsgShowsViewController: NSViewController {
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
-    scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 10, left: 10, bottom: 10, right: 10)
-    scrollView.documentView = documentView
     view.addSubview(scrollView)
-
     scrollView.edgesToSuperview()
-    scrollView.width(max: 1024)
-    scrollView.height(max: 768)
 
-    let scrollViewToDocumentWidthConstraint = scrollView.width(to: documentView)
-    scrollViewToDocumentWidthConstraint.priority = .init(rawValue: 751)
-
-    let scrollViewToDocumentHeightConstraint = scrollView.height(to: documentView)
-    scrollViewToDocumentHeightConstraint.priority = .init(rawValue: 751)
+    contentView.setContentHuggingPriority(.init(rawValue: 700), for: .vertical)
+    contentView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
+    contentView.setContentHuggingPriority(.init(rawValue: 900), for: .horizontal)
+    contentView.orientation = .vertical
+    contentView.edgeInsets = .init()
+    contentView.spacing = 0
+    scrollView.documentView = contentView
+    contentView.width(to: view)
 
     self.view = view
   }
 
-  func update(contentSize: CGSize, ctFrame: CTFrame) {
-    documentView.setFrameSize(contentSize)
-    documentView.ctFrame = ctFrame
-    documentView.needsDisplay = true
+  func render() {
+    contentView.arrangedSubviews
+      .forEach { $0.removeFromSuperview() }
+
+    for (msgShowIndex, msgShow) in store.msgShows.enumerated() {
+      let msgShowView = MsgShowView(store: store)
+      msgShowView.msgShow = msgShow
+      msgShowView.render()
+      contentView.addArrangedSubview(msgShowView)
+      msgShowView.width(to: view)
+
+      if msgShowIndex < store.msgShows.count - 1 {
+        let separatorView = NSView()
+        separatorView.alphaValue = 0.15
+        separatorView.wantsLayer = true
+        separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
+        contentView.addArrangedSubview(separatorView)
+        separatorView.height(1)
+        separatorView.width(to: view)
+      }
+    }
   }
 }
 
-private final class Window: NSWindow {
-  override var canBecomeKey: Bool {
-    false
+private final class MsgShowView: NSView {
+  var msgShow: MsgShow?
+
+  override var intrinsicContentSize: NSSize {
+    .init(
+      width: bounds.width,
+      height: (boundingSize?.height ?? 0) + 20
+    )
   }
 
-  override var canBecomeMain: Bool {
-    false
+  override var frame: NSRect {
+    didSet {
+      if frame.width != oldValue.width {
+        invalidateIntrinsicContentSize()
+      }
+    }
   }
-}
 
-private final class DocumentView: NSView {
-  var ctFrame: CTFrame?
+  private let store: Store
+  private var boundingSize: CGSize?
+  private var ctFrame: CTFrame?
 
-  override func draw(_ dirtyRect: NSRect) {
+  init(store: Store) {
+    self.store = store
+    super.init(frame: .zero)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func layout() {
+    render()
+  }
+
+  func render() {
+    guard let msgShow else {
+      return
+    }
+
+    let attributedString = NSMutableAttributedString()
+    for contentPart in msgShow.contentParts {
+      attributedString.append(.init(
+        string: contentPart.text,
+        attributes: [
+          .font: store.font.nsFont(),
+          .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+        ]
+      ))
+    }
+
+    let stringRange = CFRange(location: 0, length: attributedString.length)
+    let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
+    let containerSize = CGSize(width: bounds.width - 20, height: .greatestFiniteMagnitude)
+    boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
+      framesetter,
+      stringRange,
+      nil,
+      containerSize,
+      nil
+    )
+    invalidateIntrinsicContentSize()
+
+    ctFrame = CTFramesetterCreateFrame(
+      framesetter,
+      stringRange,
+      CGPath(
+        rect: .init(
+          origin: .init(x: 10, y: 10),
+          size: .init(
+            width: containerSize.width,
+            height: ceil(boundingSize!.height)
+          )
+        ),
+        transform: nil
+      ),
+      nil
+    )
+    setNeedsDisplay(bounds)
+  }
+
+  override func draw(_: NSRect) {
     guard let ctFrame else {
       return
     }
@@ -182,40 +227,8 @@ private final class DocumentView: NSView {
     let cgContext = graphicsContext.cgContext
 
     cgContext.saveGState()
-
-    dirtyRect.clip()
+    defer { cgContext.restoreGState() }
 
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
-
-    cgContext.restoreGState()
   }
-}
-
-@MainActor
-private func makeContentAttributedString(msgShows: [MsgShow], font: NimsFont, appearance: Appearance) -> NSAttributedString {
-  let accumulator = NSMutableAttributedString()
-
-  for (index, msgShow) in msgShows.enumerated() {
-    for contentPart in msgShow.contentParts {
-      let attributedString = NSAttributedString(
-        string: contentPart.text
-          .trimmingCharacters(in: .whitespaces),
-        attributes: [
-          .font: font.nsFont(),
-          .foregroundColor: appearance.foregroundColor(for: contentPart.highlightID).appKit,
-        ]
-      )
-      accumulator.append(attributedString)
-    }
-
-    if index < msgShows.count - 1 {
-      accumulator.append(.init(string: "\n"))
-    }
-  }
-
-  let paragraphStyle = NSMutableParagraphStyle()
-  paragraphStyle.lineBreakMode = .byWordWrapping
-  accumulator.addAttribute(.paragraphStyle, value: paragraphStyle, range: .init(location: 0, length: accumulator.length))
-
-  return .init(attributedString: accumulator)
 }

@@ -25,6 +25,7 @@
 		689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3229B5326300345713 /* CmdlinesWindowController.swift */; };
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */; };
+		689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
@@ -84,6 +85,7 @@
 		689D9E3229B5326300345713 /* CmdlinesWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesWindowController.swift; sourceTree = "<group>"; };
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesView.swift; sourceTree = "<group>"; };
+		689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsNSWindow.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				6861FA6129B462B8002C3C0B /* NimsFont.swift */,
 				683A08332AC1235800ADF9CA /* CursorBlinker.swift */,
 				6895C20C2AC42006006122D5 /* NSColorExtensions.swift */,
+				689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -322,6 +325,7 @@
 				6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				689D9E2D29B50BF400345713 /* MainView.swift in Sources */,
+				689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,

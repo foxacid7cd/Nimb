@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Carbon
 import CustomDump
 import Library
 import Neovim
@@ -97,12 +98,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func setupKeyDownLocalMonitor() {
-    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       let keyPress = KeyPress(event: event)
-      let store = self.store!
 
-      Task {
-        await store.report(keyPress: keyPress)
+      Task { @MainActor in
+        guard let self else {
+          return
+        }
+
+        if self.mainWindowController!.window!.isMainWindow || self.store!.hasModalMsgShows {
+          await self.store!.report(keyPress: keyPress)
+
+        } else if self.msgShowsWindowController!.window!.isMainWindow, keyPress.keyCode == kVK_Escape {
+          self.mainWindowController!.window!.orderFront(nil)
+          self.mainWindowController!.window!.makeMain()
+        }
       }
 
       return nil

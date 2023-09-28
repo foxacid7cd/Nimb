@@ -29,7 +29,9 @@ final class PopupmenuWindowController: NSWindowController {
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
     viewController = .init(store: store)
 
-    let window = NSWindow(contentViewController: viewController)
+    let window = NimsNSWindow(contentViewController: viewController)
+    window._canBecomeKey = false
+    window._canBecomeMain = false
     window.styleMask = [.titled, .fullSizeContentView]
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
@@ -105,14 +107,7 @@ final class PopupmenuWindowController: NSWindowController {
 
         viewController.preferredContentSize = size
         window!.setFrame(
-          CGRect(
-            //            origin: origin.applying(.init(
-//              translationX: parentWindow.frame.origin.x,
-//              y: parentWindow.frame.origin.y
-//            )),
-            origin: origin,
-            size: size
-          ),
+          CGRect(origin: origin, size: size),
           display: true
         )
         parentWindow.addChildWindow(window!, ordered: .above)

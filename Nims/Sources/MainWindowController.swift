@@ -29,7 +29,7 @@ final class MainWindowController: NSWindowController {
     self.store = store
     self.viewController = viewController
 
-    let window = Window(contentViewController: viewController)
+    let window = NimsNSWindow(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable]
 
     super.init(window: window)
@@ -56,15 +56,5 @@ final class MainWindowController: NSWindowController {
           y: window!.frame.origin.y
         ))
       }
-  }
-}
-
-private final class Window: NSWindow {
-  override var canBecomeKey: Bool {
-    true
-  }
-
-  override var canBecomeMain: Bool {
-    true
   }
 }

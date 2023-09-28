@@ -18,7 +18,9 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     viewController = CmdlinesViewController(store: store)
 
-    let window = NSWindow(contentViewController: viewController)
+    let window = NimsNSWindow(contentViewController: viewController)
+    window._canBecomeKey = false
+    window._canBecomeMain = false
     window.styleMask = [.titled, .fullSizeContentView]
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true

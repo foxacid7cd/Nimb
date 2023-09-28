@@ -83,7 +83,7 @@ public final class Instance: Sendable {
         ]
 
         try await api.nvimUIAttachFast(
-          width: 214,
+          width: 190,
           height: 65,
           options: uiOptions.nvimUIAttachOptions
         )
