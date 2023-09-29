@@ -191,12 +191,20 @@ private final class MsgShowView: NSView {
 
     let attributedString = NSMutableAttributedString()
     for contentPart in msgShow.contentParts {
+      var attributes: [NSAttributedString.Key: Any] = [
+        .font: store.font.nsFont(),
+        .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+      ]
+
+      let backgroundColor = store.appearance.backgroundColor(for: contentPart.highlightID)
+      if backgroundColor != store.appearance.defaultBackgroundColor {
+        attributes[.backgroundColor] = store.appearance.backgroundColor(for: contentPart.highlightID).appKit
+          .withAlphaComponent(0.6)
+      }
+
       attributedString.append(.init(
         string: contentPart.text,
-        attributes: [
-          .font: store.font.nsFont(),
-          .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
-        ]
+        attributes: attributes
       ))
     }
 

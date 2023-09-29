@@ -94,18 +94,10 @@ final class Store {
         observeWrappedTask.cancel()
 
         Task { @MainActor in
-          self?.observers.removeValue(forKey: id)
+          _ = self?.observers.removeValue(forKey: id)
         }
       }
     }
-  }
-
-  func report(keyPress: KeyPress) async {
-    await instance.report(keyPress: keyPress)
-  }
-
-  func report(mouseEvent: MouseEvent) async {
-    await instance.report(mouseEvent: mouseEvent)
   }
 
   var cursor: Cursor? {

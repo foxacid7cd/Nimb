@@ -343,7 +343,7 @@ public final class GridView: NSView {
     )
 
     Task {
-      await store.report(mouseEvent: mouseEvent)
+      await store.instance.report(mouseEvent: mouseEvent)
     }
   }
 }

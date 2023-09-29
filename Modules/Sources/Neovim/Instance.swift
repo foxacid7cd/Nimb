@@ -25,7 +25,7 @@ public final class Instance: Sendable {
   private var task: Task<Void, Error>?
   private let mouseEventsChannel = AsyncChannel<MouseEvent>()
 
-  public init() {
+  public init(initialOuterGridSize: IntegerSize) {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutablePath] + nvimArguments)
@@ -52,7 +52,7 @@ public final class Instance: Sendable {
           return
         }
 
-        let (rawButton, rawAction): (String, String) = switch mouseEvent.content {
+        let (rawButton, rawAction) = switch mouseEvent.content {
         case let .mouse(button, action):
           (button.rawValue, action.rawValue)
 
@@ -88,8 +88,8 @@ public final class Instance: Sendable {
       ]
 
       try await api.nvimUIAttachFast(
-        width: 120,
-        height: 40,
+        width: initialOuterGridSize.columnsCount,
+        height: initialOuterGridSize.rowsCount,
         options: uiOptions.nvimUIAttachOptions
       )
 
@@ -140,8 +140,9 @@ public final class Instance: Sendable {
     try? await api.nvimSetCurrentTabpageFast(tabpageID: id)
   }
 
-  public func reportOuterGridSizeChanged(to size: IntegerSize) async {
-    try? await api.nvimUITryResizeFast(
+  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async {
+    try? await api.nvimUITryResizeGridFast(
+      gridID: id,
       width: size.columnsCount,
       height: size.rowsCount
     )

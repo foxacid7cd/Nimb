@@ -6,13 +6,18 @@ import Neovim
 
 final class MainViewController: NSViewController {
   private let store: Store
+  private let initialOuterGridSize: IntegerSize
   private let tablineView: TablineView
+  private let mainContainerView = NSView()
+  private var mainContainerConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
   private let mainView: MainView
+  private let mainOverlayView = NSVisualEffectView()
+  private var reportedOuterGridSize: IntegerSize?
   private var task: Task<Void, Never>?
-  private let font = NimsFont()
 
-  init(store: Store) {
+  init(store: Store, initialOuterGridSize: IntegerSize) {
     self.store = store
+    self.initialOuterGridSize = initialOuterGridSize
     tablineView = .init(store: store)
     mainView = .init(store: store)
     super.init(nibName: nil, bundle: nil)
@@ -35,7 +40,23 @@ final class MainViewController: NSViewController {
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     stackView.addArrangedSubview(tablineView)
 
-    stackView.addArrangedSubview(mainView)
+    stackView.addArrangedSubview(mainContainerView)
+
+    mainContainerView.clipsToBounds = true
+    mainContainerView.addSubview(mainView)
+
+    mainContainerConstraints = (
+      mainContainerView.width(0, relation: .equalOrGreater),
+      mainContainerView.height(0, relation: .equalOrGreater)
+    )
+    mainView.centerInSuperview()
+
+    mainOverlayView.blendingMode = .withinWindow
+    mainOverlayView.state = .active
+    mainOverlayView.isHidden = true
+    mainContainerView.addSubview(mainOverlayView)
+
+    mainOverlayView.edgesToSuperview()
 
     view = stackView
   }
@@ -43,37 +64,50 @@ final class MainViewController: NSViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    updatePreferredContentSize()
-
-    task = Task { [weak self, store] in
-      for await stateUpdates in store.stateUpdatesStream() {
-        guard !Task.isCancelled else {
+    task = .init { [weak self, store] in
+      for await updates in store.stateUpdatesStream() {
+        guard let self, !Task.isCancelled else {
           return
         }
 
-        if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
-          self?.updatePreferredContentSize()
+        if updates.isFontUpdated {
+          updateMinMainContainerSize()
         }
+      }
+    }
+
+    updateMinMainContainerSize()
+  }
+
+  func showMainView(on: Bool) {
+    mainOverlayView.isHidden = on
+  }
+
+  func reportOuterGridSizeChangedIfNeeded() {
+    let outerGridSizeNeeded = IntegerSize(
+      columnsCount: Int(mainContainerView.frame.width / store.font.cellWidth),
+      rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
+    )
+    if 
+      let outerGrid = store.grids[Grid.ID.outer.rawValue],
+      outerGrid.cells.size != outerGridSizeNeeded,
+      outerGridSizeNeeded != reportedOuterGridSize
+    {
+      reportedOuterGridSize = outerGridSizeNeeded
+
+      Task {
+        await store.instance.report(gridWithID: .outer, changedSizeTo: outerGridSizeNeeded)
       }
     }
   }
 
-  private func updatePreferredContentSize() {
-    if let outerGridSize = store.grids[.outer]?.cells.size {
-      let mainViewSize = outerGridSize * font.cellSize
-      let tablineHeight = tablineView.intrinsicContentSize.height
-
-      preferredContentSize = .init(
-        width: mainViewSize.width,
-        height: mainViewSize.height + tablineHeight
-      )
-
-    } else {
-      preferredContentSize = .init()
-    }
+  func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    mainView.point(forGridID: gridID, gridPoint: gridPoint)
   }
 
-  public func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    mainView.point(forGridID: gridID, gridPoint: gridPoint)
+  private func updateMinMainContainerSize() {
+    let size = initialOuterGridSize * store.font.cellSize
+    mainContainerConstraints!.width.constant = size.width
+    mainContainerConstraints!.height.constant = size.height
   }
 }

@@ -60,5 +60,18 @@ final class MainWindowController: NSWindowController {
 }
 
 extension MainWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {}
+  func windowDidResize(_: Notification) {
+    if !window!.inLiveResize {
+      viewController.reportOuterGridSizeChangedIfNeeded()
+    }
+  }
+
+  func windowWillStartLiveResize(_: Notification) {
+    viewController.showMainView(on: false)
+  }
+
+  func windowDidEndLiveResize(_: Notification) {
+    viewController.reportOuterGridSizeChangedIfNeeded()
+    viewController.showMainView(on: true)
+  }
 }

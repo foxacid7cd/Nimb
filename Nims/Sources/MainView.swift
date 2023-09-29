@@ -5,6 +5,11 @@ import Library
 import Neovim
 
 class MainView: NSView {
+  override var intrinsicContentSize: NSSize {
+    let outerGridSize = store.grids[Grid.ID.outer.rawValue]?.cells.size
+    return (outerGridSize ?? .init()) * store.font.cellSize
+  }
+
   private var store: Store
   private var task: Task<Void, Never>?
 
@@ -256,6 +261,10 @@ class MainView: NSView {
     }
 
     if let stateUpdates {
+      if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
+        invalidateIntrinsicContentSize()
+      }
+
       if stateUpdates.isAppearanceUpdated {
         for gridView in gridViews.values {
           gridView.setNeedsDisplay(gridView.bounds)

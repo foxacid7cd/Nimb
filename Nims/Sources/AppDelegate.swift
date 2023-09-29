@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func setupStore() {
-    let instance = Instance()
+    let instance = Instance(initialOuterGridSize: .init(columnsCount: 80, rowsCount: 24))
     let cursorBlinker = CursorBlinker()
     store = Store(instance: instance, cursorBlinker: cursorBlinker)
 
@@ -82,7 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func showMainWindowController() {
-    let mainViewController = MainViewController(store: store!)
+    let mainViewController = MainViewController(
+      store: store!,
+      initialOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+    )
 
     mainWindowController = MainWindowController(store: store!, viewController: mainViewController)
     mainWindowController!.showWindow(nil)
@@ -109,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           return
         }
 
-        await self.store!.report(keyPress: keyPress)
+        await self.store!.instance.report(keyPress: keyPress)
 
         if
           self.msgShowsWindowController!.window!.isVisible,
