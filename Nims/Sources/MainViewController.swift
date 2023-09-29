@@ -44,7 +44,9 @@ final class MainViewController: NSViewController {
     stackView.addArrangedSubview(mainContainerView)
 
     mainContainerView.addSubview(mainView)
-    mainView.centerInSuperview()
+
+    mainView.centerXToSuperview()
+    mainView.topToSuperview()
 
     mainContainerViewConstraints = (
       mainContainerView.width(0, relation: .equalOrGreater),

@@ -80,8 +80,15 @@ final class TablineView: NSView {
       }
 
       for buffer in tabline.buffers {
+        let text: String
+        if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
+          text = String(match.output.1)
+        } else {
+          text = buffer.name
+        }
+
         let itemView = TablineItemView(store: store)
-        itemView.text = buffer.name
+        itemView.text = text
         itemView.isSelected = buffer.id == store.tabline?.currentBufferID
         itemView.isFirst = false
         itemView.mouseDownObserver = {
