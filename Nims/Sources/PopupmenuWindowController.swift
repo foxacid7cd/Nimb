@@ -73,7 +73,7 @@ final class PopupmenuWindowController: NSWindowController {
       viewController.reloadData()
 
       if let anchorOrigin = gridWindowFrameTransformer?.anchorOrigin(for: popupmenu.anchor) {
-        let outerGrid = store.grids[.outer]!
+        let outerGrid = store.outerGrid!
         let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
 

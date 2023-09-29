@@ -38,7 +38,7 @@ public struct ReferencesFile: GeneratableFile {
 
               try VariableDeclSyntax("public static var type: Int8") {
                 StmtSyntax(
-                  "return \(raw: type.id.rawValue)"
+                  "return \(raw: type.id)"
                 )
               }
             }

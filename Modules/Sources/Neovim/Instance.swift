@@ -65,7 +65,7 @@ public final class Instance: Sendable {
             button: rawButton,
             action: rawAction,
             modifier: "",
-            gridID: mouseEvent.gridID,
+            grid: mouseEvent.gridID,
             row: mouseEvent.point.row,
             col: mouseEvent.point.column
           )
@@ -142,7 +142,7 @@ public final class Instance: Sendable {
 
   public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async {
     try? await api.nvimUITryResizeGridFast(
-      gridID: id,
+      grid: id,
       width: size.columnsCount,
       height: size.rowsCount
     )

@@ -6,7 +6,6 @@ import Collections
 import CustomDump
 import Foundation
 import Library
-import Tagged
 
 public struct RPC<Target: Channel>: Sendable {
   public init(_ target: Target) {
@@ -95,9 +94,7 @@ extension RPC: AsyncSequence {
           case let .response(response):
             await store.responseReceived(
               response,
-              forRequestWithID: .init(
-                rawValue: response.id.rawValue
-              )
+              forRequestWithID: response.id
             )
 
           case let .notification(notification):
@@ -114,8 +111,8 @@ extension RPC: AsyncSequence {
 }
 
 private actor Store {
-  func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Message.Request.ID {
-    let id = Message.Request.ID(announcedRequestsCount)
+  func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Int {
+    let id = announcedRequestsCount
     announcedRequestsCount += 1
 
     if let handler {
@@ -124,7 +121,7 @@ private actor Store {
     return id
   }
 
-  func responseReceived(_ response: Message.Response, forRequestWithID id: Message.Request.ID) {
+  func responseReceived(_ response: Message.Response, forRequestWithID id: Int) {
     guard let handler = currentRequests.removeValue(forKey: id) else {
       return
     }
@@ -133,5 +130,5 @@ private actor Store {
   }
 
   private var announcedRequestsCount = 0
-  private var currentRequests = TreeDictionary < Message.Request.ID, @Sendable (Message.Response) -> Void > ()
+  private var currentRequests = TreeDictionary < Int, @Sendable (Message.Response) -> Void > ()
 }

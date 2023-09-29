@@ -2,7 +2,6 @@
 
 import CasePaths
 import Library
-import Tagged
 
 public enum Message: Sendable, Hashable {
   case request(Request)
@@ -36,18 +35,11 @@ public enum Message: Sendable, Hashable {
     }
   }
 
+  @PublicInit
   public struct Request: Sendable, Hashable {
-    public init(id: ID, method: String, parameters: [Value]) {
-      self.id = id
-      self.method = method
-      self.parameters = parameters
-    }
-
-    public var id: ID
+    public var id: Int
     public var method: String
     public var parameters: [Value]
-
-    public typealias ID = Tagged<Self, Int>
 
     public static var rawMessageType: Int {
       0
@@ -56,7 +48,7 @@ public enum Message: Sendable, Hashable {
     func makeValue() -> Value {
       .array([
         .integer(Self.rawMessageType),
-        .integer(id.rawValue),
+        .integer(id),
         .string(method),
         .array(parameters),
       ])
@@ -66,8 +58,7 @@ public enum Message: Sendable, Hashable {
       guard
         arrayValue.count == 4,
         let id = (/Value.integer)
-          .extract(from: arrayValue[1])
-          .map(ID.init(rawValue:)),
+          .extract(from: arrayValue[1]),
         let method = (/Value.string).extract(from: arrayValue[2]),
         let parameters = (/Value.array).extract(from: arrayValue[3])
       else {
@@ -82,16 +73,10 @@ public enum Message: Sendable, Hashable {
     }
   }
 
+  @PublicInit
   public struct Response: Sendable, Hashable {
-    public init(id: ID, result: Result) {
-      self.id = id
-      self.result = result
-    }
-
-    public var id: ID
+    public var id: Int
     public var result: Result
-
-    public typealias ID = Tagged<Self, Int>
 
     public static var rawMessageType: Int {
       1
@@ -105,9 +90,7 @@ public enum Message: Sendable, Hashable {
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 4,
-        let id = (/Value.integer)
-          .extract(from: arrayValue[1])
-          .map(Response.ID.init(rawValue:))
+        let id = (/Value.integer).extract(from: arrayValue[1])
       else {
         throw Failure("Invalid response raw array value \(arrayValue)")
       }
@@ -124,12 +107,8 @@ public enum Message: Sendable, Hashable {
     }
   }
 
+  @PublicInit
   public struct Notification: Sendable, Hashable {
-    public init(method: String, parameters: [Value]) {
-      self.method = method
-      self.parameters = parameters
-    }
-
     public var method: String
     public var parameters: [Value]
 

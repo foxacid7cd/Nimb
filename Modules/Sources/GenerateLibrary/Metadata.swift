@@ -2,10 +2,10 @@
 
 import CasePaths
 import Foundation
+import Library
 import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
-import Tagged
 
 public struct Metadata: Sendable {
   public init(functions: [Function], uiEvents: [UIEvent], types: [Type], uiOptions: [String]) {
@@ -146,15 +146,7 @@ public struct Metadata: Sendable {
       }
 
       var custom: ValueType.Custom?
-      if name == "grid", rawType == "Integer" {
-        name = "gridID"
-        custom = .init(
-          signature: "Grid.ID",
-          valueEncoder: (".integer(", ".rawValue)"),
-          valueDecoder: ("(/Value.integer).extract(from: ", ").map(Grid.ID.init(rawValue:))")
-        )
-
-      } else if let type = types.first(where: { $0.name == rawType }) {
+      if let type = types.first(where: { $0.name == rawType }) {
         name = type.name.prefix(1).lowercased() + type.name.dropFirst(1) + "ID"
 
         custom = .init(
@@ -187,16 +179,9 @@ public struct Metadata: Sendable {
     public var parameters: [Parameter]
   }
 
+  @PublicInit
   public struct `Type`: Sendable {
-    public init(id: ID, name: String, prefix: String) {
-      self.id = id
-      self.name = name
-      self.prefix = prefix
-    }
-
-    public typealias ID = Tagged<Type, Int>
-
-    public var id: ID
+    public var id: Int
     public var name: String
     public var prefix: String
   }

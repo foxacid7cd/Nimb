@@ -9,7 +9,7 @@ final class MainViewController: NSViewController {
   private let initialOuterGridSize: IntegerSize
   private let tablineView: TablineView
   private let mainContainerView = NSView()
-  private var mainContainerConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
   private let mainView: MainView
   private let mainOverlayView = NSVisualEffectView()
   private var reportedOuterGridSize: IntegerSize?
@@ -40,16 +40,16 @@ final class MainViewController: NSViewController {
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     stackView.addArrangedSubview(tablineView)
 
+    mainContainerView.clipsToBounds = true
     stackView.addArrangedSubview(mainContainerView)
 
-    mainContainerView.clipsToBounds = true
     mainContainerView.addSubview(mainView)
+    mainView.centerInSuperview()
 
-    mainContainerConstraints = (
+    mainContainerViewConstraints = (
       mainContainerView.width(0, relation: .equalOrGreater),
       mainContainerView.height(0, relation: .equalOrGreater)
     )
-    mainView.centerInSuperview()
 
     mainOverlayView.blendingMode = .withinWindow
     mainOverlayView.state = .active
@@ -71,12 +71,12 @@ final class MainViewController: NSViewController {
         }
 
         if updates.isFontUpdated {
-          updateMinMainContainerSize()
+          updateMinMainContainerViewSize()
         }
       }
     }
 
-    updateMinMainContainerSize()
+    updateMinMainContainerViewSize()
   }
 
   func showMainView(on: Bool) {
@@ -89,14 +89,14 @@ final class MainViewController: NSViewController {
       rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
     )
     if 
-      let outerGrid = store.grids[Grid.ID.outer.rawValue],
+      let outerGrid = store.outerGrid,
       outerGrid.cells.size != outerGridSizeNeeded,
       outerGridSizeNeeded != reportedOuterGridSize
     {
       reportedOuterGridSize = outerGridSizeNeeded
 
       Task {
-        await store.instance.report(gridWithID: .outer, changedSizeTo: outerGridSizeNeeded)
+        await store.instance.report(gridWithID: Grid.OuterID, changedSizeTo: outerGridSizeNeeded)
       }
     }
   }
@@ -105,9 +105,9 @@ final class MainViewController: NSViewController {
     mainView.point(forGridID: gridID, gridPoint: gridPoint)
   }
 
-  private func updateMinMainContainerSize() {
+  private func updateMinMainContainerViewSize() {
     let size = initialOuterGridSize * store.font.cellSize
-    mainContainerConstraints!.width.constant = size.width
-    mainContainerConstraints!.height.constant = size.height
+    mainContainerViewConstraints!.width.constant = size.width
+    mainContainerViewConstraints!.height.constant = size.height
   }
 }

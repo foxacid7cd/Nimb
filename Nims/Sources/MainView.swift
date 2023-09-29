@@ -6,7 +6,7 @@ import Neovim
 
 class MainView: NSView {
   override var intrinsicContentSize: NSSize {
-    let outerGridSize = store.grids[Grid.ID.outer.rawValue]?.cells.size
+    let outerGridSize = store.outerGrid?.cells.size
     return (outerGridSize ?? .init()) * store.font.cellSize
   }
 
@@ -38,7 +38,7 @@ class MainView: NSView {
   private var gridViews = IntKeyedDictionary<GridView>()
 
   public func render(_ stateUpdates: Store.Updates?) {
-    guard let outerGridIntegerSize = store.grids[.outer]?.cells.size else {
+    guard let outerGridIntegerSize = store.outerGrid?.cells.size else {
       return
     }
     let outerGridSize = outerGridIntegerSize * store.font.cellSize
@@ -46,7 +46,7 @@ class MainView: NSView {
     let updatedLayoutGridIDs = if let stateUpdates {
       stateUpdates.updatedLayoutGridIDs
     } else {
-      Set(store.grids.keys.map(Grid.ID.init(rawValue:)))
+      Set(store.grids.keys)
     }
 
     func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
@@ -77,7 +77,7 @@ class MainView: NSView {
       if let grid = store.grids[gridID] {
         let gridView = gridViewOrCreate(for: gridID)
 
-        if gridID == .outer {
+        if gridID == Grid.OuterID {
           gridView.sizeConstraints!.width.constant = outerGridSize.width
           gridView.sizeConstraints!.height.constant = outerGridSize.height
 
@@ -261,7 +261,7 @@ class MainView: NSView {
     }
 
     if let stateUpdates {
-      if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
+      if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
         invalidateIntrinsicContentSize()
       }
 

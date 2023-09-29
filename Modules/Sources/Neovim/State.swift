@@ -25,6 +25,15 @@ public struct State: Sendable {
   public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
 
+  public var outerGrid: Grid? {
+    get {
+      grids[Grid.OuterID]
+    }
+    set {
+      grids[Grid.OuterID] = newValue
+    }
+  }
+
   public mutating func nextWindowZIndex() -> Int {
     windowZIndexCounter += 1
     return windowZIndexCounter
@@ -229,8 +238,7 @@ public extension State {
                   idLm: rawCursorStyle["id_lm"]
                     .flatMap((/Value.integer).extract(from:)),
                   attrID: rawCursorStyle["attr_id"]
-                    .flatMap((/Value.integer).extract(from:))
-                    .map(Highlight.ID.init(rawValue:)),
+                    .flatMap((/Value.integer).extract(from:)),
                   attrIDLm: rawCursorStyle["attr_id_lm"]
                     .flatMap((/Value.integer).extract(from:))
                 )
@@ -419,7 +427,7 @@ public extension State {
 
         case let .gridLine(gridID, row, startColumn, data, _):
           var updatedCellsCount = 0
-          var highlightID = Highlight.ID.default
+          var highlightID = 0
 
           update(&grids[gridID]!.cells.rows[row]) { rowCells in
             for value in data {
@@ -442,7 +450,7 @@ public extension State {
                   continue
                 }
 
-                highlightID = .init(rawValue: newHighlightID)
+                highlightID = newHighlightID
 
                 if arrayValue.count > 2 {
                   guard
@@ -830,7 +838,7 @@ public extension State {
 
           let selectedItemIndex: Int? = selected >= 0 ? selected : nil
 
-          let anchor: Popupmenu.Anchor = switch gridID.rawValue {
+          let anchor: Popupmenu.Anchor = switch gridID {
           case -1:
             .cmdline(location: col)
 

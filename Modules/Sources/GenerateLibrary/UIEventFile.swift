@@ -20,7 +20,6 @@ public struct UIEventFile: GeneratableFile {
         try .init {
           "import MessagePack" as DeclSyntax
           "import CasePaths" as DeclSyntax
-          "import Tagged" as DeclSyntax
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
@@ -49,7 +48,7 @@ public struct UIEventFile: GeneratableFile {
             try InitializerDeclSyntax("init(rawRedrawNotificationParameters: [Value]) throws") {
               "var accumulator = [UIEvent]()" as DeclSyntax
 
-              try ForInStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
+              try ForStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
                 StmtSyntax(
                   """
                   guard let rawParameter = (/Value.array).extract(from: rawParameter) else {
@@ -72,7 +71,7 @@ public struct UIEventFile: GeneratableFile {
                       try SwitchCaseSyntax("case \(literal: uiEvent.name):") {
                         let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
 
-                        try ForInStmtSyntax("for rawUIEvent in rawParameter.dropFirst()") {
+                        try ForStmtSyntax("for rawUIEvent in rawParameter.dropFirst()") {
                           StmtSyntax(
                             """
                             guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {

@@ -4,7 +4,12 @@ import CustomDump
 
 @inlinable public func assertionFailure(_ reason: @autoclosure () -> Any, file: StaticString = #file, line: UInt = #line) {
   Swift.assertionFailure(
-    .init(customDumping: reason()),
+    {
+      var message = ""
+      customDump(reason(), to: &message)
+
+      return message
+    }(),
     file: file,
     line: line
   )

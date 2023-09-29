@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Tagged
+import Library
 
+@PublicInit
 public struct NimsFont: Sendable, Hashable {
-  public init(id: ID = .zero) {
-    self.id = id
-  }
-
-  public typealias ID = Tagged<Self, Int>
-
-  public var id: ID
+  public var id: Int = 0
 
   @MainActor
   public init(_ appKit: NSFont) {
@@ -56,6 +51,8 @@ public struct NimsFont: Sendable, Hashable {
 
 @MainActor
 final class FontBridge {
+  private var wrappedFonts = [WrappedFont]()
+
   static let shared = FontBridge()
 
   func wrap(_ appKit: NSFont) -> NimsFont {
@@ -85,10 +82,8 @@ final class FontBridge {
       )
     }
 
-    return wrappedFonts[font.id.rawValue]
+    return wrappedFonts[font.id]
   }
-
-  private var wrappedFonts = [WrappedFont]()
 
   struct WrappedFont {
     var regular: NSFont

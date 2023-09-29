@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 import Library
-import Tagged
 
 @PublicInit
 public struct Highlight: Identifiable, Sendable {
-  public var id: HighlightID
+  public var id: Int
   public var foregroundColor: Color? = nil
   public var backgroundColor: Color? = nil
   public var specialColor: Color? = nil
@@ -23,17 +22,5 @@ public struct Highlight: Identifiable, Sendable {
     public var isUnderdouble: Bool = false
     public var isUnderdotted: Bool = false
     public var isUnderdashed: Bool = false
-  }
-}
-
-public typealias HighlightID = Tagged<Highlight, Int>
-
-public extension HighlightID {
-  static var `default`: HighlightID {
-    .init(rawValue: 0)
-  }
-
-  var isDefault: Bool {
-    self == .default
   }
 }

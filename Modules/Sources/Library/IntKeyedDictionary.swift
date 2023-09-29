@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Collections
-import Tagged
 
 public struct IntKeyedDictionary<Value> {
   public typealias Key = Int
@@ -37,16 +36,6 @@ public struct IntKeyedDictionary<Value> {
     }
   }
 
-  public subscript(id: Tagged<some Any, Int>) -> Value? {
-    get {
-      self[id.rawValue]
-    }
-
-    set(newValue) {
-      self[id.rawValue] = newValue
-    }
-  }
-
   public var count: Int {
     keysBackingStore.count
   }
@@ -60,11 +49,6 @@ public struct IntKeyedDictionary<Value> {
     let value = self[key]
     self[key] = nil
     return value
-  }
-
-  @discardableResult
-  public mutating func removeValue(forID id: Tagged<some Any, Int>) -> Value? {
-    removeValue(forKey: id.rawValue)
   }
 
   public var keys: OrderedSet<Key> {

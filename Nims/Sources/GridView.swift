@@ -104,8 +104,8 @@ public final class GridView: NSView {
           let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
 
           let partIntegerFrame = IntegerRectangle(
-            origin: .init(column: part.indices.lowerBound, row: row),
-            size: .init(columnsCount: part.indices.count, rowsCount: 1)
+            origin: .init(column: part.range.location, row: row),
+            size: .init(columnsCount: part.range.length, rowsCount: 1)
           )
           let partFrame = partIntegerFrame * store.font.cellSize
           let upsideDownPartFrame = partFrame
@@ -118,7 +118,7 @@ public final class GridView: NSView {
             .drawRun(
               with: .init(
                 integerSize: IntegerSize(
-                  columnsCount: part.indices.count,
+                  columnsCount: part.range.length,
                   rowsCount: 1
                 ),
                 text: part.text,
@@ -142,7 +142,8 @@ public final class GridView: NSView {
             let cursor = store.cursor,
             cursor.gridID == gridID,
             cursor.position.row == row,
-            part.indices.contains(cursor.position.column)
+            cursor.position.column >= part.range.location,
+            cursor.position.column < part.range.location + part.range.length
           {
             let cursorStyle = modeInfo
               .cursorStyles[mode.cursorStyleIndex]
@@ -182,7 +183,7 @@ public final class GridView: NSView {
               let cursorUpsideDownFrame = cursorFrame
                 .applying(upsideDownTransform)
 
-              let cursorHighlightID = cursorStyle.attrID ?? .default
+              let cursorHighlightID = cursorStyle.attrID ?? 0
 
               cursorDrawRun = .init(
                 frame: cursorUpsideDownFrame,
@@ -214,7 +215,7 @@ public final class GridView: NSView {
         let cursorForegroundColor: Neovim.Color
         let cursorBackgroundColor: Neovim.Color
 
-        if cursorDrawRun.highlightID.isDefault {
+        if cursorDrawRun.highlightID == 0 {
           cursorForegroundColor = store.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
           cursorBackgroundColor = store.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
 
