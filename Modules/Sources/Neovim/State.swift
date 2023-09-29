@@ -271,90 +271,93 @@ public extension State {
 
           appearanceUpdated()
 
-        case let .hlAttrDefine(rawHighlightID, rgbAttrs, _, _):
-          let highlightID = Highlight.ID(rawHighlightID)
+        case let .hlAttrDefine(rawID, rgbAttrs, _, _):
+          let noCombine = rgbAttrs["noCombine"]
+            .flatMap((/Value.boolean).extract(from:)) ?? false
 
-          update(&appearance.highlights[highlightID]) { highlight in
-            if highlight == nil {
-              highlight = .init(id: highlightID)
+          let id = Highlight.ID(rawID)
+          var highlight = (noCombine ? appearance.highlights[id] : nil) ?? .init(id: id)
+
+          for (key, value) in rgbAttrs {
+            guard case let .string(key) = key else {
+              continue
             }
 
-            for (key, value) in rgbAttrs {
-              guard case let .string(key) = key else {
-                continue
+            switch key {
+            case "foreground":
+              if case let .integer(value) = value {
+                highlight.foregroundColor = .init(rgb: value)
               }
 
-              switch key {
-              case "foreground":
-                if case let .integer(value) = value {
-                  highlight!.foregroundColor = .init(rgb: value)
-                }
-
-              case "background":
-                if case let .integer(value) = value {
-                  highlight!.backgroundColor = .init(rgb: value)
-                }
-
-              case "special":
-                if case let .integer(value) = value {
-                  highlight!.specialColor = .init(rgb: value)
-                }
-
-              case "reverse":
-                if case let .boolean(value) = value {
-                  highlight!.isReverse = value
-                }
-
-              case "italic":
-                if case let .boolean(value) = value {
-                  highlight!.isItalic = value
-                }
-
-              case "bold":
-                if case let .boolean(value) = value {
-                  highlight!.isBold = value
-                }
-
-              case "strikethrough":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isStrikethrough = value
-                }
-
-              case "underline":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isUnderline = value
-                }
-
-              case "undercurl":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isUndercurl = value
-                }
-
-              case "underdouble":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isUnderdouble = value
-                }
-
-              case "underdotted":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isUnderdotted = value
-                }
-
-              case "underdashed":
-                if case let .boolean(value) = value {
-                  highlight!.decorations.isUnderdashed = value
-                }
-
-              case "blend":
-                if case let .integer(value) = value {
-                  highlight!.blend = value
-                }
-
-              default:
-                assertionFailure(key)
+            case "background":
+              if case let .integer(value) = value {
+                highlight.backgroundColor = .init(rgb: value)
               }
+
+            case "special":
+              if case let .integer(value) = value {
+                highlight.specialColor = .init(rgb: value)
+              }
+
+            case "reverse":
+              if case let .boolean(value) = value {
+                highlight.isReverse = value
+              }
+
+            case "italic":
+              if case let .boolean(value) = value {
+                highlight.isItalic = value
+              }
+
+            case "bold":
+              if case let .boolean(value) = value {
+                highlight.isBold = value
+              }
+
+            case "strikethrough":
+              if case let .boolean(value) = value {
+                highlight.decorations.isStrikethrough = value
+              }
+
+            case "underline":
+              if case let .boolean(value) = value {
+                highlight.decorations.isUnderline = value
+              }
+
+            case "undercurl":
+              if case let .boolean(value) = value {
+                highlight.decorations.isUndercurl = value
+              }
+
+            case "underdouble":
+              if case let .boolean(value) = value {
+                highlight.decorations.isUnderdouble = value
+              }
+
+            case "underdotted":
+              if case let .boolean(value) = value {
+                highlight.decorations.isUnderdotted = value
+              }
+
+            case "underdashed":
+              if case let .boolean(value) = value {
+                highlight.decorations.isUnderdashed = value
+              }
+
+            case "blend":
+              if case let .integer(value) = value {
+                highlight.blend = value
+              }
+
+            case "nocombine":
+              continue
+
+            default:
+              assertionFailure(key)
             }
           }
+
+          appearance.highlights[id] = highlight
 
           appearanceUpdated()
 
