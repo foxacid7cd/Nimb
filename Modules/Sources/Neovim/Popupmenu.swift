@@ -3,6 +3,7 @@
 import Library
 import MessagePack
 
+@PublicInit
 public struct Popupmenu: Sendable, Hashable {
   public var items: [PopupmenuItem]
   public var selectedItemIndex: Int?
@@ -14,14 +15,13 @@ public struct Popupmenu: Sendable, Hashable {
   }
 }
 
+@PublicInit
 public struct PopupmenuItem: Sendable, Hashable {
   public var word: String
   public var kind: String
   public var menu: String
   public var info: String
-}
 
-public extension PopupmenuItem {
   init?(rawItem: Value) {
     guard
       case let .array(rawItem) = rawItem,

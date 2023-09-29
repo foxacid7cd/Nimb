@@ -4,7 +4,8 @@ import Foundation
 import Library
 import Neovim
 
-@MainActor @dynamicMemberLookup
+@MainActor
+@dynamicMemberLookup
 final class Store {
   let instance: Instance
   let cursorBlinker: CursorBlinker
@@ -67,19 +68,25 @@ final class Store {
   }
 
   func stateUpdatesStream() -> AsyncStream<Updates> {
-    .init { continuation in
+    .init { [weak self] continuation in
       let observeWrappedTask = Task {
-        for await instanceStateUpdates in instance.stateUpdatesStream() {
+        guard let self else {
+          return
+        }
+
+        for await instanceStateUpdates in self.instance.stateUpdatesStream() {
           guard !Task.isCancelled else {
             return
           }
 
           continuation.yield(.init(instanceStateUpdates: instanceStateUpdates))
         }
+
+        continuation.finish()
       }
 
       let id = UUID()
-      observers[id] = { updates in
+      self?.observers[id] = { updates in
         continuation.yield(updates)
       }
 
@@ -87,7 +94,7 @@ final class Store {
         observeWrappedTask.cancel()
 
         Task { @MainActor in
-          _ = self.observers.removeValue(forKey: id)
+          self?.observers.removeValue(forKey: id)
         }
       }
     }

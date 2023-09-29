@@ -25,10 +25,6 @@ public struct PublicInitMacro: MemberMacro {
     let included = structDecl.storedProperties
       .filter { $0.bindings.first!.typeAnnotation != nil }
 
-    guard !included.isEmpty else {
-      return []
-    }
-
     let publicInit: DeclSyntax = """
     public init(
     \(raw: included.map { "\($0.bindings)" }.joined(separator: ",\n"))

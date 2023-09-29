@@ -45,12 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     Task {
-      if let finishedResult = await instance.finishedResult() {
-        var dump = ""
-        customDump(finishedResult, to: &dump, maxDepth: 10)
+      let instanceResult = await instance.result
 
-        let alert = NSAlert(error: finishedResult)
-        alert.informativeText = dump
+      switch instanceResult {
+      case .success:
+        break
+
+      case let .failure(error):
+        let alert = NSAlert(error: error)
+        alert.informativeText = String(customDumping: error)
         alert.runModal()
       }
     }
@@ -107,6 +110,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         await self.store!.report(keyPress: keyPress)
+
+        if
+          self.msgShowsWindowController!.window!.isVisible,
+          !self.store!.hasModalMsgShows,
+          keyPress.keyCode == kVK_Escape
+        {
+          self.msgShowsWindowController!.window!.setIsVisible(false)
+        }
       }
 
       return nil

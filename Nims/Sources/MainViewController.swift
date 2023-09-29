@@ -45,14 +45,14 @@ final class MainViewController: NSViewController {
 
     updatePreferredContentSize()
 
-    task = Task {
+    task = Task { [weak self, store] in
       for await stateUpdates in store.stateUpdatesStream() {
         guard !Task.isCancelled else {
           return
         }
 
         if stateUpdates.updatedLayoutGridIDs.contains(.outer) {
-          updatePreferredContentSize()
+          self?.updatePreferredContentSize()
         }
       }
     }

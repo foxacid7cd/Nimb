@@ -163,7 +163,7 @@ public extension State {
 
       func blockLine(fromRawLine rawLine: Value) -> [Cmdline.ContentPart] {
         guard case let .array(rawLine) = rawLine else {
-          assertionFailure("Invalid cmdline raw value type")
+          assertionFailure(rawLine)
           return []
         }
 
@@ -176,7 +176,7 @@ public extension State {
             case let .integer(rawHighlightID) = rawContentPart[0],
             case let .string(text) = rawContentPart[1]
           else {
-            assertionFailure("Invalid cmdline raw value array content")
+            assertionFailure(rawContentPart)
             return []
           }
 
@@ -204,7 +204,7 @@ public extension State {
             cursorStyles: cursorStyles
               .compactMap { rawCursorStyle -> CursorStyle? in
                 guard case let .dictionary(rawCursorStyle) = rawCursorStyle else {
-                  assertionFailure("Invalid cursor style raw value type")
+                  assertionFailure(rawCursorStyle)
                   return nil
                 }
 
@@ -351,7 +351,7 @@ public extension State {
                 }
 
               default:
-                break
+                assertionFailure(key)
               }
             }
           }
@@ -425,7 +425,7 @@ public extension State {
                 !arrayValue.isEmpty,
                 let text = (/Value.string).extract(from: arrayValue[0])
               else {
-                assertionFailure("Raw value is not an array or first element is not a text")
+                assertionFailure(value)
                 continue
               }
 
@@ -435,7 +435,7 @@ public extension State {
                 guard
                   let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
                 else {
-                  assertionFailure("Second array element is not an integer highlight id")
+                  assertionFailure(arrayValue)
                   continue
                 }
 
@@ -445,7 +445,7 @@ public extension State {
                   guard
                     let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
                   else {
-                    assertionFailure("Third array element is not an integer repeat count")
+                    assertionFailure(arrayValue)
                     continue
                   }
 
@@ -608,7 +608,7 @@ public extension State {
           _
         ):
           guard let anchor = FloatingWindow.Anchor(rawValue: rawAnchor) else {
-            assertionFailure("Invalid anchor value: \(rawAnchor)")
+            assertionFailure(rawAnchor)
             continue
           }
 
@@ -671,7 +671,7 @@ public extension State {
                 let name = rawBuffer["name"]
                   .flatMap((/Value.string).extract(from:))
               else {
-                assertionFailure("Invalid buffer raw value")
+                assertionFailure(rawBuffer)
                 return nil
               }
 
@@ -703,7 +703,7 @@ public extension State {
                   case let .integer(rawHighlightID) = rawContentPart[0],
                   case let .string(text) = rawContentPart[1]
                 else {
-                  assertionFailure("Invalid cmdline raw value")
+                  assertionFailure(rawContentPart)
                   return nil
                 }
 
@@ -775,7 +775,7 @@ public extension State {
 
           let kind = MsgShow.Kind(rawValue: rawKind)
           if kind == nil {
-            assertionFailure("Unknown msg_show kind \(rawKind)")
+            assertionFailure(rawKind)
           }
 
           if !content.isEmpty {
@@ -790,7 +790,7 @@ public extension State {
                     case let .integer(rawHighlightID) = rawContentPart[0],
                     case let .string(text) = rawContentPart[1]
                   else {
-                    assertionFailure("Invalid msgShow content raw value")
+                    assertionFailure(rawContentPart)
                     return nil
                   }
 
@@ -819,11 +819,9 @@ public extension State {
               items.append(item)
 
             } else {
-              var dump = ""
-              customDump(rawItem, to: &dump)
-              assertionFailure("Failed decoding PopupmenuItem:\n\(dump)")
+              assertionFailure(rawItem)
 
-              items.append(.init(word: "ERROR", kind: "", menu: "", info: ""))
+              items.append(.init(word: "-", kind: "-", menu: "", info: ""))
             }
           }
 
@@ -854,7 +852,7 @@ public extension State {
           }
 
         default:
-          break
+          continue
         }
       }
 

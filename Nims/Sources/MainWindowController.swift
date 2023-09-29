@@ -30,11 +30,11 @@ final class MainWindowController: NSWindowController {
     self.viewController = viewController
 
     let window = NimsNSWindow(contentViewController: viewController)
-    window.styleMask = [.titled, .miniaturizable]
+    window.styleMask = [.titled, .miniaturizable, .resizable]
 
     super.init(window: window)
 
-    windowFrameAutosaveName = "Main"
+    window.delegate = self
   }
 
   @available(*, unavailable)
@@ -57,4 +57,8 @@ final class MainWindowController: NSWindowController {
         ))
       }
   }
+}
+
+extension MainWindowController: NSWindowDelegate {
+  func windowDidResize(_: Notification) {}
 }
