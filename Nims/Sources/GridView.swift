@@ -158,13 +158,16 @@ public final class GridView: NSView {
                 cursorFrame = integerFrame * store.font.cellSize
 
               case .horizontal:
-                let height = store.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
-
-                cursorFrame = CGRect(
-                  x: Double(cursor.position.column) * store.font.cellWidth,
-                  y: Double(cursor.position.row) * store.font.cellHeight,
+                let size = CGSize(
                   width: store.font.cellWidth,
-                  height: height
+                  height: store.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+                )
+                cursorFrame = .init(
+                  origin: .init(
+                    x: Double(cursor.position.column) * store.font.cellWidth,
+                    y: Double(cursor.position.row + 1) * store.font.cellHeight - size.height
+                  ),
+                  size: size
                 )
 
               case .vertical:
