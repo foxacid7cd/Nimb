@@ -2,7 +2,6 @@
 
 import IdentifiedCollections
 import Library
-import Tagged
 
 @PublicInit
 public struct Tabline: Sendable, Hashable {

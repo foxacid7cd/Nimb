@@ -7,7 +7,6 @@ import IdentifiedCollections
 import Library
 import MessagePack
 import Overture
-import Tagged
 
 @PublicInit
 public struct State: Sendable {
