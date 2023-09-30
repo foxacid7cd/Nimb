@@ -19,7 +19,7 @@ public final class DrawRunsProvider {
 
     let drawRun = makeDrawRun(with: parameters)
 
-    if deque.count >= 500 {
+    if deque.count >= 200 {
       drawRuns.removeValue(
         forKey: deque.popFirst()!
       )
@@ -211,7 +211,7 @@ public struct DrawRun {
     defer { graphicsContext.restoreGraphicsState() }
 
     let cgContext = graphicsContext.cgContext
-    let nsFont = parameters.font.nsFont()
+    let nsFont = parameters.nsFont
 
     CGRect(
       origin: origin,

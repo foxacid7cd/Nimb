@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       popupmenuWindowController?.render(stateUpdates)
     }
 
-    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 13) {
+    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font", size: 13) {
       let font = NimsFont(sfMonoNFM)
       store!.set(font: font)
     }
