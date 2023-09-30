@@ -26,22 +26,6 @@ final class MsgShowsWindowController: NSWindowController {
     super.init(window: window)
 
     window.delegate = self
-
-    task = Task { [weak self] in
-      for await stateUpdates in store.stateUpdatesStream {
-        guard let self, !Task.isCancelled else {
-          break
-        }
-
-        if stateUpdates.isMsgShowsUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
-          updateWindow()
-        }
-      }
-    }
-  }
-
-  deinit {
-    task?.cancel()
   }
 
   @available(*, unavailable)
@@ -49,23 +33,27 @@ final class MsgShowsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isMsgShowsUpdated {
+      updateWindowOrigin()
+    }
+
+    if stateUpdates.isMsgShowsUpdated {
+      if store.msgShows.isEmpty {
+        parentWindow.removeChildWindow(window!)
+        window!.setIsVisible(false)
+
+      } else {
+        parentWindow.addChildWindow(window!, ordered: .above)
+      }
+    }
+
+    viewController.render(stateUpdates)
+  }
+
   private let store: Store
   private let parentWindow: NSWindow
   private let viewController: MsgShowsViewController
-  private var task: Task<Void, Never>?
-
-  private func updateWindow() {
-    viewController.render()
-
-    if store.msgShows.isEmpty {
-      parentWindow.removeChildWindow(window!)
-      window!.setIsVisible(false)
-
-    } else {
-      updateWindowOrigin()
-      parentWindow.addChildWindow(window!, ordered: .above)
-    }
-  }
 
   private func updateWindowOrigin() {
     window!.setFrameOrigin(.init(
@@ -122,7 +110,23 @@ final class MsgShowsViewController: NSViewController {
     self.view = view
   }
 
-  func render() {
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    reloadData()
+  }
+
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isMsgShowsUpdated {
+      reloadData()
+    }
+  }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
+  private let contentView = NSStackView(views: [])
+
+  private func reloadData() {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
@@ -149,10 +153,6 @@ final class MsgShowsViewController: NSViewController {
       }
     }
   }
-
-  private let store: Store
-  private let scrollView = NSScrollView()
-  private let contentView = NSStackView(views: [])
 }
 
 private final class MsgShowView: NSView {

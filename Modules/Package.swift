@@ -28,7 +28,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-identified-collections", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-overture", branch: "main"),
-    .package(url: "https://github.com/pointfreeco/swift-custom-dump", branch: "main")
+    .package(url: "https://github.com/pointfreeco/swift-custom-dump", branch: "main"),
   ],
   targets: [
     .target(

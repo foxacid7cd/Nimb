@@ -9,17 +9,7 @@ class MainView: NSView {
     self.store = store
     super.init(frame: .init())
 
-    render(nil)
-
-    task = Task {
-      for await stateUpdates in store.stateUpdatesStream {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        render(stateUpdates)
-      }
-    }
+    render(.init())
   }
 
   @available(*, unavailable)
@@ -27,16 +17,17 @@ class MainView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: Store.Updates?) {
+  public func render(_ stateUpdates: State.Updates) {
     guard let outerGridIntegerSize = store.outerGrid?.cells.size else {
       return
     }
     let outerGridSize = outerGridIntegerSize * store.font.cellSize
 
-    let updatedLayoutGridIDs = if let stateUpdates {
-      stateUpdates.updatedLayoutGridIDs
-    } else {
+    let updatedLayoutGridIDs = if stateUpdates.isFontUpdated {
       Set(store.grids.keys)
+
+    } else {
+      stateUpdates.updatedLayoutGridIDs
     }
 
     func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
@@ -250,32 +241,32 @@ class MainView: NSView {
       )
     }
 
-    if let stateUpdates {
-      if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
-        invalidateIntrinsicContentSize()
+    if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
+      invalidateIntrinsicContentSize()
+    }
+
+    if stateUpdates.isAppearanceUpdated {
+      for gridView in gridViews.values {
+        gridView.setNeedsDisplay(gridView.bounds)
       }
 
-      if stateUpdates.isAppearanceUpdated {
-        for gridView in gridViews.values {
-          gridView.setNeedsDisplay(gridView.bounds)
+    } else {
+      for (gridID, updatedRectangles) in stateUpdates.gridUpdatedRectangles {
+        guard let gridView = gridViews[gridID] else {
+          continue
         }
+        gridView.setNeedsDisplay(updatedRectangles: updatedRectangles)
+      }
 
-      } else {
-        for (gridID, updatedRectangles) in stateUpdates.gridUpdatedRectangles {
-          guard let gridView = gridViews[gridID] else {
-            continue
-          }
-
-          let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-            .translatedBy(x: 0, y: -gridView.frame.height)
-
-          for rectangle in updatedRectangles {
-            let rect = (rectangle * store.font.cellSize)
-              .applying(upsideDownTransform)
-
-            gridView.setNeedsDisplay(rect)
-          }
-        }
+      if stateUpdates.isCursorBlinkingPhaseUpdated, let cursor = store.cursor, let gridView = gridViews[cursor.gridID] {
+        gridView.setNeedsDisplay(
+          updatedRectangles: [
+            .init(
+              origin: cursor.position,
+              size: .init(columnsCount: 1, rowsCount: 1)
+            ),
+          ]
+        )
       }
     }
   }
@@ -284,10 +275,7 @@ class MainView: NSView {
     guard let gridView = gridViews[gridID] else {
       return nil
     }
-
-    return (gridPoint * store.font.cellSize)
-      .applying(gridView.upsideDownTransform)
-      .applying(.init(translationX: gridView.frame.origin.x, y: gridView.frame.origin.y))
+    return gridView.point(for: gridPoint) + gridView.frame.origin
   }
 
   override var intrinsicContentSize: NSSize {
@@ -297,6 +285,5 @@ class MainView: NSView {
 
   private var store: Store
   private var task: Task<Void, Never>?
-
   private var gridViews = IntKeyedDictionary<GridView>()
 }

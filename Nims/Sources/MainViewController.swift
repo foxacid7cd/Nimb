@@ -13,10 +13,6 @@ final class MainViewController: NSViewController {
     super.init(nibName: nil, bundle: nil)
   }
 
-  deinit {
-    task?.cancel()
-  }
-
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
@@ -56,19 +52,16 @@ final class MainViewController: NSViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    task = .init { [weak self, store] in
-      for await updates in store.stateUpdatesStream {
-        guard let self, !Task.isCancelled else {
-          return
-        }
+    updateMinMainContainerViewSize()
+  }
 
-        if updates.isFontUpdated {
-          updateMinMainContainerViewSize()
-        }
-      }
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isFontUpdated {
+      updateMinMainContainerViewSize()
     }
 
-    updateMinMainContainerViewSize()
+    tablineView.render(stateUpdates)
+    mainView.render(stateUpdates)
   }
 
   func showMainView(on: Bool) {
@@ -105,10 +98,10 @@ final class MainViewController: NSViewController {
   private let mainView: MainView
   private let mainOverlayView = NSVisualEffectView()
   private var reportedOuterGridSize: IntegerSize?
-  private var task: Task<Void, Never>?
 
   private func updateMinMainContainerViewSize() {
-    let size = initialOuterGridSize * store.font.cellSize
+    let outerGridSize = store.outerGrid?.cells.size ?? initialOuterGridSize
+    let size = outerGridSize * store.font.cellSize
     mainContainerViewConstraints!.width.constant = size.width
     mainContainerViewConstraints!.height.constant = size.height
   }

@@ -27,18 +27,6 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     window.delegate = self
 
-    task = Task { [weak self] in
-      for await stateUpdates in store.stateUpdatesStream {
-        guard let self, !Task.isCancelled else {
-          break
-        }
-
-        if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
-          updateWindow()
-        }
-      }
-    }
-
     updateWindow()
   }
 
@@ -49,6 +37,12 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
+      updateWindow()
+    }
   }
 
   func point(forCharacterLocation location: Int) -> CGPoint? {

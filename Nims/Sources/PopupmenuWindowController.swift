@@ -35,30 +35,24 @@ final class PopupmenuWindowController: NSWindowController {
     super.init(window: window)
 
     updateWindow()
-
-    task = Task { [weak self] in
-      for await updates in store.stateUpdatesStream {
-        guard let self, !Task.isCancelled else {
-          break
-        }
-
-        if updates.isPopupmenuUpdated || updates.isAppearanceUpdated || updates.isFontUpdated {
-          updateWindow()
-
-        } else if updates.isPopupmenuSelectionUpdated {
-          viewController.reloadData()
-
-          if let selectedItemIndex = self.store.popupmenu?.selectedItemIndex {
-            viewController.scrollTo(itemAtIndex: selectedItemIndex)
-          }
-        }
-      }
-    }
   }
 
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
+      updateWindow()
+
+    } else if stateUpdates.isPopupmenuSelectionUpdated {
+      viewController.reloadData()
+
+      if let selectedItemIndex = store.popupmenu?.selectedItemIndex {
+        viewController.scrollTo(itemAtIndex: selectedItemIndex)
+      }
+    }
   }
 
   private let store: Store

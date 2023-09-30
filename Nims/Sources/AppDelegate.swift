@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Carbon
 import CustomDump
 import Library
 import Neovim
@@ -24,24 +23,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() {
-    let instance = Instance(initialOuterGridSize: .init(columnsCount: 80, rowsCount: 24))
-    let cursorBlinker = CursorBlinker()
-    store = Store(instance: instance, cursorBlinker: cursorBlinker)
+    let instance = Instance(initialOuterGridSize: .init(columnsCount: 90, rowsCount: 28))
+    store = Store(instance: instance) { [weak self] stateUpdates in
+      guard let self else {
+        return
+      }
+      mainWindowController?.render(stateUpdates)
+      msgShowsWindowController?.render(stateUpdates)
+      cmdlinesWindowController?.render(stateUpdates)
+      popupmenuWindowController?.render(stateUpdates)
+    }
 
     if let sfMonoNFM = NSFont(name: "SFMono Nerd Font Mono", size: 13) {
       let font = NimsFont(sfMonoNFM)
       store!.set(font: font)
-    }
-
-    Task {
-      for await updates in store!.stateUpdatesStream {
-        if updates.isTitleUpdated {
-          mainWindowController?.windowTitle = store!.title ?? ""
-        }
-        if updates.isAppearanceUpdated {
-          mainWindowController?.windowBackgroundColor = store!.appearance.defaultBackgroundColor.appKit
-        }
-      }
     }
 
     Task {
@@ -84,12 +79,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func showMainWindowController() {
     let mainViewController = MainViewController(
       store: store!,
-      initialOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+      initialOuterGridSize: .init(columnsCount: 90, rowsCount: 28)
     )
 
     mainWindowController = MainWindowController(store: store!, viewController: mainViewController)
     mainWindowController!.showWindow(nil)
-    mainWindowController!.windowBackgroundColor = store!.appearance.defaultBackgroundColor.appKit
   }
 
   private func setupSecondaryWindowControllers() {
@@ -116,8 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if
           self.msgShowsWindowController!.window!.isVisible,
-          !self.store!.hasModalMsgShows,
-          keyPress.keyCode == kVK_Escape
+          !self.store!.hasModalMsgShows
         {
           self.msgShowsWindowController!.window!.setIsVisible(false)
         }

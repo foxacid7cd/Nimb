@@ -17,21 +17,7 @@ final class TablineView: NSView {
     buffersStackView.top(to: self)
     buffersStackView.bottom(to: self)
 
-    task = Task {
-      for await stateUpdates in store.stateUpdatesStream {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        if stateUpdates.isFontUpdated {
-          invalidateIntrinsicContentSize()
-          reloadData()
-
-        } else if stateUpdates.isTablineUpdated {
-          reloadData()
-        }
-      }
-    }
+    reloadData()
   }
 
   deinit {
@@ -45,6 +31,16 @@ final class TablineView: NSView {
 
   override var intrinsicContentSize: NSSize {
     .init(width: NSView.noIntrinsicMetric, height: store.font.cellHeight + 4)
+  }
+
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isFontUpdated {
+      invalidateIntrinsicContentSize()
+      reloadData()
+
+    } else if stateUpdates.isTablineUpdated {
+      reloadData()
+    }
   }
 
   private let store: Store

@@ -16,6 +16,20 @@ public final class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  public func setNeedsDisplay(updatedRectangles: [IntegerRectangle]) {
+    for rectangle in updatedRectangles {
+      let rect = (rectangle * store.font.cellSize)
+        .applying(upsideDownTransform)
+
+      setNeedsDisplay(rect)
+    }
+  }
+
+  public func point(for gridPoint: IntegerPoint) -> CGPoint {
+    (gridPoint * store.font.cellSize)
+      .applying(upsideDownTransform)
+  }
+
   override public func draw(_: NSRect) {
     guard let graphicsContext = NSGraphicsContext.current, let grid = store.grids[gridID] else {
       return
@@ -120,6 +134,7 @@ public final class GridView: NSView {
           )
 
           if
+            store.cursorBlinkingPhase,
             let modeInfo = store.modeInfo,
             let mode = store.mode,
             let cursor = store.cursor,
@@ -317,18 +332,17 @@ public final class GridView: NSView {
     store.grids[gridID]?.ordinal ?? -1
   }
 
-  var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -bounds.size.height)
-  }
-
   private let store: Store
   private let gridID: Grid.ID
   private let drawRunsProvider = DrawRunsProvider()
-
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
+
+  private var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -frame.size.height)
+  }
 
   private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
     let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)

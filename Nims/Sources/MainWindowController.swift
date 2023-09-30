@@ -22,41 +22,35 @@ final class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  var windowTitle = "" {
-    didSet {
-      if isWindowLoaded {
-        window?.title = windowTitle
-      }
-    }
-  }
-
-  var windowBackgroundColor: NSColor? {
-    get {
-      window?.backgroundColor
-    }
-    set {
-      window?.backgroundColor = newValue
-    }
-  }
-
   override func windowDidLoad() {
     super.windowDidLoad()
 
-    window?.title = windowTitle
+    updateWindow()
+  }
+
+  func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isAppearanceUpdated {
+      updateWindow()
+    }
+    if stateUpdates.isTitleUpdated {
+      updateWindow()
+    }
+
+    viewController.render(stateUpdates)
   }
 
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     viewController.point(forGridID: gridID, gridPoint: gridPoint)
-      .map {
-        $0.applying(.init(
-          translationX: window!.frame.origin.x,
-          y: window!.frame.origin.y
-        ))
-      }
+      .map { $0 + window!.frame.origin }
   }
 
   private let store: Store
   private let viewController: MainViewController
+
+  private func updateWindow() {
+    window!.backgroundColor = store.appearance.defaultBackgroundColor.appKit
+    window!.title = store.title ?? ""
+  }
 }
 
 extension MainWindowController: NSWindowDelegate {

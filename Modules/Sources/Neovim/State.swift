@@ -105,6 +105,10 @@ public extension State {
     public var gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [:]
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
+
+    public var isOuterGridLayoutUpdated: Bool {
+      updatedLayoutGridIDs.contains(Grid.OuterID)
+    }
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
@@ -356,7 +360,8 @@ public extension State {
                 highlight.blend = value
               }
 
-            case "nocombine":
+            case "nocombine",
+                 "standout":
               continue
 
             default:
