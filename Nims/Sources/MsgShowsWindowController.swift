@@ -38,13 +38,17 @@ final class MsgShowsWindowController: NSWindowController {
       updateWindowOrigin()
     }
 
-    if stateUpdates.isMsgShowsUpdated {
-      if store.msgShows.isEmpty {
-        parentWindow.removeChildWindow(window!)
-        window!.setIsVisible(false)
+    if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
+      if window!.isVisible {
+        if store.msgShows.isEmpty || store.isMsgShowsDismissed {
+          parentWindow.removeChildWindow(window!)
+          window!.setIsVisible(false)
+        }
 
       } else {
-        parentWindow.addChildWindow(window!, ordered: .above)
+        if !store.msgShows.isEmpty, !store.isMsgShowsDismissed {
+          parentWindow.addChildWindow(window!, ordered: .above)
+        }
       }
     }
 

@@ -117,18 +117,15 @@
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				6888C7D92AC84E2800686608 /* Main */,
 				6882EB472AC5B3C8001FAA2E /* Tabline */,
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				689D9E2629B4FA7000345713 /* main.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				68EED23829BD8B0600568EA0 /* State.swift */,
-				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */,
 				68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */,
-				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
-				689D9E2C29B50BF400345713 /* MainView.swift */,
-				68EF609029B2B6D20056E48D /* GridView.swift */,
 				68EF609229B2B7270056E48D /* DrawRunsProvider.swift */,
 				6861FA6129B462B8002C3C0B /* NimsFont.swift */,
 				683A08332AC1235800ADF9CA /* CursorBlinker.swift */,
@@ -152,6 +149,17 @@
 				6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */,
 			);
 			path = Tabline;
+			sourceTree = "<group>";
+		};
+		6888C7D92AC84E2800686608 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
+				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
+				689D9E2C29B50BF400345713 /* MainView.swift */,
+				68EF609029B2B6D20056E48D /* GridView.swift */,
+			);
+			path = Main;
 			sourceTree = "<group>";
 		};
 		689ECE5D2AC4FE9F008D6A02 /* Cmdlines */ = {

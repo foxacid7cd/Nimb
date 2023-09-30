@@ -72,20 +72,6 @@ public final class GridView: NSView {
       var cursorDrawRun: CursorDrawRun?
 
       struct CursorDrawRun {
-        init(
-          frame: CGRect,
-          highlightID: Highlight.ID,
-          parentOrigin: CGPoint,
-          parentDrawRun: DrawRun,
-          parentHighlightID: Highlight.ID
-        ) {
-          self.frame = frame
-          self.highlightID = highlightID
-          self.parentOrigin = parentOrigin
-          self.parentDrawRun = parentDrawRun
-          self.parentHighlightID = parentHighlightID
-        }
-
         var frame: CGRect
         var highlightID: Highlight.ID
         var parentOrigin: CGPoint
@@ -358,7 +344,7 @@ public final class GridView: NSView {
     )
 
     Task {
-      await store.instance.report(mouseEvent: mouseEvent)
+      await store.report(mouseEvent: mouseEvent)
     }
   }
 }

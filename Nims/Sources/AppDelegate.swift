@@ -106,14 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           return
         }
 
-        await self.store!.instance.report(keyPress: keyPress)
-
-        if
-          self.msgShowsWindowController!.window!.isVisible,
-          !self.store!.hasModalMsgShows
-        {
-          self.msgShowsWindowController!.window!.setIsVisible(false)
-        }
+        await self.store!.report(keyPress: keyPress)
       }
 
       return nil

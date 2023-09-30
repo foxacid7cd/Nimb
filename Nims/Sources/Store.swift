@@ -24,6 +24,10 @@ final class Store {
           self.resetCursorBlinkingTask()
         }
 
+        if instanceStateUpdates.isMsgShowsUpdated, !self.state.msgShows.isEmpty {
+          self.state.isMsgShowsDismissed = false
+        }
+
         stateUpdatesObserver(.init(instanceStateUpdates: instanceStateUpdates))
       }
     }
@@ -41,6 +45,20 @@ final class Store {
   func set(font: NimsFont) {
     state.font = font
     stateUpdatesObserver(.init(isFontUpdated: true))
+  }
+
+  func report(keyPress: KeyPress) async {
+    state.isMsgShowsDismissed = true
+    stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+
+    await instance.report(keyPress: keyPress)
+  }
+
+  func report(mouseEvent: MouseEvent) async {
+    state.isMsgShowsDismissed = true
+    stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+
+    await instance.report(mouseEvent: mouseEvent)
   }
 
   subscript<Value>(dynamicMember keyPath: KeyPath<State, Value>) -> Value {
