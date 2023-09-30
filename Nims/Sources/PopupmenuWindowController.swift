@@ -10,13 +10,6 @@ protocol GridWindowFrameTransformer: AnyObject {
 }
 
 final class PopupmenuWindowController: NSWindowController {
-  private let store: Store
-  private let mainWindow: NSWindow
-  private let cmdlinesWindow: NSWindow
-  private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
-  private let viewController: PopupmenuViewController
-  private var task: Task<Void, Never>?
-
   init(
     store: Store,
     mainWindow: NSWindow,
@@ -44,7 +37,7 @@ final class PopupmenuWindowController: NSWindowController {
     updateWindow()
 
     task = Task { [weak self] in
-      for await updates in store.stateUpdatesStream() {
+      for await updates in store.stateUpdatesStream {
         guard let self, !Task.isCancelled else {
           break
         }
@@ -67,6 +60,13 @@ final class PopupmenuWindowController: NSWindowController {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  private let store: Store
+  private let mainWindow: NSWindow
+  private let cmdlinesWindow: NSWindow
+  private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
+  private let viewController: PopupmenuViewController
+  private var task: Task<Void, Never>?
 
   private func updateWindow() {
     if let popupmenu = store.popupmenu {
@@ -125,18 +125,6 @@ final class PopupmenuWindowController: NSWindowController {
 }
 
 private final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
-  func reloadData() {
-    tableView.reloadData()
-  }
-
-  func scrollTo(itemAtIndex index: Int) {
-    tableView.scrollRowToVisible(index)
-  }
-
-  private let store: Store
-  private let scrollView = NSScrollView()
-  private let tableView = NSTableView()
-
   init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -145,6 +133,14 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  func reloadData() {
+    tableView.reloadData()
+  }
+
+  func scrollTo(itemAtIndex index: Int) {
+    tableView.scrollRowToVisible(index)
   }
 
   override func loadView() {
@@ -204,17 +200,13 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
 
     return false
   }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
+  private let tableView = NSTableView()
 }
 
 private final class PopupmenuItemView: NSView {
-  private let textField = NSTextField(labelWithString: "")
-  private let secondTextField = NSTextField(labelWithString: "")
-  private var isSelected = false
-  private var accentColor = NSColor.white
-  private var darkerAccentColor = NSColor.white
-
-  static let ReuseIdentifier = NSUserInterfaceItemIdentifier(.init(describing: PopupmenuItemView.self))
-
   init() {
     super.init(frame: .zero)
 
@@ -242,6 +234,8 @@ private final class PopupmenuItemView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  static let ReuseIdentifier = NSUserInterfaceItemIdentifier(.init(describing: PopupmenuItemView.self))
 
   override func draw(_ dirtyRect: NSRect) {
     let graphicsContext = NSGraphicsContext.current!
@@ -290,4 +284,10 @@ private final class PopupmenuItemView: NSView {
       .font: font.nsFont(isItalic: true),
     ])
   }
+
+  private let textField = NSTextField(labelWithString: "")
+  private let secondTextField = NSTextField(labelWithString: "")
+  private var isSelected = false
+  private var accentColor = NSColor.white
+  private var darkerAccentColor = NSColor.white
 }

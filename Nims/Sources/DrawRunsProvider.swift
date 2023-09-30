@@ -30,6 +30,9 @@ public final class DrawRunsProvider {
     return drawRun
   }
 
+  private var drawRuns = TreeDictionary<Int, DrawRun>()
+  private var deque = Deque<Int>()
+
   private func makeDrawRun(with parameters: DrawRunParameters) -> DrawRun {
     let size = parameters.integerSize * parameters.font.cellSize
 
@@ -174,23 +177,20 @@ public final class DrawRunsProvider {
       underlineLineDashLengths: underlineLineDashLengths
     )
   }
-
-  private var drawRuns = TreeDictionary<Int, DrawRun>()
-  private var deque = Deque<Int>()
 }
 
 public struct DrawRunParameters: Sendable, Hashable {
+  @MainActor
+  public var nsFont: NSFont {
+    font.nsFont(isBold: isBold, isItalic: isItalic)
+  }
+
   var integerSize: IntegerSize
   var text: String
   var font: NimsFont
   var isItalic: Bool
   var isBold: Bool
   var decorations: Highlight.Decorations
-
-  @MainActor
-  public var nsFont: NSFont {
-    font.nsFont(isBold: isBold, isItalic: isItalic)
-  }
 }
 
 public struct DrawRun {

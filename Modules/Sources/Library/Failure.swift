@@ -3,11 +3,6 @@
 import CustomDump
 
 public struct Failure: Error, Sendable {
-  public var message: Message
-  public var fileID: StaticString
-  public var function: StaticString
-  public var line: Int
-
   public init(_ message: Message, fileID: StaticString = #fileID, function: StaticString = #function, line: Int = #line) {
     self.message = message
     self.fileID = fileID
@@ -18,6 +13,11 @@ public struct Failure: Error, Sendable {
   public struct Message: Hashable, Sendable {
     var rawValue: String
   }
+
+  public var message: Message
+  public var fileID: StaticString
+  public var function: StaticString
+  public var line: Int
 }
 
 extension Failure.Message: ExpressibleByStringInterpolation {
@@ -31,8 +31,6 @@ extension Failure.Message: ExpressibleByStringInterpolation {
   }
 
   public struct StringInterpolation: StringInterpolationProtocol {
-    var messageComponents: [String]
-
     public init(literalCapacity: Int, interpolationCount: Int) {
       messageComponents = []
     }
@@ -47,5 +45,7 @@ extension Failure.Message: ExpressibleByStringInterpolation {
 
       messageComponents.append(description)
     }
+
+    var messageComponents: [String]
   }
 }

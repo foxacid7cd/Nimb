@@ -4,9 +4,6 @@ import Foundation
 import MessagePack
 
 struct ProcessChannel: Channel {
-  private let standardOutput = Pipe()
-  private let standardInput = Pipe()
-
   init(_ process: Foundation.Process) {
     process.standardOutput = standardOutput
     process.standardInput = standardInput
@@ -20,4 +17,7 @@ struct ProcessChannel: Channel {
     try standardInput.fileHandleForWriting
       .write(contentsOf: data)
   }
+
+  private let standardOutput = Pipe()
+  private let standardInput = Pipe()
 }

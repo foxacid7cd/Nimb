@@ -1,18 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 public struct PublicInitMacro: MemberMacro {
-  enum Error: String, Swift.Error, DiagnosticMessage {
-    var diagnosticID: MessageID { .init(domain: "PublicInitMacro", id: rawValue) }
-    var severity: DiagnosticSeverity { .error }
-    var message: String {
-      switch self {
-      case .notAStruct: "@PublicInit can only be applied to structs"
-      }
-    }
-
-    case notAStruct
-  }
-
   public static func expansion(
     of node: AttributeSyntax,
     providingMembersOf declaration: some DeclGroupSyntax,
@@ -35,6 +23,18 @@ public struct PublicInitMacro: MemberMacro {
 
     return [publicInit]
   }
+
+  enum Error: String, Swift.Error, DiagnosticMessage {
+    case notAStruct
+
+    var diagnosticID: MessageID { .init(domain: "PublicInitMacro", id: rawValue) }
+    var severity: DiagnosticSeverity { .error }
+    var message: String {
+      switch self {
+      case .notAStruct: "@PublicInit can only be applied to structs"
+      }
+    }
+  }
 }
 
 extension VariableDeclSyntax {
@@ -51,8 +51,8 @@ extension VariableDeclSyntax {
     case let .accessors(accessors):
       for accessor in accessors {
         switch accessor.accessorSpecifier.tokenKind {
-        case .keyword(.willSet),
-             .keyword(.didSet):
+        case .keyword(.didSet),
+             .keyword(.willSet):
           // Observers can occur on a stored property.
           break
 

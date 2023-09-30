@@ -4,10 +4,6 @@ import AppKit
 import TinyConstraints
 
 final class CmdlinesViewController: NSViewController {
-  private let store: Store
-  private let scrollView = NSScrollView()
-  private let contentView = NSStackView(views: [])
-
   init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -84,4 +80,8 @@ final class CmdlinesViewController: NSViewController {
 
     self.view = view
   }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
+  private let contentView = NSStackView(views: [])
 }

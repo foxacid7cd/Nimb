@@ -5,14 +5,6 @@ import Neovim
 import TinyConstraints
 
 final class TablineView: NSView {
-  override var intrinsicContentSize: NSSize {
-    .init(width: NSView.noIntrinsicMetric, height: store.font.cellHeight + 4)
-  }
-
-  private let store: Store
-  private let buffersStackView = NSStackView(views: [])
-  private var task: Task<Void, Never>?
-
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -26,7 +18,7 @@ final class TablineView: NSView {
     buffersStackView.bottom(to: self)
 
     task = Task {
-      for await stateUpdates in store.stateUpdatesStream() {
+      for await stateUpdates in store.stateUpdatesStream {
         guard !Task.isCancelled else {
           return
         }
@@ -50,6 +42,14 @@ final class TablineView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  override var intrinsicContentSize: NSSize {
+    .init(width: NSView.noIntrinsicMetric, height: store.font.cellHeight + 4)
+  }
+
+  private let store: Store
+  private let buffersStackView = NSStackView(views: [])
+  private var task: Task<Void, Never>?
 
   private func reloadData() {
     buffersStackView.arrangedSubviews

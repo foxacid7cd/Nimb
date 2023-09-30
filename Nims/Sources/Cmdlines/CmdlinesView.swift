@@ -4,17 +4,6 @@ import AppKit
 import Neovim
 
 final class CmdlineView: NSView {
-  private let store: Store
-
-  private let promptTextField = NSTextField(labelWithString: "")
-  private let firstCharacterView: CmdlineFirstCharacterView
-  private let contentTextView: CmdlineTextView
-
-  private var promptToContentConstraint: NSLayoutConstraint?
-  private var firstCharacterToContentConstraint: NSLayoutConstraint?
-  private var contentToTopConstraint: NSLayoutConstraint?
-  private var contentToLeadingConstraint: NSLayoutConstraint?
-
   init(store: Store) {
     self.store = store
     contentTextView = .init(store: store)
@@ -104,6 +93,17 @@ final class CmdlineView: NSView {
     contentTextView.render()
   }
 
+  private let store: Store
+
+  private let promptTextField = NSTextField(labelWithString: "")
+  private let firstCharacterView: CmdlineFirstCharacterView
+  private let contentTextView: CmdlineTextView
+
+  private var promptToContentConstraint: NSLayoutConstraint?
+  private var firstCharacterToContentConstraint: NSLayoutConstraint?
+  private var contentToTopConstraint: NSLayoutConstraint?
+  private var contentToLeadingConstraint: NSLayoutConstraint?
+
   private func attributedString(forContentPart contentPart: Cmdline.ContentPart) -> NSAttributedString {
     .init(
       string: contentPart.text,
@@ -116,7 +116,29 @@ final class CmdlineView: NSView {
 }
 
 private final class CmdlineFirstCharacterView: NSView {
+  init(store: Store) {
+    self.store = store
+    super.init(frame: .zero)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   var firstCharacter = ""
+
+  override var frame: NSRect {
+    didSet {
+      if frame.size != oldValue.size {
+        render()
+      }
+    }
+  }
+
+  override var firstBaselineOffsetFromTop: CGFloat {
+    store.font.nsFont().ascender + ctFrameYOffset
+  }
 
   func render() {
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
@@ -156,29 +178,6 @@ private final class CmdlineFirstCharacterView: NSView {
     backgroundColor = .init(hueSource: firstCharacter, saturation: 0.95, brightness: 0.8, alpha: 0.6)
   }
 
-  override var frame: NSRect {
-    didSet {
-      if frame.size != oldValue.size {
-        render()
-      }
-    }
-  }
-
-  private let store: Store
-  private var ctFrame: CTFrame?
-  private var backgroundColor: NSColor?
-  private var ctFrameYOffset: Double = 0
-
-  init(store: Store) {
-    self.store = store
-    super.init(frame: .zero)
-  }
-
-  @available(*, unavailable)
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
   override func draw(_: NSRect) {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
@@ -200,19 +199,13 @@ private final class CmdlineFirstCharacterView: NSView {
     }
   }
 
-  override var firstBaselineOffsetFromTop: CGFloat {
-    store.font.nsFont().ascender + ctFrameYOffset
-  }
+  private let store: Store
+  private var ctFrame: CTFrame?
+  private var backgroundColor: NSColor?
+  private var ctFrameYOffset: Double = 0
 }
 
 private final class CmdlineTextView: NSView {
-  var blockLines = [[Cmdline.ContentPart]]()
-  var cmdline: Cmdline?
-
-  private let store: Store
-  private var blockLineCTLines = [CTLine]()
-  private var cmdlineCTLines = [CTLine]()
-
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -221,6 +214,30 @@ private final class CmdlineTextView: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  var blockLines = [[Cmdline.ContentPart]]()
+  var cmdline: Cmdline?
+
+  override var intrinsicContentSize: NSSize {
+    let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
+
+    return .init(
+      width: frame.width,
+      height: store.font.cellHeight * Double(linesCount)
+    )
+  }
+
+  override var frame: NSRect {
+    didSet {
+      if oldValue.width != frame.width {
+        render()
+      }
+    }
+  }
+
+  override var firstBaselineOffsetFromTop: CGFloat {
+    store.font.nsFont().ascender
   }
 
   func render() {
@@ -383,24 +400,7 @@ private final class CmdlineTextView: NSView {
     cgContext.flush()
   }
 
-  override var intrinsicContentSize: NSSize {
-    let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
-
-    return .init(
-      width: frame.width,
-      height: store.font.cellHeight * Double(linesCount)
-    )
-  }
-
-  override var frame: NSRect {
-    didSet {
-      if oldValue.width != frame.width {
-        render()
-      }
-    }
-  }
-
-  override var firstBaselineOffsetFromTop: CGFloat {
-    store.font.nsFont().ascender
-  }
+  private let store: Store
+  private var blockLineCTLines = [CTLine]()
+  private var cmdlineCTLines = [CTLine]()
 }

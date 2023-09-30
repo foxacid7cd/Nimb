@@ -5,23 +5,18 @@ import MessagePack
 
 @PublicInit
 public struct Popupmenu: Sendable, Hashable {
-  public var items: [PopupmenuItem]
-  public var selectedItemIndex: Int?
-  public var anchor: Anchor
-
   public enum Anchor: Sendable, Hashable {
     case grid(id: Grid.ID, origin: IntegerPoint)
     case cmdline(location: Int)
   }
+
+  public var items: [PopupmenuItem]
+  public var selectedItemIndex: Int?
+  public var anchor: Anchor
 }
 
 @PublicInit
 public struct PopupmenuItem: Sendable, Hashable {
-  public var word: String
-  public var kind: String
-  public var menu: String
-  public var info: String
-
   init?(rawItem: Value) {
     guard
       case let .array(rawItem) = rawItem,
@@ -36,4 +31,9 @@ public struct PopupmenuItem: Sendable, Hashable {
 
     self.init(word: word, kind: kind, menu: menu, info: info)
   }
+
+  public var word: String
+  public var kind: String
+  public var menu: String
+  public var info: String
 }

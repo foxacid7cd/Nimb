@@ -5,10 +5,6 @@ import Library
 import Neovim
 
 public final class GridView: NSView {
-  private let store: Store
-  private let gridID: Grid.ID
-  private let drawRunsProvider = DrawRunsProvider()
-
   init(store: Store, gridID: Grid.ID) {
     self.store = store
     self.gridID = gridID
@@ -18,19 +14,6 @@ public final class GridView: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
-  var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
-
-  var ordinal: Double {
-    store.grids[gridID]?.ordinal ?? -1
-  }
-
-  var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -bounds.size.height)
   }
 
   override public func draw(_: NSRect) {
@@ -276,10 +259,6 @@ public final class GridView: NSView {
     report(event, of: .mouse(button: .middle, action: .release))
   }
 
-  private var isScrollingHorizontal: Bool?
-  private var xScrollingAccumulator: Double = 0
-  private var yScrollingAccumulator: Double = 0
-
   override public func scrollWheel(with event: NSEvent) {
     let cellSize = store.font.cellSize
 
@@ -329,6 +308,27 @@ public final class GridView: NSView {
       }
     }
   }
+
+  var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
+  var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
+
+  var ordinal: Double {
+    store.grids[gridID]?.ordinal ?? -1
+  }
+
+  var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -bounds.size.height)
+  }
+
+  private let store: Store
+  private let gridID: Grid.ID
+  private let drawRunsProvider = DrawRunsProvider()
+
+  private var isScrollingHorizontal: Bool?
+  private var xScrollingAccumulator: Double = 0
+  private var yScrollingAccumulator: Double = 0
 
   private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
     let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)

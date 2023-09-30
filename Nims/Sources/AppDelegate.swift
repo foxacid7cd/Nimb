@@ -9,12 +9,6 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-  private var store: Store?
-  private var mainWindowController: MainWindowController?
-  private var msgShowsWindowController: MsgShowsWindowController?
-  private var cmdlinesWindowController: CmdlinesWindowController?
-  private var popupmenuWindowController: PopupmenuWindowController?
-
   func applicationDidFinishLaunching(_: Notification) {
     setupStore()
     setupMainMenu()
@@ -22,6 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     setupSecondaryWindowControllers()
     setupKeyDownLocalMonitor()
   }
+
+  private var store: Store?
+  private var mainWindowController: MainWindowController?
+  private var msgShowsWindowController: MsgShowsWindowController?
+  private var cmdlinesWindowController: CmdlinesWindowController?
+  private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() {
     let instance = Instance(initialOuterGridSize: .init(columnsCount: 80, rowsCount: 24))
@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     Task {
-      for await updates in store!.stateUpdatesStream() {
+      for await updates in store!.stateUpdatesStream {
         if updates.isTitleUpdated {
           mainWindowController?.windowTitle = store!.title ?? ""
         }

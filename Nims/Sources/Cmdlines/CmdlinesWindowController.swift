@@ -7,11 +7,6 @@ import SwiftUI
 import TinyConstraints
 
 final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
-  private let store: Store
-  private let parentWindow: NSWindow
-  private let viewController: CmdlinesViewController
-  private var task: Task<Void, Never>?
-
   init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
@@ -33,7 +28,7 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
     window.delegate = self
 
     task = Task { [weak self] in
-      for await stateUpdates in store.stateUpdatesStream() {
+      for await stateUpdates in store.stateUpdatesStream {
         guard let self, !Task.isCancelled else {
           break
         }
@@ -56,22 +51,6 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private func updateWindow() {
-    guard let window else {
-      return
-    }
-
-    viewController.reloadData()
-
-    if store.cmdlines.dictionary.isEmpty {
-      parentWindow.removeChildWindow(window)
-      window.setIsVisible(false)
-
-    } else {
-      parentWindow.addChildWindow(window, ordered: .above)
-    }
-  }
-
   func point(forCharacterLocation location: Int) -> CGPoint? {
     viewController.point(forCharacterLocation: location)
       .map {
@@ -87,5 +66,26 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
       x: parentWindow.frame.origin.x + (parentWindow.frame.width - window!.frame.width) / 2,
       y: parentWindow.frame.origin.y + parentWindow.frame.height / 1.5
     ))
+  }
+
+  private let store: Store
+  private let parentWindow: NSWindow
+  private let viewController: CmdlinesViewController
+  private var task: Task<Void, Never>?
+
+  private func updateWindow() {
+    guard let window else {
+      return
+    }
+
+    viewController.reloadData()
+
+    if store.cmdlines.dictionary.isEmpty {
+      parentWindow.removeChildWindow(window)
+      window.setIsVisible(false)
+
+    } else {
+      parentWindow.addChildWindow(window, ordered: .above)
+    }
   }
 }

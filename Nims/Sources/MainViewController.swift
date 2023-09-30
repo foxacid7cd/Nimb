@@ -5,16 +5,6 @@ import Library
 import Neovim
 
 final class MainViewController: NSViewController {
-  private let store: Store
-  private let initialOuterGridSize: IntegerSize
-  private let tablineView: TablineView
-  private let mainContainerView = NSView()
-  private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  private let mainView: MainView
-  private let mainOverlayView = NSVisualEffectView()
-  private var reportedOuterGridSize: IntegerSize?
-  private var task: Task<Void, Never>?
-
   init(store: Store, initialOuterGridSize: IntegerSize) {
     self.store = store
     self.initialOuterGridSize = initialOuterGridSize
@@ -67,7 +57,7 @@ final class MainViewController: NSViewController {
     super.viewDidLoad()
 
     task = .init { [weak self, store] in
-      for await updates in store.stateUpdatesStream() {
+      for await updates in store.stateUpdatesStream {
         guard let self, !Task.isCancelled else {
           return
         }
@@ -106,6 +96,16 @@ final class MainViewController: NSViewController {
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     mainView.point(forGridID: gridID, gridPoint: gridPoint)
   }
+
+  private let store: Store
+  private let initialOuterGridSize: IntegerSize
+  private let tablineView: TablineView
+  private let mainContainerView = NSView()
+  private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  private let mainView: MainView
+  private let mainOverlayView = NSVisualEffectView()
+  private var reportedOuterGridSize: IntegerSize?
+  private var task: Task<Void, Never>?
 
   private func updateMinMainContainerViewSize() {
     let size = initialOuterGridSize * store.font.cellSize

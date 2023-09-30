@@ -5,8 +5,22 @@ import Library
 import Neovim
 
 final class MainWindowController: NSWindowController {
-  private let store: Store
-  private let viewController: MainViewController
+  init(store: Store, viewController: MainViewController) {
+    self.store = store
+    self.viewController = viewController
+
+    let window = NimsNSWindow(contentViewController: viewController)
+    window.styleMask = [.titled, .miniaturizable, .resizable]
+
+    super.init(window: window)
+
+    window.delegate = self
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
 
   var windowTitle = "" {
     didSet {
@@ -25,23 +39,6 @@ final class MainWindowController: NSWindowController {
     }
   }
 
-  init(store: Store, viewController: MainViewController) {
-    self.store = store
-    self.viewController = viewController
-
-    let window = NimsNSWindow(contentViewController: viewController)
-    window.styleMask = [.titled, .miniaturizable, .resizable]
-
-    super.init(window: window)
-
-    window.delegate = self
-  }
-
-  @available(*, unavailable)
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
   override func windowDidLoad() {
     super.windowDidLoad()
 
@@ -57,6 +54,9 @@ final class MainWindowController: NSWindowController {
         ))
       }
   }
+
+  private let store: Store
+  private let viewController: MainViewController
 }
 
 extension MainWindowController: NSWindowDelegate {

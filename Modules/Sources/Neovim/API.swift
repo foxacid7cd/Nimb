@@ -23,8 +23,6 @@ extension API: AsyncSequence {
       self.rpcIterator = rpcIterator
     }
 
-    private var rpcIterator: RPC<Target>.AsyncIterator
-
     public mutating func next() async throws -> [UIEvent]? {
       var accumulator = [UIEvent]()
 
@@ -51,5 +49,7 @@ extension API: AsyncSequence {
         }
       }
     }
+
+    private var rpcIterator: RPC<Target>.AsyncIterator
   }
 }

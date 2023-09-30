@@ -4,17 +4,6 @@ import AppKit
 import Neovim
 
 final class TablineItemView: NSView {
-  var text = ""
-  var isSelected = false
-  var isFirst = false
-  var mouseDownObserver: (() -> Void)?
-
-  private let store: Store
-  private let backgroundImageView = NSImageView()
-  private let textField = NSTextField(labelWithString: "")
-  private var trackingArea: NSTrackingArea?
-  private var isMouseInside = false
-
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -41,6 +30,11 @@ final class TablineItemView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  var text = ""
+  var isSelected = false
+  var isFirst = false
+  var mouseDownObserver: (() -> Void)?
 
   override func layout() {
     super.layout()
@@ -80,6 +74,12 @@ final class TablineItemView: NSView {
       ]
     )
   }
+
+  private let store: Store
+  private let backgroundImageView = NSImageView()
+  private let textField = NSTextField(labelWithString: "")
+  private var trackingArea: NSTrackingArea?
+  private var isMouseInside = false
 
   private func renderBackgroundImage() {
     backgroundImageView.image = makeBackgroundImage(

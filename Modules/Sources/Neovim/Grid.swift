@@ -5,23 +5,15 @@ import Library
 
 @PublicInit
 public struct Grid: Sendable, Identifiable {
-  public var id: Int
-  public var cells: TwoDimensionalArray<Cell>
-  public var rowLayouts: [RowLayout]
-  public var associatedWindow: AssociatedWindow?
-  public var isHidden: Bool
-
-  public static let OuterID = 1
-
   @PublicInit
   public struct Cell: Sendable {
-    public var text: String
-    public var highlightID: Highlight.ID
-
     public static let `default` = Self(
       text: " ",
       highlightID: .zero
     )
+
+    public var text: String
+    public var highlightID: Highlight.ID
   }
 
   public enum AssociatedWindow: Sendable {
@@ -32,9 +24,6 @@ public struct Grid: Sendable, Identifiable {
 
   @PublicInit
   public struct RowLayout: Sendable {
-    public var parts: [RowPart]
-    public var cellRanges: [(location: Int, length: Int)]
-
     public init(rowCells: [Cell]) {
       let chunks = rowCells
         .chunked { $0.highlightID == $1.highlightID }
@@ -87,6 +76,9 @@ public struct Grid: Sendable, Identifiable {
         cellRanges: cellRanges
       )
     }
+
+    public var parts: [RowPart]
+    public var cellRanges: [(location: Int, length: Int)]
   }
 
   @PublicInit
@@ -95,6 +87,14 @@ public struct Grid: Sendable, Identifiable {
     public var text: String
     public var range: (location: Int, length: Int)
   }
+
+  public static let OuterID = 1
+
+  public var id: Int
+  public var cells: TwoDimensionalArray<Cell>
+  public var rowLayouts: [RowLayout]
+  public var associatedWindow: AssociatedWindow?
+  public var isHidden: Bool
 
   public var ordinal: Double {
     if id == 0 {

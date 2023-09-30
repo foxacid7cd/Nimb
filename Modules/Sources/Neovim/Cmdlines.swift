@@ -11,6 +11,12 @@ public struct Cmdlines: Sendable {
 
 @PublicInit
 public struct Cmdline: Identifiable, Sendable, Equatable, Hashable {
+  @PublicInit
+  public struct ContentPart: Sendable, Equatable, Hashable {
+    public var highlightID: Highlight.ID
+    public var text: String
+  }
+
   public var contentParts: [ContentPart]
   public var cursorPosition: Int
   public var firstCharacter: String
@@ -19,12 +25,6 @@ public struct Cmdline: Identifiable, Sendable, Equatable, Hashable {
   public var level: Int
   public var specialCharacter: String
   public var shiftAfterSpecialCharacter: Bool
-
-  @PublicInit
-  public struct ContentPart: Sendable, Equatable, Hashable {
-    public var highlightID: Highlight.ID
-    public var text: String
-  }
 
   public var id: Int {
     level

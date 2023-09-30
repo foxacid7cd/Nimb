@@ -5,14 +5,6 @@ import Library
 import Neovim
 
 class MainView: NSView {
-  override var intrinsicContentSize: NSSize {
-    let outerGridSize = store.outerGrid?.cells.size
-    return (outerGridSize ?? .init()) * store.font.cellSize
-  }
-
-  private var store: Store
-  private var task: Task<Void, Never>?
-
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
@@ -20,7 +12,7 @@ class MainView: NSView {
     render(nil)
 
     task = Task {
-      for await stateUpdates in store.stateUpdatesStream() {
+      for await stateUpdates in store.stateUpdatesStream {
         guard !Task.isCancelled else {
           return
         }
@@ -34,8 +26,6 @@ class MainView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-
-  private var gridViews = IntKeyedDictionary<GridView>()
 
   public func render(_ stateUpdates: Store.Updates?) {
     guard let outerGridIntegerSize = store.outerGrid?.cells.size else {
@@ -299,4 +289,14 @@ class MainView: NSView {
       .applying(gridView.upsideDownTransform)
       .applying(.init(translationX: gridView.frame.origin.x, y: gridView.frame.origin.y))
   }
+
+  override var intrinsicContentSize: NSSize {
+    let outerGridSize = store.outerGrid?.cells.size
+    return (outerGridSize ?? .init()) * store.font.cellSize
+  }
+
+  private var store: Store
+  private var task: Task<Void, Never>?
+
+  private var gridViews = IntKeyedDictionary<GridView>()
 }

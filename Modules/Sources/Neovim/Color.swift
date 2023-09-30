@@ -6,14 +6,10 @@ import SwiftUI
 
 @PublicInit
 public struct Color: Sendable, Hashable {
+  public static let black = Color(rgb: 0)
+
   public var rgb: Int
   public var alpha: Double = 1
-
-  public func with(alpha: Double) -> Color {
-    var copy = self
-    copy.alpha = alpha
-    return copy
-  }
 
   public var swiftUI: SwiftUI.Color {
     .init(
@@ -34,7 +30,11 @@ public struct Color: Sendable, Hashable {
     )
   }
 
-  public static let black = Color(rgb: 0)
+  public func with(alpha: Double) -> Color {
+    var copy = self
+    copy.alpha = alpha
+    return copy
+  }
 
   private var red: Double {
     Double((rgb >> 16) & 0xFF) / 255

@@ -4,10 +4,6 @@ import Library
 
 @PublicInit
 public struct MouseEvent: Equatable, Sendable {
-  public var content: Content
-  public var gridID: Grid.ID
-  public var point: IntegerPoint
-
   public enum Content: Equatable, Sendable {
     case mouse(button: MouseButton, action: MouseAction)
     case scrollWheel(direction: ScrollDirection)
@@ -31,4 +27,8 @@ public struct MouseEvent: Equatable, Sendable {
       case right
     }
   }
+
+  public var content: Content
+  public var gridID: Grid.ID
+  public var point: IntegerPoint
 }

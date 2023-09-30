@@ -13,11 +13,6 @@ public struct RPC<Target: Channel>: Sendable {
     messageBatches = .init(target.dataBatches)
   }
 
-  private let target: Target
-  private let packer = Packer()
-  private let store = Store()
-  private let messageBatches: AsyncMessageBatches<Target.S>
-
   @discardableResult
   public func call(
     method: String,
@@ -34,7 +29,8 @@ public struct RPC<Target: Channel>: Sendable {
             },
             method: method,
             parameters: parameters
-          ))
+          )
+        )
       }
     }
   }
@@ -55,6 +51,11 @@ public struct RPC<Target: Channel>: Sendable {
     )
     try await target.write(data)
   }
+
+  private let target: Target
+  private let packer = Packer()
+  private let store = Store()
+  private let messageBatches: AsyncMessageBatches<Target.S>
 }
 
 extension RPC: AsyncSequence {
@@ -72,9 +73,6 @@ extension RPC: AsyncSequence {
       self.store = store
       self.messageBatchesIterator = messageBatchesIterator
     }
-
-    private let store: Store
-    private var messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
 
     public mutating func next() async throws -> [Message.Notification]? {
       var accumulator = [Message.Notification]()
@@ -107,6 +105,9 @@ extension RPC: AsyncSequence {
         }
       }
     }
+
+    private let store: Store
+    private var messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
   }
 }
 

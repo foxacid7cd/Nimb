@@ -7,11 +7,6 @@ import SwiftUI
 import TinyConstraints
 
 final class MsgShowsWindowController: NSWindowController {
-  private let store: Store
-  private let parentWindow: NSWindow
-  private let viewController: MsgShowsViewController
-  private var task: Task<Void, Never>?
-
   init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
@@ -33,7 +28,7 @@ final class MsgShowsWindowController: NSWindowController {
     window.delegate = self
 
     task = Task { [weak self] in
-      for await stateUpdates in store.stateUpdatesStream() {
+      for await stateUpdates in store.stateUpdatesStream {
         guard let self, !Task.isCancelled else {
           break
         }
@@ -53,6 +48,11 @@ final class MsgShowsWindowController: NSWindowController {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  private let store: Store
+  private let parentWindow: NSWindow
+  private let viewController: MsgShowsViewController
+  private var task: Task<Void, Never>?
 
   private func updateWindow() {
     viewController.render()
@@ -82,10 +82,6 @@ extension MsgShowsWindowController: NSWindowDelegate {
 }
 
 final class MsgShowsViewController: NSViewController {
-  private let store: Store
-  private let scrollView = NSScrollView()
-  private let contentView = NSStackView(views: [])
-
   init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -153,23 +149,13 @@ final class MsgShowsViewController: NSViewController {
       }
     }
   }
+
+  private let store: Store
+  private let scrollView = NSScrollView()
+  private let contentView = NSStackView(views: [])
 }
 
 private final class MsgShowView: NSView {
-  var msgShow: MsgShow?
-  var preferredMaxWidth: Double = 0
-
-  override var intrinsicContentSize: NSSize {
-    .init(
-      width: boundingSize.width + 20,
-      height: boundingSize.height + 20
-    )
-  }
-
-  private let store: Store
-  private var boundingSize = CGSize()
-  private var ctFrame: CTFrame?
-
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -178,6 +164,16 @@ private final class MsgShowView: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  var msgShow: MsgShow?
+  var preferredMaxWidth: Double = 0
+
+  override var intrinsicContentSize: NSSize {
+    .init(
+      width: boundingSize.width + 20,
+      height: boundingSize.height + 20
+    )
   }
 
   override func layout() {
@@ -251,4 +247,8 @@ private final class MsgShowView: NSView {
 
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
   }
+
+  private let store: Store
+  private var boundingSize = CGSize()
+  private var ctFrame: CTFrame?
 }

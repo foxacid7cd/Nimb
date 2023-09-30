@@ -5,14 +5,12 @@ import Neovim
 
 @MainActor
 final class CursorBlinker {
-  private(set) var cursorBlinkingPhase = true
-  var observer: (@MainActor () -> Void)?
-
-  private var task: Task<Void, Never>?
-
   deinit {
     task?.cancel()
   }
+
+  private(set) var cursorBlinkingPhase = true
+  var observer: (@MainActor () -> Void)?
 
   func cursorUpdated(state: Neovim.State) {
     task?.cancel()
@@ -46,4 +44,6 @@ final class CursorBlinker {
       }
     }
   }
+
+  private var task: Task<Void, Never>?
 }

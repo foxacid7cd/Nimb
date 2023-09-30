@@ -5,11 +5,26 @@ import Library
 
 @PublicInit
 public struct NimsFont: Sendable, Hashable {
-  public var id: Int = 0
-
   @MainActor
   public init(_ appKit: NSFont) {
     self = FontBridge.shared.wrap(appKit)
+  }
+
+  public var id: Int = 0
+
+  @MainActor
+  public var cellWidth: Double {
+    unwrapped.cellWidth
+  }
+
+  @MainActor
+  public var cellHeight: Double {
+    unwrapped.cellHeight
+  }
+
+  @MainActor
+  public var cellSize: CGSize {
+    .init(width: cellWidth, height: cellHeight)
   }
 
   @MainActor
@@ -29,21 +44,6 @@ public struct NimsFont: Sendable, Hashable {
   }
 
   @MainActor
-  public var cellWidth: Double {
-    unwrapped.cellWidth
-  }
-
-  @MainActor
-  public var cellHeight: Double {
-    unwrapped.cellHeight
-  }
-
-  @MainActor
-  public var cellSize: CGSize {
-    .init(width: cellWidth, height: cellHeight)
-  }
-
-  @MainActor
   private var unwrapped: FontBridge.WrappedFont {
     FontBridge.shared.unwrap(self)
   }
@@ -51,7 +51,14 @@ public struct NimsFont: Sendable, Hashable {
 
 @MainActor
 final class FontBridge {
-  private var wrappedFonts = [WrappedFont]()
+  struct WrappedFont {
+    var regular: NSFont
+    var bold: NSFont
+    var italic: NSFont
+    var boldItalic: NSFont
+    var cellWidth: Double
+    var cellHeight: Double
+  }
 
   static let shared = FontBridge()
 
@@ -85,12 +92,5 @@ final class FontBridge {
     return wrappedFonts[font.id]
   }
 
-  struct WrappedFont {
-    var regular: NSFont
-    var bold: NSFont
-    var italic: NSFont
-    var boldItalic: NSFont
-    var cellWidth: Double
-    var cellHeight: Double
-  }
+  private var wrappedFonts = [WrappedFont]()
 }

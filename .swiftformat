@@ -37,10 +37,10 @@
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf
---markcategories true
+--markcategories false
 --markextensions never
 --marktypes never
---maxwidth 120
+--maxwidth 200
 --modifierorder 
 --nevertrailing 
 --nospaceoperators 
@@ -80,5 +80,4 @@
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---disable sortDeclarations,wrap
---enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
+--enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,organizeDeclarations,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases

@@ -11,6 +11,13 @@ public struct Window: Sendable, Identifiable {
 
 @PublicInit
 public struct FloatingWindow: Sendable, Identifiable {
+  public enum Anchor: String, Sendable {
+    case northWest = "NW"
+    case northEast = "NE"
+    case southWest = "SW"
+    case southEast = "SE"
+  }
+
   public var id: Window.ID
   public var anchor: Anchor
   public var anchorGridID: Grid.ID
@@ -18,13 +25,6 @@ public struct FloatingWindow: Sendable, Identifiable {
   public var anchorColumn: Double
   public var isFocusable: Bool
   public var zIndex: Int
-
-  public enum Anchor: String, Sendable {
-    case northWest = "NW"
-    case northEast = "NE"
-    case southWest = "SW"
-    case southEast = "SE"
-  }
 }
 
 @PublicInit

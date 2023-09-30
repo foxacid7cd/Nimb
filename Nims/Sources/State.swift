@@ -5,10 +5,10 @@ import Neovim
 
 @PublicInit
 struct State: Sendable {
-  var font: NimsFont = .init()
-
   @PublicInit
   struct Updates: Sendable {
     var isFontUpdated: Bool = false
   }
+
+  var font: NimsFont = .init()
 }

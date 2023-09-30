@@ -37,23 +37,6 @@ public enum Message: Sendable, Hashable {
 
   @PublicInit
   public struct Request: Sendable, Hashable {
-    public var id: Int
-    public var method: String
-    public var parameters: [Value]
-
-    public static var rawMessageType: Int {
-      0
-    }
-
-    func makeValue() -> Value {
-      .array([
-        .integer(Self.rawMessageType),
-        .integer(id),
-        .string(method),
-        .array(parameters),
-      ])
-    }
-
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 4,
@@ -71,22 +54,27 @@ public enum Message: Sendable, Hashable {
         parameters: parameters
       )
     }
+
+    public static var rawMessageType: Int {
+      0
+    }
+
+    public var id: Int
+    public var method: String
+    public var parameters: [Value]
+
+    func makeValue() -> Value {
+      .array([
+        .integer(Self.rawMessageType),
+        .integer(id),
+        .string(method),
+        .array(parameters),
+      ])
+    }
   }
 
   @PublicInit
   public struct Response: Sendable, Hashable {
-    public var id: Int
-    public var result: Result
-
-    public static var rawMessageType: Int {
-      1
-    }
-
-    public enum Result: Sendable, Hashable {
-      case success(Value)
-      case failure(Value)
-    }
-
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 4,
@@ -105,17 +93,22 @@ public enum Message: Sendable, Hashable {
 
       self.init(id: id, result: result)
     }
+
+    public enum Result: Sendable, Hashable {
+      case success(Value)
+      case failure(Value)
+    }
+
+    public static var rawMessageType: Int {
+      1
+    }
+
+    public var id: Int
+    public var result: Result
   }
 
   @PublicInit
   public struct Notification: Sendable, Hashable {
-    public var method: String
-    public var parameters: [Value]
-
-    public static var rawMessageType: Int {
-      2
-    }
-
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 3,
@@ -127,5 +120,12 @@ public enum Message: Sendable, Hashable {
 
       self.init(method: method, parameters: parameters)
     }
+
+    public static var rawMessageType: Int {
+      2
+    }
+
+    public var method: String
+    public var parameters: [Value]
   }
 }

@@ -4,10 +4,6 @@ import Library
 
 @PublicInit
 public struct MsgShow: Identifiable, Sendable, Hashable {
-  public var index: Int
-  public var kind: Kind
-  public var contentParts: [ContentPart]
-
   public enum Kind: String, Sendable {
     case empty = ""
     case confirm
@@ -29,6 +25,10 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
     public var highlightID: Highlight.ID
     public var text: String
   }
+
+  public var index: Int
+  public var kind: Kind
+  public var contentParts: [ContentPart]
 
   public var id: Int {
     index

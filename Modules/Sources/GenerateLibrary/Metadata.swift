@@ -133,9 +133,6 @@ public struct Metadata: Sendable {
       self.type = type
     }
 
-    public var name: String
-    public var type: ValueType
-
     public init?(_ value: Value, types: [Metadata.`Type`]) {
       guard
         let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
@@ -167,6 +164,9 @@ public struct Metadata: Sendable {
         )
       )
     }
+
+    public var name: String
+    public var type: ValueType
   }
 
   public struct UIEvent: Sendable {

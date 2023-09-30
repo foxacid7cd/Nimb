@@ -7,21 +7,12 @@ public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence, Se
     self.dataBatches = dataBatches
   }
 
-  private let dataBatches: DataBatches
-
   public typealias Element = [Message]
-
-  public func makeAsyncIterator() -> AsyncIterator {
-    .init(dataBatches.makeAsyncIterator())
-  }
 
   public struct AsyncIterator: AsyncIteratorProtocol {
     init(_ dataBatchesIterator: DataBatches.AsyncIterator) {
       self.dataBatchesIterator = dataBatchesIterator
     }
-
-    private let unpacker: Unpacker = .init()
-    private var dataBatchesIterator: DataBatches.AsyncIterator
 
     public mutating func next() async throws -> Element? {
       guard let data = try await dataBatchesIterator.next() else {
@@ -33,5 +24,14 @@ public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence, Se
       return try await unpacker.unpack(data)
         .map(Message.init(value:))
     }
+
+    private let unpacker: Unpacker = .init()
+    private var dataBatchesIterator: DataBatches.AsyncIterator
   }
+
+  public func makeAsyncIterator() -> AsyncIterator {
+    .init(dataBatches.makeAsyncIterator())
+  }
+
+  private let dataBatches: DataBatches
 }

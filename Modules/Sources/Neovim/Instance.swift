@@ -10,21 +10,6 @@ import MessagePack
 
 @MainActor
 public final class Instance: Sendable {
-  public private(set) var state = State()
-
-  public var result: Result<Void, Error> {
-    get async {
-      await task!.result
-    }
-  }
-
-  private let process = Foundation.Process()
-  private let api: API<ProcessChannel>
-  private var observers = [UUID: @MainActor (State.Updates) -> Void]()
-  private var reportMouseEventsTask: Task<Void, Never>?
-  private var task: Task<Void, Error>?
-  private let mouseEventsChannel = AsyncChannel<MouseEvent>()
-
   public init(initialOuterGridSize: IntegerSize) {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
@@ -103,6 +88,14 @@ public final class Instance: Sendable {
     }
   }
 
+  public private(set) var state = State()
+
+  public var result: Result<Void, Error> {
+    get async {
+      await task!.result
+    }
+  }
+
   public func stateUpdatesStream() -> AsyncStream<State.Updates> {
     .init { [weak self] continuation in
       let id = UUID()
@@ -156,4 +149,11 @@ public final class Instance: Sendable {
       col: gridFrame.origin.x
     )
   }
+
+  private let process = Foundation.Process()
+  private let api: API<ProcessChannel>
+  private var observers = [UUID: @MainActor (State.Updates) -> Void]()
+  private var reportMouseEventsTask: Task<Void, Never>?
+  private var task: Task<Void, Error>?
+  private let mouseEventsChannel = AsyncChannel<MouseEvent>()
 }

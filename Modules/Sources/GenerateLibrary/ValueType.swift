@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 public struct ValueType: Sendable {
-  public var rawValue: String
-  public var custom: Custom?
-
   public struct Custom: Sendable {
     public var signature: String
     public var valueEncoder: (prefix: String, suffix: String)
@@ -52,6 +49,9 @@ public struct ValueType: Sendable {
       }
     }
   }
+
+  public var rawValue: String
+  public var custom: Custom?
 
   public var swift: SwiftType {
     if let custom {

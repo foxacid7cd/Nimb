@@ -33,11 +33,6 @@ public struct State: Sendable {
     }
   }
 
-  public mutating func nextWindowZIndex() -> Int {
-    windowZIndexCounter += 1
-    return windowZIndexCounter
-  }
-
   public var currentCursorStyle: CursorStyle? {
     guard let modeInfo, let mode, mode.cursorStyleIndex < modeInfo.cursorStyles.count else {
       return nil
@@ -89,6 +84,11 @@ public struct State: Sendable {
         true
       }
     }
+  }
+
+  public mutating func nextWindowZIndex() -> Int {
+    windowZIndexCounter += 1
+    return windowZIndexCounter
   }
 }
 

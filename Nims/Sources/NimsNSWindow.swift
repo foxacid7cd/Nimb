@@ -4,11 +4,12 @@ import AppKit
 
 class NimsNSWindow: NSWindow {
   var _canBecomeKey = true
+  var _canBecomeMain = true
+
   override var canBecomeKey: Bool {
     _canBecomeKey
   }
 
-  var _canBecomeMain = true
   override var canBecomeMain: Bool {
     _canBecomeMain
   }
