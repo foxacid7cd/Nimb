@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() {
-    let instance = Instance(initialOuterGridSize: .init(columnsCount: 90, rowsCount: 28))
+    let instance = Instance(initialOuterGridSize: .init(columnsCount: 120, rowsCount: 40))
     store = Store(instance: instance) { [weak self] stateUpdates in
       guard let self else {
         return
@@ -77,13 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func showMainWindowController() {
-    let mainViewController = MainViewController(
-      store: store!,
-      initialOuterGridSize: .init(columnsCount: 90, rowsCount: 28)
-    )
-
-    mainWindowController = MainWindowController(store: store!, viewController: mainViewController)
-    mainWindowController!.showWindow(nil)
+    mainWindowController = MainWindowController(store: store!)
   }
 
   private func setupSecondaryWindowControllers() {

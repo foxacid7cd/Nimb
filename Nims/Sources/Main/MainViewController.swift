@@ -5,9 +5,9 @@ import Library
 import Neovim
 
 final class MainViewController: NSViewController {
-  init(store: Store, initialOuterGridSize: IntegerSize) {
+  init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
-    self.initialOuterGridSize = initialOuterGridSize
+    self.minOuterGridSize = minOuterGridSize
     tablineView = .init(store: store)
     mainView = .init(store: store)
     super.init(nibName: nil, bundle: nil)
@@ -34,6 +34,8 @@ final class MainViewController: NSViewController {
     mainView.centerXToSuperview()
     mainView.topToSuperview()
 
+    mainContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    mainContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
     mainContainerViewConstraints = (
       mainContainerView.width(0, relation: .equalOrGreater),
       mainContainerView.height(0, relation: .equalOrGreater)
@@ -56,7 +58,7 @@ final class MainViewController: NSViewController {
   }
 
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isFontUpdated {
+    if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
     }
 
@@ -90,8 +92,16 @@ final class MainViewController: NSViewController {
     mainView.point(forGridID: gridID, gridPoint: gridPoint)
   }
 
+  func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
+    let mainFrameSize = outerGridSize * store.font.cellSize
+    return .init(
+      width: mainFrameSize.width,
+      height: mainFrameSize.height + tablineView.intrinsicContentSize.height
+    )
+  }
+
   private let store: Store
-  private let initialOuterGridSize: IntegerSize
+  private let minOuterGridSize: IntegerSize
   private let tablineView: TablineView
   private let mainContainerView = NSView()
   private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
@@ -100,8 +110,7 @@ final class MainViewController: NSViewController {
   private var reportedOuterGridSize: IntegerSize?
 
   private func updateMinMainContainerViewSize() {
-    let outerGridSize = store.outerGrid?.cells.size ?? initialOuterGridSize
-    let size = outerGridSize * store.font.cellSize
+    let size = minOuterGridSize * store.font.cellSize
     mainContainerViewConstraints!.width.constant = size.width
     mainContainerViewConstraints!.height.constant = size.height
   }

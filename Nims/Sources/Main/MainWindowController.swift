@@ -5,9 +5,12 @@ import Library
 import Neovim
 
 final class MainWindowController: NSWindowController {
-  init(store: Store, viewController: MainViewController) {
+  init(store: Store) {
     self.store = store
-    self.viewController = viewController
+    viewController = MainViewController(
+      store: store,
+      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+    )
 
     let window = NimsNSWindow(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable, .resizable]
@@ -37,6 +40,13 @@ final class MainWindowController: NSWindowController {
     }
 
     viewController.render(stateUpdates)
+
+    if !isWindowInitiallyShown, stateUpdates.isOuterGridLayoutUpdated, let outerGrid = store.outerGrid {
+      window!.setContentSize(viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size))
+
+      showWindow(nil)
+      isWindowInitiallyShown = true
+    }
   }
 
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
@@ -46,6 +56,7 @@ final class MainWindowController: NSWindowController {
 
   private let store: Store
   private let viewController: MainViewController
+  private var isWindowInitiallyShown = false
 
   private func updateWindow() {
     window!.backgroundColor = store.appearance.defaultBackgroundColor.appKit
@@ -55,7 +66,7 @@ final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
-    if !window!.inLiveResize {
+    if isWindowInitiallyShown, !window!.inLiveResize {
       viewController.reportOuterGridSizeChangedIfNeeded()
     }
   }
