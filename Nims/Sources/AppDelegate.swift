@@ -81,10 +81,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupKeyDownLocalMonitor() {
     NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      let keyPress = KeyPress(event: event)
-      if keyPress.modifierFlags.contains(.command) {
+      if event.modifierFlags.contains(.command) {
         return event
       }
+
+      let keyPress = KeyPress(event: event)
 
       Task { @MainActor in
         guard let self, self.mainWindowController!.window!.isMainWindow else {
