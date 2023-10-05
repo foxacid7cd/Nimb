@@ -503,14 +503,18 @@ public extension State {
             size: .init(columnsCount: updatedCellsCount, rowsCount: 1)
           )])
 
-        case let .gridScroll(gridID, top, bottom, _, _, rowsCount, _):
+        case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
           update(&grids[gridID]!) { grid in
             let gridCopy = grid
+
+            if left > 0 || right < gridCopy.cells.columnsCount || columnsCount > 1 {
+              assertionFailure("Line part and horizontal scroll are not supported")
+            }
 
             for fromRow in top ..< bottom {
               let toRow = fromRow - rowsCount
 
-              guard toRow >= 0, toRow < grid.cells.rows.count else {
+              guard toRow >= top, toRow < min(grid.cells.rows.count, bottom) else {
                 continue
               }
 
