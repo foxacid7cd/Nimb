@@ -1,0 +1,3 @@
+#!/bin/sh
+xcodebuild archive -project Nims.xcodeproj -scheme Nims -archivePath .build/Nims.xcarchive
+xcodebuild -exportArchive -archivePath .build/Nims.xcarchive -exportOptionsPlist ./Scripts/exportOptions.plist -exportPath /Applications/
