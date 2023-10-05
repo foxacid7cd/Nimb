@@ -175,7 +175,16 @@ private final class CmdlineFirstCharacterView: NSView {
       nil
     )
 
-    backgroundColor = .init(hueSource: firstCharacter, saturation: 0.95, brightness: 0.8, alpha: 0.6)
+    backgroundColor = .init(
+      hueSource: "".padding(
+        toLength: firstCharacter.count * 4,
+        withPad: firstCharacter,
+        startingAt: 0
+      ),
+      saturation: 0.8,
+      brightness: 0.8,
+      alpha: 0.6
+    )
   }
 
   override func draw(_: NSRect) {

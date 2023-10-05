@@ -262,7 +262,15 @@ private final class PopupmenuItemView: NSView {
       .filter { !$0.isEmpty }
       .joined(separator: " ")
 
-    accentColor = NSColor(hueSource: secondaryText, saturation: 0.6, brightness: 0.9)
+    accentColor = NSColor(
+      hueSource: "".padding(
+        toLength: secondaryText.count * 4,
+        withPad: secondaryText,
+        startingAt: 0
+      ),
+      saturation: 0.6,
+      brightness: 0.9
+    )
     darkerAccentColor = accentColor.withAlphaComponent(0.5)
 
     self.isSelected = isSelected

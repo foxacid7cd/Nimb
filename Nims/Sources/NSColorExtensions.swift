@@ -4,8 +4,8 @@ import AppKit
 import Neovim
 
 extension NSColor {
-  convenience init(hueSource: any Hashable, saturation: Double = 1, brightness: Double = 1, alpha: Double = 1) {
-    let rgb = hueSource.hashValue
+  convenience init(hueSource: String, saturation: Double = 1, brightness: Double = 1, alpha: Double = 1) {
+    let rgb = hueSource.sdbmHash
       .remainderReportingOverflow(dividingBy: 0xFFFFFF)
       .partialValue
 
@@ -21,5 +21,14 @@ extension NSColor {
       brightness: brightness,
       alpha: alpha
     )
+  }
+}
+
+private extension String {
+  var sdbmHash: Int {
+    let unicodeScalars = unicodeScalars.map(\.value)
+    return unicodeScalars.reduce(0) {
+      (Int($1) &+ ($0 << 6) &+ ($0 << 16)).addingReportingOverflow(-$0).partialValue
+    }
   }
 }
