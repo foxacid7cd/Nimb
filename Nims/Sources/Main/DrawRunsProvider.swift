@@ -50,7 +50,8 @@ public final class DrawRunsProvider {
 
     var ascent: CGFloat = 0
     var descent: CGFloat = 0
-    CTLineGetTypographicBounds(ctLine, &ascent, &descent, nil)
+    var leading: CGFloat = 0
+    CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
     let yOffset = (size.height - bounds.height) / 2 + descent

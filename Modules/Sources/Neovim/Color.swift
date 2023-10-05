@@ -13,7 +13,7 @@ public struct Color: Sendable, Hashable {
 
   public var swiftUI: SwiftUI.Color {
     .init(
-      .displayP3,
+      .sRGB,
       red: red,
       green: green,
       blue: blue
@@ -23,7 +23,7 @@ public struct Color: Sendable, Hashable {
 
   public var appKit: NSColor {
     .init(
-      displayP3Red: red,
+      red: red,
       green: green,
       blue: blue,
       alpha: alpha

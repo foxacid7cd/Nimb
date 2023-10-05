@@ -76,11 +76,10 @@ final class TablineView: NSView {
       }
 
       for buffer in tabline.buffers {
-        let text: String
-        if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
-          text = String(match.output.1)
+        let text: String = if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
+          String(match.output.1)
         } else {
-          text = buffer.name
+          buffer.name
         }
 
         let itemView = TablineItemView(store: store)

@@ -54,15 +54,15 @@ public struct KeyPress: Sendable {
 private extension NSEvent.ModifierFlags {
   func makeModifier(isSpecialKey: Bool) -> String? {
     if contains(.shift), isSpecialKey {
-      return "S"
+      "S"
     } else if contains(.control) {
-      return "C"
+      "C"
     } else if contains(.option) {
-      return "M"
+      "M"
     } else if contains(.command) {
-      return "D"
+      "D"
     } else {
-      return nil
+      nil
     }
   }
 }

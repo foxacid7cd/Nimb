@@ -12,7 +12,7 @@
 		682272BF293DD63800A36AB9 /* Neovim in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BE293DD63800A36AB9 /* Neovim */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* NimsFont.swift */; };
-		687B53712A4B5B930015FC94 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687B536F2A4B5B8C0015FC94 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
 		6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 6895C20A2AC41DD3006122D5 /* TinyConstraints */; };
@@ -61,7 +61,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				687B53712A4B5B930015FC94 /* nvim in Copy nvim Executable */,
+				687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -74,7 +74,7 @@
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* NimsFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsFont.swift; sourceTree = "<group>"; };
-		687B536F2A4B5B8C0015FC94 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/bin/nvim; sourceTree = "<group>"; };
+		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
 		6895C20C2AC42006006122D5 /* NSColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColorExtensions.swift; sourceTree = "<group>"; };
@@ -172,7 +172,7 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
-				687B536F2A4B5B8C0015FC94 /* nvim */,
+				687E9AA12ACEF117008B1E76 /* nvim */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
 			name = Locations;
@@ -306,7 +306,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  exit 0\n  local NVIM_INSTALL_DIR=\"$PROJECT_DIR/.build\"\n\n  if [[ ! -d $NVIM_INSTALL_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_INSTALL_DIR directory not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_INSTALL_DIR\"/^bin \"$DESTINATION_DIR\"\n}\n";
+			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  mkdir -p \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;

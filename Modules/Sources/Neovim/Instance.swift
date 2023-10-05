@@ -10,7 +10,7 @@ import MessagePack
 
 @MainActor
 public final class Instance: Sendable {
-  public init(initialOuterGridSize: IntegerSize) {
+  public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutablePath] + nvimArguments)
@@ -18,8 +18,11 @@ public final class Instance: Sendable {
 
     process.executableURL = URL(filePath: "/bin/zsh")
     process.arguments = ["-l", "-c", nvimCommand]
+    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
-    let environmentOverlay = [String: String]()
+    let environmentOverlay: [String: String] = [
+      "VIMRUNTIME": neovimRuntimeURL.standardizedFileURL.path(),
+    ]
 
     var environment = ProcessInfo.processInfo.environment
     environment.merge(environmentOverlay, uniquingKeysWith: { $1 })

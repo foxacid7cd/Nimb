@@ -55,28 +55,28 @@ public struct ValueType: Sendable {
 
   public var swift: SwiftType {
     if let custom {
-      return .custom(custom)
+      .custom(custom)
 
     } else if rawValue.starts(with: "Array") {
-      return .array
+      .array
 
     } else if rawValue == "Dictionary" {
-      return .dictionary
+      .dictionary
 
     } else if ["Integer", "LuaRef"].contains(rawValue) {
-      return .integer
+      .integer
 
     } else if rawValue == "Float" {
-      return .float
+      .float
 
     } else if rawValue == "String" {
-      return .string
+      .string
 
     } else if rawValue == "Boolean" {
-      return .boolean
+      .boolean
 
     } else {
-      return .value
+      .value
     }
   }
 

@@ -23,7 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() {
-    let instance = Instance(initialOuterGridSize: .init(columnsCount: 120, rowsCount: 40))
+    let instance = Instance(
+      neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
+      initialOuterGridSize: .init(columnsCount: 110, rowsCount: 34)
+    )
     store = Store(instance: instance) { [weak self] stateUpdates in
       guard let self else {
         return
