@@ -95,6 +95,7 @@ public struct State: Sendable {
 public extension State {
   @PublicInit
   struct Updates: Sendable {
+    public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
     public var isTablineUpdated: Bool = false
@@ -116,6 +117,10 @@ public extension State {
 
     if uiEvents.last.flatMap(/UIEvent.flush) != nil {
       var updates = Updates()
+
+      func modeUpdated() {
+        updates.isModeUpdated = true
+      }
 
       func titleUpdated() {
         updates.isTitleUpdated = true
@@ -262,6 +267,8 @@ public extension State {
             name: name,
             cursorStyleIndex: cursorStyleIndex
           )
+
+          modeUpdated()
 
           if let cursor {
             updatedCells(

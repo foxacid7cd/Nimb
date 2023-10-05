@@ -10,13 +10,14 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_: Notification) {
     setupStore()
-    setupMainMenu()
+    setupMainMenuController()
     showMainWindowController()
     setupSecondaryWindowControllers()
     setupKeyDownLocalMonitor()
   }
 
   private var store: Store?
+  private var mainMenuController: MainMenuController?
   private var mainWindowController: MainWindowController?
   private var msgShowsWindowController: MsgShowsWindowController?
   private var cmdlinesWindowController: CmdlinesWindowController?
@@ -31,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       guard let self else {
         return
       }
+      mainMenuController?.render(stateUpdates)
       mainWindowController?.render(stateUpdates)
       msgShowsWindowController?.render(stateUpdates)
       cmdlinesWindowController?.render(stateUpdates)
@@ -57,26 +59,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
-  private func setupMainMenu() {
-    let appMenu = NSMenu()
-    let fileMenu = NSMenu(title: "File")
-    let editMenu = NSMenu(title: "Edit")
-    let formatMenu = NSMenu(title: "Format")
-    let viewMenu = NSMenu(title: "View")
-    let windowMenu = NSMenu(title: "Window")
-    let helpMenu = NSMenu(title: "Help")
-
-    let submenus = [appMenu, fileMenu, editMenu, formatMenu, viewMenu, windowMenu, helpMenu]
-
-    let mainMenu = NSMenu()
-
-    for submenu in submenus {
-      let menuItem = NSMenuItem()
-      menuItem.submenu = submenu
-      mainMenu.addItem(menuItem)
-    }
-
-    NSApplication.shared.mainMenu = mainMenu
+  private func setupMainMenuController() {
+    mainMenuController = MainMenuController(store: store!)
+    NSApplication.shared.mainMenu = mainMenuController!.menu
   }
 
   private func showMainWindowController() {
@@ -97,6 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func setupKeyDownLocalMonitor() {
     NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       let keyPress = KeyPress(event: event)
+      if keyPress.modifierFlags.contains(.command) {
+        return event
+      }
 
       Task { @MainActor in
         guard let self, self.mainWindowController!.window!.isMainWindow else {

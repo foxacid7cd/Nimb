@@ -153,6 +153,20 @@ public final class Instance: Sendable {
     )
   }
 
+  public func reportPaste(text: String) async {
+    try? await api.nvimPasteFast(data: text, crlf: false, phase: -1)
+  }
+
+  public func reportCopy() async {
+    try? await api.nvimCmdFast(
+      cmd: [
+        .string("cmd"): .string("yank"),
+        .string("reg"): .string("+"),
+      ],
+      opts: [:]
+    )
+  }
+
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var observers = [UUID: @MainActor (State.Updates) -> Void]()

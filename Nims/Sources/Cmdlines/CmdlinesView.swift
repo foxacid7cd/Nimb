@@ -34,7 +34,7 @@ final class CmdlineView: NSView {
       contentTextView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
     ])
 
-    promptToContentConstraint = promptTextField.bottomAnchor.constraint(equalTo: contentTextView.topAnchor, constant: 10)
+    promptToContentConstraint = promptTextField.bottomAnchor.constraint(equalTo: contentTextView.topAnchor, constant: -4)
     promptToContentConstraint!.priority = .defaultHigh
 
     firstCharacterToContentConstraint = firstCharacterView.trailingAnchor.constraint(
@@ -63,7 +63,7 @@ final class CmdlineView: NSView {
   func update(cmdline: Cmdline, blockLines: [[Cmdline.ContentPart]]) {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
-        .foregroundColor: NSColor.textColor,
+        .foregroundColor: store.appearance.defaultForegroundColor.appKit,
         .font: store.font.nsFont(isItalic: true),
       ])
 

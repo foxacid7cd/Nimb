@@ -32,10 +32,7 @@ final class MainWindowController: NSWindowController {
   }
 
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated {
-      updateWindow()
-    }
-    if stateUpdates.isTitleUpdated {
+    if stateUpdates.isAppearanceUpdated || stateUpdates.isTitleUpdated {
       updateWindow()
     }
 
