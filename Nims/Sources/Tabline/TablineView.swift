@@ -14,12 +14,28 @@ final class TablineView: NSView {
     addSubview(visualEffectView)
     visualEffectView.edgesToSuperview()
 
+    buffersScrollView.automaticallyAdjustsContentInsets = false
+    buffersScrollView.contentInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
+    buffersScrollView.horizontalScrollElasticity = .automatic
+    buffersScrollView.verticalScrollElasticity = .none
+    buffersScrollView.drawsBackground = false
+    addSubview(buffersScrollView)
+    buffersScrollView.leading(to: self, offset: 68)
+    buffersScrollView.top(to: self)
+    buffersScrollView.bottom(to: self)
+    buffersScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
     buffersStackView.orientation = .horizontal
     buffersStackView.spacing = 16
-    addSubview(buffersStackView)
-    buffersStackView.leading(to: self, offset: 80)
-    buffersStackView.top(to: self)
-    buffersStackView.bottom(to: self)
+    buffersScrollView.documentView = buffersStackView
+    buffersStackView.height(to: buffersScrollView)
+    buffersStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+    buffersScrollView.width(
+      to: buffersStackView,
+      offset: buffersScrollView.contentInsets.left + buffersScrollView.contentInsets.right,
+      priority: .init(rawValue: 200)
+    )
 
     tabsStackView.orientation = .horizontal
     tabsStackView.spacing = 12
@@ -27,10 +43,13 @@ final class TablineView: NSView {
     tabsStackView.trailing(to: self, offset: -8)
     tabsStackView.top(to: self)
     tabsStackView.bottom(to: self)
+    tabsStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
     addSubview(titleTextField)
     titleTextField.centerY(to: self)
+    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 8)
     titleTextField.trailingToLeading(of: tabsStackView, offset: -20)
+    titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
 
     reloadData()
   }
@@ -56,17 +75,29 @@ final class TablineView: NSView {
     }
   }
 
+  override func layout() {
+    super.layout()
+
+    if let selectedBufferItemView {
+      buffersScrollView.scrollToVisible(selectedBufferItemView.frame)
+    }
+  }
+
   func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isTablineUpdated || stateUpdates.isFontUpdated {
       reloadData()
     }
 
     if stateUpdates.isTitleUpdated {
+      let paragraphStyle = NSMutableParagraphStyle()
+      paragraphStyle.alignment = .right
+
       titleTextField.attributedStringValue = .init(
         string: store.title ?? "",
         attributes: [
           .foregroundColor: NSColor.textColor,
           .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+          .paragraphStyle: paragraphStyle,
         ]
       )
     }
@@ -74,7 +105,9 @@ final class TablineView: NSView {
 
   private let store: Store
   private let visualEffectView = NSVisualEffectView()
+  private let buffersScrollView = NSScrollView()
   private let buffersStackView = NSStackView(views: [])
+  private var selectedBufferItemView: TablineItemView?
   private let tabsStackView = NSStackView(views: [])
   private let titleTextField = NSTextField(labelWithString: "")
   private var task: Task<Void, Never>?
@@ -82,6 +115,8 @@ final class TablineView: NSView {
   private func reloadData() {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
+    selectedBufferItemView = nil
+
     tabsStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
@@ -97,7 +132,11 @@ final class TablineView: NSView {
 
         let itemView = TablineItemView(store: store)
         itemView.text = text
-        itemView.isSelected = buffer.id == store.tabline?.currentBufferID
+        let isSelected = buffer.id == store.tabline?.currentBufferID
+        itemView.isSelected = isSelected
+        if isSelected {
+          selectedBufferItemView = itemView
+        }
         itemView.isLast = false
         itemView.mouseDownObserver = {
           Task {
@@ -109,6 +148,9 @@ final class TablineView: NSView {
 
         itemView.heightToSuperview()
         itemView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
+      }
+      if let selectedBufferItemView {
+        buffersScrollView.scrollToVisible(selectedBufferItemView.frame)
       }
 
       for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
