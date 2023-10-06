@@ -27,6 +27,7 @@ final class MainViewController: NSViewController {
     stackView.addArrangedSubview(tablineView)
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleTablineDoubleClick))
+    tablineDoubleClickGestureRecognizer.delaysPrimaryMouseButtonEvents = false
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
@@ -135,15 +136,17 @@ final class MainViewController: NSViewController {
     }
 
     if screen.visibleFrame.size.height > window.frame.height || screen.visibleFrame.size.width > window.frame.width {
-      preMaximizeWindowFrame = window.frame
-      window.setFrame(
-        screen.visibleFrame,
-        display: true,
-        animate: true
-      )
+      if window.frame != screen.visibleFrame {
+        preMaximizeWindowFrame = window.frame
+        window.setFrame(
+          screen.visibleFrame,
+          display: true,
+          animate: true
+        )
+      }
 
     } else {
-      if let preMaximizeWindowFrame {
+      if let preMaximizeWindowFrame, window.frame != preMaximizeWindowFrame {
         window.setFrame(preMaximizeWindowFrame, display: true, animate: true)
       }
     }

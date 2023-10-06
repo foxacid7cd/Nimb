@@ -367,7 +367,9 @@ public extension State {
                 highlight.blend = value
               }
 
-            case "nocombine",
+            case "bg_indexed",
+                 "fg_indexed",
+                 "nocombine",
                  "standout":
               continue
 
