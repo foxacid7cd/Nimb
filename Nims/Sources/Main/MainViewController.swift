@@ -26,6 +26,10 @@ final class MainViewController: NSViewController {
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     stackView.addArrangedSubview(tablineView)
 
+    let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleTablineDoubleClick))
+    tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
+    tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
+
     mainContainerView.clipsToBounds = true
     stackView.addArrangedSubview(mainContainerView)
 
@@ -117,10 +121,31 @@ final class MainViewController: NSViewController {
   private let mainView: MainView
   private let mainOverlayView = NSVisualEffectView()
   private var reportedOuterGridSize: IntegerSize?
+  private var preMaximizeWindowFrame: CGRect?
 
   private func updateMinMainContainerViewSize() {
     let size = minOuterGridSize * store.font.cellSize
     mainContainerViewConstraints!.width.constant = size.width
     mainContainerViewConstraints!.height.constant = size.height
+  }
+
+  @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
+    guard let window = view.window, let screen = window.screen ?? .main else {
+      return
+    }
+
+    if screen.visibleFrame.size.height > window.frame.height || screen.visibleFrame.size.width > window.frame.width {
+      preMaximizeWindowFrame = window.frame
+      window.setFrame(
+        screen.visibleFrame,
+        display: true,
+        animate: true
+      )
+
+    } else {
+      if let preMaximizeWindowFrame {
+        window.setFrame(preMaximizeWindowFrame, display: true, animate: true)
+      }
+    }
   }
 }
