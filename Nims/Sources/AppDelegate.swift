@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       store: store!,
       mainWindow: mainWindowController!.window!,
       cmdlinesWindow: cmdlinesWindowController!.window!,
+      msgShowsWindow: msgShowsWindowController!.window!,
       gridWindowFrameTransformer: self
     )
   }

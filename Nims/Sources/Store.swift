@@ -48,17 +48,18 @@ final class Store {
   }
 
   func report(keyPress: KeyPress) async {
-    state.isMsgShowsDismissed = true
-    stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+    if keyPress.isEscape {
+      await hideMsgShowsIfPossible()
+    }
 
     await instance.report(keyPress: keyPress)
   }
 
-  func report(mouseEvent: MouseEvent) async {
-    state.isMsgShowsDismissed = true
-    stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
-
-    await instance.report(mouseEvent: mouseEvent)
+  func hideMsgShowsIfPossible() async {
+    if !state.hasModalMsgShows, !state.isMsgShowsDismissed {
+      state.isMsgShowsDismissed = true
+      stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+    }
   }
 
   subscript<Value>(dynamicMember keyPath: KeyPath<State, Value>) -> Value {

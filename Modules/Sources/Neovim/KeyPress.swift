@@ -20,6 +20,10 @@ public struct KeyPress: Sendable {
   public var characters: String
   public var modifierFlags: NSEvent.ModifierFlags
 
+  public var isEscape: Bool {
+    keyCode == kVK_Escape
+  }
+
   public func makeNvimKeyCode() -> String {
     guard let unicodeScalar = characters.unicodeScalars.first else {
       return characters

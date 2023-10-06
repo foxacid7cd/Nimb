@@ -14,11 +14,13 @@ final class PopupmenuWindowController: NSWindowController {
     store: Store,
     mainWindow: NSWindow,
     cmdlinesWindow: NSWindow,
+    msgShowsWindow: NSWindow,
     gridWindowFrameTransformer: GridWindowFrameTransformer
   ) {
     self.store = store
     self.mainWindow = mainWindow
     self.cmdlinesWindow = cmdlinesWindow
+    self.msgShowsWindow = msgShowsWindow
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
     viewController = .init(store: store)
 
@@ -58,6 +60,7 @@ final class PopupmenuWindowController: NSWindowController {
   private let store: Store
   private let mainWindow: NSWindow
   private let cmdlinesWindow: NSWindow
+  private let msgShowsWindow: NSWindow
   private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
   private let viewController: PopupmenuViewController
   private var task: Task<Void, Never>?
@@ -72,16 +75,18 @@ final class PopupmenuWindowController: NSWindowController {
           .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
 
         let size = CGSize(
-          width: 394,
+          width: 300,
           height: 176
         )
         let origin = CGPoint(
           x: anchorOrigin.x - 13,
           y: anchorOrigin.y - size.height - store.font.cellHeight
         )
+        let windowFrame = CGRect(origin: origin, size: size)
+
         let gridFrame = CGRect(
-          x: floor(origin.x / store.font.cellWidth),
-          y: floor(origin.y / store.font.cellHeight),
+          x: floor((origin.x - mainWindow.frame.origin.x) / store.font.cellWidth),
+          y: floor((origin.y - mainWindow.frame.origin.y) / store.font.cellHeight),
           width: ceil(size.width / store.font.cellWidth),
           height: ceil(size.height / store.font.cellHeight)
         )
@@ -99,11 +104,7 @@ final class PopupmenuWindowController: NSWindowController {
           cmdlinesWindow
         }
 
-        viewController.preferredContentSize = size
-        window!.setFrame(
-          CGRect(origin: origin, size: size),
-          display: true
-        )
+        window!.setFrame(windowFrame, display: true)
         parentWindow.addChildWindow(window!, ordered: .above)
 
         if let selectedItemIndex = popupmenu.selectedItemIndex {
