@@ -252,14 +252,6 @@ private final class MsgShowView: NSView {
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
   }
 
-  override func rightMouseDown(with event: NSEvent) {
-    super.rightMouseDown(with: event)
-
-    Task {
-      await store.hideMsgShowsIfPossible()
-    }
-  }
-
   private let store: Store
   private var boundingSize = CGSize()
   private var ctFrame: CTFrame?
