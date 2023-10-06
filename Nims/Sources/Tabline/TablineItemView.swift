@@ -13,8 +13,8 @@ final class TablineItemView: NSView {
     backgroundImageView.centerInSuperview()
 
     addSubview(textField)
-    textField.leading(to: self, offset: 8)
-    textField.trailing(to: self, offset: -8)
+    textField.leading(to: self, offset: 10)
+    textField.trailing(to: self, offset: -10)
     textField.centerY(to: self)
 
     trackingArea = .init(
@@ -33,7 +33,7 @@ final class TablineItemView: NSView {
 
   var text = ""
   var isSelected = false
-  var isFirst = false
+  var isLast = false
   var mouseDownObserver: (() -> Void)?
 
   override func layout() {
@@ -69,7 +69,7 @@ final class TablineItemView: NSView {
     textField.attributedStringValue = .init(
       string: text,
       attributes: [
-        .font: store.font.nsFont(),
+        .font: NSFont.labelFont(ofSize: NSFont.systemFontSize(for: .regular)),
         .foregroundColor: foregroundColor,
       ]
     )
@@ -83,23 +83,23 @@ final class TablineItemView: NSView {
 
   private func renderBackgroundImage() {
     backgroundImageView.image = makeBackgroundImage(
-      color: isSelected ? store.appearance.defaultForegroundColor.appKit : NSColor.textBackgroundColor
+      color: isSelected ? NSColor.textColor : NSColor.textBackgroundColor
     )
   }
 
   private func makeBackgroundImage(color: NSColor) -> NSImage {
     let bounds = bounds
-    let isFirst = isFirst
+    let isLast = isLast
 
-    return .init(size: .init(width: bounds.width + 16, height: bounds.height), flipped: false) { _ in
+    return .init(size: .init(width: bounds.width + 24, height: bounds.height), flipped: false) { _ in
       let graphicsContext = NSGraphicsContext.current!
       let cgContext = graphicsContext.cgContext
 
       cgContext.beginPath()
       cgContext.move(to: .init())
-      cgContext.addLine(to: .init(x: isFirst ? 0 : 8, y: bounds.height))
-      cgContext.addLine(to: .init(x: bounds.width + 16, y: bounds.height))
-      cgContext.addLine(to: .init(x: bounds.width + 8, y: 0))
+      cgContext.addLine(to: .init(x: 12, y: bounds.height))
+      cgContext.addLine(to: .init(x: bounds.width + 24, y: bounds.height))
+      cgContext.addLine(to: .init(x: isLast ? bounds.width + 24 : bounds.width + 12, y: 0))
       cgContext.closePath()
 
       color.setFill()

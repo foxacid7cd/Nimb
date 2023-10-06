@@ -13,11 +13,14 @@ final class MainWindowController: NSWindowController {
     )
 
     let window = NimsNSWindow(contentViewController: viewController)
-    window.styleMask = [.titled, .miniaturizable, .resizable]
+    window.styleMask = [.titled, .miniaturizable, .resizable, .fullSizeContentView]
+    window.titlebarAppearsTransparent = true
 
     super.init(window: window)
 
     window.delegate = self
+    window.title = ""
+    windowFrameAutosaveName = "MainWindow"
   }
 
   @available(*, unavailable)
@@ -32,7 +35,7 @@ final class MainWindowController: NSWindowController {
   }
 
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated || stateUpdates.isTitleUpdated {
+    if stateUpdates.isAppearanceUpdated {
       updateWindow()
     }
 
@@ -57,7 +60,6 @@ final class MainWindowController: NSWindowController {
 
   private func updateWindow() {
     window!.backgroundColor = store.appearance.defaultBackgroundColor.appKit
-    window!.title = store.title ?? ""
   }
 }
 

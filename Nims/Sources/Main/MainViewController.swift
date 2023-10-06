@@ -57,6 +57,15 @@ final class MainViewController: NSViewController {
     updateMinMainContainerViewSize()
   }
 
+  override func viewDidLayout() {
+    super.viewDidLayout()
+
+    if let window = view.window {
+      let titleBarHeight = window.contentView!.frame.height - window.contentLayoutRect.height
+      tablineView.preferredViewHeight = titleBarHeight
+    }
+  }
+
   func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()

@@ -24,12 +24,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() {
+    let initialOuterGridSize: IntegerSize = if
+      let rowsCount = UserDefaults.standard.value(forKey: "rowsCount") as? Int,
+      let columnsCount = UserDefaults.standard.value(forKey: "columnsCount") as? Int
+    {
+      .init(columnsCount: columnsCount, rowsCount: rowsCount)
+    } else {
+      .init(columnsCount: 110, rowsCount: 34)
+    }
+
     let instance = Instance(
       neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
-      initialOuterGridSize: .init(columnsCount: 110, rowsCount: 34)
+      initialOuterGridSize: initialOuterGridSize
     )
     store = Store(instance: instance) { [weak self] stateUpdates in
-      guard let self else {
+      guard let self, let store else {
         return
       }
       mainMenuController?.render(stateUpdates)
@@ -37,6 +46,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       msgShowsWindowController?.render(stateUpdates)
       cmdlinesWindowController?.render(stateUpdates)
       popupmenuWindowController?.render(stateUpdates)
+
+      if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
+        let outerGridSize = store.outerGrid!.cells.size
+        UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
+        UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+      }
     }
 
     if let sfMonoNFM = NSFont(name: "SFMono Nerd Font", size: 13) {
