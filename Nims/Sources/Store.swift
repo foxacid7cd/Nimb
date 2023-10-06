@@ -25,6 +25,8 @@ final class Store {
         }
 
         if instanceStateUpdates.isMsgShowsUpdated, !self.state.msgShows.isEmpty {
+          self.hideMsgShowsTask?.cancel()
+          self.hideMsgShowsTask = nil
           self.state.isMsgShowsDismissed = false
         }
 
@@ -47,18 +49,19 @@ final class Store {
     stateUpdatesObserver(.init(isFontUpdated: true))
   }
 
-  func report(keyPress: KeyPress) async {
-    if keyPress.isEscape {
-      await hideMsgShowsIfPossible()
-    }
+  func scheduleHideMsgShowsIfPossible() {
+    if !state.hasModalMsgShows, !state.isMsgShowsDismissed, hideMsgShowsTask == nil {
+      hideMsgShowsTask = Task { [weak self] in
+        try? await Task.sleep(for: .milliseconds(500))
 
-    await instance.report(keyPress: keyPress)
-  }
+        guard !Task.isCancelled, let self else {
+          return
+        }
 
-  func hideMsgShowsIfPossible() async {
-    if !state.hasModalMsgShows, !state.isMsgShowsDismissed {
-      state.isMsgShowsDismissed = true
-      stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+        hideMsgShowsTask = nil
+        state.isMsgShowsDismissed = true
+        stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+      }
     }
   }
 
@@ -69,6 +72,7 @@ final class Store {
   private var observeCursorUpdatesTask: Task<Void, Never>?
   private var cursorBlinkingTask: Task<Void, Never>?
   private let stateUpdatesObserver: @MainActor (State.Updates) -> Void
+  private var hideMsgShowsTask: Task<Void, Never>?
 
   private func resetCursorBlinkingTask() {
     cursorBlinkingTask?.cancel()

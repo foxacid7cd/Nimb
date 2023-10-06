@@ -343,6 +343,7 @@ public final class GridView: NSView {
       point: point
     )
 
+    store.scheduleHideMsgShowsIfPossible()
     Task {
       await store.instance.report(mouseEvent: mouseEvent)
     }

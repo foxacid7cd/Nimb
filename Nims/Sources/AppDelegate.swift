@@ -93,7 +93,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           return
         }
 
-        await self.store!.report(keyPress: keyPress)
+        self.store!.scheduleHideMsgShowsIfPossible()
+        await self.store!.instance.report(keyPress: keyPress)
       }
 
       return nil
