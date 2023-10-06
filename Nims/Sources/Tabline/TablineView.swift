@@ -47,8 +47,8 @@ final class TablineView: NSView {
 
     addSubview(titleTextField)
     titleTextField.centerY(to: self)
-    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 8)
-    titleTextField.trailingToLeading(of: tabsStackView, offset: -20)
+    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10)
+    titleTextField.trailingToLeading(of: tabsStackView, offset: -22)
     titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
 
     reloadData()

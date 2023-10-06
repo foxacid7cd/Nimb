@@ -90,8 +90,9 @@ final class TablineItemView: NSView {
   private func makeBackgroundImage(color: NSColor) -> NSImage {
     let bounds = bounds
     let isLast = isLast
+    let isSelected = isSelected
 
-    return .init(size: .init(width: bounds.width + 24, height: bounds.height), flipped: false) { _ in
+    return .init(size: .init(width: bounds.width + 24, height: bounds.height), flipped: false) { rect in
       let graphicsContext = NSGraphicsContext.current!
       let cgContext = graphicsContext.cgContext
 
@@ -102,8 +103,19 @@ final class TablineItemView: NSView {
       cgContext.addLine(to: .init(x: isLast ? bounds.width + 24 : bounds.width + 12, y: 0))
       cgContext.closePath()
 
-      color.setFill()
-      cgContext.fillPath()
+      cgContext.clip()
+
+      if isSelected {
+        let gradient = CGGradient(
+          colorsSpace: .init(name: CGColorSpace.genericRGBLinear),
+          colors: [NSColor.textColor.withAlphaComponent(0.7).cgColor, NSColor.textColor.cgColor] as CFArray,
+          locations: [0, 1]
+        )!
+        cgContext.drawLinearGradient(gradient, start: .init(), end: .init(x: 0, y: bounds.height), options: [])
+      } else {
+        cgContext.setFillColor(NSColor.textBackgroundColor.cgColor)
+        cgContext.fill([rect])
+      }
 
       return true
     }
