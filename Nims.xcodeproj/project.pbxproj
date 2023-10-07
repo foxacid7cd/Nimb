@@ -33,6 +33,7 @@
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
 		68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* DrawRunsProvider.swift */; };
+		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -97,6 +98,7 @@
 		68EED23829BD8B0600568EA0 /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridView.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* DrawRunsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRunsProvider.swift; sourceTree = "<group>"; };
+		68FAD38B2AD102E20042A103 /* SlantedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlantedBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +148,7 @@
 			children = (
 				6886E1312AC5441D004AAEEF /* TablineView.swift */,
 				6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */,
+				68FAD38B2AD102E20042A103 /* SlantedBackground.swift */,
 			);
 			path = Tabline;
 			sourceTree = "<group>";
@@ -349,6 +352,7 @@
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */,
 				689D9E2D29B50BF400345713 /* MainView.swift in Sources */,
+				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
 				689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
@@ -514,7 +518,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -549,7 +553,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;

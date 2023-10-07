@@ -82,42 +82,10 @@ final class TablineItemView: NSView {
   private var isMouseInside = false
 
   private func renderBackgroundImage() {
-    backgroundImageView.image = makeBackgroundImage(
-      color: isSelected ? NSColor.textColor : NSColor.textBackgroundColor
+    backgroundImageView.image = .makeSlantedBackground(
+      type: .background(isFlatLeft: false, isFlatRight: isLast),
+      size: bounds.size,
+      color: isSelected ? .textColor : .textBackgroundColor
     )
-  }
-
-  private func makeBackgroundImage(color: NSColor) -> NSImage {
-    let bounds = bounds
-    let isLast = isLast
-    let isSelected = isSelected
-
-    return .init(size: .init(width: bounds.width + 24, height: bounds.height), flipped: false) { rect in
-      let graphicsContext = NSGraphicsContext.current!
-      let cgContext = graphicsContext.cgContext
-
-      cgContext.beginPath()
-      cgContext.move(to: .init())
-      cgContext.addLine(to: .init(x: 12, y: bounds.height))
-      cgContext.addLine(to: .init(x: bounds.width + 24, y: bounds.height))
-      cgContext.addLine(to: .init(x: isLast ? bounds.width + 24 : bounds.width + 12, y: 0))
-      cgContext.closePath()
-
-      cgContext.clip()
-
-      if isSelected {
-        let gradient = CGGradient(
-          colorsSpace: .init(name: CGColorSpace.genericRGBLinear),
-          colors: [NSColor.textColor.withAlphaComponent(0.7).cgColor, NSColor.textColor.cgColor] as CFArray,
-          locations: [0, 1]
-        )!
-        cgContext.drawLinearGradient(gradient, start: .init(), end: .init(x: 0, y: bounds.height), options: [])
-      } else {
-        cgContext.setFillColor(NSColor.textBackgroundColor.cgColor)
-        cgContext.fill([rect])
-      }
-
-      return true
-    }
   }
 }

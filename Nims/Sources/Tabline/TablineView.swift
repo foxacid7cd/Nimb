@@ -20,6 +20,8 @@ final class TablineView: NSView {
     buffersScrollView.verticalScrollElasticity = .none
     buffersScrollView.drawsBackground = false
     buffersScrollView.isVerticalContentSizeConstraintActive = false
+    buffersScrollView.wantsLayer = true
+    buffersScrollView.layer!.mask = buffersMaskLayer
     addSubview(buffersScrollView)
     buffersScrollView.leading(to: self, offset: 68)
     buffersScrollView.top(to: self)
@@ -124,13 +126,28 @@ final class TablineView: NSView {
       )
     }
 
-    scrollToSelectedItem()
+    if stateUpdates.tabline.isSelectedBufferUpdated, let selectedBufferItemView {
+      if selectedBufferItemView.frame.size != .zero {
+        buffersScrollView.contentView.scrollToVisible(selectedBufferItemView.frame)
+      } else {
+        var observation: NSKeyValueObservation?
+        observation = selectedBufferItemView.observe(\.frame, options: .new) { itemView, _ in
+          Task { @MainActor in
+            if itemView.frame.size != .zero, observation != nil {
+              self.buffersScrollView.contentView.scrollToVisible(itemView.frame)
+              observation?.invalidate()
+              observation = nil
+            }
+          }
+        }
+      }
+    }
   }
 
-  func scrollToSelectedItem() {
-    if let selectedBufferItemView {
-      buffersScrollView.contentView.scrollToVisible(selectedBufferItemView.frame)
-    }
+  func updateBuffersMask() {
+    let size = CGSize(width: buffersScrollView.frame.width, height: buffersScrollView.frame.height)
+    buffersMaskLayer.frame = .init(origin: .init(), size: size)
+    buffersMaskLayer.contents = NSImage.makeSlantedBackground(type: .mask, size: size, color: .black)
   }
 
   private let store: Store
@@ -140,6 +157,7 @@ final class TablineView: NSView {
   private var selectedBufferItemView: TablineItemView?
   private let tabsStackView = NSStackView(views: [])
   private let titleTextField = NSTextField(labelWithString: "")
+  private let buffersMaskLayer = CALayer()
 
   private func reloadBuffers() {
     buffersStackView.arrangedSubviews
