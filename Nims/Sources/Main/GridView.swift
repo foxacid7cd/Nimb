@@ -9,6 +9,14 @@ public final class GridView: NSView {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
+
+    trackingArea = .init(
+      rect: bounds,
+      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved, .mouseEnteredAndExited],
+      owner: self,
+      userInfo: nil
+    )
+    addTrackingArea(trackingArea!)
   }
 
   @available(*, unavailable)
@@ -225,39 +233,47 @@ public final class GridView: NSView {
   }
 
   override public func mouseDown(with event: NSEvent) {
-    report(event, of: .mouse(button: .left, action: .press))
+    report(event, of: .mouseButton(.left, action: .press))
   }
 
   override public func mouseDragged(with event: NSEvent) {
-    report(event, of: .mouse(button: .left, action: .drag))
+    report(event, of: .mouseButton(.left, action: .drag))
   }
 
   override public func mouseUp(with event: NSEvent) {
-    report(event, of: .mouse(button: .left, action: .release))
+    report(event, of: .mouseButton(.left, action: .release))
   }
 
   override public func rightMouseDown(with event: NSEvent) {
-    report(event, of: .mouse(button: .right, action: .press))
+    report(event, of: .mouseButton(.right, action: .press))
   }
 
   override public func rightMouseDragged(with event: NSEvent) {
-    report(event, of: .mouse(button: .right, action: .drag))
+    report(event, of: .mouseButton(.right, action: .drag))
   }
 
   override public func rightMouseUp(with event: NSEvent) {
-    report(event, of: .mouse(button: .right, action: .release))
+    report(event, of: .mouseButton(.right, action: .release))
   }
 
   override public func otherMouseDown(with event: NSEvent) {
-    report(event, of: .mouse(button: .middle, action: .press))
+    report(event, of: .mouseButton(.middle, action: .press))
   }
 
   override public func otherMouseDragged(with event: NSEvent) {
-    report(event, of: .mouse(button: .middle, action: .drag))
+    report(event, of: .mouseButton(.middle, action: .drag))
   }
 
   override public func otherMouseUp(with event: NSEvent) {
-    report(event, of: .mouse(button: .middle, action: .release))
+    report(event, of: .mouseButton(.middle, action: .release))
+  }
+
+  override public func mouseMoved(with event: NSEvent) {
+    report(event, of: .mouseMove)
+  }
+
+  override public func mouseExited(with event: NSEvent) {
+    previousMouseMoveEvent = nil
   }
 
   override public func scrollWheel(with event: NSEvent) {
@@ -324,6 +340,8 @@ public final class GridView: NSView {
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
+  private var trackingArea: NSTrackingArea?
+  private var previousMouseMoveEvent: MouseEvent?
 
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
@@ -343,9 +361,21 @@ public final class GridView: NSView {
       point: point
     )
 
-    store.scheduleHideMsgShowsIfPossible()
-    Task {
-      await store.instance.report(mouseEvent: mouseEvent)
+    switch mouseEvent.content {
+    case .mouseMove:
+      if mouseEvent.point != previousMouseMoveEvent?.point {
+        Task {
+          await store.instance.report(mouseEvent: mouseEvent)
+        }
+        previousMouseMoveEvent = mouseEvent
+      }
+
+    default:
+      store.scheduleHideMsgShowsIfPossible()
+
+      Task {
+        await store.instance.report(mouseEvent: mouseEvent)
+      }
     }
   }
 }

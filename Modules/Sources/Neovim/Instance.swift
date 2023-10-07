@@ -41,8 +41,11 @@ public final class Instance: Sendable {
         }
 
         let (rawButton, rawAction) = switch mouseEvent.content {
-        case let .mouse(button, action):
+        case let .mouseButton(button, action):
           (button.rawValue, action.rawValue)
+
+        case .mouseMove:
+          ("move", "")
 
         case let .scrollWheel(direction):
           ("wheel", direction.rawValue)

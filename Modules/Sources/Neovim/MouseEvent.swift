@@ -5,7 +5,8 @@ import Library
 @PublicInit
 public struct MouseEvent: Equatable, Sendable {
   public enum Content: Equatable, Sendable {
-    case mouse(button: MouseButton, action: MouseAction)
+    case mouseButton(MouseButton, action: MouseAction)
+    case mouseMove
     case scrollWheel(direction: ScrollDirection)
 
     public enum MouseButton: String, Sendable {
