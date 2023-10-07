@@ -82,10 +82,11 @@ final class TablineItemView: NSView {
   private var isMouseInside = false
 
   private func renderBackgroundImage() {
+    let color = isSelected ? NSColor.textColor : NSColor.textBackgroundColor
     backgroundImageView.image = .makeSlantedBackground(
-      type: .background(isFlatLeft: false, isFlatRight: isLast),
+      isFlatRight: isLast,
       size: bounds.size,
-      color: isSelected ? .textColor : .textBackgroundColor
+      fill: .gradient(from: color.withAlphaComponent(0.7), to: color)
     )
   }
 }

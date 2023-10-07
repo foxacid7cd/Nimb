@@ -69,8 +69,6 @@ final class MainViewController: NSViewController {
       let titleBarHeight = window.contentView!.frame.height - window.contentLayoutRect.height
       tablineView.preferredViewHeight = titleBarHeight
     }
-
-    tablineView.updateBuffersMask()
   }
 
   func render(_ stateUpdates: State.Updates) {

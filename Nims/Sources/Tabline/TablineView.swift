@@ -16,18 +16,26 @@ final class TablineView: NSView {
 
     buffersScrollView.automaticallyAdjustsContentInsets = false
     buffersScrollView.contentInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
-    buffersScrollView.horizontalScrollElasticity = .automatic
+    buffersScrollView.horizontalScrollElasticity = .none
     buffersScrollView.verticalScrollElasticity = .none
     buffersScrollView.drawsBackground = false
     buffersScrollView.isVerticalContentSizeConstraintActive = false
     buffersScrollView.wantsLayer = true
     buffersScrollView.layer!.mask = buffersMaskLayer
+    buffersScrollViewFrameObservation = buffersScrollView.observe(\.frame, options: .new) { [weak self] buffersScrollView, _ in
+      Task { @MainActor [self] in
+        let size = buffersScrollView.frame.size
+        self?.buffersMaskLayer.frame = .init(origin: .init(), size: size)
+        self?.buffersMaskLayer.contents = NSImage.makeSlantedBackground(size: size, fill: .color(.black))
+      }
+    }
     addSubview(buffersScrollView)
     buffersScrollView.leading(to: self, offset: 68)
     buffersScrollView.top(to: self)
     buffersScrollView.bottom(to: self)
-    buffersScrollView.widthToSuperview(nil, multiplier: 0.5, relation: .equal)
+    buffersScrollView.widthToSuperview(nil, multiplier: 0.5, relation: .equalOrLess)
     buffersScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    buffersScrollView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
 
     buffersStackView.orientation = .horizontal
     buffersStackView.spacing = 16
@@ -35,19 +43,52 @@ final class TablineView: NSView {
     buffersStackView.height(to: buffersScrollView)
     buffersStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
+    buffersScrollView.width(
+      to: buffersStackView,
+      offset: buffersScrollView.contentInsets.left + buffersScrollView.contentInsets.right,
+      priority: .init(rawValue: 500)
+    )
+
+    tabsScrollView.automaticallyAdjustsContentInsets = false
+    tabsScrollView.contentInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
+    tabsScrollView.horizontalScrollElasticity = .none
+    tabsScrollView.verticalScrollElasticity = .none
+    tabsScrollView.drawsBackground = false
+    tabsScrollView.isVerticalContentSizeConstraintActive = false
+    tabsScrollView.wantsLayer = true
+    tabsScrollView.layer!.mask = tabsMaskLayer
+    tabsScrollViewFrameObservation = tabsScrollView.observe(\.frame, options: .new) { [weak self] tabsScrollView, _ in
+      Task { @MainActor [self] in
+        let size = tabsScrollView.frame.size
+        self?.tabsMaskLayer.frame = .init(origin: .init(), size: size)
+        self?.tabsMaskLayer.contents = NSImage.makeSlantedBackground(isFlatRight: true, size: size, fill: .color(.black))
+      }
+    }
+    addSubview(tabsScrollView)
+    tabsScrollView.trailing(to: self)
+    tabsScrollView.top(to: self)
+    tabsScrollView.bottom(to: self)
+    tabsScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    tabsScrollView.widthToSuperview(nil, multiplier: 0.3, relation: .equalOrLess)
+
     tabsStackView.orientation = .horizontal
     tabsStackView.spacing = 12
-    addSubview(tabsStackView)
-    tabsStackView.trailing(to: self, offset: -8)
-    tabsStackView.top(to: self)
-    tabsStackView.bottom(to: self)
+    tabsScrollView.documentView = tabsStackView
+    tabsStackView.height(to: tabsScrollView)
     tabsStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+    tabsScrollView.width(
+      to: tabsStackView,
+      offset: tabsScrollView.contentInsets.left + tabsScrollView.contentInsets.right,
+      priority: .init(rawValue: 500)
+    )
 
     addSubview(titleTextField)
     titleTextField.centerY(to: self)
     titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10)
-    titleTextField.trailingToLeading(of: tabsStackView, offset: -22)
+    titleTextField.trailingToLeading(of: tabsScrollView, offset: -10)
     titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
+    titleTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
   }
 
   @available(*, unavailable)
@@ -84,7 +125,7 @@ final class TablineView: NSView {
           itemView.render()
 
           if itemView.isSelected {
-            selectedBufferItemView = itemView
+            buffersScrollView.contentView.scrollToVisible(itemView.frame)
           }
         }
       }
@@ -98,6 +139,10 @@ final class TablineView: NSView {
         itemView.text = "\(tabpageIndex + 1)"
         itemView.isSelected = tabpage.id == tabline.currentTabpageID
         itemView.render()
+
+        if itemView.isSelected {
+          tabsScrollView.contentView.scrollToVisible(itemView.frame)
+        }
       }
 
     } else if stateUpdates.tabline.isSelectedTabpageUpdated {
@@ -108,6 +153,10 @@ final class TablineView: NSView {
         if isSelected != itemView.isSelected {
           itemView.isSelected = isSelected
           itemView.render()
+
+          if itemView.isSelected {
+            tabsScrollView.contentView.scrollToVisible(itemView.frame)
+          }
         }
       }
     }
@@ -115,6 +164,7 @@ final class TablineView: NSView {
     if stateUpdates.isTitleUpdated {
       let paragraphStyle = NSMutableParagraphStyle()
       paragraphStyle.alignment = .right
+      paragraphStyle.lineBreakMode = .byTruncatingTail
 
       titleTextField.attributedStringValue = .init(
         string: store.title ?? "",
@@ -125,44 +175,23 @@ final class TablineView: NSView {
         ]
       )
     }
-
-    if stateUpdates.tabline.isSelectedBufferUpdated, let selectedBufferItemView {
-      if selectedBufferItemView.frame.size != .zero {
-        buffersScrollView.contentView.scrollToVisible(selectedBufferItemView.frame)
-      } else {
-        var observation: NSKeyValueObservation?
-        observation = selectedBufferItemView.observe(\.frame, options: .new) { itemView, _ in
-          Task { @MainActor in
-            if itemView.frame.size != .zero, observation != nil {
-              self.buffersScrollView.contentView.scrollToVisible(itemView.frame)
-              observation?.invalidate()
-              observation = nil
-            }
-          }
-        }
-      }
-    }
-  }
-
-  func updateBuffersMask() {
-    let size = CGSize(width: buffersScrollView.frame.width, height: buffersScrollView.frame.height)
-    buffersMaskLayer.frame = .init(origin: .init(), size: size)
-    buffersMaskLayer.contents = NSImage.makeSlantedBackground(type: .mask, size: size, color: .black)
   }
 
   private let store: Store
   private let visualEffectView = NSVisualEffectView()
   private let buffersScrollView = NSScrollView()
   private let buffersStackView = NSStackView(views: [])
-  private var selectedBufferItemView: TablineItemView?
-  private let tabsStackView = NSStackView(views: [])
-  private let titleTextField = NSTextField(labelWithString: "")
   private let buffersMaskLayer = CALayer()
+  private var buffersScrollViewFrameObservation: NSKeyValueObservation?
+  private let tabsScrollView = NSScrollView()
+  private let tabsStackView = NSStackView(views: [])
+  private let tabsMaskLayer = CALayer()
+  private var tabsScrollViewFrameObservation: NSKeyValueObservation?
+  private let titleTextField = NSTextField(labelWithString: "")
 
   private func reloadBuffers() {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
-    selectedBufferItemView = nil
 
     let instance = store.instance
 
@@ -182,7 +211,15 @@ final class TablineView: NSView {
       let isSelected = buffer.id == store.tabline?.currentBufferID
       itemView.isSelected = isSelected
       if isSelected {
-        selectedBufferItemView = itemView
+        var observation: NSKeyValueObservation?
+        observation = itemView.observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
+          Task { @MainActor in
+            if itemView.frame.size != .zero, observation != nil {
+              buffersScrollView.contentView.scrollToVisible(itemView.frame)
+              observation = nil
+            }
+          }
+        }
       }
       itemView.isLast = false
       itemView.mouseDownObserver = {
@@ -211,7 +248,19 @@ final class TablineView: NSView {
     for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
       let itemView = TablineItemView(store: store)
       itemView.text = "\(tabpageIndex + 1)"
-      itemView.isSelected = tabpage.id == tabline.currentTabpageID
+      let isSelected = tabpage.id == tabline.currentTabpageID
+      itemView.isSelected = isSelected
+      if isSelected {
+        var observation: NSKeyValueObservation?
+        observation = itemView.observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
+          Task { @MainActor in
+            if itemView.frame.size != .zero, observation != nil {
+              tabsScrollView.contentView.scrollToVisible(itemView.frame)
+              observation = nil
+            }
+          }
+        }
+      }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
       itemView.mouseDownObserver = {
         Task {
