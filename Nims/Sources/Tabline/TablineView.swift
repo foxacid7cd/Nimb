@@ -109,6 +109,10 @@ final class TablineView: NSView {
     }
   }
 
+  override func mouseDown(with event: NSEvent) {
+    window!.performDrag(with: event)
+  }
+
   func render(_ stateUpdates: State.Updates) {
     guard let tabline = store.tabline else {
       return
@@ -223,7 +227,7 @@ final class TablineView: NSView {
         }
       }
       itemView.isLast = false
-      itemView.mouseDownObserver = {
+      itemView.clicked = {
         Task {
           await instance.reportTablineBufferSelected(withID: buffer.id)
         }
@@ -263,7 +267,7 @@ final class TablineView: NSView {
         }
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
-      itemView.mouseDownObserver = {
+      itemView.clicked = {
         Task {
           await instance.reportTablineTabpageSelected(withID: tabpage.id)
         }

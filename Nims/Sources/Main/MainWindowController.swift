@@ -15,6 +15,7 @@ final class MainWindowController: NSWindowController {
     let window = NimsNSWindow(contentViewController: viewController)
     window.styleMask = [.titled, .miniaturizable, .resizable, .fullSizeContentView]
     window.titlebarAppearsTransparent = true
+    window.isMovable = false
 
     super.init(window: window)
 

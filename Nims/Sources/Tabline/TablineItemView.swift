@@ -24,6 +24,10 @@ final class TablineItemView: NSView {
       userInfo: nil
     )
     addTrackingArea(trackingArea!)
+
+    let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleClick))
+    clickGestureRecognizer.delaysPrimaryMouseButtonEvents = true
+    addGestureRecognizer(clickGestureRecognizer)
   }
 
   @available(*, unavailable)
@@ -34,16 +38,12 @@ final class TablineItemView: NSView {
   var text = ""
   var isSelected = false
   var isLast = false
-  var mouseDownObserver: (() -> Void)?
+  var clicked: (() -> Void)?
 
   override func layout() {
     super.layout()
 
     renderBackgroundImage()
-  }
-
-  override func mouseDown(with event: NSEvent) {
-    mouseDownObserver?()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -88,5 +88,9 @@ final class TablineItemView: NSView {
       size: bounds.size,
       fill: .gradient(from: color.withAlphaComponent(0.7), to: color)
     )
+  }
+
+  @objc private func handleClick(_: NSClickGestureRecognizer) {
+    clicked?()
   }
 }
