@@ -84,9 +84,10 @@ final class TablineView: NSView {
     )
 
     addSubview(titleTextField)
+    titleTextField.centerX(to: self, priority: .init(rawValue: 100))
     titleTextField.centerY(to: self)
-    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10)
-    titleTextField.trailingToLeading(of: tabsScrollView, offset: -10)
+    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10, relation: .equalOrGreater)
+    titleTextField.trailingToLeading(of: tabsScrollView, offset: -10, relation: .equalOrLess)
     titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
     titleTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
   }
@@ -169,7 +170,7 @@ final class TablineView: NSView {
       titleTextField.attributedStringValue = .init(
         string: store.title ?? "",
         attributes: [
-          .foregroundColor: NSColor.textColor,
+          .foregroundColor: NSColor.labelColor,
           .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
           .paragraphStyle: paragraphStyle,
         ]
