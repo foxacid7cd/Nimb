@@ -42,7 +42,11 @@ final class MainWindowController: NSWindowController {
     viewController.render(stateUpdates)
 
     if !isWindowInitiallyShown, stateUpdates.isOuterGridLayoutUpdated, let outerGrid = store.outerGrid {
-      window!.setContentSize(viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size))
+      var contentSize = viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size)
+      if let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double {
+        contentSize.height = lastWindowHeight
+      }
+      window!.setContentSize(contentSize)
 
       showWindow(nil)
       isWindowInitiallyShown = true
@@ -61,12 +65,17 @@ final class MainWindowController: NSWindowController {
   private func updateWindow() {
     window!.backgroundColor = store.appearance.defaultBackgroundColor.appKit
   }
+
+  private func windowFrameManuallyChanged() {
+    viewController.reportOuterGridSizeChangedIfNeeded()
+    UserDefaults.standard.setValue(window!.frame.height, forKey: "windowHeight")
+  }
 }
 
 extension MainWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
     if isWindowInitiallyShown, !window!.inLiveResize {
-      viewController.reportOuterGridSizeChangedIfNeeded()
+      windowFrameManuallyChanged()
     }
   }
 
@@ -75,7 +84,7 @@ extension MainWindowController: NSWindowDelegate {
   }
 
   func windowDidEndLiveResize(_: Notification) {
-    viewController.reportOuterGridSizeChangedIfNeeded()
+    windowFrameManuallyChanged()
     viewController.showMainView(on: true)
   }
 }
