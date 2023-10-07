@@ -19,10 +19,12 @@ final class TablineView: NSView {
     buffersScrollView.horizontalScrollElasticity = .automatic
     buffersScrollView.verticalScrollElasticity = .none
     buffersScrollView.drawsBackground = false
+    buffersScrollView.isVerticalContentSizeConstraintActive = false
     addSubview(buffersScrollView)
     buffersScrollView.leading(to: self, offset: 68)
     buffersScrollView.top(to: self)
     buffersScrollView.bottom(to: self)
+    buffersScrollView.widthToSuperview(nil, multiplier: 0.5, relation: .equal)
     buffersScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
 
     buffersStackView.orientation = .horizontal
@@ -30,12 +32,6 @@ final class TablineView: NSView {
     buffersScrollView.documentView = buffersStackView
     buffersStackView.height(to: buffersScrollView)
     buffersStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-
-    buffersScrollView.width(
-      to: buffersStackView,
-      offset: buffersScrollView.contentInsets.left + buffersScrollView.contentInsets.right,
-      priority: .init(rawValue: 200)
-    )
 
     tabsStackView.orientation = .horizontal
     tabsStackView.spacing = 12
@@ -50,12 +46,6 @@ final class TablineView: NSView {
     titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10)
     titleTextField.trailingToLeading(of: tabsStackView, offset: -22)
     titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
-
-    reloadData()
-  }
-
-  deinit {
-    task?.cancel()
   }
 
   @available(*, unavailable)
@@ -75,17 +65,49 @@ final class TablineView: NSView {
     }
   }
 
-  override func layout() {
-    super.layout()
-
-    if let selectedBufferItemView {
-      buffersScrollView.scrollToVisible(selectedBufferItemView.frame)
-    }
-  }
-
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isTablineUpdated || stateUpdates.isFontUpdated {
-      reloadData()
+    guard let tabline = store.tabline else {
+      return
+    }
+
+    if stateUpdates.tabline.isBuffersUpdated {
+      reloadBuffers()
+    } else if stateUpdates.tabline.isSelectedBufferUpdated {
+      for (bufferIndex, buffer) in tabline.buffers.enumerated() {
+        let itemView = buffersStackView.arrangedSubviews[bufferIndex] as! TablineItemView
+
+        let isSelected = buffer.id == tabline.currentBufferID
+        if isSelected != itemView.isSelected {
+          itemView.isSelected = isSelected
+          itemView.render()
+
+          if itemView.isSelected {
+            selectedBufferItemView = itemView
+          }
+        }
+      }
+    }
+
+    if stateUpdates.tabline.isTabpagesUpdated {
+      reloadTabpages()
+    } else if stateUpdates.tabline.isTabpagesContentUpdated {
+      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+        let itemView = tabsStackView.arrangedSubviews[tabpageIndex] as! TablineItemView
+        itemView.text = "\(tabpageIndex + 1)"
+        itemView.isSelected = tabpage.id == tabline.currentTabpageID
+        itemView.render()
+      }
+
+    } else if stateUpdates.tabline.isSelectedTabpageUpdated {
+      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+        let itemView = tabsStackView.arrangedSubviews[tabpageIndex] as! TablineItemView
+
+        let isSelected = tabpage.id == tabline.currentTabpageID
+        if isSelected != itemView.isSelected {
+          itemView.isSelected = isSelected
+          itemView.render()
+        }
+      }
     }
 
     if stateUpdates.isTitleUpdated {
@@ -101,6 +123,14 @@ final class TablineView: NSView {
         ]
       )
     }
+
+    scrollToSelectedItem()
+  }
+
+  func scrollToSelectedItem() {
+    if let selectedBufferItemView {
+      buffersScrollView.contentView.scrollToVisible(selectedBufferItemView.frame)
+    }
   }
 
   private let store: Store
@@ -110,65 +140,71 @@ final class TablineView: NSView {
   private var selectedBufferItemView: TablineItemView?
   private let tabsStackView = NSStackView(views: [])
   private let titleTextField = NSTextField(labelWithString: "")
-  private var task: Task<Void, Never>?
 
-  private func reloadData() {
+  private func reloadBuffers() {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
     selectedBufferItemView = nil
 
+    let instance = store.instance
+
+    guard let tabline = store.tabline else {
+      return
+    }
+
+    for buffer in tabline.buffers {
+      let text: String = if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
+        String(match.output.1)
+      } else {
+        buffer.name
+      }
+
+      let itemView = TablineItemView(store: store)
+      itemView.text = text
+      let isSelected = buffer.id == store.tabline?.currentBufferID
+      itemView.isSelected = isSelected
+      if isSelected {
+        selectedBufferItemView = itemView
+      }
+      itemView.isLast = false
+      itemView.mouseDownObserver = {
+        Task {
+          await instance.reportTablineBufferSelected(withID: buffer.id)
+        }
+      }
+      itemView.render()
+      buffersStackView.addArrangedSubview(itemView)
+
+      itemView.heightToSuperview()
+      itemView.setContentCompressionResistancePriority(.init(rawValue: 800), for: .horizontal)
+    }
+  }
+
+  private func reloadTabpages() {
     tabsStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
     let instance = store.instance
 
-    if let tabline = store.tabline {
-      for buffer in tabline.buffers {
-        let text: String = if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
-          String(match.output.1)
-        } else {
-          buffer.name
-        }
+    guard let tabline = store.tabline else {
+      return
+    }
 
-        let itemView = TablineItemView(store: store)
-        itemView.text = text
-        let isSelected = buffer.id == store.tabline?.currentBufferID
-        itemView.isSelected = isSelected
-        if isSelected {
-          selectedBufferItemView = itemView
+    for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+      let itemView = TablineItemView(store: store)
+      itemView.text = "\(tabpageIndex + 1)"
+      itemView.isSelected = tabpage.id == tabline.currentTabpageID
+      itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
+      itemView.mouseDownObserver = {
+        Task {
+          await instance.reportTablineTabpageSelected(withID: tabpage.id)
         }
-        itemView.isLast = false
-        itemView.mouseDownObserver = {
-          Task {
-            await instance.reportTablineBufferSelected(withID: buffer.id)
-          }
-        }
-        itemView.render()
-        buffersStackView.addArrangedSubview(itemView)
-
-        itemView.heightToSuperview()
-        itemView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
       }
-      if let selectedBufferItemView {
-        buffersScrollView.scrollToVisible(selectedBufferItemView.frame)
-      }
+      itemView.render()
+      tabsStackView.addArrangedSubview(itemView)
 
-      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = TablineItemView(store: store)
-        itemView.text = "\(tabpageIndex + 1)"
-        itemView.isSelected = tabpage.id == tabline.currentTabpageID
-        itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
-        itemView.mouseDownObserver = {
-          Task {
-            await instance.reportTablineTabpageSelected(withID: tabpage.id)
-          }
-        }
-        itemView.render()
-        tabsStackView.addArrangedSubview(itemView)
-
-        itemView.heightToSuperview()
-        itemView.setContentCompressionResistancePriority(.init(800), for: .horizontal)
-      }
+      itemView.heightToSuperview()
+      itemView.setContentCompressionResistancePriority(.init(rawValue: 800), for: .horizontal)
     }
   }
 }

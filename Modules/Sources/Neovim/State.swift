@@ -98,7 +98,7 @@ public extension State {
     public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
-    public var isTablineUpdated: Bool = false
+    public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
     public var isMsgShowsUpdated: Bool = false
     public var isCursorUpdated: Bool = false
@@ -110,6 +110,15 @@ public extension State {
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
     }
+  }
+
+  @PublicInit
+  struct TablineUpdate: Sendable {
+    public var isTabpagesUpdated: Bool = false
+    public var isTabpagesContentUpdated: Bool = false
+    public var isBuffersUpdated: Bool = false
+    public var isSelectedTabpageUpdated: Bool = false
+    public var isSelectedBufferUpdated: Bool = false
   }
 
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
@@ -130,8 +139,24 @@ public extension State {
         updates.isAppearanceUpdated = true
       }
 
-      func tablineUpdated() {
-        updates.isTablineUpdated = true
+      func tablineTabpagesUpdated() {
+        updates.tabline.isTabpagesUpdated = true
+      }
+
+      func tablineTabpagesContentUpdated() {
+        updates.tabline.isTabpagesContentUpdated = true
+      }
+
+      func tablineBuffersUpdated() {
+        updates.tabline.isBuffersUpdated = true
+      }
+
+      func tablineSelectedTabpageUpdated() {
+        updates.tabline.isSelectedTabpageUpdated = true
+      }
+
+      func tablineSelectedBufferUpdated() {
+        updates.tabline.isSelectedBufferUpdated = true
       }
 
       func cmdlinesUpdated() {
@@ -685,6 +710,14 @@ public extension State {
                 name: name
               )
             }
+          let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
+          if identifiedTabpages != tabline?.tabpages {
+            if identifiedTabpages.count == tabline?.tabpages.count {
+              tablineTabpagesContentUpdated()
+            } else {
+              tablineTabpagesUpdated()
+            }
+          }
 
           let buffers = rawBuffers
             .compactMap { rawBuffer -> Buffer? in
@@ -707,15 +740,25 @@ public extension State {
                 name: name
               )
             }
+          let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
+          if identifiedBuffers != tabline?.buffers {
+            tablineBuffersUpdated()
+          }
+
+          if updates.tabline.isTabpagesUpdated || currentTabpageID != tabline?.currentTabpageID {
+            tablineSelectedTabpageUpdated()
+          }
+
+          if updates.tabline.isBuffersUpdated || currentBufferID != tabline?.currentBufferID {
+            tablineSelectedBufferUpdated()
+          }
 
           tabline = .init(
             currentTabpageID: currentTabpageID,
-            tabpages: .init(uniqueElements: tabpages),
+            tabpages: identifiedTabpages,
             currentBufferID: currentBufferID,
-            buffers: .init(uniqueElements: buffers)
+            buffers: identifiedBuffers
           )
-
-          tablineUpdated()
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
           let cmdline = Cmdline(
