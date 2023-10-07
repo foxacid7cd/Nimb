@@ -55,10 +55,10 @@ public struct IntKeyedDictionary<Value> {
 
       return AnyIterator {
         if let key = keysIterator.next() {
-          return valuesBackingStore[key]!
+          valuesBackingStore[key]!
 
         } else {
-          return nil
+          nil
         }
       }
     }

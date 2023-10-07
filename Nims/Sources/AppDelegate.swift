@@ -37,7 +37,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
       initialOuterGridSize: initialOuterGridSize
     )
-    store = Store(instance: instance) { [weak self] stateUpdates in
+
+    let font: NimsFont = if
+      let name = UserDefaults.standard.value(forKey: "fontName") as? String,
+      let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,
+      let nsFont = NSFont(name: name, size: size)
+    {
+      .init(nsFont)
+    } else {
+      .init()
+    }
+    store = Store(instance: instance, font: font) { [weak self] stateUpdates in
       guard let self, let store else {
         return
       }
@@ -52,11 +62,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
         UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
       }
-    }
-
-    if let sfMonoNFM = NSFont(name: "SFMono Nerd Font", size: 13) {
-      let font = NimsFont(sfMonoNFM)
-      store!.set(font: font)
     }
 
     Task {
@@ -97,17 +102,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupKeyDownLocalMonitor() {
     NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-      if event.modifierFlags.contains(.command) {
+      guard 
+        let self,
+        mainWindowController!.window!.isKeyWindow,
+        !event.modifierFlags.contains(.command)
+      else {
         return event
       }
 
       let keyPress = KeyPress(event: event)
 
-      Task { @MainActor in
-        guard let self, self.mainWindowController!.window!.isMainWindow else {
-          return
-        }
-
+      Task { @MainActor [self] in
         self.store!.scheduleHideMsgShowsIfPossible()
         await self.store!.instance.report(keyPress: keyPress)
       }

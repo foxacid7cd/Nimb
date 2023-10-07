@@ -85,7 +85,10 @@ final class FontBridge {
   func unwrap(_ font: NimsFont) -> WrappedFont {
     if font.id == .zero, wrappedFonts.isEmpty {
       _ = wrap(
-        .monospacedSystemFont(ofSize: 13, weight: .regular)
+        .monospacedSystemFont(
+          ofSize: NSFont.systemFontSize,
+          weight: .regular
+        )
       )
     }
 

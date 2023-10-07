@@ -42,9 +42,13 @@ final class MainWindowController: NSWindowController {
     viewController.render(stateUpdates)
 
     if !isWindowInitiallyShown, stateUpdates.isOuterGridLayoutUpdated, let outerGrid = store.outerGrid {
-      var contentSize = viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size)
-      if let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double {
-        contentSize.height = lastWindowHeight
+      let contentSize: CGSize = if
+        let lastWindowWidth = UserDefaults.standard.value(forKey: "windowWidth") as? Double,
+        let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double
+      {
+        .init(width: lastWindowWidth, height: lastWindowHeight)
+      } else {
+        viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size)
       }
       window!.setContentSize(contentSize)
 
@@ -68,6 +72,7 @@ final class MainWindowController: NSWindowController {
 
   private func windowFrameManuallyChanged() {
     viewController.reportOuterGridSizeChangedIfNeeded()
+    UserDefaults.standard.setValue(window!.frame.width, forKey: "windowWidth")
     UserDefaults.standard.setValue(window!.frame.height, forKey: "windowHeight")
   }
 }

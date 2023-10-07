@@ -20,9 +20,8 @@ public struct Metadata: Sendable {
       return nil
     }
 
-    let types: [Type]
-    if let rawTypes = dictionary["types"].flatMap(/Value.dictionary) {
-      types = rawTypes
+    let types: [Type] = if let rawTypes = dictionary["types"].flatMap(/Value.dictionary) {
+      rawTypes
         .compactMap { name, rawType in
           guard
             let name = (/Value.string).extract(from: name),
@@ -37,7 +36,7 @@ public struct Metadata: Sendable {
         }
         .sorted(by: { $0.id < $1.id })
     } else {
-      types = []
+      []
     }
     self.types = types
 

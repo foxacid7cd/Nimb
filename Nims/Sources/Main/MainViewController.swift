@@ -74,6 +74,7 @@ final class MainViewController: NSViewController {
   func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
+      reportOuterGridSizeChangedIfNeeded()
     }
 
     tablineView.render(stateUpdates)
@@ -135,7 +136,9 @@ final class MainViewController: NSViewController {
       return
     }
 
-    if screen.visibleFrame.size.height > window.frame.height || screen.visibleFrame.size.width > window.frame.width {
+    let isMaximized = window.frame == screen.visibleFrame
+
+    if !isMaximized {
       if window.frame != screen.visibleFrame {
         preMaximizeWindowFrame = window.frame
         window.setFrame(

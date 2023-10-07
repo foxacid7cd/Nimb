@@ -29,13 +29,11 @@ public struct KeyPress: Sendable {
       return characters
     }
 
-    let specialKey: String? = {
-      if keyCode == kVK_Escape {
-        return "Esc"
-      } else {
-        return specialKeys[Int(unicodeScalar.value)]
-      }
-    }()
+    let specialKey: String? = if keyCode == kVK_Escape {
+      "Esc"
+    } else {
+      specialKeys[Int(unicodeScalar.value)]
+    }
 
     let modifier = modifierFlags.makeModifier(isSpecialKey: specialKey != nil)
 

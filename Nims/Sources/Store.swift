@@ -7,8 +7,9 @@ import Neovim
 @MainActor
 @dynamicMemberLookup
 final class Store {
-  init(instance: Instance, stateUpdatesObserver: @escaping @MainActor (State.Updates) -> Void) {
+  init(instance: Instance, font: NimsFont, stateUpdatesObserver: @escaping @MainActor (State.Updates) -> Void) {
     self.instance = instance
+    self.state = .init(font: font)
     self.stateUpdatesObserver = stateUpdatesObserver
 
     let instanceStateUpdatesStream = instance.stateUpdatesStream()
@@ -42,7 +43,7 @@ final class Store {
   }
 
   let instance: Instance
-  private(set) var state = State()
+  private(set) var state: State
 
   func set(font: NimsFont) {
     state.font = font

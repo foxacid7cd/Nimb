@@ -83,12 +83,11 @@ public enum Message: Sendable, Hashable {
         throw Failure("Invalid response raw array value \(arrayValue)")
       }
 
-      let result: Result
-      if arrayValue[2] != .nil {
-        result = .failure(arrayValue[2])
+      let result: Result = if arrayValue[2] != .nil {
+        .failure(arrayValue[2])
 
       } else {
-        result = .success(arrayValue[3])
+        .success(arrayValue[3])
       }
 
       self.init(id: id, result: result)
