@@ -91,30 +91,27 @@ public final class Instance: Sendable {
     try? await api.nvimInputFast(keys: keys)
   }
 
-  public func report(mouseEvent: MouseEvent) async {
-    let (rawButton, rawAction) = switch mouseEvent.content {
-    case let .mouseButton(button, action):
-      (button.rawValue, action.rawValue)
+  public func report(mouseEvents: [MouseEvent]) async {
+    let calls = mouseEvents
+      .map { mouseEvent -> (method: String, parameters: [Value]) in
+        let (rawButton, rawAction) = switch mouseEvent.content {
+        case let .mouseButton(button, action):
+          (button.rawValue, action.rawValue)
 
-    case .mouseMove:
-      ("move", "")
+        case .mouseMove:
+          ("move", "")
 
-    case let .scrollWheel(direction):
-      ("wheel", direction.rawValue)
-    }
+        case let .scrollWheel(direction):
+          ("wheel", direction.rawValue)
+        }
 
-    do {
-      _ = try await api.nvimInputMouseFast(
-        button: rawButton,
-        action: rawAction,
-        modifier: "",
-        grid: mouseEvent.gridID,
-        row: mouseEvent.point.row,
-        col: mouseEvent.point.column
-      )
-    } catch {
-      assertionFailure(error)
-    }
+        return (
+          method: "nvim_input_mouse",
+          parameters: [.string(rawButton), .string(rawAction), .string(mouseEvent.modifier), .integer(mouseEvent.gridID), .integer(mouseEvent.point.row), .integer(mouseEvent.point.column)]
+        )
+      }
+
+    try? await api.rpc.fastCallsTransaction(with: calls)
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async {

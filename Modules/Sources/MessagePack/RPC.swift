@@ -47,14 +47,20 @@ public struct RPC<Target: Channel>: Sendable {
 
   public func fastCallsTransaction(with calls: some Sequence<(method: String, parameters: [Value])>) async throws {
     var data = Data()
+
     for call in calls {
-      let request = await Message.Request(
-        id: store.announceRequest(),
-        method: call.method,
-        parameters: call.parameters
+      await data.append(
+        packer.pack(
+          Message.Request(
+            id: store.announceRequest(),
+            method: call.method,
+            parameters: call.parameters
+          )
+          .makeValue()
+        )
       )
-      await data.append(packer.pack(request.makeValue()))
     }
+
     try await target.write(data)
   }
 

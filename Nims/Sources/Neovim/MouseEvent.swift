@@ -32,4 +32,5 @@ public struct MouseEvent: Equatable, Sendable {
   public var content: Content
   public var gridID: Grid.ID
   public var point: IntegerPoint
+  public var modifier: String
 }

@@ -53,7 +53,7 @@ public struct KeyPress: Sendable {
   }
 }
 
-private extension NSEvent.ModifierFlags {
+public extension NSEvent.ModifierFlags {
   func makeModifier(isSpecialKey: Bool) -> String? {
     if contains(.shift), isSpecialKey {
       "S"

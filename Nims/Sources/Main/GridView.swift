@@ -232,43 +232,43 @@ public final class GridView: NSView {
   }
 
   override public func mouseDown(with event: NSEvent) {
-    report(event, of: .mouseButton(.left, action: .press))
+    report(event, of: [.mouseButton(.left, action: .press)])
   }
 
   override public func mouseDragged(with event: NSEvent) {
-    report(event, of: .mouseButton(.left, action: .drag))
+    report(event, of: [.mouseButton(.left, action: .drag)])
   }
 
   override public func mouseUp(with event: NSEvent) {
-    report(event, of: .mouseButton(.left, action: .release))
+    report(event, of: [.mouseButton(.left, action: .release)])
   }
 
   override public func rightMouseDown(with event: NSEvent) {
-    report(event, of: .mouseButton(.right, action: .press))
+    report(event, of: [.mouseButton(.right, action: .press)])
   }
 
   override public func rightMouseDragged(with event: NSEvent) {
-    report(event, of: .mouseButton(.right, action: .drag))
+    report(event, of: [.mouseButton(.right, action: .drag)])
   }
 
   override public func rightMouseUp(with event: NSEvent) {
-    report(event, of: .mouseButton(.right, action: .release))
+    report(event, of: [.mouseButton(.right, action: .release)])
   }
 
   override public func otherMouseDown(with event: NSEvent) {
-    report(event, of: .mouseButton(.middle, action: .press))
+    report(event, of: [.mouseButton(.middle, action: .press)])
   }
 
   override public func otherMouseDragged(with event: NSEvent) {
-    report(event, of: .mouseButton(.middle, action: .drag))
+    report(event, of: [.mouseButton(.middle, action: .drag)])
   }
 
   override public func otherMouseUp(with event: NSEvent) {
-    report(event, of: .mouseButton(.middle, action: .release))
+    report(event, of: [.mouseButton(.middle, action: .release)])
   }
 
   override public func mouseMoved(with event: NSEvent) {
-    report(event, of: .mouseMove)
+    report(event, of: [.mouseMove])
   }
 
   override public func mouseExited(with event: NSEvent) {
@@ -290,26 +290,42 @@ public final class GridView: NSView {
     let xThreshold = cellSize.width * 3
     let yThreshold = cellSize.height * 3
 
+    var mouseEventContents = [MouseEvent.Content]()
+
     if isScrollingHorizontal != true {
-      if abs(yScrollingAccumulator) > yThreshold {
+      while abs(yScrollingAccumulator) > yThreshold {
         if isScrollingHorizontal == nil {
           isScrollingHorizontal = false
         }
 
-        report(event, of: .scrollWheel(direction: yScrollingAccumulator > 0 ? .down : .up))
-        yScrollingAccumulator = 0
+        if yScrollingAccumulator > 0 {
+          mouseEventContents.append(.scrollWheel(direction: .down))
+          yScrollingAccumulator -= yThreshold
+        } else {
+          mouseEventContents.append(.scrollWheel(direction: .up))
+          yScrollingAccumulator += yThreshold
+        }
       }
     }
 
     if isScrollingHorizontal != false {
-      if abs(xScrollingAccumulator) > xThreshold {
+      while abs(xScrollingAccumulator) > xThreshold {
         if isScrollingHorizontal == nil {
           isScrollingHorizontal = true
         }
 
-        report(event, of: .scrollWheel(direction: xScrollingAccumulator > 0 ? .right : .left))
-        xScrollingAccumulator = 0
+        if xScrollingAccumulator > 0 {
+          mouseEventContents.append(.scrollWheel(direction: .right))
+          xScrollingAccumulator -= xThreshold
+        } else {
+          mouseEventContents.append(.scrollWheel(direction: .left))
+          xScrollingAccumulator += xThreshold
+        }
       }
+    }
+
+    if !mouseEventContents.isEmpty {
+      report(event, of: mouseEventContents)
     }
   }
 
@@ -335,34 +351,44 @@ public final class GridView: NSView {
       .translatedBy(x: 0, y: -frame.size.height)
   }
 
-  private func report(_ nsEvent: NSEvent, of content: MouseEvent.Content) {
+  private func report(_ nsEvent: NSEvent, of contents: [MouseEvent.Content]) {
     let upsideDownLocation = convert(nsEvent.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     let point = IntegerPoint(
       column: Int(upsideDownLocation.x / store.font.cellWidth),
       row: Int(upsideDownLocation.y / store.font.cellHeight)
     )
-    let mouseEvent = MouseEvent(
-      content: content,
-      gridID: gridID,
-      point: point
-    )
 
-    switch mouseEvent.content {
-    case .mouseMove:
-      if mouseEvent.point != previousMouseMoveEvent?.point {
-        Task {
-          await store.instance.report(mouseEvent: mouseEvent)
+    let modifier = nsEvent.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
+    let mouseEvents = contents
+      .map { content in
+        MouseEvent(content: content, gridID: gridID, point: point, modifier: modifier)
+      }
+
+    var filteredMouseEvents = [MouseEvent]()
+    var shouldHideMsgShows = false
+
+    for mouseEvent in mouseEvents {
+      switch mouseEvent.content {
+      case .mouseMove:
+        if mouseEvent.point != previousMouseMoveEvent?.point {
+          filteredMouseEvents.append(mouseEvent)
+          previousMouseMoveEvent = mouseEvent
         }
-        previousMouseMoveEvent = mouseEvent
-      }
 
-    default:
+      default:
+        shouldHideMsgShows = true
+
+        filteredMouseEvents.append(mouseEvent)
+      }
+    }
+
+    if shouldHideMsgShows {
       store.scheduleHideMsgShowsIfPossible()
+    }
 
-      Task {
-        await store.instance.report(mouseEvent: mouseEvent)
-      }
+    Task {
+      await store.instance.report(mouseEvents: filteredMouseEvents)
     }
   }
 }
