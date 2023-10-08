@@ -160,14 +160,44 @@ public final class Instance: Sendable {
     try? await api.nvimPasteFast(data: text, crlf: false, phase: -1)
   }
 
-  public func reportCopy() async {
-    try? await api.nvimCmdFast(
-      cmd: [
-        .string("cmd"): .string("yank"),
-        .string("reg"): .string("+"),
-      ],
-      opts: [:]
-    )
+  public func reportCopy() async -> String? {
+    guard let mode = state.mode, let modeInfo = state.modeInfo else {
+      return nil
+    }
+
+    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+
+    switch shortName?.lowercased().first {
+    case "i",
+         "n",
+         "o",
+         "r",
+         "s",
+         "v":
+      do {
+        return try await api.nvimExecLua(
+          code: "return require('nims').buf_text_for_copy()",
+          args: []
+        )
+        .map(/Value.string)
+
+      } catch {
+        assertionFailure(error)
+        return nil
+      }
+
+    case "c":
+      if let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel, let cmdline = state.cmdlines.dictionary[lastCmdlineLevel] {
+        return cmdline.contentParts
+          .map(\.text)
+          .joined()
+      }
+
+    default:
+      break
+    }
+
+    return nil
   }
 
   private let process = Foundation.Process()

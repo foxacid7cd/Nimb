@@ -78,7 +78,11 @@ final class MainMenuController: NSObject {
 
   @objc private func handleCopy() {
     Task {
-      await store.instance.reportCopy()
+      if let text = await store.instance.reportCopy() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+      }
     }
   }
 

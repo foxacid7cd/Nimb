@@ -96,6 +96,19 @@ public enum Message: Sendable, Hashable {
     public enum Result: Sendable, Hashable {
       case success(Value)
       case failure(Value)
+
+      public func map<Success>(_ casePath: CasePath<Value, Success>) throws -> Success {
+        switch self {
+        case let .success(value):
+          guard let value = casePath.extract(from: value) else {
+            throw Failure("Unexpected type of value", value)
+          }
+          return value
+
+        case let .failure(error):
+          throw Failure("Neovim error", error)
+        }
+      }
     }
 
     public static var rawMessageType: Int {
