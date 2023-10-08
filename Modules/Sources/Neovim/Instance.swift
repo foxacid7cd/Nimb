@@ -34,38 +34,6 @@ public final class Instance: Sendable {
 
     self.api = api
 
-    reportMouseEventsTask = Task {
-      for await mouseEvent in mouseEventsChannel._throttle(for: .milliseconds(10), latest: true) {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        let (rawButton, rawAction) = switch mouseEvent.content {
-        case let .mouseButton(button, action):
-          (button.rawValue, action.rawValue)
-
-        case .mouseMove:
-          ("move", "")
-
-        case let .scrollWheel(direction):
-          ("wheel", direction.rawValue)
-        }
-
-        do {
-          try await api.nvimInputMouseFast(
-            button: rawButton,
-            action: rawAction,
-            modifier: "",
-            grid: mouseEvent.gridID,
-            row: mouseEvent.point.row,
-            col: mouseEvent.point.column
-          )
-        } catch {
-          assertionFailure(error)
-        }
-      }
-    }
-
     task = .init {
       try process.run()
 
@@ -124,7 +92,29 @@ public final class Instance: Sendable {
   }
 
   public func report(mouseEvent: MouseEvent) async {
-    await mouseEventsChannel.send(mouseEvent)
+    let (rawButton, rawAction) = switch mouseEvent.content {
+    case let .mouseButton(button, action):
+      (button.rawValue, action.rawValue)
+
+    case .mouseMove:
+      ("move", "")
+
+    case let .scrollWheel(direction):
+      ("wheel", direction.rawValue)
+    }
+
+    do {
+      _ = try await api.nvimInputMouseFast(
+        button: rawButton,
+        action: rawAction,
+        modifier: "",
+        grid: mouseEvent.gridID,
+        row: mouseEvent.point.row,
+        col: mouseEvent.point.column
+      )
+    } catch {
+      assertionFailure(error)
+    }
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async {
@@ -203,7 +193,5 @@ public final class Instance: Sendable {
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var observers = [UUID: @MainActor (State.Updates) -> Void]()
-  private var reportMouseEventsTask: Task<Void, Never>?
   private var task: Task<Void, Error>?
-  private let mouseEventsChannel = AsyncChannel<MouseEvent>()
 }

@@ -30,6 +30,10 @@ class MainView: NSView {
       stateUpdates.updatedLayoutGridIDs
     }
 
+    if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) || stateUpdates.isFontUpdated {
+      invalidateIntrinsicContentSize()
+    }
+
     func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
       if let gridView = gridViews[gridID] {
         return gridView
@@ -239,10 +243,6 @@ class MainView: NSView {
         },
         context: nil
       )
-    }
-
-    if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) || stateUpdates.isFontUpdated {
-      invalidateIntrinsicContentSize()
     }
 
     if stateUpdates.isAppearanceUpdated {

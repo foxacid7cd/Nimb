@@ -534,7 +534,7 @@ public extension State {
           update(&grids[gridID]!) { grid in
             let gridCopy = grid
 
-            if left > 0 || right < gridCopy.cells.columnsCount || columnsCount > 1 {
+            if left > 0 || right < gridCopy.cells.columnsCount || columnsCount > 0 {
               assertionFailure("Line part and horizontal scroll are not supported")
             }
 

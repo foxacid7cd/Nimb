@@ -292,36 +292,24 @@ public final class GridView: NSView {
     let yThreshold = cellSize.height * 3
 
     if isScrollingHorizontal != true {
-      while abs(yScrollingAccumulator) > yThreshold {
+      if abs(yScrollingAccumulator) > yThreshold {
         if isScrollingHorizontal == nil {
           isScrollingHorizontal = false
         }
 
-        if yScrollingAccumulator > 0 {
-          yScrollingAccumulator -= yThreshold
-          report(event, of: .scrollWheel(direction: .down))
-
-        } else {
-          yScrollingAccumulator += yThreshold
-          report(event, of: .scrollWheel(direction: .up))
-        }
+        report(event, of: .scrollWheel(direction: yScrollingAccumulator > 0 ? .down : .up))
+        yScrollingAccumulator = 0
       }
     }
 
     if isScrollingHorizontal != false {
-      while abs(xScrollingAccumulator) > xThreshold {
+      if abs(xScrollingAccumulator) > xThreshold {
         if isScrollingHorizontal == nil {
           isScrollingHorizontal = true
         }
 
-        if xScrollingAccumulator > 0 {
-          xScrollingAccumulator -= xThreshold
-          report(event, of: .scrollWheel(direction: .right))
-
-        } else {
-          xScrollingAccumulator += xThreshold
-          report(event, of: .scrollWheel(direction: .left))
-        }
+        report(event, of: .scrollWheel(direction: xScrollingAccumulator > 0 ? .right : .left))
+        xScrollingAccumulator = 0
       }
     }
   }
