@@ -26,16 +26,12 @@
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */; };
 		689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */; };
-		68A8FF4D2AD29F660017C28D /* UIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF372AD29F650017C28D /* UIEvent.swift */; };
 		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
-		68A8FF512AD29F660017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3B2AD29F650017C28D /* References.swift */; };
-		68A8FF522AD29F660017C28D /* APIFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3C2AD29F650017C28D /* APIFunctions.swift */; };
 		68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3D2AD29F650017C28D /* Popupmenu.swift */; };
 		68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */; };
 		68A8FF552AD29F660017C28D /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3F2AD29F650017C28D /* API.swift */; };
-		68A8FF562AD29F660017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF402AD29F650017C28D /* UIOption.swift */; };
 		68A8FF572AD29F660017C28D /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF412AD29F650017C28D /* Grid.swift */; };
 		68A8FF582AD29F660017C28D /* NeovimState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF422AD29F650017C28D /* NeovimState.swift */; };
 		68A8FF592AD29F660017C28D /* NimsColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF432AD29F650017C28D /* NimsColor.swift */; };
@@ -47,7 +43,10 @@
 		68A8FF602AD29F660017C28D /* MouseEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4A2AD29F660017C28D /* MouseEvent.swift */; };
 		68A8FF612AD29F660017C28D /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4B2AD29F660017C28D /* Appearance.swift */; };
 		68A8FF622AD29F660017C28D /* Cursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4C2AD29F660017C28D /* Cursor.swift */; };
-		68A8FF642AD2A1B50017C28D /* generated in Resources */ = {isa = PBXBuildFile; fileRef = 68A8FF632AD2A1B50017C28D /* generated */; };
+		68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF682AD2ACCB0017C28D /* UIEvent.swift */; };
+		68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF692AD2ACCB0017C28D /* APIFunctions.swift */; };
+		68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */; };
+		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
@@ -112,16 +111,12 @@
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesView.swift; sourceTree = "<group>"; };
 		689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsNSWindow.swift; sourceTree = "<group>"; };
-		68A8FF372AD29F650017C28D /* UIEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIEvent.swift; sourceTree = "<group>"; };
 		68A8FF382AD29F650017C28D /* Instance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instance.swift; sourceTree = "<group>"; };
 		68A8FF392AD29F650017C28D /* Windows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Windows.swift; sourceTree = "<group>"; };
 		68A8FF3A2AD29F650017C28D /* MsgShow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MsgShow.swift; sourceTree = "<group>"; };
-		68A8FF3B2AD29F650017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
-		68A8FF3C2AD29F650017C28D /* APIFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIFunctions.swift; sourceTree = "<group>"; };
 		68A8FF3D2AD29F650017C28D /* Popupmenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Popupmenu.swift; sourceTree = "<group>"; };
 		68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProcessChannel.swift; sourceTree = "<group>"; };
 		68A8FF3F2AD29F650017C28D /* API.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
-		68A8FF402AD29F650017C28D /* UIOption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOption.swift; sourceTree = "<group>"; };
 		68A8FF412AD29F650017C28D /* Grid.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		68A8FF422AD29F650017C28D /* NeovimState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NeovimState.swift; sourceTree = "<group>"; };
 		68A8FF432AD29F650017C28D /* NimsColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NimsColor.swift; sourceTree = "<group>"; };
@@ -133,7 +128,10 @@
 		68A8FF4A2AD29F660017C28D /* MouseEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MouseEvent.swift; sourceTree = "<group>"; };
 		68A8FF4B2AD29F660017C28D /* Appearance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		68A8FF4C2AD29F660017C28D /* Cursor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cursor.swift; sourceTree = "<group>"; };
-		68A8FF632AD2A1B50017C28D /* generated */ = {isa = PBXFileReference; lastKnownFileType = folder; path = generated; sourceTree = "<group>"; };
+		68A8FF682AD2ACCB0017C28D /* UIEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIEvent.swift; sourceTree = "<group>"; };
+		68A8FF692AD2ACCB0017C28D /* APIFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIFunctions.swift; sourceTree = "<group>"; };
+		68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOption.swift; sourceTree = "<group>"; };
+		68A8FF6B2AD2ACCB0017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
@@ -232,11 +230,7 @@
 		68A8FF362AD29F110017C28D /* Neovim */ = {
 			isa = PBXGroup;
 			children = (
-				68A8FF632AD2A1B50017C28D /* generated */,
-				68A8FF3C2AD29F650017C28D /* APIFunctions.swift */,
-				68A8FF3B2AD29F650017C28D /* References.swift */,
-				68A8FF372AD29F650017C28D /* UIEvent.swift */,
-				68A8FF402AD29F650017C28D /* UIOption.swift */,
+				68A8FF672AD2AC710017C28D /* generated */,
 				68A8FF3F2AD29F650017C28D /* API.swift */,
 				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
 				68A8FF462AD29F650017C28D /* Cmdlines.swift */,
@@ -256,6 +250,17 @@
 				68A8FF392AD29F650017C28D /* Windows.swift */,
 			);
 			path = Neovim;
+			sourceTree = "<group>";
+		};
+		68A8FF672AD2AC710017C28D /* generated */ = {
+			isa = PBXGroup;
+			children = (
+				68A8FF692AD2ACCB0017C28D /* APIFunctions.swift */,
+				68A8FF6B2AD2ACCB0017C28D /* References.swift */,
+				68A8FF682AD2ACCB0017C28D /* UIEvent.swift */,
+				68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */,
+			);
+			path = generated;
 			sourceTree = "<group>";
 		};
 		68BFEF382934CF6100564FE2 = {
@@ -361,7 +366,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68A8FF642AD2A1B50017C28D /* generated in Resources */,
 				68D1803629AA4A9000732402 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,18 +419,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */,
-				68A8FF512AD29F660017C28D /* References.swift in Sources */,
 				6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */,
+				68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				68A8FF552AD29F660017C28D /* API.swift in Sources */,
 				689D9E2729B4FA7000345713 /* main.swift in Sources */,
-				68A8FF4D2AD29F660017C28D /* UIEvent.swift in Sources */,
 				68EED23929BD8B0600568EA0 /* State.swift in Sources */,
-				68A8FF522AD29F660017C28D /* APIFunctions.swift in Sources */,
 				689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */,
 				689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */,
 				68A8FF572AD29F660017C28D /* Grid.swift in Sources */,
-				68A8FF562AD29F660017C28D /* UIOption.swift in Sources */,
 				6861FA6229B462B8002C3C0B /* NimsFont.swift in Sources */,
 				68A8FF582AD29F660017C28D /* NeovimState.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
@@ -436,11 +437,14 @@
 				689D9E2D29B50BF400345713 /* MainView.swift in Sources */,
 				68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */,
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
+				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
+				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
 				68A8FF592AD29F660017C28D /* NimsColor.swift in Sources */,
 				689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */,
+				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,

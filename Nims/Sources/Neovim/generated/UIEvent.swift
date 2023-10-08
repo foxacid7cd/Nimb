@@ -40,30 +40,12 @@ public enum UIEvent: Sendable, Equatable {
   case gridScroll(grid: Int, top: Int, bot: Int, left: Int, right: Int, rows: Int, cols: Int)
   case gridDestroy(grid: Int)
   case winPos(grid: Int, windowID: Window.ID, startrow: Int, startcol: Int, width: Int, height: Int)
-  case winFloatPos(
-    grid: Int,
-    windowID: Window.ID,
-    anchor: String,
-    anchorGrid: Int,
-    anchorRow: Double,
-    anchorCol: Double,
-    focusable: Bool,
-    zindex: Int
-  )
+  case winFloatPos(grid: Int, windowID: Window.ID, anchor: String, anchorGrid: Int, anchorRow: Double, anchorCol: Double, focusable: Bool, zindex: Int)
   case winExternalPos(grid: Int, windowID: Window.ID)
   case winHide(grid: Int)
   case winClose(grid: Int)
   case msgSetPos(grid: Int, row: Int, scrolled: Bool, sepChar: String)
-  case winViewport(
-    grid: Int,
-    windowID: Window.ID,
-    topline: Int,
-    botline: Int,
-    curline: Int,
-    curcol: Int,
-    lineCount: Int,
-    scrollDelta: Int
-  )
+  case winViewport(grid: Int, windowID: Window.ID, topline: Int, botline: Int, curline: Int, curcol: Int, lineCount: Int, scrollDelta: Int)
   case winExtmark(grid: Int, windowID: Window.ID, nsID: Int, markID: Int, row: Int, col: Int)
   case popupmenuShow(items: [Value], selected: Int, row: Int, col: Int, grid: Int)
   case popupmenuHide
@@ -86,6 +68,7 @@ public enum UIEvent: Sendable, Equatable {
   case msgRuler(content: [Value])
   case msgHistoryShow(entries: [Value])
   case msgHistoryClear
+  case errorExit(status: Int)
 }
 
 public extension [UIEvent] {
@@ -104,7 +87,10 @@ public extension [UIEvent] {
           guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
-          guard rawUIEventParameters.count == 2, let enabled = (/Value.boolean).extract(from: rawUIEventParameters[0]), let cursorStyles = (/Value.array).extract(from: rawUIEventParameters[1]) else {
+          guard
+            rawUIEventParameters.count == 2,
+            let enabled = (/Value.boolean).extract(from: rawUIEventParameters[0]), let cursorStyles = (/Value.array).extract(from: rawUIEventParameters[1])
+          else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
@@ -166,7 +152,10 @@ public extension [UIEvent] {
           guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
-          guard rawUIEventParameters.count == 2, let mode = (/Value.string).extract(from: rawUIEventParameters[0]), let modeIDX = (/Value.integer).extract(from: rawUIEventParameters[1]) else {
+          guard
+            rawUIEventParameters.count == 2,
+            let mode = (/Value.string).extract(from: rawUIEventParameters[0]), let modeIDX = (/Value.integer).extract(from: rawUIEventParameters[1])
+          else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
@@ -303,7 +292,10 @@ public extension [UIEvent] {
           guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
-          guard rawUIEventParameters.count == 2, let width = (/Value.integer).extract(from: rawUIEventParameters[0]), let height = (/Value.integer).extract(from: rawUIEventParameters[1]) else {
+          guard
+            rawUIEventParameters.count == 2,
+            let width = (/Value.integer).extract(from: rawUIEventParameters[0]), let height = (/Value.integer).extract(from: rawUIEventParameters[1])
+          else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
@@ -530,21 +522,15 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 6,
-            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1]).flatMap(References.Window.init(type:data:)),
+            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1])
+              .flatMap(References.Window.init(type:data:)),
             let startrow = (/Value.integer).extract(from: rawUIEventParameters[2]), let startcol = (/Value.integer).extract(from: rawUIEventParameters[3]),
             let width = (/Value.integer).extract(from: rawUIEventParameters[4]), let height = (/Value.integer).extract(from: rawUIEventParameters[5])
           else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
-            .winPos(
-              grid: grid,
-              windowID: windowID,
-              startrow: startrow,
-              startcol: startcol,
-              width: width,
-              height: height
-            )
+            .winPos(grid: grid, windowID: windowID, startrow: startrow, startcol: startcol, width: width, height: height)
           )
         }
       case "win_float_pos":
@@ -554,7 +540,8 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 8,
-            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1]).flatMap(References.Window.init(type:data:)),
+            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1])
+              .flatMap(References.Window.init(type:data:)),
             let anchor = (/Value.string).extract(from: rawUIEventParameters[2]), let anchorGrid = (/Value.integer).extract(from: rawUIEventParameters[3]),
             let anchorRow = (/Value.float).extract(from: rawUIEventParameters[4]), let anchorCol = (/Value.float).extract(from: rawUIEventParameters[5]),
             let focusable = (/Value.boolean).extract(from: rawUIEventParameters[6]), let zindex = (/Value.integer).extract(from: rawUIEventParameters[7])
@@ -562,16 +549,7 @@ public extension [UIEvent] {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
-            .winFloatPos(
-              grid: grid,
-              windowID: windowID,
-              anchor: anchor,
-              anchorGrid: anchorGrid,
-              anchorRow: anchorRow,
-              anchorCol: anchorCol,
-              focusable: focusable,
-              zindex: zindex
-            )
+            .winFloatPos(grid: grid, windowID: windowID, anchor: anchor, anchorGrid: anchorGrid, anchorRow: anchorRow, anchorCol: anchorCol, focusable: focusable, zindex: zindex)
           )
         }
       case "win_external_pos":
@@ -581,7 +559,8 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 2,
-            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1]).flatMap(References.Window.init(type:data:))
+            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1])
+              .flatMap(References.Window.init(type:data:))
           else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
@@ -635,7 +614,8 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 8,
-            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1]).flatMap(References.Window.init(type:data:)),
+            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1])
+              .flatMap(References.Window.init(type:data:)),
             let topline = (/Value.integer).extract(from: rawUIEventParameters[2]), let botline = (/Value.integer).extract(from: rawUIEventParameters[3]),
             let curline = (/Value.integer).extract(from: rawUIEventParameters[4]), let curcol = (/Value.integer).extract(from: rawUIEventParameters[5]),
             let lineCount = (/Value.integer).extract(from: rawUIEventParameters[6]), let scrollDelta = (/Value.integer).extract(from: rawUIEventParameters[7])
@@ -643,16 +623,7 @@ public extension [UIEvent] {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
-            .winViewport(
-              grid: grid,
-              windowID: windowID,
-              topline: topline,
-              botline: botline,
-              curline: curline,
-              curcol: curcol,
-              lineCount: lineCount,
-              scrollDelta: scrollDelta
-            )
+            .winViewport(grid: grid, windowID: windowID, topline: topline, botline: botline, curline: curline, curcol: curcol, lineCount: lineCount, scrollDelta: scrollDelta)
           )
         }
       case "win_extmark":
@@ -662,7 +633,8 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 6,
-            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1]).flatMap(References.Window.init(type:data:)),
+            let grid = (/Value.integer).extract(from: rawUIEventParameters[0]), let windowID = (/Value.ext).extract(from: rawUIEventParameters[1])
+              .flatMap(References.Window.init(type:data:)),
             let nsID = (/Value.integer).extract(from: rawUIEventParameters[2]), let markID = (/Value.integer).extract(from: rawUIEventParameters[3]),
             let row = (/Value.integer).extract(from: rawUIEventParameters[4]), let col = (/Value.integer).extract(from: rawUIEventParameters[5])
           else {
@@ -717,8 +689,10 @@ public extension [UIEvent] {
           }
           guard
             rawUIEventParameters.count == 4,
-            let tabpageID = (/Value.ext).extract(from: rawUIEventParameters[0]).flatMap(References.Tabpage.init(type:data:)), let tabs = (/Value.array).extract(from: rawUIEventParameters[1]),
-            let bufferID = (/Value.ext).extract(from: rawUIEventParameters[2]).flatMap(References.Buffer.init(type:data:)), let buffers = (/Value.array).extract(from: rawUIEventParameters[3])
+            let tabpageID = (/Value.ext).extract(from: rawUIEventParameters[0]).flatMap(References.Tabpage.init(type:data:)), let tabs = (/Value.array)
+              .extract(from: rawUIEventParameters[1]),
+            let bufferID = (/Value.ext).extract(from: rawUIEventParameters[2]).flatMap(References.Buffer.init(type:data:)), let buffers = (/Value.array)
+              .extract(from: rawUIEventParameters[3])
           else {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
@@ -739,14 +713,7 @@ public extension [UIEvent] {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(
-            .cmdlineShow(
-              content: content,
-              pos: pos,
-              firstc: firstc,
-              prompt: prompt,
-              indent: indent,
-              level: level
-            )
+            .cmdlineShow(content: content, pos: pos, firstc: firstc, prompt: prompt, indent: indent, level: level)
           )
         }
       case "cmdline_pos":
@@ -938,6 +905,18 @@ public extension [UIEvent] {
             throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
           }
           accumulator.append(.msgHistoryClear)
+        }
+      case "error_exit":
+        for rawUIEvent in rawParameter.dropFirst() {
+          guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
+            throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+          }
+          guard rawUIEventParameters.count == 1, let status = (/Value.integer).extract(from: rawUIEventParameters[0]) else {
+            throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+          }
+          accumulator.append(
+            .errorExit(status: status)
+          )
         }
       default:
         throw UIEventsDecodingFailure(rawRedrawNotificationParameters)

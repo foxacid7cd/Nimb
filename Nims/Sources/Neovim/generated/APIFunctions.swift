@@ -262,16 +262,7 @@ public extension API {
     )
   }
 
-  func nvimBufSetText(
-    bufferID: Buffer.ID,
-    startRow: Int,
-    startCol: Int,
-    endRow: Int,
-    endCol: Int,
-    replacement: [Value]
-  ) async throws
-    -> Message.Response.Result
-  {
+  func nvimBufSetText(bufferID: Buffer.ID, startRow: Int, startCol: Int, endRow: Int, endCol: Int, replacement: [Value]) async throws -> Message.Response.Result {
     try await rpc.call(
       method: "nvim_buf_set_text",
       withParameters: [
@@ -285,14 +276,7 @@ public extension API {
     )
   }
 
-  func nvimBufSetTextFast(
-    bufferID: Buffer.ID,
-    startRow: Int,
-    startCol: Int,
-    endRow: Int,
-    endCol: Int,
-    replacement: [Value]
-  ) async throws {
+  func nvimBufSetTextFast(bufferID: Buffer.ID, startRow: Int, startCol: Int, endRow: Int, endCol: Int, replacement: [Value]) async throws {
     try await rpc.fastCall(
       method: "nvim_buf_set_text",
       withParameters: [
@@ -306,16 +290,7 @@ public extension API {
     )
   }
 
-  func nvimBufGetText(
-    bufferID: Buffer.ID,
-    startRow: Int,
-    startCol: Int,
-    endRow: Int,
-    endCol: Int,
-    opts: [Value: Value]
-  ) async throws
-    -> Message.Response.Result
-  {
+  func nvimBufGetText(bufferID: Buffer.ID, startRow: Int, startCol: Int, endRow: Int, endCol: Int, opts: [Value: Value]) async throws -> Message.Response.Result {
     try await rpc.call(
       method: "nvim_buf_get_text",
       withParameters: [
@@ -329,14 +304,7 @@ public extension API {
     )
   }
 
-  func nvimBufGetTextFast(
-    bufferID: Buffer.ID,
-    startRow: Int,
-    startCol: Int,
-    endRow: Int,
-    endCol: Int,
-    opts: [Value: Value]
-  ) async throws {
+  func nvimBufGetTextFast(bufferID: Buffer.ID, startRow: Int, startCol: Int, endRow: Int, endCol: Int, opts: [Value: Value]) async throws {
     try await rpc.fastCall(
       method: "nvim_buf_get_text",
       withParameters: [
@@ -860,24 +828,6 @@ public extension API {
     )
   }
 
-  func nvimGetOptionInfo(name: String) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_get_option_info",
-      withParameters: [
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimGetOptionInfoFast(name: String) async throws {
-    try await rpc.fastCall(
-      method: "nvim_get_option_info",
-      withParameters: [
-        .string(name),
-      ]
-    )
-  }
-
   func nvimCreateNamespace(name: String) async throws -> Message.Response.Result {
     try await rpc.call(
       method: "nvim_create_namespace",
@@ -1156,128 +1106,6 @@ public extension API {
       withParameters: [
         .string(name),
         .dictionary(opts),
-      ]
-    )
-  }
-
-  func nvimSetOption(name: String, value: Value) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_set_option",
-      withParameters: [
-        .string(name),
-        value,
-      ]
-    )
-  }
-
-  func nvimSetOptionFast(name: String, value: Value) async throws {
-    try await rpc.fastCall(
-      method: "nvim_set_option",
-      withParameters: [
-        .string(name),
-        value,
-      ]
-    )
-  }
-
-  func nvimGetOption(name: String) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_get_option",
-      withParameters: [
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimGetOptionFast(name: String) async throws {
-    try await rpc.fastCall(
-      method: "nvim_get_option",
-      withParameters: [
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimBufGetOption(bufferID: Buffer.ID, name: String) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_buf_get_option",
-      withParameters: [
-        .ext(type: References.Buffer.type, data: bufferID.data),
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimBufGetOptionFast(bufferID: Buffer.ID, name: String) async throws {
-    try await rpc.fastCall(
-      method: "nvim_buf_get_option",
-      withParameters: [
-        .ext(type: References.Buffer.type, data: bufferID.data),
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimBufSetOption(bufferID: Buffer.ID, name: String, value: Value) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_buf_set_option",
-      withParameters: [
-        .ext(type: References.Buffer.type, data: bufferID.data),
-        .string(name),
-        value,
-      ]
-    )
-  }
-
-  func nvimBufSetOptionFast(bufferID: Buffer.ID, name: String, value: Value) async throws {
-    try await rpc.fastCall(
-      method: "nvim_buf_set_option",
-      withParameters: [
-        .ext(type: References.Buffer.type, data: bufferID.data),
-        .string(name),
-        value,
-      ]
-    )
-  }
-
-  func nvimWinGetOption(windowID: Window.ID, name: String) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_win_get_option",
-      withParameters: [
-        .ext(type: References.Window.type, data: windowID.data),
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimWinGetOptionFast(windowID: Window.ID, name: String) async throws {
-    try await rpc.fastCall(
-      method: "nvim_win_get_option",
-      withParameters: [
-        .ext(type: References.Window.type, data: windowID.data),
-        .string(name),
-      ]
-    )
-  }
-
-  func nvimWinSetOption(windowID: Window.ID, name: String, value: Value) async throws -> Message.Response.Result {
-    try await rpc.call(
-      method: "nvim_win_set_option",
-      withParameters: [
-        .ext(type: References.Window.type, data: windowID.data),
-        .string(name),
-        value,
-      ]
-    )
-  }
-
-  func nvimWinSetOptionFast(windowID: Window.ID, name: String, value: Value) async throws {
-    try await rpc.fastCall(
-      method: "nvim_win_set_option",
-      withParameters: [
-        .ext(type: References.Window.type, data: windowID.data),
-        .string(name),
-        value,
       ]
     )
   }
@@ -1632,6 +1460,24 @@ public extension API {
         .integer(nsID),
         .string(name),
         .dictionary(val),
+      ]
+    )
+  }
+
+  func nvimGetHlNs(opts: [Value: Value]) async throws -> Message.Response.Result {
+    try await rpc.call(
+      method: "nvim_get_hl_ns",
+      withParameters: [
+        .dictionary(opts),
+      ]
+    )
+  }
+
+  func nvimGetHlNsFast(opts: [Value: Value]) async throws {
+    try await rpc.fastCall(
+      method: "nvim_get_hl_ns",
+      withParameters: [
+        .dictionary(opts),
       ]
     )
   }
@@ -2554,15 +2400,7 @@ public extension API {
     )
   }
 
-  func nvimSetClientInfo(
-    name: String,
-    version: [Value: Value],
-    type: String,
-    methods: [Value: Value],
-    attributes: [Value: Value]
-  ) async throws
-    -> Message.Response.Result
-  {
+  func nvimSetClientInfo(name: String, version: [Value: Value], type: String, methods: [Value: Value], attributes: [Value: Value]) async throws -> Message.Response.Result {
     try await rpc.call(
       method: "nvim_set_client_info",
       withParameters: [
@@ -2575,13 +2413,7 @@ public extension API {
     )
   }
 
-  func nvimSetClientInfoFast(
-    name: String,
-    version: [Value: Value],
-    type: String,
-    methods: [Value: Value],
-    attributes: [Value: Value]
-  ) async throws {
+  func nvimSetClientInfoFast(name: String, version: [Value: Value], type: String, methods: [Value: Value], attributes: [Value: Value]) async throws {
     try await rpc.fastCall(
       method: "nvim_set_client_info",
       withParameters: [
@@ -3320,6 +3152,26 @@ public extension API {
       withParameters: [
         .ext(type: References.Window.type, data: windowID.data),
         .integer(nsID),
+      ]
+    )
+  }
+
+  func nvimWinTextHeight(windowID: Window.ID, opts: [Value: Value]) async throws -> Message.Response.Result {
+    try await rpc.call(
+      method: "nvim_win_text_height",
+      withParameters: [
+        .ext(type: References.Window.type, data: windowID.data),
+        .dictionary(opts),
+      ]
+    )
+  }
+
+  func nvimWinTextHeightFast(windowID: Window.ID, opts: [Value: Value]) async throws {
+    try await rpc.fastCall(
+      method: "nvim_win_text_height",
+      withParameters: [
+        .ext(type: References.Window.type, data: windowID.data),
+        .dictionary(opts),
       ]
     )
   }
