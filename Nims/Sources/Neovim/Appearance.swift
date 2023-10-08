@@ -5,9 +5,9 @@ import Library
 @PublicInit
 public struct Appearance: Sendable {
   public var highlights: IntKeyedDictionary<Highlight> = [:]
-  public var defaultForegroundColor: Color = .black
-  public var defaultBackgroundColor: Color = .black
-  public var defaultSpecialColor: Color = .black
+  public var defaultForegroundColor: NimsColor = .black
+  public var defaultBackgroundColor: NimsColor = .black
+  public var defaultSpecialColor: NimsColor = .black
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
@@ -33,7 +33,7 @@ public struct Appearance: Sendable {
     return highlight.decorations
   }
 
-  public func foregroundColor(for highlightID: Highlight.ID) -> Color {
+  public func foregroundColor(for highlightID: Highlight.ID) -> NimsColor {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultForegroundColor
     }
@@ -43,7 +43,7 @@ public struct Appearance: Sendable {
       highlight.foregroundColor ?? defaultForegroundColor
   }
 
-  public func backgroundColor(for highlightID: Highlight.ID) -> Color {
+  public func backgroundColor(for highlightID: Highlight.ID) -> NimsColor {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultBackgroundColor
     }
@@ -56,7 +56,7 @@ public struct Appearance: Sendable {
     return color.with(alpha: alpha)
   }
 
-  public func specialColor(for highlightID: Highlight.ID) -> Color {
+  public func specialColor(for highlightID: Highlight.ID) -> NimsColor {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultSpecialColor
     }

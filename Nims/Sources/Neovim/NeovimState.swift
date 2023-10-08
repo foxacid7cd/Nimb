@@ -9,7 +9,7 @@ import MessagePack
 import Overture
 
 @PublicInit
-public struct State: Sendable {
+public struct NeovimState: Sendable {
   public var bufferedUIEvents: [UIEvent] = []
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
@@ -92,7 +92,7 @@ public struct State: Sendable {
   }
 }
 
-public extension State {
+public extension NeovimState {
   @PublicInit
   struct Updates: Sendable {
     public var isModeUpdated: Bool = false

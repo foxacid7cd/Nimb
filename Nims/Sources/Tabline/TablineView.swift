@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Neovim
 import TinyConstraints
 
 final class TablineView: NSView {

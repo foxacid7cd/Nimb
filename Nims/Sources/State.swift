@@ -1,31 +1,30 @@
 // SPDX-License-Identifier: MIT
 
 import Library
-import Neovim
 import Overture
 
 @PublicInit
 @dynamicMemberLookup
-struct State: Sendable {
+public struct State: Sendable {
   @PublicInit
   @dynamicMemberLookup
-  struct Updates: Sendable {
-    var instanceStateUpdates: Neovim.State.Updates = .init()
-    var isFontUpdated: Bool = false
-    var isCursorBlinkingPhaseUpdated: Bool = false
-    var isMsgShowsDismissedUpdated: Bool = false
+  public struct Updates: Sendable {
+    public var instanceStateUpdates: NeovimState.Updates = .init()
+    public var isFontUpdated: Bool = false
+    public var isCursorBlinkingPhaseUpdated: Bool = false
+    public var isMsgShowsDismissedUpdated: Bool = false
 
-    subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State.Updates, Value>) -> Value {
+    public subscript<Value>(dynamicMember keyPath: KeyPath<NeovimState.Updates, Value>) -> Value {
       instanceStateUpdates[keyPath: keyPath]
     }
   }
 
-  var instanceState: Neovim.State = .init()
-  var font: NimsFont = .init()
-  var cursorBlinkingPhase: Bool = false
-  var isMsgShowsDismissed: Bool = false
+  public var instanceState: NeovimState = .init()
+  public var font: NimsFont = .init()
+  public var cursorBlinkingPhase: Bool = false
+  public var isMsgShowsDismissed: Bool = false
 
-  subscript<Value>(dynamicMember keyPath: KeyPath<Neovim.State, Value>) -> Value {
+  public subscript<Value>(dynamicMember keyPath: KeyPath<NeovimState, Value>) -> Value {
     instanceState[keyPath: keyPath]
   }
 }

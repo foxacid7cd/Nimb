@@ -1,12 +1,14 @@
-#!/bin/sh
+#!/bin/zsh
 
-NVIM_PATH=".build/bin/nvim"
-GENERATE_CMD="swift run --package-path Modules generate"
+() {
+  local nvim_path=".build/nvim-macos/bin/nvim"
+  local generate_cmd="swift run --package-path Modules generate"
 
-GENERATED_DIR="Modules/Sources/Neovim/generated"
-${NVIM_PATH} --api-info | eval "${GENERATE_CMD} ${GENERATED_DIR}"
+  local generated_dir="Nims/Sources/Neovim/generated"
+  $nvim_path --api-info | eval "$generate_cmd $generated_dir"
 
-SWIFTFORMAT="/opt/homebrew/bin/swiftformat"
-if [ -x "${SWIFTFORMAT}" ]; then
-  "${SWIFTFORMAT}" --config ".swiftformat" "${GENERATED_DIR}"
-fi
+  local swiftformat="/opt/homebrew/bin/swiftformat"
+  if [ -x "$swiftformat" ]; then
+    $swiftformat --config .swiftformat $generated_dir
+  fi
+}

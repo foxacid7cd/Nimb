@@ -62,7 +62,7 @@ public final class Instance: Sendable {
     }
   }
 
-  public private(set) var state = State()
+  public private(set) var state = NeovimState()
 
   public var result: Result<Void, Error> {
     get async {
@@ -70,7 +70,7 @@ public final class Instance: Sendable {
     }
   }
 
-  public func stateUpdatesStream() -> AsyncStream<State.Updates> {
+  public func stateUpdatesStream() -> AsyncStream<NeovimState.Updates> {
     .init { [weak self] continuation in
       let id = UUID()
 
@@ -192,6 +192,6 @@ public final class Instance: Sendable {
 
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
-  private var observers = [UUID: @MainActor (State.Updates) -> Void]()
+  private var observers = [UUID: @MainActor (NeovimState.Updates) -> Void]()
   private var task: Task<Void, Error>?
 }

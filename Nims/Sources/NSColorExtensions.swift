@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Neovim
 
 extension NSColor {
   convenience init(hueSource: String, saturation: Double = 1, brightness: Double = 1, alpha: Double = 1) {
@@ -10,7 +9,7 @@ extension NSColor {
       .partialValue
 
     var hue: CGFloat = 0
-    Color(rgb: rgb)
+    NimsColor(rgb: rgb)
       .appKit
       .getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
 

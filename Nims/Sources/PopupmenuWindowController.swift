@@ -2,7 +2,6 @@
 
 import AppKit
 import Library
-import Neovim
 
 @MainActor
 protocol GridWindowFrameTransformer: AnyObject {

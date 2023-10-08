@@ -2,7 +2,6 @@
 
 import AppKit
 import Library
-import Neovim
 
 public final class GridView: NSView {
   init(store: Store, gridID: Grid.ID) {
@@ -204,8 +203,8 @@ public final class GridView: NSView {
       if let cursorDrawRun {
         graphicsContext.saveGraphicsState()
 
-        let cursorForegroundColor: Neovim.Color
-        let cursorBackgroundColor: Neovim.Color
+        let cursorForegroundColor: NimsColor
+        let cursorBackgroundColor: NimsColor
 
         if cursorDrawRun.highlightID == 0 {
           cursorForegroundColor = store.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)

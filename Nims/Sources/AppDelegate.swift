@@ -3,7 +3,6 @@
 import AppKit
 import CustomDump
 import Library
-import Neovim
 import SwiftUI
 
 @MainActor

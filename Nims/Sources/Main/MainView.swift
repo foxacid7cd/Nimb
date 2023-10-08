@@ -2,7 +2,6 @@
 
 import AppKit
 import Library
-import Neovim
 
 class MainView: NSView {
   init(store: Store) {
@@ -34,7 +33,7 @@ class MainView: NSView {
       invalidateIntrinsicContentSize()
     }
 
-    func gridViewOrCreate(for gridID: Neovim.Grid.ID) -> GridView {
+    func gridViewOrCreate(for gridID: Grid.ID) -> GridView {
       if let gridView = gridViews[gridID] {
         return gridView
 

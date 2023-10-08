@@ -7,7 +7,6 @@ let package = Package(
   name: "Modules",
   platforms: [.macOS(.v13)],
   products: [
-    .library(name: "Neovim", targets: ["Neovim"]),
     .executable(name: "generate", targets: ["generate"]),
     .library(name: "GenerateLibrary", targets: ["GenerateLibrary"]),
     .library(
@@ -31,12 +30,6 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-custom-dump", branch: "main"),
   ],
   targets: [
-    .target(
-      name: "Neovim",
-      dependencies: [
-        .target(name: "MessagePack")
-      ]
-    ),
     .executableTarget(
       name: "generate",
       dependencies: [

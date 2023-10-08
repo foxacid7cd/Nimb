@@ -2,7 +2,6 @@
 
 import IdentifiedCollections
 import Library
-import Neovim
 import SwiftUI
 import TinyConstraints
 

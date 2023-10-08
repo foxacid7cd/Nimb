@@ -5,7 +5,11 @@ import CustomDump
 public struct Failure: Error, Sendable {
   public init(fileID: StaticString = #fileID, function: StaticString = #function, line: Int = #line, _ context: Any...) {
     message = context
-      .map { String(customDumping: $0) }
+      .map { object in
+        var dump = ""
+        customDump(object, to: &dump)
+        return dump
+      }
       .joined(separator: "\n")
     self.fileID = fileID
     self.function = function

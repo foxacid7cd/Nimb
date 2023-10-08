@@ -2,7 +2,6 @@
 
 import AppKit
 import Library
-import Neovim
 
 final class MainWindowController: NSWindowController {
   init(store: Store) {

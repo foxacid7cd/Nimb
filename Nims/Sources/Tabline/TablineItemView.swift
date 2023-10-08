@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Neovim
 
 final class TablineItemView: NSView {
   init(store: Store) {

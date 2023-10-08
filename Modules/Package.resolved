@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "eastasianwidth",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/HevaWu/EastAsianWidth",
-      "state" : {
-        "revision" : "189e63776b9f22e024c2ce0dacfcac5298c21092",
-        "version" : "2.1.0"
-      }
-    },
-    {
       "identity" : "swift-algorithms",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-algorithms",

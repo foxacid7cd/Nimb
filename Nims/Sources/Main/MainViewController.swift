@@ -2,7 +2,6 @@
 
 import AppKit
 import Library
-import Neovim
 
 final class MainViewController: NSViewController {
   init(store: Store, minOuterGridSize: IntegerSize) {
@@ -79,10 +78,6 @@ final class MainViewController: NSViewController {
 
     tablineView.render(stateUpdates)
     mainView.render(stateUpdates)
-
-    if !stateUpdates.updatedLayoutGridIDs.isEmpty {
-      view.layoutSubtreeIfNeeded()
-    }
   }
 
   func showMainView(on: Bool) {

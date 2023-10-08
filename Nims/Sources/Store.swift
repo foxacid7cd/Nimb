@@ -2,7 +2,6 @@
 
 import Foundation
 import Library
-import Neovim
 
 @MainActor
 @dynamicMemberLookup

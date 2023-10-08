@@ -3,7 +3,6 @@
 import AppKit
 import Collections
 import Library
-import Neovim
 import SwiftUI
 
 @MainActor
@@ -205,8 +204,8 @@ public struct DrawRun {
   public func draw(
     at origin: CGPoint,
     to graphicsContext: NSGraphicsContext,
-    foregroundColor: Neovim.Color,
-    specialColor: Neovim.Color
+    foregroundColor: NimsColor,
+    specialColor: NimsColor
   ) {
     graphicsContext.saveGraphicsState()
     defer { graphicsContext.restoreGraphicsState() }
