@@ -63,4 +63,4 @@ build/
 .build/
 
 /Legacy/
-generated/**/*
+generated/
