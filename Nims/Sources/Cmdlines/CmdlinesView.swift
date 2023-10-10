@@ -21,7 +21,7 @@ final class CmdlineView: NSView {
 
     addConstraints([
       promptTextField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-      promptTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 10),
+      promptTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
       promptTextField.topAnchor.constraint(equalTo: topAnchor, constant: 10),
 
       firstCharacterView.widthAnchor.constraint(equalToConstant: 20),
@@ -62,8 +62,8 @@ final class CmdlineView: NSView {
   func update(cmdline: Cmdline, blockLines: [[Cmdline.ContentPart]]) {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
-        .foregroundColor: store.appearance.defaultForegroundColor.appKit,
-        .font: store.font.nsFont(isItalic: true),
+        .foregroundColor: NSColor.textColor,
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
       ])
 
       firstCharacterView.isHidden = true
