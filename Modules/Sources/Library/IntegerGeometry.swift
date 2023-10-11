@@ -53,6 +53,11 @@ public struct IntegerRectangle: Sendable, Hashable {
   public mutating func crop(to rectangle: IntegerRectangle) {
     self = intersection(with: rectangle)
   }
+
+  public func intersects(with rectangle: IntegerRectangle) -> Bool {
+    let intersection = intersection(with: rectangle)
+    return intersection.size.rowsCount > 0 && intersection.size.columnsCount > 0
+  }
 }
 
 public func * (first: IntegerRectangle, second: CGSize) -> CGRect {

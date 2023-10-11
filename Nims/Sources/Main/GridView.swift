@@ -48,20 +48,9 @@ public final class GridView: NSView {
 
   public func render(stateUpdates: State.Updates) {
     if stateUpdates.isCursorUpdated {
-      if let cursor = store.cursor, cursor.gridID == gridID {
-        cursorDrawRun = .init(
-          rowDrawRuns: drawRunsContainer.rowDrawRuns,
-          cursor: cursor,
-          modeInfo: store.modeInfo,
-          mode: store.mode,
-          font: store.font,
-          appearance: store.appearance
-        )
-        setNeedsDisplay((IntegerRectangle(origin: cursor.position, size: .init(columnsCount: 1, rowsCount: 1)) * store.font.cellSize).applying(upsideDownTransform))
-      } else {
-        cursorDrawRun = nil
-        needsDisplay = true
-      }
+      updateCursorDrawRun()
+    } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun {
+      setNeedsDisplay(cursorDrawRun.rectangle * store.font.cellSize)
     }
   }
 
@@ -77,6 +66,9 @@ public final class GridView: NSView {
 
       case let .line(origin, cells):
         let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
+        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+          updateCursorDrawRun(display: false)
+        }
         let rect = (rectangle * store.font.cellSize).applying(upsideDownTransform)
         setNeedsDisplay(rect)
 
@@ -88,27 +80,31 @@ public final class GridView: NSView {
             rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
           )
         )
+        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+          updateCursorDrawRun(display: false)
+        }
         let rect = (rectangle * store.font.cellSize).applying(upsideDownTransform)
         setNeedsDisplay(rect)
 
       case .clear:
+        updateCursorDrawRun(display: false)
         needsDisplay = true
       }
 
-//      switch textUpdate {
-//      case let .redraw(rectangles):
-//        if !rectangles.isEmpty {
-//          for rectangle in rectangles {
-//            let rect = (rectangle * store.font.cellSize)
-//              .applying(upsideDownTransform)
-//
-//            setNeedsDisplay(rect)
-//          }
-//        } else {
-//          needsDisplay = true
-//        }
-//
-//      case let .scroll(rectangle, offset):
+      //      switch textUpdate {
+      //      case let .redraw(rectangles):
+      //        if !rectangles.isEmpty {
+      //          for rectangle in rectangles {
+      //            let rect = (rectangle * store.font.cellSize)
+      //              .applying(upsideDownTransform)
+      //
+      //            setNeedsDisplay(rect)
+      //          }
+      //        } else {
+      //          needsDisplay = true
+      //        }
+      //
+      //      case let .scroll(rectangle, offset):
       ////        let rectangle = IntegerRectangle(
       ////          origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
       ////          size: .init(
@@ -117,12 +113,12 @@ public final class GridView: NSView {
       ////          )
       ////        )
       ////        let rectangle1 = IntegerRectangle(origin: <#T##IntegerPoint#>, size: <#T##IntegerSize#>)
-//        let rect = (rectangle * store.font.cellSize)
-//          .applying(upsideDownTransform)
-//
-//        setNeedsDisplay(rect)
-//        displayIfNeeded(rect)
-//      }
+      //        let rect = (rectangle * store.font.cellSize)
+      //          .applying(upsideDownTransform)
+      //
+      //        setNeedsDisplay(rect)
+      //        displayIfNeeded(rect)
+      //      }
     }
   }
 
@@ -166,9 +162,6 @@ public final class GridView: NSView {
       )
       .intersection(with: .init(size: grid.size))
 
-      // var drawRuns = [(origin: CGPoint, highlightID: Highlight.ID, drawRun: DrawRun)]()
-
-//      graphicsContext.shouldAntialias = false
       drawRunsContainer.draw(
         to: cgContext,
         boundingRect: integerFrame,
@@ -178,6 +171,7 @@ public final class GridView: NSView {
       )
 
       if
+        store.cursorBlinkingPhase,
         let cursorDrawRun,
         (integerFrame.minColumn ..< integerFrame.maxColumn).contains(cursorDrawRun.position.column),
         (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)
@@ -191,153 +185,153 @@ public final class GridView: NSView {
           upsideDownTransform: upsideDownTransform
         )
       }
-//      for row in integerFrame.rows {
-//        if rowDrawRuns[row] == nil {
-//          var rowDrawRun = RowDrawRun(origins: [], highlightIDs: [], drawRuns: [])
-//          let rowLayout = grid.rowLayouts[row]
-//
-//          for part in rowLayout.parts {
-//            let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
-//
-//            let partIntegerFrame = IntegerRectangle(
-//              origin: .init(column: part.range.location, row: 0),
-//              size: .init(columnsCount: part.range.length, rowsCount: 1)
-//            )
-//            let partFrame = partIntegerFrame * store.font.cellSize
-//            let upsideDownPartFrame = partFrame
-//              .applying(upsideDownTransform)
-//
-//            backgroundColor.appKit.setFill()
-//            cgContext.fill([upsideDownPartFrame])
-//
-//            let drawRun = drawRunsProvider
-//              .drawRun(
-//                with: .init(
-//                  integerSize: IntegerSize(
-//                    columnsCount: part.range.length,
-//                    rowsCount: 1
-//                  ),
-//                  text: part.text,
-//                  font: store.font,
-//                  isItalic: store.appearance.isItalic(for: part.highlightID),
-//                  isBold: store.appearance.isBold(for: part.highlightID),
-//                  decorations: store.appearance.decorations(for: part.highlightID)
-//                )
-//              )
-//            rowDrawRun.origins.append(upsideDownPartFrame.origin)
-//            rowDrawRun.highlightIDs.append(part.highlightID)
-//            rowDrawRun.drawRuns.append(drawRun)
-//
-//            if
-//              store.cursorBlinkingPhase,
-//              let modeInfo = store.modeInfo,
-//              let mode = store.mode,
-//              let cursor = store.cursor,
-//              cursor.gridID == gridID,
-//              cursor.position.row == row,
-//              cursor.position.column >= part.range.location,
-//              cursor.position.column < part.range.location + part.range.length
-//            {
-//              let cursorStyle = modeInfo
-//                .cursorStyles[mode.cursorStyleIndex]
-//
-//              if let cursorShape = cursorStyle.cursorShape {
-//                let cursorFrame: CGRect
-//                switch cursorShape {
-//                case .block:
-//                  let integerFrame = IntegerRectangle(
-//                    origin: cursor.position,
-//                    size: .init(columnsCount: 1, rowsCount: 1)
-//                  )
-//                  cursorFrame = integerFrame * store.font.cellSize
-//
-//                case .horizontal:
-//                  let size = CGSize(
-//                    width: store.font.cellWidth,
-//                    height: store.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
-//                  )
-//                  cursorFrame = .init(
-//                    origin: .init(
-//                      x: Double(cursor.position.column) * store.font.cellWidth,
-//                      y: Double(cursor.position.row + 1) * store.font.cellHeight - size.height
-//                    ),
-//                    size: size
-//                  )
-//
-//                case .vertical:
-//                  let width = store.font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
-//
-//                  cursorFrame = CGRect(
-//                    origin: cursor.position * store.font.cellSize,
-//                    size: .init(width: width, height: store.font.cellHeight)
-//                  )
-//                }
-//
-//                let cursorUpsideDownFrame = cursorFrame
-//                  .applying(upsideDownTransform)
-//
-//                let cursorHighlightID = cursorStyle.attrID ?? 0
-//
-//                cursorDrawRun = .init(
-//                  frame: cursorUpsideDownFrame,
-//                  highlightID: cursorHighlightID,
-//                  parentOrigin: upsideDownPartFrame.origin,
-//                  parentDrawRun: drawRun,
-//                  parentHighlightID: part.highlightID
-//                )
-//              }
-//            }
-//          }
-//
-//          rowDrawRuns[row] = rowDrawRun
-//        }
-//      }
+      //      for row in integerFrame.rows {
+      //        if rowDrawRuns[row] == nil {
+      //          var rowDrawRun = RowDrawRun(origins: [], highlightIDs: [], drawRuns: [])
+      //          let rowLayout = grid.rowLayouts[row]
+      //
+      //          for part in rowLayout.parts {
+      //            let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
+      //
+      //            let partIntegerFrame = IntegerRectangle(
+      //              origin: .init(column: part.range.location, row: 0),
+      //              size: .init(columnsCount: part.range.length, rowsCount: 1)
+      //            )
+      //            let partFrame = partIntegerFrame * store.font.cellSize
+      //            let upsideDownPartFrame = partFrame
+      //              .applying(upsideDownTransform)
+      //
+      //            backgroundColor.appKit.setFill()
+      //            cgContext.fill([upsideDownPartFrame])
+      //
+      //            let drawRun = drawRunsProvider
+      //              .drawRun(
+      //                with: .init(
+      //                  integerSize: IntegerSize(
+      //                    columnsCount: part.range.length,
+      //                    rowsCount: 1
+      //                  ),
+      //                  text: part.text,
+      //                  font: store.font,
+      //                  isItalic: store.appearance.isItalic(for: part.highlightID),
+      //                  isBold: store.appearance.isBold(for: part.highlightID),
+      //                  decorations: store.appearance.decorations(for: part.highlightID)
+      //                )
+      //              )
+      //            rowDrawRun.origins.append(upsideDownPartFrame.origin)
+      //            rowDrawRun.highlightIDs.append(part.highlightID)
+      //            rowDrawRun.drawRuns.append(drawRun)
+      //
+      //            if
+      //              store.cursorBlinkingPhase,
+      //              let modeInfo = store.modeInfo,
+      //              let mode = store.mode,
+      //              let cursor = store.cursor,
+      //              cursor.gridID == gridID,
+      //              cursor.position.row == row,
+      //              cursor.position.column >= part.range.location,
+      //              cursor.position.column < part.range.location + part.range.length
+      //            {
+      //              let cursorStyle = modeInfo
+      //                .cursorStyles[mode.cursorStyleIndex]
+      //
+      //              if let cursorShape = cursorStyle.cursorShape {
+      //                let cursorFrame: CGRect
+      //                switch cursorShape {
+      //                case .block:
+      //                  let integerFrame = IntegerRectangle(
+      //                    origin: cursor.position,
+      //                    size: .init(columnsCount: 1, rowsCount: 1)
+      //                  )
+      //                  cursorFrame = integerFrame * store.font.cellSize
+      //
+      //                case .horizontal:
+      //                  let size = CGSize(
+      //                    width: store.font.cellWidth,
+      //                    height: store.font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+      //                  )
+      //                  cursorFrame = .init(
+      //                    origin: .init(
+      //                      x: Double(cursor.position.column) * store.font.cellWidth,
+      //                      y: Double(cursor.position.row + 1) * store.font.cellHeight - size.height
+      //                    ),
+      //                    size: size
+      //                  )
+      //
+      //                case .vertical:
+      //                  let width = store.font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+      //
+      //                  cursorFrame = CGRect(
+      //                    origin: cursor.position * store.font.cellSize,
+      //                    size: .init(width: width, height: store.font.cellHeight)
+      //                  )
+      //                }
+      //
+      //                let cursorUpsideDownFrame = cursorFrame
+      //                  .applying(upsideDownTransform)
+      //
+      //                let cursorHighlightID = cursorStyle.attrID ?? 0
+      //
+      //                cursorDrawRun = .init(
+      //                  frame: cursorUpsideDownFrame,
+      //                  highlightID: cursorHighlightID,
+      //                  parentOrigin: upsideDownPartFrame.origin,
+      //                  parentDrawRun: drawRun,
+      //                  parentHighlightID: part.highlightID
+      //                )
+      //              }
+      //            }
+      //          }
+      //
+      //          rowDrawRuns[row] = rowDrawRun
+      //        }
+      //      }
 
-//      for row in 0 ..< grid.rowsCount {
-//        let rowDrawRun = rowDrawRuns[row]!
-//        for (drawRunIndex, drawRun) in rowDrawRun.drawRuns.enumerated() {
-//          let origin = rowDrawRun.origins[drawRunIndex]
-//          let highlightID = rowDrawRun.highlightIDs[drawRunIndex]
-//          let foregroundColor = store.appearance.foregroundColor(for: highlightID)
-//          let specialColor = store.appearance.specialColor(for: highlightID)
-//
-//          drawRun.draw(
-//            at: origin + .init(x: 0, y: -Double(row) * store.font.cellHeight),
-//            to: graphicsContext,
-//            foregroundColor: foregroundColor,
-//            specialColor: specialColor
-//          )
-//        }
-//      }
+      //      for row in 0 ..< grid.rowsCount {
+      //        let rowDrawRun = rowDrawRuns[row]!
+      //        for (drawRunIndex, drawRun) in rowDrawRun.drawRuns.enumerated() {
+      //          let origin = rowDrawRun.origins[drawRunIndex]
+      //          let highlightID = rowDrawRun.highlightIDs[drawRunIndex]
+      //          let foregroundColor = store.appearance.foregroundColor(for: highlightID)
+      //          let specialColor = store.appearance.specialColor(for: highlightID)
+      //
+      //          drawRun.draw(
+      //            at: origin + .init(x: 0, y: -Double(row) * store.font.cellHeight),
+      //            to: graphicsContext,
+      //            foregroundColor: foregroundColor,
+      //            specialColor: specialColor
+      //          )
+      //        }
+      //      }
 
-//      if let cursorDrawRun {
-//        graphicsContext.saveGraphicsState()
-//
-//        let cursorForegroundColor: NimsColor
-//        let cursorBackgroundColor: NimsColor
-//
-//        if cursorDrawRun.highlightID == 0 {
-//          cursorForegroundColor = store.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
-//          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
-//
-//        } else {
-//          cursorForegroundColor = store.appearance.foregroundColor(for: cursorDrawRun.highlightID)
-//          cursorBackgroundColor = store.appearance.backgroundColor(for: cursorDrawRun.highlightID)
-//        }
-//
-//        cursorBackgroundColor.appKit.setFill()
-//        cursorDrawRun.frame.fill()
-//
-//        cursorDrawRun.frame.clip()
-//        cursorDrawRun.parentDrawRun.draw(
-//          at: cursorDrawRun.parentOrigin,
-//          to: graphicsContext,
-//          foregroundColor: cursorForegroundColor,
-//          specialColor: cursorBackgroundColor
-//        )
-//
-//        graphicsContext.restoreGraphicsState()
-//      }
+      //      if let cursorDrawRun {
+      //        graphicsContext.saveGraphicsState()
+      //
+      //        let cursorForegroundColor: NimsColor
+      //        let cursorBackgroundColor: NimsColor
+      //
+      //        if cursorDrawRun.highlightID == 0 {
+      //          cursorForegroundColor = store.appearance.backgroundColor(for: cursorDrawRun.parentHighlightID)
+      //          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorDrawRun.parentHighlightID)
+      //
+      //        } else {
+      //          cursorForegroundColor = store.appearance.foregroundColor(for: cursorDrawRun.highlightID)
+      //          cursorBackgroundColor = store.appearance.backgroundColor(for: cursorDrawRun.highlightID)
+      //        }
+      //
+      //        cursorBackgroundColor.appKit.setFill()
+      //        cursorDrawRun.frame.fill()
+      //
+      //        cursorDrawRun.frame.clip()
+      //        cursorDrawRun.parentDrawRun.draw(
+      //          at: cursorDrawRun.parentOrigin,
+      //          to: graphicsContext,
+      //          foregroundColor: cursorForegroundColor,
+      //          specialColor: cursorBackgroundColor
+      //        )
+      //
+      //        graphicsContext.restoreGraphicsState()
+      //      }
     }
   }
 
@@ -504,6 +498,35 @@ public final class GridView: NSView {
 
     Task {
       await store.instance.report(mouseEvents: filteredMouseEvents)
+    }
+  }
+
+  private func updateCursorDrawRun(display: Bool = true) {
+    if 
+      let cursor = store.cursor,
+      cursor.gridID == gridID,
+      let mode = store.mode,
+      let modeInfo = store.modeInfo
+    {
+      let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
+      cursorDrawRun = .init(
+        gridLayout: gridLayout,
+        rowDrawRuns: drawRunsContainer.rowDrawRuns,
+        cursorPosition: cursor.position,
+        cursorStyle: cursorStyle,
+        font: store.font,
+        appearance: store.appearance
+      )
+      if display {
+        setNeedsDisplay(cursorDrawRun!.rectangle * store.font.cellSize)
+      }
+    } else {
+      if let cursorDrawRun {
+        self.cursorDrawRun = nil
+        if display {
+          setNeedsDisplay(cursorDrawRun.rectangle * store.font.cellSize)
+        }
+      }
     }
   }
 }

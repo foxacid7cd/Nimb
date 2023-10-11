@@ -361,51 +361,49 @@ public struct GlyphRun: Sendable {
 @PublicInit
 public struct CursorDrawRun {
   @MainActor
-  public init?(rowDrawRuns: [RowDrawRun], cursor: Cursor, modeInfo: ModeInfo?, mode: Mode?, font: NimsFont, appearance: Appearance) {
-    if let modeInfo, let mode {
-      var location = 0
-      for drawRun in rowDrawRuns[cursor.position.row].drawRuns {
-        let nextLocation = location + drawRun.integerSize.columnsCount
-        if cursor.position.column >= location, cursor.position.column < nextLocation {
-          let cursorStyle = modeInfo
-            .cursorStyles[mode.cursorStyleIndex]
+  public init?(gridLayout: GridLayout, rowDrawRuns: [RowDrawRun], cursorPosition: IntegerPoint, cursorStyle: CursorStyle, font: NimsFont, appearance: Appearance) {
+    var location = 0
+    for drawRun in rowDrawRuns[cursorPosition.row].drawRuns {
+      if
+        cursorPosition.column >= location,
+        cursorPosition.column < location + drawRun.integerSize.columnsCount
+      {
+        if let cursorShape = cursorStyle.cursorShape {
+          let cellFrame: CGRect
+          switch cursorShape {
+          case .block:
+            cellFrame = .init(origin: .init(), size: font.cellSize)
 
-          if let cursorShape = cursorStyle.cursorShape {
-            let cellFrame: CGRect
-            switch cursorShape {
-            case .block:
-              cellFrame = .init(origin: .init(), size: font.cellSize)
+          case .horizontal:
+            let size = CGSize(
+              width: font.cellWidth,
+              height: font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+            )
+            cellFrame = .init(
+              origin: .init(x: 0, y: font.cellHeight - size.height),
+              size: size
+            )
 
-            case .horizontal:
-              let size = CGSize(
-                width: font.cellWidth,
-                height: font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
-              )
-              cellFrame = .init(
-                origin: .init(),
-                size: size
-              )
-
-            case .vertical:
-              let width = font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
-              cellFrame = CGRect(
-                origin: .init(),
-                size: .init(width: width, height: font.cellHeight)
-              )
-            }
-
-            self = .init(
-              position: cursor.position,
-              cellFrame: cellFrame,
-              highlightID: cursorStyle.attrID ?? 0,
-              parentOrigin: .init(column: location, row: cursor.position.row),
-              parentDrawRun: drawRun
+          case .vertical:
+            let width = font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+            cellFrame = CGRect(
+              origin: .init(),
+              size: .init(width: width, height: font.cellHeight)
             )
           }
-        }
 
-        location = nextLocation
+          self = .init(
+            position: cursorPosition,
+            cellFrame: cellFrame,
+            highlightID: cursorStyle.attrID ?? 0,
+            parentOrigin: .init(column: location, row: cursorPosition.row),
+            parentDrawRun: drawRun
+          )
+          return
+        }
       }
+
+      location += drawRun.integerSize.columnsCount
     }
 
     return nil
@@ -416,6 +414,10 @@ public struct CursorDrawRun {
   public var highlightID: Highlight.ID
   public var parentOrigin: IntegerPoint
   public var parentDrawRun: DrawRun
+
+  public var rectangle: IntegerRectangle {
+    .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
+  }
 
   @MainActor
   public func draw(at origin: CGPoint, to context: CGContext, font: NimsFont, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
@@ -431,25 +433,20 @@ public struct CursorDrawRun {
       cursorBackgroundColor = appearance.backgroundColor(for: highlightID)
     }
 
-    let cursorRectangle = IntegerRectangle(
-      origin: position,
-      size: .init(columnsCount: 1, rowsCount: 1)
-    )
-    let cursorRect = (cursorRectangle * font.cellSize)
+    let offset = rectangle.origin * font.cellSize
+    let rect = cellFrame
+      .offsetBy(dx: offset.x, dy: offset.y)
       .applying(upsideDownTransform)
 
     context.setShouldAntialias(false)
     cursorBackgroundColor.appKit.setFill()
-    cursorRect.fill()
+    rect.fill()
 
     context.setShouldAntialias(true)
-    cursorRect.clip()
+    rect.clip()
     for glyphRun in parentDrawRun.glyphRuns {
       context.textMatrix = glyphRun.textMatrix
-      context.textPosition = cursorRect.origin + .init(
-        x: -font.cellWidth * Double(position.column - parentOrigin.column),
-        y: 0
-      )
+      context.textPosition = parentDrawRun.origin + .init(x: 0, y: rect.origin.y)
       context.setFillColor(cursorForegroundColor.appKit.cgColor)
 
       CTFontDrawGlyphs(
