@@ -14,6 +14,7 @@
 		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
+		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 6895C20A2AC41DD3006122D5 /* TinyConstraints */; };
 		6895C20D2AC42006006122D5 /* NSColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6895C20C2AC42006006122D5 /* NSColorExtensions.swift */; };
 		689D9E2729B4FA7000345713 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2629B4FA7000345713 /* main.swift */; };
@@ -52,7 +53,7 @@
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
-		68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* DrawRunsProvider.swift */; };
+		68EF609329B2B7270056E48D /* DrawRunsContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* DrawRunsContainer.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
 /* End PBXBuildFile section */
 
@@ -100,6 +101,7 @@
 		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
+		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		6895C20C2AC42006006122D5 /* NSColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColorExtensions.swift; sourceTree = "<group>"; };
 		689D9E2629B4FA7000345713 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
@@ -139,7 +141,7 @@
 		68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuWindowController.swift; sourceTree = "<group>"; };
 		68EED23829BD8B0600568EA0 /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridView.swift; sourceTree = "<group>"; };
-		68EF609229B2B7270056E48D /* DrawRunsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRunsProvider.swift; sourceTree = "<group>"; };
+		68EF609229B2B7270056E48D /* DrawRunsContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRunsContainer.swift; sourceTree = "<group>"; };
 		68FAD38B2AD102E20042A103 /* SlantedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlantedBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -203,7 +205,8 @@
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* MainView.swift */,
 				68EF609029B2B6D20056E48D /* GridView.swift */,
-				68EF609229B2B7270056E48D /* DrawRunsProvider.swift */,
+				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
+				68EF609229B2B7270056E48D /* DrawRunsContainer.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -433,6 +436,7 @@
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
+				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,
 				6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */,
 				689D9E2D29B50BF400345713 /* MainView.swift in Sources */,
 				68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */,
@@ -454,7 +458,7 @@
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,
 				68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */,
 				68A8FF5A2AD29F660017C28D /* Tabline.swift in Sources */,
-				68EF609329B2B7270056E48D /* DrawRunsProvider.swift in Sources */,
+				68EF609329B2B7270056E48D /* DrawRunsContainer.swift in Sources */,
 				68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */,
 				68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */,
 				68EF609129B2B6D20056E48D /* GridView.swift in Sources */,
@@ -511,6 +515,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					"LOG_RPC=1",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;

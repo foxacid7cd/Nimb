@@ -91,7 +91,7 @@ final class MainViewController: NSViewController {
     )
     if 
       let outerGrid = store.outerGrid,
-      outerGrid.cells.size != outerGridSizeNeeded,
+      outerGrid.size != outerGridSizeNeeded,
       outerGridSizeNeeded != reportedOuterGridSize
     {
       reportedOuterGridSize = outerGridSizeNeeded

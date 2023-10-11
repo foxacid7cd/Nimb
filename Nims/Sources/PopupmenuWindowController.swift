@@ -71,7 +71,7 @@ final class PopupmenuWindowController: NSWindowController {
       if let anchorOrigin = gridWindowFrameTransformer?.anchorOrigin(for: popupmenu.anchor) {
         let outerGrid = store.outerGrid!
         let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-          .translatedBy(x: 0, y: -Double(outerGrid.cells.size.rowsCount))
+          .translatedBy(x: 0, y: -Double(outerGrid.size.rowsCount))
 
         let size = CGSize(
           width: 300,
@@ -235,8 +235,6 @@ private final class PopupmenuItemView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
-    cgContext.saveGState()
-
     dirtyRect.clip()
 
     (isSelected ? darkerAccentColor : .clear)
@@ -250,8 +248,6 @@ private final class PopupmenuItemView: NSView {
     )
     cgContext.addPath(roundedRectPath)
     cgContext.drawPath(using: .fill)
-
-    cgContext.restoreGState()
 
     super.draw(dirtyRect)
   }

@@ -103,7 +103,7 @@ public extension NeovimState {
     public var isMsgShowsUpdated: Bool = false
     public var isCursorUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdatedRectangles: [Grid.ID: [IntegerRectangle]] = [:]
+    public var gridUpdates: [Grid.ID: [GridTextUpdate]] = [:]
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
 
@@ -175,24 +175,13 @@ public extension NeovimState {
         updates.updatedLayoutGridIDs.insert(gridID)
       }
 
-      func updatedCells(inGridWithID gridID: Grid.ID, rectangles: [IntegerRectangle]) {
-        update(&updates.gridUpdatedRectangles[gridID]) { accumulator in
-          accumulator = (accumulator ?? []) + rectangles
+      func updatedText(inGridWithID gridID: Grid.ID, _ update: GridTextUpdate) {
+        Overture.update(&updates.gridUpdates[gridID]) { accumulator in
+          if accumulator == nil {
+            accumulator = []
+          }
+          accumulator!.append(update)
         }
-      }
-
-      func updatedAllCells(inGrid grid: Grid) {
-        updates.gridUpdatedRectangles.removeValue(forKey: grid.id)
-
-        updatedCells(
-          inGridWithID: grid.id,
-          rectangles: [
-            .init(
-              origin: .init(),
-              size: grid.cells.size
-            ),
-          ]
-        )
       }
 
       func popupmenuUpdated() {
@@ -296,14 +285,6 @@ public extension NeovimState {
           modeUpdated()
 
           if let cursor {
-            updatedCells(
-              inGridWithID: cursor.gridID,
-              rectangles: [.init(
-                origin: .init(column: max(0, cursor.position.column - 1), row: cursor.position.row),
-                size: .init(columnsCount: 3, rowsCount: 1)
-              )]
-            )
-
             cursorUpdated()
           }
 
@@ -415,38 +396,15 @@ public extension NeovimState {
 
           update(&grids[gridID]) { grid in
             if grid == nil {
-              let cells = TwoDimensionalArray<Grid.Cell>(
-                size: size,
-                repeatingElement: .default
-              )
-
               grid = .init(
                 id: gridID,
-                cells: cells,
-                rowLayouts: cells.rows
-                  .map(Grid.RowLayout.init(rowCells:)),
+                size: size,
                 associatedWindow: nil,
                 isHidden: false
               )
 
             } else {
-              let newCells = TwoDimensionalArray<Grid.Cell>(
-                size: size,
-                elementAtPoint: { point in
-                  guard
-                    point.row < grid!.cells.rows.count,
-                    point.column < grid!.cells.columnsCount
-                  else {
-                    return .default
-                  }
-
-                  return grid!.cells[point]
-                }
-              )
-
-              grid!.cells = newCells
-              grid!.rowLayouts = newCells.rows
-                .map(Grid.RowLayout.init(rowCells:))
+              grid!.size = size
             }
           }
 
@@ -462,116 +420,118 @@ public extension NeovimState {
           }
 
           updatedLayout(forGridWithID: gridID)
+          updatedText(inGridWithID: gridID, .resize(size))
 
         case let .gridLine(gridID, row, startColumn, data, _):
-          var updatedCellsCount = 0
+          var cells = [Cell]()
           var highlightID = 0
 
-          update(&grids[gridID]!.cells.rows[row]) { rowCells in
-            for value in data {
+          for value in data {
+            guard
+              let arrayValue = (/Value.array).extract(from: value),
+              !arrayValue.isEmpty,
+              let text = (/Value.string).extract(from: arrayValue[0])
+            else {
+              assertionFailure(value)
+              continue
+            }
+
+            var repeatCount = 1
+
+            if arrayValue.count > 1 {
               guard
-                let arrayValue = (/Value.array).extract(from: value),
-                !arrayValue.isEmpty,
-                let text = (/Value.string).extract(from: arrayValue[0])
+                let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
               else {
-                assertionFailure(value)
+                assertionFailure(arrayValue)
                 continue
               }
 
-              var repeatCount = 1
+              highlightID = newHighlightID
 
-              if arrayValue.count > 1 {
+              if arrayValue.count > 2 {
                 guard
-                  let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                  let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
                 else {
                   assertionFailure(arrayValue)
                   continue
                 }
 
-                highlightID = newHighlightID
-
-                if arrayValue.count > 2 {
-                  guard
-                    let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
-                  else {
-                    assertionFailure(arrayValue)
-                    continue
-                  }
-
-                  repeatCount = newRepeatCount
-                }
+                repeatCount = newRepeatCount
               }
+            }
 
-              for _ in 0 ..< repeatCount {
-                let cell = Grid.Cell(
-                  text: text,
-                  highlightID: highlightID
-                )
-
-                let index = rowCells.index(
-                  rowCells.startIndex,
-                  offsetBy: startColumn + updatedCellsCount
-                )
-                rowCells[index] = cell
-
-                updatedCellsCount += 1
-              }
+            for _ in 0 ..< repeatCount {
+              cells.append(.init(
+                text: text,
+                highlightID: highlightID
+              ))
             }
           }
 
-          update(&grids[gridID]!) { grid in
-            grid.rowLayouts[row] = .init(
-              rowCells: grid.cells.rows[row]
-            )
-          }
+          updatedText(inGridWithID: gridID, .line(origin: .init(column: startColumn, row: row), cells: cells))
 
-          updatedCells(inGridWithID: gridID, rectangles: [.init(
-            origin: .init(column: startColumn, row: row),
-            size: .init(columnsCount: updatedCellsCount, rowsCount: 1)
-          )])
+//          update(&grids[gridID]!) { grid in
+//            grid.rowLayouts[row] = .init(
+//              rowCells: grid.cells.rows[row]
+//            )
+//          }
+
+//          updatedText(inGridWithID: gridID, .redraw(rectangles: [.init(
+//            origin: .init(column: startColumn, row: row),
+//            size: .init(columnsCount: updatedCellsCount, rowsCount: 1)
+//          )]))
 
         case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
-          update(&grids[gridID]!) { grid in
-            let gridCopy = grid
-
-            if left > 0 || right < gridCopy.cells.columnsCount || columnsCount > 0 {
-              assertionFailure("Line part and horizontal scroll are not supported")
-            }
-
-            for fromRow in top ..< bottom {
-              let toRow = fromRow - rowsCount
-
-              guard toRow >= top, toRow < min(grid.cells.rows.count, bottom) else {
-                continue
-              }
-
-              grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
-              grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
-            }
-          }
-
           let rectangle = IntegerRectangle(
-            origin: .init(column: 0, row: top + min(0, rowsCount)),
-            size: .init(
-              columnsCount: grids[gridID]!.cells.size.columnsCount,
-              rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
-            )
+            origin: .init(column: left, row: top),
+            size: .init(columnsCount: right - left, rowsCount: bottom - top)
           )
-          updatedCells(inGridWithID: gridID, rectangles: [rectangle])
+          let offset = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
+          updatedText(inGridWithID: gridID, .scroll(rectangle: rectangle, offset: offset))
+//          let gridSize = grids[gridID]!.size
+//
+//          if columnsCount != 0 {
+//            assertionFailure("Horizontal scroll are not supported")
+//          }
+//
+//          update(&grids[gridID]!) { grid in
+//            let gridCopy = grid
+//
+//            let fromRows = offset.columnsCount < 0 ? Array(rectangle.rows) : rectangle.rows.reversed()
+//            for fromRow in fromRows {
+//              let toRow = fromRow - rowsCount
+//
+//              guard toRow >= top, toRow < min(gridSize.rowsCount, bottom) else {
+//                continue
+//              }
+//
+//              grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
+//              grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
+//            }
+//          }
+
+//          let rectangle = IntegerRectangle(
+//            origin: .init(column: 0, row: top + min(0, rowsCount)),
+//            size: .init(
+//              columnsCount: grids[gridID]!.cells.size.columnsCount,
+//              rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
+//            )
+//          )
 
         case let .gridClear(gridID):
-          update(&grids[gridID]!) { grid in
-            let newCells = TwoDimensionalArray<Grid.Cell>(
-              size: grid.cells.size,
-              repeatingElement: .default
-            )
-
-            grid.cells = newCells
-            grid.rowLayouts = newCells.rows
-              .map(Grid.RowLayout.init(rowCells:))
-
-            updatedAllCells(inGrid: grid)
-          }
+          updatedText(inGridWithID: gridID, .clear)
+//          update(&grids[gridID]!) { grid in
+//            let newCells = TwoDimensionalArray<Grid.Cell>(
+//              size: grid.cells.size,
+//              repeatingElement: .default
+//            )
+//
+//            grid.cells = newCells
+//            grid.rowLayouts = newCells.rows
+//              .map(Grid.RowLayout.init(rowCells:))
+//
+//            updatedText(inGridWithID: gridID, .redraw(rectangles: [.init(size: grid.size)]))
+//          }
 
         case let .gridDestroy(gridID):
           grids[gridID]?.associatedWindow = nil
@@ -589,41 +549,6 @@ public extension NeovimState {
             gridID: gridID,
             position: cursorPosition
           )
-
-          if
-            let oldCursor,
-            oldCursor.gridID == gridID,
-            oldCursor.position.row == cursorPosition.row
-          {
-            let originColumn = min(oldCursor.position.column, cursorPosition.column)
-            let columnsCount = max(oldCursor.position.column, cursorPosition.column) - originColumn + 1
-            updatedCells(inGridWithID: oldCursor.gridID, rectangles: [.init(
-              origin: .init(column: originColumn, row: cursorPosition.row),
-              size: .init(
-                columnsCount: columnsCount,
-                rowsCount: 1
-              )
-            )])
-
-          } else {
-            if let oldCursor {
-              updatedCells(
-                inGridWithID: oldCursor.gridID,
-                rectangles: [.init(
-                  origin: oldCursor.position,
-                  size: .init(columnsCount: 1, rowsCount: 1)
-                )]
-              )
-            }
-
-            updatedCells(
-              inGridWithID: gridID,
-              rectangles: [.init(
-                origin: cursorPosition,
-                size: .init(columnsCount: 1, rowsCount: 1)
-              )]
-            )
-          }
 
           cursorUpdated()
 

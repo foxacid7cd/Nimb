@@ -57,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       popupmenuWindowController?.render(stateUpdates)
 
       if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
-        let outerGridSize = store.outerGrid!.cells.size
+        let outerGridSize = store.outerGrid!.size
         UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
         UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
       }

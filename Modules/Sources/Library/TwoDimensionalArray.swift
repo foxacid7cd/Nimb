@@ -52,6 +52,10 @@ public struct TwoDimensionalArray<Element> {
     )
   }
 
+  public var rowsCount: Int {
+    rows.count
+  }
+
   public subscript(point: IntegerPoint) -> Element {
     get {
       rows[point.row][point.column]

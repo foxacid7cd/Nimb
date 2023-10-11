@@ -48,7 +48,7 @@ final class MainWindowController: NSWindowController {
       {
         .init(width: lastWindowWidth, height: lastWindowHeight)
       } else {
-        viewController.estimatedContentSize(outerGridSize: outerGrid.cells.size)
+        viewController.estimatedContentSize(outerGridSize: outerGrid.size)
       }
       window!.setContentSize(contentSize)
 

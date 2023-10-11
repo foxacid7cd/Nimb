@@ -17,11 +17,6 @@ class MainView: NSView {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    guard let outerGridIntegerSize = store.outerGrid?.cells.size else {
-      return
-    }
-    let outerGridSize = outerGridIntegerSize * store.font.cellSize
-
     let updatedLayoutGridIDs = if stateUpdates.isFontUpdated {
       Set(store.grids.keys)
 
@@ -35,22 +30,15 @@ class MainView: NSView {
 
     func gridViewOrCreate(for gridID: Grid.ID) -> GridView {
       if let gridView = gridViews[gridID] {
+        gridView.invalidateIntrinsicContentSize()
         return gridView
 
       } else {
         let gridView = GridView(store: store, gridID: gridID)
         gridView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(gridView)
-
-        let widthConstraint = gridView.widthAnchor.constraint(equalToConstant: 0)
-        widthConstraint.priority = .defaultHigh
-        widthConstraint.isActive = true
-
-        let heightConstraint = gridView.heightAnchor.constraint(equalToConstant: 0)
-        heightConstraint.priority = .defaultHigh
-        heightConstraint.isActive = true
-
-        gridView.sizeConstraints = (widthConstraint, heightConstraint)
+        gridView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        gridView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
 
         gridViews[gridID] = gridView
         return gridView
@@ -62,9 +50,6 @@ class MainView: NSView {
         let gridView = gridViewOrCreate(for: gridID)
 
         if gridID == Grid.OuterID {
-          gridView.sizeConstraints!.width.constant = outerGridSize.width
-          gridView.sizeConstraints!.height.constant = outerGridSize.height
-
           gridView.floatingWindowConstraints?.horizontal.isActive = false
           gridView.floatingWindowConstraints?.vertical.isActive = false
           gridView.floatingWindowConstraints = nil
@@ -92,9 +77,6 @@ class MainView: NSView {
           case let .plain(value):
             let windowFrame = (value.frame * store.font.cellSize)
 
-            gridView.sizeConstraints!.width.constant = windowFrame.width
-            gridView.sizeConstraints!.height.constant = windowFrame.height
-
             gridView.floatingWindowConstraints?.horizontal.isActive = false
             gridView.floatingWindowConstraints?.vertical.isActive = false
             gridView.floatingWindowConstraints = nil
@@ -121,10 +103,6 @@ class MainView: NSView {
             gridView.isHidden = grid.isHidden
 
           case let .floating(value):
-            let windowSize = grid.cells.size * store.font.cellSize
-            gridView.sizeConstraints!.width.constant = windowSize.width
-            gridView.sizeConstraints!.height.constant = windowSize.height
-
             gridView.windowConstraints?.leading.isActive = false
             gridView.windowConstraints?.top.isActive = false
             gridView.windowConstraints = nil
@@ -190,9 +168,6 @@ class MainView: NSView {
             gridView.isHidden = grid.isHidden
 
           case .external:
-            gridView.sizeConstraints!.width.constant = 0
-            gridView.sizeConstraints!.height.constant = 0
-
             gridView.windowConstraints?.leading.isActive = false
             gridView.windowConstraints?.top.isActive = false
             gridView.windowConstraints = nil
@@ -205,9 +180,6 @@ class MainView: NSView {
           }
 
         } else {
-          gridView.sizeConstraints!.width.constant = 0
-          gridView.sizeConstraints!.height.constant = 0
-
           gridView.windowConstraints?.leading.isActive = false
           gridView.windowConstraints?.top.isActive = false
           gridView.windowConstraints = nil
@@ -218,7 +190,6 @@ class MainView: NSView {
 
           gridView.isHidden = true
         }
-
       } else {
         gridViews[gridID]?.isHidden = true
       }
@@ -244,29 +215,30 @@ class MainView: NSView {
       )
     }
 
+    for gridView in gridViews.values {
+      gridView.render(stateUpdates: stateUpdates)
+    }
+
+    for (gridID, textUpdates) in stateUpdates.gridUpdates {
+      guard let gridView = gridViews[gridID] else {
+        continue
+      }
+      gridView.render(textUpdates: textUpdates)
+    }
+
     if stateUpdates.isAppearanceUpdated {
       for gridView in gridViews.values {
-        gridView.setNeedsDisplay(gridView.bounds)
+        gridView.needsDisplay = true
       }
 
     } else {
-      for (gridID, updatedRectangles) in stateUpdates.gridUpdatedRectangles {
-        guard let gridView = gridViews[gridID] else {
-          continue
-        }
-        gridView.setNeedsDisplay(updatedRectangles: updatedRectangles)
-      }
-
-      if stateUpdates.isCursorBlinkingPhaseUpdated, let cursor = store.cursor, let gridView = gridViews[cursor.gridID] {
-        gridView.setNeedsDisplay(
-          updatedRectangles: [
-            .init(
-              origin: cursor.position,
-              size: .init(columnsCount: 1, rowsCount: 1)
-            ),
-          ]
-        )
-      }
+//      if stateUpdates.isCursorBlinkingPhaseUpdated, let cursor = store.cursor, let gridView = gridViews[cursor.gridID] {
+//        gridView.render(
+//          textUpdates: [.redraw(rectangles: [
+//            .init(origin: cursor.position, size: .init(columnsCount: 1, rowsCount: 1)),
+//          ])]
+//        )
+//      }
     }
   }
 
@@ -278,11 +250,12 @@ class MainView: NSView {
   }
 
   override var intrinsicContentSize: NSSize {
-    let outerGridSize = store.outerGrid?.cells.size
-    return (outerGridSize ?? .init()) * store.font.cellSize
+    guard let outerGrid = store.outerGrid else {
+      return .init()
+    }
+    return outerGrid.size * store.font.cellSize
   }
 
   private var store: Store
-  private var task: Task<Void, Never>?
   private var gridViews = IntKeyedDictionary<GridView>()
 }

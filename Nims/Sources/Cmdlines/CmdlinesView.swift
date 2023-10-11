@@ -190,9 +190,6 @@ private final class CmdlineFirstCharacterView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
-    cgContext.saveGState()
-    defer { cgContext.restoreGState() }
-
     if let backgroundColor {
       backgroundColor.setFill()
       cgContext.addPath(

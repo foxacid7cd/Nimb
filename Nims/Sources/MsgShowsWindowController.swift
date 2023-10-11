@@ -245,9 +245,6 @@ private final class MsgShowView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
-    cgContext.saveGState()
-    defer { cgContext.restoreGState() }
-
     CTFrameDraw(ctFrame, graphicsContext.cgContext)
   }
 
