@@ -18,7 +18,6 @@ public final class GridView: NSView {
     let grid = store.grids[gridID]!
     gridLayout = .init(cells: .init(size: grid.size, repeatingElement: .default))
     gridDrawRuns = .init(
-      gridID: gridID,
       gridLayout: gridLayout,
       font: store.font,
       appearance: store.appearance
@@ -156,7 +155,6 @@ public final class GridView: NSView {
         (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)
       {
         cursorDrawRun.draw(
-          at: .init(x: 0, y: Double(cursorDrawRun.position.row) * store.font.cellSize.height),
           to: context,
           font: store.font,
           appearance: store.appearance,

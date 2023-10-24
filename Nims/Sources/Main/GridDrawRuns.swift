@@ -8,19 +8,21 @@ import SwiftUI
 
 @MainActor
 public final class GridDrawRuns {
-  public init(gridID: Grid.ID, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
-    let drawRunProvider = DrawRunCachingProvider(gridID: gridID)
+  public init(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
+    let drawRunProvider = DrawRunCachingProvider()
     self.drawRunProvider = drawRunProvider
-    rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
+
+    rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
   }
 
   public func render(textUpdate: GridTextUpdate, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
     switch textUpdate {
     case .resize:
-      rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
+      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
 
     case let .line(origin, _):
       rowDrawRuns[origin.row] = .init(
+        row: origin.row,
         rowLayout: gridLayout.rowLayouts[origin.row],
         font: font,
         appearance: appearance,
@@ -42,7 +44,8 @@ public final class GridDrawRuns {
       }
 
     case .clear:
-      rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
+      drawRunProvider.clearCache()
+      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
     }
   }
 
@@ -54,18 +57,13 @@ public final class GridDrawRuns {
     upsideDownTransform: CGAffineTransform
   ) {
     for row in boundingRect.rows where row >= 0 && row < rowDrawRuns.count {
-      let rowRectangle = IntegerRectangle(
-        origin: .init(column: boundingRect.origin.column, row: row),
-        size: .init(columnsCount: boundingRect.size.columnsCount, rowsCount: 1)
+      rowDrawRuns[row].draw(
+        at: .init(x: 0, y: Double(row) * font.cellHeight),
+        to: context,
+        font: font,
+        appearance: appearance,
+        upsideDownTransform: upsideDownTransform
       )
-
-      (rowRectangle * font.cellSize)
-        .applying(upsideDownTransform)
-        .clip()
-
-      rowDrawRuns[row].draw(at: .init(x: 0, y: Double(rowDrawRuns.count - row - 1) * font.cellHeight), to: context, font: font, appearance: appearance)
-
-      context.resetClip()
     }
   }
 
@@ -80,88 +78,127 @@ public final class GridDrawRuns {
 }
 
 @MainActor
-private class DrawRunCachingProvider {
-  init(gridID: Grid.ID) {
-    let cache = NSCache<Key, Wrapped<DrawRun>>()
-    cache.name = "\(Bundle.main.bundleIdentifier!).DrawRunsCache-\(gridID)"
-    cache.countLimit = 400
-    self.cache = cache
-  }
-
-  func makeDrawRun(rowPart: RowPart, font: NimsFont, appearance: Appearance) -> DrawRun {
-    let key = Key(rowPart: rowPart)
-    if let cached = cache.object(forKey: key)?.value {
-      return cached
-    } else {
-      let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
-      cache.setObject(.init(value: drawRun), forKey: key)
-      return drawRun
+private func makeDrawRuns(
+  gridLayout: GridLayout,
+  font: NimsFont,
+  appearance: Appearance,
+  drawRunProvider: DrawRunCachingProvider
+) -> [RowDrawRun] {
+  gridLayout.rowLayouts
+    .enumerated()
+    .map {
+      .init(
+        row: $0,
+        rowLayout: $1,
+        font: font,
+        appearance: appearance,
+        drawRunProvider: drawRunProvider
+      )
     }
+}
+
+@MainActor
+private class DrawRunCachingProvider {
+  func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
+    if cachedRows[row] == nil {
+      cachedRows[row] = .init(parts: [])
+    }
+
+    var newCachedParts = [CachedPart]()
+
+    for rowPart in rowParts {
+      if let (drawRun, boundingRange) = cachedRows[row]!.matchingDrawRun(for: rowPart) {
+        newCachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: boundingRange))
+      } else {
+        let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
+        newCachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: 0 ..< rowPart.text.count))
+      }
+    }
+
+    cachedRows[row]!.parts = newCachedParts
+
+    return newCachedParts.map { ($0.drawRun, $0.boundingRange) }
   }
 
   func clearCache() {
-    cache.removeAllObjects()
+    cachedRows = [:]
   }
 
-  private class Key: NSObject {
-    init(rowPart: RowPart) {
-      var hasher = Hasher()
-      hasher.combine(rowPart.text)
-      hasher.combine(rowPart.highlightID)
-      value = hasher.finalize()
-      super.init()
-    }
+  private struct CachedRow {
+    var parts: [CachedPart]
 
-    override var hash: Int {
-      value
-    }
+    func matchingDrawRun(for rowPart: RowPart) -> (drawRun: DrawRun, boundingRange: Range<Int>)? {
+      for part in parts {
+        guard 
+          part.highlightID == rowPart.highlightID,
+          let range = part.text.range(of: rowPart.text),
+          range.lowerBound == part.text.startIndex || range.upperBound == part.text.endIndex
+        else {
+          continue
+        }
 
-    override func isEqual(_ object: Any?) -> Bool {
-      guard let object = object as? Key else {
-        return false
+        let lowerBound = part.text.distance(from: part.text.startIndex, to: range.lowerBound)
+        let upperBound = part.text.distance(from: part.text.startIndex, to: range.upperBound)
+        return (
+          drawRun: part.drawRun,
+          boundingRange: part.boundingRange.lowerBound + lowerBound ..< part.boundingRange.lowerBound + upperBound
+        )
       }
 
-      return object.value == value
+      return nil
     }
-
-    private let value: Int
   }
 
-  private class Wrapped<Value>: NSObject {
-    init(value: Value) {
-      self.value = value
-      super.init()
-    }
-
-    let value: Value
+  private struct CachedPart {
+    var text: String
+    var highlightID: Highlight.ID
+    var drawRun: DrawRun
+    var boundingRange: Range<Int>
   }
 
-  private let cache: NSCache<Key, Wrapped<DrawRun>>
+  private var cachedRows = IntKeyedDictionary<CachedRow>()
 }
 
 @PublicInit
 public struct RowDrawRun {
   @MainActor
-  fileprivate init(rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunProvider: DrawRunCachingProvider) {
+  fileprivate init(row: Int, rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunProvider: DrawRunCachingProvider) {
     self = .init(
-      drawRuns: rowLayout.parts
-        .map { drawRunProvider.makeDrawRun(rowPart: $0, font: font, appearance: appearance) }
+      drawRuns: drawRunProvider.drawRuns(forRow: row, rowParts: rowLayout.parts, font: font, appearance: appearance)
     )
   }
 
-  public var drawRuns: [DrawRun]
+  public var drawRuns: [(drawRun: DrawRun, boundingRange: Range<Int>)]
 
   @MainActor
   public func draw(
     at origin: CGPoint,
     to context: CGContext,
     font: NimsFont,
-    appearance: Appearance
+    appearance: Appearance,
+    upsideDownTransform: CGAffineTransform
   ) {
     var currentColumn = 0
-    for drawRun in drawRuns {
-      drawRun.draw(to: context, at: .init(x: Double(currentColumn) * font.cellWidth + origin.x, y: origin.y), font: font, appearance: appearance)
-      currentColumn += drawRun.columnsCount
+    for (drawRun, boundingRange) in drawRuns {
+      let rect = CGRect(
+        x: Double(currentColumn) * font.cellWidth + origin.x,
+        y: origin.y,
+        width: Double(boundingRange.count) * font.cellWidth,
+        height: font.cellHeight
+      )
+      .applying(upsideDownTransform)
+
+      rect.clip()
+
+      drawRun.draw(
+        to: context,
+        at: rect.origin + .init(x: -Double(boundingRange.lowerBound) * font.cellWidth, y: 0),
+        font: font,
+        appearance: appearance
+      )
+      currentColumn += boundingRange.count
+
+      context.resetClip()
     }
   }
 }
@@ -407,10 +444,10 @@ public struct CursorDrawRun {
   @MainActor
   public init?(gridLayout: GridLayout, rowDrawRuns: [RowDrawRun], cursorPosition: IntegerPoint, cursorStyle: CursorStyle, font: NimsFont, appearance: Appearance) {
     var location = 0
-    for drawRun in rowDrawRuns[cursorPosition.row].drawRuns {
+    for (drawRun, boundingRange) in rowDrawRuns[cursorPosition.row].drawRuns {
       if
         cursorPosition.column >= location,
-        cursorPosition.column < location + drawRun.columnsCount
+        cursorPosition.column < location + boundingRange.count
       {
         if let cursorShape = cursorStyle.cursorShape {
           let cellFrame: CGRect
@@ -441,13 +478,14 @@ public struct CursorDrawRun {
             cellFrame: cellFrame,
             highlightID: cursorStyle.attrID ?? 0,
             parentOrigin: .init(column: location, row: cursorPosition.row),
-            parentDrawRun: drawRun
+            parentDrawRun: drawRun,
+            parentBoundingRange: boundingRange
           )
           return
         }
       }
 
-      location += drawRun.columnsCount
+      location += boundingRange.count
     }
 
     return nil
@@ -458,13 +496,14 @@ public struct CursorDrawRun {
   public var highlightID: Highlight.ID
   public var parentOrigin: IntegerPoint
   public var parentDrawRun: DrawRun
+  public var parentBoundingRange: Range<Int>
 
   public var rectangle: IntegerRectangle {
     .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
   }
 
   @MainActor
-  public func draw(at origin: CGPoint, to context: CGContext, font: NimsFont, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
+  public func draw(to context: CGContext, font: NimsFont, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
     let cursorForegroundColor: NimsColor
     let cursorBackgroundColor: NimsColor
 
@@ -477,7 +516,7 @@ public struct CursorDrawRun {
       cursorBackgroundColor = appearance.backgroundColor(for: highlightID)
     }
 
-    let offset = rectangle.origin * font.cellSize
+    let offset = position * font.cellSize
     let rect = cellFrame
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(upsideDownTransform)
@@ -488,10 +527,19 @@ public struct CursorDrawRun {
 
     context.setShouldAntialias(true)
     rect.clip()
+
+    context.setFillColor(cursorForegroundColor.appKit.cgColor)
+
+    let parentRectangle = IntegerRectangle(
+      origin: .init(column: parentOrigin.column - parentBoundingRange.lowerBound, row: parentOrigin.row),
+      size: .init(columnsCount: parentBoundingRange.count, rowsCount: 1)
+    )
+    let parentRect = (parentRectangle * font.cellSize)
+      .applying(upsideDownTransform)
+
     for glyphRun in parentDrawRun.glyphRuns {
       context.textMatrix = glyphRun.textMatrix
-      context.textPosition = parentOrigin * font.cellSize
-      context.setFillColor(cursorForegroundColor.appKit.cgColor)
+      context.textPosition = parentRect.origin
 
       CTFontDrawGlyphs(
         font.nsFont(),
@@ -501,7 +549,6 @@ public struct CursorDrawRun {
         context
       )
     }
-
     context.resetClip()
   }
 }
