@@ -8,20 +8,23 @@ import SwiftUI
 
 @MainActor
 public final class GridDrawRuns {
-  public init(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
-    rowDrawRuns = makeRowDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance)
+  public init(gridID: Grid.ID, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
+    let drawRunProvider = DrawRunCachingProvider(gridID: gridID)
+    self.drawRunProvider = drawRunProvider
+    rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
   }
 
   public func render(textUpdate: GridTextUpdate, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
     switch textUpdate {
     case .resize:
-      rowDrawRuns = makeRowDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance)
+      rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
 
     case let .line(origin, _):
       rowDrawRuns[origin.row] = .init(
         rowLayout: gridLayout.rowLayouts[origin.row],
         font: font,
-        appearance: appearance
+        appearance: appearance,
+        drawRunProvider: drawRunProvider
       )
 
     case let .scroll(rectangle, offset):
@@ -39,7 +42,7 @@ public final class GridDrawRuns {
       }
 
     case .clear:
-      rowDrawRuns = makeRowDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance)
+      rowDrawRuns = gridLayout.rowLayouts.map { .init(rowLayout: $0, font: font, appearance: appearance, drawRunProvider: drawRunProvider) }
     }
   }
 
@@ -66,36 +69,83 @@ public final class GridDrawRuns {
     }
   }
 
+  public func clearCache() {
+    drawRunProvider.clearCache()
+  }
+
   private(set) var rowDrawRuns: [RowDrawRun]
 
+  private let drawRunProvider: DrawRunCachingProvider
   private var cursorDrawRun: CursorDrawRun?
 }
 
 @MainActor
-private func makeRowDrawRuns(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) -> [RowDrawRun] {
-  gridLayout.rowLayouts
-    .map { rowLayout in
-      RowDrawRun(
-        rowLayout: rowLayout,
-        font: font,
-        appearance: appearance
-      )
+private class DrawRunCachingProvider {
+  init(gridID: Grid.ID) {
+    let cache = NSCache<Key, Wrapped<DrawRun>>()
+    cache.name = "\(Bundle.main.bundleIdentifier!).DrawRunsCache-\(gridID)"
+    cache.countLimit = 400
+    self.cache = cache
+  }
+
+  func makeDrawRun(rowPart: RowPart, font: NimsFont, appearance: Appearance) -> DrawRun {
+    let key = Key(rowPart: rowPart)
+    if let cached = cache.object(forKey: key)?.value {
+      return cached
+    } else {
+      let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
+      cache.setObject(.init(value: drawRun), forKey: key)
+      return drawRun
     }
+  }
+
+  func clearCache() {
+    cache.removeAllObjects()
+  }
+
+  private class Key: NSObject {
+    init(rowPart: RowPart) {
+      var hasher = Hasher()
+      hasher.combine(rowPart.text)
+      hasher.combine(rowPart.highlightID)
+      value = hasher.finalize()
+      super.init()
+    }
+
+    override var hash: Int {
+      value
+    }
+
+    override func isEqual(_ object: Any?) -> Bool {
+      guard let object = object as? Key else {
+        return false
+      }
+
+      return object.value == value
+    }
+
+    private let value: Int
+  }
+
+  private class Wrapped<Value>: NSObject {
+    init(value: Value) {
+      self.value = value
+      super.init()
+    }
+
+    let value: Value
+  }
+
+  private let cache: NSCache<Key, Wrapped<DrawRun>>
 }
 
 @PublicInit
 public struct RowDrawRun {
   @MainActor
-  public init(rowLayout: RowLayout, font: NimsFont, appearance: Appearance) {
-    var drawRuns = [DrawRun]()
-
-    for rowPart in rowLayout.parts {
-      let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
-      drawRuns.append(drawRun)
-    }
-
+  fileprivate init(rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunProvider: DrawRunCachingProvider) {
     self = .init(
-      drawRuns: drawRuns
+      drawRuns: rowLayout.parts
+        .map { drawRunProvider.makeDrawRun(rowPart: $0, font: font, appearance: appearance) }
     )
   }
 

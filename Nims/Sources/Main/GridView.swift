@@ -18,6 +18,7 @@ public final class GridView: NSView {
     let grid = store.grids[gridID]!
     gridLayout = .init(cells: .init(size: grid.size, repeatingElement: .default))
     gridDrawRuns = .init(
+      gridID: gridID,
       gridLayout: gridLayout,
       font: store.font,
       appearance: store.appearance
@@ -47,6 +48,10 @@ public final class GridView: NSView {
   }
 
   public func render(stateUpdates: State.Updates) {
+    if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
+      gridDrawRuns.clearCache()
+    }
+
     if stateUpdates.isCursorUpdated {
       updateCursorDrawRun()
     } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun {
@@ -198,7 +203,23 @@ public final class GridView: NSView {
   }
 
   override public func mouseMoved(with event: NSEvent) {
-    report(event, of: [.mouseMove])
+    let upsideDownLocation = convert(event.locationInWindow, from: nil)
+      .applying(upsideDownTransform)
+    let point = IntegerPoint(
+      column: Int(upsideDownLocation.x / store.font.cellWidth),
+      row: Int(upsideDownLocation.y / store.font.cellHeight)
+    )
+
+    let modifier = event.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
+    let mouseMoveEvent = MouseEvent(content: .mouseMove, gridID: gridID, point: point, modifier: modifier)
+
+    if previousMouseMoveEvent != mouseMoveEvent {
+      previousMouseMoveEvent = mouseMoveEvent
+
+      Task {
+        await store.instance.report(mouseEvents: [mouseMoveEvent])
+      }
+    }
   }
 
   override public func mouseExited(with event: NSEvent) {
@@ -217,7 +238,7 @@ public final class GridView: NSView {
     xScrollingAccumulator -= event.scrollingDeltaX
     yScrollingAccumulator -= event.scrollingDeltaY
 
-    let xThreshold = cellSize.width * 3
+    let xThreshold = cellSize.width * 6
     let yThreshold = cellSize.height * 3
 
     var mouseEventContents = [MouseEvent.Content]()
@@ -294,36 +315,14 @@ public final class GridView: NSView {
       row: Int(upsideDownLocation.y / store.font.cellHeight)
     )
 
-    let modifier = nsEvent.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
-    let mouseEvents = contents
-      .map { content in
-        MouseEvent(content: content, gridID: gridID, point: point, modifier: modifier)
-      }
-
-    var filteredMouseEvents = [MouseEvent]()
-    var shouldHideMsgShows = false
-
-    for mouseEvent in mouseEvents {
-      switch mouseEvent.content {
-      case .mouseMove:
-        if mouseEvent.point != previousMouseMoveEvent?.point {
-          filteredMouseEvents.append(mouseEvent)
-          previousMouseMoveEvent = mouseEvent
-        }
-
-      default:
-        shouldHideMsgShows = true
-
-        filteredMouseEvents.append(mouseEvent)
-      }
-    }
-
-    if shouldHideMsgShows {
-      store.scheduleHideMsgShowsIfPossible()
-    }
+    store.scheduleHideMsgShowsIfPossible()
 
     Task {
-      await store.instance.report(mouseEvents: filteredMouseEvents)
+      let modifier = nsEvent.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
+      await store.instance.report(
+        mouseEvents: contents
+          .map { MouseEvent(content: $0, gridID: gridID, point: point, modifier: modifier) }
+      )
     }
   }
 
