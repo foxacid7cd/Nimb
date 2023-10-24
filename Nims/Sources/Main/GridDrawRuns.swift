@@ -7,7 +7,7 @@ import Library
 import SwiftUI
 
 @MainActor
-public final class DrawRunsContainer {
+public final class GridDrawRuns {
   public init(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
     rowDrawRuns = makeRowDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance)
   }
@@ -19,7 +19,6 @@ public final class DrawRunsContainer {
 
     case let .line(origin, _):
       rowDrawRuns[origin.row] = .init(
-        origin: .init(x: 0, y: Double(gridLayout.rowsCount - origin.row - 1) * font.cellHeight),
         rowLayout: gridLayout.rowLayouts[origin.row],
         font: font,
         appearance: appearance
@@ -37,7 +36,6 @@ public final class DrawRunsContainer {
           continue
         }
         rowDrawRuns[toRow] = copy[fromRow]
-        rowDrawRuns[toRow].origin = .init(x: 0, y: Double(gridLayout.rowsCount - toRow - 1) * font.cellHeight)
       }
 
     case .clear:
@@ -53,8 +51,17 @@ public final class DrawRunsContainer {
     upsideDownTransform: CGAffineTransform
   ) {
     for row in boundingRect.rows where row > 0 && row < rowDrawRuns.count {
-      context.clip(to: [boundingRect * font.cellSize])
-      rowDrawRuns[row].draw(at: .init(), to: context, font: font, appearance: appearance)
+      let rowRectangle = IntegerRectangle(
+        origin: .init(column: boundingRect.origin.column, row: row),
+        size: .init(columnsCount: boundingRect.size.columnsCount, rowsCount: 1)
+      )
+
+      (rowRectangle * font.cellSize)
+        .applying(upsideDownTransform)
+        .clip()
+
+      rowDrawRuns[row].draw(at: .init(x: 0, y: Double(rowDrawRuns.count - row - 1) * font.cellHeight), to: context, font: font, appearance: appearance)
+
       context.resetClip()
     }
   }
@@ -67,10 +74,8 @@ public final class DrawRunsContainer {
 @MainActor
 private func makeRowDrawRuns(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) -> [RowDrawRun] {
   gridLayout.rowLayouts
-    .enumerated()
-    .map { row, rowLayout in
+    .map { rowLayout in
       RowDrawRun(
-        origin: .init(x: 0, y: Double(gridLayout.rowsCount - row - 1) * font.cellHeight),
         rowLayout: rowLayout,
         font: font,
         appearance: appearance
@@ -81,31 +86,19 @@ private func makeRowDrawRuns(gridLayout: GridLayout, font: NimsFont, appearance:
 @PublicInit
 public struct RowDrawRun {
   @MainActor
-  public init(origin: CGPoint, rowLayout: RowLayout, font: NimsFont, appearance: Appearance) {
+  public init(rowLayout: RowLayout, font: NimsFont, appearance: Appearance) {
     var drawRuns = [DrawRun]()
 
     for rowPart in rowLayout.parts {
-      let drawRun = DrawRun(
-        origin: .init(
-          x: Double(rowPart.range.location) * font.cellSize.width,
-          y: 0
-        ),
-        highlightID: rowPart.highlightID,
-        integerSize: .init(columnsCount: rowPart.range.length, rowsCount: 1),
-        font: font,
-        appearance: appearance,
-        text: rowPart.text
-      )
+      let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
       drawRuns.append(drawRun)
     }
 
     self = .init(
-      origin: origin,
       drawRuns: drawRuns
     )
   }
 
-  public var origin: CGPoint
   public var drawRuns: [DrawRun]
 
   @MainActor
@@ -115,8 +108,10 @@ public struct RowDrawRun {
     font: NimsFont,
     appearance: Appearance
   ) {
+    var currentColumn = 0
     for drawRun in drawRuns {
-      drawRun.draw(at: self.origin + origin, to: context, font: font, appearance: appearance)
+      drawRun.draw(to: context, at: .init(x: Double(currentColumn) * font.cellWidth + origin.x, y: origin.y), font: font, appearance: appearance)
+      currentColumn += drawRun.columnsCount
     }
   }
 }
@@ -124,8 +119,8 @@ public struct RowDrawRun {
 @PublicInit
 public struct DrawRun {
   @MainActor
-  public init(origin: CGPoint, highlightID: Highlight.ID, integerSize: IntegerSize, font: NimsFont, appearance: Appearance, text: String) {
-    let size = integerSize * font.cellSize
+  public init(text: String, columnsCount: Int, highlightID: Highlight.ID, font: NimsFont, appearance: Appearance) {
+    let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
 
     let nsFont = font.nsFont(
       isBold: appearance.isBold(for: highlightID),
@@ -233,7 +228,7 @@ public struct DrawRun {
         let widthDivider = 3
 
         let xStep = font.cellWidth / Double(widthDivider)
-        let pointsCount = integerSize.columnsCount * widthDivider + 3
+        let pointsCount = columnsCount * widthDivider + 3
 
         let oddUnderlineY = underlineY + 3
         let evenUnderlineY = underlineY
@@ -266,39 +261,38 @@ public struct DrawRun {
     }
 
     self = .init(
-      origin: origin,
-      highlightID: highlightID,
-      integerSize: integerSize,
+      columnsCount: columnsCount,
       glyphRuns: glyphRuns,
       strikethroughPath: strikethroughPath?.cgPath,
       underlinePath: underlinePath?.cgPath,
-      underlineLineDashLengths: underlineLineDashLengths
+      underlineLineDashLengths: underlineLineDashLengths,
+      highlightID: highlightID
     )
   }
 
-  public var origin: CGPoint
-  public var highlightID: Highlight.ID
-  public var integerSize: IntegerSize
+  public var columnsCount: Int
   public var glyphRuns: [GlyphRun]
   public var strikethroughPath: CGPath?
   public var underlinePath: CGPath?
   public var underlineLineDashLengths: [CGFloat]
+  public var highlightID: Highlight.ID
 
   @MainActor
   public func draw(
-    at origin: CGPoint,
     to context: CGContext,
+    at origin: CGPoint,
     font: NimsFont,
     appearance: Appearance
   ) {
-    let origin = self.origin + origin
-    let rect = CGRect(
-      origin: origin,
-      size: integerSize * font.cellSize
-    )
-
     context.setShouldAntialias(false)
     appearance.backgroundColor(for: highlightID).appKit.setFill()
+    let rect = CGRect(
+      origin: origin,
+      size: .init(
+        width: Double(columnsCount) * font.cellWidth,
+        height: font.cellHeight
+      )
+    )
     context.fill([rect])
 
     let nsFont = font.nsFont(
@@ -366,7 +360,7 @@ public struct CursorDrawRun {
     for drawRun in rowDrawRuns[cursorPosition.row].drawRuns {
       if
         cursorPosition.column >= location,
-        cursorPosition.column < location + drawRun.integerSize.columnsCount
+        cursorPosition.column < location + drawRun.columnsCount
       {
         if let cursorShape = cursorStyle.cursorShape {
           let cellFrame: CGRect
@@ -403,7 +397,7 @@ public struct CursorDrawRun {
         }
       }
 
-      location += drawRun.integerSize.columnsCount
+      location += drawRun.columnsCount
     }
 
     return nil
@@ -446,7 +440,7 @@ public struct CursorDrawRun {
     rect.clip()
     for glyphRun in parentDrawRun.glyphRuns {
       context.textMatrix = glyphRun.textMatrix
-      context.textPosition = parentDrawRun.origin + .init(x: 0, y: rect.origin.y)
+      context.textPosition = parentOrigin * font.cellSize
       context.setFillColor(cursorForegroundColor.appKit.cgColor)
 
       CTFontDrawGlyphs(

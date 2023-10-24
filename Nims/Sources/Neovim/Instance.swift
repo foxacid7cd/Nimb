@@ -79,7 +79,7 @@ public final class Instance: Sendable {
       }
 
       continuation.onTermination = { _ in
-        Task { @MainActor in
+        Task<Void, Never> { @MainActor in
           self?.observers.removeValue(forKey: id)
         }
       }

@@ -140,6 +140,7 @@ public struct IntKeyedDictionary<Value> {
     }
   }
 
+  @inlinable
   @discardableResult
   public mutating func removeValue(forKey key: Key) -> Value? {
     let value = self[key]
@@ -152,6 +153,7 @@ public struct IntKeyedDictionary<Value> {
 }
 
 extension IntKeyedDictionary: ExpressibleByDictionaryLiteral {
+  @inlinable
   public init(dictionaryLiteral elements: (Int, Value)...) {
     self.init(minimumCapacity: elements.count)
 

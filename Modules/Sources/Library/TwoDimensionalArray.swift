@@ -3,6 +3,7 @@
 import Foundation
 
 public struct TwoDimensionalArray<Element> {
+  @inlinable
   public init(
     size: IntegerSize,
     repeatingElement: Element
@@ -45,6 +46,7 @@ public struct TwoDimensionalArray<Element> {
   public var rows: [[Element]]
   public internal(set) var columnsCount: Int
 
+  @inlinable
   public var size: IntegerSize {
     .init(
       columnsCount: columnsCount,
@@ -52,10 +54,12 @@ public struct TwoDimensionalArray<Element> {
     )
   }
 
+  @inlinable
   public var rowsCount: Int {
     rows.count
   }
 
+  @inlinable
   public subscript(point: IntegerPoint) -> Element {
     get {
       rows[point.row][point.column]

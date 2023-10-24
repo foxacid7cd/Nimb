@@ -3,6 +3,7 @@
 import AppKit
 
 public extension NSFont {
+  @inlinable
   func makeCellWidth() -> Double {
     var character = "A".utf16.first!
 
@@ -14,6 +15,7 @@ public extension NSFont {
     return advance.width
   }
 
+  @inlinable
   func makeCellHeight() -> Double {
     let ascent = CTFontGetAscent(self)
     let descent = CTFontGetDescent(self)

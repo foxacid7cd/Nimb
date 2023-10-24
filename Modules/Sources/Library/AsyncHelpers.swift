@@ -4,6 +4,7 @@ import AsyncAlgorithms
 import Foundation
 
 public extension AsyncStream {
+  @inlinable
   init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy: Continuation.BufferingPolicy = .unbounded
@@ -38,6 +39,7 @@ public extension AsyncStream {
 }
 
 public extension AsyncThrowingStream where Failure == Error {
+  @inlinable
   init<S: AsyncSequence>(
     _ sequence: S,
     bufferingPolicy _: Continuation.BufferingPolicy = .unbounded
@@ -68,12 +70,15 @@ public extension AsyncThrowingStream where Failure == Error {
 }
 
 public extension AsyncSequence {
+  @inlinable
   var erasedToAsyncStream: AsyncStream<Element> { .init(self) }
 
+  @inlinable
   var erasedToAsyncThrowingStream: AsyncThrowingStream<Element, Error> { .init(self) }
 }
 
 public extension AsyncChannel {
+  @inlinable
   static func pipe(
     bufferingPolicy: AsyncStream<Element>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncStream<Element>) {
@@ -86,6 +91,7 @@ public extension AsyncChannel {
 }
 
 public extension AsyncThrowingChannel where Failure == Error {
+  @inlinable
   static func pipe(
     bufferingPolicy: AsyncThrowingStream<Element, Failure>.Continuation.BufferingPolicy = .unbounded
   ) -> (send: @Sendable (Element) async -> Void, stream: AsyncThrowingStream<Element, Failure>) {
@@ -98,6 +104,7 @@ public extension AsyncThrowingChannel where Failure == Error {
 }
 
 public extension FileHandle {
+  @inlinable
   var dataBatches: AsyncStream<Data> {
     AsyncStream<Data> { continuation in
       readabilityHandler = { fileHandle in
