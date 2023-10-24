@@ -1,4 +1,6 @@
 #!/bin/sh
+set -e
+
 cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="/Applications/Nims.app/Contents/Resources/nvim"
 cmake --build .build/ --target package
 

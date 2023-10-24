@@ -1,4 +1,5 @@
 #!/bin/zsh
+set -e
 
 () {
   local nvim_path=".build/nvim-macos/bin/nvim"
