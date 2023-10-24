@@ -50,7 +50,7 @@ public final class GridDrawRuns {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    for row in boundingRect.rows where row > 0 && row < rowDrawRuns.count {
+    for row in boundingRect.rows where row >= 0 && row < rowDrawRuns.count {
       let rowRectangle = IntegerRectangle(
         origin: .init(column: boundingRect.origin.column, row: row),
         size: .init(columnsCount: boundingRect.size.columnsCount, rowsCount: 1)
