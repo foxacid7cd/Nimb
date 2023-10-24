@@ -100,24 +100,20 @@ private func makeDrawRuns(
 @MainActor
 private class DrawRunCachingProvider {
   func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
-    if cachedRows[row] == nil {
-      cachedRows[row] = .init(parts: [])
-    }
-
-    var newCachedParts = [CachedPart]()
+    var cachedParts = [CachedPart]()
 
     for rowPart in rowParts {
-      if let (drawRun, boundingRange) = cachedRows[row]!.matchingDrawRun(for: rowPart) {
-        newCachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: boundingRange))
+      if let (drawRun, boundingRange) = cachedRows[row]?.matchingDrawRun(for: rowPart) {
+        cachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: boundingRange))
       } else {
         let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
-        newCachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: 0 ..< rowPart.text.count))
+        cachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: 0 ..< rowPart.text.count))
       }
     }
 
-    cachedRows[row]!.parts = newCachedParts
+    cachedRows[row] = .init(parts: cachedParts)
 
-    return newCachedParts.map { ($0.drawRun, $0.boundingRange) }
+    return cachedParts.map { ($0.drawRun, $0.boundingRange) }
   }
 
   func clearCache() {

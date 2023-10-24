@@ -230,15 +230,6 @@ class MainView: NSView {
       for gridView in gridViews.values {
         gridView.needsDisplay = true
       }
-
-    } else {
-//      if stateUpdates.isCursorBlinkingPhaseUpdated, let cursor = store.cursor, let gridView = gridViews[cursor.gridID] {
-//        gridView.render(
-//          textUpdates: [.redraw(rectangles: [
-//            .init(origin: cursor.position, size: .init(columnsCount: 1, rowsCount: 1)),
-//          ])]
-//        )
-//      }
     }
   }
 
