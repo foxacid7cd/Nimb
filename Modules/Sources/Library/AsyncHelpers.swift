@@ -94,11 +94,20 @@ public extension AsyncThrowingChannel where Failure == Error {
   @inlinable
   static func pipe(
     bufferingPolicy: AsyncThrowingStream<Element, Failure>.Continuation.BufferingPolicy = .unbounded
-  ) -> (send: @Sendable (Element) async -> Void, stream: AsyncThrowingStream<Element, Failure>) {
+  ) -> (send: @Sendable (Result<Element, Failure>) async -> Void, stream: AsyncThrowingStream<Element, Failure>) {
     let channel = AsyncThrowingChannel<Element, Failure>()
 
     return (
-      send: { await channel.send($0) }, stream: .init(channel, bufferingPolicy: bufferingPolicy)
+      send: {
+        switch $0 {
+        case let .success(value):
+          await channel.send(value)
+
+        case let .failure(error):
+          channel.fail(error)
+        }
+      },
+      stream: .init(channel, bufferingPolicy: bufferingPolicy)
     )
   }
 }

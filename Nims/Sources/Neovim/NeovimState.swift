@@ -24,6 +24,7 @@ public struct NeovimState: Sendable {
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
+  public var cursorBlinkingPhase: Bool = true
 
   public var outerGrid: Grid? {
     get {
@@ -108,6 +109,7 @@ public extension NeovimState {
     public var gridUpdates: [Grid.ID: GridUpdate] = [:]
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
+    public var isCursorBlinkingPhaseUpdated: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)

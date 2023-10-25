@@ -12,51 +12,43 @@ final class Store: Sendable {
     self.state = state
     backgroundState = state
 
-    Task { @NeovimActor [weak self] in
-      self?.stateUpdatesTask = Task {
-        do {
-          for try await instanceStateUpdates in instance {
-            guard let self, !Task.isCancelled else {
-              return
-            }
+    task = Task { @NeovimActor [weak self] in
+      do {
+        for try await instanceStateUpdates in instance {
+          guard let self else {
+            return
+          }
 
-            let state = instance.state
-            self.backgroundState.instanceState = state
+          try Task.checkCancellation()
 
-            if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
-              self.hideMsgShowsTask?.cancel()
-              self.hideMsgShowsTask = nil
+          let state = instance.state
+          self.backgroundState.instanceState = state
 
-              self.backgroundState.isMsgShowsDismissed = false
-              Task { @MainActor in
-                self.state.isMsgShowsDismissed = false
-              }
-            }
+          if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
+            self.hideMsgShowsTask?.cancel()
+            self.hideMsgShowsTask = nil
 
+            self.backgroundState.isMsgShowsDismissed = false
             Task { @MainActor in
-              self.state.instanceState = state
-              await self.sendStateUpdates(.init(instanceStateUpdates: instanceStateUpdates))
-            }
-
-            if instanceStateUpdates.isCursorUpdated {
-              self.resetCursorBlinkingTask()
+              self.state.isMsgShowsDismissed = false
             }
           }
-        } catch {
-          assertionFailure(error)
-        }
-      }
 
-      self?.resetCursorBlinkingTask()
+          Task { @MainActor in
+            self.state.instanceState = state
+            await self.sendStateUpdates(.init(instanceStateUpdates: instanceStateUpdates))
+          }
+        }
+      } catch is CancellationError {
+      } catch {
+        assertionFailure(error)
+      }
     }
   }
 
   deinit {
-    Task { @NeovimActor in
-      stateUpdatesTask?.cancel()
-      cursorBlinkingTask?.cancel()
-      hideMsgShowsTask?.cancel()
-    }
+    task?.cancel()
+    hideMsgShowsTask?.cancel()
   }
 
   let instance: Instance
@@ -110,62 +102,10 @@ final class Store: Sendable {
   @NeovimActor
   private var backgroundState: State
 
-  @NeovimActor
-  private var stateUpdatesTask: Task<Void, Never>?
-
-  @NeovimActor
-  private var cursorBlinkingTask: Task<Void, Never>?
+  private var task: Task<Void, Never>?
 
   @NeovimActor
   private var hideMsgShowsTask: Task<Void, Never>?
-
-  @NeovimActor
-  private func resetCursorBlinkingTask() {
-    cursorBlinkingTask?.cancel()
-
-    if !backgroundState.cursorBlinkingPhase {
-      backgroundState.cursorBlinkingPhase = true
-      Task { @MainActor in
-        self.state.cursorBlinkingPhase = true
-        await sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
-      }
-    }
-
-    if
-      backgroundState.cmdlines.dictionary.isEmpty,
-      let cursorStyle = backgroundState.currentCursorStyle,
-      let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
-      let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
-      let blinkOn = cursorStyle.blinkOn, blinkOn > 0
-    {
-      cursorBlinkingTask = Task { @NeovimActor [weak self] in
-        do {
-          try await Task.sleep(for: .milliseconds(blinkWait))
-
-          while true {
-            guard let self else {
-              return
-            }
-            self.backgroundState.cursorBlinkingPhase = false
-            Task { @MainActor in
-              self.state.cursorBlinkingPhase = false
-              await self.sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
-            }
-
-            try await Task.sleep(for: .milliseconds(blinkOff))
-
-            self.backgroundState.cursorBlinkingPhase = true
-            Task { @MainActor in
-              self.state.cursorBlinkingPhase = true
-              await self.sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
-            }
-
-            try await Task.sleep(for: .milliseconds(blinkOn))
-          }
-        } catch {}
-      }
-    }
-  }
 }
 
 extension Store: AsyncSequence {

@@ -11,12 +11,13 @@ import MessagePack
 @NeovimActor
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
-    self.initialOuterGridSize = initialOuterGridSize
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutablePath] + nvimArguments)
       .joined(separator: " ")
 
+    let process = Process()
+    self.process = process
     process.executableURL = URL(filePath: "/bin/zsh")
     process.arguments = ["-l", "-c", nvimCommand]
     process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
@@ -32,8 +33,72 @@ public final class Instance: Sendable {
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel)
     let api = API(rpc)
-
     self.api = api
+
+    let (sendStateUpdates, stateUpdates) = AsyncThrowingChannel<NeovimState.Updates, any Error>.pipe(
+      bufferingPolicy: .unbounded
+    )
+    self.stateUpdates = stateUpdates
+
+    task = Task { [weak self] in
+      await withThrowingTaskGroup(of: Void.self) { taskGroup in
+        taskGroup.addTask { @NeovimActor in
+          for try await uiEvents in api {
+            try Task.checkCancellation()
+
+            if let stateUpdates = self?.state.apply(uiEvents: uiEvents) {
+              await sendStateUpdates(.success(stateUpdates))
+
+              if stateUpdates.isCursorUpdated {
+                self?.resetCursorBlinkingTask(sendStateUpdates: sendStateUpdates)
+              }
+            }
+          }
+        }
+
+        taskGroup.addTask { @NeovimActor in
+          try process.run()
+
+          let uiOptions: UIOptions = [
+            .extMultigrid,
+            .extHlstate,
+            .extCmdline,
+            .extMessages,
+            .extPopupmenu,
+            .extTabline,
+          ]
+
+          let result = try await api.nvimUIAttach(
+            width: initialOuterGridSize.columnsCount,
+            height: initialOuterGridSize.rowsCount,
+            options: uiOptions.nvimUIAttachOptions
+          )
+          switch result {
+          case .success:
+            break
+          case let .failure(value):
+            throw Failure("failed nvimUIAttach", value)
+          }
+        }
+
+        while !taskGroup.isEmpty {
+          do {
+            try await taskGroup.next()
+          } catch is CancellationError {
+          } catch {
+            await sendStateUpdates(.failure(error))
+            taskGroup.cancelAll()
+          }
+        }
+      }
+    }
+
+    resetCursorBlinkingTask(sendStateUpdates: sendStateUpdates)
+  }
+
+  deinit {
+    task?.cancel()
+    cursorBlinkingTask?.cancel()
   }
 
   public enum MouseButton: String, Sendable {
@@ -73,9 +138,7 @@ public final class Instance: Sendable {
         {
           return
         }
-
         previousMouseMove = (modifier, gridID, point)
-
         try await api.nvimInputMouseFast(
           button: "move",
           action: "",
@@ -205,72 +268,64 @@ public final class Instance: Sendable {
     return nil
   }
 
-  private let initialOuterGridSize: IntegerSize
-  private let process = Foundation.Process()
+  private let process: Process
   private let api: API<ProcessChannel>
-  private var observers = [UUID: @NeovimActor (NeovimState.Updates) -> Void]()
+  private let stateUpdates: AsyncThrowingStream<NeovimState.Updates, any Error>
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
+  private var task: Task<Void, Never>?
+  private var cursorBlinkingTask: Task<Void, Never>?
 
   @NeovimActor
-  private func apply(uiEvents: [UIEvent]) -> NeovimState.Updates? {
-    state.apply(uiEvents: uiEvents)
-  }
+  private func resetCursorBlinkingTask(sendStateUpdates: @escaping @Sendable (Result<NeovimState.Updates, any Error>) async -> Void) {
+    cursorBlinkingTask?.cancel()
 
-  @NeovimActor
-  private func runAndAttach() async throws {
-    try process.run()
+    if !state.cursorBlinkingPhase {
+      state.cursorBlinkingPhase = true
+      Task { @NeovimActor in
+        self.state.cursorBlinkingPhase = true
+        await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
+      }
+    }
 
-    let uiOptions: UIOptions = [
-      .extMultigrid,
-      .extHlstate,
-      .extCmdline,
-      .extMessages,
-      .extPopupmenu,
-      .extTabline,
-    ]
+    if
+      state.cmdlines.dictionary.isEmpty,
+      let cursorStyle = state.currentCursorStyle,
+      let blinkWait = cursorStyle.blinkWait,
+      blinkWait > 0,
+      let blinkOff = cursorStyle.blinkOff,
+      blinkOff > 0,
+      let blinkOn = cursorStyle.blinkOn,
+      blinkOn > 0
+    {
+      cursorBlinkingTask = Task { @NeovimActor [weak self] in
+        do {
+          try await Task.sleep(for: .milliseconds(blinkWait))
 
-    try await api.nvimUIAttachFast(
-      width: initialOuterGridSize.columnsCount,
-      height: initialOuterGridSize.rowsCount,
-      options: uiOptions.nvimUIAttachOptions
-    )
+          while true {
+            guard let self else {
+              return
+            }
+
+            self.state.cursorBlinkingPhase = false
+            await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
+
+            try await Task.sleep(for: .milliseconds(blinkOff))
+
+            self.state.cursorBlinkingPhase = true
+            await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
+
+            try await Task.sleep(for: .milliseconds(blinkOn))
+          }
+        } catch {}
+      }
+    }
   }
 }
 
 extension Instance: AsyncSequence {
   public typealias Element = NeovimState.Updates
 
-  public nonisolated func makeAsyncIterator() -> AsyncIterator {
-    .init(instance: self, apiIterator: api.makeAsyncIterator())
-  }
-
-  public struct AsyncIterator: AsyncIteratorProtocol {
-    fileprivate init(instance: Instance, apiIterator: API<ProcessChannel>.AsyncIterator) {
-      self.instance = instance
-      self.apiIterator = apiIterator
-    }
-
-    public mutating func next() async throws -> NeovimState.Updates? {
-      if !isProcessRunning {
-        isProcessRunning = true
-
-        try await instance.runAndAttach()
-      }
-
-      while true {
-        if let uiEvents = try await apiIterator.next() {
-          if let stateUpdates = await instance.apply(uiEvents: uiEvents) {
-            return stateUpdates
-          }
-
-        } else {
-          return nil
-        }
-      }
-    }
-
-    private let instance: Instance
-    private var apiIterator: API<ProcessChannel>.AsyncIterator
-    private var isProcessRunning = false
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingStream<NeovimState.Updates, any Error>.AsyncIterator {
+    stateUpdates.makeAsyncIterator()
   }
 }

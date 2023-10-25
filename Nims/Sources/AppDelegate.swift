@@ -74,6 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func setupKeyDownLocalMonitor() {
+    let store = store!
+
     NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
       guard 
         let self,
@@ -84,11 +86,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       let keyPress = KeyPress(event: event)
-
-      Task { @MainActor [self] in
-        self.store!.scheduleHideMsgShowsIfPossible()
-        await self.store!.instance.report(keyPress: keyPress)
+      Task {
+        await store.instance.report(keyPress: keyPress)
       }
+
+      store.scheduleHideMsgShowsIfPossible()
 
       return nil
     }

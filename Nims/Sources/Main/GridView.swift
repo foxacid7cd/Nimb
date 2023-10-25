@@ -27,6 +27,11 @@ public final class GridView: NSView {
   public func render(stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       needsDisplay = true
+    } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
+      setNeedsDisplay(
+        (cursorDrawRun.rectangle * store.font.cellSize)
+          .applying(upsideDownTransform)
+      )
     }
   }
 
@@ -239,6 +244,8 @@ public final class GridView: NSView {
         point: point(for: event),
         count: count
       )
+
+      store.scheduleHideMsgShowsIfPossible()
     }
   }
 

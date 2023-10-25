@@ -10,7 +10,6 @@ public struct State: Sendable {
   @dynamicMemberLookup
   public struct Updates: Sendable {
     public var instanceStateUpdates: NeovimState.Updates = .init()
-    public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isMsgShowsDismissedUpdated: Bool = false
 
     public subscript<Value>(dynamicMember keyPath: KeyPath<NeovimState.Updates, Value>) -> Value {
@@ -19,7 +18,6 @@ public struct State: Sendable {
   }
 
   public var instanceState: NeovimState = .init()
-  public var cursorBlinkingPhase: Bool = false
   public var isMsgShowsDismissed: Bool = false
 
   public subscript<Value>(dynamicMember keyPath: KeyPath<NeovimState, Value>) -> Value {
