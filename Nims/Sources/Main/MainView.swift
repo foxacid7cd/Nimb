@@ -7,6 +7,14 @@ class MainView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
+
+    trackingArea = .init(
+      rect: bounds,
+      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
+      owner: self,
+      userInfo: nil
+    )
+    addTrackingArea(trackingArea!)
   }
 
   @available(*, unavailable)
@@ -23,9 +31,6 @@ class MainView: NSView {
     }
 
     if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) || stateUpdates.isFontUpdated {
-      _intrinsicContentSize = store.state.grids[Grid.OuterID]
-        .map { $0.size * store.font.cellSize }
-
       invalidateIntrinsicContentSize()
     }
 
@@ -234,11 +239,21 @@ class MainView: NSView {
     return gridView.point(for: gridPoint) + gridView.frame.origin
   }
 
+  override public func mouseMoved(with event: NSEvent) {
+    let location = convert(event.locationInWindow, from: nil)
+    if let gridView = hitTest(location) as? GridView {
+      gridView.reportMouseMove(for: event)
+    }
+  }
+
   override var intrinsicContentSize: NSSize {
-    _intrinsicContentSize ?? .init()
+    guard let outerGrid = store.state.outerGrid else {
+      return .init()
+    }
+    return outerGrid.size * store.font.cellSize
   }
 
   private var store: Store
-  private var _intrinsicContentSize: NSSize?
   private var gridViews = IntKeyedDictionary<GridView>()
+  private var trackingArea: NSTrackingArea?
 }

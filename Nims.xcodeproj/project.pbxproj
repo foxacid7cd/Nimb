@@ -42,7 +42,6 @@
 		68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF462AD29F650017C28D /* Cmdlines.swift */; };
 		68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF472AD29F650017C28D /* KeyPress.swift */; };
 		68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF492AD29F660017C28D /* Highlight.swift */; };
-		68A8FF602AD29F660017C28D /* MouseEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4A2AD29F660017C28D /* MouseEvent.swift */; };
 		68A8FF612AD29F660017C28D /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4B2AD29F660017C28D /* Appearance.swift */; };
 		68A8FF622AD29F660017C28D /* Cursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4C2AD29F660017C28D /* Cursor.swift */; };
 		68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF682AD2ACCB0017C28D /* UIEvent.swift */; };
@@ -129,7 +128,6 @@
 		68A8FF462AD29F650017C28D /* Cmdlines.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cmdlines.swift; sourceTree = "<group>"; };
 		68A8FF472AD29F650017C28D /* KeyPress.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyPress.swift; sourceTree = "<group>"; };
 		68A8FF492AD29F660017C28D /* Highlight.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Highlight.swift; sourceTree = "<group>"; };
-		68A8FF4A2AD29F660017C28D /* MouseEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MouseEvent.swift; sourceTree = "<group>"; };
 		68A8FF4B2AD29F660017C28D /* Appearance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		68A8FF4C2AD29F660017C28D /* Cursor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cursor.swift; sourceTree = "<group>"; };
 		68A8FF682AD2ACCB0017C28D /* UIEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIEvent.swift; sourceTree = "<group>"; };
@@ -245,7 +243,6 @@
 				68A8FF492AD29F660017C28D /* Highlight.swift */,
 				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
-				68A8FF4A2AD29F660017C28D /* MouseEvent.swift */,
 				68A8FF3A2AD29F650017C28D /* MsgShow.swift */,
 				68A8FF3D2AD29F650017C28D /* Popupmenu.swift */,
 				68A8FF422AD29F650017C28D /* NeovimState.swift */,
@@ -458,7 +455,6 @@
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
 				68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
-				68A8FF602AD29F660017C28D /* MouseEvent.swift in Sources */,
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,
 				68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */,
 				68A8FF5A2AD29F660017C28D /* Tabline.swift in Sources */,

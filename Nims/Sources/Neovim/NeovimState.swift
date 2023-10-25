@@ -284,7 +284,7 @@ public extension NeovimState {
 
           modeUpdated()
 
-          if let cursor {
+          if cursor != nil {
             cursorUpdated()
           }
 
@@ -539,8 +539,6 @@ public extension NeovimState {
           updatedLayout(forGridWithID: gridID)
 
         case let .gridCursorGoto(gridID, row, column):
-          let oldCursor = cursor
-
           let cursorPosition = IntegerPoint(
             column: column,
             row: row

@@ -26,9 +26,7 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     window.delegate = self
 
-    Task {
-      await updateWindow()
-    }
+    updateWindow()
   }
 
   deinit {

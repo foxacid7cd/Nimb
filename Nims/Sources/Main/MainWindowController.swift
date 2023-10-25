@@ -70,8 +70,8 @@ final class MainWindowController: NSWindowController {
     window!.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
   }
 
-  private func windowFrameManuallyChanged() async {
-    await viewController.reportOuterGridSizeChangedIfNeeded()
+  private func windowFrameManuallyChanged() {
+    viewController.reportOuterGridSizeChangedIfNeeded()
     UserDefaults.standard.setValue(window!.frame.width, forKey: "windowWidth")
     UserDefaults.standard.setValue(window!.frame.height, forKey: "windowHeight")
   }
@@ -80,9 +80,7 @@ final class MainWindowController: NSWindowController {
 extension MainWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
     if isWindowInitiallyShown, !window!.inLiveResize {
-      Task {
-        await windowFrameManuallyChanged()
-      }
+      windowFrameManuallyChanged()
     }
   }
 
@@ -91,9 +89,7 @@ extension MainWindowController: NSWindowDelegate {
   }
 
   func windowDidEndLiveResize(_: Notification) {
-    Task {
-      await windowFrameManuallyChanged()
-      viewController.showMainView(on: true)
-    }
+    windowFrameManuallyChanged()
+    viewController.showMainView(on: true)
   }
 }

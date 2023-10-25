@@ -36,6 +36,25 @@ public final class Instance: Sendable {
     self.api = api
   }
 
+  public enum MouseButton: String, Sendable {
+    case left
+    case right
+    case middle
+  }
+
+  public enum MouseAction: String, Sendable {
+    case press
+    case drag
+    case release
+  }
+
+  public enum ScrollDirection: String, Sendable {
+    case up
+    case down
+    case left
+    case right
+  }
+
   public private(set) var state = NeovimState()
 
   public func report(keyPress: KeyPress) async {
@@ -43,27 +62,74 @@ public final class Instance: Sendable {
     try? await api.nvimInputFast(keys: keys)
   }
 
-  public func report(mouseEvents: [MouseEvent]) async {
-    let calls = mouseEvents
-      .map { mouseEvent -> (method: String, parameters: [Value]) in
-        let (rawButton, rawAction) = switch mouseEvent.content {
-        case let .mouseButton(button, action):
-          (button.rawValue, action.rawValue)
-
-        case .mouseMove:
-          ("move", "")
-
-        case let .scrollWheel(direction):
-          ("wheel", direction.rawValue)
+  public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
+    Task { @NeovimActor in
+      do {
+        if
+          let previousMouseMove,
+          previousMouseMove.modifier == modifier,
+          previousMouseMove.gridID == gridID,
+          previousMouseMove.point == point
+        {
+          return
         }
 
-        return (
-          method: "nvim_input_mouse",
-          parameters: [.string(rawButton), .string(rawAction), .string(mouseEvent.modifier), .integer(mouseEvent.gridID), .integer(mouseEvent.point.row), .integer(mouseEvent.point.column)]
-        )
-      }
+        previousMouseMove = (modifier, gridID, point)
 
-    try? await api.rpc.fastCallsTransaction(with: calls)
+        try await api.nvimInputMouseFast(
+          button: "move",
+          action: "",
+          modifier: modifier ?? "",
+          grid: gridID,
+          row: point.row,
+          col: point.column
+        )
+      } catch {
+        assertionFailure(error)
+      }
+    }
+  }
+
+  public nonisolated func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
+    Task { @NeovimActor in
+      do {
+        try await api.rpc.fastCallsTransaction(
+          with: Array(
+            repeating: (
+              method: "nvim_input_mouse",
+              parameters: [
+                .string("wheel"),
+                .string(direction.rawValue),
+                .string(modifier ?? ""),
+                .integer(gridID),
+                .integer(point.row),
+                .integer(point.column),
+              ]
+            ),
+            count: count
+          )
+        )
+      } catch {
+        assertionFailure(error)
+      }
+    }
+  }
+
+  public nonisolated func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
+    Task { @NeovimActor in
+      do {
+        try await api.nvimInputMouseFast(
+          button: mouseButton.rawValue,
+          action: action.rawValue,
+          modifier: modifier ?? "",
+          grid: gridID,
+          row: point.row,
+          col: point.column
+        )
+      } catch {
+        assertionFailure(error)
+      }
+    }
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async {
@@ -143,6 +209,7 @@ public final class Instance: Sendable {
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var observers = [UUID: @NeovimActor (NeovimState.Updates) -> Void]()
+  private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
 
   @NeovimActor
   private func apply(uiEvents: [UIEvent]) -> NeovimState.Updates? {
