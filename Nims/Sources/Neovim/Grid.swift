@@ -30,6 +30,7 @@ public struct Grid: Sendable, Identifiable {
 
   public var id: Int
   public var layout: GridLayout
+  public var drawRunsProvider: DrawRunsCachingProvider
   public var drawRuns: GridDrawRuns
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
@@ -79,7 +80,7 @@ public struct Grid: Sendable, Identifiable {
       }
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns.rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: layout, font: font, appearance: appearance, drawRunProvider: drawRuns.drawRunProvider)
+      drawRuns.rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
       return .needsDisplay
 
     case let .line(origin, cells):
@@ -92,7 +93,7 @@ public struct Grid: Sendable, Identifiable {
         rowLayout: layout.rowLayouts[origin.row],
         font: font,
         appearance: appearance,
-        drawRunProvider: drawRuns.drawRunProvider
+        drawRunsProvider: drawRunsProvider
       )
       return .dirtyRectangle(.init(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1)))
 
@@ -101,7 +102,7 @@ public struct Grid: Sendable, Identifiable {
         assertionFailure("Horizontal scroll not supported")
       }
 
-      drawRuns.clearCache()
+      drawRunsProvider.clearCache()
 
       let cellsCopy = layout.cells
       let rowLayoutsCopy = layout.rowLayouts
@@ -128,8 +129,8 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns.clearCache()
-      drawRuns.rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: layout, font: font, appearance: appearance, drawRunProvider: drawRuns.drawRunProvider)
+      drawRunsProvider.clearCache()
+      drawRuns.rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
       return .needsDisplay
 
     case let .cursor(style, position):

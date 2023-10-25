@@ -473,10 +473,17 @@ public extension NeovimState {
             if grid == nil {
               let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
               let layout = GridLayout(cells: cells)
+              let drawRunsProvider = DrawRunsCachingProvider()
               grid = .init(
                 id: gridID,
                 layout: layout,
-                drawRuns: .init(gridLayout: layout, font: font, appearance: appearance),
+                drawRunsProvider: drawRunsProvider,
+                drawRuns: .init(
+                  gridLayout: layout,
+                  font: font,
+                  appearance: appearance,
+                  drawRunsProvider: drawRunsProvider
+                ),
                 associatedWindow: nil,
                 isHidden: false
               )
