@@ -205,8 +205,6 @@
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* MainView.swift */,
 				68EF609029B2B6D20056E48D /* GridView.swift */,
-				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
-				68EF609229B2B7270056E48D /* GridDrawRuns.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -240,6 +238,8 @@
 				68A8FF432AD29F650017C28D /* NimsColor.swift */,
 				68A8FF4C2AD29F660017C28D /* Cursor.swift */,
 				68A8FF412AD29F650017C28D /* Grid.swift */,
+				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
+				68EF609229B2B7270056E48D /* GridDrawRuns.swift */,
 				68A8FF492AD29F660017C28D /* Highlight.swift */,
 				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,

@@ -10,7 +10,6 @@ public struct State: Sendable {
   @dynamicMemberLookup
   public struct Updates: Sendable {
     public var instanceStateUpdates: NeovimState.Updates = .init()
-    public var isFontUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isMsgShowsDismissedUpdated: Bool = false
 
@@ -20,7 +19,6 @@ public struct State: Sendable {
   }
 
   public var instanceState: NeovimState = .init()
-  public var font: NimsFont = .init()
   public var cursorBlinkingPhase: Bool = false
   public var isMsgShowsDismissed: Bool = false
 

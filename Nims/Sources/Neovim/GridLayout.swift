@@ -26,53 +26,53 @@ public struct GridLayout: Sendable {
     cells.size
   }
 
-  public mutating func apply(textUpdate: GridTextUpdate) {
-    switch textUpdate {
-    case let .resize(integerSize):
-      cells = TwoDimensionalArray<Cell>(size: integerSize) { point in
-        if point.row < cells.rowsCount, point.column < cells.columnsCount {
-          return cells[point]
-        }
-        return .default
-      }
-      rowLayouts = cells.rows
-        .map(RowLayout.init(rowCells:))
-
-    case let .line(origin, cells):
-      update(&self.cells.rows[origin.row]) { row in
-        row.replaceSubrange(origin.column ..< origin.column + cells.count, with: cells)
-      }
-      rowLayouts[origin.row] = .init(rowCells: self.cells.rows[origin.row])
-
-    case let .scroll(rectangle, offset):
-      if offset.columnsCount != 0 {
-        assertionFailure("Horizontal scroll are not supported")
-      }
-
-      let cellsCopy = cells
-      let rowLayoutsCopy = rowLayouts
-
-      let fromRows = rectangle.minRow ..< rectangle.maxRow
-      for fromRow in fromRows {
-        let toRow = fromRow - offset.rowsCount
-
-        guard
-          toRow >= rectangle.minRow,
-          toRow < min(rowsCount, rectangle.maxRow)
-        else {
-          continue
-        }
-
-        cells.rows[toRow] = cellsCopy.rows[fromRow]
-        rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-      }
-
-    case .clear:
-      cells = .init(size: cells.size, repeatingElement: .default)
-      rowLayouts = cells.rows
-        .map(RowLayout.init(rowCells:))
-    }
-  }
+//  public mutating func apply(textUpdate: Grid.TextUpdate) {
+//    switch textUpdate {
+//    case let .resize(integerSize):
+//      cells = TwoDimensionalArray<Cell>(size: integerSize) { point in
+//        if point.row < cells.rowsCount, point.column < cells.columnsCount {
+//          return cells[point]
+//        }
+//        return .default
+//      }
+//      rowLayouts = cells.rows
+//        .map(RowLayout.init(rowCells:))
+//
+//    case let .line(origin, cells):
+//      update(&self.cells.rows[origin.row]) { row in
+//        row.replaceSubrange(origin.column ..< origin.column + cells.count, with: cells)
+//      }
+//      rowLayouts[origin.row] = .init(rowCells: self.cells.rows[origin.row])
+//
+//    case let .scroll(rectangle, offset):
+//      if offset.columnsCount != 0 {
+//        assertionFailure("Horizontal scroll not supported")
+//      }
+//
+//      let cellsCopy = cells
+//      let rowLayoutsCopy = rowLayouts
+//
+//      let fromRows = rectangle.minRow ..< rectangle.maxRow
+//      for fromRow in fromRows {
+//        let toRow = fromRow - offset.rowsCount
+//
+//        guard
+//          toRow >= rectangle.minRow,
+//          toRow < min(rowsCount, rectangle.maxRow)
+//        else {
+//          continue
+//        }
+//
+//        cells.rows[toRow] = cellsCopy.rows[fromRow]
+//        rowLayouts[toRow] = rowLayoutsCopy[fromRow]
+//      }
+//
+//    case .clear:
+//      cells = .init(size: cells.size, repeatingElement: .default)
+//      rowLayouts = cells.rows
+//        .map(RowLayout.init(rowCells:))
+//    }
+//  }
 }
 
 @PublicInit

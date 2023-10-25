@@ -4,25 +4,11 @@ import AppKit
 import CustomDump
 import Library
 
-public enum GridTextUpdate: Sendable {
-  case resize(IntegerSize)
-  case line(origin: IntegerPoint, cells: [Cell])
-  case scroll(rectangle: IntegerRectangle, offset: IntegerSize)
-  case clear
-}
-
 public final class GridView: NSView {
   init(store: Store, gridID: Grid.ID) {
     self.store = store
     self.gridID = gridID
-    let grid = store.state.grids[gridID]!
-    gridLayout = .init(cells: .init(size: grid.size, repeatingElement: .default))
-    gridDrawRuns = .init(
-      gridLayout: gridLayout,
-      font: store.font,
-      appearance: store.appearance
-    )
-    super.init(frame: .init(origin: .init(), size: grid.size * store.font.cellSize))
+    super.init(frame: .init())
   }
 
   @available(*, unavailable)
@@ -40,65 +26,70 @@ public final class GridView: NSView {
 
   public func render(stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
-      gridDrawRuns.clearCache()
       needsDisplay = true
-    }
-
-    if stateUpdates.isCursorUpdated {
-      updateCursorDrawRun()
-    } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun {
-      setNeedsDisplay(cursorDrawRun.rectangle * store.font.cellSize)
     }
   }
 
-  public func render(textUpdates: [GridTextUpdate]) {
-    var dirtyRectangles: [IntegerRectangle]? = []
-
-    for textUpdate in textUpdates {
-      gridLayout.apply(textUpdate: textUpdate)
-
-      gridDrawRuns.render(textUpdate: textUpdate, gridLayout: gridLayout, font: store.font, appearance: store.appearance)
-
-      switch textUpdate {
-      case .resize:
-        dirtyRectangles = nil
-
-      case let .line(origin, cells):
-        let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
-        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-          updateCursorDrawRun(display: false)
-        }
-        dirtyRectangles?.append(rectangle)
-
-      case let .scroll(rectangle, offset):
-        let rectangle = IntegerRectangle(
-          origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
-          size: .init(
-            columnsCount: rectangle.size.columnsCount,
-            rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
-          )
-        )
-        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-          updateCursorDrawRun(display: false)
-        }
-        dirtyRectangles?.append(rectangle)
-
-      case .clear:
-        updateCursorDrawRun(display: false)
-        dirtyRectangles = nil
-      }
-    }
-
-    if let dirtyRectangles {
+  public func render(gridUpdate: NeovimState.GridUpdate) {
+    switch gridUpdate {
+    case let .dirtyRectangles(dirtyRectangles):
       for dirtyRectangle in dirtyRectangles {
         setNeedsDisplay(
           (dirtyRectangle * store.font.cellSize)
             .applying(upsideDownTransform)
         )
       }
-    } else {
+
+    case .needsDisplay:
       needsDisplay = true
     }
+//    var dirtyRectangles: [IntegerRectangle]? = []
+//
+//    for textUpdate in textUpdates {
+//      gridLayout.apply(textUpdate: textUpdate)
+//
+//      gridDrawRuns.render(textUpdate: textUpdate, gridLayout: gridLayout, font: store.font, appearance: store.appearance)
+//
+//      switch textUpdate {
+//      case .resize:
+//        dirtyRectangles = nil
+//
+//      case let .line(origin, cells):
+//        let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
+//        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+//          updateCursorDrawRun(display: false)
+//        }
+//        dirtyRectangles?.append(rectangle)
+//
+//      case let .scroll(rectangle, offset):
+//        let rectangle = IntegerRectangle(
+//          origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
+//          size: .init(
+//            columnsCount: rectangle.size.columnsCount,
+//            rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
+//          )
+//        )
+//        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+//          updateCursorDrawRun(display: false)
+//        }
+//        dirtyRectangles?.append(rectangle)
+//
+//      case .clear:
+//        updateCursorDrawRun(display: false)
+//        dirtyRectangles = nil
+//      }
+//    }
+//
+//    if let dirtyRectangles {
+//      for dirtyRectangle in dirtyRectangles {
+//        setNeedsDisplay(
+//          (dirtyRectangle * store.font.cellSize)
+//            .applying(upsideDownTransform)
+//        )
+//      }
+//    } else {
+//      needsDisplay = true
+//    }
   }
 
   public func point(for gridPoint: IntegerPoint) -> CGPoint {
@@ -131,9 +122,9 @@ public final class GridView: NSView {
           rowsCount: Int(ceil(upsideDownRect.size.height / store.font.cellHeight))
         )
       )
-      .intersection(with: .init(size: gridLayout.cells.size))
+      .intersection(with: .init(size: grid.size))
 
-      gridDrawRuns.draw(
+      grid.drawRuns.draw(
         to: context,
         boundingRect: integerFrame,
         font: store.font,
@@ -143,7 +134,7 @@ public final class GridView: NSView {
 
       if
         store.state.cursorBlinkingPhase,
-        let cursorDrawRun,
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
         (integerFrame.minColumn ..< integerFrame.maxColumn).contains(cursorDrawRun.position.column),
         (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)
       {
@@ -268,12 +259,9 @@ public final class GridView: NSView {
 
   private let gridID: Grid.ID
   private let store: Store
-  private var gridLayout: GridLayout
-  private let gridDrawRuns: GridDrawRuns
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
-  private var cursorDrawRun: CursorDrawRun?
 
   private var grid: Grid {
     store.state.grids[gridID]!
@@ -281,7 +269,7 @@ public final class GridView: NSView {
 
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(gridLayout.size.rowsCount) * store.font.cellHeight)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
   }
 
   private func point(for event: NSEvent) -> IntegerPoint {
@@ -303,34 +291,5 @@ public final class GridView: NSView {
     )
 
     store.scheduleHideMsgShowsIfPossible()
-  }
-
-  private func updateCursorDrawRun(display: Bool = true) {
-    if
-      let cursor = store.state.cursor,
-      cursor.gridID == grid.id,
-      let mode = store.state.mode,
-      let modeInfo = store.state.modeInfo
-    {
-      let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
-      cursorDrawRun = .init(
-        gridLayout: gridLayout,
-        rowDrawRuns: gridDrawRuns.rowDrawRuns,
-        cursorPosition: cursor.position,
-        cursorStyle: cursorStyle,
-        font: store.font,
-        appearance: store.appearance
-      )
-      if display {
-        setNeedsDisplay((cursorDrawRun!.rectangle * store.font.cellSize).applying(upsideDownTransform))
-      }
-    } else {
-      if let cursorDrawRun {
-        self.cursorDrawRun = nil
-        if display {
-          setNeedsDisplay((cursorDrawRun.rectangle * store.font.cellSize).applying(upsideDownTransform))
-        }
-      }
-    }
   }
 }

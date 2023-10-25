@@ -5,29 +5,24 @@ import Library
 
 @PublicInit
 public struct NimsFont: Sendable, Hashable {
-  @MainActor
   public init(_ appKit: NSFont) {
     self = FontBridge.shared.wrap(appKit)
   }
 
   public var id: Int = 0
 
-  @MainActor
   public var cellWidth: Double {
     unwrapped.cellWidth
   }
 
-  @MainActor
   public var cellHeight: Double {
     unwrapped.cellHeight
   }
 
-  @MainActor
   public var cellSize: CGSize {
     .init(width: cellWidth, height: cellHeight)
   }
 
-  @MainActor
   public func nsFont(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
     if isBold, isItalic {
       unwrapped.boldItalic
@@ -43,13 +38,11 @@ public struct NimsFont: Sendable, Hashable {
     }
   }
 
-  @MainActor
   private var unwrapped: FontBridge.WrappedFont {
     FontBridge.shared.unwrap(self)
   }
 }
 
-@MainActor
 final class FontBridge {
   struct WrappedFont {
     var regular: NSFont

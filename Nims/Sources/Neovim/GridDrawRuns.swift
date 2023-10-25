@@ -6,49 +6,51 @@ import CustomDump
 import Library
 import SwiftUI
 
-@MainActor
-public final class GridDrawRuns {
+public struct GridDrawRuns: Sendable {
+  @NeovimActor
   public init(gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
     let drawRunProvider = DrawRunCachingProvider()
     self.drawRunProvider = drawRunProvider
 
-    rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
+    rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
   }
 
-  public func render(textUpdate: GridTextUpdate, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
-    switch textUpdate {
-    case .resize:
-      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
+//  @NeovimActor
+//  public mutating func render(textUpdate: Grid.TextUpdate, gridLayout: GridLayout, font: NimsFont, appearance: Appearance) {
+//    switch textUpdate {
+//    case .resize:
+//      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
+//
+//    case let .line(origin, _):
+//      rowDrawRuns[origin.row] = .init(
+//        row: origin.row,
+//        rowLayout: gridLayout.rowLayouts[origin.row],
+//        font: font,
+//        appearance: appearance,
+//        drawRunProvider: drawRunProvider
+//      )
+//
+//    case let .scroll(rectangle, offset):
+//      let copy = rowDrawRuns
+//      let fromRows = rectangle.minRow ..< rectangle.maxRow
+//      for fromRow in fromRows {
+//        let toRow = fromRow - offset.rowsCount
+//        guard
+//          toRow >= rectangle.minRow,
+//          toRow < min(gridLayout.rowsCount, rectangle.maxRow)
+//        else {
+//          continue
+//        }
+//        rowDrawRuns[toRow] = copy[fromRow]
+//      }
+//
+//    case .clear:
+//      drawRunProvider.clearCache()
+//      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
+//    }
+//  }
 
-    case let .line(origin, _):
-      rowDrawRuns[origin.row] = .init(
-        row: origin.row,
-        rowLayout: gridLayout.rowLayouts[origin.row],
-        font: font,
-        appearance: appearance,
-        drawRunProvider: drawRunProvider
-      )
-
-    case let .scroll(rectangle, offset):
-      let copy = rowDrawRuns
-      let fromRows = rectangle.minRow ..< rectangle.maxRow
-      for fromRow in fromRows {
-        let toRow = fromRow - offset.rowsCount
-        guard
-          toRow >= rectangle.minRow,
-          toRow < min(gridLayout.rowsCount, rectangle.maxRow)
-        else {
-          continue
-        }
-        rowDrawRuns[toRow] = copy[fromRow]
-      }
-
-    case .clear:
-      drawRunProvider.clearCache()
-      rowDrawRuns = makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunProvider: drawRunProvider)
-    }
-  }
-
+  @MainActor
   public func draw(
     to context: CGContext,
     boundingRect: IntegerRectangle,
@@ -67,38 +69,39 @@ public final class GridDrawRuns {
     }
   }
 
+  @NeovimActor
   public func clearCache() {
     drawRunProvider.clearCache()
   }
 
-  private(set) var rowDrawRuns: [RowDrawRun]
+  var rowDrawRuns: [RowDrawRun]
 
-  private let drawRunProvider: DrawRunCachingProvider
-  private var cursorDrawRun: CursorDrawRun?
+  let drawRunProvider: DrawRunCachingProvider
+  var cursorDrawRun: CursorDrawRun?
+
+  @NeovimActor
+  static func makeDrawRuns(
+    gridLayout: GridLayout,
+    font: NimsFont,
+    appearance: Appearance,
+    drawRunProvider: DrawRunCachingProvider
+  ) -> [RowDrawRun] {
+    gridLayout.rowLayouts
+      .enumerated()
+      .map {
+        .init(
+          row: $0,
+          rowLayout: $1,
+          font: font,
+          appearance: appearance,
+          drawRunProvider: drawRunProvider
+        )
+      }
+  }
 }
 
-@MainActor
-private func makeDrawRuns(
-  gridLayout: GridLayout,
-  font: NimsFont,
-  appearance: Appearance,
-  drawRunProvider: DrawRunCachingProvider
-) -> [RowDrawRun] {
-  gridLayout.rowLayouts
-    .enumerated()
-    .map {
-      .init(
-        row: $0,
-        rowLayout: $1,
-        font: font,
-        appearance: appearance,
-        drawRunProvider: drawRunProvider
-      )
-    }
-}
-
-@MainActor
-private class DrawRunCachingProvider {
+@NeovimActor
+public class DrawRunCachingProvider {
   func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
     var cachedParts = [CachedPart]()
 
@@ -156,9 +159,9 @@ private class DrawRunCachingProvider {
 }
 
 @PublicInit
-public struct RowDrawRun {
-  @MainActor
-  fileprivate init(row: Int, rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunProvider: DrawRunCachingProvider) {
+public struct RowDrawRun: Sendable {
+  @NeovimActor
+  public init(row: Int, rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunProvider: DrawRunCachingProvider) {
     self = .init(
       drawRuns: drawRunProvider.drawRuns(forRow: row, rowParts: rowLayout.parts, font: font, appearance: appearance)
     )
@@ -200,8 +203,8 @@ public struct RowDrawRun {
 }
 
 @PublicInit
-public struct DrawRun {
-  @MainActor
+public struct DrawRun: Sendable {
+  @NeovimActor
   public init(text: String, columnsCount: Int, highlightID: Highlight.ID, font: NimsFont, appearance: Appearance) {
     let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
 
@@ -436,8 +439,8 @@ public struct GlyphRun: Sendable {
 }
 
 @PublicInit
-public struct CursorDrawRun {
-  @MainActor
+public struct CursorDrawRun: Sendable {
+  @NeovimActor
   public init?(gridLayout: GridLayout, rowDrawRuns: [RowDrawRun], cursorPosition: IntegerPoint, cursorStyle: CursorStyle, font: NimsFont, appearance: Appearance) {
     var location = 0
     for (drawRun, boundingRange) in rowDrawRuns[cursorPosition.row].drawRuns {

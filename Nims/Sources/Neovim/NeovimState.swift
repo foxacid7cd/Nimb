@@ -13,6 +13,7 @@ public struct NeovimState: Sendable {
   public var bufferedUIEvents: [UIEvent] = []
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
+  public var font: NimsFont = .init()
   public var appearance: Appearance = .init()
   public var modeInfo: ModeInfo? = nil
   public var mode: Mode? = nil
@@ -97,13 +98,14 @@ public extension NeovimState {
   struct Updates: Sendable {
     public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
+    public var isFontUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
+    public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
     public var isMsgShowsUpdated: Bool = false
-    public var isCursorUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdates: [Grid.ID: [GridTextUpdate]] = [:]
+    public var gridUpdates: [Grid.ID: GridUpdate] = [:]
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
 
@@ -121,6 +123,26 @@ public extension NeovimState {
     public var isSelectedBufferUpdated: Bool = false
   }
 
+  enum GridUpdate: Sendable {
+    case dirtyRectangles([IntegerRectangle])
+    case needsDisplay
+
+    mutating func apply(textUpdateApplyResult: Grid.TextUpdateApplyResult) {
+      switch (self, textUpdateApplyResult) {
+      case (.dirtyRectangles(var accumulator), let .dirtyRectangle(dirtyRectangle)):
+        accumulator.append(dirtyRectangle)
+        self = .dirtyRectangles(accumulator)
+
+      case (_, .needsDisplay):
+        self = .needsDisplay
+
+      default:
+        break
+      }
+    }
+  }
+
+  @NeovimActor
   mutating func apply(uiEvents: [UIEvent]) -> Updates? {
     bufferedUIEvents += uiEvents
 
@@ -167,21 +189,70 @@ public extension NeovimState {
         updates.isMsgShowsUpdated = true
       }
 
-      func cursorUpdated() {
+      func cursorUpdated(oldCursor: Cursor? = nil) {
+        if let oldCursor {
+          updatedText(inGridWithID: oldCursor.gridID, .clearCursor)
+        }
         updates.isCursorUpdated = true
+        if let cursor, let style = currentCursorStyle {
+          updatedText(inGridWithID: cursor.gridID, .cursor(style: style, position: cursor.position))
+        }
       }
 
       func updatedLayout(forGridWithID gridID: Grid.ID) {
         updates.updatedLayoutGridIDs.insert(gridID)
       }
 
-      func updatedText(inGridWithID gridID: Grid.ID, _ update: GridTextUpdate) {
-        Overture.update(&updates.gridUpdates[gridID]) { accumulator in
-          if accumulator == nil {
-            accumulator = []
-          }
-          accumulator!.append(update)
+      func updatedText(inGridWithID gridID: Grid.ID, _ textUpdate: Grid.TextUpdate) {
+        let font = font
+        let appearance = appearance
+
+        var textUpdateApplyResult: Grid.TextUpdateApplyResult?
+        update(&grids[gridID]!) { grid in
+          textUpdateApplyResult = grid.apply(
+            textUpdate: textUpdate,
+            font: font,
+            appearance: appearance
+          )
         }
+        if let textUpdateApplyResult {
+          update(&updates.gridUpdates[gridID]) { gridUpdate in
+            if gridUpdate == nil {
+              gridUpdate = .dirtyRectangles([])
+            }
+            gridUpdate!.apply(textUpdateApplyResult: textUpdateApplyResult)
+          }
+        }
+//        switch textUpdate {
+//        case .resize:
+//          break
+//          dirtyRectangles = nil
+//
+//        case let .line(origin, cells):
+//          let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
+//          if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+//            updateCursorDrawRun(display: false)
+//          }
+//          dirtyRectangles?.append(rectangle)
+//
+//        case let .scroll(rectangle, offset):
+//          let rectangle = IntegerRectangle(
+//            origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
+//            size: .init(
+//              columnsCount: rectangle.size.columnsCount,
+//              rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
+//            )
+//          )
+//          if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+//            updateCursorDrawRun(display: false)
+//          }
+//          dirtyRectangles?.append(rectangle)
+//
+//        case .clear:
+//          break
+//          updateCursorDrawRun(display: false)
+//          dirtyRectangles = nil
+//        }
       }
 
       func popupmenuUpdated() {
@@ -394,17 +465,19 @@ public extension NeovimState {
             rowsCount: height
           )
 
+          let font = font
+          let appearance = appearance
           update(&grids[gridID]) { grid in
             if grid == nil {
+              let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+              let layout = GridLayout(cells: cells)
               grid = .init(
                 id: gridID,
-                size: size,
+                layout: layout,
+                drawRuns: .init(gridLayout: layout, font: font, appearance: appearance),
                 associatedWindow: nil,
                 isHidden: false
               )
-
-            } else {
-              grid!.size = size
             }
           }
 
@@ -416,7 +489,7 @@ public extension NeovimState {
           {
             self.cursor = nil
 
-            cursorUpdated()
+            cursorUpdated(oldCursor: cursor)
           }
 
           updatedLayout(forGridWithID: gridID)
@@ -539,6 +612,8 @@ public extension NeovimState {
           updatedLayout(forGridWithID: gridID)
 
         case let .gridCursorGoto(gridID, row, column):
+          let oldCursor = cursor
+
           let cursorPosition = IntegerPoint(
             column: column,
             row: row
@@ -548,7 +623,7 @@ public extension NeovimState {
             position: cursorPosition
           )
 
-          cursorUpdated()
+          cursorUpdated(oldCursor: oldCursor)
 
         case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
           let zIndex = nextWindowZIndex()
@@ -688,6 +763,8 @@ public extension NeovimState {
           )
 
         case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
+          let oldCursor = cursor
+
           let cmdline = Cmdline(
             contentParts: content
               .compactMap { rawContentPart in
@@ -720,16 +797,18 @@ public extension NeovimState {
 
           if cmdline != oldCmdline {
             cmdlines.dictionary[level] = cmdline
-            cursorUpdated()
+            cursorUpdated(oldCursor: oldCursor)
             cmdlinesUpdated()
           }
 
         case let .cmdlinePos(pos, level):
+          let oldCursor = cursor
+
           update(&cmdlines.dictionary[level]) {
             $0?.cursorPosition = pos
           }
 
-          cmdlinesUpdated()
+          cursorUpdated(oldCursor: oldCursor)
 
         case let .cmdlineSpecialChar(c, shift, level):
           update(&cmdlines.dictionary[level]) {

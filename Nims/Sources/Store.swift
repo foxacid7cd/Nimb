@@ -8,7 +8,7 @@ import Library
 final class Store: Sendable {
   init(instance: Instance, font: NimsFont) {
     self.instance = instance
-    let state = State(font: font)
+    let state = State(instanceState: .init(font: font))
     self.state = state
     backgroundState = state
 
@@ -72,10 +72,10 @@ final class Store: Sendable {
 
   func set(font: NimsFont) {
     Task { @NeovimActor in
-      backgroundState.font = font
+      backgroundState.instanceState.font = font
       Task { @MainActor in
-        state.font = font
-        await sendStateUpdates(.init(isFontUpdated: true))
+        state.instanceState.font = font
+        await sendStateUpdates(.init(instanceStateUpdates: .init(isFontUpdated: true)))
       }
     }
   }

@@ -98,6 +98,11 @@ public func + (lhs: IntegerPoint, rhs: IntegerPoint) -> IntegerPoint {
 }
 
 @inlinable
+public func + (lhs: IntegerPoint, rhs: IntegerSize) -> IntegerPoint {
+  .init(column: lhs.column + rhs.columnsCount, row: lhs.row + rhs.rowsCount)
+}
+
+@inlinable
 public func + (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
   .init(x: lhs.x + rhs.x, y: lhs.y + rhs.y)
 }
@@ -105,6 +110,11 @@ public func + (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
 @inlinable
 public prefix func - (point: IntegerPoint) -> IntegerPoint {
   .init(column: -point.column, row: -point.row)
+}
+
+@inlinable
+public prefix func - (size: IntegerSize) -> IntegerSize {
+  .init(columnsCount: -size.columnsCount, rowsCount: -size.rowsCount)
 }
 
 @inlinable
