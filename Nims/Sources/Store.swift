@@ -4,111 +4,160 @@ import Foundation
 import Library
 
 @MainActor
-@dynamicMemberLookup
-final class Store {
-  init(instance: Instance, font: NimsFont, stateUpdatesObserver: @escaping @MainActor (State.Updates) -> Void) {
+final class Store: Sendable {
+  init(instance: Instance, font: NimsFont, stateUpdatesObserver: @escaping @Sendable @MainActor (Store, State.Updates) -> Void) {
     self.instance = instance
-    self.state = .init(font: font)
+    let state = State(font: font)
+    self.state = state
+    backgroundState = state
     self.stateUpdatesObserver = stateUpdatesObserver
 
-    let instanceStateUpdatesStream = instance.stateUpdatesStream()
-    observeCursorUpdatesTask = Task { @MainActor [weak self] in
-      for await instanceStateUpdates in instanceStateUpdatesStream {
-        guard let self, !Task.isCancelled else {
-          break
+    Task { @NeovimActor [weak self] in
+      let instanceStateUpdatesStream = instance.stateUpdatesStream()
+      self?.stateUpdatesTask = Task {
+        for await instanceStateUpdates in instanceStateUpdatesStream {
+          guard let self, !Task.isCancelled else {
+            break
+          }
+
+          let state = instance.state
+          self.backgroundState.instanceState = state
+
+          if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
+            self.hideMsgShowsTask?.cancel()
+            self.hideMsgShowsTask = nil
+
+            self.backgroundState.isMsgShowsDismissed = false
+            Task { @MainActor in
+              self.state.isMsgShowsDismissed = false
+            }
+          }
+
+          Task { @MainActor in
+            self.state.instanceState = state
+            stateUpdatesObserver(self, .init(instanceStateUpdates: instanceStateUpdates))
+          }
+
+          if instanceStateUpdates.isCursorUpdated {
+            self.resetCursorBlinkingTask()
+          }
         }
-
-        self.state.instanceState = instance.state
-
-        if instanceStateUpdates.isCursorUpdated {
-          self.resetCursorBlinkingTask()
-        }
-
-        if instanceStateUpdates.isMsgShowsUpdated, !self.state.msgShows.isEmpty {
-          self.hideMsgShowsTask?.cancel()
-          self.hideMsgShowsTask = nil
-          self.state.isMsgShowsDismissed = false
-        }
-
-        stateUpdatesObserver(.init(instanceStateUpdates: instanceStateUpdates))
       }
-    }
 
-    resetCursorBlinkingTask()
+      self?.resetCursorBlinkingTask()
+    }
   }
 
   deinit {
-    observeCursorUpdatesTask?.cancel()
+    Task { @NeovimActor in
+      stateUpdatesTask?.cancel()
+      cursorBlinkingTask?.cancel()
+      hideMsgShowsTask?.cancel()
+    }
   }
 
   let instance: Instance
   private(set) var state: State
 
-  func set(font: NimsFont) {
-    state.font = font
-    stateUpdatesObserver(.init(isFontUpdated: true))
+  var font: NimsFont {
+    state.font
   }
 
-  func scheduleHideMsgShowsIfPossible() {
-    if !state.hasModalMsgShows, !state.isMsgShowsDismissed, hideMsgShowsTask == nil {
-      hideMsgShowsTask = Task { [weak self] in
-        try? await Task.sleep(for: .milliseconds(500))
+  var appearance: Appearance {
+    state.appearance
+  }
 
-        guard !Task.isCancelled, let self else {
-          return
-        }
-
-        hideMsgShowsTask = nil
-        state.isMsgShowsDismissed = true
-        stateUpdatesObserver(.init(isMsgShowsDismissedUpdated: true))
+  func set(font: NimsFont) {
+    Task { @NeovimActor in
+      backgroundState.font = font
+      Task { @MainActor in
+        state.font = font
+        await stateUpdatesObserver(self, .init(isFontUpdated: true))
       }
     }
   }
 
-  subscript<Value>(dynamicMember keyPath: KeyPath<State, Value>) -> Value {
-    state[keyPath: keyPath]
+  func scheduleHideMsgShowsIfPossible() {
+    Task { @NeovimActor in
+      if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
+        hideMsgShowsTask = Task { [weak self] in
+          do {
+            try await Task.sleep(for: .milliseconds(500))
+
+            guard let self else {
+              return
+            }
+
+            hideMsgShowsTask = nil
+            backgroundState.isMsgShowsDismissed = true
+            Task { @MainActor in
+              self.state.isMsgShowsDismissed = true
+              await self.stateUpdatesObserver(self, .init(isMsgShowsDismissedUpdated: true))
+            }
+          } catch {}
+        }
+      }
+    }
   }
 
-  private var observeCursorUpdatesTask: Task<Void, Never>?
+  @NeovimActor
+  private var backgroundState: State
+
+  private let stateUpdatesObserver: @Sendable @MainActor (Store, State.Updates) async -> Void
+
+  @NeovimActor
+  private var stateUpdatesTask: Task<Void, Never>?
+
+  @NeovimActor
   private var cursorBlinkingTask: Task<Void, Never>?
-  private let stateUpdatesObserver: @MainActor (State.Updates) -> Void
+
+  @NeovimActor
   private var hideMsgShowsTask: Task<Void, Never>?
 
+  @NeovimActor
   private func resetCursorBlinkingTask() {
     cursorBlinkingTask?.cancel()
 
-    if !state.cursorBlinkingPhase {
-      state.cursorBlinkingPhase = true
-      stateUpdatesObserver(.init(isCursorBlinkingPhaseUpdated: true))
+    if !backgroundState.cursorBlinkingPhase {
+      backgroundState.cursorBlinkingPhase = true
+      Task { @MainActor in
+        self.state.cursorBlinkingPhase = true
+        await stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+      }
     }
 
     if
-      self.cmdlines.dictionary.isEmpty,
-      let cursorStyle = self.currentCursorStyle,
+      backgroundState.cmdlines.dictionary.isEmpty,
+      let cursorStyle = backgroundState.currentCursorStyle,
       let blinkWait = cursorStyle.blinkWait, blinkWait > 0,
       let blinkOff = cursorStyle.blinkOff, blinkOff > 0,
       let blinkOn = cursorStyle.blinkOn, blinkOn > 0
     {
-      cursorBlinkingTask = Task { @MainActor [weak self] in
-        try? await Task.sleep(for: .milliseconds(blinkWait))
+      cursorBlinkingTask = Task { @NeovimActor [weak self] in
+        do {
+          try await Task.sleep(for: .milliseconds(blinkWait))
 
-        while true {
-          guard !Task.isCancelled else {
-            return
+          while true {
+            guard let self else {
+              return
+            }
+            self.backgroundState.cursorBlinkingPhase = false
+            Task { @MainActor in
+              self.state.cursorBlinkingPhase = false
+              await self.stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+            }
+
+            try await Task.sleep(for: .milliseconds(blinkOff))
+
+            self.backgroundState.cursorBlinkingPhase = true
+            Task { @MainActor in
+              self.state.cursorBlinkingPhase = true
+              await self.stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+            }
+
+            try await Task.sleep(for: .milliseconds(blinkOn))
           }
-          self?.state.cursorBlinkingPhase = false
-          self?.stateUpdatesObserver(.init(isCursorBlinkingPhaseUpdated: true))
-
-          try? await Task.sleep(for: .milliseconds(blinkOff))
-
-          guard !Task.isCancelled else {
-            return
-          }
-          self?.state.cursorBlinkingPhase = true
-          self?.stateUpdatesObserver(.init(isCursorBlinkingPhaseUpdated: true))
-
-          try? await Task.sleep(for: .milliseconds(blinkOn))
-        }
+        } catch {}
       }
     }
   }

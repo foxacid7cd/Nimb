@@ -6,7 +6,6 @@ import AppKit
 final class MainMenuController: NSObject {
   init(store: Store) {
     self.store = store
-
     super.init()
 
     let appMenu = NSMenu()
@@ -34,8 +33,6 @@ final class MainMenuController: NSObject {
 
   let menu = NSMenu()
 
-  func render(_: State.Updates) {}
-
   private let store: Store
   private let editMenu = NSMenu(title: "Edit")
   private let copyItem = NSMenuItem(title: "Copy", action: #selector(handleCopy), keyEquivalent: "c")
@@ -43,11 +40,13 @@ final class MainMenuController: NSObject {
   private let viewMenu = NSMenu(title: "View")
 
   @objc private func handleFont() {
+    let selectedFont = store.state.font.nsFont()
+
     let fontManager = NSFontManager.shared
     fontManager.target = self
     fontManager.fontPanel(true)!.makeKeyAndOrderFront(nil)
 
-    fontManager.setSelectedFont(store.font.nsFont(), isMultiple: false)
+    fontManager.setSelectedFont(selectedFont, isMultiple: false)
   }
 
   @objc private func handleIncreaseFontSize() {
@@ -72,8 +71,10 @@ final class MainMenuController: NSObject {
       currentFont,
       toSize: newFontSize
     )
-    store.set(font: .init(newFont))
     UserDefaults.standard.setValue(newFontSize, forKey: "fontSize")
+    Task {
+      await store.set(font: .init(newFont))
+    }
   }
 
   @objc private func handleCopy() {
@@ -104,10 +105,12 @@ extension MainMenuController: NSFontChanging {
     }
 
     let newFont = sender.convert(store.font.nsFont())
-    store.set(font: .init(newFont))
-
     UserDefaults.standard.setValue(newFont.fontName, forKey: "fontName")
     UserDefaults.standard.setValue(newFont.pointSize, forKey: "fontSize")
+
+    Task {
+      await store.set(font: .init(newFont))
+    }
   }
 }
 

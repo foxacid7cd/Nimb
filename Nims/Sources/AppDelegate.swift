@@ -8,11 +8,13 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_: Notification) {
-    setupStore()
-    setupMainMenuController()
-    showMainWindowController()
-    setupSecondaryWindowControllers()
-    setupKeyDownLocalMonitor()
+    Task {
+      await setupStore()
+      setupMainMenuController()
+      showMainWindowController()
+      setupSecondaryWindowControllers()
+      setupKeyDownLocalMonitor()
+    }
   }
 
   private var store: Store?
@@ -22,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var cmdlinesWindowController: CmdlinesWindowController?
   private var popupmenuWindowController: PopupmenuWindowController?
 
-  private func setupStore() {
+  private func setupStore() async {
     let initialOuterGridSize: IntegerSize = if
       let rowsCount = UserDefaults.standard.value(forKey: "rowsCount") as? Int,
       let columnsCount = UserDefaults.standard.value(forKey: "columnsCount") as? Int
@@ -31,11 +33,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       .init(columnsCount: 110, rowsCount: 34)
     }
-
-    let instance = Instance(
-      neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
-      initialOuterGridSize: initialOuterGridSize
-    )
 
     let font: NimsFont = if
       let name = UserDefaults.standard.value(forKey: "fontName") as? String,
@@ -46,25 +43,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       .init()
     }
-    store = Store(instance: instance, font: font) { [weak self] stateUpdates in
-      guard let self, let store else {
-        return
-      }
-      mainMenuController?.render(stateUpdates)
-      mainWindowController?.render(stateUpdates)
-      msgShowsWindowController?.render(stateUpdates)
-      cmdlinesWindowController?.render(stateUpdates)
-      popupmenuWindowController?.render(stateUpdates)
+
+    let instance = await Task { @NeovimActor in
+      Instance(
+        neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
+        initialOuterGridSize: initialOuterGridSize
+      )
+    }.value
+
+    let store = Store(instance: instance, font: font) { [weak self] store, stateUpdates in
+      self?.mainWindowController?.render(stateUpdates)
+      self?.msgShowsWindowController?.render(stateUpdates)
+      self?.cmdlinesWindowController?.render(stateUpdates)
+      self?.popupmenuWindowController?.render(stateUpdates)
 
       if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
-        let outerGridSize = store.outerGrid!.size
-        UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
-        UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+        let outerGridSize = store.state.outerGrid!.size
+        Task { @MainActor in
+          UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
+          UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+        }
       }
     }
+    self.store = store
 
     Task {
-      let instanceResult = await instance.result
+      let instanceResult = await store.instance.result
 
       switch instanceResult {
       case .success:

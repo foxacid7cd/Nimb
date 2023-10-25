@@ -5,9 +5,9 @@ import AppKit
 final class CmdlineView: NSView {
   init(store: Store) {
     self.store = store
-    contentTextView = .init(store: store)
     firstCharacterView = .init(store: store)
-    super.init(frame: .zero)
+    contentTextView = .init(store: store)
+    super.init(frame: .init())
 
     promptTextField.translatesAutoresizingMaskIntoConstraints = false
     addSubview(promptTextField)
@@ -93,7 +93,6 @@ final class CmdlineView: NSView {
   }
 
   private let store: Store
-
   private let promptTextField = NSTextField(labelWithString: "")
   private let firstCharacterView: CmdlineFirstCharacterView
   private let contentTextView: CmdlineTextView
@@ -102,22 +101,12 @@ final class CmdlineView: NSView {
   private var firstCharacterToContentConstraint: NSLayoutConstraint?
   private var contentToTopConstraint: NSLayoutConstraint?
   private var contentToLeadingConstraint: NSLayoutConstraint?
-
-  private func attributedString(forContentPart contentPart: Cmdline.ContentPart) -> NSAttributedString {
-    .init(
-      string: contentPart.text,
-      attributes: .init([
-        .font: store.font.nsFont(),
-        .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
-      ])
-    )
-  }
 }
 
 private final class CmdlineFirstCharacterView: NSView {
   init(store: Store) {
     self.store = store
-    super.init(frame: .zero)
+    super.init(frame: .init())
   }
 
   @available(*, unavailable)
@@ -213,7 +202,7 @@ private final class CmdlineFirstCharacterView: NSView {
 private final class CmdlineTextView: NSView {
   init(store: Store) {
     self.store = store
-    super.init(frame: .zero)
+    super.init(frame: .init())
   }
 
   @available(*, unavailable)
@@ -391,13 +380,12 @@ private final class CmdlineTextView: NSView {
     cgContext.saveGState()
     defer { cgContext.restoreGState() }
 
-    let font = store.font.nsFont()
     let ctLines = (blockLineCTLines + cmdlineCTLines)
       .reversed()
     for (offset, ctLine) in ctLines.enumerated() {
       cgContext.textMatrix = .init(
         translationX: 0,
-        y: Double(offset) * store.font.cellHeight - font.descender
+        y: Double(offset) * store.font.cellHeight - store.font.nsFont().descender
       )
       CTLineDraw(ctLine, cgContext)
     }

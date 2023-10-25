@@ -8,7 +8,7 @@ import Foundation
 import Library
 import MessagePack
 
-@MainActor
+@NeovimActor
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
@@ -79,7 +79,7 @@ public final class Instance: Sendable {
       }
 
       continuation.onTermination = { _ in
-        Task<Void, Never> { @MainActor in
+        Task<Void, Never> { @NeovimActor in
           self?.observers.removeValue(forKey: id)
         }
       }
@@ -189,6 +189,6 @@ public final class Instance: Sendable {
 
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
-  private var observers = [UUID: @MainActor (NeovimState.Updates) -> Void]()
+  private var observers = [UUID: @NeovimActor (NeovimState.Updates) -> Void]()
   private var task: Task<Void, Error>?
 }

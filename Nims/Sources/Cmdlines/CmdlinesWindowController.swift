@@ -26,7 +26,9 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     window.delegate = self
 
-    updateWindow()
+    Task {
+      await updateWindow()
+    }
   }
 
   deinit {
@@ -73,7 +75,8 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
 
     viewController.reloadData()
 
-    if store.cmdlines.dictionary.isEmpty {
+    let cmdlines = store.state.cmdlines
+    if cmdlines.dictionary.isEmpty {
       parentWindow.removeChildWindow(window)
       window.setIsVisible(false)
 

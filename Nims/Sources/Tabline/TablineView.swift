@@ -113,7 +113,7 @@ final class TablineView: NSView {
   }
 
   func render(_ stateUpdates: State.Updates) {
-    guard let tabline = store.tabline else {
+    guard let tabline = store.state.tabline else {
       return
     }
 
@@ -171,7 +171,7 @@ final class TablineView: NSView {
       paragraphStyle.lineBreakMode = .byTruncatingTail
 
       titleTextField.attributedStringValue = .init(
-        string: store.title ?? "",
+        string: store.state.title ?? "",
         attributes: [
           .foregroundColor: NSColor.labelColor,
           .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
@@ -197,9 +197,7 @@ final class TablineView: NSView {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    let instance = store.instance
-
-    guard let tabline = store.tabline else {
+    guard let tabline = store.state.tabline else {
       return
     }
 
@@ -212,7 +210,7 @@ final class TablineView: NSView {
 
       let itemView = TablineItemView(store: store)
       itemView.text = text
-      let isSelected = buffer.id == store.tabline?.currentBufferID
+      let isSelected = buffer.id == tabline.currentBufferID
       itemView.isSelected = isSelected
       if isSelected {
         var observation: NSKeyValueObservation?
@@ -228,7 +226,7 @@ final class TablineView: NSView {
       itemView.isLast = false
       itemView.clicked = {
         Task {
-          await instance.reportTablineBufferSelected(withID: buffer.id)
+          await self.store.instance.reportTablineBufferSelected(withID: buffer.id)
         }
       }
       itemView.render()
@@ -245,7 +243,7 @@ final class TablineView: NSView {
 
     let instance = store.instance
 
-    guard let tabline = store.tabline else {
+    guard let tabline = store.state.tabline else {
       return
     }
 

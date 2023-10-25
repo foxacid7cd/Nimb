@@ -39,13 +39,13 @@ final class MsgShowsWindowController: NSWindowController {
 
     if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
       if window!.isVisible {
-        if store.msgShows.isEmpty || store.isMsgShowsDismissed {
+        if store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed {
           parentWindow.removeChildWindow(window!)
           window!.setIsVisible(false)
         }
 
       } else {
-        if !store.msgShows.isEmpty, !store.isMsgShowsDismissed {
+        if !store.state.msgShows.isEmpty, !store.state.isMsgShowsDismissed {
           parentWindow.addChildWindow(window!, ordered: .above)
         }
       }
@@ -133,7 +133,7 @@ final class MsgShowsViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    for (msgShowIndex, msgShow) in store.msgShows.enumerated() {
+    for (msgShowIndex, msgShow) in store.state.msgShows.enumerated() {
       let msgShowView = MsgShowView(store: store)
       msgShowView.msgShow = msgShow
       msgShowView.preferredMaxWidth = 640
@@ -145,7 +145,7 @@ final class MsgShowsViewController: NSViewController {
       msgShowView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
       msgShowView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
 
-      if msgShowIndex < store.msgShows.count - 1 {
+      if msgShowIndex < store.state.msgShows.count - 1 {
         let separatorView = NSView()
         separatorView.alphaValue = 0.15
         separatorView.wantsLayer = true
@@ -177,10 +177,6 @@ private final class MsgShowView: NSView {
       width: boundingSize.width + 20,
       height: boundingSize.height + 20
     )
-  }
-
-  override func layout() {
-    render()
   }
 
   func render() {
@@ -245,7 +241,7 @@ private final class MsgShowView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
-    CTFrameDraw(ctFrame, graphicsContext.cgContext)
+    CTFrameDraw(ctFrame, cgContext)
   }
 
   private let store: Store

@@ -50,7 +50,7 @@ final class PopupmenuWindowController: NSWindowController {
     } else if stateUpdates.isPopupmenuSelectionUpdated {
       viewController.reloadData()
 
-      if let selectedItemIndex = store.popupmenu?.selectedItemIndex {
+      if let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
         viewController.scrollTo(itemAtIndex: selectedItemIndex)
       }
     }
@@ -65,11 +65,11 @@ final class PopupmenuWindowController: NSWindowController {
   private var task: Task<Void, Never>?
 
   private func updateWindow() {
-    if let popupmenu = store.popupmenu {
+    if let popupmenu = store.state.popupmenu {
       viewController.reloadData()
 
       if let anchorOrigin = gridWindowFrameTransformer?.anchorOrigin(for: popupmenu.anchor) {
-        let outerGrid = store.outerGrid!
+        let outerGrid = store.state.outerGrid!
         let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
           .translatedBy(x: 0, y: -Double(outerGrid.size.rowsCount))
 
@@ -79,7 +79,7 @@ final class PopupmenuWindowController: NSWindowController {
         )
         let origin = CGPoint(
           x: anchorOrigin.x - 13,
-          y: anchorOrigin.y - size.height - store.font.cellHeight
+          y: anchorOrigin.y - size.height - store.state.font.cellHeight
         )
         let windowFrame = CGRect(origin: origin, size: size)
 
@@ -170,7 +170,8 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
   }
 
   func numberOfRows(in tableView: NSTableView) -> Int {
-    store.popupmenu?.items.count ?? 0
+    0
+    // store.popupmenu?.items.count ?? 0
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -181,9 +182,9 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
       itemView!.identifier = PopupmenuItemView.ReuseIdentifier
     }
 
-    if let popupmenu = store.popupmenu, row < popupmenu.items.count {
-      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row, font: store.font)
-    }
+//    if let popupmenu = store.popupmenu, row < popupmenu.items.count {
+//      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row, font: store.font)
+//    }
     return itemView
   }
 

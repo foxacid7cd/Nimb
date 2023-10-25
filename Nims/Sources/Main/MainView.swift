@@ -7,8 +7,6 @@ class MainView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
-
-    render(.init())
   }
 
   @available(*, unavailable)
@@ -18,17 +16,20 @@ class MainView: NSView {
 
   public func render(_ stateUpdates: State.Updates) {
     let updatedLayoutGridIDs = if stateUpdates.isFontUpdated {
-      Set(store.grids.keys)
+      Set(store.state.grids.keys)
 
     } else {
       stateUpdates.updatedLayoutGridIDs
     }
 
     if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) || stateUpdates.isFontUpdated {
+      _intrinsicContentSize = store.state.grids[Grid.OuterID]
+        .map { $0.size * store.font.cellSize }
+
       invalidateIntrinsicContentSize()
     }
 
-    func gridViewOrCreate(for gridID: Grid.ID) -> GridView {
+    func gridViewOrCreate(forGridID gridID: Grid.ID) -> GridView {
       if let gridView = gridViews[gridID] {
         gridView.invalidateIntrinsicContentSize()
         return gridView
@@ -39,15 +40,14 @@ class MainView: NSView {
         addSubview(gridView)
         gridView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         gridView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-
         gridViews[gridID] = gridView
         return gridView
       }
     }
 
     for gridID in updatedLayoutGridIDs {
-      if let grid = store.grids[gridID] {
-        let gridView = gridViewOrCreate(for: gridID)
+      if let grid = store.state.grids[gridID] {
+        let gridView = gridViewOrCreate(forGridID: gridID)
 
         if gridID == Grid.OuterID {
           gridView.floatingWindowConstraints?.horizontal.isActive = false
@@ -75,7 +75,7 @@ class MainView: NSView {
         } else if let associatedWindow = grid.associatedWindow {
           switch associatedWindow {
           case let .plain(value):
-            let windowFrame = (value.frame * store.font.cellSize)
+            let windowFrame = value.frame * store.font.cellSize
 
             gridView.floatingWindowConstraints?.horizontal.isActive = false
             gridView.floatingWindowConstraints?.vertical.isActive = false
@@ -111,7 +111,7 @@ class MainView: NSView {
             gridView.floatingWindowConstraints?.vertical.isActive = false
             gridView.floatingWindowConstraints = nil
 
-            let anchorGridView = gridViewOrCreate(for: value.anchorGridID)
+            let anchorGridView = gridViewOrCreate(forGridID: value.anchorGridID)
 
             let horizontalConstant: Double = value.anchorColumn * store.font.cellWidth
             let verticalConstant: Double = value.anchorRow * store.font.cellHeight
@@ -225,12 +225,6 @@ class MainView: NSView {
       }
       gridView.render(textUpdates: textUpdates)
     }
-
-    if stateUpdates.isAppearanceUpdated {
-      for gridView in gridViews.values {
-        gridView.needsDisplay = true
-      }
-    }
   }
 
   public func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
@@ -241,12 +235,10 @@ class MainView: NSView {
   }
 
   override var intrinsicContentSize: NSSize {
-    guard let outerGrid = store.outerGrid else {
-      return .init()
-    }
-    return outerGrid.size * store.font.cellSize
+    _intrinsicContentSize ?? .init()
   }
 
   private var store: Store
+  private var _intrinsicContentSize: NSSize?
   private var gridViews = IntKeyedDictionary<GridView>()
 }

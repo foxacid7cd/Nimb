@@ -89,8 +89,8 @@ final class MainViewController: NSViewController {
       columnsCount: Int(mainContainerView.frame.width / store.font.cellWidth),
       rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
     )
-    if 
-      let outerGrid = store.outerGrid,
+    if
+      let outerGrid = store.state.outerGrid,
       outerGrid.size != outerGridSizeNeeded,
       outerGridSizeNeeded != reportedOuterGridSize
     {

@@ -18,11 +18,11 @@ final class CmdlinesViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    let cmdlines = store.cmdlines.dictionary.values
+    let cmdlines = store.state.cmdlines.dictionary.values
       .sorted(by: { $0.level < $1.level })
 
     for (cmdlineIndex, cmdline) in cmdlines.enumerated() {
-      let blockLines = store.cmdlines.blockLines[cmdline.level] ?? []
+      let blockLines = store.state.cmdlines.blockLines[cmdline.level] ?? []
 
       let cmdlineView = CmdlineView(store: store)
       cmdlineView.update(cmdline: cmdline, blockLines: blockLines)

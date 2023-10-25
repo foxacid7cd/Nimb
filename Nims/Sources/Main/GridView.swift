@@ -15,7 +15,7 @@ public final class GridView: NSView {
   init(store: Store, gridID: Grid.ID) {
     self.store = store
     self.gridID = gridID
-    let grid = store.grids[gridID]!
+    let grid = store.state.grids[gridID]!
     gridLayout = .init(cells: .init(size: grid.size, repeatingElement: .default))
     gridDrawRuns = .init(
       gridLayout: gridLayout,
@@ -49,6 +49,7 @@ public final class GridView: NSView {
   public func render(stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       gridDrawRuns.clearCache()
+      needsDisplay = true
     }
 
     if stateUpdates.isCursorUpdated {
@@ -149,7 +150,7 @@ public final class GridView: NSView {
       )
 
       if
-        store.cursorBlinkingPhase,
+        store.state.cursorBlinkingPhase,
         let cursorDrawRun,
         (integerFrame.minColumn ..< integerFrame.maxColumn).contains(cursorDrawRun.position.column),
         (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)
@@ -209,7 +210,7 @@ public final class GridView: NSView {
     )
 
     let modifier = event.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
-    let mouseMoveEvent = MouseEvent(content: .mouseMove, gridID: gridID, point: point, modifier: modifier)
+    let mouseMoveEvent = MouseEvent(content: .mouseMove, gridID: grid.id, point: point, modifier: modifier)
 
     if previousMouseMoveEvent != mouseMoveEvent {
       previousMouseMoveEvent = mouseMoveEvent
@@ -225,8 +226,6 @@ public final class GridView: NSView {
   }
 
   override public func scrollWheel(with event: NSEvent) {
-    let cellSize = store.font.cellSize
-
     if event.phase == .began {
       isScrollingHorizontal = nil
       xScrollingAccumulator = 0
@@ -236,8 +235,8 @@ public final class GridView: NSView {
     xScrollingAccumulator -= event.scrollingDeltaX
     yScrollingAccumulator -= event.scrollingDeltaY
 
-    let xThreshold = cellSize.width * 6
-    let yThreshold = cellSize.height * 3
+    let xThreshold = store.font.cellSize.width * 6
+    let yThreshold = store.font.cellSize.height * 3
 
     var mouseEventContents = [MouseEvent.Content]()
 
@@ -282,7 +281,7 @@ public final class GridView: NSView {
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
   var ordinal: Double {
-    store.grids[gridID]?.ordinal ?? -1
+    grid.ordinal
   }
 
   private let store: Store
@@ -296,13 +295,13 @@ public final class GridView: NSView {
   private var previousMouseMoveEvent: MouseEvent?
   private var cursorDrawRun: CursorDrawRun?
 
+  private var grid: Grid {
+    store.state.grids[gridID]!
+  }
+
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(gridLayout.size.rowsCount) * store.font.cellHeight)
-  }
-
-  private var grid: Grid {
-    store.grids[gridID]!
   }
 
   private func report(_ nsEvent: NSEvent, of contents: [MouseEvent.Content]) {
@@ -313,23 +312,23 @@ public final class GridView: NSView {
       row: Int(upsideDownLocation.y / store.font.cellHeight)
     )
 
-    store.scheduleHideMsgShowsIfPossible()
-
     Task {
       let modifier = nsEvent.modifierFlags.makeModifier(isSpecialKey: false) ?? ""
       await store.instance.report(
         mouseEvents: contents
-          .map { MouseEvent(content: $0, gridID: gridID, point: point, modifier: modifier) }
+          .map { MouseEvent(content: $0, gridID: grid.id, point: point, modifier: modifier) }
       )
+
+      store.scheduleHideMsgShowsIfPossible()
     }
   }
 
   private func updateCursorDrawRun(display: Bool = true) {
-    if 
-      let cursor = store.cursor,
-      cursor.gridID == gridID,
-      let mode = store.mode,
-      let modeInfo = store.modeInfo
+    if
+      let cursor = store.state.cursor,
+      cursor.gridID == grid.id,
+      let mode = store.state.mode,
+      let modeInfo = store.state.modeInfo
     {
       let cursorStyle = modeInfo.cursorStyles[mode.cursorStyleIndex]
       cursorDrawRun = .init(
