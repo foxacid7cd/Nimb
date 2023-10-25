@@ -100,22 +100,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let store = store!
 
     stateUpdatesTask = Task { [weak self] in
-      for await stateUpdates in store {
-        guard !Task.isCancelled else {
-          return
-        }
+      do {
+        for try await stateUpdates in store {
+          guard !Task.isCancelled else {
+            return
+          }
 
-        self?.mainWindowController?.render(stateUpdates)
-        self?.msgShowsWindowController?.render(stateUpdates)
-        self?.cmdlinesWindowController?.render(stateUpdates)
-        self?.popupmenuWindowController?.render(stateUpdates)
+          self?.mainWindowController?.render(stateUpdates)
+          self?.msgShowsWindowController?.render(stateUpdates)
+          self?.cmdlinesWindowController?.render(stateUpdates)
+          self?.popupmenuWindowController?.render(stateUpdates)
 
-        if stateUpdates.isOuterGridLayoutUpdated {
-          let outerGridSize = store.state.outerGrid!.size
-          UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
-          UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+          if stateUpdates.isOuterGridLayoutUpdated {
+            let outerGridSize = store.state.outerGrid!.size
+            UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
+            UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+          }
         }
+      } catch {
+        assertionFailure(error)
       }
+
+      NSApplication.shared.terminate(nil)
     }
   }
 }

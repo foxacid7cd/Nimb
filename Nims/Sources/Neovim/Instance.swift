@@ -35,10 +35,7 @@ public final class Instance: Sendable {
     let api = API(rpc)
     self.api = api
 
-    let (sendStateUpdates, stateUpdates) = AsyncThrowingChannel<NeovimState.Updates, any Error>.pipe(
-      bufferingPolicy: .unbounded
-    )
-    self.stateUpdates = stateUpdates
+    let stateUpdatesChannel = stateUpdatesChannel
 
     task = Task { [weak self] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
@@ -47,10 +44,10 @@ public final class Instance: Sendable {
             try Task.checkCancellation()
 
             if let stateUpdates = self?.state.apply(uiEvents: uiEvents) {
-              await sendStateUpdates(.success(stateUpdates))
+              await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
-                self?.resetCursorBlinkingTask(sendStateUpdates: sendStateUpdates)
+                self?.resetCursorBlinkingTask()
               }
             }
           }
@@ -86,14 +83,16 @@ public final class Instance: Sendable {
             try await taskGroup.next()
           } catch is CancellationError {
           } catch {
-            await sendStateUpdates(.failure(error))
+            stateUpdatesChannel.fail(error)
             taskGroup.cancelAll()
           }
         }
+
+        stateUpdatesChannel.finish()
       }
     }
 
-    resetCursorBlinkingTask(sendStateUpdates: sendStateUpdates)
+    resetCursorBlinkingTask()
   }
 
   deinit {
@@ -270,53 +269,51 @@ public final class Instance: Sendable {
 
   private let process: Process
   private let api: API<ProcessChannel>
-  private let stateUpdates: AsyncThrowingStream<NeovimState.Updates, any Error>
+  private let stateUpdatesChannel = AsyncThrowingChannel<NeovimState.Updates, any Error>()
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
   private var task: Task<Void, Never>?
   private var cursorBlinkingTask: Task<Void, Never>?
 
-  @NeovimActor
-  private func resetCursorBlinkingTask(sendStateUpdates: @escaping @Sendable (Result<NeovimState.Updates, any Error>) async -> Void) {
-    cursorBlinkingTask?.cancel()
+  private func resetCursorBlinkingTask() {
+    Task { @NeovimActor in
+      cursorBlinkingTask?.cancel()
 
-    if !state.cursorBlinkingPhase {
-      state.cursorBlinkingPhase = true
-      Task { @NeovimActor in
-        self.state.cursorBlinkingPhase = true
-        await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
+      if !state.cursorBlinkingPhase {
+        state.cursorBlinkingPhase = true
+        await stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
       }
-    }
 
-    if
-      state.cmdlines.dictionary.isEmpty,
-      let cursorStyle = state.currentCursorStyle,
-      let blinkWait = cursorStyle.blinkWait,
-      blinkWait > 0,
-      let blinkOff = cursorStyle.blinkOff,
-      blinkOff > 0,
-      let blinkOn = cursorStyle.blinkOn,
-      blinkOn > 0
-    {
-      cursorBlinkingTask = Task { @NeovimActor [weak self] in
-        do {
-          try await Task.sleep(for: .milliseconds(blinkWait))
+      if
+        state.cmdlines.dictionary.isEmpty,
+        let cursorStyle = state.currentCursorStyle,
+        let blinkWait = cursorStyle.blinkWait,
+        blinkWait > 0,
+        let blinkOff = cursorStyle.blinkOff,
+        blinkOff > 0,
+        let blinkOn = cursorStyle.blinkOn,
+        blinkOn > 0
+      {
+        cursorBlinkingTask = Task { @NeovimActor [weak self] in
+          do {
+            try await Task.sleep(for: .milliseconds(blinkWait))
 
-          while true {
-            guard let self else {
-              return
+            while true {
+              guard let self else {
+                return
+              }
+
+              self.state.cursorBlinkingPhase = false
+              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
+
+              try await Task.sleep(for: .milliseconds(blinkOff))
+
+              self.state.cursorBlinkingPhase = true
+              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
+
+              try await Task.sleep(for: .milliseconds(blinkOn))
             }
-
-            self.state.cursorBlinkingPhase = false
-            await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
-
-            try await Task.sleep(for: .milliseconds(blinkOff))
-
-            self.state.cursorBlinkingPhase = true
-            await sendStateUpdates(.success(.init(isCursorBlinkingPhaseUpdated: true)))
-
-            try await Task.sleep(for: .milliseconds(blinkOn))
-          }
-        } catch {}
+          } catch {}
+        }
       }
     }
   }
@@ -325,7 +322,7 @@ public final class Instance: Sendable {
 extension Instance: AsyncSequence {
   public typealias Element = NeovimState.Updates
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingStream<NeovimState.Updates, any Error>.AsyncIterator {
-    stateUpdates.makeAsyncIterator()
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<NeovimState.Updates, any Error>.AsyncIterator {
+    stateUpdatesChannel.makeAsyncIterator()
   }
 }

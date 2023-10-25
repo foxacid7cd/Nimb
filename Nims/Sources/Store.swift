@@ -36,12 +36,15 @@ final class Store: Sendable {
 
           Task { @MainActor in
             self.state.instanceState = state
-            await self.sendStateUpdates(.init(instanceStateUpdates: instanceStateUpdates))
+            await self.stateUpdatesChannel.send(.init(instanceStateUpdates: instanceStateUpdates))
           }
         }
+
+        self?.stateUpdatesChannel.finish()
+
       } catch is CancellationError {
       } catch {
-        assertionFailure(error)
+        self?.stateUpdatesChannel.fail(error)
       }
     }
   }
@@ -67,7 +70,7 @@ final class Store: Sendable {
       backgroundState.instanceState.font = font
       Task { @MainActor in
         state.instanceState.font = font
-        await sendStateUpdates(.init(instanceStateUpdates: .init(isFontUpdated: true)))
+        await stateUpdatesChannel.send(.init(instanceStateUpdates: .init(isFontUpdated: true)))
       }
     }
   }
@@ -87,7 +90,7 @@ final class Store: Sendable {
             backgroundState.isMsgShowsDismissed = true
             Task { @MainActor in
               self.state.isMsgShowsDismissed = true
-              await self.sendStateUpdates(.init(isMsgShowsDismissedUpdated: true))
+              await self.stateUpdatesChannel.send(.init(isMsgShowsDismissedUpdated: true))
             }
           } catch {}
         }
@@ -95,9 +98,7 @@ final class Store: Sendable {
     }
   }
 
-  private let (sendStateUpdates, stateUpdates) = AsyncChannel<State.Updates>.pipe(
-    bufferingPolicy: .unbounded
-  )
+  private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
 
   @NeovimActor
   private var backgroundState: State
@@ -111,7 +112,7 @@ final class Store: Sendable {
 extension Store: AsyncSequence {
   typealias Element = State.Updates
 
-  nonisolated func makeAsyncIterator() -> AsyncStream<State.Updates>.AsyncIterator {
-    stateUpdates.makeAsyncIterator()
+  nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
+    stateUpdatesChannel.makeAsyncIterator()
   }
 }
