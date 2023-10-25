@@ -203,8 +203,8 @@ class MainView: NSView {
     if !updatedLayoutGridIDs.isEmpty {
       sortSubviews(
         { firstView, secondView, _ in
-          let firstOrdinal = (firstView as! GridView).ordinal
-          let secondOrdinal = (secondView as! GridView).ordinal
+          let firstOrdinal = (firstView as! GridView).zIndex
+          let secondOrdinal = (secondView as! GridView).zIndex
 
           if firstOrdinal == secondOrdinal {
             return .orderedSame

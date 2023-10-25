@@ -260,8 +260,8 @@ public final class GridView: NSView {
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
-  var ordinal: Double {
-    grid.ordinal
+  var zIndex: Double {
+    grid.zIndex
   }
 
   private let gridID: Grid.ID

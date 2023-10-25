@@ -9,21 +9,18 @@ import SwiftUI
 @PublicInit
 public struct GridDrawRuns: Sendable {
   @NeovimActor
-  public init(gridLayout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
-    rowDrawRuns = GridDrawRuns.makeDrawRuns(gridLayout: gridLayout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+  public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
+    rowDrawRuns = []
+
+    renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
   }
 
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
   @NeovimActor
-  public static func makeDrawRuns(
-    gridLayout: GridLayout,
-    font: NimsFont,
-    appearance: Appearance,
-    drawRunsProvider: DrawRunsCachingProvider
-  ) -> [RowDrawRun] {
-    gridLayout.rowLayouts
+  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
+    rowDrawRuns = layout.rowLayouts
       .enumerated()
       .map {
         .init(
@@ -397,14 +394,14 @@ public struct GlyphRun: Sendable {
 @PublicInit
 public struct CursorDrawRun: Sendable {
   @NeovimActor
-  public init?(gridLayout: GridLayout, rowDrawRuns: [RowDrawRun], cursorPosition: IntegerPoint, cursorStyle: CursorStyle, font: NimsFont, appearance: Appearance) {
+  public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], position: IntegerPoint, style: CursorStyle, font: NimsFont, appearance: Appearance) {
     var location = 0
-    for (drawRun, boundingRange) in rowDrawRuns[cursorPosition.row].drawRuns {
+    for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
       if
-        cursorPosition.column >= location,
-        cursorPosition.column < location + boundingRange.count
+        position.column >= location,
+        position.column < location + boundingRange.count
       {
-        if let cursorShape = cursorStyle.cursorShape {
+        if let cursorShape = style.cursorShape {
           let cellFrame: CGRect
           switch cursorShape {
           case .block:
@@ -413,7 +410,7 @@ public struct CursorDrawRun: Sendable {
           case .horizontal:
             let size = CGSize(
               width: font.cellWidth,
-              height: font.cellHeight / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+              height: font.cellHeight / 100.0 * Double(style.cellPercentage ?? 25)
             )
             cellFrame = .init(
               origin: .init(x: 0, y: font.cellHeight - size.height),
@@ -421,7 +418,7 @@ public struct CursorDrawRun: Sendable {
             )
 
           case .vertical:
-            let width = font.cellWidth / 100.0 * Double(cursorStyle.cellPercentage ?? 25)
+            let width = font.cellWidth / 100.0 * Double(style.cellPercentage ?? 25)
             cellFrame = CGRect(
               origin: .init(),
               size: .init(width: width, height: font.cellHeight)
@@ -429,10 +426,10 @@ public struct CursorDrawRun: Sendable {
           }
 
           self = .init(
-            position: cursorPosition,
+            position: position,
             cellFrame: cellFrame,
-            highlightID: cursorStyle.attrID ?? 0,
-            parentOrigin: .init(column: location, row: cursorPosition.row),
+            highlightID: style.attrID ?? 0,
+            parentOrigin: .init(column: location, row: position.row),
             parentDrawRun: drawRun,
             parentBoundingRange: boundingRange
           )
@@ -455,6 +452,23 @@ public struct CursorDrawRun: Sendable {
 
   public var rectangle: IntegerRectangle {
     .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
+  }
+
+  @NeovimActor
+  public mutating func updateParent(with layout: GridLayout, rowDrawRuns: [RowDrawRun]) {
+    var location = 0
+    for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
+      if
+        position.column >= location,
+        position.column < location + boundingRange.count
+      {
+        parentOrigin = .init(column: location, row: position.row)
+        parentDrawRun = drawRun
+        parentBoundingRange = boundingRange
+      }
+
+      location += boundingRange.count
+    }
   }
 
   @MainActor

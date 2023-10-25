@@ -479,7 +479,7 @@ public extension NeovimState {
                 layout: layout,
                 drawRunsProvider: drawRunsProvider,
                 drawRuns: .init(
-                  gridLayout: layout,
+                  layout: layout,
                   font: font,
                   appearance: appearance,
                   drawRunsProvider: drawRunsProvider
