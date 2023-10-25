@@ -11,6 +11,7 @@ import MessagePack
 @NeovimActor
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
+    self.initialOuterGridSize = initialOuterGridSize
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     let nvimArguments = ["--embed"]
     let nvimCommand = ([nvimExecutablePath] + nvimArguments)
@@ -33,58 +34,9 @@ public final class Instance: Sendable {
     let api = API(rpc)
 
     self.api = api
-
-    task = .init {
-      try process.run()
-
-      let uiOptions: UIOptions = [
-        .extMultigrid,
-        .extHlstate,
-        .extCmdline,
-        .extMessages,
-        .extPopupmenu,
-        .extTabline,
-      ]
-
-      try await api.nvimUIAttachFast(
-        width: initialOuterGridSize.columnsCount,
-        height: initialOuterGridSize.rowsCount,
-        options: uiOptions.nvimUIAttachOptions
-      )
-
-      for try await uiEvents in api {
-        if let stateUpdates = state.apply(uiEvents: uiEvents) {
-          for (_, body) in self.observers {
-            body(stateUpdates)
-          }
-        }
-      }
-    }
   }
 
   public private(set) var state = NeovimState()
-
-  public var result: Result<Void, Error> {
-    get async {
-      await task!.result
-    }
-  }
-
-  public func stateUpdatesStream() -> AsyncStream<NeovimState.Updates> {
-    .init { [weak self] continuation in
-      let id = UUID()
-
-      self?.observers[id] = { updates in
-        continuation.yield(updates)
-      }
-
-      continuation.onTermination = { _ in
-        Task<Void, Never> { @NeovimActor in
-          self?.observers.removeValue(forKey: id)
-        }
-      }
-    }
-  }
 
   public func report(keyPress: KeyPress) async {
     let keys = keyPress.makeNvimKeyCode()
@@ -187,8 +139,71 @@ public final class Instance: Sendable {
     return nil
   }
 
+  private let initialOuterGridSize: IntegerSize
   private let process = Foundation.Process()
   private let api: API<ProcessChannel>
   private var observers = [UUID: @NeovimActor (NeovimState.Updates) -> Void]()
-  private var task: Task<Void, Error>?
+
+  @NeovimActor
+  private func apply(uiEvents: [UIEvent]) -> NeovimState.Updates? {
+    state.apply(uiEvents: uiEvents)
+  }
+
+  @NeovimActor
+  private func runAndAttach() async throws {
+    try process.run()
+
+    let uiOptions: UIOptions = [
+      .extMultigrid,
+      .extHlstate,
+      .extCmdline,
+      .extMessages,
+      .extPopupmenu,
+      .extTabline,
+    ]
+
+    try await api.nvimUIAttachFast(
+      width: initialOuterGridSize.columnsCount,
+      height: initialOuterGridSize.rowsCount,
+      options: uiOptions.nvimUIAttachOptions
+    )
+  }
+}
+
+extension Instance: AsyncSequence {
+  public typealias Element = NeovimState.Updates
+
+  public nonisolated func makeAsyncIterator() -> AsyncIterator {
+    .init(instance: self, apiIterator: api.makeAsyncIterator())
+  }
+
+  public struct AsyncIterator: AsyncIteratorProtocol {
+    fileprivate init(instance: Instance, apiIterator: API<ProcessChannel>.AsyncIterator) {
+      self.instance = instance
+      self.apiIterator = apiIterator
+    }
+
+    public mutating func next() async throws -> NeovimState.Updates? {
+      if !isProcessRunning {
+        isProcessRunning = true
+
+        try await instance.runAndAttach()
+      }
+
+      while true {
+        if let uiEvents = try await apiIterator.next() {
+          if let stateUpdates = await instance.apply(uiEvents: uiEvents) {
+            return stateUpdates
+          }
+
+        } else {
+          return nil
+        }
+      }
+    }
+
+    private let instance: Instance
+    private var apiIterator: API<ProcessChannel>.AsyncIterator
+    private var isProcessRunning = false
+  }
 }

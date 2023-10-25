@@ -14,10 +14,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       showMainWindowController()
       setupSecondaryWindowControllers()
       setupKeyDownLocalMonitor()
+      runStateUpdatesTask()
     }
   }
 
   private var store: Store?
+  private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
   private var mainWindowController: MainWindowController?
   private var msgShowsWindowController: MsgShowsWindowController?
@@ -34,6 +36,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       .init(columnsCount: 110, rowsCount: 34)
     }
 
+    let instance = await Instance(
+      neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
+      initialOuterGridSize: initialOuterGridSize
+    )
     let font: NimsFont = if
       let name = UserDefaults.standard.value(forKey: "fontName") as? String,
       let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,
@@ -43,43 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       .init()
     }
-
-    let instance = await Task { @NeovimActor in
-      Instance(
-        neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
-        initialOuterGridSize: initialOuterGridSize
-      )
-    }.value
-
-    let store = Store(instance: instance, font: font) { [weak self] store, stateUpdates in
-      self?.mainWindowController?.render(stateUpdates)
-      self?.msgShowsWindowController?.render(stateUpdates)
-      self?.cmdlinesWindowController?.render(stateUpdates)
-      self?.popupmenuWindowController?.render(stateUpdates)
-
-      if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) {
-        let outerGridSize = store.state.outerGrid!.size
-        Task { @MainActor in
-          UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
-          UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
-        }
-      }
-    }
-    self.store = store
-
-    Task {
-      let instanceResult = await store.instance.result
-
-      switch instanceResult {
-      case .success:
-        break
-
-      case let .failure(error):
-        let alert = NSAlert(error: error)
-        alert.informativeText = String(customDumping: error)
-        alert.runModal()
-      }
-    }
+    store = .init(instance: instance, font: font)
   }
 
   private func setupMainMenuController() {
@@ -121,6 +91,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       return nil
+    }
+  }
+
+  private func runStateUpdatesTask() {
+    let store = store!
+
+    stateUpdatesTask = Task { [weak self] in
+      for await stateUpdates in store {
+        guard !Task.isCancelled else {
+          return
+        }
+
+        self?.mainWindowController?.render(stateUpdates)
+        self?.msgShowsWindowController?.render(stateUpdates)
+        self?.cmdlinesWindowController?.render(stateUpdates)
+        self?.popupmenuWindowController?.render(stateUpdates)
+
+        if stateUpdates.isOuterGridLayoutUpdated {
+          let outerGridSize = store.state.outerGrid!.size
+          UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
+          UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+        }
+      }
     }
   }
 }

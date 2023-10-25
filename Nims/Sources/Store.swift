@@ -1,46 +1,49 @@
 // SPDX-License-Identifier: MIT
 
+import AsyncAlgorithms
 import Foundation
 import Library
 
 @MainActor
 final class Store: Sendable {
-  init(instance: Instance, font: NimsFont, stateUpdatesObserver: @escaping @Sendable @MainActor (Store, State.Updates) -> Void) {
+  init(instance: Instance, font: NimsFont) {
     self.instance = instance
     let state = State(font: font)
     self.state = state
     backgroundState = state
-    self.stateUpdatesObserver = stateUpdatesObserver
 
     Task { @NeovimActor [weak self] in
-      let instanceStateUpdatesStream = instance.stateUpdatesStream()
       self?.stateUpdatesTask = Task {
-        for await instanceStateUpdates in instanceStateUpdatesStream {
-          guard let self, !Task.isCancelled else {
-            break
-          }
+        do {
+          for try await instanceStateUpdates in instance {
+            guard let self, !Task.isCancelled else {
+              return
+            }
 
-          let state = instance.state
-          self.backgroundState.instanceState = state
+            let state = instance.state
+            self.backgroundState.instanceState = state
 
-          if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
-            self.hideMsgShowsTask?.cancel()
-            self.hideMsgShowsTask = nil
+            if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
+              self.hideMsgShowsTask?.cancel()
+              self.hideMsgShowsTask = nil
 
-            self.backgroundState.isMsgShowsDismissed = false
+              self.backgroundState.isMsgShowsDismissed = false
+              Task { @MainActor in
+                self.state.isMsgShowsDismissed = false
+              }
+            }
+
             Task { @MainActor in
-              self.state.isMsgShowsDismissed = false
+              self.state.instanceState = state
+              await self.sendStateUpdates(.init(instanceStateUpdates: instanceStateUpdates))
+            }
+
+            if instanceStateUpdates.isCursorUpdated {
+              self.resetCursorBlinkingTask()
             }
           }
-
-          Task { @MainActor in
-            self.state.instanceState = state
-            stateUpdatesObserver(self, .init(instanceStateUpdates: instanceStateUpdates))
-          }
-
-          if instanceStateUpdates.isCursorUpdated {
-            self.resetCursorBlinkingTask()
-          }
+        } catch {
+          assertionFailure(error)
         }
       }
 
@@ -72,7 +75,7 @@ final class Store: Sendable {
       backgroundState.font = font
       Task { @MainActor in
         state.font = font
-        await stateUpdatesObserver(self, .init(isFontUpdated: true))
+        await sendStateUpdates(.init(isFontUpdated: true))
       }
     }
   }
@@ -92,7 +95,7 @@ final class Store: Sendable {
             backgroundState.isMsgShowsDismissed = true
             Task { @MainActor in
               self.state.isMsgShowsDismissed = true
-              await self.stateUpdatesObserver(self, .init(isMsgShowsDismissedUpdated: true))
+              await self.sendStateUpdates(.init(isMsgShowsDismissedUpdated: true))
             }
           } catch {}
         }
@@ -100,10 +103,12 @@ final class Store: Sendable {
     }
   }
 
+  private let (sendStateUpdates, stateUpdates) = AsyncChannel<State.Updates>.pipe(
+    bufferingPolicy: .unbounded
+  )
+
   @NeovimActor
   private var backgroundState: State
-
-  private let stateUpdatesObserver: @Sendable @MainActor (Store, State.Updates) async -> Void
 
   @NeovimActor
   private var stateUpdatesTask: Task<Void, Never>?
@@ -122,7 +127,7 @@ final class Store: Sendable {
       backgroundState.cursorBlinkingPhase = true
       Task { @MainActor in
         self.state.cursorBlinkingPhase = true
-        await stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+        await sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
       }
     }
 
@@ -144,7 +149,7 @@ final class Store: Sendable {
             self.backgroundState.cursorBlinkingPhase = false
             Task { @MainActor in
               self.state.cursorBlinkingPhase = false
-              await self.stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+              await self.sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
             }
 
             try await Task.sleep(for: .milliseconds(blinkOff))
@@ -152,7 +157,7 @@ final class Store: Sendable {
             self.backgroundState.cursorBlinkingPhase = true
             Task { @MainActor in
               self.state.cursorBlinkingPhase = true
-              await self.stateUpdatesObserver(self, .init(isCursorBlinkingPhaseUpdated: true))
+              await self.sendStateUpdates(.init(isCursorBlinkingPhaseUpdated: true))
             }
 
             try await Task.sleep(for: .milliseconds(blinkOn))
@@ -160,5 +165,13 @@ final class Store: Sendable {
         } catch {}
       }
     }
+  }
+}
+
+extension Store: AsyncSequence {
+  typealias Element = State.Updates
+
+  nonisolated func makeAsyncIterator() -> AsyncStream<State.Updates>.AsyncIterator {
+    stateUpdates.makeAsyncIterator()
   }
 }

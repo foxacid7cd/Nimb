@@ -2,7 +2,6 @@
 
 import AsyncAlgorithms
 import CasePaths
-import Collections
 import CustomDump
 import Foundation
 import Library
@@ -65,9 +64,7 @@ public struct RPC<Target: Channel>: Sendable {
   }
 
   public func send(request: Message.Request) async throws {
-    let data = await packer.pack(
-      request.makeValue()
-    )
+    let data = await packer.pack(request.makeValue())
     try await target.write(data)
   }
 
@@ -80,7 +77,7 @@ public struct RPC<Target: Channel>: Sendable {
 extension RPC: AsyncSequence {
   public typealias Element = [Message.Notification]
 
-  public func makeAsyncIterator() -> AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> AsyncIterator {
     .init(
       store: store,
       messageBatchesIterator: messageBatches.makeAsyncIterator()
@@ -150,5 +147,5 @@ private actor Store {
   }
 
   private var announcedRequestsCount = 0
-  private var currentRequests = TreeDictionary < Int, @Sendable (Message.Response) -> Void > ()
+  private var currentRequests = [Int: @Sendable (Message.Response) -> Void]()
 }
