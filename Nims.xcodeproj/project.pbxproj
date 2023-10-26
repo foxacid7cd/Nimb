@@ -50,6 +50,8 @@
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
 		68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68BA57392AE9E7A9002E041B /* Metal.framework */; };
+		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
+		68BA573E2AE9F291002E041B /* NeovimStateUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573D2AE9F291002E041B /* NeovimStateUpdater.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
@@ -137,6 +139,8 @@
 		68A8FF6B2AD2ACCB0017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
 		68BA57392AE9E7A9002E041B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
+		68BA573D2AE9F291002E041B /* NeovimStateUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimStateUpdater.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -250,6 +254,8 @@
 				68A8FF3A2AD29F650017C28D /* MsgShow.swift */,
 				68A8FF3D2AD29F650017C28D /* Popupmenu.swift */,
 				68A8FF422AD29F650017C28D /* NeovimState.swift */,
+				68BA573D2AE9F291002E041B /* NeovimStateUpdater.swift */,
+				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */,
 				68A8FF442AD29F650017C28D /* Tabline.swift */,
 				68A8FF452AD29F650017C28D /* UIOptions.swift */,
@@ -447,6 +453,7 @@
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
+				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
@@ -457,6 +464,7 @@
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
+				68BA573E2AE9F291002E041B /* NeovimStateUpdater.swift in Sources */,
 				68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,

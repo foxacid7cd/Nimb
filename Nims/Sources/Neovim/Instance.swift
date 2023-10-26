@@ -48,7 +48,11 @@ public final class Instance: Sendable {
               return
             }
 
-            if let stateUpdates = self.state.apply(uiEvents: uiEvents) {
+            let updater = NeovimStateUpdater(self.state)
+            let stateUpdates = await updater.apply(uiEvents: uiEvents)
+            self.state = updater.state
+
+            if let stateUpdates {
               await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
