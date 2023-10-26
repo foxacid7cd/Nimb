@@ -197,4 +197,20 @@ public struct Grid: Sendable, Identifiable {
       return .dirtyRectangle(dirtyRectangle)
     }
   }
+
+  @NeovimActor
+  public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
+    drawRunsProvider.clearCache()
+    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+    if let cursorDrawRun = drawRuns.cursorDrawRun {
+      drawRuns.cursorDrawRun = .init(
+        layout: layout,
+        rowDrawRuns: drawRuns.rowDrawRuns,
+        position: cursorDrawRun.position,
+        style: cursorDrawRun.style,
+        font: font,
+        appearance: appearance
+      )
+    }
+  }
 }

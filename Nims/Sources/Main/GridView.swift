@@ -26,6 +26,7 @@ public final class GridView: NSView {
 
   public func render(stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
+      invalidateIntrinsicContentSize()
       needsDisplay = true
     } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
       setNeedsDisplay(

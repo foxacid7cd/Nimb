@@ -73,6 +73,8 @@ final class MainViewController: NSViewController {
   func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
+
+      reportedOuterGridSize = nil
       reportOuterGridSizeChangedIfNeeded()
     }
 

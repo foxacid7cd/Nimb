@@ -65,16 +65,6 @@ final class Store: Sendable {
     state.appearance
   }
 
-  func set(font: NimsFont) {
-    Task { @NeovimActor in
-      backgroundState.instanceState.font = font
-      Task { @MainActor in
-        state.instanceState.font = font
-        await stateUpdatesChannel.send(.init(instanceStateUpdates: .init(isFontUpdated: true)))
-      }
-    }
-  }
-
   func scheduleHideMsgShowsIfPossible() {
     Task { @NeovimActor in
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {

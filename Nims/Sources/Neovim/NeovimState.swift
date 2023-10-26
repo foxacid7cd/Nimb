@@ -92,6 +92,13 @@ public struct NeovimState: Sendable {
     windowZIndexCounter += 1
     return windowZIndexCounter
   }
+
+  @NeovimActor
+  public mutating func flushDrawRuns() {
+    for gridID in grids.keys {
+      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
+    }
+  }
 }
 
 public extension NeovimState {
@@ -225,36 +232,6 @@ public extension NeovimState {
             gridUpdate!.apply(textUpdateApplyResult: textUpdateApplyResult)
           }
         }
-//        switch textUpdate {
-//        case .resize:
-//          break
-//          dirtyRectangles = nil
-//
-//        case let .line(origin, cells):
-//          let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
-//          if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-//            updateCursorDrawRun(display: false)
-//          }
-//          dirtyRectangles?.append(rectangle)
-//
-//        case let .scroll(rectangle, offset):
-//          let rectangle = IntegerRectangle(
-//            origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
-//            size: .init(
-//              columnsCount: rectangle.size.columnsCount,
-//              rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
-//            )
-//          )
-//          if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-//            updateCursorDrawRun(display: false)
-//          }
-//          dirtyRectangles?.append(rectangle)
-//
-//        case .clear:
-//          break
-//          updateCursorDrawRun(display: false)
-//          dirtyRectangles = nil
-//        }
       }
 
       func popupmenuUpdated() {
@@ -365,6 +342,7 @@ public extension NeovimState {
           appearance.defaultForegroundColor = .init(rgb: rgbFg)
           appearance.defaultBackgroundColor = .init(rgb: rgbBg)
           appearance.defaultSpecialColor = .init(rgb: rgbSp)
+          flushDrawRuns()
 
           appearanceUpdated()
 
@@ -459,35 +437,29 @@ public extension NeovimState {
 
           appearance.highlights[id] = highlight
 
-          appearanceUpdated()
-
         case let .gridResize(gridID, width, height):
           let size = IntegerSize(
             columnsCount: width,
             rowsCount: height
           )
 
-          let font = font
-          let appearance = appearance
-          update(&grids[gridID]) { grid in
-            if grid == nil {
-              let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
-              let layout = GridLayout(cells: cells)
-              let drawRunsProvider = DrawRunsCachingProvider()
-              grid = .init(
-                id: gridID,
+          if grids[gridID] == nil {
+            let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+            let layout = GridLayout(cells: cells)
+            let drawRunsProvider = DrawRunsCachingProvider()
+            grids[gridID] = .init(
+              id: gridID,
+              layout: layout,
+              drawRunsProvider: drawRunsProvider,
+              drawRuns: .init(
                 layout: layout,
-                drawRunsProvider: drawRunsProvider,
-                drawRuns: .init(
-                  layout: layout,
-                  font: font,
-                  appearance: appearance,
-                  drawRunsProvider: drawRunsProvider
-                ),
-                associatedWindow: nil,
-                isHidden: false
-              )
-            }
+                font: font,
+                appearance: appearance,
+                drawRunsProvider: drawRunsProvider
+              ),
+              associatedWindow: nil,
+              isHidden: false
+            )
           }
 
           if
@@ -552,17 +524,6 @@ public extension NeovimState {
 
           updatedText(inGridWithID: gridID, .line(origin: .init(column: startColumn, row: row), cells: cells))
 
-//          update(&grids[gridID]!) { grid in
-//            grid.rowLayouts[row] = .init(
-//              rowCells: grid.cells.rows[row]
-//            )
-//          }
-
-//          updatedText(inGridWithID: gridID, .redraw(rectangles: [.init(
-//            origin: .init(column: startColumn, row: row),
-//            size: .init(columnsCount: updatedCellsCount, rowsCount: 1)
-//          )]))
-
         case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
           let rectangle = IntegerRectangle(
             origin: .init(column: left, row: top),
@@ -570,50 +531,9 @@ public extension NeovimState {
           )
           let offset = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
           updatedText(inGridWithID: gridID, .scroll(rectangle: rectangle, offset: offset))
-//          let gridSize = grids[gridID]!.size
-//
-//          if columnsCount != 0 {
-//            assertionFailure("Horizontal scroll are not supported")
-//          }
-//
-//          update(&grids[gridID]!) { grid in
-//            let gridCopy = grid
-//
-//            let fromRows = offset.columnsCount < 0 ? Array(rectangle.rows) : rectangle.rows.reversed()
-//            for fromRow in fromRows {
-//              let toRow = fromRow - rowsCount
-//
-//              guard toRow >= top, toRow < min(gridSize.rowsCount, bottom) else {
-//                continue
-//              }
-//
-//              grid.cells.rows[toRow] = gridCopy.cells.rows[fromRow]
-//              grid.rowLayouts[toRow] = gridCopy.rowLayouts[fromRow]
-//            }
-//          }
-
-//          let rectangle = IntegerRectangle(
-//            origin: .init(column: 0, row: top + min(0, rowsCount)),
-//            size: .init(
-//              columnsCount: grids[gridID]!.cells.size.columnsCount,
-//              rowsCount: bottom - top - min(0, rowsCount) + max(0, rowsCount)
-//            )
-//          )
 
         case let .gridClear(gridID):
           updatedText(inGridWithID: gridID, .clear)
-//          update(&grids[gridID]!) { grid in
-//            let newCells = TwoDimensionalArray<Grid.Cell>(
-//              size: grid.cells.size,
-//              repeatingElement: .default
-//            )
-//
-//            grid.cells = newCells
-//            grid.rowLayouts = newCells.rows
-//              .map(Grid.RowLayout.init(rowCells:))
-//
-//            updatedText(inGridWithID: gridID, .redraw(rectangles: [.init(size: grid.size)]))
-//          }
 
         case let .gridDestroy(gridID):
           grids[gridID]?.associatedWindow = nil
@@ -944,5 +864,12 @@ public extension NeovimState {
     }
 
     return nil
+  }
+
+  @NeovimActor
+  mutating func apply(newFont: NimsFont) -> Updates {
+    font = newFont
+    flushDrawRuns()
+    return .init(isFontUpdated: true)
   }
 }

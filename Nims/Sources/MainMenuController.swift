@@ -71,7 +71,9 @@ final class MainMenuController: NSObject {
       currentFont,
       toSize: newFontSize
     )
-    store.set(font: .init(newFont))
+    Task {
+      await store.instance.set(font: .init(newFont))
+    }
     UserDefaults.standard.setValue(newFontSize, forKey: "fontSize")
   }
 
@@ -103,7 +105,9 @@ extension MainMenuController: NSFontChanging {
     }
 
     let newFont = sender.convert(store.font.nsFont())
-    store.set(font: .init(newFont))
+    Task {
+      await store.instance.set(font: .init(newFont))
+    }
     UserDefaults.standard.setValue(newFont.fontName, forKey: "fontName")
     UserDefaults.standard.setValue(newFont.pointSize, forKey: "fontSize")
   }

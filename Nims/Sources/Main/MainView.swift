@@ -30,7 +30,7 @@ class MainView: NSView {
       stateUpdates.updatedLayoutGridIDs
     }
 
-    if stateUpdates.updatedLayoutGridIDs.contains(Grid.OuterID) || stateUpdates.isFontUpdated {
+    if updatedLayoutGridIDs.contains(Grid.OuterID) {
       invalidateIntrinsicContentSize()
     }
 

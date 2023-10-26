@@ -73,7 +73,7 @@ public class DrawRunsCachingProvider {
   }
 
   func clearCache() {
-    cachedRows = [:]
+    cachedRows = .init()
   }
 
   private struct CachedRow {
@@ -427,6 +427,7 @@ public struct CursorDrawRun: Sendable {
 
           self = .init(
             position: position,
+            style: style,
             cellFrame: cellFrame,
             highlightID: style.attrID ?? 0,
             parentOrigin: .init(column: location, row: position.row),
@@ -444,6 +445,7 @@ public struct CursorDrawRun: Sendable {
   }
 
   public var position: IntegerPoint
+  public var style: CursorStyle
   public var cellFrame: CGRect
   public var highlightID: Highlight.ID
   public var parentOrigin: IntegerPoint

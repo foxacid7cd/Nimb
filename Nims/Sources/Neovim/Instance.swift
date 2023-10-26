@@ -36,6 +36,7 @@ public final class Instance: Sendable {
     self.api = api
 
     let stateUpdatesChannel = stateUpdatesChannel
+    let newFontChannel = newFontChannel
 
     task = Task { [weak self] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
@@ -43,13 +44,30 @@ public final class Instance: Sendable {
           for try await uiEvents in api {
             try Task.checkCancellation()
 
-            if let stateUpdates = self?.state.apply(uiEvents: uiEvents) {
+            guard let self else {
+              return
+            }
+
+            if let stateUpdates = self.state.apply(uiEvents: uiEvents) {
               await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
-                self?.resetCursorBlinkingTask()
+                self.resetCursorBlinkingTask()
               }
             }
+          }
+        }
+
+        taskGroup.addTask { @NeovimActor in
+          for await newFont in newFontChannel {
+            guard let self else {
+              return
+            }
+
+            try Task.checkCancellation()
+
+            let updates = self.state.apply(newFont: newFont)
+            await stateUpdatesChannel.send(updates)
           }
         }
 
@@ -120,6 +138,10 @@ public final class Instance: Sendable {
   }
 
   public private(set) var state = NeovimState()
+
+  public func set(font: NimsFont) async {
+    await newFontChannel.send(font)
+  }
 
   public func report(keyPress: KeyPress) async {
     let keys = keyPress.makeNvimKeyCode()
@@ -270,6 +292,7 @@ public final class Instance: Sendable {
   private let process: Process
   private let api: API<ProcessChannel>
   private let stateUpdatesChannel = AsyncThrowingChannel<NeovimState.Updates, any Error>()
+  private let newFontChannel = AsyncChannel<NimsFont>()
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
   private var task: Task<Void, Never>?
   private var cursorBlinkingTask: Task<Void, Never>?
