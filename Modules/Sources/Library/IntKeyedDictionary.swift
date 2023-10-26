@@ -183,3 +183,31 @@ extension IntKeyedDictionary: Hashable where Value: Hashable {
     }
   }
 }
+
+extension IntKeyedDictionary: Sequence {
+  public func makeIterator() -> Iterator {
+    .init(self)
+  }
+
+  public struct Iterator: IteratorProtocol {
+    fileprivate init(_ dictionary: IntKeyedDictionary<Value>) {
+      self.dictionary = dictionary
+      currentKeyIndex = dictionary.keysBackingStore.startIndex
+    }
+
+    public mutating func next() -> (key: Int, value: Value)? {
+      guard currentKeyIndex != dictionary.keysBackingStore.endIndex else {
+        return nil
+      }
+
+      let key = dictionary.keysBackingStore[currentKeyIndex]
+      currentKeyIndex = dictionary.keysBackingStore.index(after: currentKeyIndex)
+
+      let value = dictionary.valuesBackingStore[key]!
+      return (key, value)
+    }
+
+    private let dictionary: IntKeyedDictionary<Value>
+    private var currentKeyIndex: OrderedSet<Int>.Index
+  }
+}

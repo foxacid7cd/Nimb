@@ -26,6 +26,15 @@ public struct Grid: Sendable, Identifiable {
     case needsDisplay
   }
 
+  public struct LineUpdateResult: Sendable {
+    public var row: Int
+    public var rowCells: [Cell]
+    public var rowLayout: RowLayout
+    public var rowDrawRun: RowDrawRun
+    public var dirtyRectangle: IntegerRectangle
+    public var shouldUpdateCursorDrawRun: Bool
+  }
+
   public static let OuterID = 1
 
   public var id: Int
@@ -196,6 +205,37 @@ public struct Grid: Sendable, Identifiable {
       drawRuns.cursorDrawRun = nil
       return .dirtyRectangle(dirtyRectangle)
     }
+  }
+
+  @Sendable
+  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) async -> LineUpdateResult {
+    var rowCells = layout.cells.rows[row]
+    rowCells.replaceSubrange(
+      originColumn ..< originColumn + cells.count,
+      with: cells
+    )
+    let rowLayout = RowLayout(rowCells: rowCells)
+    let rowDrawRun = RowDrawRun(
+      row: row,
+      rowLayout: rowLayout,
+      font: font,
+      appearance: appearance,
+      drawRunsProvider: drawRunsProvider
+    )
+    return .init(
+      row: row,
+      rowCells: rowCells,
+      rowLayout: rowLayout,
+      rowDrawRun: rowDrawRun,
+      dirtyRectangle: .init(
+        origin: .init(column: originColumn, row: row),
+        size: .init(columnsCount: cells.count, rowsCount: 1)
+      ),
+      shouldUpdateCursorDrawRun: drawRuns.cursorDrawRun != nil &&
+        drawRuns.cursorDrawRun!.position.row == row &&
+        drawRuns.cursorDrawRun!.position.column >= originColumn &&
+        drawRuns.cursorDrawRun!.position.column < originColumn + cells.count
+    )
   }
 
   @NeovimActor

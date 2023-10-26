@@ -63,19 +63,6 @@ public final class Instance: Sendable {
         }
 
         taskGroup.addTask { @NeovimActor in
-          for await newFont in newFontChannel {
-            guard let self else {
-              return
-            }
-
-            try Task.checkCancellation()
-
-            let updates = self.state.apply(newFont: newFont)
-            await stateUpdatesChannel.send(updates)
-          }
-        }
-
-        taskGroup.addTask { @NeovimActor in
           try process.run()
 
           let uiOptions: UIOptions = [
@@ -114,12 +101,24 @@ public final class Instance: Sendable {
       }
     }
 
+    newFontChannelTask = Task { [weak self] in
+      for await newFont in newFontChannel {
+        guard let self, !Task.isCancelled else {
+          return
+        }
+
+        let updates = state.apply(newFont: newFont)
+        await stateUpdatesChannel.send(updates)
+      }
+    }
+
     resetCursorBlinkingTask()
   }
 
   deinit {
     task?.cancel()
     cursorBlinkingTask?.cancel()
+    newFontChannelTask?.cancel()
   }
 
   public enum MouseButton: String, Sendable {
@@ -300,6 +299,7 @@ public final class Instance: Sendable {
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
   private var task: Task<Void, Never>?
   private var cursorBlinkingTask: Task<Void, Never>?
+  private var newFontChannelTask: Task<Void, Never>?
 
   private func resetCursorBlinkingTask() {
     Task { @NeovimActor in

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
+import CustomDump
 import IdentifiedCollections
 import Library
 import MessagePack
@@ -696,9 +697,15 @@ public final class NeovimStateUpdater {
           }
 
         case let .gridLines(gridID, gridLines):
-          await withTaskGroup(of: Void.self) { taskGroup in
-            for gridLines in gridLines.chunks(ofCount: 20) {
-              taskGroup.addTask { @NeovimActor in
+          let font = state.font
+          let appearance = state.appearance
+          let grids = state.grids
+
+          await withTaskGroup(of: [Grid.LineUpdateResult].self) { taskGroup in
+            for gridLines in Array(gridLines).chunks(ofCount: 20) {
+              taskGroup.addTask {
+                var accumulator = [Grid.LineUpdateResult]()
+
                 for gridLine in gridLines {
                   var cells = [Cell]()
                   var highlightID = 0
@@ -745,18 +752,49 @@ public final class NeovimStateUpdater {
                     }
                   }
 
-                  updatedText(
-                    inGridWithID: gridID,
-                    .line(
-                      origin: .init(column: gridLine.originColumn, row: gridLine.row),
-                      cells: cells
+                  await accumulator.append(
+                    grids[gridID]!.applyingLineUpdate(
+                      forRow: gridLine.row,
+                      originColumn: gridLine.originColumn,
+                      cells: cells,
+                      font: font,
+                      appearance: appearance,
+                      drawRunsProvider: grids[gridID]!.drawRunsProvider.makeCopy()
                     )
                   )
                 }
+
+                return accumulator
               }
             }
 
-            await taskGroup.waitForAll()
+            for await lineUpdateResults in taskGroup {
+              update(&state.grids[gridID]!) { grid in
+                for lineUpdateResult in lineUpdateResults {
+                  grid.layout.rowLayouts[lineUpdateResult.row] = lineUpdateResult.rowLayout
+                  grid.drawRuns.rowDrawRuns[lineUpdateResult.row] = lineUpdateResult.rowDrawRun
+                  if lineUpdateResult.shouldUpdateCursorDrawRun {
+                    grid.drawRuns.cursorDrawRun!.updateParent(
+                      with: grid.layout,
+                      rowDrawRuns: grid.drawRuns.rowDrawRuns
+                    )
+                  }
+                  update(&updates.gridUpdates[gridID]) { updates in
+                    switch updates {
+                    case var .dirtyRectangles(dirtyRectangles):
+                      dirtyRectangles.append(lineUpdateResult.dirtyRectangle)
+                      updates = .dirtyRectangles(dirtyRectangles)
+
+                    case .none:
+                      updates = .dirtyRectangles([lineUpdateResult.dirtyRectangle])
+
+                    default:
+                      break
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

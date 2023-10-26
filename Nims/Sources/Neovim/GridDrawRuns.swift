@@ -8,7 +8,6 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  @NeovimActor
   public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
     rowDrawRuns = []
 
@@ -18,7 +17,6 @@ public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  @NeovimActor
   public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
@@ -53,13 +51,20 @@ public struct GridDrawRuns: Sendable {
   }
 }
 
-@NeovimActor
-public class DrawRunsCachingProvider {
-  func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
+public final class DrawRunsCachingProvider: @unchecked Sendable {
+  public convenience init() {
+    self.init(cachedRows: .init())
+  }
+
+  private init(cachedRows: IntKeyedDictionary<CachedRow>) {
+    self.cachedRows = cachedRows
+  }
+
+  public func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
     var cachedParts = [CachedPart]()
 
     for rowPart in rowParts {
-      if let (drawRun, boundingRange) = cachedRows[row]?.matchingDrawRun(for: rowPart) {
+      if let (drawRun, boundingRange) = dispatchQueue.sync(execute: { cachedRows[row]?.matchingDrawRun(for: rowPart) }) {
         cachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: boundingRange))
       } else {
         let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
@@ -67,13 +72,21 @@ public class DrawRunsCachingProvider {
       }
     }
 
-    cachedRows[row] = .init(parts: cachedParts)
+    dispatchQueue.sync(flags: .barrier) {
+      cachedRows[row] = .init(parts: cachedParts)
+    }
 
     return cachedParts.map { ($0.drawRun, $0.boundingRange) }
   }
 
-  func clearCache() {
-    cachedRows = .init()
+  public func clearCache() {
+    dispatchQueue.sync(flags: .barrier) {
+      cachedRows = .init()
+    }
+  }
+
+  public func makeCopy() -> DrawRunsCachingProvider {
+    .init(cachedRows: cachedRows)
   }
 
   private struct CachedRow {
@@ -108,15 +121,23 @@ public class DrawRunsCachingProvider {
     var boundingRange: Range<Int>
   }
 
-  private var cachedRows = IntKeyedDictionary<CachedRow>()
+  private let dispatchQueue = DispatchQueue(
+    label: "\(Bundle.main.bundleIdentifier!).DrawRunsCachingProvider.\(UUID().uuidString)",
+    attributes: .concurrent
+  )
+  private var cachedRows: IntKeyedDictionary<CachedRow>
 }
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  @NeovimActor
   public init(row: Int, rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
     self = .init(
-      drawRuns: drawRunsProvider.drawRuns(forRow: row, rowParts: rowLayout.parts, font: font, appearance: appearance)
+      drawRuns: drawRunsProvider.drawRuns(
+        forRow: row,
+        rowParts: rowLayout.parts,
+        font: font,
+        appearance: appearance
+      )
     )
   }
 
@@ -157,7 +178,6 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  @NeovimActor
   public init(text: String, columnsCount: Int, highlightID: Highlight.ID, font: NimsFont, appearance: Appearance) {
     let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
 
@@ -393,7 +413,6 @@ public struct GlyphRun: Sendable {
 
 @PublicInit
 public struct CursorDrawRun: Sendable {
-  @NeovimActor
   public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], position: IntegerPoint, style: CursorStyle, font: NimsFont, appearance: Appearance) {
     var location = 0
     for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
@@ -456,7 +475,6 @@ public struct CursorDrawRun: Sendable {
     .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
   }
 
-  @NeovimActor
   public mutating func updateParent(with layout: GridLayout, rowDrawRuns: [RowDrawRun]) {
     var location = 0
     for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
