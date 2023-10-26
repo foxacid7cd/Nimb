@@ -8,27 +8,29 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
+  public init(layout: GridLayout, font: NimsFont, appearance: Appearance) {
     rowDrawRuns = []
-
-    renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+    renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
 
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
+  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
-      .map {
+      .map { row, layout in
         .init(
-          row: $0,
-          rowLayout: $1,
+          row: row,
+          layout: layout,
           font: font,
           appearance: appearance,
-          drawRunsProvider: drawRunsProvider
+          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
         )
       }
+    if cursorDrawRun != nil {
+      cursorDrawRun!.updateParent(with: layout, rowDrawRuns: rowDrawRuns)
+    }
   }
 
   @MainActor
@@ -51,97 +53,41 @@ public struct GridDrawRuns: Sendable {
   }
 }
 
-public final class DrawRunsCachingProvider: @unchecked Sendable {
-  public convenience init() {
-    self.init(cachedRows: .init())
-  }
-
-  private init(cachedRows: IntKeyedDictionary<CachedRow>) {
-    self.cachedRows = cachedRows
-  }
-
-  public func drawRuns(forRow row: Int, rowParts: [RowPart], font: NimsFont, appearance: Appearance) -> [(drawRun: DrawRun, boundingRange: Range<Int>)] {
-    var cachedParts = [CachedPart]()
-
-    for rowPart in rowParts {
-      if let (drawRun, boundingRange) = dispatchQueue.sync(execute: { cachedRows[row]?.matchingDrawRun(for: rowPart) }) {
-        cachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: boundingRange))
-      } else {
-        let drawRun = DrawRun(text: rowPart.text, columnsCount: rowPart.range.length, highlightID: rowPart.highlightID, font: font, appearance: appearance)
-        cachedParts.append(.init(text: rowPart.text, highlightID: rowPart.highlightID, drawRun: drawRun, boundingRange: 0 ..< rowPart.text.count))
-      }
-    }
-
-    dispatchQueue.sync(flags: .barrier) {
-      cachedRows[row] = .init(parts: cachedParts)
-    }
-
-    return cachedParts.map { ($0.drawRun, $0.boundingRange) }
-  }
-
-  public func clearCache() {
-    dispatchQueue.sync(flags: .barrier) {
-      cachedRows = .init()
-    }
-  }
-
-  public func makeCopy() -> DrawRunsCachingProvider {
-    .init(cachedRows: cachedRows)
-  }
-
-  private struct CachedRow {
-    var parts: [CachedPart]
-
-    func matchingDrawRun(for rowPart: RowPart) -> (drawRun: DrawRun, boundingRange: Range<Int>)? {
-      for part in parts {
-        guard 
-          part.highlightID == rowPart.highlightID,
-          let range = part.text.range(of: rowPart.text),
-          range.lowerBound == part.text.startIndex || range.upperBound == part.text.endIndex
-        else {
-          continue
-        }
-
-        let lowerBound = part.text.distance(from: part.text.startIndex, to: range.lowerBound)
-        let upperBound = part.text.distance(from: part.text.startIndex, to: range.upperBound)
-        return (
-          drawRun: part.drawRun,
-          boundingRange: part.boundingRange.lowerBound + lowerBound ..< part.boundingRange.lowerBound + upperBound
-        )
-      }
-
-      return nil
-    }
-  }
-
-  private struct CachedPart {
-    var text: String
-    var highlightID: Highlight.ID
-    var drawRun: DrawRun
-    var boundingRange: Range<Int>
-  }
-
-  private let dispatchQueue = DispatchQueue(
-    label: "\(Bundle.main.bundleIdentifier!).DrawRunsCachingProvider.\(UUID().uuidString)",
-    attributes: .concurrent
-  )
-  private var cachedRows: IntKeyedDictionary<CachedRow>
-}
-
 @PublicInit
 public struct RowDrawRun: Sendable {
-  public init(row: Int, rowLayout: RowLayout, font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) {
-    self = .init(
-      drawRuns: drawRunsProvider.drawRuns(
-        forRow: row,
-        rowParts: rowLayout.parts,
-        font: font,
-        appearance: appearance
-      )
-    )
+  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?) {
+    drawRuns = layout.parts
+      .map { part in
+        if let old {
+          for oldDrawRun in old.drawRuns {
+            guard
+              part.highlightID == oldDrawRun.highlightID,
+              let range = oldDrawRun.text.range(of: part.text),
+              range.lowerBound == oldDrawRun.text.startIndex || range.upperBound == oldDrawRun.text.endIndex
+            else {
+              continue
+            }
+
+            let lowerBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.lowerBound)
+            let upperBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.upperBound)
+
+            var drawRun = oldDrawRun
+            drawRun.boundingRange = lowerBound ..< upperBound
+            return drawRun
+          }
+        }
+
+        return .init(
+          text: part.text,
+          columnsCount: part.range.length,
+          highlightID: part.highlightID,
+          font: font,
+          appearance: appearance
+        )
+      }
   }
 
-  public var drawRuns: [(drawRun: DrawRun, boundingRange: Range<Int>)]
+  public var drawRuns: [DrawRun]
 
   @MainActor
   public func draw(
@@ -152,26 +98,24 @@ public struct RowDrawRun: Sendable {
     upsideDownTransform: CGAffineTransform
   ) {
     var currentColumn = 0
-    for (drawRun, boundingRange) in drawRuns {
+
+    for drawRun in drawRuns {
       let rect = CGRect(
         x: Double(currentColumn) * font.cellWidth + origin.x,
         y: origin.y,
-        width: Double(boundingRange.count) * font.cellWidth,
+        width: Double(drawRun.boundingRange.count) * font.cellWidth,
         height: font.cellHeight
       )
       .applying(upsideDownTransform)
 
-      rect.clip()
-
       drawRun.draw(
         to: context,
-        at: rect.origin + .init(x: -Double(boundingRange.lowerBound) * font.cellWidth, y: 0),
+        at: rect.origin,
         font: font,
         appearance: appearance
       )
-      currentColumn += boundingRange.count
 
-      context.resetClip()
+      currentColumn += drawRun.boundingRange.count
     }
   }
 }
@@ -320,21 +264,25 @@ public struct DrawRun: Sendable {
     }
 
     self = .init(
+      text: text,
+      highlightID: highlightID,
+      boundingRange: 0 ..< columnsCount,
       columnsCount: columnsCount,
       glyphRuns: glyphRuns,
       strikethroughPath: strikethroughPath,
       underlinePath: underlinePath,
-      underlineLineDashLengths: underlineLineDashLengths,
-      highlightID: highlightID
+      underlineLineDashLengths: underlineLineDashLengths
     )
   }
 
+  public var text: String
+  public var highlightID: Highlight.ID
+  public var boundingRange: Range<Int>
   public var columnsCount: Int
   public var glyphRuns: [GlyphRun]
   public var strikethroughPath: Path?
   public var underlinePath: Path?
   public var underlineLineDashLengths: [CGFloat]
-  public var highlightID: Highlight.ID
 
   @MainActor
   public func draw(
@@ -343,15 +291,21 @@ public struct DrawRun: Sendable {
     font: NimsFont,
     appearance: Appearance
   ) {
+    context.saveGState()
+    defer { context.restoreGState() }
+
     context.setShouldAntialias(false)
-    appearance.backgroundColor(for: highlightID).appKit.setFill()
+
     let rect = CGRect(
       origin: origin,
       size: .init(
-        width: Double(columnsCount) * font.cellWidth,
+        width: Double(boundingRange.count) * font.cellWidth,
         height: font.cellHeight
       )
     )
+    context.clip(to: [rect])
+
+    appearance.backgroundColor(for: highlightID).appKit.setFill()
     context.fill([rect])
 
     let nsFont = font.nsFont(
@@ -387,11 +341,15 @@ public struct DrawRun: Sendable {
     }
 
     context.setShouldAntialias(true)
+    context.setFillColor(foregroundColor.appKit.cgColor)
+
+    let textPosition = CGPoint(
+      x: origin.x - Double(boundingRange.lowerBound) * font.cellWidth,
+      y: origin.y
+    )
     for glyphRun in glyphRuns {
       context.textMatrix = glyphRun.textMatrix
-      context.textPosition = origin
-      context.setFillColor(foregroundColor.appKit.cgColor)
-
+      context.textPosition = textPosition
       CTFontDrawGlyphs(
         nsFont,
         glyphRun.glyphs,
@@ -415,10 +373,10 @@ public struct GlyphRun: Sendable {
 public struct CursorDrawRun: Sendable {
   public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], position: IntegerPoint, style: CursorStyle, font: NimsFont, appearance: Appearance) {
     var location = 0
-    for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
+    for drawRun in rowDrawRuns[position.row].drawRuns {
       if
         position.column >= location,
-        position.column < location + boundingRange.count
+        position.column < location + drawRun.boundingRange.count
       {
         if let cursorShape = style.cursorShape {
           let cellFrame: CGRect
@@ -450,14 +408,13 @@ public struct CursorDrawRun: Sendable {
             cellFrame: cellFrame,
             highlightID: style.attrID ?? 0,
             parentOrigin: .init(column: location, row: position.row),
-            parentDrawRun: drawRun,
-            parentBoundingRange: boundingRange
+            parentDrawRun: drawRun
           )
           return
         }
       }
 
-      location += boundingRange.count
+      location += drawRun.boundingRange.count
     }
 
     return nil
@@ -469,7 +426,6 @@ public struct CursorDrawRun: Sendable {
   public var highlightID: Highlight.ID
   public var parentOrigin: IntegerPoint
   public var parentDrawRun: DrawRun
-  public var parentBoundingRange: Range<Int>
 
   public var rectangle: IntegerRectangle {
     .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
@@ -477,17 +433,16 @@ public struct CursorDrawRun: Sendable {
 
   public mutating func updateParent(with layout: GridLayout, rowDrawRuns: [RowDrawRun]) {
     var location = 0
-    for (drawRun, boundingRange) in rowDrawRuns[position.row].drawRuns {
+    for drawRun in rowDrawRuns[position.row].drawRuns {
       if
         position.column >= location,
-        position.column < location + boundingRange.count
+        position.column < location + drawRun.boundingRange.count
       {
         parentOrigin = .init(column: location, row: position.row)
         parentDrawRun = drawRun
-        parentBoundingRange = boundingRange
       }
 
-      location += boundingRange.count
+      location += drawRun.boundingRange.count
     }
   }
 
@@ -520,8 +475,8 @@ public struct CursorDrawRun: Sendable {
     context.setFillColor(cursorForegroundColor.appKit.cgColor)
 
     let parentRectangle = IntegerRectangle(
-      origin: .init(column: parentOrigin.column - parentBoundingRange.lowerBound, row: parentOrigin.row),
-      size: .init(columnsCount: parentBoundingRange.count, rowsCount: 1)
+      origin: .init(column: parentOrigin.column - parentDrawRun.boundingRange.lowerBound, row: parentOrigin.row),
+      size: .init(columnsCount: parentDrawRun.boundingRange.count, rowsCount: 1)
     )
     let parentRect = (parentRectangle * font.cellSize)
       .applying(upsideDownTransform)
@@ -529,7 +484,6 @@ public struct CursorDrawRun: Sendable {
     for glyphRun in parentDrawRun.glyphRuns {
       context.textMatrix = glyphRun.textMatrix
       context.textPosition = parentRect.origin
-
       CTFontDrawGlyphs(
         font.nsFont(),
         glyphRun.glyphs,

@@ -25,9 +25,13 @@ public final class GridView: NSView {
   }
 
   public func render(stateUpdates: State.Updates) {
-    if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
+    if stateUpdates.isFontUpdated {
       invalidateIntrinsicContentSize()
+    }
+
+    if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       needsDisplay = true
+
     } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
       setNeedsDisplay(
         (cursorDrawRun.rectangle * store.font.cellSize)
@@ -49,53 +53,6 @@ public final class GridView: NSView {
     case .needsDisplay:
       needsDisplay = true
     }
-//    var dirtyRectangles: [IntegerRectangle]? = []
-//
-//    for textUpdate in textUpdates {
-//      gridLayout.apply(textUpdate: textUpdate)
-//
-//      gridDrawRuns.render(textUpdate: textUpdate, gridLayout: gridLayout, font: store.font, appearance: store.appearance)
-//
-//      switch textUpdate {
-//      case .resize:
-//        dirtyRectangles = nil
-//
-//      case let .line(origin, cells):
-//        let rectangle = IntegerRectangle(origin: origin, size: .init(columnsCount: cells.count, rowsCount: 1))
-//        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-//          updateCursorDrawRun(display: false)
-//        }
-//        dirtyRectangles?.append(rectangle)
-//
-//      case let .scroll(rectangle, offset):
-//        let rectangle = IntegerRectangle(
-//          origin: .init(column: rectangle.origin.column, row: rectangle.origin.row + min(0, offset.rowsCount)),
-//          size: .init(
-//            columnsCount: rectangle.size.columnsCount,
-//            rowsCount: rectangle.maxRow - rectangle.minRow - min(0, offset.rowsCount) + max(0, offset.rowsCount)
-//          )
-//        )
-//        if let cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-//          updateCursorDrawRun(display: false)
-//        }
-//        dirtyRectangles?.append(rectangle)
-//
-//      case .clear:
-//        updateCursorDrawRun(display: false)
-//        dirtyRectangles = nil
-//      }
-//    }
-//
-//    if let dirtyRectangles {
-//      for dirtyRectangle in dirtyRectangles {
-//        setNeedsDisplay(
-//          (dirtyRectangle * store.font.cellSize)
-//            .applying(upsideDownTransform)
-//        )
-//      }
-//    } else {
-//      needsDisplay = true
-//    }
   }
 
   public func point(for gridPoint: IntegerPoint) -> CGPoint {

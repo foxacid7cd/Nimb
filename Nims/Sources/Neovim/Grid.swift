@@ -14,7 +14,6 @@ public struct Grid: Sendable, Identifiable {
 
   public enum TextUpdate: Sendable {
     case resize(IntegerSize)
-    case line(origin: IntegerPoint, cells: [Cell])
     case scroll(rectangle: IntegerRectangle, offset: IntegerSize)
     case clear
     case cursor(style: CursorStyle, position: IntegerPoint)
@@ -39,7 +38,6 @@ public struct Grid: Sendable, Identifiable {
 
   public var id: Int
   public var layout: GridLayout
-  public var drawRunsProvider: DrawRunsCachingProvider
   public var drawRuns: GridDrawRuns
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
@@ -90,7 +88,7 @@ public struct Grid: Sendable, Identifiable {
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
 
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
 
       if
         let cursorDrawRun = drawRuns.cursorDrawRun,
@@ -101,40 +99,10 @@ public struct Grid: Sendable, Identifiable {
 
       return .needsDisplay
 
-    case let .line(origin, cells):
-      update(&layout.cells.rows[origin.row]) { row in
-        row.replaceSubrange(origin.column ..< origin.column + cells.count, with: cells)
-      }
-      layout.rowLayouts[origin.row] = .init(rowCells: layout.cells.rows[origin.row])
-
-      drawRuns.rowDrawRuns[origin.row] = .init(
-        row: origin.row,
-        rowLayout: layout.rowLayouts[origin.row],
-        font: font,
-        appearance: appearance,
-        drawRunsProvider: drawRunsProvider
-      )
-
-      if 
-        drawRuns.cursorDrawRun != nil,
-        drawRuns.cursorDrawRun!.position.row == origin.row,
-        drawRuns.cursorDrawRun!.position.column >= origin.column,
-        drawRuns.cursorDrawRun!.position.column < origin.column + cells.count
-      {
-        drawRuns.cursorDrawRun!.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
-      }
-
-      return .dirtyRectangle(.init(
-        origin: origin,
-        size: .init(columnsCount: cells.count, rowsCount: 1)
-      ))
-
     case let .scroll(rectangle, offset):
       if offset.columnsCount != 0 {
         assertionFailure("Horizontal scroll not supported")
       }
-
-      drawRunsProvider.clearCache()
 
       var shouldUpdateCursorDrawRun = false
 
@@ -175,8 +143,7 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRunsProvider.clearCache()
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
       drawRuns.cursorDrawRun?.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
       return .needsDisplay
 
@@ -208,25 +175,25 @@ public struct Grid: Sendable, Identifiable {
   }
 
   @Sendable
-  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance, drawRunsProvider: DrawRunsCachingProvider) async -> LineUpdateResult {
+  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance) async -> LineUpdateResult {
     var rowCells = layout.cells.rows[row]
     rowCells.replaceSubrange(
       originColumn ..< originColumn + cells.count,
       with: cells
     )
-    let rowLayout = RowLayout(rowCells: rowCells)
-    let rowDrawRun = RowDrawRun(
+    let layout = RowLayout(rowCells: rowCells)
+    let drawRun = RowDrawRun(
       row: row,
-      rowLayout: rowLayout,
+      layout: layout,
       font: font,
       appearance: appearance,
-      drawRunsProvider: drawRunsProvider
+      old: drawRuns.rowDrawRuns[row]
     )
     return .init(
       row: row,
       rowCells: rowCells,
-      rowLayout: rowLayout,
-      rowDrawRun: rowDrawRun,
+      rowLayout: layout,
+      rowDrawRun: drawRun,
       dirtyRectangle: .init(
         origin: .init(column: originColumn, row: row),
         size: .init(columnsCount: cells.count, rowsCount: 1)
@@ -240,8 +207,7 @@ public struct Grid: Sendable, Identifiable {
 
   @NeovimActor
   public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
-    drawRunsProvider.clearCache()
-    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunsProvider: drawRunsProvider)
+    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
       drawRuns.cursorDrawRun = .init(
         layout: layout,

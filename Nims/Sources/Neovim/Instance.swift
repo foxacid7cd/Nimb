@@ -42,17 +42,13 @@ public final class Instance: Sendable {
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @NeovimActor in
           for try await uiEvents in api {
-            try Task.checkCancellation()
-
             guard let self else {
               return
             }
 
-            let updater = NeovimStateUpdater(self.state)
-            let stateUpdates = await updater.apply(uiEvents: uiEvents)
-            self.state = updater.state
+            try Task.checkCancellation()
 
-            if let stateUpdates {
+            if let stateUpdates = await self.stateContainer.apply(uiEvents: uiEvents) {
               await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
@@ -107,7 +103,7 @@ public final class Instance: Sendable {
           return
         }
 
-        let updates = state.apply(newFont: newFont)
+        let updates = stateContainer.apply(newFont: newFont)
         await stateUpdatesChannel.send(updates)
       }
     }
@@ -140,7 +136,9 @@ public final class Instance: Sendable {
     case right
   }
 
-  public private(set) var state = NeovimState()
+  public var state: NeovimState {
+    stateContainer.state
+  }
 
   public func set(font: NimsFont) async {
     await newFontChannel.send(font)
@@ -292,6 +290,7 @@ public final class Instance: Sendable {
     return nil
   }
 
+  private let stateContainer = NeovimStateContainer()
   private let process: Process
   private let api: API<ProcessChannel>
   private let stateUpdatesChannel = AsyncThrowingChannel<NeovimState.Updates, any Error>()
@@ -306,7 +305,7 @@ public final class Instance: Sendable {
       cursorBlinkingTask?.cancel()
 
       if !state.cursorBlinkingPhase {
-        state.cursorBlinkingPhase = true
+        stateContainer.set(cursorBlinkingPhase: true)
         await stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
       }
 
@@ -329,12 +328,12 @@ public final class Instance: Sendable {
                 return
               }
 
-              self.state.cursorBlinkingPhase = false
+              self.stateContainer.set(cursorBlinkingPhase: false)
               await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
 
               try await Task.sleep(for: .milliseconds(blinkOff))
 
-              self.state.cursorBlinkingPhase = true
+              self.stateContainer.set(cursorBlinkingPhase: true)
               await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
 
               try await Task.sleep(for: .milliseconds(blinkOn))

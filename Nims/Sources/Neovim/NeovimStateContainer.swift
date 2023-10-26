@@ -8,8 +8,8 @@ import MessagePack
 import Overture
 
 @NeovimActor
-public final class NeovimStateUpdater {
-  init(_ state: NeovimState) {
+public final class NeovimStateContainer {
+  init(state: NeovimState = .init()) {
     self.state = state
   }
 
@@ -156,6 +156,7 @@ public final class NeovimStateUpdater {
           uiEventsChunks.append(.single(uiEvent))
         }
       }
+      state.bufferedUIEvents = []
 
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {
@@ -333,16 +334,13 @@ public final class NeovimStateUpdater {
             if state.grids[gridID] == nil {
               let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
               let layout = GridLayout(cells: cells)
-              let drawRunsProvider = DrawRunsCachingProvider()
               state.grids[gridID] = .init(
                 id: gridID,
                 layout: layout,
-                drawRunsProvider: drawRunsProvider,
                 drawRuns: .init(
                   layout: layout,
                   font: state.font,
-                  appearance: state.appearance,
-                  drawRunsProvider: drawRunsProvider
+                  appearance: state.appearance
                 ),
                 associatedWindow: nil,
                 isHidden: false
@@ -702,7 +700,7 @@ public final class NeovimStateUpdater {
           let grids = state.grids
 
           await withTaskGroup(of: [Grid.LineUpdateResult].self) { taskGroup in
-            for gridLines in Array(gridLines).chunks(ofCount: 20) {
+            for gridLines in Array(gridLines).chunks(ofCount: 10) {
               taskGroup.addTask {
                 var accumulator = [Grid.LineUpdateResult]()
 
@@ -744,11 +742,9 @@ public final class NeovimStateUpdater {
                       }
                     }
 
+                    let cell = Cell(text: text, highlightID: highlightID)
                     for _ in 0 ..< repeatCount {
-                      cells.append(.init(
-                        text: text,
-                        highlightID: highlightID
-                      ))
+                      cells.append(cell)
                     }
                   }
 
@@ -758,8 +754,7 @@ public final class NeovimStateUpdater {
                       originColumn: gridLine.originColumn,
                       cells: cells,
                       font: font,
-                      appearance: appearance,
-                      drawRunsProvider: grids[gridID]!.drawRunsProvider.makeCopy()
+                      appearance: appearance
                     )
                   )
                 }
@@ -799,11 +794,17 @@ public final class NeovimStateUpdater {
         }
       }
 
-      state.bufferedUIEvents = []
-
       return updates
     }
 
     return nil
+  }
+
+  public func apply(newFont: NimsFont) -> NeovimState.Updates {
+    state.apply(newFont: newFont)
+  }
+
+  public func set(cursorBlinkingPhase: Bool) {
+    state.cursorBlinkingPhase = cursorBlinkingPhase
   }
 }
