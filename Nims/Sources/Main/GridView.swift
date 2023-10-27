@@ -37,7 +37,10 @@ public final class GridView: NSView {
       needsDisplay = true
     }
 
-    if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
+    if
+      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated,
+      let cursorDrawRun = grid.drawRuns.cursorDrawRun
+    {
       dirtyRectangles.append(cursorDrawRun.rectangle)
     }
 
@@ -106,6 +109,7 @@ public final class GridView: NSView {
 
       if
         store.state.cursorBlinkingPhase,
+        !store.state.isBusy,
         let cursorDrawRun = grid.drawRuns.cursorDrawRun,
         (integerFrame.minColumn ..< integerFrame.maxColumn).contains(cursorDrawRun.position.column),
         (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)

@@ -165,8 +165,7 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
-      drawRuns.cursorDrawRun?.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
+      drawRuns = .init(layout: layout, font: font, appearance: appearance)
       return .needsDisplay
 
     case let .cursor(style, position):

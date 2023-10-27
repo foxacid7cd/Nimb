@@ -102,6 +102,10 @@ public final class NeovimStateContainer {
       updates.isPopupmenuSelectionUpdated = true
     }
 
+    func isBusyUpdated() {
+      updates.isBusyUpdated = true
+    }
+
     func blockLine(fromRawLine rawLine: Value) -> [Cmdline.ContentPart] {
       guard case let .array(rawLine) = rawLine else {
         assertionFailure(rawLine)
@@ -676,7 +680,6 @@ public final class NeovimStateContainer {
           }
 
           state.popupmenu = .init(items: items, selectedItemIndex: selectedItemIndex, anchor: anchor)
-
           popupmenuUpdated()
 
         case let .popupmenuSelect(selected):
@@ -690,6 +693,14 @@ public final class NeovimStateContainer {
             state.popupmenu = nil
             popupmenuUpdated()
           }
+
+        case .busyStart:
+          state.isBusy = true
+          isBusyUpdated()
+
+        case .busyStop:
+          state.isBusy = false
+          isBusyUpdated()
 
         default:
           break
