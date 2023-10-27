@@ -112,7 +112,7 @@ public extension NeovimState {
     public var isCmdlinesUpdated: Bool = false
     public var isMsgShowsUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdates: [Grid.ID: GridUpdate] = [:]
+    public var gridUpdates: IntKeyedDictionary<GridUpdate> = [:]
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false

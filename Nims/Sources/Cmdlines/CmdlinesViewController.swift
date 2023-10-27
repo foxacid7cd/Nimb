@@ -3,8 +3,8 @@
 import AppKit
 import TinyConstraints
 
-final class CmdlinesViewController: NSViewController {
-  init(store: Store) {
+public final class CmdlinesViewController: NSViewController {
+  public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
   }
@@ -14,7 +14,7 @@ final class CmdlinesViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func reloadData() {
+  public func reloadData() {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
@@ -41,17 +41,16 @@ final class CmdlinesViewController: NSViewController {
     }
   }
 
-  func point(forCharacterLocation location: Int) -> CGPoint? {
+  public func point(forCharacterLocation location: Int) -> CGPoint? {
     let cmdlineView = contentView.arrangedSubviews.last as! CmdlineView
 
-    return cmdlineView
-      .point(forCharacterLocation: location)
+    return cmdlineView.point(forCharacterLocation: location)
       .map { contentView.convert($0, from: cmdlineView) }
       .map { scrollView.convert($0, from: contentView) }
       .map { view.convert($0, from: scrollView) }
   }
 
-  override func loadView() {
+  override public func loadView() {
     let view = NSView(frame: .zero)
     view.width(500)
     view.height(max: 160)

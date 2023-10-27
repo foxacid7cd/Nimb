@@ -5,8 +5,8 @@ import Library
 import SwiftUI
 import TinyConstraints
 
-final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
-  init(store: Store, parentWindow: NSWindow) {
+public final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
+  public init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
 
@@ -38,23 +38,18 @@ final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func render(_ stateUpdates: State.Updates) {
+  public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
       updateWindow()
     }
   }
 
-  func point(forCharacterLocation location: Int) -> CGPoint? {
+  public func point(forCharacterLocation location: Int) -> CGPoint? {
     viewController.point(forCharacterLocation: location)
-      .map {
-        $0.applying(.init(
-          translationX: window!.frame.origin.x,
-          y: window!.frame.origin.y
-        ))
-      }
+      .map { window!.convertPoint(toScreen: $0) }
   }
 
-  func windowDidResize(_: Notification) {
+  public func windowDidResize(_: Notification) {
     window!.setFrameOrigin(.init(
       x: parentWindow.frame.origin.x + (parentWindow.frame.width - window!.frame.width) / 2,
       y: parentWindow.frame.origin.y + parentWindow.frame.height / 1.5

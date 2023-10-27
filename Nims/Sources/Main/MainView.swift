@@ -220,15 +220,11 @@ class MainView: NSView {
       )
     }
 
-    for gridView in gridViews.values {
-      gridView.render(stateUpdates: stateUpdates)
-    }
-
-    for (gridID, gridUpdate) in stateUpdates.gridUpdates {
-      guard let gridView = gridViews[gridID] else {
-        continue
-      }
-      gridView.render(gridUpdate: gridUpdate)
+    for (gridID, gridView) in gridViews {
+      gridView.render(
+        stateUpdates: stateUpdates,
+        gridUpdate: stateUpdates.gridUpdates[gridID]
+      )
     }
   }
 

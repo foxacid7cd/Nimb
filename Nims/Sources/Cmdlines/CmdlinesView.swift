@@ -176,20 +176,19 @@ private final class CmdlineFirstCharacterView: NSView {
   }
 
   override func draw(_: NSRect) {
-    let graphicsContext = NSGraphicsContext.current!
-    let cgContext = graphicsContext.cgContext
+    let context = NSGraphicsContext.current!.cgContext
 
     if let backgroundColor {
       backgroundColor.setFill()
-      cgContext.addPath(
+      context.addPath(
         .init(roundedRect: bounds, cornerWidth: 5, cornerHeight: 5, transform: nil)
       )
-      cgContext.fillPath()
+      context.fillPath()
     }
 
     if let ctFrame {
-      cgContext.textMatrix = .identity
-      CTFrameDraw(ctFrame, cgContext)
+      context.textMatrix = .identity
+      CTFrameDraw(ctFrame, context)
     }
   }
 
@@ -325,10 +324,10 @@ private final class CmdlineTextView: NSView {
       range: .init(location: 0, length: cmdlineAttributedString.length)
     )
 
-    func makeCTLines(for attributedString: NSAttributedString) -> [CTLine] {
+    func makeCTLines(for attributedString: NSAttributedString) -> (ctFramesetter: CTFramesetter, ctFrame: CTFrame, ctLines: [CTLine]) {
       let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
 
-      let stringRange = CFRange(location: 0, length: attributedString.length)
+      let stringRange = CFRange(location: 0, length: 0)
       let containerSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
       let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
         ctFramesetter,
@@ -345,28 +344,33 @@ private final class CmdlineTextView: NSView {
         transform: nil
       )
       let ctFrame = CTFramesetterCreateFrame(ctFramesetter, stringRange, path, nil)
-
-      return CTFrameGetLines(ctFrame) as! [CTLine]
+      return (
+        ctFramesetter,
+        ctFrame,
+        CTFrameGetLines(ctFrame) as! [CTLine]
+      )
     }
-    blockLineCTLines = makeCTLines(for: blockLinesAttributedString)
-    cmdlineCTLines = makeCTLines(for: cmdlineAttributedString)
+    self.blockLinesAttributedString = blockLinesAttributedString
+    self.cmdlineAttributedString = cmdlineAttributedString
+    (blockLinesCTFramesetter, blockLinesCTFrame, blockLineCTLines) = makeCTLines(for: blockLinesAttributedString)
+    (cmdlineCTFramesetter, cmdlineCTFrame, cmdlineCTLines) = makeCTLines(for: cmdlineAttributedString)
 
     invalidateIntrinsicContentSize()
     setNeedsDisplay(bounds)
-    displayIfNeeded()
   }
 
   func point(forCharacterLocation location: Int) -> CGPoint? {
-    let location = location + (cmdline?.indent ?? 0)
+    var location = location
+    if let cmdline {
+      location += cmdline.indent
+    }
 
     for ctLine in cmdlineCTLines.reversed() {
       let cfRange = CTLineGetStringRange(ctLine)
       let range = (cfRange.location ..< cfRange.location + cfRange.length)
       if range.contains(location) {
-        return .init(
-          x: CTLineGetOffsetForStringIndex(ctLine, location - cfRange.location, nil),
-          y: 0
-        )
+        let offset = CTLineGetOffsetForStringIndex(ctLine, location - cfRange.location, nil)
+        return .init(x: offset, y: 0)
       }
     }
 
@@ -374,26 +378,26 @@ private final class CmdlineTextView: NSView {
   }
 
   override func draw(_: NSRect) {
-    let graphicsContext = NSGraphicsContext.current!
-    let cgContext = graphicsContext.cgContext
-
-    cgContext.saveGState()
-    defer { cgContext.restoreGState() }
+    let context = NSGraphicsContext.current!.cgContext
 
     let ctLines = (blockLineCTLines + cmdlineCTLines)
       .reversed()
     for (offset, ctLine) in ctLines.enumerated() {
-      cgContext.textMatrix = .init(
+      context.textMatrix = .init(
         translationX: 0,
         y: Double(offset) * store.font.cellHeight - store.font.nsFont().descender
       )
-      CTLineDraw(ctLine, cgContext)
+      CTLineDraw(ctLine, context)
     }
-
-    cgContext.flush()
   }
 
   private let store: Store
+  private var blockLinesAttributedString: NSAttributedString?
+  private var cmdlineAttributedString: NSAttributedString?
+  private var blockLinesCTFramesetter: CTFramesetter?
+  private var cmdlineCTFramesetter: CTFramesetter?
+  private var blockLinesCTFrame: CTFrame?
+  private var cmdlineCTFrame: CTFrame?
   private var blockLineCTLines = [CTLine]()
   private var cmdlineCTLines = [CTLine]()
 }

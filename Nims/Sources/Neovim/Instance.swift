@@ -224,7 +224,7 @@ public final class Instance: Sendable {
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async {
-    try? await api.nvimSelectPopupmenuItemFast(item: index, insert: false, finish: false, opts: [:])
+    try? await api.nvimSelectPopupmenuItemFast(item: index, insert: true, finish: false, opts: [:])
   }
 
   public func reportTablineBufferSelected(withID id: Buffer.ID) async {

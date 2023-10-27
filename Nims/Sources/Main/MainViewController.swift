@@ -106,6 +106,8 @@ final class MainViewController: NSViewController {
 
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     mainView.point(forGridID: gridID, gridPoint: gridPoint)
+      .map { mainContainerView.convert($0, from: mainView) }
+      .map { view.convert($0, from: mainContainerView) }
   }
 
   func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {

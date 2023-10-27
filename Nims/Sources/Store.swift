@@ -5,8 +5,8 @@ import Foundation
 import Library
 
 @MainActor
-final class Store: Sendable {
-  init(instance: Instance, font: NimsFont) {
+public final class Store: Sendable {
+  public init(instance: Instance, font: NimsFont) {
     self.instance = instance
     let state = State(instanceState: .init(font: font))
     self.state = state
@@ -54,18 +54,17 @@ final class Store: Sendable {
     hideMsgShowsTask?.cancel()
   }
 
-  let instance: Instance
-  private(set) var state: State
+  public let instance: Instance
 
-  var font: NimsFont {
+  public var font: NimsFont {
     state.font
   }
 
-  var appearance: Appearance {
+  public var appearance: Appearance {
     state.appearance
   }
 
-  func scheduleHideMsgShowsIfPossible() {
+  public func scheduleHideMsgShowsIfPossible() {
     Task { @NeovimActor in
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
         hideMsgShowsTask = Task { [weak self] in
@@ -88,21 +87,20 @@ final class Store: Sendable {
     }
   }
 
-  private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
+  private(set) var state: State
 
+  private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
   @NeovimActor
   private var backgroundState: State
-
   private var task: Task<Void, Never>?
-
   @NeovimActor
   private var hideMsgShowsTask: Task<Void, Never>?
 }
 
 extension Store: AsyncSequence {
-  typealias Element = State.Updates
+  public typealias Element = State.Updates
 
-  nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
     stateUpdatesChannel.makeAsyncIterator()
   }
 }

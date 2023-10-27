@@ -59,7 +59,8 @@ final class MainWindowController: NSWindowController {
 
   func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     viewController.point(forGridID: gridID, gridPoint: gridPoint)
-      .map { $0 + window!.frame.origin }
+      .map { $0 + .init(x: 0, y: -store.font.cellHeight) }
+      .map { window!.convertPoint(toScreen: $0) }
   }
 
   private let store: Store

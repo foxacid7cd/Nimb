@@ -9,6 +9,7 @@ public final class GridView: NSView {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
+    canDrawConcurrently = true
   }
 
   @available(*, unavailable)
@@ -24,34 +25,42 @@ public final class GridView: NSView {
     }
   }
 
-  public func render(stateUpdates: State.Updates) {
+  public func render(stateUpdates: State.Updates, gridUpdate: NeovimState.GridUpdate?) {
     if stateUpdates.isFontUpdated {
       invalidateIntrinsicContentSize()
     }
 
+    var needsDisplay = false
+    var dirtyRectangles = [IntegerRectangle]()
+
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       needsDisplay = true
-
-    } else if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
-      setNeedsDisplay(
-        (cursorDrawRun.rectangle * store.font.cellSize)
-          .applying(upsideDownTransform)
-      )
     }
-  }
 
-  public func render(gridUpdate: NeovimState.GridUpdate) {
-    switch gridUpdate {
-    case let .dirtyRectangles(dirtyRectangles):
+    if stateUpdates.isCursorBlinkingPhaseUpdated, let cursorDrawRun = grid.drawRuns.cursorDrawRun {
+      dirtyRectangles.append(cursorDrawRun.rectangle)
+    }
+
+    if let gridUpdate {
+      switch gridUpdate {
+      case let .dirtyRectangles(value):
+        dirtyRectangles += value
+
+      case .needsDisplay:
+        needsDisplay = true
+      }
+    }
+
+    if needsDisplay {
+      self.needsDisplay = true
+
+    } else {
       for dirtyRectangle in dirtyRectangles {
         setNeedsDisplay(
           (dirtyRectangle * store.font.cellSize)
             .applying(upsideDownTransform)
         )
       }
-
-    case .needsDisplay:
-      needsDisplay = true
     }
   }
 
