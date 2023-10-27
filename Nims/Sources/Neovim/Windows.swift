@@ -5,7 +5,7 @@ import Library
 @PublicInit
 public struct Window: Sendable, Identifiable {
   public var id: References.Window
-  public var frame: IntegerRectangle
+  public var origin: IntegerPoint
   public var zIndex: Int
 }
 

@@ -41,6 +41,7 @@ public struct Grid: Sendable, Identifiable {
   public var drawRuns: GridDrawRuns
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
+  public var isDestroyed: Bool
 
   public var size: IntegerSize {
     layout.size
@@ -79,22 +80,27 @@ public struct Grid: Sendable, Identifiable {
   public mutating func apply(textUpdate: TextUpdate, font: NimsFont, appearance: Appearance) -> TextUpdateApplyResult? {
     switch textUpdate {
     case let .resize(integerSize):
-      layout.cells = TwoDimensionalArray<Cell>(size: integerSize) { point in
-        if point.row < layout.cells.rowsCount, point.column < layout.cells.columnsCount {
-          return layout.cells[point]
-        }
-        return .default
+      let copyColumnsCount = min(layout.columnsCount, integerSize.columnsCount)
+      let copyColumnsRange = 0 ..< copyColumnsCount
+      let copyRowsCount = min(layout.rowsCount, integerSize.rowsCount)
+      var cells = TwoDimensionalArray<Cell>(size: integerSize, repeatingElement: .default)
+      for row in 0 ..< copyRowsCount {
+        cells.rows[row].replaceSubrange(
+          copyColumnsRange,
+          with: layout.cells.rows[row][copyColumnsRange]
+        )
       }
-      layout.rowLayouts = layout.cells.rows
-        .map(RowLayout.init(rowCells:))
+      layout = .init(cells: cells)
 
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
+      let cursorDrawRun = drawRuns.cursorDrawRun
+      drawRuns = .init(layout: layout, font: font, appearance: appearance)
 
       if
-        let cursorDrawRun = drawRuns.cursorDrawRun,
-        cursorDrawRun.position.column >= integerSize.columnsCount || cursorDrawRun.position.row >= integerSize.rowsCount
+        let cursorDrawRun,
+        cursorDrawRun.position.column < integerSize.columnsCount,
+        cursorDrawRun.position.row < integerSize.rowsCount
       {
-        drawRuns.cursorDrawRun = nil
+        drawRuns.cursorDrawRun = cursorDrawRun
       }
 
       return .needsDisplay
@@ -155,7 +161,7 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns = .init(layout: layout, font: font, appearance: appearance)
+      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
       return .needsDisplay
 
     case let .cursor(style, position):
@@ -173,20 +179,21 @@ public struct Grid: Sendable, Identifiable {
       ))
 
     case .clearCursor:
-      guard drawRuns.cursorDrawRun != nil else {
+      guard let cursorDrawRun = drawRuns.cursorDrawRun else {
         return nil
       }
-      let dirtyRectangle = IntegerRectangle(
-        origin: drawRuns.cursorDrawRun!.position,
-        size: .init(columnsCount: 1, rowsCount: 1)
-      )
       drawRuns.cursorDrawRun = nil
-      return .dirtyRectangle(dirtyRectangle)
+      return .dirtyRectangle(
+        .init(
+          origin: cursorDrawRun.position,
+          size: .init(columnsCount: 1, rowsCount: 1)
+        )
+      )
     }
   }
 
   @Sendable
-  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance) async -> LineUpdateResult {
+  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance) -> LineUpdateResult {
     var rowCells = layout.cells.rows[row]
     rowCells.replaceSubrange(
       originColumn ..< originColumn + cells.count,

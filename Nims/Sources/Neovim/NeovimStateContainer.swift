@@ -331,20 +331,23 @@ public final class NeovimStateContainer {
             rowsCount: height
           )
 
-          if state.grids[gridID] == nil {
-            let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
-            let layout = GridLayout(cells: cells)
-            state.grids[gridID] = .init(
-              id: gridID,
-              layout: layout,
-              drawRuns: .init(
+          update(&state.grids[gridID]) { [state] grid in
+            if grid == nil || grid?.isDestroyed == true {
+              let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+              let layout = GridLayout(cells: cells)
+              grid = .init(
+                id: gridID,
                 layout: layout,
-                font: state.font,
-                appearance: state.appearance
-              ),
-              associatedWindow: nil,
-              isHidden: false
-            )
+                drawRuns: .init(
+                  layout: layout,
+                  font: state.font,
+                  appearance: state.appearance
+                ),
+                associatedWindow: nil,
+                isHidden: false,
+                isDestroyed: false
+              )
+            }
           }
 
           if
@@ -373,9 +376,8 @@ public final class NeovimStateContainer {
           updatedText(inGridWithID: gridID, .clear)
 
         case let .gridDestroy(gridID):
-          state.grids[gridID]?.associatedWindow = nil
-
-          updatedLayout(forGridWithID: gridID)
+          state.grids[gridID]!.isDestroyed = true
+          updates.destroyedGridIDs.insert(gridID)
 
         case let .gridCursorGoto(gridID, row, column):
           let oldCursor = state.cursor
@@ -392,57 +394,49 @@ public final class NeovimStateContainer {
           cursorUpdated(oldCursor: oldCursor)
 
         case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
-          let zIndex = state.nextWindowZIndex()
+          let origin = IntegerPoint(column: originColumn, row: originRow)
+          let size = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
 
-          state.grids[gridID]?.associatedWindow = .plain(
+          let zIndex = state.nextWindowZIndex()
+          state.grids[gridID]!.associatedWindow = .plain(
             .init(
               id: windowID,
-              frame: .init(
-                origin: .init(
-                  column: originColumn,
-                  row: originRow
-                ),
-                size: .init(
-                  columnsCount: columnsCount,
-                  rowsCount: rowsCount
-                )
-              ),
+              origin: origin,
               zIndex: zIndex
             )
           )
-          state.grids[gridID]?.isHidden = false
+          state.grids[gridID]!.isHidden = false
 
           updatedLayout(forGridWithID: gridID)
+          if size != state.grids[gridID]!.size {
+            updatedText(inGridWithID: gridID, .resize(size))
+          }
 
         case let .winFloatPos(
           gridID,
           windowID,
           rawAnchor,
-          rawAnchorGridID,
+          anchorGridID,
           anchorRow,
           anchorColumn,
           isFocusable,
           _
         ):
-          guard let anchor = FloatingWindow.Anchor(rawValue: rawAnchor) else {
-            assertionFailure(rawAnchor)
-            continue
-          }
+          let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
 
           let zIndex = state.nextWindowZIndex()
-
-          state.grids[gridID]?.associatedWindow = .floating(
+          state.grids[gridID]!.associatedWindow = .floating(
             .init(
               id: windowID,
               anchor: anchor,
-              anchorGridID: .init(rawAnchorGridID),
+              anchorGridID: anchorGridID,
               anchorRow: anchorRow,
               anchorColumn: anchorColumn,
               isFocusable: isFocusable,
               zIndex: zIndex
             )
           )
-          state.grids[gridID]?.isHidden = false
+          state.grids[gridID]!.isHidden = false
 
           updatedLayout(forGridWithID: gridID)
 
@@ -702,11 +696,7 @@ public final class NeovimStateContainer {
         }
 
       case let .gridLines(gridID, gridLines):
-        let font = state.font
-        let appearance = state.appearance
-        let grid = state.grids[gridID]!
-
-        await withTaskGroup(of: [Grid.LineUpdateResult].self) { taskGroup in
+        await withTaskGroup(of: [Grid.LineUpdateResult].self) { [state] taskGroup in
           for gridLines in Array(gridLines).chunks(ofCount: 10) {
             taskGroup.addTask {
               var accumulator = [Grid.LineUpdateResult]()
@@ -755,13 +745,13 @@ public final class NeovimStateContainer {
                   }
                 }
 
-                await accumulator.append(
-                  grid.applyingLineUpdate(
+                accumulator.append(
+                  state.grids[gridID]!.applyingLineUpdate(
                     forRow: gridLine.row,
                     originColumn: gridLine.originColumn,
                     cells: cells,
-                    font: font,
-                    appearance: appearance
+                    font: state.font,
+                    appearance: state.appearance
                   )
                 )
               }
@@ -771,7 +761,7 @@ public final class NeovimStateContainer {
           }
 
           for await lineUpdateResults in taskGroup {
-            update(&state.grids[gridID]!) { grid in
+            update(&self.state.grids[gridID]!) { grid in
               for lineUpdateResult in lineUpdateResults {
                 grid.layout.cells.rows[lineUpdateResult.row] = lineUpdateResult.rowCells
                 grid.layout.rowLayouts[lineUpdateResult.row] = lineUpdateResult.rowLayout

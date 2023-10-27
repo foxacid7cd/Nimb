@@ -23,6 +23,10 @@ class MainView: NSView {
   }
 
   public func render(_ stateUpdates: State.Updates) {
+    for gridID in stateUpdates.destroyedGridIDs {
+      gridViews.removeValue(forKey: gridID)?.removeFromSuperview()
+    }
+
     let updatedLayoutGridIDs = if stateUpdates.isFontUpdated {
       Set(store.state.grids.keys)
 
@@ -80,25 +84,25 @@ class MainView: NSView {
         } else if let associatedWindow = grid.associatedWindow {
           switch associatedWindow {
           case let .plain(value):
-            let windowFrame = value.frame * store.font.cellSize
+            let origin = value.origin * store.font.cellSize
 
             gridView.floatingWindowConstraints?.horizontal.isActive = false
             gridView.floatingWindowConstraints?.vertical.isActive = false
             gridView.floatingWindowConstraints = nil
 
             if let constraints = gridView.windowConstraints {
-              constraints.leading.constant = windowFrame.minX
-              constraints.top.constant = windowFrame.minY
+              constraints.leading.constant = origin.x
+              constraints.top.constant = origin.y
 
             } else {
               let leadingConstraint = gridView.leadingAnchor.constraint(
                 equalTo: leadingAnchor,
-                constant: windowFrame.minX
+                constant: origin.x
               )
               leadingConstraint.priority = .defaultHigh
               leadingConstraint.isActive = true
 
-              let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: windowFrame.minY)
+              let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: origin.y)
               topConstraint.priority = .defaultHigh
               topConstraint.isActive = true
 

@@ -18,11 +18,7 @@ public final class GridView: NSView {
   }
 
   override public var intrinsicContentSize: NSSize {
-    if case let .plain(window) = grid.associatedWindow {
-      window.frame.size * store.font.cellSize
-    } else {
-      grid.size * store.font.cellSize
-    }
+    grid.size * store.font.cellSize
   }
 
   public func render(stateUpdates: State.Updates, gridUpdate: NeovimState.GridUpdate?) {

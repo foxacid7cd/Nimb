@@ -24,19 +24,26 @@ public final class Store: Sendable {
           let state = instance.state
           self.backgroundState.instanceState = state
 
+          var isMsgShowsDismissed: Bool?
           if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
             self.hideMsgShowsTask?.cancel()
             self.hideMsgShowsTask = nil
 
             self.backgroundState.isMsgShowsDismissed = false
-            Task { @MainActor in
-              self.state.isMsgShowsDismissed = false
-            }
+            isMsgShowsDismissed = false
           }
 
-          Task { @MainActor in
+          Task { @MainActor [isMsgShowsDismissed] in
             self.state.instanceState = state
-            await self.stateUpdatesChannel.send(.init(instanceStateUpdates: instanceStateUpdates))
+            if let isMsgShowsDismissed {
+              self.state.isMsgShowsDismissed = isMsgShowsDismissed
+            }
+            await self.stateUpdatesChannel.send(
+              .init(
+                instanceStateUpdates: instanceStateUpdates,
+                isMsgShowsDismissedUpdated: isMsgShowsDismissed != nil
+              )
+            )
           }
         }
 
@@ -69,7 +76,7 @@ public final class Store: Sendable {
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
         hideMsgShowsTask = Task { [weak self] in
           do {
-            try await Task.sleep(for: .milliseconds(500))
+            try await Task.sleep(for: .milliseconds(100))
 
             guard let self else {
               return
