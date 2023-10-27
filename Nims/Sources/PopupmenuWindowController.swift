@@ -170,21 +170,18 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
   }
 
   func numberOfRows(in tableView: NSTableView) -> Int {
-    0
-    // store.popupmenu?.items.count ?? 0
+    store.state.popupmenu?.items.count ?? 0
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     var itemView = tableView.makeView(withIdentifier: PopupmenuItemView.ReuseIdentifier, owner: self) as? PopupmenuItemView
-
     if itemView == nil {
       itemView = .init()
       itemView!.identifier = PopupmenuItemView.ReuseIdentifier
     }
-
-//    if let popupmenu = store.popupmenu, row < popupmenu.items.count {
-//      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row, font: store.font)
-//    }
+    if let popupmenu = store.state.popupmenu, row < popupmenu.items.count {
+      itemView!.set(item: popupmenu.items[row], isSelected: popupmenu.selectedItemIndex == row, font: store.font)
+    }
     return itemView
   }
 
@@ -192,7 +189,6 @@ private final class PopupmenuViewController: NSViewController, NSTableViewDataSo
     Task {
       await store.instance.reportPopupmenuItemSelected(atIndex: row)
     }
-
     return false
   }
 
@@ -262,6 +258,7 @@ private final class PopupmenuItemView: NSView {
     accentColor = NSColor(
       hueSource: "".padding(
         toLength: secondaryText.count * 4,
+
         withPad: secondaryText,
         startingAt: 0
       ),
