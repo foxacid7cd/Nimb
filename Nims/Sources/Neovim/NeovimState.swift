@@ -10,7 +10,6 @@ import Overture
 
 @PublicInit
 public struct NeovimState: Sendable {
-  public var bufferedUIEvents: [UIEvent] = []
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
   public var font: NimsFont = .init()

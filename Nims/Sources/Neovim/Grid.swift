@@ -181,10 +181,10 @@ public struct Grid: Sendable, Identifiable {
       originColumn ..< originColumn + cells.count,
       with: cells
     )
-    let layout = RowLayout(rowCells: rowCells)
-    let drawRun = RowDrawRun(
+    let rowLayout = RowLayout(rowCells: rowCells)
+    let rowDrawRun = RowDrawRun(
       row: row,
-      layout: layout,
+      layout: rowLayout,
       font: font,
       appearance: appearance,
       old: drawRuns.rowDrawRuns[row]
@@ -192,8 +192,8 @@ public struct Grid: Sendable, Identifiable {
     return .init(
       row: row,
       rowCells: rowCells,
-      rowLayout: layout,
-      rowDrawRun: drawRun,
+      rowLayout: rowLayout,
+      rowDrawRun: rowDrawRun,
       dirtyRectangle: .init(
         origin: .init(column: originColumn, row: row),
         size: .init(columnsCount: cells.count, rowsCount: 1)

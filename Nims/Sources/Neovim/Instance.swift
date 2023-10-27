@@ -41,19 +41,25 @@ public final class Instance: Sendable {
     task = Task { [weak self] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @NeovimActor in
+          var bufferedUIEvents = [UIEvent]()
+
           for try await uiEvents in api {
             guard let self else {
               return
             }
-
             try Task.checkCancellation()
 
-            if let stateUpdates = await self.stateContainer.apply(uiEvents: uiEvents) {
+            bufferedUIEvents += uiEvents
+
+            if let last = uiEvents.last, case .flush = last {
+              let stateUpdates = await self.stateContainer.apply(uiEvents: bufferedUIEvents)
               await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
                 self.resetCursorBlinkingTask()
               }
+
+              bufferedUIEvents = []
             }
           }
         }

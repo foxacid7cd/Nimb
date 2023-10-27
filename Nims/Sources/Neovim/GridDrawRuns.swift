@@ -28,9 +28,6 @@ public struct GridDrawRuns: Sendable {
           old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
         )
       }
-    if cursorDrawRun != nil {
-      cursorDrawRun!.updateParent(with: layout, rowDrawRuns: rowDrawRuns)
-    }
   }
 
   @MainActor
