@@ -121,13 +121,29 @@ public struct Grid: Sendable, Identifiable {
           continue
         }
 
-        layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
-        layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-        drawRuns.rowDrawRuns[toRow] = rowDrawRunsCopy[fromRow]
+        if rectangle.size.columnsCount == size.columnsCount {
+          layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
+          layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
+          drawRuns.rowDrawRuns[toRow] = rowDrawRunsCopy[fromRow]
+        } else {
+          layout.cells.rows[toRow].replaceSubrange(
+            rectangle.columns,
+            with: cellsCopy.rows[fromRow][rectangle.columns]
+          )
+          layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
+          drawRuns.rowDrawRuns[toRow] = .init(
+            row: toRow,
+            layout: layout.rowLayouts[toRow],
+            font: font,
+            appearance: appearance,
+            old: drawRuns.rowDrawRuns[toRow]
+          )
+        }
 
         if
           drawRuns.cursorDrawRun != nil,
-          drawRuns.cursorDrawRun!.position.row == toRow
+          drawRuns.cursorDrawRun!.position.row == toRow,
+          rectangle.columns.contains(drawRuns.cursorDrawRun!.position.column)
         {
           shouldUpdateCursorDrawRun = true
         }
@@ -137,7 +153,13 @@ public struct Grid: Sendable, Identifiable {
         drawRuns.cursorDrawRun!.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
       }
 
-      return .dirtyRectangle(.init(origin: rectangle.origin + offset, size: .init(columnsCount: rectangle.size.columnsCount, rowsCount: 1)))
+      return .dirtyRectangle(
+        .init(
+          origin: rectangle.origin + offset,
+          size: rectangle.size
+        )
+        .intersection(with: .init(size: size))
+      )
 
     case .clear:
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
