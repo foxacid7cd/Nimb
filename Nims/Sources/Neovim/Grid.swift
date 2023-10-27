@@ -110,16 +110,12 @@ public struct Grid: Sendable, Identifiable {
       let rowLayoutsCopy = layout.rowLayouts
       let rowDrawRunsCopy = drawRuns.rowDrawRuns
 
-      let fromRows = rectangle.minRow ..< rectangle.maxRow
-      for fromRow in fromRows {
-        let toRow = fromRow - offset.rowsCount
+      let toRectangle = rectangle
+        .applying(offset: -offset)
+        .intersection(with: rectangle)
 
-        guard
-          toRow >= rectangle.minRow,
-          toRow < min(rowsCount, rectangle.maxRow)
-        else {
-          continue
-        }
+      for toRow in toRectangle.rows {
+        let fromRow = toRow + offset.rowsCount
 
         if rectangle.size.columnsCount == size.columnsCount {
           layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
@@ -153,13 +149,7 @@ public struct Grid: Sendable, Identifiable {
         drawRuns.cursorDrawRun!.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
       }
 
-      return .dirtyRectangle(
-        .init(
-          origin: rectangle.origin + offset,
-          size: rectangle.size
-        )
-        .intersection(with: .init(size: size))
-      )
+      return .dirtyRectangle(toRectangle)
 
     case .clear:
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)

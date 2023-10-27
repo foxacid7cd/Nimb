@@ -323,12 +323,7 @@ public final class NeovimStateContainer {
             }
           }
 
-          let isNewHighlight = state.appearance.highlights[id] == nil
           state.appearance.highlights[id] = highlight
-
-          if !isNewHighlight {
-            appearanceUpdated()
-          }
 
         case let .gridResize(gridID, width, height):
           let size = IntegerSize(

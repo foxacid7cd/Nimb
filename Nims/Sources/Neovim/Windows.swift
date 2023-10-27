@@ -18,7 +18,7 @@ public struct FloatingWindow: Sendable, Identifiable {
     case southEast = "SE"
   }
 
-  public var id: Window.ID
+  public var id: References.Window
   public var anchor: Anchor
   public var anchorGridID: Grid.ID
   public var anchorRow: Double
@@ -29,5 +29,5 @@ public struct FloatingWindow: Sendable, Identifiable {
 
 @PublicInit
 public struct ExternalWindow: Sendable, Identifiable {
-  public var id: Window.ID
+  public var id: References.Window
 }

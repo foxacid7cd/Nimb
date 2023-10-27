@@ -67,6 +67,11 @@ public struct IntegerRectangle: Sendable, Hashable {
     let intersection = intersection(with: rectangle)
     return intersection.size.rowsCount > 0 && intersection.size.columnsCount > 0
   }
+
+  @inlinable
+  public func applying(offset: IntegerSize) -> IntegerRectangle {
+    .init(origin: origin + offset, size: size)
+  }
 }
 
 @inlinable
