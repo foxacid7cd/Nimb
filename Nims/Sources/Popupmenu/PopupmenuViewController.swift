@@ -53,6 +53,15 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     self.view = view
   }
 
+  override public func viewWillAppear() {
+    super.viewWillAppear()
+
+    scrollView.contentView.scroll(to: .init(
+      x: -scrollView.contentInsets.left,
+      y: -scrollView.contentInsets.top
+    ))
+  }
+
   public func numberOfRows(in tableView: NSTableView) -> Int {
     store.state.popupmenu?.items.count ?? 0
   }

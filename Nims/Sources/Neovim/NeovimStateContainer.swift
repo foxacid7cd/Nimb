@@ -13,7 +13,7 @@ public final class NeovimStateContainer {
     self.state = state
   }
 
-  public private(set) var state: NeovimState
+  public var state: NeovimState
 
   public func apply(uiEvents: [UIEvent]) async -> NeovimState.Updates {
     var updates = NeovimState.Updates()
@@ -60,36 +60,36 @@ public final class NeovimStateContainer {
 
     func cursorUpdated(oldCursor: Cursor? = nil) {
       if let oldCursor {
-        updatedText(inGridWithID: oldCursor.gridID, .clearCursor)
+        apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
+      }
+      if let cursor = state.cursor, let style = state.currentCursorStyle {
+        apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
       }
       updates.isCursorUpdated = true
-      if let cursor = state.cursor, let style = state.currentCursorStyle {
-        updatedText(inGridWithID: cursor.gridID, .cursor(style: style, position: cursor.position))
-      }
     }
 
     func updatedLayout(forGridWithID gridID: Grid.ID) {
       updates.updatedLayoutGridIDs.insert(gridID)
     }
 
-    func updatedText(inGridWithID gridID: Grid.ID, _ textUpdate: Grid.TextUpdate) {
+    func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
       let font = state.font
       let appearance = state.appearance
 
-      var textUpdateApplyResult: Grid.TextUpdateApplyResult?
-      update(&state.grids[gridID]!) { grid in
-        textUpdateApplyResult = grid.apply(
-          textUpdate: textUpdate,
+      var result: Grid.UpdateApplyResult?
+      Overture.update(&state.grids[gridID]!) { grid in
+        result = grid.apply(
+          update: update,
           font: font,
           appearance: appearance
         )
       }
-      if let textUpdateApplyResult {
-        update(&updates.gridUpdates[gridID]) { gridUpdate in
+      if let result {
+        Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
           if gridUpdate == nil {
             gridUpdate = .dirtyRectangles([])
           }
-          gridUpdate!.apply(textUpdateApplyResult: textUpdateApplyResult)
+          gridUpdate!.apply(updateApplyResult: result)
         }
       }
     }
@@ -330,39 +330,40 @@ public final class NeovimStateContainer {
             columnsCount: width,
             rowsCount: height
           )
-
-          update(&state.grids[gridID]) { [state] grid in
-            if grid == nil || grid?.isDestroyed == true {
-              let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
-              let layout = GridLayout(cells: cells)
-              grid = .init(
-                id: gridID,
-                layout: layout,
-                drawRuns: .init(
+          if state.grids[gridID]?.size != size || state.grids[gridID]?.isDestroyed == true {
+            update(&state.grids[gridID]) { [state] grid in
+              if grid == nil || grid?.isDestroyed == true {
+                let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+                let layout = GridLayout(cells: cells)
+                grid = .init(
+                  id: gridID,
                   layout: layout,
-                  font: state.font,
-                  appearance: state.appearance
-                ),
-                associatedWindow: nil,
-                isHidden: false,
-                isDestroyed: false
-              )
+                  drawRuns: .init(
+                    layout: layout,
+                    font: state.font,
+                    appearance: state.appearance
+                  ),
+                  associatedWindow: nil,
+                  isHidden: false,
+                  isDestroyed: false
+                )
+              }
             }
+
+            if
+              let cursor = state.cursor,
+              cursor.gridID == gridID,
+              cursor.position.column >= size.columnsCount,
+              cursor.position.row >= size.rowsCount
+            {
+              state.cursor = nil
+
+              cursorUpdated(oldCursor: cursor)
+            }
+
+            updatedLayout(forGridWithID: gridID)
+            apply(update: .resize(size), toGridWithID: gridID)
           }
-
-          if
-            let cursor = state.cursor,
-            cursor.gridID == gridID,
-            cursor.position.column >= size.columnsCount,
-            cursor.position.row >= size.rowsCount
-          {
-            state.cursor = nil
-
-            cursorUpdated(oldCursor: cursor)
-          }
-
-          updatedLayout(forGridWithID: gridID)
-          updatedText(inGridWithID: gridID, .resize(size))
 
         case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
           let rectangle = IntegerRectangle(
@@ -370,10 +371,10 @@ public final class NeovimStateContainer {
             size: .init(columnsCount: right - left, rowsCount: bottom - top)
           )
           let offset = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
-          updatedText(inGridWithID: gridID, .scroll(rectangle: rectangle, offset: offset))
+          apply(update: .scroll(rectangle: rectangle, offset: offset), toGridWithID: gridID)
 
         case let .gridClear(gridID):
-          updatedText(inGridWithID: gridID, .clear)
+          apply(update: .clear, toGridWithID: gridID)
 
         case let .gridDestroy(gridID):
           state.grids[gridID]!.isDestroyed = true
@@ -409,7 +410,7 @@ public final class NeovimStateContainer {
 
           updatedLayout(forGridWithID: gridID)
           if size != state.grids[gridID]!.size {
-            updatedText(inGridWithID: gridID, .resize(size))
+            apply(update: .resize(size), toGridWithID: gridID)
           }
 
         case let .winFloatPos(
@@ -797,13 +798,5 @@ public final class NeovimStateContainer {
     }
 
     return updates
-  }
-
-  public func apply(newFont: NimsFont) -> NeovimState.Updates {
-    state.apply(newFont: newFont)
-  }
-
-  public func set(cursorBlinkingPhase: Bool) {
-    state.cursorBlinkingPhase = cursorBlinkingPhase
   }
 }

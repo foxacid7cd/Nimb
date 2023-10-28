@@ -247,10 +247,7 @@ class MainView: NSView {
   }
 
   override var intrinsicContentSize: NSSize {
-    guard let outerGrid = store.state.outerGrid else {
-      return .init()
-    }
-    return outerGrid.size * store.font.cellSize
+    store.state.outerGrid!.size * store.font.cellSize
   }
 
   private var store: Store

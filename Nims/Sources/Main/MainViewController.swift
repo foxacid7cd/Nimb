@@ -7,8 +7,6 @@ final class MainViewController: NSViewController {
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
-    tablineView = .init(store: store)
-    mainView = .init(store: store)
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -120,10 +118,10 @@ final class MainViewController: NSViewController {
 
   private let store: Store
   private let minOuterGridSize: IntegerSize
-  private let tablineView: TablineView
+  private lazy var tablineView = TablineView(store: store)
   private let mainContainerView = NSView()
   private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  private let mainView: MainView
+  private lazy var mainView = MainView(store: store)
   private let mainOverlayView = NSVisualEffectView()
   private var reportedOuterGridSize: IntegerSize?
   private var preMaximizeWindowFrame: CGRect?

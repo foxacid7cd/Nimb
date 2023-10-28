@@ -59,6 +59,7 @@
 		68EED23929BD8B0600568EA0 /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EED23829BD8B0600568EA0 /* State.swift */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
+		68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* Loggers.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
 /* End PBXBuildFile section */
 
@@ -152,6 +153,7 @@
 		68EED23829BD8B0600568EA0 /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridView.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
+		68F0D4F22AECFDFC000954FF /* Loggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loggers.swift; sourceTree = "<group>"; };
 		68FAD38B2AD102E20042A103 /* SlantedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlantedBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -197,6 +199,7 @@
 				68EED23829BD8B0600568EA0 /* State.swift */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
+				68F0D4F22AECFDFC000954FF /* Loggers.swift */,
 				689D9E2629B4FA7000345713 /* main.swift */,
 			);
 			path = Sources;
@@ -469,6 +472,7 @@
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
+				68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,

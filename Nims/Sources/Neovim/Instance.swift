@@ -52,6 +52,10 @@ public final class Instance: Sendable {
             bufferedUIEvents += uiEvents
 
             if let last = uiEvents.last, case .flush = last {
+              if self.state.debug.isUIEventsLoggingEnabled {
+                Loggers.uiEvents.info("\(String(customDumping: bufferedUIEvents))")
+              }
+
               let stateUpdates = await self.stateContainer.apply(uiEvents: bufferedUIEvents)
               await stateUpdatesChannel.send(stateUpdates)
 
@@ -109,7 +113,7 @@ public final class Instance: Sendable {
           return
         }
 
-        let updates = stateContainer.apply(newFont: newFont)
+        let updates = stateContainer.state.apply(newFont: newFont)
         await stateUpdatesChannel.send(updates)
       }
     }
@@ -296,6 +300,13 @@ public final class Instance: Sendable {
     return nil
   }
 
+  public nonisolated func toggleUIEventsLogging() {
+    Task { @NeovimActor in
+      stateContainer.state.debug.isUIEventsLoggingEnabled.toggle()
+      await stateUpdatesChannel.send(.init(isDebugUpdated: true))
+    }
+  }
+
   private let stateContainer = NeovimStateContainer()
   private let process: Process
   private let api: API<ProcessChannel>
@@ -311,7 +322,7 @@ public final class Instance: Sendable {
       cursorBlinkingTask?.cancel()
 
       if !state.cursorBlinkingPhase {
-        stateContainer.set(cursorBlinkingPhase: true)
+        stateContainer.state.cursorBlinkingPhase = true
         await stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
       }
 
@@ -334,12 +345,12 @@ public final class Instance: Sendable {
                 return
               }
 
-              self.stateContainer.set(cursorBlinkingPhase: false)
+              stateContainer.state.cursorBlinkingPhase = false
               await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
 
               try await Task.sleep(for: .milliseconds(blinkOff))
 
-              self.stateContainer.set(cursorBlinkingPhase: true)
+              stateContainer.state.cursorBlinkingPhase = true
               await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
 
               try await Task.sleep(for: .milliseconds(blinkOn))

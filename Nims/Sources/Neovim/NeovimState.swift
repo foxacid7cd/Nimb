@@ -10,6 +10,64 @@ import Overture
 
 @PublicInit
 public struct NeovimState: Sendable {
+  @PublicInit
+  public struct Debug: Sendable {
+    public var isUIEventsLoggingEnabled: Bool = false
+  }
+
+  @PublicInit
+  public struct Updates: Sendable {
+    public var isDebugUpdated: Bool = false
+    public var isModeUpdated: Bool = false
+    public var isTitleUpdated: Bool = false
+    public var isFontUpdated: Bool = false
+    public var isAppearanceUpdated: Bool = false
+    public var isCursorUpdated: Bool = false
+    public var tabline: TablineUpdate = .init()
+    public var isCmdlinesUpdated: Bool = false
+    public var isMsgShowsUpdated: Bool = false
+    public var updatedLayoutGridIDs: Set<Grid.ID> = []
+    public var gridUpdates: IntKeyedDictionary<GridUpdate> = [:]
+    public var destroyedGridIDs: Set<Grid.ID> = []
+    public var isPopupmenuUpdated: Bool = false
+    public var isPopupmenuSelectionUpdated: Bool = false
+    public var isCursorBlinkingPhaseUpdated: Bool = false
+    public var isBusyUpdated: Bool = false
+
+    public var isOuterGridLayoutUpdated: Bool {
+      updatedLayoutGridIDs.contains(Grid.OuterID)
+    }
+  }
+
+  @PublicInit
+  public struct TablineUpdate: Sendable {
+    public var isTabpagesUpdated: Bool = false
+    public var isTabpagesContentUpdated: Bool = false
+    public var isBuffersUpdated: Bool = false
+    public var isSelectedTabpageUpdated: Bool = false
+    public var isSelectedBufferUpdated: Bool = false
+  }
+
+  public enum GridUpdate: Sendable {
+    case dirtyRectangles([IntegerRectangle])
+    case needsDisplay
+
+    mutating func apply(updateApplyResult: Grid.UpdateApplyResult) {
+      switch (self, updateApplyResult) {
+      case (.dirtyRectangles(var accumulator), let .dirtyRectangle(dirtyRectangle)):
+        accumulator.append(dirtyRectangle)
+        self = .dirtyRectangles(accumulator)
+
+      case (_, .needsDisplay):
+        self = .needsDisplay
+
+      default:
+        break
+      }
+    }
+  }
+
+  public var debug: Debug = .init()
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
   public var font: NimsFont = .init()
@@ -99,62 +157,9 @@ public struct NeovimState: Sendable {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }
   }
-}
-
-public extension NeovimState {
-  @PublicInit
-  struct Updates: Sendable {
-    public var isModeUpdated: Bool = false
-    public var isTitleUpdated: Bool = false
-    public var isFontUpdated: Bool = false
-    public var isAppearanceUpdated: Bool = false
-    public var isCursorUpdated: Bool = false
-    public var tabline: TablineUpdate = .init()
-    public var isCmdlinesUpdated: Bool = false
-    public var isMsgShowsUpdated: Bool = false
-    public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdates: IntKeyedDictionary<GridUpdate> = [:]
-    public var destroyedGridIDs: Set<Grid.ID> = []
-    public var isPopupmenuUpdated: Bool = false
-    public var isPopupmenuSelectionUpdated: Bool = false
-    public var isCursorBlinkingPhaseUpdated: Bool = false
-    public var isBusyUpdated: Bool = false
-
-    public var isOuterGridLayoutUpdated: Bool {
-      updatedLayoutGridIDs.contains(Grid.OuterID)
-    }
-  }
-
-  @PublicInit
-  struct TablineUpdate: Sendable {
-    public var isTabpagesUpdated: Bool = false
-    public var isTabpagesContentUpdated: Bool = false
-    public var isBuffersUpdated: Bool = false
-    public var isSelectedTabpageUpdated: Bool = false
-    public var isSelectedBufferUpdated: Bool = false
-  }
-
-  enum GridUpdate: Sendable {
-    case dirtyRectangles([IntegerRectangle])
-    case needsDisplay
-
-    mutating func apply(textUpdateApplyResult: Grid.TextUpdateApplyResult) {
-      switch (self, textUpdateApplyResult) {
-      case (.dirtyRectangles(var accumulator), let .dirtyRectangle(dirtyRectangle)):
-        accumulator.append(dirtyRectangle)
-        self = .dirtyRectangles(accumulator)
-
-      case (_, .needsDisplay):
-        self = .needsDisplay
-
-      default:
-        break
-      }
-    }
-  }
 
   @NeovimActor
-  mutating func apply(newFont: NimsFont) -> Updates {
+  public mutating func apply(newFont: NimsFont) -> Updates {
     font = newFont
     flushDrawRuns()
     return .init(isFontUpdated: true)

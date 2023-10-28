@@ -12,7 +12,7 @@ public struct Grid: Sendable, Identifiable {
     case external(ExternalWindow)
   }
 
-  public enum TextUpdate: Sendable {
+  public enum Update: Sendable {
     case resize(IntegerSize)
     case scroll(rectangle: IntegerRectangle, offset: IntegerSize)
     case clear
@@ -20,7 +20,7 @@ public struct Grid: Sendable, Identifiable {
     case clearCursor
   }
 
-  public enum TextUpdateApplyResult {
+  public enum UpdateApplyResult {
     case dirtyRectangle(IntegerRectangle)
     case needsDisplay
   }
@@ -77,8 +77,8 @@ public struct Grid: Sendable, Identifiable {
   }
 
   @NeovimActor
-  public mutating func apply(textUpdate: TextUpdate, font: NimsFont, appearance: Appearance) -> TextUpdateApplyResult? {
-    switch textUpdate {
+  public mutating func apply(update: Update, font: NimsFont, appearance: Appearance) -> UpdateApplyResult? {
+    switch update {
     case let .resize(integerSize):
       let copyColumnsCount = min(layout.columnsCount, integerSize.columnsCount)
       let copyColumnsRange = 0 ..< copyColumnsCount

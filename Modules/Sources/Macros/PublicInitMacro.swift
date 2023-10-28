@@ -43,6 +43,10 @@ extension VariableDeclSyntax {
       return false
     }
 
+    if modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }) {
+      return false
+    }
+
     let binding = bindings.first!
     switch binding.accessorBlock?.accessors {
     case .none:

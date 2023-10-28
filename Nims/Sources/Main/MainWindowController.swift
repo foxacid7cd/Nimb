@@ -6,20 +6,19 @@ import Library
 final class MainWindowController: NSWindowController {
   init(store: Store) {
     self.store = store
-    viewController = MainViewController(
-      store: store,
-      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
-    )
 
-    let window = NimsNSWindow(contentViewController: viewController)
-    window.styleMask = [.titled, .miniaturizable, .resizable, .fullSizeContentView]
+    let window = NimsNSWindow(
+      contentRect: .init(),
+      styleMask: [.titled, .miniaturizable, .resizable, .fullSizeContentView],
+      backing: .buffered,
+      defer: true
+    )
     window.titlebarAppearsTransparent = true
     window.isMovable = false
-
+    window.title = ""
     super.init(window: window)
 
     window.delegate = self
-    window.title = ""
     windowFrameAutosaveName = "MainWindow"
   }
 
@@ -42,6 +41,8 @@ final class MainWindowController: NSWindowController {
     viewController.render(stateUpdates)
 
     if !isWindowInitiallyShown, stateUpdates.isOuterGridLayoutUpdated, let outerGrid = store.state.outerGrid {
+      window!.contentViewController = viewController
+
       let contentSize: CGSize = if
         let lastWindowWidth = UserDefaults.standard.value(forKey: "windowWidth") as? Double,
         let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double
@@ -64,7 +65,10 @@ final class MainWindowController: NSWindowController {
   }
 
   private let store: Store
-  private let viewController: MainViewController
+  private lazy var viewController = MainViewController(
+    store: store,
+    minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+  )
   private var isWindowInitiallyShown = false
 
   private func updateWindow() {

@@ -22,7 +22,12 @@ final class MainMenuController: NSObject {
     let windowMenu = NSMenu(title: "Window")
     let helpMenu = NSMenu(title: "Help")
 
-    let submenus = [appMenu, fileMenu, editMenu, viewMenu, windowMenu, helpMenu]
+    var submenus = [appMenu, fileMenu, editMenu, viewMenu, windowMenu, helpMenu]
+
+    #if DEBUG
+      debugMenu.delegate = self
+      submenus.insert(debugMenu, at: submenus.count - 2)
+    #endif
 
     for submenu in submenus {
       let menuItem = NSMenuItem()
@@ -38,6 +43,7 @@ final class MainMenuController: NSObject {
   private let copyItem = NSMenuItem(title: "Copy", action: #selector(handleCopy), keyEquivalent: "c")
   private let pasteItem = NSMenuItem(title: "Paste", action: #selector(handlePaste), keyEquivalent: "v")
   private let viewMenu = NSMenu(title: "View")
+  private let debugMenu = NSMenu(title: "Debug")
 
   @objc private func handleFont() {
     let selectedFont = store.state.font.nsFont()
@@ -96,6 +102,10 @@ final class MainMenuController: NSObject {
       await store.instance.reportPaste(text: text)
     }
   }
+
+  @objc private func handleToggleUIEventsLogging() {
+    store.instance.toggleUIEventsLogging()
+  }
 }
 
 extension MainMenuController: NSFontChanging {
@@ -115,29 +125,41 @@ extension MainMenuController: NSFontChanging {
 
 extension MainMenuController: NSMenuDelegate {
   func menuNeedsUpdate(_ menu: NSMenu) {
-    menu.items = FontMenuLayout.map { item in
-      switch item {
-      case .currentFontDescription:
-        let currentFont = store.font.nsFont()
-        let name = (currentFont.displayName ?? currentFont.fontName)
-          .trimmingCharacters(in: .whitespacesAndNewlines)
-        return makeItem("\(name), \(currentFont.pointSize)")
+    switch menu {
+    case viewMenu:
+      menu.items = FontMenuLayout.map { item in
+        switch item {
+        case .currentFontDescription:
+          let currentFont = store.font.nsFont()
+          let name = (currentFont.displayName ?? currentFont.fontName)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+          return makeItem("\(name), \(currentFont.pointSize)")
 
-      case .select:
-        return makeItem("Select Font", action: #selector(handleFont), keyEquivalent: "t")
+        case .select:
+          return makeItem("Select Font", action: #selector(handleFont), keyEquivalent: "t")
 
-      case .separator:
-        return .separator()
+        case .separator:
+          return .separator()
 
-      case .increaseSize:
-        return makeItem("Increase Font Size", action: #selector(handleIncreaseFontSize), keyEquivalent: "+")
+        case .increaseSize:
+          return makeItem("Increase Font Size", action: #selector(handleIncreaseFontSize), keyEquivalent: "+")
 
-      case .decreaseSize:
-        return makeItem("Decrease Font Size", action: #selector(handleDecreaseFontSize), keyEquivalent: "-")
+        case .decreaseSize:
+          return makeItem("Decrease Font Size", action: #selector(handleDecreaseFontSize), keyEquivalent: "-")
 
-      case .resetSize:
-        return makeItem("Reset Font Size", action: #selector(handleResetFontSize), keyEquivalent: "o", keyEquivalentModifierMask: [.control, .command])
+        case .resetSize:
+          return makeItem("Reset Font Size", action: #selector(handleResetFontSize), keyEquivalent: "o", keyEquivalentModifierMask: [.control, .command])
+        }
       }
+
+    case debugMenu:
+      let title = store.state.debug.isUIEventsLoggingEnabled ? "Disable UI events logging" : "Enable UI events logging"
+      let item = NSMenuItem(title: title, action: #selector(handleToggleUIEventsLogging), keyEquivalent: "")
+      item.target = self
+      menu.items = [item]
+
+    default:
+      break
     }
   }
 
