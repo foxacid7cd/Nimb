@@ -702,107 +702,182 @@ public final class NeovimStateContainer {
         }
 
       case let .gridLines(gridID, gridLines):
-        await withTaskGroup(of: [Grid.LineUpdatesResult].self) { [state] taskGroup in
-          for gridLines in Array(gridLines).chunks(ofCount: 10) {
-            taskGroup.addTask {
-              var accumulator = [Grid.LineUpdatesResult]()
+        let results: [Grid.LineUpdatesResult] = if gridLines.count < 16 {
+          applyLineUpdates(for: gridLines)
+        } else {
+          await withTaskGroup(of: [Grid.LineUpdatesResult].self) { [state] taskGroup in
+            for gridLines in Array(gridLines).chunks(ofCount: 10) {
+              taskGroup.addTask {
+                var accumulator = [Grid.LineUpdatesResult]()
 
-              for (row, rowGridLines) in gridLines {
-                var lineUpdates = [(originColumn: Int, cells: [Cell])]()
+                for (row, rowGridLines) in gridLines {
+                  var lineUpdates = [(originColumn: Int, cells: [Cell])]()
 
-                for gridLine in rowGridLines {
-                  var cells = [Cell]()
-                  var highlightID = 0
+                  for gridLine in rowGridLines {
+                    var cells = [Cell]()
+                    var highlightID = 0
 
-                  for value in gridLine.data {
-                    guard
-                      let arrayValue = (/Value.array).extract(from: value),
-                      !arrayValue.isEmpty,
-                      let text = (/Value.string).extract(from: arrayValue[0])
-                    else {
-                      assertionFailure(value)
-                      continue
-                    }
-
-                    var repeatCount = 1
-
-                    if arrayValue.count > 1 {
+                    for value in gridLine.data {
                       guard
-                        let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                        let arrayValue = (/Value.array).extract(from: value),
+                        !arrayValue.isEmpty,
+                        let text = (/Value.string).extract(from: arrayValue[0])
                       else {
-                        assertionFailure(arrayValue)
+                        assertionFailure(value)
                         continue
                       }
 
-                      highlightID = newHighlightID
+                      var repeatCount = 1
 
-                      if arrayValue.count > 2 {
+                      if arrayValue.count > 1 {
                         guard
-                          let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                          let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
                         else {
                           assertionFailure(arrayValue)
                           continue
                         }
 
-                        repeatCount = newRepeatCount
+                        highlightID = newHighlightID
+
+                        if arrayValue.count > 2 {
+                          guard
+                            let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                          else {
+                            assertionFailure(arrayValue)
+                            continue
+                          }
+
+                          repeatCount = newRepeatCount
+                        }
+                      }
+
+                      let cell = Cell(text: text, highlightID: highlightID)
+                      for _ in 0 ..< repeatCount {
+                        cells.append(cell)
                       }
                     }
 
-                    let cell = Cell(text: text, highlightID: highlightID)
-                    for _ in 0 ..< repeatCount {
-                      cells.append(cell)
-                    }
+                    lineUpdates.append((gridLine.originColumn, cells))
                   }
 
-                  lineUpdates.append((gridLine.originColumn, cells))
-                }
-
-                accumulator.append(
-                  state.grids[gridID]!.applying(
-                    lineUpdates: lineUpdates,
-                    forRow: row,
-                    font: state.font,
-                    appearance: state.appearance
-                  )
-                )
-              }
-
-              return accumulator
-            }
-          }
-
-          for await results in taskGroup {
-            update(&self.state.grids[gridID]!) { grid in
-              for result in results {
-                grid.layout.cells.rows[result.row] = result.rowCells
-                grid.layout.rowLayouts[result.row] = result.rowLayout
-                grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
-
-                if result.shouldUpdateCursorDrawRun {
-                  grid.drawRuns.cursorDrawRun!.updateParent(
-                    with: grid.layout,
-                    rowDrawRuns: grid.drawRuns.rowDrawRuns
+                  accumulator.append(
+                    state.grids[gridID]!.applying(
+                      lineUpdates: lineUpdates,
+                      forRow: row,
+                      font: state.font,
+                      appearance: state.appearance
+                    )
                   )
                 }
+
+                return accumulator
               }
             }
 
-            update(&updates.gridUpdates[gridID]) { updates in
-              let dirtyRectangles = results.flatMap(\.dirtyRectangles)
+            var accumulator = [Grid.LineUpdatesResult]()
+            for await results in taskGroup {
+              accumulator += results
+            }
 
-              switch updates {
-              case var .dirtyRectangles(accumulator):
-                accumulator += dirtyRectangles
-                updates = .dirtyRectangles(accumulator)
+            return accumulator
+          }
+        }
 
-              case .none:
-                updates = .dirtyRectangles(dirtyRectangles)
+        update(&state.grids[gridID]!) { grid in
+          for result in results {
+            grid.layout.cells.rows[result.row] = result.rowCells
+            grid.layout.rowLayouts[result.row] = result.rowLayout
+            grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
 
-              default:
-                break
-              }
+            if result.shouldUpdateCursorDrawRun {
+              grid.drawRuns.cursorDrawRun!.updateParent(
+                with: grid.layout,
+                rowDrawRuns: grid.drawRuns.rowDrawRuns
+              )
             }
           }
+        }
+
+        update(&updates.gridUpdates[gridID]) { updates in
+          let dirtyRectangles = results.flatMap(\.dirtyRectangles)
+
+          switch updates {
+          case var .dirtyRectangles(accumulator):
+            accumulator += dirtyRectangles
+            updates = .dirtyRectangles(accumulator)
+
+          case .none:
+            updates = .dirtyRectangles(dirtyRectangles)
+
+          default:
+            break
+          }
+        }
+
+        func applyLineUpdates(for gridLines: IntKeyedDictionary<[UIEventsChunk.GridLine]>) -> [Grid.LineUpdatesResult] {
+          var accumulator = [Grid.LineUpdatesResult]()
+
+          for (row, rowGridLines) in gridLines {
+            var lineUpdates = [(originColumn: Int, cells: [Cell])]()
+
+            for gridLine in rowGridLines {
+              var cells = [Cell]()
+              var highlightID = 0
+
+              for value in gridLine.data {
+                guard
+                  let arrayValue = (/Value.array).extract(from: value),
+                  !arrayValue.isEmpty,
+                  let text = (/Value.string).extract(from: arrayValue[0])
+                else {
+                  assertionFailure(value)
+                  continue
+                }
+
+                var repeatCount = 1
+
+                if arrayValue.count > 1 {
+                  guard
+                    let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                  else {
+                    assertionFailure(arrayValue)
+                    continue
+                  }
+
+                  highlightID = newHighlightID
+
+                  if arrayValue.count > 2 {
+                    guard
+                      let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                    else {
+                      assertionFailure(arrayValue)
+                      continue
+                    }
+
+                    repeatCount = newRepeatCount
+                  }
+                }
+
+                let cell = Cell(text: text, highlightID: highlightID)
+                for _ in 0 ..< repeatCount {
+                  cells.append(cell)
+                }
+              }
+
+              lineUpdates.append((gridLine.originColumn, cells))
+            }
+
+            accumulator.append(
+              state.grids[gridID]!.applying(
+                lineUpdates: lineUpdates,
+                forRow: row,
+                font: state.font,
+                appearance: state.appearance
+              )
+            )
+          }
+
+          return accumulator
         }
       }
     }
