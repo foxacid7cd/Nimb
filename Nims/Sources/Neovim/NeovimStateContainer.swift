@@ -140,17 +140,22 @@ public final class NeovimStateContainer {
     for uiEvent in uiEvents {
       switch uiEvent {
       case let .gridLine(gridID, row, originColumn, data, wrap):
-        let gridLine = UIEventsChunk.GridLine(row: row, originColumn: originColumn, data: data, wrap: wrap)
+        let gridLine = UIEventsChunk.GridLine(originColumn: originColumn, data: data, wrap: wrap)
 
         if
           let previousChunk = uiEventsChunks.last,
           case .gridLines(let chunkGridID, var chunkGridLines) = previousChunk,
           chunkGridID == gridID
         {
-          chunkGridLines.append(gridLine)
+          update(&chunkGridLines[row]) { rowGridLines in
+            if rowGridLines == nil {
+              rowGridLines = []
+            }
+            rowGridLines!.append(gridLine)
+          }
           uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(gridID: gridID, gridLines: chunkGridLines)
         } else {
-          uiEventsChunks.append(.gridLines(gridID: gridID, gridLines: [gridLine]))
+          uiEventsChunks.append(.gridLines(gridID: gridID, gridLines: [row: [gridLine]]))
         }
 
       default:
@@ -697,60 +702,65 @@ public final class NeovimStateContainer {
         }
 
       case let .gridLines(gridID, gridLines):
-        await withTaskGroup(of: [Grid.LineUpdateResult].self) { [state] taskGroup in
+        await withTaskGroup(of: [Grid.LineUpdatesResult].self) { [state] taskGroup in
           for gridLines in Array(gridLines).chunks(ofCount: 10) {
             taskGroup.addTask {
-              var accumulator = [Grid.LineUpdateResult]()
+              var accumulator = [Grid.LineUpdatesResult]()
 
-              for gridLine in gridLines {
-                var cells = [Cell]()
-                var highlightID = 0
+              for (row, rowGridLines) in gridLines {
+                var lineUpdates = [(originColumn: Int, cells: [Cell])]()
 
-                for value in gridLine.data {
-                  guard
-                    let arrayValue = (/Value.array).extract(from: value),
-                    !arrayValue.isEmpty,
-                    let text = (/Value.string).extract(from: arrayValue[0])
-                  else {
-                    assertionFailure(value)
-                    continue
-                  }
+                for gridLine in rowGridLines {
+                  var cells = [Cell]()
+                  var highlightID = 0
 
-                  var repeatCount = 1
-
-                  if arrayValue.count > 1 {
+                  for value in gridLine.data {
                     guard
-                      let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                      let arrayValue = (/Value.array).extract(from: value),
+                      !arrayValue.isEmpty,
+                      let text = (/Value.string).extract(from: arrayValue[0])
                     else {
-                      assertionFailure(arrayValue)
+                      assertionFailure(value)
                       continue
                     }
 
-                    highlightID = newHighlightID
+                    var repeatCount = 1
 
-                    if arrayValue.count > 2 {
+                    if arrayValue.count > 1 {
                       guard
-                        let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                        let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
                       else {
                         assertionFailure(arrayValue)
                         continue
                       }
 
-                      repeatCount = newRepeatCount
+                      highlightID = newHighlightID
+
+                      if arrayValue.count > 2 {
+                        guard
+                          let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                        else {
+                          assertionFailure(arrayValue)
+                          continue
+                        }
+
+                        repeatCount = newRepeatCount
+                      }
+                    }
+
+                    let cell = Cell(text: text, highlightID: highlightID)
+                    for _ in 0 ..< repeatCount {
+                      cells.append(cell)
                     }
                   }
 
-                  let cell = Cell(text: text, highlightID: highlightID)
-                  for _ in 0 ..< repeatCount {
-                    cells.append(cell)
-                  }
+                  lineUpdates.append((gridLine.originColumn, cells))
                 }
 
                 accumulator.append(
-                  state.grids[gridID]!.applyingLineUpdate(
-                    forRow: gridLine.row,
-                    originColumn: gridLine.originColumn,
-                    cells: cells,
+                  state.grids[gridID]!.applying(
+                    lineUpdates: lineUpdates,
+                    forRow: row,
                     font: state.font,
                     appearance: state.appearance
                   )
@@ -761,14 +771,14 @@ public final class NeovimStateContainer {
             }
           }
 
-          for await lineUpdateResults in taskGroup {
+          for await results in taskGroup {
             update(&self.state.grids[gridID]!) { grid in
-              for lineUpdateResult in lineUpdateResults {
-                grid.layout.cells.rows[lineUpdateResult.row] = lineUpdateResult.rowCells
-                grid.layout.rowLayouts[lineUpdateResult.row] = lineUpdateResult.rowLayout
-                grid.drawRuns.rowDrawRuns[lineUpdateResult.row] = lineUpdateResult.rowDrawRun
+              for result in results {
+                grid.layout.cells.rows[result.row] = result.rowCells
+                grid.layout.rowLayouts[result.row] = result.rowLayout
+                grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
 
-                if lineUpdateResult.shouldUpdateCursorDrawRun {
+                if result.shouldUpdateCursorDrawRun {
                   grid.drawRuns.cursorDrawRun!.updateParent(
                     with: grid.layout,
                     rowDrawRuns: grid.drawRuns.rowDrawRuns
@@ -778,7 +788,7 @@ public final class NeovimStateContainer {
             }
 
             update(&updates.gridUpdates[gridID]) { updates in
-              let dirtyRectangles = lineUpdateResults.map(\.dirtyRectangle)
+              let dirtyRectangles = results.flatMap(\.dirtyRectangles)
 
               switch updates {
               case var .dirtyRectangles(accumulator):

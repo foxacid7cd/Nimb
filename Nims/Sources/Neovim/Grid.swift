@@ -25,12 +25,12 @@ public struct Grid: Sendable, Identifiable {
     case needsDisplay
   }
 
-  public struct LineUpdateResult: Sendable {
+  public struct LineUpdatesResult: Sendable {
     public var row: Int
     public var rowCells: [Cell]
     public var rowLayout: RowLayout
     public var rowDrawRun: RowDrawRun
-    public var dirtyRectangle: IntegerRectangle
+    public var dirtyRectangles: [IntegerRectangle]
     public var shouldUpdateCursorDrawRun: Bool
   }
 
@@ -193,12 +193,30 @@ public struct Grid: Sendable, Identifiable {
   }
 
   @Sendable
-  public func applyingLineUpdate(forRow row: Int, originColumn: Int, cells: [Cell], font: NimsFont, appearance: Appearance) -> LineUpdateResult {
+  public func applying(lineUpdates: [(originColumn: Int, cells: [Cell])], forRow row: Int, font: NimsFont, appearance: Appearance) -> LineUpdatesResult {
+    var dirtyRectangles = [IntegerRectangle]()
+    var shouldUpdateCursorDrawRun = false
+
     var rowCells = layout.cells.rows[row]
-    rowCells.replaceSubrange(
-      originColumn ..< originColumn + cells.count,
-      with: cells
-    )
+    for (originColumn, cells) in lineUpdates {
+      rowCells.replaceSubrange(
+        originColumn ..< originColumn + cells.count,
+        with: cells
+      )
+      dirtyRectangles.append(.init(
+        origin: .init(column: originColumn, row: row),
+        size: .init(columnsCount: cells.count, rowsCount: 1)
+      ))
+
+      if 
+        let cursorDrawRun = drawRuns.cursorDrawRun,
+        cursorDrawRun.position.row == row,
+        cursorDrawRun.position.column >= originColumn,
+        cursorDrawRun.position.column < originColumn + cells.count
+      {
+        shouldUpdateCursorDrawRun = true
+      }
+    }
     let rowLayout = RowLayout(rowCells: rowCells)
     let rowDrawRun = RowDrawRun(
       row: row,
@@ -212,14 +230,8 @@ public struct Grid: Sendable, Identifiable {
       rowCells: rowCells,
       rowLayout: rowLayout,
       rowDrawRun: rowDrawRun,
-      dirtyRectangle: .init(
-        origin: .init(column: originColumn, row: row),
-        size: .init(columnsCount: cells.count, rowsCount: 1)
-      ),
-      shouldUpdateCursorDrawRun: drawRuns.cursorDrawRun != nil &&
-        drawRuns.cursorDrawRun!.position.row == row &&
-        drawRuns.cursorDrawRun!.position.column >= originColumn &&
-        drawRuns.cursorDrawRun!.position.column < originColumn + cells.count
+      dirtyRectangles: dirtyRectangles,
+      shouldUpdateCursorDrawRun: shouldUpdateCursorDrawRun
     )
   }
 
