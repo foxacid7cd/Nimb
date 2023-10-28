@@ -144,7 +144,7 @@ public final class NeovimStateContainer {
 
         if
           let previousChunk = uiEventsChunks.last,
-          case .gridLines(let chunkGridID, var chunkGridLines) = previousChunk,
+          case .gridLines(let chunkGridID, let hlAttrDefines, var chunkGridLines) = previousChunk,
           chunkGridID == gridID
         {
           update(&chunkGridLines[row]) { rowGridLines in
@@ -153,9 +153,32 @@ public final class NeovimStateContainer {
             }
             rowGridLines!.append(gridLine)
           }
-          uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(gridID: gridID, gridLines: chunkGridLines)
+          uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
+            gridID: chunkGridID,
+            hlAttrDefines: hlAttrDefines,
+            gridLines: chunkGridLines
+          )
         } else {
-          uiEventsChunks.append(.gridLines(gridID: gridID, gridLines: [row: [gridLine]]))
+          uiEventsChunks.append(.gridLines(
+            gridID: gridID,
+            hlAttrDefines: [],
+            gridLines: [row: [gridLine]]
+          ))
+        }
+
+      case let .hlAttrDefine(id, rgbAttrs, _, _):
+        if
+          let previousChunk = uiEventsChunks.last,
+          case .gridLines(let chunkGridID, var hlAttrDefines, let chunkGridLines) = previousChunk
+        {
+          hlAttrDefines.append(.init(id: id, rgbAttrs: rgbAttrs))
+          uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
+            gridID: chunkGridID,
+            hlAttrDefines: hlAttrDefines,
+            gridLines: chunkGridLines
+          )
+        } else {
+          uiEventsChunks.append(.single(uiEvent))
         }
 
       default:
@@ -239,96 +262,8 @@ public final class NeovimStateContainer {
 
           appearanceUpdated()
 
-        case let .hlAttrDefine(rawID, rgbAttrs, _, _):
-          let noCombine = rgbAttrs["noCombine"]
-            .flatMap((/Value.boolean).extract(from:)) ?? false
-
-          let id = Highlight.ID(rawID)
-          var highlight = (noCombine ? state.appearance.highlights[id] : nil) ?? .init(id: id)
-
-          for (key, value) in rgbAttrs {
-            guard case let .string(key) = key else {
-              continue
-            }
-
-            switch key {
-            case "foreground":
-              if case let .integer(value) = value {
-                highlight.foregroundColor = .init(rgb: value)
-              }
-
-            case "background":
-              if case let .integer(value) = value {
-                highlight.backgroundColor = .init(rgb: value)
-              }
-
-            case "special":
-              if case let .integer(value) = value {
-                highlight.specialColor = .init(rgb: value)
-              }
-
-            case "reverse":
-              if case let .boolean(value) = value {
-                highlight.isReverse = value
-              }
-
-            case "italic":
-              if case let .boolean(value) = value {
-                highlight.isItalic = value
-              }
-
-            case "bold":
-              if case let .boolean(value) = value {
-                highlight.isBold = value
-              }
-
-            case "strikethrough":
-              if case let .boolean(value) = value {
-                highlight.decorations.isStrikethrough = value
-              }
-
-            case "underline":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderline = value
-              }
-
-            case "undercurl":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUndercurl = value
-              }
-
-            case "underdouble":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdouble = value
-              }
-
-            case "underdotted":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdotted = value
-              }
-
-            case "underdashed":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdashed = value
-              }
-
-            case "blend":
-              if case let .integer(value) = value {
-                highlight.blend = value
-              }
-
-            case "bg_indexed",
-                 "fg_indexed",
-                 "nocombine",
-                 "standout":
-              continue
-
-            default:
-              assertionFailure(key)
-            }
-          }
-
-          state.appearance.highlights[id] = highlight
+        case let .hlAttrDefine(id, rgbAttrs, _, _):
+          applyHlAttrDefine(id: id, rgbAttrs: rgbAttrs)
 
         case let .gridResize(gridID, width, height):
           let size = IntegerSize(
@@ -701,8 +636,12 @@ public final class NeovimStateContainer {
           break
         }
 
-      case let .gridLines(gridID, gridLines):
-        let results: [Grid.LineUpdatesResult] = if gridLines.count < 16 {
+      case let .gridLines(gridID, hlAttrDefines, gridLines):
+        for hlAttrDefine in hlAttrDefines {
+          applyHlAttrDefine(id: hlAttrDefine.id, rgbAttrs: hlAttrDefine.rgbAttrs)
+        }
+
+        let results: [Grid.LineUpdatesResult] = if gridLines.count < 10 {
           applyLineUpdates(for: gridLines)
         } else {
           await withTaskGroup(of: [Grid.LineUpdatesResult].self) { [state] taskGroup in
@@ -879,6 +818,97 @@ public final class NeovimStateContainer {
 
           return accumulator
         }
+      }
+
+      func applyHlAttrDefine(id: Int, rgbAttrs: [Value: Value]) {
+        let noCombine = rgbAttrs["noCombine"]
+          .flatMap((/Value.boolean).extract(from:)) ?? false
+
+        var highlight = (noCombine ? state.appearance.highlights[id] : nil) ?? .init(id: id)
+
+        for (key, value) in rgbAttrs {
+          guard case let .string(key) = key else {
+            continue
+          }
+
+          switch key {
+          case "foreground":
+            if case let .integer(value) = value {
+              highlight.foregroundColor = .init(rgb: value)
+            }
+
+          case "background":
+            if case let .integer(value) = value {
+              highlight.backgroundColor = .init(rgb: value)
+            }
+
+          case "special":
+            if case let .integer(value) = value {
+              highlight.specialColor = .init(rgb: value)
+            }
+
+          case "reverse":
+            if case let .boolean(value) = value {
+              highlight.isReverse = value
+            }
+
+          case "italic":
+            if case let .boolean(value) = value {
+              highlight.isItalic = value
+            }
+
+          case "bold":
+            if case let .boolean(value) = value {
+              highlight.isBold = value
+            }
+
+          case "strikethrough":
+            if case let .boolean(value) = value {
+              highlight.decorations.isStrikethrough = value
+            }
+
+          case "underline":
+            if case let .boolean(value) = value {
+              highlight.decorations.isUnderline = value
+            }
+
+          case "undercurl":
+            if case let .boolean(value) = value {
+              highlight.decorations.isUndercurl = value
+            }
+
+          case "underdouble":
+            if case let .boolean(value) = value {
+              highlight.decorations.isUnderdouble = value
+            }
+
+          case "underdotted":
+            if case let .boolean(value) = value {
+              highlight.decorations.isUnderdotted = value
+            }
+
+          case "underdashed":
+            if case let .boolean(value) = value {
+              highlight.decorations.isUnderdashed = value
+            }
+
+          case "blend":
+            if case let .integer(value) = value {
+              highlight.blend = value
+            }
+
+          case "bg_indexed",
+               "fg_indexed",
+               "nocombine",
+               "standout":
+            continue
+
+          default:
+            assertionFailure(key)
+          }
+        }
+
+        state.appearance.highlights[id] = highlight
       }
     }
 
