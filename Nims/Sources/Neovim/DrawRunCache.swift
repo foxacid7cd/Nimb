@@ -5,13 +5,15 @@ import Foundation
 import Library
 
 public final class DrawRunCache: @unchecked Sendable {
+  public init(maximumCount: Int) {
+    self.maximumCount = maximumCount
+  }
+
   @PublicInit
   public struct Key: Sendable, Hashable {
     public var text: String
     public var highlightID: Int
   }
-
-  public static let shared = DrawRunCache()
 
   public subscript(key: Key) -> DrawRun? {
     get {
@@ -36,15 +38,17 @@ public final class DrawRunCache: @unchecked Sendable {
   }
 
   public func clear() {
-    dictionary = [:]
-    keys = .init()
+    dispatchQueue.sync(flags: .barrier) {
+      dictionary = [:]
+      keys = .init()
+    }
   }
 
   private let dispatchQueue = DispatchQueue(
     label: "\(Bundle.main.bundleIdentifier!).DrawRunCache",
     attributes: .concurrent
   )
-  private let maximumCount = 100
+  private let maximumCount: Int
   private var dictionary = TreeDictionary<Int, DrawRun>()
   private var keys = Deque<Int>()
 }

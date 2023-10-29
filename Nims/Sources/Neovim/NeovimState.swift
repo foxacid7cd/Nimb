@@ -49,6 +49,7 @@ public struct NeovimState: Sendable {
   }
 
   public var debug: Debug = .init()
+  public var drawRunCache: DrawRunCache = .init(maximumCount: 100)
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
   public var font: NimsFont = .init()
@@ -132,16 +133,14 @@ public struct NeovimState: Sendable {
     return windowZIndexCounter
   }
 
-  @StateActor
   public mutating func flushDrawRuns() {
-    DrawRunCache.shared.clear()
+    drawRunCache.clear()
 
     for gridID in grids.keys {
-      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
+      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance, drawRunCache: drawRunCache)
     }
   }
 
-  @StateActor
   public mutating func apply(newFont: NimsFont) -> Updates {
     font = newFont
     flushDrawRuns()

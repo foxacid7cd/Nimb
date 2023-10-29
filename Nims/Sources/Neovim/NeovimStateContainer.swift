@@ -28,8 +28,8 @@ public final class NeovimStateContainer {
 
     func appearanceUpdated() {
       if !updates.isAppearanceUpdated {
+        state.drawRunCache.clear()
         updates.isAppearanceUpdated = true
-        DrawRunCache.shared.clear()
       }
     }
 
@@ -82,7 +82,8 @@ public final class NeovimStateContainer {
       let result = state.grids[gridID]!.apply(
         update: update,
         font: font,
-        appearance: appearance
+        appearance: appearance,
+        drawRunCache: state.drawRunCache
       )
       if let result {
         Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -281,7 +282,8 @@ public final class NeovimStateContainer {
                   drawRuns: .init(
                     layout: layout,
                     font: state.font,
-                    appearance: state.appearance
+                    appearance: state.appearance,
+                    drawRunCache: state.drawRunCache
                   ),
                   associatedWindow: nil,
                   isHidden: false,
@@ -704,7 +706,8 @@ public final class NeovimStateContainer {
                       lineUpdates: lineUpdates,
                       forRow: row,
                       font: state.font,
-                      appearance: state.appearance
+                      appearance: state.appearance,
+                      drawRunCache: state.drawRunCache
                     )
                   )
                 }
@@ -811,7 +814,8 @@ public final class NeovimStateContainer {
                 lineUpdates: lineUpdates,
                 forRow: row,
                 font: state.font,
-                appearance: state.appearance
+                appearance: state.appearance,
+                drawRunCache: state.drawRunCache
               )
             )
           }

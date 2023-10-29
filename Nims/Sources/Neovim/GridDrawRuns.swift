@@ -8,7 +8,7 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) {
+  public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache) {
     rowDrawRuns = []
     renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunCache: drawRunCache)
   }
@@ -16,7 +16,7 @@ public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) {
+  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
       .map { row, layout in
@@ -53,7 +53,7 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?, drawRunCache: DrawRunCache = .shared) {
+  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?, drawRunCache: DrawRunCache) {
     drawRuns = layout.parts
       .map { part in
         if let old {
