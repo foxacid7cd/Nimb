@@ -134,6 +134,8 @@ public struct NeovimState: Sendable {
 
   @StateActor
   public mutating func flushDrawRuns() {
+    DrawRunCache.shared.clear()
+
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }

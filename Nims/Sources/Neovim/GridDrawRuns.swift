@@ -8,15 +8,15 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  public init(layout: GridLayout, font: NimsFont, appearance: Appearance) {
+  public init(layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) {
     rowDrawRuns = []
-    renderDrawRuns(for: layout, font: font, appearance: appearance)
+    renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunCache: drawRunCache)
   }
 
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance) {
+  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
       .map { row, layout in
@@ -25,7 +25,8 @@ public struct GridDrawRuns: Sendable {
           layout: layout,
           font: font,
           appearance: appearance,
-          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
+          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
+          drawRunCache: drawRunCache
         )
       }
   }
@@ -52,7 +53,7 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?) {
+  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?, drawRunCache: DrawRunCache = .shared) {
     drawRuns = layout.parts
       .map { part in
         if let old {
@@ -74,13 +75,34 @@ public struct RowDrawRun: Sendable {
           }
         }
 
-        return .init(
-          text: part.text,
-          columnsCount: part.range.length,
-          highlightID: part.highlightID,
-          font: font,
-          appearance: appearance
-        )
+        if part.text.count <= 2 {
+          let key = DrawRunCache.Key(
+            text: part.text,
+            highlightID: part.highlightID
+          )
+          if var cached = drawRunCache[key] {
+            cached.boundingRange = 0 ..< part.range.length
+            return cached
+          } else {
+            let drawRun = DrawRun(
+              text: part.text,
+              columnsCount: part.range.length,
+              highlightID: part.highlightID,
+              font: font,
+              appearance: appearance
+            )
+            drawRunCache[key] = drawRun
+            return drawRun
+          }
+        } else {
+          return .init(
+            text: part.text,
+            columnsCount: part.range.length,
+            highlightID: part.highlightID,
+            font: font,
+            appearance: appearance
+          )
+        }
       }
   }
 

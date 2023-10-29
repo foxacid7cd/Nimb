@@ -27,7 +27,10 @@ public final class NeovimStateContainer {
     }
 
     func appearanceUpdated() {
-      updates.isAppearanceUpdated = true
+      if !updates.isAppearanceUpdated {
+        updates.isAppearanceUpdated = true
+        DrawRunCache.shared.clear()
+      }
     }
 
     func tablineTabpagesUpdated() {

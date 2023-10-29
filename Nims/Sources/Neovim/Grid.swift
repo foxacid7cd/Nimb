@@ -91,7 +91,7 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  public mutating func apply(update: Update, font: NimsFont, appearance: Appearance) -> UpdateResult? {
+  public mutating func apply(update: Update, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) -> UpdateResult? {
     switch update {
     case let .resize(integerSize):
       let copyColumnsCount = min(layout.columnsCount, integerSize.columnsCount)
@@ -107,7 +107,7 @@ public struct Grid: Sendable, Identifiable {
       layout = .init(cells: cells)
 
       let cursorDrawRun = drawRuns.cursorDrawRun
-      drawRuns = .init(layout: layout, font: font, appearance: appearance)
+      drawRuns = .init(layout: layout, font: font, appearance: appearance, drawRunCache: drawRunCache)
 
       if
         let cursorDrawRun,
@@ -152,7 +152,8 @@ public struct Grid: Sendable, Identifiable {
             layout: layout.rowLayouts[toRow],
             font: font,
             appearance: appearance,
-            old: drawRuns.rowDrawRuns[toRow]
+            old: drawRuns.rowDrawRuns[toRow],
+            drawRunCache: drawRunCache
           )
         }
 
@@ -175,7 +176,7 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
+      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunCache: drawRunCache)
       return .needsDisplay
 
     case let .cursor(style, position):
@@ -205,7 +206,7 @@ public struct Grid: Sendable, Identifiable {
   }
 
   @Sendable
-  public func applying(lineUpdates: [(originColumn: Int, cells: [Cell])], forRow row: Int, font: NimsFont, appearance: Appearance) -> LineUpdatesResult {
+  public func applying(lineUpdates: [(originColumn: Int, cells: [Cell])], forRow row: Int, font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) -> LineUpdatesResult {
     var dirtyRectangles = [IntegerRectangle]()
     var shouldUpdateCursorDrawRun = false
 
@@ -235,7 +236,8 @@ public struct Grid: Sendable, Identifiable {
       layout: rowLayout,
       font: font,
       appearance: appearance,
-      old: drawRuns.rowDrawRuns[row]
+      old: drawRuns.rowDrawRuns[row],
+      drawRunCache: drawRunCache
     )
     return .init(
       row: row,
@@ -247,8 +249,8 @@ public struct Grid: Sendable, Identifiable {
     )
   }
 
-  public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
-    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
+  public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance, drawRunCache: DrawRunCache = .shared) {
+    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, drawRunCache: drawRunCache)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
       drawRuns.cursorDrawRun = .init(
         layout: layout,
