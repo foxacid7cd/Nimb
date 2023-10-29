@@ -12,7 +12,7 @@ public final class Store: Sendable {
     self.state = state
     backgroundState = state
 
-    task = Task { @NeovimActor [weak self] in
+    task = Task { @StateActor [weak self] in
       do {
         for try await instanceStateUpdates in instance {
           guard let self else {
@@ -72,7 +72,7 @@ public final class Store: Sendable {
   }
 
   public func scheduleHideMsgShowsIfPossible() {
-    Task { @NeovimActor in
+    Task { @StateActor in
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
         hideMsgShowsTask = Task { [weak self] in
           do {
@@ -97,10 +97,10 @@ public final class Store: Sendable {
   private(set) var state: State
 
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
-  @NeovimActor
+  @StateActor
   private var backgroundState: State
   private var task: Task<Void, Never>?
-  @NeovimActor
+  @StateActor
   private var hideMsgShowsTask: Task<Void, Never>?
 }
 

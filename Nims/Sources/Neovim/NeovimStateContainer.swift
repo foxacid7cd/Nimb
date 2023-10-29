@@ -7,7 +7,7 @@ import Library
 import MessagePack
 import Overture
 
-@NeovimActor
+@StateActor
 public final class NeovimStateContainer {
   init(state: NeovimState = .init()) {
     self.state = state

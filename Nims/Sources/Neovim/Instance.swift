@@ -8,7 +8,7 @@ import Foundation
 import Library
 import MessagePack
 
-@NeovimActor
+@StateActor
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
@@ -38,29 +38,26 @@ public final class Instance: Sendable {
     let stateUpdatesChannel = stateUpdatesChannel
     let newFontChannel = newFontChannel
 
-    task = Task { [weak self] in
+    task = Task { [weak self, stateContainer] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
-        taskGroup.addTask { @NeovimActor in
+        taskGroup.addTask { @StateActor in
           var bufferedUIEvents = [UIEvent]()
 
           for try await uiEvents in api {
-            guard let self else {
-              return
-            }
             try Task.checkCancellation()
 
             bufferedUIEvents += uiEvents
 
             if let last = uiEvents.last, case .flush = last {
-              if self.state.debug.isUIEventsLoggingEnabled {
+              if stateContainer.state.debug.isUIEventsLoggingEnabled {
                 Loggers.uiEvents.info("\(String(customDumping: bufferedUIEvents))")
               }
 
-              let stateUpdates = await self.stateContainer.apply(uiEvents: bufferedUIEvents)
+              let stateUpdates = await stateContainer.apply(uiEvents: bufferedUIEvents)
               await stateUpdatesChannel.send(stateUpdates)
 
               if stateUpdates.isCursorUpdated {
-                self.resetCursorBlinkingTask()
+                self?.resetCursorBlinkingTask()
               }
 
               bufferedUIEvents = []
@@ -68,7 +65,7 @@ public final class Instance: Sendable {
           }
         }
 
-        taskGroup.addTask { @NeovimActor in
+        taskGroup.addTask { @StateActor in
           try process.run()
 
           let uiOptions: UIOptions = [
@@ -107,9 +104,9 @@ public final class Instance: Sendable {
       }
     }
 
-    newFontChannelTask = Task { [weak self] in
+    newFontChannelTask = Task { [stateUpdatesChannel, stateContainer, newFontChannel] in
       for await newFont in newFontChannel {
-        guard let self, !Task.isCancelled else {
+        guard !Task.isCancelled else {
           return
         }
 
@@ -160,7 +157,7 @@ public final class Instance: Sendable {
   }
 
   public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    Task { @NeovimActor in
+    Task { @StateActor in
       do {
         if
           let previousMouseMove,
@@ -186,7 +183,7 @@ public final class Instance: Sendable {
   }
 
   public nonisolated func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
-    Task { @NeovimActor in
+    Task { @StateActor in
       do {
         try await api.rpc.fastCallsTransaction(
           with: Array(
@@ -211,7 +208,7 @@ public final class Instance: Sendable {
   }
 
   public nonisolated func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    Task { @NeovimActor in
+    Task { @StateActor in
       do {
         try await api.nvimInputMouseFast(
           button: mouseButton.rawValue,
@@ -301,7 +298,7 @@ public final class Instance: Sendable {
   }
 
   public nonisolated func toggleUIEventsLogging() {
-    Task { @NeovimActor in
+    Task { @StateActor in
       stateContainer.state.debug.isUIEventsLoggingEnabled.toggle()
       await stateUpdatesChannel.send(.init(isDebugUpdated: true))
     }
@@ -318,7 +315,7 @@ public final class Instance: Sendable {
   private var newFontChannelTask: Task<Void, Never>?
 
   private func resetCursorBlinkingTask() {
-    Task { @NeovimActor in
+    Task { @StateActor in
       cursorBlinkingTask?.cancel()
 
       if !state.cursorBlinkingPhase {
@@ -336,7 +333,7 @@ public final class Instance: Sendable {
         let blinkOn = cursorStyle.blinkOn,
         blinkOn > 0
       {
-        cursorBlinkingTask = Task { @NeovimActor [weak self] in
+        cursorBlinkingTask = Task { @StateActor [weak self] in
           do {
             try await Task.sleep(for: .milliseconds(blinkWait))
 
@@ -365,7 +362,7 @@ public final class Instance: Sendable {
 extension Instance: AsyncSequence {
   public typealias Element = NeovimState.Updates
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<NeovimState.Updates, any Error>.AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<Element, any Error>.AsyncIterator {
     stateUpdatesChannel.makeAsyncIterator()
   }
 }

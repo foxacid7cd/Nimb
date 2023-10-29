@@ -151,14 +151,14 @@ public struct NeovimState: Sendable {
     return windowZIndexCounter
   }
 
-  @NeovimActor
+  @StateActor
   public mutating func flushDrawRuns() {
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }
   }
 
-  @NeovimActor
+  @StateActor
   public mutating func apply(newFont: NimsFont) -> Updates {
     font = newFont
     flushDrawRuns()

@@ -76,7 +76,7 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  @NeovimActor
+  @StateActor
   public mutating func apply(update: Update, font: NimsFont, appearance: Appearance) -> UpdateApplyResult? {
     switch update {
     case let .resize(integerSize):
@@ -235,7 +235,7 @@ public struct Grid: Sendable, Identifiable {
     )
   }
 
-  @NeovimActor
+  @StateActor
   public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
     drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
