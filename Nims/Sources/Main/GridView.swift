@@ -21,7 +21,7 @@ public final class GridView: NSView {
     grid.size * store.font.cellSize
   }
 
-  public func render(stateUpdates: State.Updates, gridUpdate: NeovimState.GridUpdate?) {
+  public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
     if stateUpdates.isFontUpdated {
       invalidateIntrinsicContentSize()
     }

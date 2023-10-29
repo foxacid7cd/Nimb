@@ -20,11 +20,26 @@ public struct Grid: Sendable, Identifiable {
     case clearCursor
   }
 
-  public enum UpdateApplyResult {
-    case dirtyRectangle(IntegerRectangle)
+  public enum UpdateResult: Sendable {
+    case dirtyRectangles([IntegerRectangle])
     case needsDisplay
+
+    public mutating func formUnion(_ other: Self) {
+      switch (self, other) {
+      case (.dirtyRectangles(var accumulator), let .dirtyRectangles(dirtyRectangles)):
+        accumulator += dirtyRectangles
+        self = .dirtyRectangles(accumulator)
+
+      case (_, .needsDisplay):
+        self = .needsDisplay
+
+      default:
+        break
+      }
+    }
   }
 
+  @PublicInit
   public struct LineUpdatesResult: Sendable {
     public var row: Int
     public var rowCells: [Cell]
@@ -76,8 +91,7 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  @StateActor
-  public mutating func apply(update: Update, font: NimsFont, appearance: Appearance) -> UpdateApplyResult? {
+  public mutating func apply(update: Update, font: NimsFont, appearance: Appearance) -> UpdateResult? {
     switch update {
     case let .resize(integerSize):
       let copyColumnsCount = min(layout.columnsCount, integerSize.columnsCount)
@@ -155,7 +169,7 @@ public struct Grid: Sendable, Identifiable {
         drawRuns.cursorDrawRun!.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
       }
 
-      return .dirtyRectangle(toRectangle)
+      return .dirtyRectangles([toRectangle])
 
     case .clear:
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
@@ -173,22 +187,20 @@ public struct Grid: Sendable, Identifiable {
         font: font,
         appearance: appearance
       )
-      return .dirtyRectangle(.init(
+      return .dirtyRectangles([.init(
         origin: position,
         size: .init(columnsCount: 1, rowsCount: 1)
-      ))
+      )])
 
     case .clearCursor:
       guard let cursorDrawRun = drawRuns.cursorDrawRun else {
         return nil
       }
       drawRuns.cursorDrawRun = nil
-      return .dirtyRectangle(
-        .init(
-          origin: cursorDrawRun.position,
-          size: .init(columnsCount: 1, rowsCount: 1)
-        )
-      )
+      return .dirtyRectangles([.init(
+        origin: cursorDrawRun.position,
+        size: .init(columnsCount: 1, rowsCount: 1)
+      )])
     }
   }
 
@@ -235,7 +247,6 @@ public struct Grid: Sendable, Identifiable {
     )
   }
 
-  @StateActor
   public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
     drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
     if let cursorDrawRun = drawRuns.cursorDrawRun {

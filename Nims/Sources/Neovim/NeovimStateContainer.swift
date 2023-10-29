@@ -76,20 +76,17 @@ public final class NeovimStateContainer {
       let font = state.font
       let appearance = state.appearance
 
-      var result: Grid.UpdateApplyResult?
-      Overture.update(&state.grids[gridID]!) { grid in
-        result = grid.apply(
-          update: update,
-          font: font,
-          appearance: appearance
-        )
-      }
+      let result = state.grids[gridID]!.apply(
+        update: update,
+        font: font,
+        appearance: appearance
+      )
       if let result {
         Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
           if gridUpdate == nil {
             gridUpdate = .dirtyRectangles([])
           }
-          gridUpdate!.apply(updateApplyResult: result)
+          gridUpdate!.formUnion(result)
         }
       }
     }

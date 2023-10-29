@@ -27,7 +27,7 @@ public struct NeovimState: Sendable {
     public var isCmdlinesUpdated: Bool = false
     public var isMsgShowsUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdates: IntKeyedDictionary<GridUpdate> = [:]
+    public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
@@ -46,25 +46,6 @@ public struct NeovimState: Sendable {
     public var isBuffersUpdated: Bool = false
     public var isSelectedTabpageUpdated: Bool = false
     public var isSelectedBufferUpdated: Bool = false
-  }
-
-  public enum GridUpdate: Sendable {
-    case dirtyRectangles([IntegerRectangle])
-    case needsDisplay
-
-    mutating func apply(updateApplyResult: Grid.UpdateApplyResult) {
-      switch (self, updateApplyResult) {
-      case (.dirtyRectangles(var accumulator), let .dirtyRectangle(dirtyRectangle)):
-        accumulator.append(dirtyRectangle)
-        self = .dirtyRectangles(accumulator)
-
-      case (_, .needsDisplay):
-        self = .needsDisplay
-
-      default:
-        break
-      }
-    }
   }
 
   public var debug: Debug = .init()

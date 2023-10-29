@@ -95,8 +95,8 @@ public final class Instance: Sendable {
             try await taskGroup.next()
           } catch is CancellationError {
           } catch {
-            stateUpdatesChannel.fail(error)
             taskGroup.cancelAll()
+            stateUpdatesChannel.fail(error)
           }
         }
 
