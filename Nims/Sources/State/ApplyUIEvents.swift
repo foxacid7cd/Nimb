@@ -640,11 +640,13 @@ public struct ApplyUIEvents: Reducer {
           applyHlAttrDefine(id: hlAttrDefine.id, rgbAttrs: hlAttrDefine.rgbAttrs)
         }
 
-        let results: [Grid.LineUpdatesResult] = if gridLines.count < 10 {
+        let results: [Grid.LineUpdatesResult] = if gridLines.count <= 10 {
           applyLineUpdates(for: gridLines)
         } else {
           await withTaskGroup(of: [Grid.LineUpdatesResult].self) { [state] taskGroup in
-            for gridLines in Array(gridLines).chunks(ofCount: 10) {
+            let gridLines = Array(gridLines)
+            let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 10)
+            for gridLines in gridLines.chunks(ofCount: chunkSize) {
               taskGroup.addTask {
                 var accumulator = [Grid.LineUpdatesResult]()
 

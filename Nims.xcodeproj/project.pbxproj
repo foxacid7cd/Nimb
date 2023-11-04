@@ -54,7 +54,6 @@
 		68B4AA6D2AEE696B00E1CA6C /* DrawRunCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B4AA6C2AEE696B00E1CA6C /* DrawRunCache.swift */; };
 		68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68BA57392AE9E7A9002E041B /* Metal.framework */; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
-		68BA573E2AE9F291002E041B /* NeovimStateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573D2AE9F291002E041B /* NeovimStateContainer.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4E3152AC21710009BFAF7 /* PopupmenuWindowController.swift */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
@@ -149,7 +148,6 @@
 		68B4AA6C2AEE696B00E1CA6C /* DrawRunCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawRunCache.swift; sourceTree = "<group>"; };
 		68BA57392AE9E7A9002E041B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
-		68BA573D2AE9F291002E041B /* NeovimStateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimStateContainer.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -204,6 +202,7 @@
 				6895C20C2AC42006006122D5 /* NSColorExtensions.swift */,
 				689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */,
 				6861FA6129B462B8002C3C0B /* NimsFont.swift */,
+				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				68F0D4F22AECFDFC000954FF /* Loggers.swift */,
 				689D9E2629B4FA7000345713 /* main.swift */,
@@ -277,13 +276,11 @@
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
 				68A8FF3A2AD29F650017C28D /* MsgShow.swift */,
 				68A8FF3D2AD29F650017C28D /* Popupmenu.swift */,
-				68BA573D2AE9F291002E041B /* NeovimStateContainer.swift */,
 				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */,
 				68A8FF442AD29F650017C28D /* Tabline.swift */,
 				68A8FF452AD29F650017C28D /* UIOptions.swift */,
 				68A8FF392AD29F650017C28D /* Windows.swift */,
-				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 			);
 			path = Neovim;
 			sourceTree = "<group>";
@@ -502,7 +499,6 @@
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
-				68BA573E2AE9F291002E041B /* NeovimStateContainer.swift in Sources */,
 				68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68D4E3162AC21710009BFAF7 /* PopupmenuWindowController.swift in Sources */,

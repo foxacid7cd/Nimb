@@ -20,6 +20,7 @@ public struct UIEventFile: GeneratableFile {
         try .init {
           "import MessagePack" as DeclSyntax
           "import CasePaths" as DeclSyntax
+          "import Library" as DeclSyntax
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
@@ -45,14 +46,14 @@ public struct UIEventFile: GeneratableFile {
           }
 
           try ExtensionDeclSyntax("public extension Array<UIEvent>") {
-            try InitializerDeclSyntax("init(rawRedrawNotificationParameters: [Value]) throws") {
+            try InitializerDeclSyntax("init(rawRedrawNotificationParameters: some Sequence<Value>) throws") {
               "var accumulator = [UIEvent]()" as DeclSyntax
 
               try ForStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
                 StmtSyntax(
                   """
                   guard let rawParameter = (/Value.array).extract(from: rawParameter) else {
-                    throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                    throw Failure(rawRedrawNotificationParameters)
                   }
                   """
                 )
@@ -60,7 +61,7 @@ public struct UIEventFile: GeneratableFile {
                 StmtSyntax(
                   """
                   guard let uiEventName = rawParameter.first.flatMap(/Value.string) else {
-                    throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                    throw Failure(rawRedrawNotificationParameters)
                   }
                   """
                 )
@@ -75,7 +76,7 @@ public struct UIEventFile: GeneratableFile {
                           StmtSyntax(
                             """
                             guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
-                              throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                              throw Failure(rawRedrawNotificationParameters)
                             }
                             """
                           )
@@ -105,7 +106,7 @@ public struct UIEventFile: GeneratableFile {
                           StmtSyntax(
                             """
                             guard \(raw: guardConditions) else {
-                              throw UIEventsDecodingFailure(rawRedrawNotificationParameters)
+                              throw Failure(rawRedrawNotificationParameters)
                             }
                             """
                           )
@@ -145,7 +146,7 @@ public struct UIEventFile: GeneratableFile {
                     }
 
                     SwitchCaseSyntax("default:") {
-                      "throw UIEventsDecodingFailure(rawRedrawNotificationParameters)" as StmtSyntax
+                      "throw Failure(rawRedrawNotificationParameters)" as StmtSyntax
                     }
                   }
                 }
@@ -156,19 +157,6 @@ public struct UIEventFile: GeneratableFile {
               )
             }
           }
-          DeclSyntax(
-            """
-            public struct UIEventsDecodingFailure: Error {
-              public init(_ rawRedrawNotificationParameters: [Value], lineNumber: UInt = #line) {
-                self.rawRedrawNotificationParameters = rawRedrawNotificationParameters
-                self.lineNumber = lineNumber
-              }
-
-              public var rawRedrawNotificationParameters: [Value]
-              public var lineNumber: UInt
-            }
-            """
-          )
         }
       }
     }

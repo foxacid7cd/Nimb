@@ -24,7 +24,7 @@ extension API: AsyncSequence {
     }
 
     public mutating func next() async throws -> [UIEvent]? {
-      var accumulator = [UIEvent]()
+      var rawRedrawNotificationParameters = [Value]()
 
       while true {
         guard let notifications = try await rpcIterator.next() else {
@@ -38,18 +38,43 @@ extension API: AsyncSequence {
             throw Failure("Unknown neovim API method \(notification.method)")
           }
 
-          let uiEvents = try [UIEvent](
-            rawRedrawNotificationParameters: notification.parameters
-          )
-          accumulator += uiEvents
+          rawRedrawNotificationParameters += notification.parameters
         }
 
-        if !accumulator.isEmpty {
-          return accumulator
+        if !rawRedrawNotificationParameters.isEmpty {
+          return try await makeUIEvents(
+            rawRedrawNotificationParameters: rawRedrawNotificationParameters
+          )
         }
       }
     }
 
     private var rpcIterator: RPC<Target>.AsyncIterator
+
+    private func makeUIEvents(rawRedrawNotificationParameters: [Value]) async throws -> [UIEvent] {
+      if rawRedrawNotificationParameters.count <= 10 {
+        try [UIEvent](rawRedrawNotificationParameters: rawRedrawNotificationParameters)
+      } else {
+        try await withThrowingTaskGroup(of: (index: Int, uiEvents: [UIEvent]).self) { taskGroup in
+          let chunkSize = rawRedrawNotificationParameters.optimalChunkSize(preferredChunkSize: 10)
+          let chunks = rawRedrawNotificationParameters.chunks(ofCount: chunkSize)
+          for (index, rawRedrawNotificationParameters) in chunks.enumerated() {
+            taskGroup.addTask {
+              try (
+                index: index,
+                uiEvents: [UIEvent](rawRedrawNotificationParameters: rawRedrawNotificationParameters)
+              )
+            }
+          }
+
+          var accumulator = [[UIEvent]?](repeating: nil, count: chunks.count)
+          for try await (index, uiEvents) in taskGroup {
+            accumulator[index] = uiEvents
+          }
+
+          return accumulator.flatMap { $0! }
+        }
+      }
+    }
   }
 }
