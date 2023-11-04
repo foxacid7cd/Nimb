@@ -91,9 +91,7 @@ public final class PopupmenuWindowController: NSWindowController {
           size: gridSize
         )
 
-        Task {
-          await store.instance.reportPumBounds(gridFrame: gridFrame)
-        }
+        store.reportPumBounds(gridFrame: gridFrame)
 
         let parentWindow = switch popupmenu.anchor {
         case .grid:

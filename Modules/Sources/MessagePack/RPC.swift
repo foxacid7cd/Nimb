@@ -95,7 +95,7 @@ extension RPC: AsyncSequence {
 
       while true {
         guard let messages = try await messageBatchesIterator.next() else {
-          return nil
+          return accumulator.isEmpty ? nil : accumulator
         }
 
         try Task.checkCancellation()

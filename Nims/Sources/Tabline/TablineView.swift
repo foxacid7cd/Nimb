@@ -224,10 +224,8 @@ final class TablineView: NSView {
         }
       }
       itemView.isLast = false
-      itemView.clicked = {
-        Task {
-          await self.store.instance.reportTablineBufferSelected(withID: buffer.id)
-        }
+      itemView.clicked = { [store] in
+        store.reportTablineBufferSelected(withID: buffer.id)
       }
       itemView.render()
       buffersStackView.addArrangedSubview(itemView)
@@ -240,8 +238,6 @@ final class TablineView: NSView {
   private func reloadTabpages() {
     tabsStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
-
-    let instance = store.instance
 
     guard let tabline = store.state.tabline else {
       return
@@ -264,10 +260,8 @@ final class TablineView: NSView {
         }
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
-      itemView.clicked = {
-        Task {
-          await instance.reportTablineTabpageSelected(withID: tabpage.id)
-        }
+      itemView.clicked = { [store] in
+        store.reportTablineTabpageSelected(withID: tabpage.id)
       }
       itemView.render()
       tabsStackView.addArrangedSubview(itemView)

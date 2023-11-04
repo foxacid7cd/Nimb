@@ -96,9 +96,7 @@ final class MainViewController: NSViewController {
     {
       reportedOuterGridSize = outerGridSizeNeeded
 
-      Task {
-        await store.instance.report(gridWithID: Grid.OuterID, changedSizeTo: outerGridSizeNeeded)
-      }
+      store.report(gridWithID: Grid.OuterID, changedSizeTo: outerGridSizeNeeded)
     }
   }
 

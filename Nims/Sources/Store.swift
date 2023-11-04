@@ -79,8 +79,6 @@ public final class Store: Sendable {
     instanceTask?.cancel()
   }
 
-  public let instance: Instance
-
   public private(set) var state: State
 
   public var font: NimsFont {
@@ -113,6 +111,60 @@ public final class Store: Sendable {
           } catch {}
         }
       }
+    }
+  }
+
+  public nonisolated func report(keyPress: KeyPress) {
+    Task { @StateActor in
+      await instance.report(keyPress: keyPress)
+    }
+  }
+
+  public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
+    instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
+  }
+
+  public nonisolated func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
+    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
+  }
+
+  public nonisolated func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
+    instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
+  }
+
+  public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
+    Task { @StateActor in
+      await instance.reportPopupmenuItemSelected(atIndex: index)
+    }
+  }
+
+  public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
+    Task { @StateActor in
+      await instance.reportTablineBufferSelected(withID: id)
+    }
+  }
+
+  public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
+    Task { @StateActor in
+      await instance.reportTablineTabpageSelected(withID: id)
+    }
+  }
+
+  public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
+    Task { @StateActor in
+      await instance.report(gridWithID: id, changedSizeTo: size)
+    }
+  }
+
+  public nonisolated func reportPumBounds(gridFrame: CGRect) {
+    Task { @StateActor in
+      await instance.reportPumBounds(gridFrame: gridFrame)
+    }
+  }
+
+  public nonisolated func reportPaste(text: String) {
+    Task { @StateActor in
+      await instance.reportPaste(text: text)
     }
   }
 
@@ -152,6 +204,7 @@ public final class Store: Sendable {
     }
   }
 
+  private let instance: Instance
   @StateActor private var backgroundState: State
   private let reducerChannel = AsyncThrowingChannel<Reducer, any Error>()
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()

@@ -86,10 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       let keyPress = KeyPress(event: event)
-      Task {
-        await store.instance.report(keyPress: keyPress)
-      }
-
+      store.report(keyPress: keyPress)
       store.scheduleHideMsgShowsIfPossible()
 
       return nil

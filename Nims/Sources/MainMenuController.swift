@@ -96,9 +96,7 @@ final class MainMenuController: NSObject {
       return
     }
 
-    Task {
-      await store.instance.reportPaste(text: text)
-    }
+    store.reportPaste(text: text)
   }
 
   @objc private func handleToggleUIEventsLogging() {

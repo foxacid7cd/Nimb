@@ -204,7 +204,7 @@ public final class GridView: NSView {
     }
 
     if let direction, count > 0 {
-      store.instance.reportScrollWheel(
+      store.reportScrollWheel(
         with: direction,
         modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
         gridID: gridID,
@@ -217,7 +217,7 @@ public final class GridView: NSView {
   }
 
   public func reportMouseMove(for event: NSEvent) {
-    store.instance.reportMouseMove(
+    store.reportMouseMove(
       modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
       gridID: gridID,
       point: point(for: event)
@@ -256,14 +256,13 @@ public final class GridView: NSView {
   }
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
-    store.instance.report(
+    store.report(
       mouseButton: mouseButton,
       action: action,
       modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
       gridID: gridID,
       point: point(for: event)
     )
-
     store.scheduleHideMsgShowsIfPossible()
   }
 }
