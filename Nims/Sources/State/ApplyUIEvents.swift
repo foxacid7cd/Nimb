@@ -25,7 +25,6 @@ public struct ApplyUIEvents: Reducer {
 
     func appearanceUpdated() {
       if !updates.isAppearanceUpdated {
-        state.drawRunCache.clear()
         updates.isAppearanceUpdated = true
       }
     }
@@ -79,8 +78,7 @@ public struct ApplyUIEvents: Reducer {
       let result = state.grids[gridID]!.apply(
         update: update,
         font: font,
-        appearance: appearance,
-        drawRunCache: state.drawRunCache
+        appearance: appearance
       )
       if let result {
         Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -279,8 +277,7 @@ public struct ApplyUIEvents: Reducer {
                   drawRuns: .init(
                     layout: layout,
                     font: state.font,
-                    appearance: state.appearance,
-                    drawRunCache: state.drawRunCache
+                    appearance: state.appearance
                   ),
                   associatedWindow: nil,
                   isHidden: false,
@@ -705,8 +702,7 @@ public struct ApplyUIEvents: Reducer {
                       lineUpdates: lineUpdates,
                       forRow: row,
                       font: state.font,
-                      appearance: state.appearance,
-                      drawRunCache: state.drawRunCache
+                      appearance: state.appearance
                     )
                   )
                 }
@@ -813,8 +809,7 @@ public struct ApplyUIEvents: Reducer {
                 lineUpdates: lineUpdates,
                 forRow: row,
                 font: state.font,
-                appearance: state.appearance,
-                drawRunCache: state.drawRunCache
+                appearance: state.appearance
               )
             )
           }

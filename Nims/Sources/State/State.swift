@@ -49,7 +49,6 @@ public struct State: Sendable {
   }
 
   public var debug: Debug = .init()
-  public var drawRunCache: DrawRunCache = .init(maximumCount: 100)
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
   public var font: NimsFont = .init()
@@ -135,10 +134,8 @@ public struct State: Sendable {
   }
 
   public mutating func flushDrawRuns() {
-    drawRunCache.clear()
-
     for gridID in grids.keys {
-      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance, drawRunCache: drawRunCache)
+      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }
   }
 }
