@@ -35,11 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       .init(columnsCount: 110, rowsCount: 34)
     }
-
     let instance = await Instance(
       neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
       initialOuterGridSize: initialOuterGridSize
     )
+
     let font: NimsFont = if
       let name = UserDefaults.standard.value(forKey: "fontName") as? String,
       let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,

@@ -7,15 +7,12 @@ import Library
 import MessagePack
 import Overture
 
-@StateActor
-public final class NeovimStateContainer {
-  init(state: State) {
-    self.state = state
-  }
+@PublicInit
+public struct ApplyUIEvents: Reducer {
+  public var uiEvents: [UIEvent]
 
-  public var state: State
-
-  public func apply(uiEvents: [UIEvent]) async -> State.Updates {
+  public func reduce(state: State) async throws -> (state: State, updates: State.Updates) {
+    var state = state
     var updates = State.Updates()
 
     func modeUpdated() {
@@ -916,6 +913,6 @@ public final class NeovimStateContainer {
       }
     }
 
-    return updates
+    return (state, updates)
   }
 }

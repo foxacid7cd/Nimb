@@ -35,10 +35,7 @@ public final class Instance: Sendable {
     let api = API(rpc)
     self.api = api
 
-    let stateUpdatesChannel = stateUpdatesChannel
-    let newFontChannel = newFontChannel
-
-    task = Task { [weak self, stateContainer] in
+    task = Task { [uiEventsChannel] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @StateActor in
           var bufferedUIEvents = [UIEvent]()
@@ -49,16 +46,7 @@ public final class Instance: Sendable {
             bufferedUIEvents += uiEvents
 
             if let last = uiEvents.last, case .flush = last {
-              if stateContainer.state.debug.isUIEventsLoggingEnabled {
-                Loggers.uiEvents.info("\(String(customDumping: bufferedUIEvents))")
-              }
-
-              let stateUpdates = await stateContainer.apply(uiEvents: bufferedUIEvents)
-              await stateUpdatesChannel.send(stateUpdates)
-
-              if stateUpdates.isCursorUpdated {
-                self?.resetCursorBlinkingTask()
-              }
+              await uiEventsChannel.send(bufferedUIEvents)
 
               bufferedUIEvents = []
             }
@@ -96,32 +84,17 @@ public final class Instance: Sendable {
           } catch is CancellationError {
           } catch {
             taskGroup.cancelAll()
-            stateUpdatesChannel.fail(error)
+            uiEventsChannel.fail(error)
           }
         }
 
-        stateUpdatesChannel.finish()
+        uiEventsChannel.finish()
       }
     }
-
-    newFontChannelTask = Task { [stateUpdatesChannel, stateContainer, newFontChannel] in
-      for await newFont in newFontChannel {
-        guard !Task.isCancelled else {
-          return
-        }
-
-        let updates = stateContainer.state.apply(newFont: newFont)
-        await stateUpdatesChannel.send(updates)
-      }
-    }
-
-    resetCursorBlinkingTask()
   }
 
   deinit {
     task?.cancel()
-    cursorBlinkingTask?.cancel()
-    newFontChannelTask?.cancel()
   }
 
   public enum MouseButton: String, Sendable {
@@ -141,14 +114,6 @@ public final class Instance: Sendable {
     case down
     case left
     case right
-  }
-
-  public var state: NeovimState {
-    stateContainer.state
-  }
-
-  public func set(font: NimsFont) async {
-    await newFontChannel.send(font)
   }
 
   public func report(keyPress: KeyPress) async {
@@ -257,112 +222,25 @@ public final class Instance: Sendable {
     try? await api.nvimPasteFast(data: text, crlf: false, phase: -1)
   }
 
-  public func reportCopy() async -> String? {
-    guard let mode = state.mode, let modeInfo = state.modeInfo else {
-      return nil
-    }
-
-    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
-
-    switch shortName?.lowercased().first {
-    case "i",
-         "n",
-         "o",
-         "r",
-         "s",
-         "v":
-      do {
-        return try await api.nvimExecLua(
-          code: "return require('nims').buf_text_for_copy()",
-          args: []
-        )
-        .map(/Value.string)
-
-      } catch {
-        assertionFailure(error)
-        return nil
-      }
-
-    case "c":
-      if let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel, let cmdline = state.cmdlines.dictionary[lastCmdlineLevel] {
-        return cmdline.contentParts
-          .map(\.text)
-          .joined()
-      }
-
-    default:
-      break
-    }
-
-    return nil
+  public func bufTextForCopy() async -> String? {
+    try? await api.nvimExecLua(
+      code: "return require('nims').buf_text_for_copy()",
+      args: []
+    )
+    .map(/Value.string)
   }
 
-  public nonisolated func toggleUIEventsLogging() {
-    Task { @StateActor in
-      stateContainer.state.debug.isUIEventsLoggingEnabled.toggle()
-      await stateUpdatesChannel.send(.init(isDebugUpdated: true))
-    }
-  }
-
-  private let stateContainer = NeovimStateContainer()
   private let process: Process
   private let api: API<ProcessChannel>
-  private let stateUpdatesChannel = AsyncThrowingChannel<NeovimState.Updates, any Error>()
-  private let newFontChannel = AsyncChannel<NimsFont>()
+  private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
   private var task: Task<Void, Never>?
-  private var cursorBlinkingTask: Task<Void, Never>?
-  private var newFontChannelTask: Task<Void, Never>?
-
-  private func resetCursorBlinkingTask() {
-    Task { @StateActor in
-      cursorBlinkingTask?.cancel()
-
-      if !state.cursorBlinkingPhase {
-        stateContainer.state.cursorBlinkingPhase = true
-        await stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
-      }
-
-      if
-        state.cmdlines.dictionary.isEmpty,
-        let cursorStyle = state.currentCursorStyle,
-        let blinkWait = cursorStyle.blinkWait,
-        blinkWait > 0,
-        let blinkOff = cursorStyle.blinkOff,
-        blinkOff > 0,
-        let blinkOn = cursorStyle.blinkOn,
-        blinkOn > 0
-      {
-        cursorBlinkingTask = Task { @StateActor [weak self] in
-          do {
-            try await Task.sleep(for: .milliseconds(blinkWait))
-
-            while true {
-              guard let self else {
-                return
-              }
-
-              stateContainer.state.cursorBlinkingPhase = false
-              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
-
-              try await Task.sleep(for: .milliseconds(blinkOff))
-
-              stateContainer.state.cursorBlinkingPhase = true
-              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
-
-              try await Task.sleep(for: .milliseconds(blinkOn))
-            }
-          } catch {}
-        }
-      }
-    }
-  }
 }
 
 extension Instance: AsyncSequence {
-  public typealias Element = NeovimState.Updates
+  public typealias Element = [UIEvent]
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<Element, any Error>.AsyncIterator {
-    stateUpdatesChannel.makeAsyncIterator()
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<[UIEvent], any Error>.AsyncIterator {
+    uiEventsChannel.makeAsyncIterator()
   }
 }

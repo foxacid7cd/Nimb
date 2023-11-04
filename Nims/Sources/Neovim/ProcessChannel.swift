@@ -3,17 +3,17 @@
 import Foundation
 import MessagePack
 
-struct ProcessChannel: Channel {
-  init(_ process: Foundation.Process) {
+public struct ProcessChannel: Channel {
+  public init(_ process: Foundation.Process) {
     process.standardOutput = standardOutput
     process.standardInput = standardInput
   }
 
-  var dataBatches: AsyncStream<Data> {
+  public var dataBatches: AsyncStream<Data> {
     standardOutput.fileHandleForReading.dataBatches
   }
 
-  func write(_ data: Data) async throws {
+  public func write(_ data: Data) async throws {
     try standardInput.fileHandleForWriting
       .write(contentsOf: data)
   }

@@ -77,15 +77,13 @@ final class MainMenuController: NSObject {
       currentFont,
       toSize: newFontSize
     )
-    Task {
-      await store.instance.set(font: .init(newFont))
-    }
+    store.set(font: .init(newFont))
     UserDefaults.standard.setValue(newFontSize, forKey: "fontSize")
   }
 
   @objc private func handleCopy() {
     Task {
-      if let text = await store.instance.reportCopy() {
+      if let text = await store.reportCopy() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
@@ -104,7 +102,7 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleToggleUIEventsLogging() {
-    store.instance.toggleUIEventsLogging()
+    store.toggleUIEventsLogging()
   }
 }
 
@@ -115,9 +113,7 @@ extension MainMenuController: NSFontChanging {
     }
 
     let newFont = sender.convert(store.font.nsFont())
-    Task {
-      await store.instance.set(font: .init(newFont))
-    }
+    store.set(font: .init(newFont))
     UserDefaults.standard.setValue(newFont.fontName, forKey: "fontName")
     UserDefaults.standard.setValue(newFont.pointSize, forKey: "fontSize")
   }

@@ -8,60 +8,80 @@ import Library
 public final class Store: Sendable {
   public init(instance: Instance, font: NimsFont) {
     self.instance = instance
-    let state = State(instanceState: .init(font: font))
-    self.state = state
-    backgroundState = state
 
-    task = Task { @StateActor [weak self] in
+    let state = State(font: font)
+    backgroundState = state
+    self.state = state
+
+    reducerChannelTask = Task { @StateActor [weak self, reducerChannel] in
       do {
-        for try await instanceStateUpdates in instance {
+        for try await reducer in reducerChannel {
           guard let self else {
             return
           }
-
           try Task.checkCancellation()
 
-          let state = instance.state
-          self.backgroundState.instanceState = state
+          var (state, updates) = try await reducer.reduce(state: self.backgroundState)
 
-          var isMsgShowsDismissed: Bool?
-          if instanceStateUpdates.isMsgShowsUpdated, !self.backgroundState.msgShows.isEmpty {
+          if updates.isCursorUpdated {
+            self.resetCursorBlinkingTask()
+          }
+
+          if updates.isMsgShowsUpdated, !state.msgShows.isEmpty {
             self.hideMsgShowsTask?.cancel()
             self.hideMsgShowsTask = nil
 
-            self.backgroundState.isMsgShowsDismissed = false
-            isMsgShowsDismissed = false
+            state.isMsgShowsDismissed = false
+            updates.isMsgShowsDismissedUpdated = true
           }
 
-          Task { @MainActor [isMsgShowsDismissed] in
-            self.state.instanceState = state
-            if let isMsgShowsDismissed {
-              self.state.isMsgShowsDismissed = isMsgShowsDismissed
-            }
-            await self.stateUpdatesChannel.send(
-              .init(
-                instanceStateUpdates: instanceStateUpdates,
-                isMsgShowsDismissedUpdated: isMsgShowsDismissed != nil
-              )
-            )
+          self.backgroundState = state
+          Task { @MainActor [state, updates] in
+            self.state = state
+            await self.stateUpdatesChannel.send(updates)
           }
         }
 
         self?.stateUpdatesChannel.finish()
-
       } catch is CancellationError {
       } catch {
         self?.stateUpdatesChannel.fail(error)
       }
     }
+
+    instanceTask = Task { @StateActor [weak self, reducerChannel] in
+      do {
+        for try await uiEvents in instance {
+          guard let self else {
+            return
+          }
+          try Task.checkCancellation()
+
+          if backgroundState.debug.isUIEventsLoggingEnabled {
+            Loggers.uiEvents.info("\(String(customDumping: uiEvents))")
+          }
+
+          await reducerChannel.send(
+            ApplyUIEvents(uiEvents: uiEvents)
+          )
+        }
+
+        reducerChannel.finish()
+      } catch is CancellationError {
+      } catch {
+        reducerChannel.fail(error)
+      }
+    }
   }
 
   deinit {
-    task?.cancel()
-    hideMsgShowsTask?.cancel()
+    reducerChannelTask?.cancel()
+    instanceTask?.cancel()
   }
 
   public let instance: Instance
+
+  public private(set) var state: State
 
   public var font: NimsFont {
     state.font
@@ -71,7 +91,13 @@ public final class Store: Sendable {
     state.appearance
   }
 
-  public func scheduleHideMsgShowsIfPossible() {
+  public nonisolated func set(font: NimsFont) {
+    Task { @StateActor in
+      await reducerChannel.send(Action.setFont(font))
+    }
+  }
+
+  public nonisolated func scheduleHideMsgShowsIfPossible() {
     Task { @StateActor in
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
         hideMsgShowsTask = Task { [weak self] in
@@ -83,25 +109,99 @@ public final class Store: Sendable {
             }
 
             hideMsgShowsTask = nil
-            backgroundState.isMsgShowsDismissed = true
-            Task { @MainActor in
-              self.state.isMsgShowsDismissed = true
-              await self.stateUpdatesChannel.send(.init(isMsgShowsDismissedUpdated: true))
-            }
+            await reducerChannel.send(Action.setIsMsgShowsDismissed(true))
           } catch {}
         }
       }
     }
   }
 
-  private(set) var state: State
+  public func reportCopy() async -> String? {
+    guard let mode = state.mode, let modeInfo = state.modeInfo else {
+      return nil
+    }
 
+    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+
+    switch shortName?.lowercased().first {
+    case "i",
+         "n",
+         "o",
+         "r",
+         "s",
+         "v":
+      return await instance.bufTextForCopy()
+
+    case "c":
+      if let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel, let cmdline = state.cmdlines.dictionary[lastCmdlineLevel] {
+        return cmdline.contentParts
+          .map(\.text)
+          .joined()
+      }
+
+    default:
+      break
+    }
+
+    return nil
+  }
+
+  public nonisolated func toggleUIEventsLogging() {
+    Task { @StateActor in
+      await reducerChannel.send(Action.toggleDebugUIEventsLogging)
+    }
+  }
+
+  @StateActor private var backgroundState: State
+  private let reducerChannel = AsyncThrowingChannel<Reducer, any Error>()
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
-  @StateActor
-  private var backgroundState: State
-  private var task: Task<Void, Never>?
-  @StateActor
-  private var hideMsgShowsTask: Task<Void, Never>?
+  private var reducerChannelTask: Task<Void, Never>?
+  private var instanceTask: Task<Void, Never>?
+  @StateActor private var cursorBlinkingTask: Task<Void, Never>?
+  @StateActor private var hideMsgShowsTask: Task<Void, Never>?
+
+  private nonisolated func resetCursorBlinkingTask() {
+    Task { @StateActor [reducerChannel] in
+      cursorBlinkingTask?.cancel()
+
+      if !backgroundState.cursorBlinkingPhase {
+        await reducerChannel.send(Action.setCursorBlinkingPhase(true))
+      }
+
+      if
+        backgroundState.cmdlines.dictionary.isEmpty,
+        let cursorStyle = backgroundState.currentCursorStyle,
+        let blinkWait = cursorStyle.blinkWait,
+        blinkWait > 0,
+        let blinkOff = cursorStyle.blinkOff,
+        blinkOff > 0,
+        let blinkOn = cursorStyle.blinkOn,
+        blinkOn > 0
+      {
+        cursorBlinkingTask = Task { @StateActor [weak self] in
+          do {
+            try await Task.sleep(for: .milliseconds(blinkWait))
+
+            while true {
+              guard let self else {
+                return
+              }
+
+              backgroundState.cursorBlinkingPhase = false
+              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
+
+              try await Task.sleep(for: .milliseconds(blinkOff))
+
+              backgroundState.cursorBlinkingPhase = true
+              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
+
+              try await Task.sleep(for: .milliseconds(blinkOn))
+            }
+          } catch {}
+        }
+      }
+    }
+  }
 }
 
 extension Store: AsyncSequence {

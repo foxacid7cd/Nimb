@@ -8,7 +8,7 @@ import MessagePack
 import Overture
 
 @PublicInit
-public struct NeovimState: Sendable {
+public struct State: Sendable {
   @PublicInit
   public struct Debug: Sendable {
     public var isUIEventsLoggingEnabled: Bool = false
@@ -32,6 +32,7 @@ public struct NeovimState: Sendable {
     public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
+    public var isMsgShowsDismissedUpdated: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
@@ -64,6 +65,7 @@ public struct NeovimState: Sendable {
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
+  public var isMsgShowsDismissed: Bool = false
 
   public var outerGrid: Grid? {
     get {
@@ -138,11 +140,5 @@ public struct NeovimState: Sendable {
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance, drawRunCache: drawRunCache)
     }
-  }
-
-  public mutating func apply(newFont: NimsFont) -> Updates {
-    font = newFont
-    flushDrawRuns()
-    return .init(isFontUpdated: true)
   }
 }
