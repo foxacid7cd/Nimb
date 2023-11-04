@@ -71,6 +71,10 @@ public struct ApplyUIEvents: Reducer {
       updates.updatedLayoutGridIDs.insert(gridID)
     }
 
+    func updatedGridsOrder() {
+      updates.isGridsOrderUpdated = true
+    }
+
     func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
       let font = state.font
       let appearance = state.appearance
@@ -334,6 +338,8 @@ public struct ApplyUIEvents: Reducer {
           let origin = IntegerPoint(column: originColumn, row: originRow)
           let size = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
 
+          let previousOrderedGridIDs = state.orderedGridIDs()
+
           let zIndex = state.nextWindowZIndex()
           state.grids[gridID]!.associatedWindow = .plain(
             .init(
@@ -349,6 +355,10 @@ public struct ApplyUIEvents: Reducer {
             apply(update: .resize(size), toGridWithID: gridID)
           }
 
+          if previousOrderedGridIDs != state.orderedGridIDs() {
+            updatedGridsOrder()
+          }
+
         case let .winFloatPos(
           gridID,
           windowID,
@@ -360,6 +370,8 @@ public struct ApplyUIEvents: Reducer {
           _
         ):
           let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
+
+          let previousOrderedGridIDs = state.orderedGridIDs()
 
           let zIndex = state.nextWindowZIndex()
           state.grids[gridID]!.associatedWindow = .floating(
@@ -376,6 +388,10 @@ public struct ApplyUIEvents: Reducer {
           state.grids[gridID]!.isHidden = false
 
           updatedLayout(forGridWithID: gridID)
+
+          if previousOrderedGridIDs != state.orderedGridIDs() {
+            updatedGridsOrder()
+          }
 
         case let .winHide(gridID):
           state.grids[gridID]?.isHidden = true

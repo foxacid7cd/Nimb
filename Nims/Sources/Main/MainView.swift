@@ -204,7 +204,7 @@ class MainView: NSView {
       }
     }
 
-    if !updatedLayoutGridIDs.isEmpty {
+    if stateUpdates.isGridsOrderUpdated {
       sortSubviews(
         { firstView, secondView, _ in
           let firstOrdinal = (firstView as! GridView).zIndex

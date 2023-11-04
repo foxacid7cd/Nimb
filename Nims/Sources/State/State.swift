@@ -26,6 +26,7 @@ public struct State: Sendable {
     public var isCmdlinesUpdated: Bool = false
     public var isMsgShowsUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
+    public var isGridsOrderUpdated: Bool = false
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isPopupmenuUpdated: Bool = false
@@ -131,6 +132,19 @@ public struct State: Sendable {
   public mutating func nextWindowZIndex() -> Int {
     windowZIndexCounter += 1
     return windowZIndexCounter
+  }
+
+  public func orderedGridIDs() -> [Grid.ID] {
+    grids
+      .map { $1 }
+      .sorted(by: { first, second in
+        if first.zIndex != second.zIndex {
+          first.zIndex < second.zIndex
+        } else {
+          first.id < second.id
+        }
+      })
+      .map(\.id)
   }
 
   public mutating func flushDrawRuns() {
