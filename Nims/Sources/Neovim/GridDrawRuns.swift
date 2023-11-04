@@ -53,35 +53,63 @@ public struct GridDrawRuns: Sendable {
 @PublicInit
 public struct RowDrawRun: Sendable {
   public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?) {
-    drawRuns = layout.parts
-      .map { part in
-        if let old {
-          for oldDrawRun in old.drawRuns {
-            guard
-              part.highlightID == oldDrawRun.highlightID,
-              let range = oldDrawRun.text.range(of: part.text),
-              range.lowerBound == oldDrawRun.text.startIndex || range.upperBound == oldDrawRun.text.endIndex
-            else {
+    var drawRuns = [DrawRun]()
+    var previousReusedOldDrawRunIndex: Int?
+    for part in layout.parts {
+      var reusedDrawRun: DrawRun?
+
+      if let old {
+        if 
+          let index = previousReusedOldDrawRunIndex.map({ $0 + 1 }),
+          index < old.drawRuns.endIndex,
+          let drawRun = reuseDrawRunIfFits(atIndex: index)
+        {
+          reusedDrawRun = drawRun
+          previousReusedOldDrawRunIndex = index
+        } else {
+          for index in old.drawRuns.indices {
+            if let previousReusedOldDrawRunIndex, index == previousReusedOldDrawRunIndex + 1 {
               continue
             }
 
-            let lowerBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.lowerBound)
-            let upperBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.upperBound)
-
-            var drawRun = oldDrawRun
-            drawRun.boundingRange = lowerBound ..< upperBound
-            return drawRun
+            if let drawRun = reuseDrawRunIfFits(atIndex: index) {
+              reusedDrawRun = drawRun
+              previousReusedOldDrawRunIndex = index
+              break
+            }
           }
         }
 
-        return .init(
-          text: part.text,
-          columnsCount: part.range.length,
-          highlightID: part.highlightID,
-          font: font,
-          appearance: appearance
-        )
+        func reuseDrawRunIfFits(atIndex index: Int) -> DrawRun? {
+          let oldDrawRun = old.drawRuns[index]
+
+          guard
+            part.highlightID == oldDrawRun.highlightID,
+            let range = oldDrawRun.text.range(of: part.text),
+            range.lowerBound == oldDrawRun.text.startIndex || range.upperBound == oldDrawRun.text.endIndex
+          else {
+            return nil
+          }
+
+          let lowerBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.lowerBound)
+          let upperBound = oldDrawRun.text.distance(from: oldDrawRun.text.startIndex, to: range.upperBound)
+
+          var drawRun = oldDrawRun
+          drawRun.boundingRange = lowerBound ..< upperBound
+          return drawRun
+        }
       }
+
+      drawRuns.append(reusedDrawRun ?? .init(
+        text: part.text,
+        columnsCount: part.range.length,
+        highlightID: part.highlightID,
+        font: font,
+        appearance: appearance
+      ))
+    }
+
+    self.drawRuns = drawRuns
   }
 
   public var drawRuns: [DrawRun]

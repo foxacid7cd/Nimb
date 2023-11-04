@@ -34,6 +34,8 @@ public final class Store: Sendable {
         self?.stateUpdatesChannel.fail(error)
       }
     }
+
+    resetCursorBlinkingTask()
   }
 
   deinit {
@@ -129,8 +131,9 @@ public final class Store: Sendable {
     }
   }
 
+  @StateActor
   public func reportCopy() async -> String? {
-    guard let mode = state.mode, let modeInfo = state.modeInfo else {
+    guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
     }
 
@@ -146,7 +149,10 @@ public final class Store: Sendable {
       return await instance.bufTextForCopy()
 
     case "c":
-      if let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel, let cmdline = state.cmdlines.dictionary[lastCmdlineLevel] {
+      if
+        let lastCmdlineLevel = backgroundState.cmdlines.lastCmdlineLevel,
+        let cmdline = backgroundState.cmdlines.dictionary[lastCmdlineLevel]
+      {
         return cmdline.contentParts
           .map(\.text)
           .joined()
@@ -176,10 +182,6 @@ public final class Store: Sendable {
     Task { @StateActor in
       cursorBlinkingTask?.cancel()
 
-      if !backgroundState.cursorBlinkingPhase {
-        try? await dispatch(reducer: Action.setCursorBlinkingPhase(true))
-      }
-
       if
         backgroundState.cmdlines.dictionary.isEmpty,
         let cursorStyle = backgroundState.currentCursorStyle,
@@ -199,14 +201,10 @@ public final class Store: Sendable {
                 return
               }
 
-              backgroundState.cursorBlinkingPhase = false
-              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
-
+              try await dispatch(reducer: Action.setCursorBlinkingPhase(false))
               try await Task.sleep(for: .milliseconds(blinkOff))
 
-              backgroundState.cursorBlinkingPhase = true
-              await self.stateUpdatesChannel.send(.init(isCursorBlinkingPhaseUpdated: true))
-
+              try await dispatch(reducer: Action.setCursorBlinkingPhase(true))
               try await Task.sleep(for: .milliseconds(blinkOn))
             }
           } catch {}
@@ -220,7 +218,13 @@ public final class Store: Sendable {
     var (state, updates) = try await reducer.reduce(state: backgroundState)
 
     if updates.isCursorUpdated {
-      resetCursorBlinkingTask()
+      cursorBlinkingTask?.cancel()
+      cursorBlinkingTask = nil
+
+      if !state.cursorBlinkingPhase {
+        state.cursorBlinkingPhase = true
+        updates.isCursorBlinkingPhaseUpdated = true
+      }
     }
 
     if updates.isMsgShowsUpdated, !state.msgShows.isEmpty {
@@ -235,6 +239,10 @@ public final class Store: Sendable {
     Task { @MainActor [state, updates] in
       self.state = state
       await self.stateUpdatesChannel.send(updates)
+    }
+
+    if updates.isCursorUpdated {
+      resetCursorBlinkingTask()
     }
   }
 }
