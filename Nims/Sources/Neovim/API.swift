@@ -27,29 +27,45 @@ extension API: AsyncSequence {
       var rawRedrawNotificationParameters = [Value]()
 
       while true {
-        guard let notifications = try await rpcIterator.next() else {
-          return nil
-        }
+        if let notifications = try await rpcIterator.next() {
+          try Task.checkCancellation()
 
-        try Task.checkCancellation()
+          for notification in notifications {
+            guard notification.method == "redraw" else {
+              throw Failure("Unknown neovim API method \(notification.method)")
+            }
 
-        for notification in notifications {
-          guard notification.method == "redraw" else {
-            throw Failure("Unknown neovim API method \(notification.method)")
+            rawRedrawNotificationParameters += notification.parameters
           }
 
-          rawRedrawNotificationParameters += notification.parameters
-        }
-
-        if !rawRedrawNotificationParameters.isEmpty {
+          if isLastEventFlush(rawRedrawNotificationParameters: rawRedrawNotificationParameters) {
+            return try await makeUIEvents(
+              rawRedrawNotificationParameters: rawRedrawNotificationParameters
+            )
+          }
+        } else if !rawRedrawNotificationParameters.isEmpty {
           return try await makeUIEvents(
             rawRedrawNotificationParameters: rawRedrawNotificationParameters
           )
+        } else {
+          return nil
         }
       }
     }
 
     private var rpcIterator: RPC<Target>.AsyncIterator
+
+    private func isLastEventFlush(rawRedrawNotificationParameters: [Value]) -> Bool {
+      guard 
+        case let .array(array) = rawRedrawNotificationParameters.last,
+        case let .string(uiEventName) = array.first,
+        uiEventName == "flush"
+      else {
+        return false
+      }
+
+      return true
+    }
 
     private func makeUIEvents(rawRedrawNotificationParameters: [Value]) async throws -> [UIEvent] {
       if rawRedrawNotificationParameters.count <= 10 {
