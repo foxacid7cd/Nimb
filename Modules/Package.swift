@@ -21,7 +21,7 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", branch: "main"),
     .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
-    .package(url: "https://github.com/apple/swift-syntax", from: "509.0.0"),
+    .package(url: "https://github.com/apple/swift-syntax", branch: "main"),
     .package(url: "https://github.com/apple/swift-argument-parser", branch: "main"),
     .package(url: "https://github.com/apple/swift-algorithms", branch: "main"),
     .package(url: "https://github.com/pointfreeco/swift-identified-collections", branch: "main"),
