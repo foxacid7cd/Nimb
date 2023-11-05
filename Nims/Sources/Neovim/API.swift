@@ -63,32 +63,31 @@ extension API: AsyncSequence {
       else {
         return false
       }
-
       return true
     }
 
     private func makeUIEvents(rawRedrawNotificationParameters: [Value]) async throws -> [UIEvent] {
-      if rawRedrawNotificationParameters.count <= 10 {
+      if rawRedrawNotificationParameters.count <= 100 {
         try [UIEvent](rawRedrawNotificationParameters: rawRedrawNotificationParameters)
       } else {
         try await withThrowingTaskGroup(of: (index: Int, uiEvents: [UIEvent]).self) { taskGroup in
-          let chunkSize = rawRedrawNotificationParameters.optimalChunkSize(preferredChunkSize: 10)
+          let chunkSize = rawRedrawNotificationParameters.optimalChunkSize(preferredChunkSize: 100)
           let chunks = rawRedrawNotificationParameters.chunks(ofCount: chunkSize)
-          for (index, rawRedrawNotificationParameters) in chunks.enumerated() {
+
+          for (index, chunk) in chunks.enumerated() {
             taskGroup.addTask {
               try (
                 index: index,
-                uiEvents: [UIEvent](rawRedrawNotificationParameters: rawRedrawNotificationParameters)
+                uiEvents: [UIEvent](rawRedrawNotificationParameters: chunk)
               )
             }
           }
 
-          var accumulator = [[UIEvent]?](repeating: nil, count: chunks.count)
+          var accumulator = [[UIEvent]](repeating: [], count: chunks.count)
           for try await (index, uiEvents) in taskGroup {
             accumulator[index] = uiEvents
           }
-
-          return accumulator.flatMap { $0! }
+          return accumulator.flatMap { $0 }
         }
       }
     }
