@@ -79,7 +79,9 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   public func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-    store.reportPopupmenuItemSelected(atIndex: row)
+    Task {
+      await store.reportPopupmenuItemSelected(atIndex: row)
+    }
     return false
   }
 

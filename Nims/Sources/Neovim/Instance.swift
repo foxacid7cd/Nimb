@@ -102,113 +102,83 @@ public final class Instance: Sendable {
     case right
   }
 
-  public nonisolated func report(keyPress: KeyPress) {
-    Task { @StateActor in
-      let keys = keyPress.makeNvimKeyCode()
-      try await api.fastCall(APIFunctions.NvimInput(keys: keys))
-    }
+  public func report(keyPress: KeyPress) async {
+    let keys = keyPress.makeNvimKeyCode()
+    try? await api.fastCall(APIFunctions.NvimInput(keys: keys))
   }
 
-  public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    Task { @StateActor in
-      do {
-        if
-          let previousMouseMove,
-          previousMouseMove.modifier == modifier,
-          previousMouseMove.gridID == gridID,
-          previousMouseMove.point == point
-        {
-          return
-        }
-        previousMouseMove = (modifier, gridID, point)
-        try await api.fastCall(APIFunctions.NvimInputMouse(
-          button: "move",
-          action: "",
-          modifier: modifier ?? "",
-          grid: gridID,
-          row: point.row,
-          col: point.column
-        ))
-      } catch {
-        assertionFailure(error)
-      }
+  public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    if
+      let previousMouseMove,
+      previousMouseMove.modifier == modifier,
+      previousMouseMove.gridID == gridID,
+      previousMouseMove.point == point
+    {
+      return
     }
+    previousMouseMove = (modifier, gridID, point)
+    try? await api.fastCall(APIFunctions.NvimInputMouse(
+      button: "move",
+      action: "",
+      modifier: modifier ?? "",
+      grid: gridID,
+      row: point.row,
+      col: point.column
+    ))
   }
 
-  public nonisolated func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
-    Task { @StateActor in
-      do {
-        try await api.fastCallsTransaction(with: Array(
-          repeating: APIFunctions.NvimInputMouse(
-            button: "wheel",
-            action: direction.rawValue,
-            modifier: modifier ?? "",
-            grid: gridID,
-            row: point.row,
-            col: point.column
-          ),
-          count: count
-        ))
-      } catch {
-        assertionFailure(error)
-      }
-    }
+  public func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
+    try? await api.fastCallsTransaction(with: Array(
+      repeating: APIFunctions.NvimInputMouse(
+        button: "wheel",
+        action: direction.rawValue,
+        modifier: modifier ?? "",
+        grid: gridID,
+        row: point.row,
+        col: point.column
+      ),
+      count: count
+    ))
   }
 
-  public nonisolated func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    Task { @StateActor in
-      do {
-        try await api.fastCall(APIFunctions.NvimInputMouse(
-          button: mouseButton.rawValue,
-          action: action.rawValue,
-          modifier: modifier ?? "",
-          grid: gridID,
-          row: point.row,
-          col: point.column
-        ))
-      } catch {
-        assertionFailure(error)
-      }
-    }
+  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    try? await api.fastCall(APIFunctions.NvimInputMouse(
+      button: mouseButton.rawValue,
+      action: action.rawValue,
+      modifier: modifier ?? "",
+      grid: gridID,
+      row: point.row,
+      col: point.column
+    ))
   }
 
-  public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
-    Task { @StateActor in
-      try await api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: false, opts: [:]))
-    }
+  public func reportPopupmenuItemSelected(atIndex index: Int) async throws {
+    try await api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: false, opts: [:]))
   }
 
-  public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
-    Task { @StateActor in
-      try await api.fastCall(APIFunctions.NvimSetCurrentBuf(bufferID: id))
-    }
+  public func reportTablineBufferSelected(withID id: Buffer.ID) async throws {
+    try await api.fastCall(APIFunctions.NvimSetCurrentBuf(bufferID: id))
   }
 
-  public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
-    Task { @StateActor in
-      try await api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
-    }
+  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async throws {
+    try await api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
   }
 
-  public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
-    Task { @StateActor in
-      try await api.fastCall(APIFunctions.NvimUITryResizeGrid(
-        grid: id,
-        width: size.columnsCount,
-        height: size.rowsCount
-      ))
-    }
+  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async throws {
+    try await api.fastCall(APIFunctions.NvimUITryResizeGrid(
+      grid: id,
+      width: size.columnsCount,
+      height: size.rowsCount
+    ))
   }
 
-  public nonisolated func reportPumBounds(gridFrame: CGRect) {
-    Task { @StateActor in
-      try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
-        width: gridFrame.width,
-        height: gridFrame.height,
-        row: gridFrame.origin.y,
-        col: gridFrame.origin.x
-      ))
-    }
+  public func reportPumBounds(gridFrame: CGRect) async throws {
+    try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
+      width: gridFrame.width,
+      height: gridFrame.height,
+      row: gridFrame.origin.y,
+      col: gridFrame.origin.x
+    ))
   }
 
   public func reportPaste(text: String) async throws {

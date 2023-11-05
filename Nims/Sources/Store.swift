@@ -57,13 +57,11 @@ public final class Store: Sendable {
     state.appearance
   }
 
-  public nonisolated func set(font: NimsFont) {
-    Task {
-      try await dispatch(reducer: Action.setFont(font))
-    }
+  public func set(font: NimsFont) async {
+    try? await dispatch(reducer: Action.setFont(font))
   }
 
-  public nonisolated func scheduleHideMsgShowsIfPossible() {
+  public func scheduleHideMsgShowsIfPossible() {
     Task { @StateActor in
       if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
         hideMsgShowsTask = Task { [weak self] in
@@ -82,40 +80,60 @@ public final class Store: Sendable {
     }
   }
 
-  public nonisolated func report(keyPress: KeyPress) {
-    instance.report(keyPress: keyPress)
+  public func report(keyPress: KeyPress) async {
+    await instance.report(keyPress: keyPress)
   }
 
-  public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
+  public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    await instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
-  public nonisolated func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
-    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
+  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
+    await instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
-  public nonisolated func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
-    instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
+  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 
-  public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
-    instance.reportPopupmenuItemSelected(atIndex: index)
+  public func reportPopupmenuItemSelected(atIndex index: Int) async {
+    do {
+      try await instance.reportPopupmenuItemSelected(atIndex: index)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
-    instance.reportTablineBufferSelected(withID: id)
+  public func reportTablineBufferSelected(withID id: Buffer.ID) async {
+    do {
+      try await instance.reportTablineBufferSelected(withID: id)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
-    instance.reportTablineTabpageSelected(withID: id)
+  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async {
+    do {
+      try await instance.reportTablineTabpageSelected(withID: id)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
-    instance.report(gridWithID: id, changedSizeTo: size)
+  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async {
+    do {
+      try await instance.report(gridWithID: id, changedSizeTo: size)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public nonisolated func reportPumBounds(gridFrame: CGRect) {
-    instance.reportPumBounds(gridFrame: gridFrame)
+  public func reportPumBounds(gridFrame: CGRect) async {
+    do {
+      try await instance.reportPumBounds(gridFrame: gridFrame)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
   public func reportPaste(text: String) async {
@@ -126,8 +144,9 @@ public final class Store: Sendable {
     }
   }
 
-  @StateActor
   public func requestTextForCopy() async -> String? {
+    let backgroundState = await backgroundState
+
     guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
     }

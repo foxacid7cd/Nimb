@@ -204,24 +204,28 @@ public final class GridView: NSView {
     }
 
     if let direction, count > 0 {
-      store.reportScrollWheel(
-        with: direction,
-        modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
-        gridID: gridID,
-        point: point(for: event),
-        count: count
-      )
+      Task {
+        await store.reportScrollWheel(
+          with: direction,
+          modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
+          gridID: gridID,
+          point: point(for: event),
+          count: count
+        )
+      }
 
       store.scheduleHideMsgShowsIfPossible()
     }
   }
 
   public func reportMouseMove(for event: NSEvent) {
-    store.reportMouseMove(
-      modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
-      gridID: gridID,
-      point: point(for: event)
-    )
+    Task {
+      await store.reportMouseMove(
+        modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
+        gridID: gridID,
+        point: point(for: event)
+      )
+    }
   }
 
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
@@ -256,13 +260,15 @@ public final class GridView: NSView {
   }
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
-    store.report(
-      mouseButton: mouseButton,
-      action: action,
-      modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
-      gridID: gridID,
-      point: point(for: event)
-    )
+    Task {
+      await store.report(
+        mouseButton: mouseButton,
+        action: action,
+        modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
+        gridID: gridID,
+        point: point(for: event)
+      )
+    }
     store.scheduleHideMsgShowsIfPossible()
   }
 }
