@@ -248,6 +248,9 @@ public struct Grid: Sendable, Identifiable {
   }
 
   public mutating func flushDrawRuns(font: NimsFont, appearance: Appearance) {
+    for index in drawRuns.rowDrawRuns.indices {
+      drawRuns.rowDrawRuns[index].drawRunsCache.removeAll(keepingCapacity: true)
+    }
     drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
       drawRuns.cursorDrawRun = .init(

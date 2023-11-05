@@ -54,6 +54,7 @@ public struct GridDrawRuns: Sendable {
 public struct RowDrawRun: Sendable {
   public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?) {
     var drawRuns = [DrawRun]()
+    var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
     var previousReusedOldDrawRunIndex: Int?
     for part in layout.parts {
       var reusedDrawRun: DrawRun?
@@ -64,6 +65,11 @@ public struct RowDrawRun: Sendable {
           index < old.drawRuns.endIndex,
           let drawRun = reuseDrawRunIfFits(atIndex: index)
         {
+          reusedDrawRun = drawRun
+          previousReusedOldDrawRunIndex = index
+        } else if let (index, drawRun) = old.drawRunsCache[.init(part)] {
+          var drawRun = drawRun
+          drawRun.boundingRange = 0 ..< drawRun.text.count
           reusedDrawRun = drawRun
           previousReusedOldDrawRunIndex = index
         } else {
@@ -100,19 +106,42 @@ public struct RowDrawRun: Sendable {
         }
       }
 
-      drawRuns.append(reusedDrawRun ?? .init(
+      let drawRun = reusedDrawRun ?? .init(
         text: part.text,
         columnsCount: part.range.length,
         highlightID: part.highlightID,
         font: font,
         appearance: appearance
-      ))
+      )
+      drawRunsCache[.init(drawRun)] = (
+        index: drawRuns.count,
+        drawRun: drawRun
+      )
+      drawRuns.append(drawRun)
     }
 
     self.drawRuns = drawRuns
+    self.drawRunsCache = drawRunsCache
+  }
+
+  @PublicInit
+  public struct DrawRunsCachingKey: Sendable, Hashable {
+    public init(_ drawRun: DrawRun) {
+      text = drawRun.text
+      highlightID = drawRun.highlightID
+    }
+
+    public init(_ rowPart: RowPart) {
+      text = rowPart.text
+      highlightID = rowPart.highlightID
+    }
+
+    public var text: String
+    public var highlightID: Highlight.ID
   }
 
   public var drawRuns: [DrawRun]
+  public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
 
   @MainActor
   public func draw(
