@@ -14,6 +14,8 @@ public struct Highlight: Identifiable, Sendable {
     public var isUnderdashed: Bool = false
   }
 
+  public static let DefaultID: Highlight.ID = 0
+
   public var id: Int
   public var foregroundColor: NimsColor? = nil
   public var backgroundColor: NimsColor? = nil

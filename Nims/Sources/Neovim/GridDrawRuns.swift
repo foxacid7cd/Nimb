@@ -453,7 +453,7 @@ public struct CursorDrawRun: Sendable {
     let cursorForegroundColor: NimsColor
     let cursorBackgroundColor: NimsColor
 
-    if highlightID == 0 {
+    if highlightID == Highlight.DefaultID {
       cursorForegroundColor = appearance.backgroundColor(for: parentDrawRun.highlightID)
       cursorBackgroundColor = appearance.foregroundColor(for: parentDrawRun.highlightID)
 

@@ -282,6 +282,9 @@ private final class CmdlineTextView: NSView {
       attributes: [.font: store.font.nsFont()]
     ))
 
+    cursorParentHighlightID = nil
+
+    var location = 0
     for contentPart in cmdline.contentParts {
       cmdlineAttributedString.append(.init(
         string: contentPart.text
@@ -291,6 +294,10 @@ private final class CmdlineTextView: NSView {
           .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
         ])
       ))
+      if cmdline.cursorPosition >= location, cmdline.cursorPosition < location + contentPart.text.count {
+        cursorParentHighlightID = contentPart.highlightID
+      }
+      location += contentPart.text.count
     }
     cmdlineAttributedString.append(.init(
       string: " ",
@@ -391,6 +398,7 @@ private final class CmdlineTextView: NSView {
         !store.state.isBusy,
         cmdline.specialCharacter.isEmpty,
         let currentCursorStyle = store.state.currentCursorStyle,
+        let highlightID = currentCursorStyle.attrID,
         let cellFrame = currentCursorStyle.cellFrame(font: store.font),
         cmdline.cursorPosition >= range.location,
         cmdline.cursorPosition < range.location + range.length
@@ -402,13 +410,25 @@ private final class CmdlineTextView: NSView {
             dy: Double(ctLineIndex) * store.font.cellHeight
           )
 
+        let cursorForegroundColor: NimsColor
+        let cursorBackgroundColor: NimsColor
+
+        if highlightID == Highlight.DefaultID, let cursorParentHighlightID {
+          cursorForegroundColor = store.appearance.backgroundColor(for: cursorParentHighlightID)
+          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorParentHighlightID)
+
+        } else {
+          cursorForegroundColor = store.appearance.foregroundColor(for: highlightID)
+          cursorBackgroundColor = store.appearance.backgroundColor(for: highlightID)
+        }
+
         context.saveGState()
 
-        context.setFillColor(store.appearance.defaultForegroundColor.appKit.cgColor)
+        context.setFillColor(cursorBackgroundColor.appKit.cgColor)
         context.fill([rect])
 
         context.clip(to: [rect])
-        context.setFillColor(store.appearance.defaultBackgroundColor.appKit.cgColor)
+        context.setFillColor(cursorForegroundColor.appKit.cgColor)
         let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
         for glyphRun in glyphRuns {
           context.textMatrix = .init(
@@ -451,6 +471,7 @@ private final class CmdlineTextView: NSView {
   private var cmdlineCTFrame: CTFrame?
   private var blockLineCTLines = [CTLine]()
   private var cmdlineCTLines = [CTLine]()
+  private var cursorParentHighlightID: Highlight.ID?
 
   private var cmdline: Cmdline {
     store.state.cmdlines.dictionary[level]!
