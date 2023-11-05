@@ -173,6 +173,10 @@ public final class Store: Sendable {
 
   private let instance: Instance
   @StateActor private var backgroundState: State
+  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
+  private var lastSetStateTime = SuspendingClock.now
+  private var stateUpdatesAccumulator = State.Updates()
+  private var stateThrottlingTask: Task<Void, Never>?
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
@@ -236,9 +240,33 @@ public final class Store: Sendable {
     }
 
     backgroundState = state
-    Task { @MainActor [state, updates] in
-      self.state = state
-      await self.stateUpdatesChannel.send(updates)
+    Task { @MainActor [weak self, state, updates] in
+      guard let self else {
+        return
+      }
+      self.stateThrottlingTask?.cancel()
+      self.stateUpdatesAccumulator.formUnion(updates)
+
+      let timeElapsed = self.lastSetStateTime.duration(to: .now)
+      defer { self.lastSetStateTime = .now }
+
+      if timeElapsed > stateThrottlingInterval {
+        self.state = state
+        await self.stateUpdatesChannel.send(self.stateUpdatesAccumulator)
+        self.stateUpdatesAccumulator = .init()
+      } else {
+        self.stateThrottlingTask = Task { [weak self] in
+          guard let self else {
+            return
+          }
+          let duration = stateThrottlingInterval - timeElapsed
+          try? await Task.sleep(for: duration)
+
+          self.state = state
+          await stateUpdatesChannel.send(stateUpdatesAccumulator)
+          stateUpdatesAccumulator = .init()
+        }
+      }
     }
 
     if shouldResetCursorBlinkingTask {

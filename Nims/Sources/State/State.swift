@@ -38,6 +38,41 @@ public struct State: Sendable {
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
     }
+
+    public mutating func formUnion(_ updates: Updates) {
+      isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
+      isModeUpdated = isModeUpdated || updates.isModeUpdated
+      isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
+      isFontUpdated = isFontUpdated || updates.isFontUpdated
+      isAppearanceUpdated = isAppearanceUpdated || updates.isAppearanceUpdated
+      isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
+      tabline.formUnion(updates.tabline)
+      isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
+      isMsgShowsUpdated = isMsgShowsUpdated || updates.isMsgShowsUpdated
+      for gridID in updates.destroyedGridIDs {
+        updatedLayoutGridIDs.remove(gridID)
+        gridUpdates.removeValue(forKey: gridID)
+        destroyedGridIDs.insert(gridID)
+      }
+      for gridID in updates.updatedLayoutGridIDs {
+        updatedLayoutGridIDs.insert(gridID)
+      }
+      isGridsOrderUpdated = isGridsOrderUpdated || updates.isGridsOrderUpdated
+      for (gridID, gridUpdate) in updates.gridUpdates {
+        update(&gridUpdates[gridID]) { accumulator in
+          if accumulator == nil {
+            accumulator = gridUpdate
+          } else {
+            accumulator!.formUnion(gridUpdate)
+          }
+        }
+      }
+      isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
+      isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates.isPopupmenuSelectionUpdated
+      isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates.isCursorBlinkingPhaseUpdated
+      isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
+      isMsgShowsDismissedUpdated = isMsgShowsDismissedUpdated || updates.isMsgShowsDismissedUpdated
+    }
   }
 
   @PublicInit
@@ -47,6 +82,14 @@ public struct State: Sendable {
     public var isBuffersUpdated: Bool = false
     public var isSelectedTabpageUpdated: Bool = false
     public var isSelectedBufferUpdated: Bool = false
+
+    public mutating func formUnion(_ update: TablineUpdate) {
+      isTabpagesUpdated = isTabpagesUpdated || update.isTabpagesUpdated
+      isTabpagesContentUpdated = isTabpagesContentUpdated || update.isTabpagesContentUpdated
+      isBuffersUpdated = isBuffersUpdated || update.isBuffersUpdated
+      isSelectedTabpageUpdated = isSelectedTabpageUpdated || update.isSelectedTabpageUpdated
+      isSelectedBufferUpdated = isSelectedBufferUpdated || update.isSelectedBufferUpdated
+    }
   }
 
   public var debug: Debug = .init()
