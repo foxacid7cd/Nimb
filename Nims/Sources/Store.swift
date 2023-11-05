@@ -174,9 +174,9 @@ public final class Store: Sendable {
   private let instance: Instance
   @StateActor private var backgroundState: State
   private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
-  private var lastSetStateTime = SuspendingClock.now
-  private var stateUpdatesAccumulator = State.Updates()
-  private var stateThrottlingTask: Task<Void, Never>?
+  @StateActor private var lastSetStateTime = SuspendingClock.now
+  @StateActor private var stateUpdatesAccumulator = State.Updates()
+  @StateActor private var stateThrottlingTask: Task<Void, Never>?
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
@@ -240,33 +240,33 @@ public final class Store: Sendable {
     }
 
     backgroundState = state
-    Task { @MainActor [weak self, state, updates] in
-      guard let self else {
-        return
-      }
-      self.stateUpdatesAccumulator.formUnion(updates)
+    stateUpdatesAccumulator.formUnion(updates)
 
-      if stateThrottlingTask == nil {
-        let timeElapsed = self.lastSetStateTime.duration(to: .now)
-        defer { self.lastSetStateTime = .now }
+    if stateThrottlingTask == nil {
+      let timeElapsed = lastSetStateTime.duration(to: .now)
+      defer { self.lastSetStateTime = .now }
 
-        if timeElapsed > stateThrottlingInterval {
+      if timeElapsed > stateThrottlingInterval {
+        Task { @MainActor [state, stateUpdatesAccumulator] in
           self.state = state
-          await self.stateUpdatesChannel.send(self.stateUpdatesAccumulator)
-          self.stateUpdatesAccumulator = .init()
-        } else {
-          self.stateThrottlingTask = Task { [weak self] in
-            guard let self else {
-              return
-            }
-            let duration = stateThrottlingInterval - timeElapsed
-            try? await Task.sleep(for: duration)
-
-            self.state = await backgroundState
-            await stateUpdatesChannel.send(stateUpdatesAccumulator)
-            stateUpdatesAccumulator = .init()
-            stateThrottlingTask = nil
+          await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
+        }
+        stateUpdatesAccumulator = .init()
+      } else {
+        stateThrottlingTask = Task { [weak self] in
+          guard let self else {
+            return
           }
+          let duration = stateThrottlingInterval - timeElapsed
+          try? await Task.sleep(for: duration)
+
+          let state = backgroundState
+          Task { @MainActor [stateUpdatesAccumulator] in
+            self.state = state
+            await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
+          }
+          stateUpdatesAccumulator = .init()
+          stateThrottlingTask = nil
         }
       }
     }
