@@ -244,27 +244,29 @@ public final class Store: Sendable {
       guard let self else {
         return
       }
-      self.stateThrottlingTask?.cancel()
       self.stateUpdatesAccumulator.formUnion(updates)
 
-      let timeElapsed = self.lastSetStateTime.duration(to: .now)
-      defer { self.lastSetStateTime = .now }
+      if stateThrottlingTask == nil {
+        let timeElapsed = self.lastSetStateTime.duration(to: .now)
+        defer { self.lastSetStateTime = .now }
 
-      if timeElapsed > stateThrottlingInterval {
-        self.state = state
-        await self.stateUpdatesChannel.send(self.stateUpdatesAccumulator)
-        self.stateUpdatesAccumulator = .init()
-      } else {
-        self.stateThrottlingTask = Task { [weak self] in
-          guard let self else {
-            return
-          }
-          let duration = stateThrottlingInterval - timeElapsed
-          try? await Task.sleep(for: duration)
-
+        if timeElapsed > stateThrottlingInterval {
           self.state = state
-          await stateUpdatesChannel.send(stateUpdatesAccumulator)
-          stateUpdatesAccumulator = .init()
+          await self.stateUpdatesChannel.send(self.stateUpdatesAccumulator)
+          self.stateUpdatesAccumulator = .init()
+        } else {
+          self.stateThrottlingTask = Task { [weak self] in
+            guard let self else {
+              return
+            }
+            let duration = stateThrottlingInterval - timeElapsed
+            try? await Task.sleep(for: duration)
+
+            self.state = await backgroundState
+            await stateUpdatesChannel.send(stateUpdatesAccumulator)
+            stateUpdatesAccumulator = .init()
+            stateThrottlingTask = nil
+          }
         }
       }
     }
