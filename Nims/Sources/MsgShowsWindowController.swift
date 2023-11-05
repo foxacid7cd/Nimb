@@ -133,8 +133,10 @@ final class MsgShowsViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    for (msgShowIndex, msgShow) in store.state.msgShows.enumerated() {
-      let msgShowView = MsgShowView(store: store)
+    let msgShows = store.state.msgShows
+
+    for (index, msgShow) in msgShows.enumerated() {
+      let msgShowView = TextView(store: store)
       msgShowView.msgShow = msgShow
       msgShowView.preferredMaxWidth = 640
       msgShowView.render()
@@ -145,7 +147,7 @@ final class MsgShowsViewController: NSViewController {
       msgShowView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
       msgShowView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
 
-      if msgShowIndex < store.state.msgShows.count - 1 {
+      if index < msgShows.count - 1 {
         let separatorView = NSView()
         separatorView.alphaValue = 0.15
         separatorView.wantsLayer = true
@@ -158,7 +160,7 @@ final class MsgShowsViewController: NSViewController {
   }
 }
 
-private final class MsgShowView: NSView {
+private final class TextView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -185,6 +187,7 @@ private final class MsgShowView: NSView {
     }
 
     let attributedString = NSMutableAttributedString()
+
     for contentPart in msgShow.contentParts {
       var attributes: [NSAttributedString.Key: Any] = [
         .font: store.font.nsFont(),

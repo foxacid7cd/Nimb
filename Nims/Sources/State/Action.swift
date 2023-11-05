@@ -29,6 +29,11 @@ public enum Action: Reducer {
     case let .setIsMsgShowsDismissed(value):
       state.isMsgShowsDismissed = value
       updates.isMsgShowsDismissedUpdated = true
+
+      if value, !state.msgShows.isEmpty {
+        state.msgShows = []
+        updates.isMsgShowsUpdated = true
+      }
     }
 
     return (state, updates)

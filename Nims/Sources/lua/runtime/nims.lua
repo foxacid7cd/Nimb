@@ -1,5 +1,29 @@
 # SPDX-License-Identifier: MIT
 
+local function failure(param)
+  local error
+  local param_type = type(param)
+  if (param_type == "table") then
+    error = param
+  elseif (param_type == "string") then
+    error = { param }
+  end
+
+  if (error) then
+    return {
+      failure = error
+    }
+  end
+end
+
+local function success(param)
+  if (param) then
+    return {
+      success = param
+    }
+  end
+end
+
 local M = {}
 
 function M.buf_text_for_copy()
@@ -11,27 +35,47 @@ function M.buf_text_for_copy()
   vim.cmd([[silent! normal! "aygv]])
   local text = vim.fn.getreg("a")
   vim.fn.setreg("a", a_orig)
-  return text
+  return success(text)
 end
 
 function M.edit(path)
-  vim.cmd([[e ]] .. path)
+  vim.v.errmsg = ""
+  vim.cmd([[silent! edit ]] .. path)
+  if (vim.v.errmsg ~= "") then
+    return error(vim.v.errmsg)
+  end
 end
 
 function M.write()
-  vim.cmd([[w]])
+  vim.v.errmsg = ""
+  vim.cmd([[silent! write]])
+  if (vim.v.errmsg ~= "") then
+    return failure(vim.v.errmsg)
+  end
 end
 
 function M.save_as(path)
-  vim.cmd([[sav ]] .. path)
+  vim.v.errmsg = ""
+  vim.cmd([[silent! saveas ]] .. path)
+  if (vim.v.errmsg ~= "") then
+    return failure(vim.v.errmsg)
+  end
 end
 
 function M.quit()
-  vim.cmd([[q]])
+  vim.v.errmsg = ""
+  vim.cmd([[silent! q]])
+  if (vim.v.errmsg ~= "") then
+    return failure(vim.v.errmsg)
+  end
 end
 
 function M.quit_all()
-  vim.cmd([[qa]])
+  vim.v.errmsg = ""
+  vim.cmd([[silent! qa]])
+  if (vim.v.errmsg ~= "") then
+    return failure(vim.v.errmsg)
+  end
 end
 
 return M

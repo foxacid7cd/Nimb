@@ -18,6 +18,7 @@
 		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
+		6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */; };
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 6895C20A2AC41DD3006122D5 /* TinyConstraints */; };
 		6895C20D2AC42006006122D5 /* NSColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6895C20C2AC42006006122D5 /* NSColorExtensions.swift */; };
@@ -114,6 +115,7 @@
 		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
+		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
 		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		6895C20C2AC42006006122D5 /* NSColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColorExtensions.swift; sourceTree = "<group>"; };
 		689870A82AF80D1B00C4F2FD /* NeovimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimError.swift; sourceTree = "<group>"; };
@@ -265,6 +267,7 @@
 			children = (
 				68A8FF672AD2AC710017C28D /* generated */,
 				68A8FF3F2AD29F650017C28D /* API.swift */,
+				6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */,
 				6878932C2AF7F2B300005A8E /* APIFunction.swift */,
 				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
@@ -468,6 +471,7 @@
 				689D9E3129B5204C00345713 /* MsgShowsWindowController.swift in Sources */,
 				689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */,
 				6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */,
+				6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */,
 				68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */,
 				68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,

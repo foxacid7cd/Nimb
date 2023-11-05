@@ -58,8 +58,8 @@ public final class Store: Sendable {
   }
 
   public nonisolated func set(font: NimsFont) {
-    Task { @StateActor in
-      try? await dispatch(reducer: Action.setFont(font))
+    Task {
+      try await dispatch(reducer: Action.setFont(font))
     }
   }
 
@@ -118,12 +118,16 @@ public final class Store: Sendable {
     instance.reportPumBounds(gridFrame: gridFrame)
   }
 
-  public func reportPaste(text: String) async throws {
-    try await instance.reportPaste(text: text)
+  public func reportPaste(text: String) async {
+    do {
+      try await instance.reportPaste(text: text)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
   @StateActor
-  public func requestTextForCopy() async throws -> String? {
+  public func requestTextForCopy() async -> String? {
     guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
     }
@@ -137,7 +141,12 @@ public final class Store: Sendable {
          "r",
          "s",
          "v":
-      return try await instance.bufTextForCopy()
+      do {
+        return try await instance.bufTextForCopy()
+      } catch {
+        await handleActionError(error)
+        return nil
+      }
 
     case "c":
       if
@@ -162,28 +171,53 @@ public final class Store: Sendable {
     }
   }
 
-  public func edit(url: URL) async throws {
-    try await instance.edit(url: url)
+  public func edit(url: URL) async {
+    do {
+      try await instance.edit(url: url)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public func write() async throws {
-    try await instance.write()
+  public func write() async {
+    do {
+      try await instance.write()
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public func saveAs(url: URL) async throws {
-    try await instance.saveAs(url: url)
+  public func saveAs(url: URL) async {
+    do {
+      try await instance.saveAs(url: url)
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public func quit() async throws {
-    try await instance.quit()
+  public func quit() async {
+    do {
+      try await instance.quit()
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public func quitAll() async throws {
-    try await instance.quitAll()
+  public func quitAll() async {
+    do {
+      try await instance.quitAll()
+    } catch {
+      await handleActionError(error)
+    }
   }
 
-  public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
-    try await instance.requestCurrentBufferInfo()
+  public func requestCurrentBufferInfo() async -> (name: String, buftype: String)? {
+    do {
+      return try await instance.requestCurrentBufferInfo()
+    } catch {
+      await handleActionError(error)
+      return nil
+    }
   }
 
   private let instance: Instance
@@ -291,6 +325,17 @@ public final class Store: Sendable {
     if shouldResetCursorBlinkingTask {
       resetCursorBlinkingTask()
     }
+  }
+
+  private func handleActionError(_ error: any Error) async {
+    let errorMessages: [String] = if let error = error as? NimsNeovimError {
+      error.errorMessages
+    } else if let error = error as? NeovimError {
+      ["Neovim failed with value:\n\(String(customDumping: error.raw))"]
+    } else {
+      ["\(error.localizedDescription)\n\(String(customDumping: error))"]
+    }
+    try? await instance.report(errorMessages: errorMessages)
   }
 }
 

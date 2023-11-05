@@ -216,49 +216,37 @@ public final class Instance: Sendable {
   }
 
   public func bufTextForCopy() async throws -> String {
-    let rawSuccess = try await api.nvimExecLua(
-      code: "return require('nims').buf_text_for_copy()",
-      args: []
-    )
-    guard case let .string(text) = rawSuccess else {
-      throw Failure("success result is not a string", rawSuccess)
+    let rawSuccess = try await api.nims(method: "buf_text_for_copy")
+    guard let text = rawSuccess.flatMap(/Value.string) else {
+      throw Failure("success result is not a string", rawSuccess as Any)
     }
     return text
   }
 
   public func edit(url: URL) async throws {
-    try await api.fastCall(APIFunctions.NvimExecLua(
-      code: "require('nims').edit(...)",
-      args: [.string(url.path(percentEncoded: false))]
-    ))
+    try await api.nims(
+      method: "edit",
+      parameters: [.string(url.path(percentEncoded: false))]
+    )
   }
 
   public func write() async throws {
-    try await api.fastCall(APIFunctions.NvimExecLua(
-      code: "require('nims').write()",
-      args: []
-    ))
+    try await api.nims(method: "write")
   }
 
   public func saveAs(url: URL) async throws {
-    try await api.fastCall(APIFunctions.NvimExecLua(
-      code: "require('nims').save_as(...)",
-      args: [.string(url.path(percentEncoded: false))]
-    ))
+    try await api.nims(
+      method: "save_as",
+      parameters: [.string(url.path(percentEncoded: false))]
+    )
   }
 
   public func quit() async throws {
-    try await api.fastCall(APIFunctions.NvimExecLua(
-      code: "require('nims').quit()",
-      args: []
-    ))
+    try await api.nims(method: "quit")
   }
 
   public func quitAll() async throws {
-    try await api.fastCall(APIFunctions.NvimExecLua(
-      code: "require('nims').quit_all()",
-      args: []
-    ))
+    try await api.nims(method: "quit_all")
   }
 
   public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
@@ -267,6 +255,13 @@ public final class Instance: Sendable {
     return try await (
       name: name,
       buftype: (/Value.string).extract(from: rawBuftype) ?? ""
+    )
+  }
+
+  public func report(errorMessages: [String]) async throws {
+    try await api.fastCallsTransaction(
+      with: errorMessages
+        .map(APIFunctions.NvimErrWriteln.init(str:))
     )
   }
 

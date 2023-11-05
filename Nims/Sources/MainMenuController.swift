@@ -73,17 +73,12 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        let panel = NSOpenPanel()
-        panel.showsHiddenFiles = true
-        panel.canChooseDirectories = true
+      let panel = NSOpenPanel()
+      panel.showsHiddenFiles = true
+      panel.canChooseDirectories = true
 
-        if panel.runModal() == .OK, let url = panel.url {
-          try await store.edit(url: url)
-        }
-      } catch {
-        NSAlert(error: error)
-          .runModal()
+      if panel.runModal() == .OK, let url = panel.url {
+        await store.edit(url: url)
       }
     }
   }
@@ -96,19 +91,16 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        let (_, buftype) = try await store.requestCurrentBufferInfo()
+      let validBuftypes: Set<String> = ["", "help", "acwrite"]
 
-        let validBuftypes: Set<String> = ["", "help", "acwrite"]
-        guard validBuftypes.contains(buftype) else {
-          return
-        }
-
-        try await store.write()
-      } catch {
-        NSAlert(error: error)
-          .runModal()
+      guard
+        let (_, buftype) = await store.requestCurrentBufferInfo(),
+        validBuftypes.contains(buftype)
+      else {
+        return
       }
+
+      await store.write()
     }
   }
 
@@ -120,27 +112,24 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        let (name, buftype) = try await store.requestCurrentBufferInfo()
+      let validBuftypes: Set<String> = ["", "help"]
 
-        let validBuftypes: Set<String> = ["", "help"]
-        guard validBuftypes.contains(buftype) else {
-          return
-        }
+      guard 
+        let (name, buftype) = await store.requestCurrentBufferInfo(),
+        validBuftypes.contains(buftype)
+      else {
+        return
+      }
 
-        let url = URL(filePath: name)
+      let url = URL(filePath: name)
 
-        let panel = NSSavePanel()
-        panel.showsHiddenFiles = true
-        panel.directoryURL = url.deletingLastPathComponent()
-        panel.nameFieldStringValue = url.lastPathComponent
+      let panel = NSSavePanel()
+      panel.showsHiddenFiles = true
+      panel.directoryURL = url.deletingLastPathComponent()
+      panel.nameFieldStringValue = url.lastPathComponent
 
-        if panel.runModal() == .OK, let url = panel.url {
-          try await store.saveAs(url: url)
-        }
-      } catch {
-        NSAlert(error: error)
-          .runModal()
+      if panel.runModal() == .OK, let url = panel.url {
+        await store.saveAs(url: url)
       }
     }
   }
@@ -153,12 +142,7 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        try await store.quit()
-      } catch {
-        NSAlert(error: error)
-          .runModal()
-      }
+      await store.quit()
     }
   }
 
@@ -170,12 +154,7 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        try await store.quitAll()
-      } catch {
-        NSAlert(error: error)
-          .runModal()
-      }
+      await store.quitAll()
     }
   }
 
@@ -222,18 +201,13 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        guard let text = try await store.requestTextForCopy() else {
-          return
-        }
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-      } catch {
-        NSAlert(error: error)
-          .runModal()
+      guard let text = await store.requestTextForCopy() else {
+        return
       }
+
+      let pasteboard = NSPasteboard.general
+      pasteboard.clearContents()
+      pasteboard.setString(text, forType: .string)
     }
   }
 
@@ -248,12 +222,7 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      do {
-        try await store.reportPaste(text: text)
-      } catch {
-        NSAlert(error: error)
-          .runModal()
-      }
+      await store.reportPaste(text: text)
     }
   }
 
