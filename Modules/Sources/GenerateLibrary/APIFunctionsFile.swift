@@ -26,6 +26,7 @@ public struct APIFunctionsFile: GeneratableFile {
 
             try StructDeclSyntax(
               """
+              \(raw: function.deprecationAttributeIfNeeded)
               @PublicInit
               public struct \(raw: camelCasedFunctionName): APIFunction
               """
@@ -90,77 +91,18 @@ public struct APIFunctionsFile: GeneratableFile {
               .joined(separator: ", ")
             let camelCasedFunctionName = function.name.camelCasedAssumingSnakeCased(capitalized: false)
             let capitalizedCamelCasedFunctionName = function.name.camelCasedAssumingSnakeCased(capitalized: true)
-            try FunctionDeclSyntax("func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(raw: function.returnType.swift.signature)") {
+            try FunctionDeclSyntax(
+              """
+              \(raw: function.deprecationAttributeIfNeeded)
+              func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(raw: function.returnType.swift.signature)
+              """
+            ) {
               ExprSyntax(
                 "try await call(APIFunctions.\(raw: capitalizedCamelCasedFunctionName)(\(raw: initializingWithParameters)))"
               )
             }
           }
         }
-
-//        try ExtensionDeclSyntax("public extension API") {
-//          let validFunctions = metadata.functions
-//            .filter { $0.deprecatedSince == nil }
-//
-//          for function in validFunctions {
-//            let parametersInSignature = function.parameters
-//              .map {
-//                let name = $0.name.camelCasedAssumingSnakeCased(capitalized: false)
-//                return "\(name): \($0.type.swift.signature)"
-//              }
-//              .joined(separator: ", ")
-//
-//            let functionNameInSignature = function.name
-//              .camelCasedAssumingSnakeCased(capitalized: false)
-//            try FunctionDeclSyntax(
-//              "func \(raw: functionNameInSignature)(\(raw: parametersInSignature)) async throws -> Message.Response.Result"
-//            ) {
-//              let parametersInArray = function.parameters
-//                .map { parameter in
-//                  let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-//
-//                  return parameter.type.wrapWithValueEncoder(String(name))
-//                }
-//                .joined(separator: ",\n")
-//
-//              StmtSyntax(
-//                """
-//                return try await rpc.call(
-//                  method: \(literal: function.name),
-//                  withParameters: [
-//                    \(raw: parametersInArray)
-//                  ]
-//                )
-//                """
-//              )
-//              // .map { \(raw: function.returnType.wrapWithValueDecoder("$0", force: true)) }
-//            }
-//
-//            let fastFunctionNameInSignature = functionNameInSignature + "Fast"
-//            try FunctionDeclSyntax(
-//              "func \(raw: fastFunctionNameInSignature)(\(raw: parametersInSignature)) async throws"
-//            ) {
-//              let parametersInArray = function.parameters
-//                .map { parameter in
-//                  let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-//
-//                  return parameter.type.wrapWithValueEncoder(String(name))
-//                }
-//                .joined(separator: ",\n")
-//
-//              ExprSyntax(
-//                """
-//                try await rpc.fastCall(
-//                  method: \(literal: function.name),
-//                  withParameters: [
-//                    \(raw: parametersInArray)
-//                  ]
-//                )
-//                """
-//              )
-//            }
-//          }
-//        }
       }
     }
   }

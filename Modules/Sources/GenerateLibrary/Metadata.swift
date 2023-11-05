@@ -103,6 +103,14 @@ public struct Metadata: Sendable {
     public var method: Bool
     public var since: Int
     public var deprecatedSince: Int?
+    
+    public var deprecationAttributeIfNeeded: String {
+      if let deprecatedSince {
+        "@available(*, deprecated, message: \"since version \(deprecatedSince)\")"
+      } else {
+        ""
+      }
+    }
   }
 
   @PublicInit
