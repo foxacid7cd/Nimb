@@ -9,8 +9,22 @@ final class MainMenuController: NSObject {
     super.init()
 
     let appMenu = NSMenu()
+    quitMenuItem.target = self
+    appMenu.addItem(quitMenuItem)
 
     let fileMenu = NSMenu(title: "File")
+    openMenuItem.target = self
+    fileMenu.addItem(openMenuItem)
+    fileMenu.addItem(.separator())
+    saveMenuItem.target = self
+    fileMenu.addItem(saveMenuItem)
+    saveAsMenuItem.target = self
+    saveAsMenuItem.keyEquivalentModifierMask = [.shift, .command]
+    fileMenu.addItem(saveAsMenuItem)
+    fileMenu.addItem(.separator())
+    closeWindowMenuItem.target = self
+    fileMenu.addItem(closeWindowMenuItem)
+
     let editMenu = NSMenu(title: "Edit")
     copyItem.target = self
     editMenu.addItem(copyItem)
@@ -39,11 +53,47 @@ final class MainMenuController: NSObject {
   let menu = NSMenu()
 
   private let store: Store
+  private let quitMenuItem = NSMenuItem(title: "Quit Nims", action: #selector(handleQuit), keyEquivalent: "q")
+  private let openMenuItem = NSMenuItem(title: "Open", action: #selector(handleOpen), keyEquivalent: "o")
+  private let saveMenuItem = NSMenuItem(title: "Save", action: #selector(handleSave), keyEquivalent: "s")
+  private let saveAsMenuItem = NSMenuItem(title: "Save As", action: #selector(handleSaveAs), keyEquivalent: "s")
+  private let closeWindowMenuItem = NSMenuItem(title: "Close Window", action: #selector(handleCloseWindow), keyEquivalent: "w")
   private let editMenu = NSMenu(title: "Edit")
   private let copyItem = NSMenuItem(title: "Copy", action: #selector(handleCopy), keyEquivalent: "c")
   private let pasteItem = NSMenuItem(title: "Paste", action: #selector(handlePaste), keyEquivalent: "v")
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
+
+  @objc private func handleOpen() {
+    let panel = NSOpenPanel()
+    panel.showsHiddenFiles = true
+    panel.canChooseDirectories = true
+
+    if panel.runModal() == .OK, let url = panel.url {
+      store.edit(url: url)
+    }
+  }
+
+  @objc private func handleSave() {
+    store.write()
+  }
+
+  @objc private func handleSaveAs() {
+    let panel = NSSavePanel()
+    panel.showsHiddenFiles = true
+
+    if panel.runModal() == .OK, let url = panel.url {
+      store.saveAs(url: url)
+    }
+  }
+
+  @objc private func handleCloseWindow() {
+    store.quit()
+  }
+
+  @objc private func handleQuit() {
+    store.quitAll()
+  }
 
   @objc private func handleFont() {
     let selectedFont = store.state.font.nsFont()
@@ -83,7 +133,7 @@ final class MainMenuController: NSObject {
 
   @objc private func handleCopy() {
     Task {
-      if let text = await store.reportCopy() {
+      if let text = await store.requestTextForCopy() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)

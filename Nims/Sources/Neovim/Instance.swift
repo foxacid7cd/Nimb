@@ -222,6 +222,41 @@ public final class Instance: Sendable {
     .map(/Value.string)
   }
 
+  public func edit(url: URL) async throws {
+    try await api.nvimExecLuaFast(
+      code: "require('nims').edit(...)",
+      args: [.string(url.path(percentEncoded: false))]
+    )
+  }
+
+  public func write() async throws {
+    try await api.nvimExecLuaFast(
+      code: "require('nims').write()",
+      args: []
+    )
+  }
+
+  public func saveAs(url: URL) async throws {
+    try await api.nvimExecLuaFast(
+      code: "require('nims').save_as(...)",
+      args: [.string(url.path(percentEncoded: false))]
+    )
+  }
+
+  public func quit() async throws {
+    try await api.nvimExecLuaFast(
+      code: "require('nims').quit()",
+      args: []
+    )
+  }
+
+  public func quitAll() async throws {
+    _ = try await api.nvimExecLua(
+      code: "require('nims').quit_all()",
+      args: []
+    )
+  }
+
   private let process: Process
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()

@@ -50,7 +50,11 @@ public struct CursorStyle: Sendable {
       return true
     case .horizontal,
          .vertical:
-      return false
+      if let cellPercentage {
+        return cellPercentage > 25
+      } else {
+        return false
+      }
     }
   }
 

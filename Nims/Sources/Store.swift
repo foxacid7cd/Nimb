@@ -132,7 +132,7 @@ public final class Store: Sendable {
   }
 
   @StateActor
-  public func reportCopy() async -> String? {
+  public func requestTextForCopy() async -> String? {
     guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
     }
@@ -166,8 +166,38 @@ public final class Store: Sendable {
   }
 
   public nonisolated func toggleUIEventsLogging() {
-    Task { @StateActor [weak self] in
-      try? await self?.dispatch(reducer: Action.toggleDebugUIEventsLogging)
+    Task { @StateActor in
+      try await dispatch(reducer: Action.toggleDebugUIEventsLogging)
+    }
+  }
+
+  public nonisolated func edit(url: URL) {
+    Task { @StateActor in
+      try await instance.edit(url: url)
+    }
+  }
+
+  public nonisolated func write() {
+    Task { @StateActor in
+      try await instance.write()
+    }
+  }
+
+  public nonisolated func saveAs(url: URL) {
+    Task { @StateActor in
+      try await instance.saveAs(url: url)
+    }
+  }
+
+  public nonisolated func quit() {
+    Task { @StateActor in
+      try await instance.quit()
+    }
+  }
+
+  public nonisolated func quitAll() {
+    Task { @StateActor in
+      try await instance.quitAll()
     }
   }
 

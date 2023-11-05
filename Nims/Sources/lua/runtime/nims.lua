@@ -14,4 +14,24 @@ function M.buf_text_for_copy()
   return text
 end
 
+function M.edit(path)
+  vim.cmd([[e ]] .. path)
+end
+
+function M.write()
+  vim.cmd([[w]])
+end
+
+function M.save_as(path)
+  vim.cmd([[sav ]] .. path)
+end
+
+function M.quit()
+  vim.cmd([[q]])
+end
+
+function M.quit_all()
+  vim.cmd([[qa]])
+end
+
 return M

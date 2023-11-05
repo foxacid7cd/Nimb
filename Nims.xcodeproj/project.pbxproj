@@ -261,23 +261,9 @@
 			children = (
 				68A8FF672AD2AC710017C28D /* generated */,
 				68A8FF3F2AD29F650017C28D /* API.swift */,
-				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
-				68A8FF462AD29F650017C28D /* Cmdlines.swift */,
-				68A8FF432AD29F650017C28D /* NimsColor.swift */,
-				68A8FF4C2AD29F660017C28D /* Cursor.swift */,
-				68A8FF412AD29F650017C28D /* Grid.swift */,
-				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
-				68EF609229B2B7270056E48D /* GridDrawRuns.swift */,
-				68A8FF492AD29F660017C28D /* Highlight.swift */,
 				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
-				68A8FF3A2AD29F650017C28D /* MsgShow.swift */,
-				68A8FF3D2AD29F650017C28D /* Popupmenu.swift */,
-				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */,
-				68A8FF442AD29F650017C28D /* Tabline.swift */,
-				68A8FF452AD29F650017C28D /* UIOptions.swift */,
-				68A8FF392AD29F650017C28D /* Windows.swift */,
 			);
 			path = Neovim;
 			sourceTree = "<group>";
@@ -332,6 +318,20 @@
 				68FAC3F22AF685AB00490F09 /* Reducer.swift */,
 				68FAC3F62AF6932F00490F09 /* Action.swift */,
 				68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */,
+				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
+				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
+				68A8FF462AD29F650017C28D /* Cmdlines.swift */,
+				68A8FF432AD29F650017C28D /* NimsColor.swift */,
+				68A8FF4C2AD29F660017C28D /* Cursor.swift */,
+				68A8FF412AD29F650017C28D /* Grid.swift */,
+				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
+				68EF609229B2B7270056E48D /* GridDrawRuns.swift */,
+				68A8FF492AD29F660017C28D /* Highlight.swift */,
+				68A8FF3A2AD29F650017C28D /* MsgShow.swift */,
+				68A8FF3D2AD29F650017C28D /* Popupmenu.swift */,
+				68A8FF442AD29F650017C28D /* Tabline.swift */,
+				68A8FF452AD29F650017C28D /* UIOptions.swift */,
+				68A8FF392AD29F650017C28D /* Windows.swift */,
 			);
 			path = State;
 			sourceTree = "<group>";
