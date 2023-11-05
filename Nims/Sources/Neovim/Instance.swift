@@ -57,17 +57,11 @@ public final class Instance: Sendable {
             .extTabline,
           ]
 
-          let result = try await api.nvimUIAttach(
+          try await api.call(APIFunctions.NvimUIAttach(
             width: initialOuterGridSize.columnsCount,
             height: initialOuterGridSize.rowsCount,
             options: uiOptions.nvimUIAttachOptions
-          )
-          switch result {
-          case .success:
-            break
-          case let .failure(value):
-            throw Failure("failed nvimUIAttach", value)
-          }
+          ))
         }
 
         while !taskGroup.isEmpty {
@@ -111,7 +105,7 @@ public final class Instance: Sendable {
   public nonisolated func report(keyPress: KeyPress) {
     Task { @StateActor in
       let keys = keyPress.makeNvimKeyCode()
-      try await api.nvimInputFast(keys: keys)
+      try await api.fastCall(APIFunctions.NvimInput(keys: keys))
     }
   }
 
@@ -127,14 +121,14 @@ public final class Instance: Sendable {
           return
         }
         previousMouseMove = (modifier, gridID, point)
-        try await api.nvimInputMouseFast(
+        try await api.fastCall(APIFunctions.NvimInputMouse(
           button: "move",
           action: "",
           modifier: modifier ?? "",
           grid: gridID,
           row: point.row,
           col: point.column
-        )
+        ))
       } catch {
         assertionFailure(error)
       }
@@ -144,22 +138,17 @@ public final class Instance: Sendable {
   public nonisolated func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) {
     Task { @StateActor in
       do {
-        try await api.rpc.fastCallsTransaction(
-          with: Array(
-            repeating: (
-              method: "nvim_input_mouse",
-              parameters: [
-                .string("wheel"),
-                .string(direction.rawValue),
-                .string(modifier ?? ""),
-                .integer(gridID),
-                .integer(point.row),
-                .integer(point.column),
-              ]
-            ),
-            count: count
-          )
-        )
+        try await api.fastCallsTransaction(with: Array(
+          repeating: APIFunctions.NvimInputMouse(
+            button: "wheel",
+            action: direction.rawValue,
+            modifier: modifier ?? "",
+            grid: gridID,
+            row: point.row,
+            col: point.column
+          ),
+          count: count
+        ))
       } catch {
         assertionFailure(error)
       }
@@ -169,14 +158,14 @@ public final class Instance: Sendable {
   public nonisolated func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
     Task { @StateActor in
       do {
-        try await api.nvimInputMouseFast(
+        try await api.fastCall(APIFunctions.NvimInputMouse(
           button: mouseButton.rawValue,
           action: action.rawValue,
           modifier: modifier ?? "",
           grid: gridID,
           row: point.row,
           col: point.column
-        )
+        ))
       } catch {
         assertionFailure(error)
       }
@@ -185,96 +174,100 @@ public final class Instance: Sendable {
 
   public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
     Task { @StateActor in
-      try await api.nvimSelectPopupmenuItemFast(item: index, insert: true, finish: false, opts: [:])
+      try await api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: false, opts: [:]))
     }
   }
 
   public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
     Task { @StateActor in
-      try await api.nvimSetCurrentBufFast(bufferID: id)
+      try await api.fastCall(APIFunctions.NvimSetCurrentBuf(bufferID: id))
     }
   }
 
   public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
     Task { @StateActor in
-      try await api.nvimSetCurrentTabpageFast(tabpageID: id)
+      try await api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
     }
   }
 
   public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
     Task { @StateActor in
-      try await api.nvimUITryResizeGridFast(
+      try await api.fastCall(APIFunctions.NvimUITryResizeGrid(
         grid: id,
         width: size.columnsCount,
         height: size.rowsCount
-      )
+      ))
     }
   }
 
   public nonisolated func reportPumBounds(gridFrame: CGRect) {
     Task { @StateActor in
-      try await api.nvimUIPumSetBoundsFast(
+      try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
         width: gridFrame.width,
         height: gridFrame.height,
         row: gridFrame.origin.y,
         col: gridFrame.origin.x
-      )
+      ))
     }
   }
 
   public func reportPaste(text: String) async throws {
-    try await api.nvimPasteFast(data: text, crlf: false, phase: -1)
+    try await api.fastCall(APIFunctions.NvimPaste(data: text, crlf: false, phase: -1))
   }
 
-  public func bufTextForCopy() async -> String? {
-    try? await api.nvimExecLua(
+  public func bufTextForCopy() async throws -> String {
+    let rawSuccess = try await api.nvimExecLua(
       code: "return require('nims').buf_text_for_copy()",
       args: []
     )
-    .map(/Value.string)
+    guard case let .string(text) = rawSuccess else {
+      throw Failure("success result is not a string", rawSuccess)
+    }
+    return text
   }
 
   public func edit(url: URL) async throws {
-    try await api.nvimExecLuaFast(
+    try await api.fastCall(APIFunctions.NvimExecLua(
       code: "require('nims').edit(...)",
       args: [.string(url.path(percentEncoded: false))]
-    )
+    ))
   }
 
   public func write() async throws {
-    try await api.nvimExecLuaFast(
+    try await api.fastCall(APIFunctions.NvimExecLua(
       code: "require('nims').write()",
       args: []
-    )
+    ))
   }
 
   public func saveAs(url: URL) async throws {
-    try await api.nvimExecLuaFast(
+    try await api.fastCall(APIFunctions.NvimExecLua(
       code: "require('nims').save_as(...)",
       args: [.string(url.path(percentEncoded: false))]
-    )
+    ))
   }
 
   public func quit() async throws {
-    try await api.nvimExecLuaFast(
+    try await api.fastCall(APIFunctions.NvimExecLua(
       code: "require('nims').quit()",
       args: []
-    )
+    ))
   }
 
   public func quitAll() async throws {
-    try await api.nvimExecLuaFast(
+    try await api.fastCall(APIFunctions.NvimExecLua(
       code: "require('nims').quit_all()",
       args: []
-    )
+    ))
   }
 
   public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
     async let name = api.nvimBufGetName(bufferID: .current)
-      .map(/Value.string)
-    async let buftype = api.nvimBufGetOption(bufferID: .current, name: "buftype")
-      .map(/Value.string)
-    return try await (name, buftype)
+    async let rawBuftype = api.nvimBufGetOption(bufferID: .current, name: "buftype")
+    return try await (
+      name: name,
+      buftype: (/Value.string).extract(from: rawBuftype) ?? ""
+    )
   }
 
   private let process: Process

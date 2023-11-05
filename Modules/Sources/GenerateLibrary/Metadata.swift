@@ -7,14 +7,8 @@ import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
+@PublicInit
 public struct Metadata: Sendable {
-  public init(functions: [Function], uiEvents: [UIEvent], types: [Type], uiOptions: [String]) {
-    self.functions = functions
-    self.uiEvents = uiEvents
-    self.types = types
-    self.uiOptions = uiOptions
-  }
-
   public init?(_ value: Value) {
     guard let dictionary = (/Value.dictionary).extract(from: value) else {
       return nil
@@ -101,23 +95,8 @@ public struct Metadata: Sendable {
     }
   }
 
+  @PublicInit
   public struct Function: Sendable {
-    public init(
-      name: String,
-      parameters: [Parameter],
-      returnType: ValueType,
-      method: Bool,
-      since: Int,
-      deprecatedSince: Int? = nil
-    ) {
-      self.name = name
-      self.parameters = parameters
-      self.returnType = returnType
-      self.method = method
-      self.since = since
-      self.deprecatedSince = deprecatedSince
-    }
-
     public var name: String
     public var parameters: [Parameter]
     public var returnType: ValueType
@@ -126,12 +105,8 @@ public struct Metadata: Sendable {
     public var deprecatedSince: Int?
   }
 
+  @PublicInit
   public struct Parameter: Sendable {
-    public init(name: String, type: ValueType) {
-      self.name = name
-      self.type = type
-    }
-
     public init?(_ value: Value, types: [Metadata.`Type`]) {
       guard
         let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
@@ -168,12 +143,8 @@ public struct Metadata: Sendable {
     public var type: ValueType
   }
 
+  @PublicInit
   public struct UIEvent: Sendable {
-    public init(name: String, parameters: [Parameter]) {
-      self.name = name
-      self.parameters = parameters
-    }
-
     public var name: String
     public var parameters: [Parameter]
   }
@@ -190,5 +161,3 @@ public struct Metadata: Sendable {
   public var types: [Type]
   public var uiOptions: [String]
 }
-
-private extension Metadata.Parameter {}

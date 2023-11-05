@@ -97,6 +97,16 @@ public enum Message: Sendable, Hashable {
       case success(Value)
       case failure(Value)
 
+      public func map<Success>(_ successBody: (Value) throws -> Success, _ failureBody: (Value) -> any Error) throws -> Success {
+        switch self {
+        case let .success(value):
+          return try successBody(value)
+
+        case let .failure(error):
+          throw failureBody(error)
+        }
+      }
+
       public func map<Success>(_ casePath: CasePath<Value, Success>) throws -> Success {
         switch self {
         case let .success(value):

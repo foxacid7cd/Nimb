@@ -123,7 +123,7 @@ public final class Store: Sendable {
   }
 
   @StateActor
-  public func requestTextForCopy() async -> String? {
+  public func requestTextForCopy() async throws -> String? {
     guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
     }
@@ -137,7 +137,7 @@ public final class Store: Sendable {
          "r",
          "s",
          "v":
-      return await instance.bufTextForCopy()
+      return try await instance.bufTextForCopy()
 
     case "c":
       if

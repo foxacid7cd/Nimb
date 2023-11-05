@@ -222,13 +222,18 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      guard let text = await store.requestTextForCopy() else {
-        return
-      }
+      do {
+        guard let text = try await store.requestTextForCopy() else {
+          return
+        }
 
-      let pasteboard = NSPasteboard.general
-      pasteboard.clearContents()
-      pasteboard.setString(text, forType: .string)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
     }
   }
 

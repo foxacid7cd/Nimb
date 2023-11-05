@@ -8,6 +8,31 @@ public struct API<Target: Channel>: Sendable {
     self.rpc = rpc
   }
 
+  @discardableResult
+  public func call<T: Nims.APIFunction>(_ apiFunction: T) async throws -> T.Success {
+    try await rpc.call(
+      method: T.method,
+      withParameters: apiFunction.parameters
+    )
+    .map(T.decodeSuccess(from:), NeovimError.init(raw:))
+  }
+
+  public func fastCall<T: Nims.APIFunction>(_ apiFunction: T) async throws {
+    try await rpc.fastCall(
+      method: T.method,
+      withParameters: apiFunction.parameters
+    )
+  }
+
+  public func fastCallsTransaction(with apiFunctions: some Sequence<any APIFunction>) async throws {
+    try await rpc.fastCallsTransaction(with: apiFunctions.map {
+      (
+        method: type(of: $0).method,
+        parameters: $0.parameters
+      )
+    })
+  }
+
   let rpc: RPC<Target>
 }
 
