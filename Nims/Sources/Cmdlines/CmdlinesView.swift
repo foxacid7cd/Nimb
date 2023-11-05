@@ -424,24 +424,28 @@ private final class CmdlineTextView: NSView {
 
         context.saveGState()
 
+        context.setShouldAntialias(false)
         context.setFillColor(cursorBackgroundColor.appKit.cgColor)
         context.fill([rect])
 
-        context.clip(to: [rect])
-        context.setFillColor(cursorForegroundColor.appKit.cgColor)
-        let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
-        for glyphRun in glyphRuns {
-          context.textMatrix = .init(
-            translationX: 0,
-            y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
-          )
-          CTFontDrawGlyphs(
-            store.font.nsFont(),
-            CTRunGetGlyphsPtr(glyphRun)!,
-            CTRunGetPositionsPtr(glyphRun)!,
-            CTRunGetGlyphCount(glyphRun),
-            context
-          )
+        if currentCursorStyle.shouldDrawParentText {
+          context.setShouldAntialias(true)
+          context.clip(to: [rect])
+          context.setFillColor(cursorForegroundColor.appKit.cgColor)
+          let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
+          for glyphRun in glyphRuns {
+            context.textMatrix = .init(
+              translationX: 0,
+              y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+            )
+            CTFontDrawGlyphs(
+              store.font.nsFont(),
+              CTRunGetGlyphsPtr(glyphRun)!,
+              CTRunGetPositionsPtr(glyphRun)!,
+              CTRunGetGlyphCount(glyphRun),
+              context
+            )
+          }
         }
 
         context.restoreGState()

@@ -410,7 +410,8 @@ public struct CursorDrawRun: Sendable {
             cellFrame: cellFrame,
             highlightID: style.attrID ?? 0,
             parentOrigin: .init(column: location, row: position.row),
-            parentDrawRun: drawRun
+            parentDrawRun: drawRun,
+            shouldDrawParentText: style.shouldDrawParentText
           )
           return
         }
@@ -428,6 +429,7 @@ public struct CursorDrawRun: Sendable {
   public var highlightID: Highlight.ID
   public var parentOrigin: IntegerPoint
   public var parentDrawRun: DrawRun
+  public var shouldDrawParentText: Bool
 
   public var rectangle: IntegerRectangle {
     .init(origin: position, size: .init(columnsCount: 1, rowsCount: 1))
@@ -450,6 +452,9 @@ public struct CursorDrawRun: Sendable {
 
   @MainActor
   public func draw(to context: CGContext, font: NimsFont, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
+    context.saveGState()
+    defer { context.restoreGState() }
+
     let cursorForegroundColor: NimsColor
     let cursorBackgroundColor: NimsColor
 
@@ -471,29 +476,30 @@ public struct CursorDrawRun: Sendable {
     cursorBackgroundColor.appKit.setFill()
     rect.fill()
 
-    context.setShouldAntialias(true)
-    rect.clip()
+    if shouldDrawParentText {
+      context.setShouldAntialias(true)
+      rect.clip()
 
-    context.setFillColor(cursorForegroundColor.appKit.cgColor)
+      context.setFillColor(cursorForegroundColor.appKit.cgColor)
 
-    let parentRectangle = IntegerRectangle(
-      origin: .init(column: parentOrigin.column - parentDrawRun.boundingRange.lowerBound, row: parentOrigin.row),
-      size: .init(columnsCount: parentDrawRun.boundingRange.count, rowsCount: 1)
-    )
-    let parentRect = (parentRectangle * font.cellSize)
-      .applying(upsideDownTransform)
-
-    for glyphRun in parentDrawRun.glyphRuns {
-      context.textMatrix = glyphRun.textMatrix
-      context.textPosition = parentRect.origin
-      CTFontDrawGlyphs(
-        font.nsFont(),
-        glyphRun.glyphs,
-        glyphRun.positions,
-        glyphRun.glyphs.count,
-        context
+      let parentRectangle = IntegerRectangle(
+        origin: .init(column: parentOrigin.column - parentDrawRun.boundingRange.lowerBound, row: parentOrigin.row),
+        size: .init(columnsCount: parentDrawRun.boundingRange.count, rowsCount: 1)
       )
+      let parentRect = (parentRectangle * font.cellSize)
+        .applying(upsideDownTransform)
+
+      for glyphRun in parentDrawRun.glyphRuns {
+        context.textMatrix = glyphRun.textMatrix
+        context.textPosition = parentRect.origin
+        CTFontDrawGlyphs(
+          font.nsFont(),
+          glyphRun.glyphs,
+          glyphRun.positions,
+          glyphRun.glyphs.count,
+          context
+        )
+      }
     }
-    context.resetClip()
   }
 }

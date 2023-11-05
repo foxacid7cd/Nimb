@@ -41,6 +41,19 @@ public struct CursorStyle: Sendable {
   public var attrID: Highlight.ID?
   public var attrIDLm: Int?
 
+  public var shouldDrawParentText: Bool {
+    guard let cursorShape else {
+      return false
+    }
+    switch cursorShape {
+    case .block:
+      return true
+    case .horizontal,
+         .vertical:
+      return false
+    }
+  }
+
   public func cellFrame(font: NimsFont) -> CGRect? {
     guard let cursorShape else {
       return nil
