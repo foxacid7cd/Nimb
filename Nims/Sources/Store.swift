@@ -13,6 +13,10 @@ public final class Store: Sendable {
     backgroundState = state
     self.state = state
 
+    Task { @StateActor in
+      resetCursorBlinkingTask()
+    }
+
     instanceTask = Task { @StateActor [weak self] in
       do {
         for try await uiEvents in instance {
@@ -34,8 +38,6 @@ public final class Store: Sendable {
         self?.stateUpdatesChannel.fail(error)
       }
     }
-
-    resetCursorBlinkingTask()
   }
 
   deinit {
@@ -215,36 +217,35 @@ public final class Store: Sendable {
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
 
-  private nonisolated func resetCursorBlinkingTask() {
-    Task { @StateActor in
-      cursorBlinkingTask?.cancel()
+  @StateActor
+  private func resetCursorBlinkingTask() {
+    cursorBlinkingTask?.cancel()
 
-      if
-        let cursorStyle = backgroundState.currentCursorStyle,
-        let blinkWait = cursorStyle.blinkWait,
-        blinkWait > 0,
-        let blinkOff = cursorStyle.blinkOff,
-        blinkOff > 0,
-        let blinkOn = cursorStyle.blinkOn,
-        blinkOn > 0
-      {
-        cursorBlinkingTask = Task { @StateActor [weak self] in
-          do {
-            try await Task.sleep(for: .milliseconds(blinkWait))
+    if
+      let cursorStyle = backgroundState.currentCursorStyle,
+      let blinkWait = cursorStyle.blinkWait,
+      blinkWait > 0,
+      let blinkOff = cursorStyle.blinkOff,
+      blinkOff > 0,
+      let blinkOn = cursorStyle.blinkOn,
+      blinkOn > 0
+    {
+      cursorBlinkingTask = Task { @StateActor [weak self] in
+        do {
+          try await Task.sleep(for: .milliseconds(blinkWait))
 
-            while true {
-              guard let self else {
-                return
-              }
-
-              try await dispatch(reducer: Action.setCursorBlinkingPhase(false))
-              try await Task.sleep(for: .milliseconds(blinkOff))
-
-              try await dispatch(reducer: Action.setCursorBlinkingPhase(true))
-              try await Task.sleep(for: .milliseconds(blinkOn))
+          while true {
+            guard let self else {
+              return
             }
-          } catch {}
-        }
+
+            try await dispatch(reducer: Action.setCursorBlinkingPhase(false))
+            try await Task.sleep(for: .milliseconds(blinkOff))
+
+            try await dispatch(reducer: Action.setCursorBlinkingPhase(true))
+            try await Task.sleep(for: .milliseconds(blinkOn))
+          }
+        } catch {}
       }
     }
   }
@@ -290,16 +291,19 @@ public final class Store: Sendable {
           guard let self else {
             return
           }
-          let duration = stateThrottlingInterval - timeElapsed
-          try? await Task.sleep(for: duration)
 
-          let state = backgroundState
-          Task { @MainActor [stateUpdatesAccumulator] in
-            self.state = state
-            await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
-          }
-          stateUpdatesAccumulator = .init()
-          stateThrottlingTask = nil
+          do {
+            let duration = stateThrottlingInterval - timeElapsed
+            try await Task.sleep(for: duration)
+
+            let state = backgroundState
+            Task { @MainActor [stateUpdatesAccumulator] in
+              self.state = state
+              await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
+            }
+            stateUpdatesAccumulator = .init()
+            stateThrottlingTask = nil
+          } catch {}
         }
       }
     }
