@@ -10,7 +10,7 @@ import Overture
 @PublicInit
 public struct State: Sendable {
   @PublicInit
-  public struct Debug: Sendable {
+  public struct Debug: Sendable, Codable {
     public var isUIEventsLoggingEnabled: Bool = false
   }
 

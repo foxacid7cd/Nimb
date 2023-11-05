@@ -6,10 +6,10 @@ import Library
 
 @MainActor
 public final class Store: Sendable {
-  public init(instance: Instance, font: NimsFont) {
+  public init(instance: Instance, debug: State.Debug, font: NimsFont) {
     self.instance = instance
 
-    let state = State(font: font)
+    let state = State(debug: debug, font: font)
     backgroundState = state
     self.state = state
 

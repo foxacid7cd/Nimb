@@ -40,6 +40,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       initialOuterGridSize: initialOuterGridSize
     )
 
+    var debug = State.Debug()
+    #if DEBUG
+      if 
+        let data = UserDefaults.standard.data(forKey: "debug"),
+        let decoded = try? JSONDecoder().decode(State.Debug.self, from: data)
+      {
+        debug = decoded
+      }
+    #endif
     let font: NimsFont = if
       let name = UserDefaults.standard.value(forKey: "fontName") as? String,
       let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,
@@ -49,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     } else {
       .init()
     }
-    store = .init(instance: instance, font: font)
+    store = .init(instance: instance, debug: debug, font: font)
   }
 
   private func setupMainMenuController() {
@@ -113,6 +122,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
             UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
           }
+
+          #if DEBUG
+            if 
+              stateUpdates.isDebugUpdated,
+              let encoded = try? JSONEncoder().encode(store.state.debug)
+            {
+              UserDefaults.standard.setValue(encoded, forKey: "debug")
+            }
+          #endif
         }
       } catch {
         assertionFailure(error)
