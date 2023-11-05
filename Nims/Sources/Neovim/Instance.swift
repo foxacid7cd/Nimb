@@ -108,9 +108,11 @@ public final class Instance: Sendable {
     case right
   }
 
-  public func report(keyPress: KeyPress) async {
-    let keys = keyPress.makeNvimKeyCode()
-    try? await api.nvimInputFast(keys: keys)
+  public nonisolated func report(keyPress: KeyPress) {
+    Task { @StateActor in
+      let keys = keyPress.makeNvimKeyCode()
+      try await api.nvimInputFast(keys: keys)
+    }
   }
 
   public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
@@ -181,37 +183,47 @@ public final class Instance: Sendable {
     }
   }
 
-  public func reportPopupmenuItemSelected(atIndex index: Int) async {
-    try? await api.nvimSelectPopupmenuItemFast(item: index, insert: true, finish: false, opts: [:])
+  public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
+    Task { @StateActor in
+      try await api.nvimSelectPopupmenuItemFast(item: index, insert: true, finish: false, opts: [:])
+    }
   }
 
-  public func reportTablineBufferSelected(withID id: Buffer.ID) async {
-    try? await api.nvimSetCurrentBufFast(bufferID: id)
+  public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
+    Task { @StateActor in
+      try await api.nvimSetCurrentBufFast(bufferID: id)
+    }
   }
 
-  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async {
-    try? await api.nvimSetCurrentTabpageFast(tabpageID: id)
+  public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
+    Task { @StateActor in
+      try await api.nvimSetCurrentTabpageFast(tabpageID: id)
+    }
   }
 
-  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async {
-    try? await api.nvimUITryResizeGridFast(
-      grid: id,
-      width: size.columnsCount,
-      height: size.rowsCount
-    )
+  public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
+    Task { @StateActor in
+      try await api.nvimUITryResizeGridFast(
+        grid: id,
+        width: size.columnsCount,
+        height: size.rowsCount
+      )
+    }
   }
 
-  public func reportPumBounds(gridFrame: CGRect) async {
-    try? await api.nvimUIPumSetBoundsFast(
-      width: gridFrame.width,
-      height: gridFrame.height,
-      row: gridFrame.origin.y,
-      col: gridFrame.origin.x
-    )
+  public nonisolated func reportPumBounds(gridFrame: CGRect) {
+    Task { @StateActor in
+      try await api.nvimUIPumSetBoundsFast(
+        width: gridFrame.width,
+        height: gridFrame.height,
+        row: gridFrame.origin.y,
+        col: gridFrame.origin.x
+      )
+    }
   }
 
-  public func reportPaste(text: String) async {
-    try? await api.nvimPasteFast(data: text, crlf: false, phase: -1)
+  public func reportPaste(text: String) async throws {
+    try await api.nvimPasteFast(data: text, crlf: false, phase: -1)
   }
 
   public func bufTextForCopy() async -> String? {
@@ -251,10 +263,18 @@ public final class Instance: Sendable {
   }
 
   public func quitAll() async throws {
-    _ = try await api.nvimExecLua(
+    try await api.nvimExecLuaFast(
       code: "require('nims').quit_all()",
       args: []
     )
+  }
+
+  public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
+    async let name = api.nvimBufGetName(bufferID: .current)
+      .map(/Value.string)
+    async let buftype = api.nvimBufGetOption(bufferID: .current, name: "buftype")
+      .map(/Value.string)
+    return try await (name, buftype)
   }
 
   private let process: Process

@@ -123,6 +123,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
           }
 
+          if stateUpdates.isFontUpdated {
+            UserDefaults.standard.setValue(store.state.font.nsFont().pointSize, forKey: "fontSize")
+          }
+
           #if DEBUG
             if 
               stateUpdates.isDebugUpdated,

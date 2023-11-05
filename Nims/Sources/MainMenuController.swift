@@ -63,36 +63,120 @@ final class MainMenuController: NSObject {
   private let pasteItem = NSMenuItem(title: "Paste", action: #selector(handlePaste), keyEquivalent: "v")
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
+  private var actionTask: Task<Void, Never>?
 
   @objc private func handleOpen() {
-    let panel = NSOpenPanel()
-    panel.showsHiddenFiles = true
-    panel.canChooseDirectories = true
+    guard actionTask == nil else {
+      return
+    }
 
-    if panel.runModal() == .OK, let url = panel.url {
-      store.edit(url: url)
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        let panel = NSOpenPanel()
+        panel.showsHiddenFiles = true
+        panel.canChooseDirectories = true
+
+        if panel.runModal() == .OK, let url = panel.url {
+          try await store.edit(url: url)
+        }
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
     }
   }
 
   @objc private func handleSave() {
-    store.write()
+    guard actionTask == nil else {
+      return
+    }
+
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        let (_, buftype) = try await store.requestCurrentBufferInfo()
+
+        let validBuftypes: Set<String> = ["", "help", "acwrite"]
+        guard validBuftypes.contains(buftype) else {
+          return
+        }
+
+        try await store.write()
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
+    }
   }
 
   @objc private func handleSaveAs() {
-    let panel = NSSavePanel()
-    panel.showsHiddenFiles = true
+    guard actionTask == nil else {
+      return
+    }
 
-    if panel.runModal() == .OK, let url = panel.url {
-      store.saveAs(url: url)
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        let (name, buftype) = try await store.requestCurrentBufferInfo()
+
+        let validBuftypes: Set<String> = ["", "help"]
+        guard validBuftypes.contains(buftype) else {
+          return
+        }
+
+        let url = URL(filePath: name)
+
+        let panel = NSSavePanel()
+        panel.showsHiddenFiles = true
+        panel.directoryURL = url.deletingLastPathComponent()
+        panel.nameFieldStringValue = url.lastPathComponent
+
+        if panel.runModal() == .OK, let url = panel.url {
+          try await store.saveAs(url: url)
+        }
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
     }
   }
 
   @objc private func handleCloseWindow() {
-    store.quit()
+    guard actionTask == nil else {
+      return
+    }
+
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        try await store.quit()
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
+    }
   }
 
   @objc private func handleQuit() {
-    store.quitAll()
+    guard actionTask == nil else {
+      return
+    }
+
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        try await store.quitAll()
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
+    }
   }
 
   @objc private func handleFont() {
@@ -128,25 +212,44 @@ final class MainMenuController: NSObject {
       toSize: newFontSize
     )
     store.set(font: .init(newFont))
-    UserDefaults.standard.setValue(newFontSize, forKey: "fontSize")
   }
 
   @objc private func handleCopy() {
-    Task {
-      if let text = await store.requestTextForCopy() {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+    guard actionTask == nil else {
+      return
+    }
+
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      guard let text = await store.requestTextForCopy() else {
+        return
       }
+
+      let pasteboard = NSPasteboard.general
+      pasteboard.clearContents()
+      pasteboard.setString(text, forType: .string)
     }
   }
 
   @objc private func handlePaste() {
-    guard let text = NSPasteboard.general.string(forType: .string) else {
+    guard 
+      let text = NSPasteboard.general.string(forType: .string),
+      actionTask == nil
+    else {
       return
     }
 
-    store.reportPaste(text: text)
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      do {
+        try await store.reportPaste(text: text)
+      } catch {
+        NSAlert(error: error)
+          .runModal()
+      }
+    }
   }
 
   @objc private func handleToggleUIEventsLogging() {

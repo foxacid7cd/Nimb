@@ -83,9 +83,7 @@ public final class Store: Sendable {
   }
 
   public nonisolated func report(keyPress: KeyPress) {
-    Task { @StateActor in
-      await instance.report(keyPress: keyPress)
-    }
+    instance.report(keyPress: keyPress)
   }
 
   public nonisolated func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) {
@@ -101,39 +99,27 @@ public final class Store: Sendable {
   }
 
   public nonisolated func reportPopupmenuItemSelected(atIndex index: Int) {
-    Task { @StateActor in
-      await instance.reportPopupmenuItemSelected(atIndex: index)
-    }
+    instance.reportPopupmenuItemSelected(atIndex: index)
   }
 
   public nonisolated func reportTablineBufferSelected(withID id: Buffer.ID) {
-    Task { @StateActor in
-      await instance.reportTablineBufferSelected(withID: id)
-    }
+    instance.reportTablineBufferSelected(withID: id)
   }
 
   public nonisolated func reportTablineTabpageSelected(withID id: Tabpage.ID) {
-    Task { @StateActor in
-      await instance.reportTablineTabpageSelected(withID: id)
-    }
+    instance.reportTablineTabpageSelected(withID: id)
   }
 
   public nonisolated func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) {
-    Task { @StateActor in
-      await instance.report(gridWithID: id, changedSizeTo: size)
-    }
+    instance.report(gridWithID: id, changedSizeTo: size)
   }
 
   public nonisolated func reportPumBounds(gridFrame: CGRect) {
-    Task { @StateActor in
-      await instance.reportPumBounds(gridFrame: gridFrame)
-    }
+    instance.reportPumBounds(gridFrame: gridFrame)
   }
 
-  public nonisolated func reportPaste(text: String) {
-    Task { @StateActor in
-      await instance.reportPaste(text: text)
-    }
+  public func reportPaste(text: String) async throws {
+    try await instance.reportPaste(text: text)
   }
 
   @StateActor
@@ -170,40 +156,34 @@ public final class Store: Sendable {
     return nil
   }
 
-  public nonisolated func toggleUIEventsLogging() {
-    Task { @StateActor in
+  public func toggleUIEventsLogging() {
+    Task {
       try await dispatch(reducer: Action.toggleDebugUIEventsLogging)
     }
   }
 
-  public nonisolated func edit(url: URL) {
-    Task { @StateActor in
-      try await instance.edit(url: url)
-    }
+  public func edit(url: URL) async throws {
+    try await instance.edit(url: url)
   }
 
-  public nonisolated func write() {
-    Task { @StateActor in
-      try await instance.write()
-    }
+  public func write() async throws {
+    try await instance.write()
   }
 
-  public nonisolated func saveAs(url: URL) {
-    Task { @StateActor in
-      try await instance.saveAs(url: url)
-    }
+  public func saveAs(url: URL) async throws {
+    try await instance.saveAs(url: url)
   }
 
-  public nonisolated func quit() {
-    Task { @StateActor in
-      try await instance.quit()
-    }
+  public func quit() async throws {
+    try await instance.quit()
   }
 
-  public nonisolated func quitAll() {
-    Task { @StateActor in
-      try await instance.quitAll()
-    }
+  public func quitAll() async throws {
+    try await instance.quitAll()
+  }
+
+  public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
+    try await instance.requestCurrentBufferInfo()
   }
 
   private let instance: Instance

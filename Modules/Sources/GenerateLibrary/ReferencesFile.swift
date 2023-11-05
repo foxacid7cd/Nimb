@@ -36,11 +36,12 @@ public struct ReferencesFile: GeneratableFile {
                 "self = .init(data: data)" as ExprSyntax
               }
 
-              try VariableDeclSyntax("public static var type: Int8") {
-                StmtSyntax(
-                  "return \(raw: type.id)"
-                )
-              }
+              DeclSyntax(
+                "public static let type: Int8 = \(raw: type.id)"
+              )
+              DeclSyntax(
+                "public static let current = Self(data: .init([0]))"
+              )
             }
           }
         }
