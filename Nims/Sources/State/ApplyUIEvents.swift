@@ -61,7 +61,7 @@ public struct ApplyUIEvents: Reducer {
       if let oldCursor {
         apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
       }
-      if let cursor = state.cursor, let style = state.currentCursorStyle {
+      if state.cmdlines.dictionary.isEmpty, let cursor = state.cursor, let style = state.currentCursorStyle {
         apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
       }
       updates.isCursorUpdated = true
@@ -522,6 +522,7 @@ public struct ApplyUIEvents: Reducer {
           }
 
           cursorUpdated(oldCursor: oldCursor)
+          cmdlinesUpdated()
 
         case let .cmdlineSpecialChar(c, shift, level):
           update(&state.cmdlines.dictionary[level]) {

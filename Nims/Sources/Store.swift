@@ -183,7 +183,6 @@ public final class Store: Sendable {
       cursorBlinkingTask?.cancel()
 
       if
-        backgroundState.cmdlines.dictionary.isEmpty,
         let cursorStyle = backgroundState.currentCursorStyle,
         let blinkWait = cursorStyle.blinkWait,
         blinkWait > 0,
@@ -217,7 +216,8 @@ public final class Store: Sendable {
   private func dispatch(reducer: Reducer) async throws {
     var (state, updates) = try await reducer.reduce(state: backgroundState)
 
-    if updates.isCursorUpdated {
+    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isBusyUpdated || updates.isCmdlinesUpdated
+    if shouldResetCursorBlinkingTask {
       cursorBlinkingTask?.cancel()
       cursorBlinkingTask = nil
 
@@ -241,7 +241,7 @@ public final class Store: Sendable {
       await self.stateUpdatesChannel.send(updates)
     }
 
-    if updates.isCursorUpdated {
+    if shouldResetCursorBlinkingTask {
       resetCursorBlinkingTask()
     }
   }

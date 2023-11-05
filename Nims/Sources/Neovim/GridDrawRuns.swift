@@ -403,30 +403,7 @@ public struct CursorDrawRun: Sendable {
         position.column >= location,
         position.column < location + drawRun.boundingRange.count
       {
-        if let cursorShape = style.cursorShape {
-          let cellFrame: CGRect
-          switch cursorShape {
-          case .block:
-            cellFrame = .init(origin: .init(), size: font.cellSize)
-
-          case .horizontal:
-            let size = CGSize(
-              width: font.cellWidth,
-              height: font.cellHeight / 100.0 * Double(style.cellPercentage ?? 25)
-            )
-            cellFrame = .init(
-              origin: .init(x: 0, y: font.cellHeight - size.height),
-              size: size
-            )
-
-          case .vertical:
-            let width = font.cellWidth / 100.0 * Double(style.cellPercentage ?? 25)
-            cellFrame = CGRect(
-              origin: .init(),
-              size: .init(width: width, height: font.cellHeight)
-            )
-          }
-
+        if let cellFrame = style.cellFrame(font: font) {
           self = .init(
             position: position,
             style: style,

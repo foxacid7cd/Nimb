@@ -22,10 +22,7 @@ public final class CmdlinesViewController: NSViewController {
       .sorted(by: { $0.level < $1.level })
 
     for (cmdlineIndex, cmdline) in cmdlines.enumerated() {
-      let blockLines = store.state.cmdlines.blockLines[cmdline.level] ?? []
-
-      let cmdlineView = CmdlineView(store: store)
-      cmdlineView.update(cmdline: cmdline, blockLines: blockLines)
+      let cmdlineView = CmdlineView(store: store, level: cmdline.level)
       contentView.addArrangedSubview(cmdlineView)
       cmdlineView.width(to: contentView)
 

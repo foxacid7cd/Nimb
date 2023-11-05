@@ -39,7 +39,7 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
+    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated || stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
       updateWindow()
     }
   }

@@ -3,10 +3,11 @@
 import AppKit
 
 final class CmdlineView: NSView {
-  init(store: Store) {
+  init(store: Store, level: Int) {
+    self.level = level
     self.store = store
-    firstCharacterView = .init(store: store)
-    contentTextView = .init(store: store)
+    firstCharacterView = .init(store: store, level: level)
+    contentTextView = .init(store: store, level: level)
     super.init(frame: .init())
 
     promptTextField.translatesAutoresizingMaskIntoConstraints = false
@@ -47,6 +48,8 @@ final class CmdlineView: NSView {
 
     contentToLeadingConstraint = contentTextView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10)
     contentToLeadingConstraint!.priority = .defaultHigh
+
+    render()
   }
 
   @available(*, unavailable)
@@ -59,7 +62,7 @@ final class CmdlineView: NSView {
       .map { convert($0, from: contentTextView) }
   }
 
-  func update(cmdline: Cmdline, blockLines: [[Cmdline.ContentPart]]) {
+  func render() {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
         .foregroundColor: NSColor.textColor,
@@ -75,7 +78,6 @@ final class CmdlineView: NSView {
       contentToLeadingConstraint!.isActive = true
 
     } else {
-      firstCharacterView.firstCharacter = cmdline.firstCharacter
       firstCharacterView.render()
 
       firstCharacterView.isHidden = false
@@ -87,12 +89,11 @@ final class CmdlineView: NSView {
       contentToLeadingConstraint!.isActive = false
     }
 
-    contentTextView.blockLines = blockLines
-    contentTextView.cmdline = cmdline
     contentTextView.render()
   }
 
   private let store: Store
+  private let level: Int
   private let promptTextField = NSTextField(labelWithString: "")
   private let firstCharacterView: CmdlineFirstCharacterView
   private let contentTextView: CmdlineTextView
@@ -101,11 +102,20 @@ final class CmdlineView: NSView {
   private var firstCharacterToContentConstraint: NSLayoutConstraint?
   private var contentToTopConstraint: NSLayoutConstraint?
   private var contentToLeadingConstraint: NSLayoutConstraint?
+
+  private var cmdline: Cmdline {
+    store.state.cmdlines.dictionary[level]!
+  }
+
+  private var blockLines: [[Cmdline.ContentPart]] {
+    store.state.cmdlines.blockLines[level] ?? []
+  }
 }
 
 private final class CmdlineFirstCharacterView: NSView {
-  init(store: Store) {
+  init(store: Store, level: Int) {
     self.store = store
+    self.level = level
     super.init(frame: .init())
   }
 
@@ -113,8 +123,6 @@ private final class CmdlineFirstCharacterView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-
-  var firstCharacter = ""
 
   override var frame: NSRect {
     didSet {
@@ -193,14 +201,20 @@ private final class CmdlineFirstCharacterView: NSView {
   }
 
   private let store: Store
+  private let level: Int
   private var ctFrame: CTFrame?
   private var backgroundColor: NSColor?
   private var ctFrameYOffset: Double = 0
+
+  private var firstCharacter: String {
+    store.state.cmdlines.dictionary[level]!.firstCharacter
+  }
 }
 
 private final class CmdlineTextView: NSView {
-  init(store: Store) {
+  init(store: Store, level: Int) {
     self.store = store
+    self.level = level
     super.init(frame: .init())
   }
 
@@ -208,9 +222,6 @@ private final class CmdlineTextView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-
-  var blockLines = [[Cmdline.ContentPart]]()
-  var cmdline: Cmdline?
 
   override var intrinsicContentSize: NSSize {
     let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
@@ -234,10 +245,6 @@ private final class CmdlineTextView: NSView {
   }
 
   func render() {
-    guard let cmdline else {
-      return
-    }
-
     let blockLinesAttributedString = NSMutableAttributedString()
 
     for (blockLineIndex, contentParts) in blockLines.enumerated() {
@@ -300,14 +307,6 @@ private final class CmdlineTextView: NSView {
         ),
         at: cmdline.cursorPosition + cmdline.indent
       )
-    } else {
-      cmdlineAttributedString.addAttributes(
-        [
-          .foregroundColor: store.appearance.defaultBackgroundColor.appKit,
-          .backgroundColor: store.appearance.defaultForegroundColor.appKit,
-        ],
-        range: .init(location: cmdline.cursorPosition + cmdline.indent, length: 1)
-      )
     }
 
     let paragraphStyle = NSMutableParagraphStyle()
@@ -360,10 +359,7 @@ private final class CmdlineTextView: NSView {
   }
 
   func point(forCharacterLocation location: Int) -> CGPoint? {
-    var location = location
-    if let cmdline {
-      location += cmdline.indent
-    }
+    let location = location + cmdline.indent
 
     for ctLine in cmdlineCTLines.reversed() {
       let cfRange = CTLineGetStringRange(ctLine)
@@ -380,18 +376,73 @@ private final class CmdlineTextView: NSView {
   override func draw(_: NSRect) {
     let context = NSGraphicsContext.current!.cgContext
 
-    let ctLines = (blockLineCTLines + cmdlineCTLines)
-      .reversed()
-    for (offset, ctLine) in ctLines.enumerated() {
+    var ctLineIndex = 0
+
+    for cmdlineCTLine in cmdlineCTLines.reversed() {
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(offset) * store.font.cellHeight - store.font.nsFont().descender
+        y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
       )
-      CTLineDraw(ctLine, context)
+      CTLineDraw(cmdlineCTLine, context)
+
+      let range = CTLineGetStringRange(cmdlineCTLine)
+      if
+        store.state.cursorBlinkingPhase,
+        !store.state.isBusy,
+        cmdline.specialCharacter.isEmpty,
+        let currentCursorStyle = store.state.currentCursorStyle,
+        let cellFrame = currentCursorStyle.cellFrame(font: store.font),
+        cmdline.cursorPosition >= range.location,
+        cmdline.cursorPosition < range.location + range.length
+      {
+        let offset = CTLineGetOffsetForStringIndex(cmdlineCTLine, cmdline.cursorPosition, nil)
+        let rect = cellFrame
+          .offsetBy(
+            dx: offset,
+            dy: Double(ctLineIndex) * store.font.cellHeight
+          )
+
+        context.saveGState()
+
+        context.setFillColor(store.appearance.defaultForegroundColor.appKit.cgColor)
+        context.fill([rect])
+
+        context.clip(to: [rect])
+        context.setFillColor(store.appearance.defaultBackgroundColor.appKit.cgColor)
+        let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
+        for glyphRun in glyphRuns {
+          context.textMatrix = .init(
+            translationX: 0,
+            y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+          )
+          CTFontDrawGlyphs(
+            store.font.nsFont(),
+            CTRunGetGlyphsPtr(glyphRun)!,
+            CTRunGetPositionsPtr(glyphRun)!,
+            CTRunGetGlyphCount(glyphRun),
+            context
+          )
+        }
+
+        context.restoreGState()
+      }
+
+      ctLineIndex += 1
+    }
+
+    for blockLineCTLine in blockLineCTLines.reversed() {
+      context.textMatrix = .init(
+        translationX: 0,
+        y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+      )
+      CTLineDraw(blockLineCTLine, context)
+
+      ctLineIndex += 1
     }
   }
 
   private let store: Store
+  private let level: Int
   private var blockLinesAttributedString: NSAttributedString?
   private var cmdlineAttributedString: NSAttributedString?
   private var blockLinesCTFramesetter: CTFramesetter?
@@ -400,4 +451,12 @@ private final class CmdlineTextView: NSView {
   private var cmdlineCTFrame: CTFrame?
   private var blockLineCTLines = [CTLine]()
   private var cmdlineCTLines = [CTLine]()
+
+  private var cmdline: Cmdline {
+    store.state.cmdlines.dictionary[level]!
+  }
+
+  private var blockLines: [[Cmdline.ContentPart]] {
+    store.state.cmdlines.blockLines[level] ?? []
+  }
 }
