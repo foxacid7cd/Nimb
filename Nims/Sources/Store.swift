@@ -39,7 +39,10 @@ public final class Store: Sendable {
   }
 
   deinit {
+    stateThrottlingTask?.cancel()
     instanceTask?.cancel()
+    cursorBlinkingTask?.cancel()
+    hideMsgShowsTask?.cancel()
   }
 
   public private(set) var state: State
