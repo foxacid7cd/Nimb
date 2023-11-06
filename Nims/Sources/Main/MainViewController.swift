@@ -43,13 +43,6 @@ final class MainViewController: NSViewController {
       mainContainerView.height(0, relation: .equalOrGreater)
     )
 
-    mainOverlayView.blendingMode = .withinWindow
-    mainOverlayView.state = .active
-    mainOverlayView.isHidden = true
-    mainContainerView.addSubview(mainOverlayView)
-
-    mainOverlayView.edgesToSuperview()
-
     view = stackView
   }
 
@@ -81,7 +74,7 @@ final class MainViewController: NSViewController {
   }
 
   func showMainView(on: Bool) {
-    mainOverlayView.isHidden = on
+    mainView.alphaValue = on ? 1 : 0.5
   }
 
   func reportOuterGridSizeChangedIfNeeded() {
@@ -122,7 +115,6 @@ final class MainViewController: NSViewController {
   private let mainContainerView = NSView()
   private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
   private lazy var mainView = MainView(store: store)
-  private let mainOverlayView = NSVisualEffectView()
   private var reportedOuterGridSize: IntegerSize?
   private var preMaximizeWindowFrame: CGRect?
 

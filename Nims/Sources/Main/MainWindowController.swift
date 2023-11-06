@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import AsyncAlgorithms
 import Library
 
 final class MainWindowController: NSWindowController {
@@ -25,6 +26,10 @@ final class MainWindowController: NSWindowController {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  enum Event {
+    case liveResizeChanged(on: Bool)
   }
 
   override func windowDidLoad() {
@@ -70,6 +75,7 @@ final class MainWindowController: NSWindowController {
     minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
   )
   private var isWindowInitiallyShown = false
+  private let eventChannel = AsyncChannel<Event>()
 
   private func updateWindow() {
     window!.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
@@ -91,10 +97,24 @@ extension MainWindowController: NSWindowDelegate {
 
   func windowWillStartLiveResize(_: Notification) {
     viewController.showMainView(on: false)
+    Task {
+      await eventChannel.send(.liveResizeChanged(on: true))
+    }
   }
 
   func windowDidEndLiveResize(_: Notification) {
     windowFrameManuallyChanged()
     viewController.showMainView(on: true)
+    Task {
+      await eventChannel.send(.liveResizeChanged(on: false))
+    }
+  }
+}
+
+extension MainWindowController: AsyncSequence {
+  typealias Element = Event
+
+  nonisolated func makeAsyncIterator() -> AsyncChannel<Event>.AsyncIterator {
+    eventChannel.makeAsyncIterator()
   }
 }
