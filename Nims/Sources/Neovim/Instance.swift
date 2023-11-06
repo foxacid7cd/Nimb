@@ -171,21 +171,56 @@ public final class Instance: Sendable {
     try await api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
   }
 
-  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async throws {
-    try await api.fastCall(APIFunctions.NvimUITryResizeGrid(
-      grid: id,
-      width: size.columnsCount,
-      height: size.rowsCount
-    ))
+  public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
+    guard size != previousReportedOuterGridSize else {
+      return
+    }
+    previousReportedOuterGridSize = size
+
+    guard outerGridSizeThrottlingTask == nil else {
+      return
+    }
+    defer { previousReportedOuterGridSizeTime = .now }
+
+    let timeElapsed = previousReportedOuterGridSizeTime.duration(to: .now)
+    if timeElapsed > outerGridSizeThrottlingInterval {
+      try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
+        grid: Grid.OuterID,
+        width: size.columnsCount,
+        height: size.rowsCount
+      ))
+    } else {
+      outerGridSizeThrottlingTask = Task { [weak self] in
+        guard let self else {
+          return
+        }
+
+        do {
+          try await Task.sleep(for: outerGridSizeThrottlingInterval - timeElapsed)
+
+          try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
+            grid: Grid.OuterID,
+            width: previousReportedOuterGridSize!.columnsCount,
+            height: previousReportedOuterGridSize!.rowsCount
+          ))
+
+        } catch {}
+
+        outerGridSizeThrottlingTask = nil
+      }
+    }
   }
 
   public func reportPumBounds(gridFrame: CGRect) async throws {
-    try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
-      width: gridFrame.width,
-      height: gridFrame.height,
-      row: gridFrame.origin.y,
-      col: gridFrame.origin.x
-    ))
+    if gridFrame != previousPumBounds {
+      try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
+        width: gridFrame.width,
+        height: gridFrame.height,
+        row: gridFrame.origin.y,
+        col: gridFrame.origin.x
+      ))
+      previousPumBounds = gridFrame
+    }
   }
 
   public func reportPaste(text: String) async throws {
@@ -246,7 +281,12 @@ public final class Instance: Sendable {
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
+  private var previousPumBounds: CGRect?
   private var task: Task<Void, Never>?
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(100)
+  private var outerGridSizeThrottlingTask: Task<Void, Never>?
+  private var previousReportedOuterGridSizeTime = SuspendingClock.now
+  private var previousReportedOuterGridSize: IntegerSize?
 }
 
 extension Instance: AsyncSequence {

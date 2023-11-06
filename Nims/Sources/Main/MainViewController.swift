@@ -65,33 +65,20 @@ final class MainViewController: NSViewController {
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
 
-      reportedOuterGridSize = nil
-      reportOuterGridSizeChangedIfNeeded()
+      reportOuterGridSizeChanged()
     }
 
     tablineView.render(stateUpdates)
     mainView.render(stateUpdates)
   }
 
-  func showMainView(on: Bool) {
-    mainView.alphaValue = on ? 1 : 0.5
-  }
-
-  func reportOuterGridSizeChangedIfNeeded() {
+  func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
       columnsCount: Int(mainContainerView.frame.width / store.font.cellWidth),
       rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
     )
-    if
-      let outerGrid = store.state.outerGrid,
-      outerGrid.size != outerGridSizeNeeded,
-      outerGridSizeNeeded != reportedOuterGridSize
-    {
-      reportedOuterGridSize = outerGridSizeNeeded
-
-      Task {
-        await store.report(gridWithID: Grid.OuterID, changedSizeTo: outerGridSizeNeeded)
-      }
+    Task {
+      await store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
     }
   }
 
@@ -115,7 +102,6 @@ final class MainViewController: NSViewController {
   private let mainContainerView = NSView()
   private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
   private lazy var mainView = MainView(store: store)
-  private var reportedOuterGridSize: IntegerSize?
   private var preMaximizeWindowFrame: CGRect?
 
   private func updateMinMainContainerViewSize() {

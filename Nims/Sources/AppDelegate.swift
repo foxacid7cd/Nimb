@@ -13,7 +13,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       setupMainMenuController()
       showMainWindowController()
       setupSecondaryWindowControllers()
-      setupMainWindowEventObserving()
       setupKeyDownLocalMonitor()
       runStateUpdatesTask()
     }
@@ -26,7 +25,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var msgShowsWindowController: MsgShowsWindowController?
   private var cmdlinesWindowController: CmdlinesWindowController?
   private var popupmenuWindowController: PopupmenuWindowController?
-  private var mainWindowEventTask: Task<Void, Never>?
 
   private func setupStore() async {
     let initialOuterGridSize: IntegerSize = if
@@ -82,24 +80,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       msgShowsWindow: msgShowsWindowController!.window!,
       gridWindowFrameTransformer: self
     )
-  }
-
-  private func setupMainWindowEventObserving() {
-    mainWindowEventTask = Task { [msgShowsWindowController, cmdlinesWindowController, popupmenuWindowController] in
-      do {
-        for await event in mainWindowController! {
-          try Task.checkCancellation()
-
-          switch event {
-          case let .liveResizeChanged(on):
-            let alphaValue: Double = on ? 0.5 : 1
-            msgShowsWindowController!.window!.alphaValue = alphaValue
-            cmdlinesWindowController!.window!.alphaValue = alphaValue
-            popupmenuWindowController!.window!.alphaValue = alphaValue
-          }
-        }
-      } catch {}
-    }
   }
 
   private func setupKeyDownLocalMonitor() {

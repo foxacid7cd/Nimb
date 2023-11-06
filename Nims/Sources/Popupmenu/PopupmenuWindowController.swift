@@ -33,7 +33,6 @@ public final class PopupmenuWindowController: NSWindowController {
     window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     window.level = .popUpMenu
     window.alphaValue = 0
-    mainWindow.addChildWindow(window, ordered: .above)
 
     super.init(window: window)
 
@@ -46,7 +45,7 @@ public final class PopupmenuWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
+    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated || stateUpdates.isOuterGridLayoutUpdated {
       updateWindow()
 
     } else if stateUpdates.isPopupmenuSelectionUpdated {
@@ -67,66 +66,80 @@ public final class PopupmenuWindowController: NSWindowController {
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?
 
+  private var preferredWindowFrame: CGRect {
+    guard
+      let gridWindowFrameTransformer,
+      let popupmenu = store.state.popupmenu,
+      let anchorOrigin = gridWindowFrameTransformer.anchorOrigin(for: popupmenu.anchor)
+    else {
+      return .init()
+    }
+    let size = CGSize(
+      width: 300,
+      height: 176
+    )
+    let origin = CGPoint(
+      x: anchorOrigin.x - 13,
+      y: anchorOrigin.y - size.height
+    )
+    return .init(origin: origin, size: size)
+  }
+
+  private func updateWindowFrameIfNeeded() {
+    guard let outerGrid = store.state.outerGrid else {
+      return
+    }
+
+    let frame = preferredWindowFrame
+    if frame != window!.frame {
+      window!.setFrame(frame, display: true)
+
+      let gridSize = CGSize(
+        width: ceil(frame.size.width / store.font.cellWidth),
+        height: ceil(frame.size.height / store.font.cellHeight)
+      )
+      let gridFrame = CGRect(
+        origin: .init(
+          x: floor((frame.origin.x - mainWindow.frame.origin.x) / store.font.cellWidth),
+          y: Double(outerGrid.rowsCount) - floor((frame.origin.y - mainWindow.frame.origin.y) / store.font.cellHeight) - gridSize.height
+        ),
+        size: gridSize
+      )
+      Task {
+        await store.reportPumBounds(gridFrame: gridFrame)
+      }
+    }
+  }
+
   private func updateWindow() {
-    if let popupmenu = store.state.popupmenu, let outerGrid = store.state.outerGrid {
-      viewController.reloadData()
+    updateWindowFrameIfNeeded()
+    viewController.reloadData()
 
-      if let anchorOrigin = gridWindowFrameTransformer?.anchorOrigin(for: popupmenu.anchor) {
-        let size = CGSize(
-          width: 300,
-          height: 176
-        )
-        let origin = CGPoint(
-          x: anchorOrigin.x - 13,
-          y: anchorOrigin.y - size.height
-        )
-        let windowFrame = CGRect(origin: origin, size: size)
-
-        let gridSize = CGSize(
-          width: ceil(size.width / store.font.cellWidth),
-          height: ceil(size.height / store.font.cellHeight)
-        )
-        let gridFrame = CGRect(
-          origin: .init(
-            x: floor((origin.x - mainWindow.frame.origin.x) / store.font.cellWidth),
-            y: Double(outerGrid.rowsCount) - floor((origin.y - mainWindow.frame.origin.y) / store.font.cellHeight) - gridSize.height
-          ),
-          size: gridSize
-        )
-
-        Task {
-          await store.reportPumBounds(gridFrame: gridFrame)
-        }
-
-        window!.setFrame(windowFrame, display: true)
-
-        let parentWindow = switch popupmenu.anchor {
-        case .grid:
-          mainWindow
-
-        case .cmdline:
-          cmdlinesWindow
-        }
-        if window!.parent != parentWindow {
-          window!.parent?.removeChildWindow(window!)
-          parentWindow.addChildWindow(window!, ordered: .above)
-          window!.alphaValue = 0
-          isVisibleAnimatedOn = nil
-        }
-
-        if isVisibleAnimatedOn != true {
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            window!.animator().alphaValue = 1
-          }
-          isVisibleAnimatedOn = true
-        }
-
-        if let selectedItemIndex = popupmenu.selectedItemIndex {
-          viewController.scrollTo(itemAtIndex: selectedItemIndex)
-        }
+    if let popupmenu = store.state.popupmenu {
+      let parentWindow = switch popupmenu.anchor {
+      case .grid:
+        mainWindow
+      case .cmdline:
+        cmdlinesWindow
+      }
+      if window!.parent != parentWindow {
+        window!.parent?.removeChildWindow(window!)
+        parentWindow.addChildWindow(window!, ordered: .above)
+        window!.alphaValue = 0
+        isVisibleAnimatedOn = nil
       }
 
+      if isVisibleAnimatedOn != true {
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          window!.animator().alphaValue = 1
+        }
+        isVisibleAnimatedOn = true
+      }
+
+      if let selectedItemIndex = popupmenu.selectedItemIndex {
+        viewController.scrollTo(itemAtIndex: selectedItemIndex)
+      }
     } else {
       if isVisibleAnimatedOn != false {
         NSAnimationContext.runAnimationGroup { context in

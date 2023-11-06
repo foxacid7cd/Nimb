@@ -28,10 +28,6 @@ final class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  enum Event {
-    case liveResizeChanged(on: Bool)
-  }
-
   override func windowDidLoad() {
     super.windowDidLoad()
 
@@ -75,14 +71,12 @@ final class MainWindowController: NSWindowController {
     minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
   )
   private var isWindowInitiallyShown = false
-  private let eventChannel = AsyncChannel<Event>()
 
   private func updateWindow() {
     window!.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
   }
 
-  private func windowFrameManuallyChanged() {
-    viewController.reportOuterGridSizeChangedIfNeeded()
+  private func saveWindowFrame() {
     UserDefaults.standard.setValue(window!.frame.width, forKey: "windowWidth")
     UserDefaults.standard.setValue(window!.frame.height, forKey: "windowHeight")
   }
@@ -90,32 +84,17 @@ final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
-    if isWindowInitiallyShown, !window!.inLiveResize {
-      windowFrameManuallyChanged()
+    guard isWindowInitiallyShown else {
+      return
     }
-  }
-
-  func windowWillStartLiveResize(_: Notification) {
-    viewController.showMainView(on: false)
-    Task {
-      await eventChannel.send(.liveResizeChanged(on: true))
+    viewController.reportOuterGridSizeChanged()
+    if !window!.inLiveResize {
+      saveWindowFrame()
     }
   }
 
   func windowDidEndLiveResize(_: Notification) {
-    windowFrameManuallyChanged()
-    viewController.showMainView(on: true)
-    Task {
-      await eventChannel.send(.liveResizeChanged(on: false))
-    }
-  }
-}
-
-extension MainWindowController: AsyncSequence {
-  typealias Element = Event
-
-  nonisolated func makeAsyncIterator() -> AsyncChannel<Event>.AsyncIterator {
-    eventChannel.makeAsyncIterator()
+    saveWindowFrame()
   }
 }
 

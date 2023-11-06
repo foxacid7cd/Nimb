@@ -133,12 +133,8 @@ public final class Store: Sendable {
     }
   }
 
-  public func report(gridWithID id: Grid.ID, changedSizeTo size: IntegerSize) async {
-    do {
-      try await instance.report(gridWithID: id, changedSizeTo: size)
-    } catch {
-      await handleActionError(error)
-    }
+  public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
+    await instance.reportOuterGrid(changedSizeTo: size)
   }
 
   public func reportPumBounds(gridFrame: CGRect) async {

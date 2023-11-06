@@ -28,11 +28,21 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
 
     window.delegate = self
 
+    parentWindowFrameObservation = parentWindow.observe(\.frame) { [weak self] _, _ in
+      guard let self else {
+        return
+      }
+
+      Task { @MainActor in
+        self.updateWindowFrameOriginIfNeeded()
+      }
+    }
     updateWindow()
   }
 
   deinit {
     task?.cancel()
+    parentWindowFrameObservation?.invalidate()
   }
 
   @available(*, unavailable)
@@ -52,10 +62,7 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
   }
 
   public func windowDidResize(_: Notification) {
-    window!.setFrameOrigin(.init(
-      x: parentWindow.frame.origin.x + (parentWindow.frame.width - window!.frame.width) / 2,
-      y: parentWindow.frame.origin.y + parentWindow.frame.height / 1.5
-    ))
+    updateWindowFrameOriginIfNeeded()
   }
 
   private let store: Store
@@ -63,8 +70,31 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
   private let viewController: CmdlinesViewController
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?
+  private var parentWindowFrameObservation: NSKeyValueObservation?
+
+  private var preferredWindowFrameOrigin: CGPoint {
+    .init(
+      x: parentWindow.frame.origin.x + (parentWindow.frame.width - window!.frame.width) / 2,
+      y: parentWindow.frame.origin.y + parentWindow.frame.height / 1.5
+    )
+  }
+
+  private func updateWindowFrameOriginIfNeeded() {
+    let origin = preferredWindowFrameOrigin
+    if origin != window!.frame.origin {
+      window!.setFrame(
+        .init(
+          origin: origin,
+          size: window!.frame.size
+        ),
+        display: true
+      )
+    }
+  }
 
   private func updateWindow() {
+    updateWindowFrameOriginIfNeeded()
+
     guard let window else {
       return
     }
