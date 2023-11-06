@@ -54,30 +54,34 @@ class MainView: NSView {
       }
     }
 
+    var activated = [NSLayoutConstraint]()
+    var deactivated = [NSLayoutConstraint]()
+
     for gridID in updatedLayoutGridIDs {
       if let grid = store.state.grids[gridID] {
         let gridView = gridViewOrCreate(forGridID: gridID)
 
         if gridID == Grid.OuterID {
-          gridView.floatingWindowConstraints?.horizontal.isActive = false
-          gridView.floatingWindowConstraints?.vertical.isActive = false
-          gridView.floatingWindowConstraints = nil
-
-          if let constraints = gridView.windowConstraints {
-            constraints.leading.constant = 0
-            constraints.top.constant = 0
-
-          } else {
-            let leadingConstraint = gridView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0)
-            leadingConstraint.priority = .defaultHigh
-            leadingConstraint.isActive = true
-
-            let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: 0)
-            topConstraint.priority = .defaultHigh
-            topConstraint.isActive = true
-
-            gridView.windowConstraints = (leadingConstraint, topConstraint)
+          if let (horizontal, vertical) = gridView.floatingWindowConstraints {
+            deactivated.append(horizontal)
+            deactivated.append(vertical)
+            gridView.floatingWindowConstraints = nil
           }
+
+          if let (leading, top) = gridView.windowConstraints {
+            deactivated.append(leading)
+            deactivated.append(top)
+          }
+
+          let leading = gridView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0)
+          leading.priority = .defaultHigh
+          activated.append(leading)
+
+          let top = gridView.topAnchor.constraint(equalTo: topAnchor, constant: 0)
+          top.priority = .defaultHigh
+          activated.append(top)
+
+          gridView.windowConstraints = (leading, top)
 
           gridView.isHidden = false
 
@@ -86,39 +90,43 @@ class MainView: NSView {
           case let .plain(value):
             let origin = value.origin * store.font.cellSize
 
-            gridView.floatingWindowConstraints?.horizontal.isActive = false
-            gridView.floatingWindowConstraints?.vertical.isActive = false
-            gridView.floatingWindowConstraints = nil
-
-            if let constraints = gridView.windowConstraints {
-              constraints.leading.constant = origin.x
-              constraints.top.constant = origin.y
-
-            } else {
-              let leadingConstraint = gridView.leadingAnchor.constraint(
-                equalTo: leadingAnchor,
-                constant: origin.x
-              )
-              leadingConstraint.priority = .defaultHigh
-              leadingConstraint.isActive = true
-
-              let topConstraint = gridView.topAnchor.constraint(equalTo: topAnchor, constant: origin.y)
-              topConstraint.priority = .defaultHigh
-              topConstraint.isActive = true
-
-              gridView.windowConstraints = (leadingConstraint, topConstraint)
+            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
+              deactivated.append(horizontal)
+              deactivated.append(vertical)
+              gridView.floatingWindowConstraints = nil
             }
+
+            if let (leading, top) = gridView.windowConstraints {
+              deactivated.append(leading)
+              deactivated.append(top)
+            }
+            let leading = gridView.leadingAnchor.constraint(
+              equalTo: leadingAnchor,
+              constant: origin.x
+            )
+            leading.priority = .defaultHigh
+            activated.append(leading)
+
+            let top = gridView.topAnchor.constraint(equalTo: topAnchor, constant: origin.y)
+            top.priority = .defaultHigh
+            activated.append(top)
+
+            gridView.windowConstraints = (leading, top)
 
             gridView.isHidden = grid.isHidden
 
           case let .floating(value):
-            gridView.windowConstraints?.leading.isActive = false
-            gridView.windowConstraints?.top.isActive = false
-            gridView.windowConstraints = nil
+            if let (leading, top) = gridView.windowConstraints {
+              deactivated.append(leading)
+              deactivated.append(top)
+              gridView.windowConstraints = nil
+            }
 
-            gridView.floatingWindowConstraints?.horizontal.isActive = false
-            gridView.floatingWindowConstraints?.vertical.isActive = false
-            gridView.floatingWindowConstraints = nil
+            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
+              deactivated.append(horizontal)
+              deactivated.append(vertical)
+              gridView.floatingWindowConstraints = nil
+            }
 
             let anchorGridView = gridViewOrCreate(forGridID: value.anchorGridID)
 
@@ -170,39 +178,51 @@ class MainView: NSView {
               )
             }
 
-            horizontal.isActive = true
-            vertical.isActive = true
+            activated.append(horizontal)
+            activated.append(vertical)
             gridView.floatingWindowConstraints = (horizontal, vertical)
 
             gridView.isHidden = grid.isHidden
 
           case .external:
-            gridView.windowConstraints?.leading.isActive = false
-            gridView.windowConstraints?.top.isActive = false
-            gridView.windowConstraints = nil
+            if let (leading, top) = gridView.windowConstraints {
+              deactivated.append(leading)
+              deactivated.append(top)
+              gridView.windowConstraints = nil
+            }
 
-            gridView.floatingWindowConstraints?.horizontal.isActive = false
-            gridView.floatingWindowConstraints?.vertical.isActive = false
-            gridView.floatingWindowConstraints = nil
+            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
+              deactivated.append(horizontal)
+              deactivated.append(vertical)
+              gridView.floatingWindowConstraints = nil
+            }
 
             gridView.isHidden = true
           }
 
         } else {
-          gridView.windowConstraints?.leading.isActive = false
-          gridView.windowConstraints?.top.isActive = false
-          gridView.windowConstraints = nil
+          if let (leading, top) = gridView.windowConstraints {
+            deactivated.append(leading)
+            deactivated.append(top)
+            gridView.windowConstraints = nil
+          }
 
-          gridView.floatingWindowConstraints?.horizontal.isActive = false
-          gridView.floatingWindowConstraints?.vertical.isActive = false
-          gridView.floatingWindowConstraints = nil
+          if let (horizontal, vertical) = gridView.floatingWindowConstraints {
+            deactivated.append(horizontal)
+            deactivated.append(vertical)
+            gridView.floatingWindowConstraints = nil
+          }
 
           gridView.isHidden = true
         }
       } else {
-        gridViews[gridID]?.isHidden = true
+        gridViews.removeValue(forKey: gridID)?.removeFromSuperview()
       }
     }
+
+    NSLayoutConstraint.deactivate(deactivated)
+    NSLayoutConstraint.activate(activated)
+    layoutSubtreeIfNeeded()
 
     if stateUpdates.isGridsOrderUpdated {
       sortSubviews(
