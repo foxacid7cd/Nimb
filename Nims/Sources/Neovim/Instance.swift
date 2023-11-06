@@ -38,10 +38,17 @@ public final class Instance: Sendable {
     task = Task { [uiEventsChannel] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @StateActor in
+          var bufferedUIEvents = [UIEvent]()
+
           for try await uiEvents in api {
             try Task.checkCancellation()
 
-            await uiEventsChannel.send(uiEvents)
+            bufferedUIEvents += uiEvents
+
+            if let last = uiEvents.last, case .flush = last {
+              await uiEventsChannel.send(bufferedUIEvents)
+              bufferedUIEvents.removeAll(keepingCapacity: true)
+            }
           }
         }
 

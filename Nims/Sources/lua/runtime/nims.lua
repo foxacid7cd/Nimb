@@ -41,15 +41,15 @@ end
 function M.edit(path)
   vim.v.errmsg = ""
   vim.cmd([[silent! edit ]] .. path)
-  if (vim.v.errmsg ~= "") then
-    return error(vim.v.errmsg)
+  if vim.v.errmsg ~= "" then
+    return failure(vim.v.errmsg)
   end
 end
 
 function M.write()
   vim.v.errmsg = ""
   vim.cmd([[silent! write]])
-  if (vim.v.errmsg ~= "") then
+  if vim.v.errmsg ~= "" then
     return failure(vim.v.errmsg)
   end
 end
@@ -57,15 +57,15 @@ end
 function M.save_as(path)
   vim.v.errmsg = ""
   vim.cmd([[silent! saveas ]] .. path)
-  if (vim.v.errmsg ~= "") then
+  if vim.v.errmsg ~= "" then
     return failure(vim.v.errmsg)
   end
 end
 
 function M.quit()
   vim.v.errmsg = ""
-  vim.cmd([[silent! q]])
-  if (vim.v.errmsg ~= "") then
+  vim.cmd([[silent! quit]])
+  if vim.v.errmsg ~= "" then
     return failure(vim.v.errmsg)
   end
 end
@@ -73,7 +73,7 @@ end
 function M.quit_all()
   vim.v.errmsg = ""
   vim.cmd([[silent! qa]])
-  if (vim.v.errmsg ~= "") then
+  if vim.v.errmsg ~= "" then
     return failure(vim.v.errmsg)
   end
 end

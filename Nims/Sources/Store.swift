@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
+import CustomDump
 import Foundation
 import Library
 
@@ -25,8 +26,8 @@ public final class Store: Sendable {
           }
           try Task.checkCancellation()
 
-          if backgroundState.debug.isUIEventsLoggingEnabled {
-            Loggers.uiEvents.info("\(String(customDumping: uiEvents))")
+          if self.backgroundState.debug.isUIEventsLoggingEnabled {
+            Loggers.uiEvents.debug("\(String(customDumping: uiEvents))")
           }
 
           try await self.dispatch(reducer: ApplyUIEvents(uiEvents: uiEvents))
@@ -63,8 +64,12 @@ public final class Store: Sendable {
 
   public func scheduleHideMsgShowsIfPossible() {
     Task { @StateActor in
-      if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed, hideMsgShowsTask == nil {
+      if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed {
+        hideMsgShowsTask?.cancel()
+
         hideMsgShowsTask = Task { [weak self] in
+          defer { hideMsgShowsTask = nil }
+
           do {
             try await Task.sleep(for: .milliseconds(100))
 
@@ -72,7 +77,6 @@ public final class Store: Sendable {
               return
             }
 
-            hideMsgShowsTask = nil
             try await dispatch(reducer: Action.setIsMsgShowsDismissed(true))
           } catch {}
         }
@@ -329,14 +333,14 @@ public final class Store: Sendable {
             let duration = stateThrottlingInterval - timeElapsed
             try await Task.sleep(for: duration)
 
-            let state = backgroundState
-            Task { @MainActor [stateUpdatesAccumulator] in
-              self.state = state
+            Task { @MainActor [backgroundState, stateUpdatesAccumulator] in
+              self.state = backgroundState
               await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
             }
             stateUpdatesAccumulator = .init()
-            stateThrottlingTask = nil
           } catch {}
+
+          stateThrottlingTask = nil
         }
       }
     }
@@ -350,11 +354,17 @@ public final class Store: Sendable {
     let errorMessages: [String] = if let error = error as? NimsNeovimError {
       error.errorMessages
     } else if let error = error as? NeovimError {
-      ["Neovim failed with value:\n\(String(customDumping: error.raw))"]
+      String(customDumping: error.raw)
+        .components(separatedBy: .newlines)
+        .filter(\.isEmpty)
     } else {
-      ["\(error.localizedDescription)\n\(String(customDumping: error))"]
+      String(customDumping: error)
+        .components(separatedBy: .newlines)
+        .filter(\.isEmpty)
     }
-    try? await instance.report(errorMessages: errorMessages)
+    if !errorMessages.isEmpty {
+      try? await instance.report(errorMessages: errorMessages)
+    }
   }
 }
 

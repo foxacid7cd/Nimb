@@ -33,6 +33,8 @@ final class MsgShowsWindowController: NSWindowController {
   }
 
   func render(_ stateUpdates: State.Updates) {
+    viewController.render(stateUpdates)
+
     if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isMsgShowsUpdated {
       updateWindowOrigin()
     }
@@ -50,8 +52,6 @@ final class MsgShowsWindowController: NSWindowController {
         }
       }
     }
-
-    viewController.render(stateUpdates)
   }
 
   private let store: Store
@@ -120,7 +120,7 @@ final class MsgShowsViewController: NSViewController {
   }
 
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isMsgShowsUpdated {
+    if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
       reloadData()
     }
   }

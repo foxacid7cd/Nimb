@@ -278,7 +278,7 @@ extension MainMenuController: NSMenuDelegate {
       }
 
     case debugMenu:
-      let title = store.state.debug.isUIEventsLoggingEnabled ? "Disable UI events logging" : "Enable UI events logging"
+      let title = store.state.debug.isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging"
       let item = NSMenuItem(title: title, action: #selector(handleToggleUIEventsLogging), keyEquivalent: "")
       item.target = self
       menu.items = [item]
