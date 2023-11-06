@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Library
 
 public final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
   public init(store: Store) {
@@ -13,6 +14,10 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     fatalError("init(coder:) has not been implemented")
   }
 
+  public func setIsUserInteractionEnabled(_ value: Bool) {
+    customView.isUserInteractionEnabled = value
+  }
+
   public func reloadData() {
     tableView.reloadData()
   }
@@ -22,7 +27,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   override public func loadView() {
-    let view = NSView()
+    let view = customView
 
     let blurView = NSVisualEffectView()
     blurView.blendingMode = .behindWindow
@@ -86,6 +91,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   private let store: Store
-  private let scrollView = NSScrollView()
-  private let tableView = NSTableView()
+  private lazy var customView = CustomView()
+  private lazy var scrollView = NSScrollView()
+  private lazy var tableView = NSTableView()
 }

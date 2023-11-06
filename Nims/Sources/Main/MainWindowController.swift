@@ -10,17 +10,16 @@ final class MainWindowController: NSWindowController {
 
     let window = MainWindow(
       contentRect: .init(),
-      styleMask: [.titled, .miniaturizable, .resizable, .fullSizeContentView],
+      styleMask: [.titled, .miniaturizable, .fullSizeContentView],
       backing: .buffered,
       defer: true
     )
     window.titlebarAppearsTransparent = true
-    window.isMovable = false
     window.title = ""
     super.init(window: window)
 
     window.delegate = self
-    windowFrameAutosaveName = "MainWindow"
+    updateWindow()
   }
 
   @available(*, unavailable)
@@ -28,14 +27,8 @@ final class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override func windowDidLoad() {
-    super.windowDidLoad()
-
-    updateWindow()
-  }
-
   func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated {
+    if stateUpdates.isAppearanceUpdated || stateUpdates.isMouseOnUpdated {
       updateWindow()
     }
 
@@ -74,6 +67,11 @@ final class MainWindowController: NSWindowController {
 
   private func updateWindow() {
     window!.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+    if store.state.isMouseOn {
+      window!.styleMask.insert(.resizable)
+    } else {
+      window!.styleMask.remove(.resizable)
+    }
   }
 
   private func saveWindowFrame() {
@@ -84,12 +82,11 @@ final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
-    guard isWindowInitiallyShown else {
-      return
-    }
-    viewController.reportOuterGridSizeChanged()
-    if !window!.inLiveResize {
-      saveWindowFrame()
+    if isWindowInitiallyShown {
+      viewController.reportOuterGridSizeChanged()
+      if !window!.inLiveResize {
+        saveWindowFrame()
+      }
     }
   }
 

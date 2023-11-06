@@ -16,9 +16,13 @@ final class MainViewController: NSViewController {
   }
 
   override func loadView() {
+    let view = customView
+
     let stackView = NSStackView(views: [])
     stackView.spacing = 0
     stackView.orientation = .vertical
+    view.addSubview(stackView)
+    stackView.edgesToSuperview()
 
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     stackView.addArrangedSubview(tablineView)
@@ -43,7 +47,7 @@ final class MainViewController: NSViewController {
       mainContainerView.height(0, relation: .equalOrGreater)
     )
 
-    view = stackView
+    self.view = view
   }
 
   override func viewDidLoad() {
@@ -68,8 +72,14 @@ final class MainViewController: NSViewController {
       reportOuterGridSizeChanged()
     }
 
+    if stateUpdates.isMouseOnUpdated {
+      customView.isUserInteractionEnabled = store.state.isMouseOn
+    }
+
     tablineView.render(stateUpdates)
     mainView.render(stateUpdates)
+
+    view.layoutSubtreeIfNeeded()
   }
 
   func reportOuterGridSizeChanged() {
@@ -97,6 +107,7 @@ final class MainViewController: NSViewController {
   }
 
   private let store: Store
+  private lazy var customView = CustomView()
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private let mainContainerView = NSView()

@@ -23,20 +23,8 @@ public final class PopupmenuWindowController: NSWindowController {
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
     viewController = .init(store: store)
 
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.titled, .fullSizeContentView]
-    window.titleVisibility = .hidden
-    window.titlebarAppearsTransparent = true
-    window.isMovable = false
-    window.isOpaque = false
-    window.isFloatingPanel = true
-    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.level = .popUpMenu
-    window.alphaValue = 0
-
+    let window = FloatingPanel(contentViewController: viewController)
     super.init(window: window)
-
-    updateWindow()
   }
 
   @available(*, unavailable)
@@ -45,7 +33,15 @@ public final class PopupmenuWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated || stateUpdates.isOuterGridLayoutUpdated {
+    if stateUpdates.isMouseOnUpdated {
+      viewController.setIsUserInteractionEnabled(store.state.isMouseOn)
+    }
+
+    if stateUpdates.isPopupmenuUpdated || !stateUpdates.updatedLayoutGridIDs.isEmpty || stateUpdates.isFontUpdated {
+      updateWindowFrameIfNeeded()
+    }
+
+    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
       updateWindow()
 
     } else if stateUpdates.isPopupmenuSelectionUpdated {
@@ -94,39 +90,34 @@ public final class PopupmenuWindowController: NSWindowController {
     if frame != window!.frame {
       window!.setFrame(frame, display: true)
 
-      let gridSize = CGSize(
-        width: ceil(frame.size.width / store.font.cellWidth),
-        height: ceil(frame.size.height / store.font.cellHeight)
+      let size = IntegerSize(
+        columnsCount: Int((frame.size.width / store.font.cellWidth).rounded(.up)),
+        rowsCount: Int((frame.size.height / store.font.cellHeight).rounded(.up))
       )
-      let gridFrame = CGRect(
+      let rectangle = IntegerRectangle(
         origin: .init(
-          x: floor((frame.origin.x - mainWindow.frame.origin.x) / store.font.cellWidth),
-          y: Double(outerGrid.rowsCount) - floor((frame.origin.y - mainWindow.frame.origin.y) / store.font.cellHeight) - gridSize.height
+          column: Int(((frame.origin.x - mainWindow.frame.origin.x) / store.font.cellWidth).rounded(.down)),
+          row: outerGrid.rowsCount - Int(((frame.origin.y - mainWindow.frame.origin.y) / store.font.cellHeight).rounded(.down)) - size.rowsCount + 1
         ),
-        size: gridSize
+        size: size
       )
       Task {
-        await store.reportPumBounds(gridFrame: gridFrame)
+        await store.reportPumBounds(rectangle: rectangle)
       }
     }
   }
 
   private func updateWindow() {
-    updateWindowFrameIfNeeded()
     viewController.reloadData()
 
     if let popupmenu = store.state.popupmenu {
-      let parentWindow = switch popupmenu.anchor {
-      case .grid:
-        mainWindow
-      case .cmdline:
-        cmdlinesWindow
-      }
-      if window!.parent != parentWindow {
-        window!.parent?.removeChildWindow(window!)
-        parentWindow.addChildWindow(window!, ordered: .above)
+      if window!.parent == nil {
+        mainWindow.addChildWindow(window!, ordered: .above)
         window!.alphaValue = 0
-        isVisibleAnimatedOn = nil
+      }
+
+      if let selectedItemIndex = popupmenu.selectedItemIndex {
+        viewController.scrollTo(itemAtIndex: selectedItemIndex)
       }
 
       if isVisibleAnimatedOn != true {
@@ -135,10 +126,6 @@ public final class PopupmenuWindowController: NSWindowController {
           window!.animator().alphaValue = 1
         }
         isVisibleAnimatedOn = true
-      }
-
-      if let selectedItemIndex = popupmenu.selectedItemIndex {
-        viewController.scrollTo(itemAtIndex: selectedItemIndex)
       }
     } else {
       if isVisibleAnimatedOn != false {

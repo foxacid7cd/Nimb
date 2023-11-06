@@ -12,32 +12,10 @@ final class MsgShowsWindowController: NSWindowController {
 
     viewController = MsgShowsViewController(store: store)
 
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.titled, .fullSizeContentView]
-    window.titleVisibility = .hidden
-    window.titlebarAppearsTransparent = true
-    window.isOpaque = false
-    window.isMovable = false
-    window.isFloatingPanel = true
-    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.level = .popUpMenu
-    window.alphaValue = 0
-    parentWindow.addChildWindow(window, ordered: .above)
-
+    let window = FloatingPanel(contentViewController: viewController)
     super.init(window: window)
 
     window.delegate = self
-
-    parentWindowFrameObservation = parentWindow.observe(\.frame) { [weak self] _, _ in
-      guard let self else {
-        return
-      }
-
-      Task { @MainActor in
-        self.updateWindowFrameOriginIfNeeded()
-      }
-    }
-    updateWindowFrameOriginIfNeeded()
   }
 
   @available(*, unavailable)
@@ -45,15 +23,11 @@ final class MsgShowsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    parentWindowFrameObservation?.invalidate()
-  }
-
   func render(_ stateUpdates: State.Updates) {
     viewController.render(stateUpdates)
 
-    if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isMsgShowsUpdated {
-      updateWindowFrameOriginIfNeeded()
+    if stateUpdates.isOuterGridLayoutUpdated || stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
+      updateWindowFrameOrigin()
     }
 
     if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
@@ -67,6 +41,11 @@ final class MsgShowsWindowController: NSWindowController {
         }
       } else {
         if isVisibleAnimatedOn != true {
+          if window!.parent == nil {
+            parentWindow.addChildWindow(window!, ordered: .above)
+            window!.alphaValue = 0
+          }
+
           NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             window!.animator().alphaValue = 1
@@ -81,7 +60,6 @@ final class MsgShowsWindowController: NSWindowController {
   private let parentWindow: NSWindow
   private let viewController: MsgShowsViewController
   private var isVisibleAnimatedOn: Bool?
-  private var parentWindowFrameObservation: NSKeyValueObservation?
 
   private var preferredWindowOrigin: CGPoint {
     .init(
@@ -90,23 +68,14 @@ final class MsgShowsWindowController: NSWindowController {
     )
   }
 
-  private func updateWindowFrameOriginIfNeeded() {
-    let origin = preferredWindowOrigin
-    if origin != window!.frame.origin {
-      window!.setFrame(
-        .init(
-          origin: origin,
-          size: window!.frame.size
-        ),
-        display: true
-      )
-    }
+  private func updateWindowFrameOrigin() {
+    window!.setFrameOrigin(preferredWindowOrigin)
   }
 }
 
 extension MsgShowsWindowController: NSWindowDelegate {
   func windowDidResize(_: Notification) {
-    updateWindowFrameOriginIfNeeded()
+    updateWindowFrameOrigin()
   }
 }
 

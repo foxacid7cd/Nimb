@@ -89,23 +89,14 @@ public final class Store: Sendable {
   }
 
   public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
-    guard state.isMouseOn else {
-      return
-    }
     await instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
   public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
-    guard state.isMouseOn else {
-      return
-    }
     await instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
   public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
-    guard state.isMouseOn else {
-      return
-    }
     await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 
@@ -137,9 +128,14 @@ public final class Store: Sendable {
     await instance.reportOuterGrid(changedSizeTo: size)
   }
 
-  public func reportPumBounds(gridFrame: CGRect) async {
+  public func reportPumBounds(rectangle: IntegerRectangle) async {
+    guard rectangle != previousPumBounds else {
+      return
+    }
+    previousPumBounds = rectangle
+
     do {
-      try await instance.reportPumBounds(gridFrame: gridFrame)
+      try await instance.reportPumBounds(rectangle: rectangle)
     } catch {
       await handleActionError(error)
     }
@@ -258,6 +254,7 @@ public final class Store: Sendable {
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
+  private var previousPumBounds: IntegerRectangle?
 
   @StateActor
   private func resetCursorBlinkingTask() {

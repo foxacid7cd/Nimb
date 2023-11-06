@@ -211,16 +211,13 @@ public final class Instance: Sendable {
     }
   }
 
-  public func reportPumBounds(gridFrame: CGRect) async throws {
-    if gridFrame != previousPumBounds {
-      try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
-        width: gridFrame.width,
-        height: gridFrame.height,
-        row: gridFrame.origin.y,
-        col: gridFrame.origin.x
-      ))
-      previousPumBounds = gridFrame
-    }
+  public func reportPumBounds(rectangle: IntegerRectangle) async throws {
+    try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
+      width: Double(rectangle.size.columnsCount),
+      height: Double(rectangle.size.rowsCount),
+      row: Double(rectangle.origin.row),
+      col: Double(rectangle.origin.column)
+    ))
   }
 
   public func reportPaste(text: String) async throws {
@@ -281,9 +278,8 @@ public final class Instance: Sendable {
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
   private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
-  private var previousPumBounds: CGRect?
   private var task: Task<Void, Never>?
-  private let outerGridSizeThrottlingInterval = Duration.milliseconds(100)
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
   private var outerGridSizeThrottlingTask: Task<Void, Never>?
   private var previousReportedOuterGridSizeTime = SuspendingClock.now
   private var previousReportedOuterGridSize: IntegerSize?

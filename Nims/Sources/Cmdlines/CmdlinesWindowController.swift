@@ -5,44 +5,21 @@ import Library
 import SwiftUI
 import TinyConstraints
 
-public final class CmdlinesWindowController: NSWindowController, NSWindowDelegate {
+public final class CmdlinesWindowController: NSWindowController {
   public init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
 
     viewController = CmdlinesViewController(store: store)
 
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.titled, .fullSizeContentView]
-    window.titleVisibility = .hidden
-    window.titlebarAppearsTransparent = true
-    window.isMovable = false
-    window.isOpaque = false
-    window.isFloatingPanel = true
-    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.level = .popUpMenu
-    window.alphaValue = 0
-    parentWindow.addChildWindow(window, ordered: .above)
-
+    let window = FloatingPanel(contentViewController: viewController)
     super.init(window: window)
 
     window.delegate = self
-
-    parentWindowFrameObservation = parentWindow.observe(\.frame) { [weak self] _, _ in
-      guard let self else {
-        return
-      }
-
-      Task { @MainActor in
-        self.updateWindowFrameOriginIfNeeded()
-      }
-    }
-    updateWindow()
   }
 
   deinit {
     task?.cancel()
-    parentWindowFrameObservation?.invalidate()
   }
 
   @available(*, unavailable)
@@ -50,7 +27,18 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
     fatalError("init(coder:) has not been implemented")
   }
 
+  override public func windowDidLoad() {
+    super.windowDidLoad()
+
+    updateWindowFrameOrigin()
+    updateWindow()
+  }
+
   public func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isCmdlinesUpdated || stateUpdates.isFontUpdated || stateUpdates.isOuterGridLayoutUpdated {
+      updateWindowFrameOrigin()
+    }
+
     if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated || stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
       updateWindow()
     }
@@ -61,16 +49,11 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
       .map { window!.convertPoint(toScreen: $0) }
   }
 
-  public func windowDidResize(_: Notification) {
-    updateWindowFrameOriginIfNeeded()
-  }
-
   private let store: Store
   private let parentWindow: NSWindow
   private let viewController: CmdlinesViewController
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?
-  private var parentWindowFrameObservation: NSKeyValueObservation?
 
   private var preferredWindowFrameOrigin: CGPoint {
     .init(
@@ -79,26 +62,11 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
     )
   }
 
-  private func updateWindowFrameOriginIfNeeded() {
-    let origin = preferredWindowFrameOrigin
-    if origin != window!.frame.origin {
-      window!.setFrame(
-        .init(
-          origin: origin,
-          size: window!.frame.size
-        ),
-        display: true
-      )
-    }
+  private func updateWindowFrameOrigin() {
+    window!.setFrameOrigin(preferredWindowFrameOrigin)
   }
 
   private func updateWindow() {
-    updateWindowFrameOriginIfNeeded()
-
-    guard let window else {
-      return
-    }
-
     viewController.reloadData()
 
     let cmdlines = store.state.cmdlines
@@ -106,19 +74,30 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
       if isVisibleAnimatedOn != false {
         NSAnimationContext.runAnimationGroup { context in
           context.duration = 0.12
-          window.animator().alphaValue = 0
+          window!.animator().alphaValue = 0
         }
         isVisibleAnimatedOn = false
       }
 
     } else {
       if isVisibleAnimatedOn != true {
+        if window!.parent == nil {
+          parentWindow.addChildWindow(window!, ordered: .above)
+          window!.alphaValue = 0
+        }
+
         NSAnimationContext.runAnimationGroup { context in
           context.duration = 0.12
-          window.animator().alphaValue = 1
+          window!.animator().alphaValue = 1
         }
         isVisibleAnimatedOn = true
       }
     }
+  }
+}
+
+extension CmdlinesWindowController: NSWindowDelegate {
+  public func windowDidResize(_: Notification) {
+    updateWindowFrameOrigin()
   }
 }
