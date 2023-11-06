@@ -560,43 +560,40 @@ public struct ApplyUIEvents: Reducer {
             state.msgShows.removeLast()
           }
 
-          let kind = MsgShow.Kind(rawValue: rawKind)
-          if kind == nil {
-            assertionFailure(rawKind)
+          let kind: MsgShow.Kind
+          if let decoded = MsgShow.Kind(rawValue: rawKind) {
+            kind = decoded
+          } else {
+            throw Failure("invalid raw msg_show kind", rawKind)
           }
 
           if !content.isEmpty {
-            let msgShow = MsgShow(
+            try state.msgShows.append(.init(
               index: state.msgShows.count,
-              kind: kind ?? .empty,
-              contentParts: content
-                .compactMap { rawContentPart in
-                  guard
-                    case let .array(rawContentPart) = rawContentPart,
-                    rawContentPart.count == 2,
-                    case let .integer(rawHighlightID) = rawContentPart[0],
-                    case let .string(text) = rawContentPart[1]
-                  else {
-                    assertionFailure(rawContentPart)
-                    return nil
-                  }
-
-                  return .init(
-                    highlightID: .init(rawHighlightID),
-                    text: text
-                  )
+              kind: kind,
+              contentParts: content.map { rawContentPart in
+                guard
+                  case let .array(rawContentPart) = rawContentPart,
+                  rawContentPart.count == 2,
+                  case let .integer(highlightID) = rawContentPart[0],
+                  case let .string(text) = rawContentPart[1]
+                else {
+                  throw Failure("invalid raw msg_show content part", rawContentPart)
                 }
-            )
-            state.msgShows.append(msgShow)
+
+                return .init(
+                  highlightID: highlightID,
+                  text: text
+                )
+              }
+            ))
           }
 
           msgShowsUpdated()
 
         case .msgClear:
-          if !state.msgShows.isEmpty {
-            state.msgShows = []
-            msgShowsUpdated()
-          }
+          state.msgShows = []
+          msgShowsUpdated()
 
         case let .popupmenuShow(rawItems, selected, row, col, gridID):
           var items = [PopupmenuItem]()

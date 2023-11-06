@@ -62,9 +62,10 @@ final class MsgShowsWindowController: NSWindowController {
   private var isVisibleAnimatedOn: Bool?
 
   private var preferredWindowOrigin: CGPoint {
-    .init(
-      x: parentWindow.frame.origin.x + 10,
-      y: parentWindow.frame.origin.y + 10
+    let offset = max(3, store.font.cellHeight * 0.5)
+    return .init(
+      x: parentWindow.frame.origin.x + offset,
+      y: parentWindow.frame.origin.y + offset
     )
   }
 
@@ -140,21 +141,29 @@ final class MsgShowsViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    let msgShows = store.state.msgShows
+    let layout = Layout(msgShows: store.state.msgShows)
 
-    for (index, msgShow) in msgShows.enumerated() {
-      let msgShowView = TextView(store: store)
-      msgShowView.msgShow = msgShow
-      msgShowView.preferredMaxWidth = 640
-      msgShowView.render()
-      contentView.addArrangedSubview(msgShowView)
-      msgShowView.width(to: view)
-      msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .horizontal)
-      msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .vertical)
-      msgShowView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
-      msgShowView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
+    for item in layout.items {
+      switch item {
+      case let .texts(texts):
+        for textIndex in texts.indices {
+          let text = texts[textIndex]
 
-      if index < msgShows.count - 1 {
+          let msgShowView = TextView(store: store)
+          msgShowView.contentParts = text
+          msgShowView.isFirst = textIndex == texts.startIndex
+          msgShowView.isLast = textIndex == texts.index(before: texts.endIndex)
+          msgShowView.preferredMaxWidth = 640
+          msgShowView.render()
+          contentView.addArrangedSubview(msgShowView)
+          msgShowView.width(to: view)
+          msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .horizontal)
+          msgShowView.setContentHuggingPriority(.init(rawValue: 800), for: .vertical)
+          msgShowView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
+          msgShowView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
+        }
+
+      case .separator:
         let separatorView = NSView()
         separatorView.alphaValue = 0.15
         separatorView.wantsLayer = true
@@ -178,24 +187,32 @@ private final class TextView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  var msgShow: MsgShow?
+  var contentParts = [MsgShow.ContentPart]()
   var preferredMaxWidth: Double = 0
+  var isFirst = false
+  var isLast = false
 
   override var intrinsicContentSize: NSSize {
     .init(
-      width: boundingSize.width + 20,
-      height: boundingSize.height + 20
+      width: boundingSize.width + insets.left + insets.right,
+      height: boundingSize.height + insets.top + insets.bottom
     )
   }
 
   func render() {
-    guard let msgShow else {
-      return
-    }
+    let bigVerticalInset = max(5, store.font.cellHeight * 0.75)
+    let smallVerticalInset = max(1, store.font.cellHeight * 0.15)
+    let horizontalInset = bigVerticalInset
+    insets = .init(
+      top: isFirst ? bigVerticalInset : smallVerticalInset,
+      left: horizontalInset,
+      bottom: isLast ? bigVerticalInset : smallVerticalInset,
+      right: horizontalInset
+    )
 
     let attributedString = NSMutableAttributedString()
 
-    for contentPart in msgShow.contentParts {
+    for contentPart in contentParts {
       var attributes: [NSAttributedString.Key: Any] = [
         .font: store.font.nsFont(),
         .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
@@ -215,7 +232,7 @@ private final class TextView: NSView {
 
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let containerSize = CGSize(width: preferredMaxWidth - 20, height: .greatestFiniteMagnitude)
+    let containerSize = CGSize(width: preferredMaxWidth - (insets.left + insets.right), height: .greatestFiniteMagnitude)
     boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
       framesetter,
       stringRange,
@@ -230,7 +247,7 @@ private final class TextView: NSView {
       stringRange,
       CGPath(
         rect: .init(
-          origin: .init(x: 10, y: 10),
+          origin: .init(x: insets.left, y: insets.bottom),
           size: .init(
             width: containerSize.width,
             height: ceil(boundingSize.height)
@@ -257,4 +274,49 @@ private final class TextView: NSView {
   private let store: Store
   private var boundingSize = CGSize()
   private var ctFrame: CTFrame?
+  private var insets = NSEdgeInsets()
+}
+
+private struct Layout: Sendable {
+  init(msgShows: [MsgShow]) {
+    var items = [Item]()
+
+    var accumulator = [[MsgShow.ContentPart]]()
+    func finishTextsItem() {
+      guard !accumulator.isEmpty else {
+        return
+      }
+      items.append(.texts(accumulator))
+      accumulator.removeAll(keepingCapacity: true)
+    }
+
+    for index in msgShows.indices {
+      let msgShow = msgShows[index]
+      let isLast = index == msgShows.index(before: msgShows.endIndex)
+
+      if isLast, msgShow.kind == .returnPrompt {
+        finishTextsItem()
+        items.append(.separator)
+      }
+
+      var text = [MsgShow.ContentPart]()
+      for contentPart in msgShow.contentParts where contentPart.text != "\n" {
+        text.append(contentPart)
+      }
+      accumulator.append(
+        msgShow.contentParts
+          .filter { $0.text != "\n" }
+      )
+    }
+    finishTextsItem()
+
+    self.items = items
+  }
+
+  enum Item: Sendable {
+    case texts([[MsgShow.ContentPart]])
+    case separator
+  }
+
+  var items: [Item]
 }

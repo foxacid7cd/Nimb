@@ -27,6 +27,8 @@ end
 local M = {}
 
 function M.buf_text_for_copy()
+  vim.cmd([[stopinsert]])
+
   local a_orig = vim.fn.getreg("a")
   local mode = vim.fn.mode()
   if mode ~= "v" and mode ~= "V" then
@@ -39,6 +41,8 @@ function M.buf_text_for_copy()
 end
 
 function M.edit(path)
+  vim.cmd([[stopinsert]])
+
   vim.v.errmsg = ""
   vim.cmd([[silent! edit ]] .. path)
   if vim.v.errmsg ~= "" then
@@ -47,6 +51,8 @@ function M.edit(path)
 end
 
 function M.write()
+  vim.cmd([[stopinsert]])
+
   vim.v.errmsg = ""
   vim.cmd([[silent! write]])
   if vim.v.errmsg ~= "" then
@@ -55,6 +61,8 @@ function M.write()
 end
 
 function M.save_as(path)
+  vim.cmd([[stopinsert]])
+
   vim.v.errmsg = ""
   vim.cmd([[silent! saveas ]] .. path)
   if vim.v.errmsg ~= "" then
@@ -63,6 +71,8 @@ function M.save_as(path)
 end
 
 function M.quit()
+  vim.cmd([[stopinsert]])
+
   vim.v.errmsg = ""
   vim.cmd([[silent! quit]])
   if vim.v.errmsg ~= "" then
@@ -71,8 +81,10 @@ function M.quit()
 end
 
 function M.quit_all()
+  vim.cmd([[stopinsert]])
+
   vim.v.errmsg = ""
-  vim.cmd([[silent! qa]])
+  vim.cmd([[silent! quitall]])
   if vim.v.errmsg ~= "" then
     return failure(vim.v.errmsg)
   end
