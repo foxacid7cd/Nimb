@@ -12,15 +12,17 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
 
     viewController = CmdlinesViewController(store: store)
 
-    let window = NimsNSWindow(contentViewController: viewController)
-    window._canBecomeKey = false
-    window._canBecomeMain = false
+    let window = NSPanel(contentViewController: viewController)
     window.styleMask = [.titled, .fullSizeContentView]
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
     window.isMovable = false
     window.isOpaque = false
-    window.setIsVisible(false)
+    window.isFloatingPanel = true
+    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    window.level = .popUpMenu
+    window.alphaValue = 0
+    parentWindow.addChildWindow(window, ordered: .above)
 
     super.init(window: window)
 
@@ -60,6 +62,7 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
   private let parentWindow: NSWindow
   private let viewController: CmdlinesViewController
   private var task: Task<Void, Never>?
+  private var isVisibleAnimatedOn: Bool?
 
   private func updateWindow() {
     guard let window else {
@@ -70,11 +73,22 @@ public final class CmdlinesWindowController: NSWindowController, NSWindowDelegat
 
     let cmdlines = store.state.cmdlines
     if cmdlines.dictionary.isEmpty {
-      parentWindow.removeChildWindow(window)
-      window.setIsVisible(false)
+      if isVisibleAnimatedOn != false {
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          window.animator().alphaValue = 0
+        }
+        isVisibleAnimatedOn = false
+      }
 
     } else {
-      parentWindow.addChildWindow(window, ordered: .above)
+      if isVisibleAnimatedOn != true {
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          window.animator().alphaValue = 1
+        }
+        isVisibleAnimatedOn = true
+      }
     }
   }
 }

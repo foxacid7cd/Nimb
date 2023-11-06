@@ -12,15 +12,17 @@ final class MsgShowsWindowController: NSWindowController {
 
     viewController = MsgShowsViewController(store: store)
 
-    let window = NimsNSWindow(contentViewController: viewController)
-    window._canBecomeKey = false
-    window._canBecomeMain = false
+    let window = NSPanel(contentViewController: viewController)
     window.styleMask = [.titled, .fullSizeContentView]
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
     window.isOpaque = false
     window.isMovable = false
-    window.setIsVisible(false)
+    window.isFloatingPanel = true
+    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    window.level = .popUpMenu
+    window.alphaValue = 0
+    parentWindow.addChildWindow(window, ordered: .above)
 
     super.init(window: window)
 
@@ -40,15 +42,21 @@ final class MsgShowsWindowController: NSWindowController {
     }
 
     if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
-      if window!.isVisible {
-        if store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed {
-          parentWindow.removeChildWindow(window!)
-          window!.setIsVisible(false)
+      if store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed {
+        if isVisibleAnimatedOn != false {
+          NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            window!.animator().alphaValue = 0
+          }
+          isVisibleAnimatedOn = false
         }
-
       } else {
-        if !store.state.msgShows.isEmpty, !store.state.isMsgShowsDismissed {
-          parentWindow.addChildWindow(window!, ordered: .above)
+        if isVisibleAnimatedOn != true {
+          NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            window!.animator().alphaValue = 1
+          }
+          isVisibleAnimatedOn = true
         }
       }
     }
@@ -57,12 +65,17 @@ final class MsgShowsWindowController: NSWindowController {
   private let store: Store
   private let parentWindow: NSWindow
   private let viewController: MsgShowsViewController
+  private var isVisibleAnimatedOn: Bool?
 
-  private func updateWindowOrigin() {
-    window!.setFrameOrigin(.init(
+  private var preferredWindowOrigin: CGPoint {
+    .init(
       x: parentWindow.frame.origin.x + 10,
       y: parentWindow.frame.origin.y + 10
-    ))
+    )
+  }
+
+  private func updateWindowOrigin() {
+    window!.setFrameOrigin(preferredWindowOrigin)
   }
 }
 

@@ -71,7 +71,7 @@ public final class Store: Sendable {
           defer { hideMsgShowsTask = nil }
 
           do {
-            try await Task.sleep(for: .milliseconds(100))
+            try await Task.sleep(for: .milliseconds(50))
 
             guard let self else {
               return
@@ -89,14 +89,23 @@ public final class Store: Sendable {
   }
 
   public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    guard state.isMouseOn else {
+      return
+    }
     await instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
   public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
+    guard state.isMouseOn else {
+      return
+    }
     await instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
   public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    guard state.isMouseOn else {
+      return
+    }
     await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 

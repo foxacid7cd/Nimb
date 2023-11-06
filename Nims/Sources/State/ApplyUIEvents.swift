@@ -645,6 +645,14 @@ public struct ApplyUIEvents: Reducer {
           state.isBusy = false
           isBusyUpdated()
 
+        case .mouseOn:
+          state.isMouseOn = true
+          updates.isMouseOnUpdated = true
+
+        case .mouseOff:
+          state.isMouseOn = false
+          updates.isMouseOnUpdated = true
+
         default:
           break
         }

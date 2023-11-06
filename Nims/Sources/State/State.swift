@@ -34,6 +34,7 @@ public struct State: Sendable {
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
     public var isMsgShowsDismissedUpdated: Bool = false
+    public var isMouseOnUpdated: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
@@ -72,6 +73,7 @@ public struct State: Sendable {
       isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates.isCursorBlinkingPhaseUpdated
       isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
       isMsgShowsDismissedUpdated = isMsgShowsDismissedUpdated || updates.isMsgShowsDismissedUpdated
+      isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
     }
   }
 
@@ -109,6 +111,7 @@ public struct State: Sendable {
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
   public var isMsgShowsDismissed: Bool = false
+  public var isMouseOn: Bool = true
 
   public var outerGrid: Grid? {
     get {

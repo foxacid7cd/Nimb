@@ -23,15 +23,17 @@ public final class PopupmenuWindowController: NSWindowController {
     self.gridWindowFrameTransformer = gridWindowFrameTransformer
     viewController = .init(store: store)
 
-    let window = NimsNSWindow(contentViewController: viewController)
-    window._canBecomeKey = false
-    window._canBecomeMain = false
+    let window = NSPanel(contentViewController: viewController)
     window.styleMask = [.titled, .fullSizeContentView]
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
     window.isMovable = false
     window.isOpaque = false
-    window.setIsVisible(false)
+    window.isFloatingPanel = true
+    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    window.level = .popUpMenu
+    window.alphaValue = 0
+    mainWindow.addChildWindow(window, ordered: .above)
 
     super.init(window: window)
 
@@ -63,6 +65,7 @@ public final class PopupmenuWindowController: NSWindowController {
   private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
   private let viewController: PopupmenuViewController
   private var task: Task<Void, Never>?
+  private var isVisibleAnimatedOn: Bool?
 
   private func updateWindow() {
     if let popupmenu = store.state.popupmenu, let outerGrid = store.state.outerGrid {
@@ -95,6 +98,8 @@ public final class PopupmenuWindowController: NSWindowController {
           await store.reportPumBounds(gridFrame: gridFrame)
         }
 
+        window!.setFrame(windowFrame, display: true)
+
         let parentWindow = switch popupmenu.anchor {
         case .grid:
           mainWindow
@@ -102,9 +107,20 @@ public final class PopupmenuWindowController: NSWindowController {
         case .cmdline:
           cmdlinesWindow
         }
+        if window!.parent != parentWindow {
+          window!.parent?.removeChildWindow(window!)
+          parentWindow.addChildWindow(window!, ordered: .above)
+          window!.alphaValue = 0
+          isVisibleAnimatedOn = nil
+        }
 
-        window!.setFrame(windowFrame, display: true)
-        parentWindow.addChildWindow(window!, ordered: .above)
+        if isVisibleAnimatedOn != true {
+          NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            window!.animator().alphaValue = 1
+          }
+          isVisibleAnimatedOn = true
+        }
 
         if let selectedItemIndex = popupmenu.selectedItemIndex {
           viewController.scrollTo(itemAtIndex: selectedItemIndex)
@@ -112,8 +128,13 @@ public final class PopupmenuWindowController: NSWindowController {
       }
 
     } else {
-      window!.parent?.removeChildWindow(window!)
-      window!.setIsVisible(false)
+      if isVisibleAnimatedOn != false {
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          window!.animator().alphaValue = 0
+        }
+        isVisibleAnimatedOn = false
+      }
     }
   }
 }

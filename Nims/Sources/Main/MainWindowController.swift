@@ -8,7 +8,7 @@ final class MainWindowController: NSWindowController {
   init(store: Store) {
     self.store = store
 
-    let window = NimsNSWindow(
+    let window = MainWindow(
       contentRect: .init(),
       styleMask: [.titled, .miniaturizable, .resizable, .fullSizeContentView],
       backing: .buffered,
@@ -58,7 +58,7 @@ final class MainWindowController: NSWindowController {
       }
       window!.setContentSize(contentSize)
 
-      showWindow(nil)
+      window!.makeKeyAndOrderFront(nil)
       isWindowInitiallyShown = true
     }
   }
@@ -116,5 +116,15 @@ extension MainWindowController: AsyncSequence {
 
   nonisolated func makeAsyncIterator() -> AsyncChannel<Event>.AsyncIterator {
     eventChannel.makeAsyncIterator()
+  }
+}
+
+private final class MainWindow: NSWindow {
+  override var canBecomeMain: Bool {
+    true
+  }
+
+  override var canBecomeKey: Bool {
+    true
   }
 }

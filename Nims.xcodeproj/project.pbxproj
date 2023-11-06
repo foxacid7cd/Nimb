@@ -32,7 +32,6 @@
 		689D9E3329B5326300345713 /* CmdlinesWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E3229B5326300345713 /* CmdlinesWindowController.swift */; };
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */; };
-		689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */; };
 		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -128,7 +127,6 @@
 		689D9E3229B5326300345713 /* CmdlinesWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesWindowController.swift; sourceTree = "<group>"; };
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesView.swift; sourceTree = "<group>"; };
-		689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsNSWindow.swift; sourceTree = "<group>"; };
 		68A8FF382AD29F650017C28D /* Instance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instance.swift; sourceTree = "<group>"; };
 		68A8FF392AD29F650017C28D /* Windows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Windows.swift; sourceTree = "<group>"; };
 		68A8FF3A2AD29F650017C28D /* MsgShow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MsgShow.swift; sourceTree = "<group>"; };
@@ -204,7 +202,6 @@
 				689D9E3029B5204C00345713 /* MsgShowsWindowController.swift */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				6895C20C2AC42006006122D5 /* NSColorExtensions.swift */,
-				689ECE622AC507D6008D6A02 /* NimsNSWindow.swift */,
 				6861FA6129B462B8002C3C0B /* NimsFont.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
@@ -500,7 +497,6 @@
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
 				68A8FF592AD29F660017C28D /* NimsColor.swift in Sources */,
-				689ECE632AC507D6008D6A02 /* NimsNSWindow.swift in Sources */,
 				682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */,
 				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
