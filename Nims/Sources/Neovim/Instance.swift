@@ -233,6 +233,13 @@ public final class Instance: Sendable {
     )
   }
 
+  public func stopinsert() async {
+    try? await api.fastCall(APIFunctions.NvimCmd(
+      cmd: [.string("cmd"): .string("stopinsert")],
+      opts: [:]
+    ))
+  }
+
   private let process: Process
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()

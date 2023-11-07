@@ -41,7 +41,7 @@ public struct State: Sendable {
     }
 
     public var isMouseUserInteractionEnabledUpdated: Bool {
-      isMouseOnUpdated || isCmdlinesUpdated
+      isMouseOnUpdated || isBusyUpdated
     }
 
     public mutating func formUnion(_ updates: Updates) {
@@ -139,7 +139,23 @@ public struct State: Sendable {
   }
 
   public var isMouseUserInteractionEnabled: Bool {
-    isMouseOn && cmdlines.dictionary.isEmpty
+    isMouseOn && !isBusy
+  }
+
+  public var shouldNextMouseEventStopinsert: Bool {
+    if hasModalMsgShows {
+      return false
+    }
+
+    if let popupmenu, case .grid = popupmenu.anchor {
+      return true
+    }
+
+    if !cmdlines.dictionary.isEmpty {
+      return true
+    }
+
+    return false
   }
 
   public mutating func nextWindowZIndex() -> Int {

@@ -77,9 +77,9 @@ public final class PopupmenuWindowController: NSWindowController {
         forGridID: id,
         gridFrame: .init(origin: origin, size: .init(columnsCount: 1, rowsCount: 1))
       )
-      .map { $0.offsetBy(dx: -13, dy: 0) }
+      .map { $0.offsetBy(dx: -13, dy: -2) }
     case .cmdline:
-      cmdlinesWindowController.window!.frame.offsetBy(dx: 0, dy: -10)
+      cmdlinesWindowController.window!.frame.offsetBy(dx: 0, dy: -8)
     }
     guard let anchorFrame else {
       return nil

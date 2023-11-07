@@ -3,7 +3,7 @@
 import AppKit
 import Library
 
-public class MainView: NSView {
+public class GridsView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
@@ -23,7 +23,10 @@ public class MainView: NSView {
   }
 
   override public var intrinsicContentSize: NSSize {
-    store.state.outerGrid!.size * store.font.cellSize
+    guard let outerGrid = store.state.outerGrid else {
+      return .init()
+    }
+    return outerGrid.size * store.font.cellSize
   }
 
   public func render(_ stateUpdates: State.Updates) {

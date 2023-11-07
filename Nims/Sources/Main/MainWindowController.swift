@@ -4,22 +4,13 @@ import AppKit
 import AsyncAlgorithms
 import Library
 
-public final class MainWindowController: NSWindowController {
-  public init(store: Store) {
+public class MainWindowController: NSWindowController {
+  public init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
+    mainWindow = MainWindow(store: store, minOuterGridSize: minOuterGridSize)
+    super.init(window: mainWindow)
 
-    let window = MainWindow(
-      contentRect: .init(),
-      styleMask: [.titled, .miniaturizable, .fullSizeContentView],
-      backing: .buffered,
-      defer: true
-    )
-    window.titlebarAppearsTransparent = true
-    window.title = ""
-    super.init(window: window)
-
-    window.delegate = self
-    updateWindow()
+    mainWindow.delegate = self
   }
 
   @available(*, unavailable)
@@ -28,50 +19,31 @@ public final class MainWindowController: NSWindowController {
   }
 
   public func screenFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    viewController.windowFrame(forGridID: gridID, gridFrame: gridFrame)
-      .map { window!.convertToScreen($0) }
+    mainWindow.screenFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
-  func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated || stateUpdates.isMouseOnUpdated {
-      updateWindow()
-    }
+  public func render(_ stateUpdates: State.Updates) {
+    mainWindow.render(stateUpdates)
 
-    viewController.render(stateUpdates)
-
-    if !isWindowInitiallyShown, stateUpdates.isOuterGridLayoutUpdated, let outerGrid = store.state.outerGrid {
-      window!.contentViewController = viewController
-
+    if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
       let contentSize: CGSize = if
         let lastWindowWidth = UserDefaults.standard.value(forKey: "windowWidth") as? Double,
         let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double
       {
         .init(width: lastWindowWidth, height: lastWindowHeight)
       } else {
-        viewController.estimatedContentSize(outerGridSize: outerGrid.size)
+        mainWindow.estimatedContentSize(outerGridSize: outerGrid.size)
       }
-      window!.setContentSize(contentSize)
+      mainWindow.setContentSize(contentSize)
 
-      window!.makeKeyAndOrderFront(nil)
+      showWindow(nil)
       isWindowInitiallyShown = true
     }
   }
 
   private let store: Store
-  private lazy var viewController = MainViewController(
-    store: store,
-    minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
-  )
+  private let mainWindow: MainWindow
   private var isWindowInitiallyShown = false
-
-  private func updateWindow() {
-    window!.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
-    if store.state.isMouseOn {
-      window!.styleMask.insert(.resizable)
-    } else {
-      window!.styleMask.remove(.resizable)
-    }
-  }
 
   private func saveWindowFrame() {
     UserDefaults.standard.setValue(window!.frame.width, forKey: "windowWidth")
@@ -84,24 +56,14 @@ extension MainWindowController: NSWindowDelegate {
     guard isWindowInitiallyShown else {
       return
     }
-    viewController.reportOuterGridSizeChanged()
+    mainWindow.reportOuterGridSizeChanged()
     if !window!.inLiveResize {
       saveWindowFrame()
     }
   }
 
   public func windowDidEndLiveResize(_: Notification) {
-    viewController.reportOuterGridSizeChanged()
+    mainWindow.reportOuterGridSizeChanged()
     saveWindowFrame()
-  }
-}
-
-private final class MainWindow: NSWindow {
-  override var canBecomeMain: Bool {
-    true
-  }
-
-  override var canBecomeKey: Bool {
-    true
   }
 }

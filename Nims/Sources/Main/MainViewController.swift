@@ -16,7 +16,7 @@ public class MainViewController: NSViewController {
   }
 
   public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    mainView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
+    gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
   override public func loadView() {
@@ -33,19 +33,19 @@ public class MainViewController: NSViewController {
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
-    mainContainerView.clipsToBounds = true
-    stackView.addArrangedSubview(mainContainerView)
+    gridsContainerView.clipsToBounds = true
+    stackView.addArrangedSubview(gridsContainerView)
 
-    mainContainerView.addSubview(mainView)
+    gridsContainerView.addSubview(gridsView)
 
-    mainView.centerXToSuperview()
-    mainView.topToSuperview()
+    gridsView.centerXToSuperview()
+    gridsView.topToSuperview()
 
-    mainContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-    mainContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
-    mainContainerViewConstraints = (
-      mainContainerView.width(0, relation: .equalOrGreater),
-      mainContainerView.height(0, relation: .equalOrGreater)
+    gridsContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    gridsContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
+    gridsContainerViewConstraints = (
+      gridsContainerView.width(0, relation: .equalOrGreater),
+      gridsContainerView.height(0, relation: .equalOrGreater)
     )
 
     view = customView
@@ -54,7 +54,7 @@ public class MainViewController: NSViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
 
-    updateMinMainContainerViewSize()
+    updateMinGridsContainerViewSize()
   }
 
   override public func viewDidLayout() {
@@ -68,10 +68,10 @@ public class MainViewController: NSViewController {
 
   public func render(_ stateUpdates: State.Updates) {
     tablineView.render(stateUpdates)
-    mainView.render(stateUpdates)
+    gridsView.render(stateUpdates)
 
     if stateUpdates.isFontUpdated {
-      updateMinMainContainerViewSize()
+      updateMinGridsContainerViewSize()
       reportOuterGridSizeChanged()
     }
 
@@ -84,8 +84,8 @@ public class MainViewController: NSViewController {
 
   public func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
-      columnsCount: Int(mainContainerView.frame.width / store.font.cellWidth),
-      rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
+      columnsCount: Int(gridsContainerView.frame.width / store.font.cellWidth),
+      rowsCount: Int(gridsContainerView.frame.height / store.font.cellHeight)
     )
     Task {
       await store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
@@ -100,20 +100,24 @@ public class MainViewController: NSViewController {
     )
   }
 
+  override public func keyDown(with event: NSEvent) {
+    super.keyDown(with: event)
+  }
+
   private let store: Store
   private lazy var customView = CustomView()
   private lazy var stackView = NSStackView(views: [])
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
-  private let mainContainerView = NSView()
-  private var mainContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  private lazy var mainView = MainView(store: store)
+  private let gridsContainerView = NSView()
+  private var gridsContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  private lazy var gridsView = GridsView(store: store)
   private var preMaximizeWindowFrame: CGRect?
 
-  private func updateMinMainContainerViewSize() {
+  private func updateMinGridsContainerViewSize() {
     let size = minOuterGridSize * store.font.cellSize
-    mainContainerViewConstraints!.width.constant = size.width
-    mainContainerViewConstraints!.height.constant = size.height
+    gridsContainerViewConstraints!.width.constant = size.width
+    gridsContainerViewConstraints!.height.constant = size.height
   }
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {

@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       setupMainMenuController()
       showMainWindowController()
       setupSecondaryWindowControllers()
-      setupKeyDownLocalMonitor()
+
       runStateUpdatesTask()
     }
   }
@@ -67,7 +67,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func showMainWindowController() {
-    mainWindowController = MainWindowController(store: store!)
+    mainWindowController = MainWindowController(
+      store: store!,
+      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+    )
   }
 
   private func setupSecondaryWindowControllers() {
@@ -79,26 +82,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       cmdlinesWindowController: cmdlinesWindowController!,
       msgShowsWindowController: msgShowsWindowController!
     )
-  }
-
-  private func setupKeyDownLocalMonitor() {
-    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [store, mainWindowController] event in
-      guard
-        mainWindowController!.window!.isKeyWindow,
-        !event.modifierFlags.contains(.command)
-      else {
-        return event
-      }
-
-      store!.scheduleHideMsgShowsIfPossible()
-
-      let keyPress = KeyPress(event: event)
-      Task {
-        await store!.report(keyPress: keyPress)
-      }
-
-      return nil
-    }
   }
 
   private func runStateUpdatesTask() {
