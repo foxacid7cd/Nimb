@@ -294,19 +294,23 @@ private struct Layout: Sendable {
       let msgShow = msgShows[index]
       let isLast = index == msgShows.index(before: msgShows.endIndex)
 
-      if isLast, msgShow.kind == .returnPrompt {
+      if isLast, MsgShow.Kind.modal.contains(msgShow.kind) {
         finishTextsItem()
         items.append(.separator)
       }
 
       var text = [MsgShow.ContentPart]()
-      for contentPart in msgShow.contentParts where contentPart.text != "\n" {
-        text.append(contentPart)
+      for var contentPart in msgShow.contentParts {
+        contentPart.text = contentPart.text
+          .trimmingCharacters(in: .newlines)
+
+        if !contentPart.text.isEmpty {
+          text.append(contentPart)
+        }
       }
-      accumulator.append(
-        msgShow.contentParts
-          .filter { $0.text != "\n" }
-      )
+      if !text.isEmpty {
+        accumulator.append(text)
+      }
     }
     finishTextsItem()
 

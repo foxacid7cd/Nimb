@@ -231,11 +231,6 @@ public class GridView: NSView {
     )
   }
 
-  public func windowPoint(forGridPoint gridPoint: IntegerPoint) -> CGPoint? {
-    convert(gridPoint * store.font.cellSize, to: nil)
-      .applying(upsideDownTransform)
-  }
-
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 

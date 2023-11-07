@@ -28,7 +28,8 @@ public final class MainWindowController: NSWindowController {
   }
 
   public func screenPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    viewController.windowPoint(forGridID: gridID, gridPoint: gridPoint)
+    viewController.viewPoint(forGridID: gridID, gridPoint: gridPoint)
+      .map { .init(x: $0.x, y: window!.frame.size.height - $0.y) }
       .map { window!.convertPoint(toScreen: $0) }
   }
 

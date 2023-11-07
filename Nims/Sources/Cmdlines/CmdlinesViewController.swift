@@ -38,11 +38,12 @@ public final class CmdlinesViewController: NSViewController {
     }
   }
 
-  public func point(forCharacterLocation location: Int) -> CGPoint? {
+  public func viewPoint(forCharacterLocation location: Int) -> CGPoint? {
     let cmdlineView = contentView.arrangedSubviews.last as! CmdlineView
 
     return cmdlineView.point(forCharacterLocation: location)
       .map { contentView.convert($0, from: cmdlineView) }
+      .map { .init(x: $0.x, y: $0.y + contentView.frame.size.height) }
       .map { scrollView.convert($0, from: contentView) }
       .map { view.convert($0, from: scrollView) }
   }

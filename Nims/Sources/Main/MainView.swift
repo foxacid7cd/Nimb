@@ -252,14 +252,17 @@ public class MainView: NSView {
     }
   }
 
-  public func windowPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+  public func viewPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
     guard let gridView = gridViews[gridID] else {
       return nil
     }
-    return gridView.windowPoint(forGridPoint: gridPoint)
+    return convert(gridPoint * store.font.cellSize, from: gridView) + .init(x: 0, y: -store.font.cellHeight)
   }
 
   override public func mouseMoved(with event: NSEvent) {
+    guard store.state.isMouseUserInteractionEnabled else {
+      return
+    }
     let location = convert(event.locationInWindow, from: nil)
     if let gridView = hitTest(location) as? GridView {
       gridView.reportMouseMove(for: event)

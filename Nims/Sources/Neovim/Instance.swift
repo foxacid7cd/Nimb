@@ -160,7 +160,7 @@ public final class Instance: Sendable {
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int) async throws {
-    try await api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: false, opts: [:]))
+    try await api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: false, finish: false, opts: [:]))
   }
 
   public func reportTablineBufferSelected(withID id: Buffer.ID) async throws {

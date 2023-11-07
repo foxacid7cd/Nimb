@@ -15,17 +15,17 @@ public class MainViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func windowPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    mainView.windowPoint(forGridID: gridID, gridPoint: gridPoint)
+  public func viewPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    mainView.viewPoint(forGridID: gridID, gridPoint: gridPoint)
+      .map { mainContainerView.convert($0, from: mainView) }
+      .map { stackView.convert($0, from: mainContainerView) }
+      .map { customView.convert($0, from: stackView) }
   }
 
   override public func loadView() {
-    let view = customView
-
-    let stackView = NSStackView(views: [])
     stackView.spacing = 0
     stackView.orientation = .vertical
-    view.addSubview(stackView)
+    customView.addSubview(stackView)
     stackView.edgesToSuperview()
 
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
@@ -51,7 +51,7 @@ public class MainViewController: NSViewController {
       mainContainerView.height(0, relation: .equalOrGreater)
     )
 
-    self.view = view
+    view = customView
   }
 
   override public func viewDidLoad() {
@@ -70,18 +70,19 @@ public class MainViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
+    tablineView.render(stateUpdates)
+    mainView.render(stateUpdates)
+
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
-
       reportOuterGridSizeChanged()
     }
 
-    if stateUpdates.isMouseOnUpdated {
-      customView.isUserInteractionEnabled = store.state.isMouseOn
+    if stateUpdates.isMouseUserInteractionEnabledUpdated {
+      customView.isUserInteractionEnabled = store.state.isMouseUserInteractionEnabled
     }
 
-    tablineView.render(stateUpdates)
-    mainView.render(stateUpdates)
+    view.layoutSubtreeIfNeeded()
   }
 
   public func reportOuterGridSizeChanged() {
@@ -104,6 +105,7 @@ public class MainViewController: NSViewController {
 
   private let store: Store
   private lazy var customView = CustomView()
+  private lazy var stackView = NSStackView(views: [])
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private let mainContainerView = NSView()

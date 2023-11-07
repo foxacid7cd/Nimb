@@ -40,6 +40,10 @@ public struct State: Sendable {
       updatedLayoutGridIDs.contains(Grid.OuterID)
     }
 
+    public var isMouseUserInteractionEnabledUpdated: Bool {
+      isMouseOnUpdated || isCmdlinesUpdated
+    }
+
     public mutating func formUnion(_ updates: Updates) {
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated
@@ -131,48 +135,11 @@ public struct State: Sendable {
   }
 
   public var hasModalMsgShows: Bool {
-    msgShows.contains {
-      switch $0.kind {
-      case .empty:
-        false
+    msgShows.contains(where: { MsgShow.Kind.modal.contains($0.kind) })
+  }
 
-      case .confirm:
-        true
-
-      case .confirmSub:
-        true
-
-      case .emsg:
-        false
-
-      case .echo:
-        false
-
-      case .echomsg:
-        false
-
-      case .echoerr:
-        false
-
-      case .luaError:
-        false
-
-      case .rpcError:
-        false
-
-      case .returnPrompt:
-        true
-
-      case .quickfix:
-        true
-
-      case .searchCount:
-        false
-
-      case .wmsg:
-        true
-      }
-    }
+  public var isMouseUserInteractionEnabled: Bool {
+    isMouseOn && cmdlines.dictionary.isEmpty
   }
 
   public mutating func nextWindowZIndex() -> Int {

@@ -38,7 +38,8 @@ public final class CmdlinesWindowController: NSWindowController {
   }
 
   public func screenPoint(forCharacterLocation location: Int) -> CGPoint? {
-    viewController.point(forCharacterLocation: location)
+    viewController.viewPoint(forCharacterLocation: location)
+      .map { .init(x: $0.x, y: window!.frame.size.height - $0.y) }
       .map { window!.convertPoint(toScreen: $0) }
   }
 
