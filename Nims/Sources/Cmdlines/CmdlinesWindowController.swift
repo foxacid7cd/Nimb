@@ -32,15 +32,13 @@ public final class CmdlinesWindowController: NSWindowController {
       updateWindowFrameOrigin()
     }
 
-    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated || stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
+    if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
       updateWindow()
     }
-  }
 
-  public func screenPoint(forCharacterLocation location: Int) -> CGPoint? {
-    viewController.viewPoint(forCharacterLocation: location)
-      .map { .init(x: $0.x, y: window!.frame.size.height - $0.y) }
-      .map { window!.convertPoint(toScreen: $0) }
+    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated {
+      viewController.setNeedsDisplayCmdlineTextViews()
+    }
   }
 
   private let store: Store

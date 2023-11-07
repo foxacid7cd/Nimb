@@ -46,6 +46,7 @@ public final class Store: Sendable {
     instanceTask?.cancel()
     cursorBlinkingTask?.cancel()
     hideMsgShowsTask?.cancel()
+    outerGridSizeThrottlingTask?.cancel()
   }
 
   public private(set) var state: State
@@ -157,7 +158,7 @@ public final class Store: Sendable {
         do {
           try await Task.sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
 
-          await instance.reportOuterGrid(changedSizeTo: size)
+          await instance.reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
         } catch {}
 
         outerGridSizeThrottlingTask = nil

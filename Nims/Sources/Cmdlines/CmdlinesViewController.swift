@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Library
 import TinyConstraints
 
 public final class CmdlinesViewController: NSViewController {
@@ -15,18 +16,20 @@ public final class CmdlinesViewController: NSViewController {
   }
 
   public func reloadData() {
+    cmdlineViews = [:]
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
     let cmdlines = store.state.cmdlines.dictionary.values
       .sorted(by: { $0.level < $1.level })
 
-    for (cmdlineIndex, cmdline) in cmdlines.enumerated() {
+    for (index, cmdline) in cmdlines.enumerated() {
       let cmdlineView = CmdlineView(store: store, level: cmdline.level)
       contentView.addArrangedSubview(cmdlineView)
       cmdlineView.width(to: contentView)
+      cmdlineViews[cmdline.level] = cmdlineView
 
-      if cmdlineIndex < cmdlines.count - 1 {
+      if index < cmdlines.count - 1 {
         let separatorView = NSView()
         separatorView.alphaValue = 0.15
         separatorView.wantsLayer = true
@@ -38,14 +41,10 @@ public final class CmdlinesViewController: NSViewController {
     }
   }
 
-  public func viewPoint(forCharacterLocation location: Int) -> CGPoint? {
-    let cmdlineView = contentView.arrangedSubviews.last as! CmdlineView
-
-    return cmdlineView.point(forCharacterLocation: location)
-      .map { contentView.convert($0, from: cmdlineView) }
-      .map { .init(x: $0.x, y: $0.y + contentView.frame.size.height) }
-      .map { scrollView.convert($0, from: contentView) }
-      .map { view.convert($0, from: scrollView) }
+  public func setNeedsDisplayCmdlineTextViews() {
+    for (_, cmdlineView) in cmdlineViews {
+      cmdlineView.setNeedsDisplayTextView()
+    }
   }
 
   override public func loadView() {
@@ -81,4 +80,5 @@ public final class CmdlinesViewController: NSViewController {
   private let store: Store
   private let scrollView = NSScrollView()
   private let contentView = NSStackView(views: [])
+  private var cmdlineViews = IntKeyedDictionary<CmdlineView>()
 }

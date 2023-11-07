@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CustomDump
 
 final class CmdlineView: NSView {
   init(store: Store, level: Int) {
@@ -57,11 +58,6 @@ final class CmdlineView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func point(forCharacterLocation location: Int) -> CGPoint? {
-    contentTextView.point(forCharacterLocation: location)
-      .map { convert($0, from: contentTextView) }
-  }
-
   func render() {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
@@ -90,6 +86,10 @@ final class CmdlineView: NSView {
     }
 
     contentTextView.render()
+  }
+
+  func setNeedsDisplayTextView() {
+    contentTextView.needsDisplay = true
   }
 
   private let store: Store
@@ -362,22 +362,7 @@ private final class CmdlineTextView: NSView {
     (cmdlineCTFramesetter, cmdlineCTFrame, cmdlineCTLines) = makeCTLines(for: cmdlineAttributedString)
 
     invalidateIntrinsicContentSize()
-    setNeedsDisplay(bounds)
-  }
-
-  func point(forCharacterLocation location: Int) -> CGPoint? {
-    let location = location + cmdline.indent
-
-    for ctLine in cmdlineCTLines.reversed() {
-      let cfRange = CTLineGetStringRange(ctLine)
-      let range = (cfRange.location ..< cfRange.location + cfRange.length)
-      if range.contains(location) {
-        let offset = CTLineGetOffsetForStringIndex(ctLine, location - cfRange.location, nil)
-        return .init(x: offset, y: 0)
-      }
-    }
-
-    return nil
+    needsDisplay = true
   }
 
   override func draw(_: NSRect) {
@@ -386,6 +371,7 @@ private final class CmdlineTextView: NSView {
     var ctLineIndex = 0
 
     for cmdlineCTLine in cmdlineCTLines.reversed() {
+      context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
         y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
@@ -452,9 +438,11 @@ private final class CmdlineTextView: NSView {
       }
 
       ctLineIndex += 1
+      context.restoreGState()
     }
 
     for blockLineCTLine in blockLineCTLines.reversed() {
+      context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
         y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
@@ -462,6 +450,7 @@ private final class CmdlineTextView: NSView {
       CTLineDraw(blockLineCTLine, context)
 
       ctLineIndex += 1
+      context.restoreGState()
     }
   }
 

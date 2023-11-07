@@ -15,11 +15,8 @@ public class MainViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func viewPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    mainView.viewPoint(forGridID: gridID, gridPoint: gridPoint)
-      .map { mainContainerView.convert($0, from: mainView) }
-      .map { stackView.convert($0, from: mainContainerView) }
-      .map { customView.convert($0, from: stackView) }
+  public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+    mainView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
   override public func loadView() {

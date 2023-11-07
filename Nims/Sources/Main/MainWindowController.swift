@@ -27,10 +27,9 @@ public final class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func screenPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    viewController.viewPoint(forGridID: gridID, gridPoint: gridPoint)
-      .map { .init(x: $0.x, y: window!.frame.size.height - $0.y) }
-      .map { window!.convertPoint(toScreen: $0) }
+  public func screenFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+    viewController.windowFrame(forGridID: gridID, gridFrame: gridFrame)
+      .map { window!.convertToScreen($0) }
   }
 
   func render(_ stateUpdates: State.Updates) {
@@ -82,15 +81,17 @@ public final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
   public func windowDidResize(_: Notification) {
-    if isWindowInitiallyShown {
-      viewController.reportOuterGridSizeChanged()
-      if !window!.inLiveResize {
-        saveWindowFrame()
-      }
+    guard isWindowInitiallyShown else {
+      return
+    }
+    viewController.reportOuterGridSizeChanged()
+    if !window!.inLiveResize {
+      saveWindowFrame()
     }
   }
 
   public func windowDidEndLiveResize(_: Notification) {
+    viewController.reportOuterGridSizeChanged()
     saveWindowFrame()
   }
 }

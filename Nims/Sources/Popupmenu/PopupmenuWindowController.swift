@@ -31,7 +31,7 @@ public final class PopupmenuWindowController: NSWindowController {
     }
 
     if stateUpdates.isPopupmenuUpdated || !stateUpdates.updatedLayoutGridIDs.isEmpty || stateUpdates.isFontUpdated {
-      updateWindowFrameIfNeeded()
+      updateWindowFrame()
     }
 
     if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated || stateUpdates.isFontUpdated {
@@ -54,35 +54,50 @@ public final class PopupmenuWindowController: NSWindowController {
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?
 
-  private let preferredWindowFrameSize = CGSize(
-    width: 300,
-    height: 176
-  )
-
-  private var preferredWindowFrameOrigin: CGPoint? {
+  private var preferredWindowFrameSize: CGSize? {
     guard let popupmenu = store.state.popupmenu else {
       return nil
     }
-    let anchorOrigin: CGPoint? = switch popupmenu.anchor {
-    case let .grid(id, origin):
-      mainWindowController.screenPoint(forGridID: id, gridPoint: origin)
-    case let .cmdline(location):
-      cmdlinesWindowController.screenPoint(forCharacterLocation: location)
+    let width: Double = switch popupmenu.anchor {
+    case .cmdline:
+      cmdlinesWindowController.window!.frame.width
+    case .grid:
+      300
     }
-    guard let anchorOrigin else {
+    return .init(width: width, height: 176)
+  }
+
+  private var preferredWindowFrameOrigin: CGPoint? {
+    guard let popupmenu = store.state.popupmenu, let preferredWindowFrameSize else {
+      return nil
+    }
+    let anchorFrame: CGRect? = switch popupmenu.anchor {
+    case let .grid(id, origin):
+      mainWindowController.screenFrame(
+        forGridID: id,
+        gridFrame: .init(origin: origin, size: .init(columnsCount: 1, rowsCount: 1))
+      )
+      .map { $0.offsetBy(dx: -13, dy: 0) }
+    case .cmdline:
+      cmdlinesWindowController.window!.frame.offsetBy(dx: 0, dy: -10)
+    }
+    guard let anchorFrame else {
       return nil
     }
     return .init(
-      x: anchorOrigin.x - 13,
-      y: anchorOrigin.y - preferredWindowFrameSize.height
+      x: anchorFrame.origin.x,
+      y: anchorFrame.origin.y - preferredWindowFrameSize.height
     )
   }
 
   private var preferredWindowFrame: CGRect? {
-    preferredWindowFrameOrigin.map { .init(origin: $0, size: preferredWindowFrameSize) }
+    guard let preferredWindowFrameOrigin, let preferredWindowFrameSize else {
+      return nil
+    }
+    return .init(origin: preferredWindowFrameOrigin, size: preferredWindowFrameSize)
   }
 
-  private func updateWindowFrameIfNeeded() {
+  private func updateWindowFrame() {
     guard let outerGrid = store.state.outerGrid, let frame = preferredWindowFrame else {
       return
     }

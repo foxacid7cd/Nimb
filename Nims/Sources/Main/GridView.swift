@@ -16,8 +16,15 @@ public class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  public var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
+  public var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
+
   override public var intrinsicContentSize: NSSize {
     grid.size * store.font.cellSize
+  }
+
+  public var zIndex: Double {
+    grid.zIndex
   }
 
   public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
@@ -231,11 +238,10 @@ public class GridView: NSView {
     )
   }
 
-  var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
-  var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
-
-  var zIndex: Double {
-    grid.zIndex
+  public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
+    let viewFrame = (gridFrame * store.font.cellSize)
+      .applying(upsideDownTransform)
+    return convert(viewFrame, to: nil)
   }
 
   private let gridID: Grid.ID
