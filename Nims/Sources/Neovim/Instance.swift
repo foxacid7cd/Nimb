@@ -115,15 +115,6 @@ public final class Instance: Sendable {
   }
 
   public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
-    if
-      let previousMouseMove,
-      previousMouseMove.modifier == modifier,
-      previousMouseMove.gridID == gridID,
-      previousMouseMove.point == point
-    {
-      return
-    }
-    previousMouseMove = (modifier, gridID, point)
     try? await api.fastCall(APIFunctions.NvimInputMouse(
       button: "move",
       action: "",
@@ -172,43 +163,11 @@ public final class Instance: Sendable {
   }
 
   public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
-    guard size != previousReportedOuterGridSize else {
-      return
-    }
-    previousReportedOuterGridSize = size
-
-    guard outerGridSizeThrottlingTask == nil else {
-      return
-    }
-    defer { previousReportedOuterGridSizeTime = .now }
-
-    let timeElapsed = previousReportedOuterGridSizeTime.duration(to: .now)
-    if timeElapsed > outerGridSizeThrottlingInterval {
-      try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
-        grid: Grid.OuterID,
-        width: size.columnsCount,
-        height: size.rowsCount
-      ))
-    } else {
-      outerGridSizeThrottlingTask = Task { [weak self] in
-        guard let self else {
-          return
-        }
-
-        do {
-          try await Task.sleep(for: outerGridSizeThrottlingInterval - timeElapsed)
-
-          try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
-            grid: Grid.OuterID,
-            width: previousReportedOuterGridSize!.columnsCount,
-            height: previousReportedOuterGridSize!.rowsCount
-          ))
-
-        } catch {}
-
-        outerGridSizeThrottlingTask = nil
-      }
-    }
+    try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
+      grid: Grid.OuterID,
+      width: size.columnsCount,
+      height: size.rowsCount
+    ))
   }
 
   public func reportPumBounds(rectangle: IntegerRectangle) async throws {
@@ -277,12 +236,7 @@ public final class Instance: Sendable {
   private let process: Process
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
-  private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
   private var task: Task<Void, Never>?
-  private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
-  private var outerGridSizeThrottlingTask: Task<Void, Never>?
-  private var previousReportedOuterGridSizeTime = SuspendingClock.now
-  private var previousReportedOuterGridSize: IntegerSize?
 }
 
 extension Instance: AsyncSequence {

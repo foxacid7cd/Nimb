@@ -89,6 +89,16 @@ public final class Store: Sendable {
   }
 
   public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+    if
+      let previousMouseMove,
+      previousMouseMove.modifier == modifier,
+      previousMouseMove.gridID == gridID,
+      previousMouseMove.point == point
+    {
+      return
+    }
+    previousMouseMove = (modifier, gridID, point)
+
     await instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
@@ -125,7 +135,34 @@ public final class Store: Sendable {
   }
 
   public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
-    await instance.reportOuterGrid(changedSizeTo: size)
+    guard size != previousReportedOuterGridSize else {
+      return
+    }
+    previousReportedOuterGridSize = size
+
+    guard outerGridSizeThrottlingTask == nil else {
+      return
+    }
+    defer { previousReportedOuterGridSizeInstant = .now }
+
+    let sincePrevious = previousReportedOuterGridSizeInstant.duration(to: .now)
+    if sincePrevious > outerGridSizeThrottlingInterval {
+      await instance.reportOuterGrid(changedSizeTo: size)
+    } else {
+      outerGridSizeThrottlingTask = Task { [weak self] in
+        guard let self else {
+          return
+        }
+
+        do {
+          try await Task.sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
+
+          await instance.reportOuterGrid(changedSizeTo: size)
+        } catch {}
+
+        outerGridSizeThrottlingTask = nil
+      }
+    }
   }
 
   public func reportPumBounds(rectangle: IntegerRectangle) async {
@@ -247,7 +284,7 @@ public final class Store: Sendable {
   private let instance: Instance
   @StateActor private var backgroundState: State
   private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
-  @StateActor private var lastSetStateTime = SuspendingClock.now
+  @StateActor private var lastSetStateInstant = ContinuousClock.now
   @StateActor private var stateUpdatesAccumulator = State.Updates()
   @StateActor private var stateThrottlingTask: Task<Void, Never>?
   private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
@@ -255,6 +292,11 @@ public final class Store: Sendable {
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
   private var previousPumBounds: IntegerRectangle?
+  private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
+  private var outerGridSizeThrottlingTask: Task<Void, Never>?
+  private var previousReportedOuterGridSizeInstant = ContinuousClock.now
+  private var previousReportedOuterGridSize: IntegerSize?
 
   @StateActor
   private func resetCursorBlinkingTask() {
@@ -316,10 +358,10 @@ public final class Store: Sendable {
     stateUpdatesAccumulator.formUnion(updates)
 
     if stateThrottlingTask == nil {
-      let timeElapsed = lastSetStateTime.duration(to: .now)
-      defer { self.lastSetStateTime = .now }
+      let sincePrevious = lastSetStateInstant.duration(to: .now)
+      defer { lastSetStateInstant = .now }
 
-      if timeElapsed > stateThrottlingInterval {
+      if sincePrevious > stateThrottlingInterval {
         Task { @MainActor [state, stateUpdatesAccumulator] in
           self.state = state
           await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
@@ -332,8 +374,7 @@ public final class Store: Sendable {
           }
 
           do {
-            let duration = stateThrottlingInterval - timeElapsed
-            try await Task.sleep(for: duration)
+            try await Task.sleep(for: stateThrottlingInterval - sincePrevious)
 
             Task { @MainActor [backgroundState, stateUpdatesAccumulator] in
               self.state = backgroundState
