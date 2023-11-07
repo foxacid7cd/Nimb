@@ -75,10 +75,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     cmdlinesWindowController = CmdlinesWindowController(store: store!, parentWindow: mainWindowController!.window!)
     popupmenuWindowController = PopupmenuWindowController(
       store: store!,
-      mainWindow: mainWindowController!.window!,
-      cmdlinesWindow: cmdlinesWindowController!.window!,
-      msgShowsWindow: msgShowsWindowController!.window!,
-      gridWindowFrameTransformer: self
+      mainWindowController: mainWindowController!,
+      cmdlinesWindowController: cmdlinesWindowController!,
+      msgShowsWindowController: msgShowsWindowController!
     )
   }
 
@@ -141,18 +140,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
 
       NSApplication.shared.terminate(nil)
-    }
-  }
-}
-
-extension AppDelegate: GridWindowFrameTransformer {
-  func anchorOrigin(for anchor: Popupmenu.Anchor) -> CGPoint? {
-    switch anchor {
-    case let .grid(gridID, gridPoint):
-      mainWindowController!.point(forGridID: gridID, gridPoint: gridPoint)
-
-    case let .cmdline(location):
-      cmdlinesWindowController!.point(forCharacterLocation: location)
     }
   }
 }

@@ -3,24 +3,17 @@
 import AppKit
 import Library
 
-@MainActor
-public protocol GridWindowFrameTransformer: AnyObject {
-  func anchorOrigin(for anchor: Popupmenu.Anchor) -> CGPoint?
-}
-
 public final class PopupmenuWindowController: NSWindowController {
   public init(
     store: Store,
-    mainWindow: NSWindow,
-    cmdlinesWindow: NSWindow,
-    msgShowsWindow: NSWindow,
-    gridWindowFrameTransformer: GridWindowFrameTransformer
+    mainWindowController: MainWindowController,
+    cmdlinesWindowController: CmdlinesWindowController,
+    msgShowsWindowController: MsgShowsWindowController
   ) {
     self.store = store
-    self.mainWindow = mainWindow
-    self.cmdlinesWindow = cmdlinesWindow
-    self.msgShowsWindow = msgShowsWindow
-    self.gridWindowFrameTransformer = gridWindowFrameTransformer
+    self.mainWindowController = mainWindowController
+    self.cmdlinesWindowController = cmdlinesWindowController
+    self.msgShowsWindowController = msgShowsWindowController
     viewController = .init(store: store)
 
     let window = FloatingPanel(contentViewController: viewController)
@@ -54,56 +47,61 @@ public final class PopupmenuWindowController: NSWindowController {
   }
 
   private let store: Store
-  private let mainWindow: NSWindow
-  private let cmdlinesWindow: NSWindow
-  private let msgShowsWindow: NSWindow
-  private weak var gridWindowFrameTransformer: GridWindowFrameTransformer?
+  private let mainWindowController: MainWindowController
+  private let cmdlinesWindowController: CmdlinesWindowController
+  private let msgShowsWindowController: MsgShowsWindowController
   private let viewController: PopupmenuViewController
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?
 
-  private var preferredWindowFrame: CGRect {
-    guard
-      let gridWindowFrameTransformer,
-      let popupmenu = store.state.popupmenu,
-      let anchorOrigin = gridWindowFrameTransformer.anchorOrigin(for: popupmenu.anchor)
-    else {
-      return .init()
+  private let preferredWindowFrameSize = CGSize(
+    width: 300,
+    height: 176
+  )
+
+  private var preferredWindowFrameOrigin: CGPoint? {
+    guard let popupmenu = store.state.popupmenu else {
+      return nil
     }
-    let size = CGSize(
-      width: 300,
-      height: 176
-    )
-    let origin = CGPoint(
+    let anchorOrigin: CGPoint? = switch popupmenu.anchor {
+    case let .grid(id, origin):
+      mainWindowController.screenPoint(forGridID: id, gridPoint: origin)
+    case let .cmdline(location):
+      cmdlinesWindowController.screenPoint(forCharacterLocation: location)
+    }
+    guard let anchorOrigin else {
+      return nil
+    }
+    return .init(
       x: anchorOrigin.x - 13,
-      y: anchorOrigin.y - size.height
+      y: anchorOrigin.y - preferredWindowFrameSize.height
     )
-    return .init(origin: origin, size: size)
+  }
+
+  private var preferredWindowFrame: CGRect? {
+    preferredWindowFrameOrigin.map { .init(origin: $0, size: preferredWindowFrameSize) }
   }
 
   private func updateWindowFrameIfNeeded() {
-    guard let outerGrid = store.state.outerGrid else {
+    guard let outerGrid = store.state.outerGrid, let frame = preferredWindowFrame else {
       return
     }
 
-    let frame = preferredWindowFrame
-    if frame != window!.frame {
-      window!.setFrame(frame, display: true)
+    window!.setFrame(frame, display: true)
 
-      let size = IntegerSize(
-        columnsCount: Int((frame.size.width / store.font.cellWidth).rounded(.up)),
-        rowsCount: Int((frame.size.height / store.font.cellHeight).rounded(.up))
-      )
-      let rectangle = IntegerRectangle(
-        origin: .init(
-          column: Int(((frame.origin.x - mainWindow.frame.origin.x) / store.font.cellWidth).rounded(.down)),
-          row: outerGrid.rowsCount - Int(((frame.origin.y - mainWindow.frame.origin.y) / store.font.cellHeight).rounded(.down)) - size.rowsCount + 1
-        ),
-        size: size
-      )
-      Task {
-        await store.reportPumBounds(rectangle: rectangle)
-      }
+    let size = IntegerSize(
+      columnsCount: Int((frame.size.width / store.font.cellWidth).rounded(.up)),
+      rowsCount: Int((frame.size.height / store.font.cellHeight).rounded(.up))
+    )
+    let rectangle = IntegerRectangle(
+      origin: .init(
+        column: Int(((frame.origin.x - mainWindowController.window!.frame.origin.x) / store.font.cellWidth).rounded(.down)),
+        row: outerGrid.rowsCount - Int(((frame.origin.y - mainWindowController.window!.frame.origin.y) / store.font.cellHeight).rounded(.down)) - size.rowsCount + 1
+      ),
+      size: size
+    )
+    Task {
+      await store.reportPumBounds(rectangle: rectangle)
     }
   }
 
@@ -112,7 +110,7 @@ public final class PopupmenuWindowController: NSWindowController {
 
     if let popupmenu = store.state.popupmenu {
       if window!.parent == nil {
-        mainWindow.addChildWindow(window!, ordered: .above)
+        mainWindowController.window!.addChildWindow(window!, ordered: .above)
         window!.alphaValue = 0
       }
 

@@ -4,12 +4,11 @@ import AppKit
 import CustomDump
 import Library
 
-public final class GridView: NSView {
+public class GridView: NSView {
   init(store: Store, gridID: Grid.ID) {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
-    canDrawConcurrently = true
   }
 
   @available(*, unavailable)
@@ -61,11 +60,6 @@ public final class GridView: NSView {
         )
       }
     }
-  }
-
-  public func point(for gridPoint: IntegerPoint) -> CGPoint {
-    (gridPoint * store.font.cellSize)
-      .applying(upsideDownTransform)
   }
 
   override public func draw(_: NSRect) {
@@ -228,6 +222,20 @@ public final class GridView: NSView {
     }
   }
 
+  public func point(for event: NSEvent) -> IntegerPoint {
+    let upsideDownLocation = convert(event.locationInWindow, from: nil)
+      .applying(upsideDownTransform)
+    return .init(
+      column: Int(upsideDownLocation.x / store.font.cellWidth),
+      row: Int(upsideDownLocation.y / store.font.cellHeight)
+    )
+  }
+
+  public func windowPoint(forGridPoint gridPoint: IntegerPoint) -> CGPoint? {
+    convert(gridPoint * store.font.cellSize, to: nil)
+      .applying(upsideDownTransform)
+  }
+
   var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
   var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
 
@@ -248,15 +256,6 @@ public final class GridView: NSView {
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
-  }
-
-  private func point(for event: NSEvent) -> IntegerPoint {
-    let upsideDownLocation = convert(event.locationInWindow, from: nil)
-      .applying(upsideDownTransform)
-    return .init(
-      column: Int(upsideDownLocation.x / store.font.cellWidth),
-      row: Int(upsideDownLocation.y / store.font.cellHeight)
-    )
   }
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {

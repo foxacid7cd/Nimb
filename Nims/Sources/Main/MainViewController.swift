@@ -3,7 +3,7 @@
 import AppKit
 import Library
 
-final class MainViewController: NSViewController {
+public class MainViewController: NSViewController {
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
@@ -15,7 +15,11 @@ final class MainViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override func loadView() {
+  public func windowPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    mainView.windowPoint(forGridID: gridID, gridPoint: gridPoint)
+  }
+
+  override public func loadView() {
     let view = customView
 
     let stackView = NSStackView(views: [])
@@ -50,13 +54,13 @@ final class MainViewController: NSViewController {
     self.view = view
   }
 
-  override func viewDidLoad() {
+  override public func viewDidLoad() {
     super.viewDidLoad()
 
     updateMinMainContainerViewSize()
   }
 
-  override func viewDidLayout() {
+  override public func viewDidLayout() {
     super.viewDidLayout()
 
     if let window = view.window {
@@ -65,7 +69,7 @@ final class MainViewController: NSViewController {
     }
   }
 
-  func render(_ stateUpdates: State.Updates) {
+  public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
       updateMinMainContainerViewSize()
 
@@ -78,11 +82,9 @@ final class MainViewController: NSViewController {
 
     tablineView.render(stateUpdates)
     mainView.render(stateUpdates)
-
-    view.layoutSubtreeIfNeeded()
   }
 
-  func reportOuterGridSizeChanged() {
+  public func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
       columnsCount: Int(mainContainerView.frame.width / store.font.cellWidth),
       rowsCount: Int(mainContainerView.frame.height / store.font.cellHeight)
@@ -92,13 +94,7 @@ final class MainViewController: NSViewController {
     }
   }
 
-  func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    mainView.point(forGridID: gridID, gridPoint: gridPoint)
-      .map { mainContainerView.convert($0, from: mainView) }
-      .map { view.convert($0, from: mainContainerView) }
-  }
-
-  func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
+  public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
     let mainFrameSize = outerGridSize * store.font.cellSize
     return .init(
       width: mainFrameSize.width,

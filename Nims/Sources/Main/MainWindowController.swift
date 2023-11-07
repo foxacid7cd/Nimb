@@ -4,8 +4,8 @@ import AppKit
 import AsyncAlgorithms
 import Library
 
-final class MainWindowController: NSWindowController {
-  init(store: Store) {
+public final class MainWindowController: NSWindowController {
+  public init(store: Store) {
     self.store = store
 
     let window = MainWindow(
@@ -25,6 +25,11 @@ final class MainWindowController: NSWindowController {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  public func screenPoint(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
+    viewController.windowPoint(forGridID: gridID, gridPoint: gridPoint)
+      .map { window!.convertPoint(toScreen: $0) }
   }
 
   func render(_ stateUpdates: State.Updates) {
@@ -52,12 +57,6 @@ final class MainWindowController: NSWindowController {
     }
   }
 
-  func point(forGridID gridID: Grid.ID, gridPoint: IntegerPoint) -> CGPoint? {
-    viewController.point(forGridID: gridID, gridPoint: gridPoint)
-      .map { $0 + .init(x: 0, y: -store.font.cellHeight) }
-      .map { window!.convertPoint(toScreen: $0) }
-  }
-
   private let store: Store
   private lazy var viewController = MainViewController(
     store: store,
@@ -81,7 +80,7 @@ final class MainWindowController: NSWindowController {
 }
 
 extension MainWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {
+  public func windowDidResize(_: Notification) {
     if isWindowInitiallyShown {
       viewController.reportOuterGridSizeChanged()
       if !window!.inLiveResize {
@@ -90,7 +89,7 @@ extension MainWindowController: NSWindowDelegate {
     }
   }
 
-  func windowDidEndLiveResize(_: Notification) {
+  public func windowDidEndLiveResize(_: Notification) {
     saveWindowFrame()
   }
 }

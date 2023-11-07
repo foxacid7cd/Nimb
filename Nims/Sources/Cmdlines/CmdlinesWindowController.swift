@@ -27,13 +27,6 @@ public final class CmdlinesWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override public func windowDidLoad() {
-    super.windowDidLoad()
-
-    updateWindowFrameOrigin()
-    updateWindow()
-  }
-
   public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isFontUpdated || stateUpdates.isOuterGridLayoutUpdated {
       updateWindowFrameOrigin()
@@ -44,7 +37,7 @@ public final class CmdlinesWindowController: NSWindowController {
     }
   }
 
-  public func point(forCharacterLocation location: Int) -> CGPoint? {
+  public func screenPoint(forCharacterLocation location: Int) -> CGPoint? {
     viewController.point(forCharacterLocation: location)
       .map { window!.convertPoint(toScreen: $0) }
   }

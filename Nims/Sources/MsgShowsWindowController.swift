@@ -5,8 +5,8 @@ import Library
 import SwiftUI
 import TinyConstraints
 
-final class MsgShowsWindowController: NSWindowController {
-  init(store: Store, parentWindow: NSWindow) {
+public class MsgShowsWindowController: NSWindowController {
+  public init(store: Store, parentWindow: NSWindow) {
     self.store = store
     self.parentWindow = parentWindow
 
@@ -75,13 +75,13 @@ final class MsgShowsWindowController: NSWindowController {
 }
 
 extension MsgShowsWindowController: NSWindowDelegate {
-  func windowDidResize(_: Notification) {
+  public func windowDidResize(_: Notification) {
     updateWindowFrameOrigin()
   }
 }
 
-final class MsgShowsViewController: NSViewController {
-  init(store: Store) {
+public final class MsgShowsViewController: NSViewController {
+  public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
   }
@@ -91,7 +91,7 @@ final class MsgShowsViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override func loadView() {
+  override public func loadView() {
     let view = NSView()
     view.width(max: 640)
     view.height(max: 480)
@@ -121,7 +121,7 @@ final class MsgShowsViewController: NSViewController {
     self.view = view
   }
 
-  override func viewDidLoad() {
+  override public func viewDidLoad() {
     super.viewDidLoad()
 
     reloadData()
