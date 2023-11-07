@@ -6,7 +6,7 @@ import Library
 public class MainWindow: NSWindow {
   public init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
-    mainViewController = .init(
+    viewController = .init(
       store: store,
       minOuterGridSize: minOuterGridSize
     )
@@ -16,7 +16,7 @@ public class MainWindow: NSWindow {
       backing: .buffered,
       defer: true
     )
-    contentViewController = mainViewController
+    contentViewController = viewController
     titlebarAppearsTransparent = true
     title = ""
     renderBackgroundColor()
@@ -47,24 +47,24 @@ public class MainWindow: NSWindow {
       renderIsMouseOn()
     }
 
-    mainViewController.render(stateUpdates)
+    viewController.render(stateUpdates)
   }
 
   public func reportOuterGridSizeChanged() {
-    mainViewController.reportOuterGridSizeChanged()
+    viewController.reportOuterGridSizeChanged()
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
-    mainViewController.estimatedContentSize(outerGridSize: outerGridSize)
+    viewController.estimatedContentSize(outerGridSize: outerGridSize)
   }
 
   public func screenFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    mainViewController.windowFrame(forGridID: gridID, gridFrame: gridFrame)
+    viewController.windowFrame(forGridID: gridID, gridFrame: gridFrame)
       .map { convertToScreen($0) }
   }
 
   private let store: Store
-  private let mainViewController: MainViewController
+  private let viewController: MainViewController
 
   private func renderBackgroundColor() {
     backgroundColor = store.state.appearance.defaultBackgroundColor.appKit

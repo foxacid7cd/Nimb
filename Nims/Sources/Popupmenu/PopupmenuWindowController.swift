@@ -7,13 +7,11 @@ public final class PopupmenuWindowController: NSWindowController {
   public init(
     store: Store,
     mainWindowController: MainWindowController,
-    cmdlinesWindowController: CmdlinesWindowController,
-    msgShowsWindowController: MsgShowsWindowController
+    cmdlinesWindowController: CmdlinesWindowController
   ) {
     self.store = store
     self.mainWindowController = mainWindowController
     self.cmdlinesWindowController = cmdlinesWindowController
-    self.msgShowsWindowController = msgShowsWindowController
     viewController = .init(store: store)
 
     let window = FloatingPanel(contentViewController: viewController)
@@ -49,7 +47,6 @@ public final class PopupmenuWindowController: NSWindowController {
   private let store: Store
   private let mainWindowController: MainWindowController
   private let cmdlinesWindowController: CmdlinesWindowController
-  private let msgShowsWindowController: MsgShowsWindowController
   private let viewController: PopupmenuViewController
   private var task: Task<Void, Never>?
   private var isVisibleAnimatedOn: Bool?

@@ -12,8 +12,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       await setupStore()
       setupMainMenuController()
       showMainWindowController()
-      setupSecondaryWindowControllers()
-
       runStateUpdatesTask()
     }
   }
@@ -22,9 +20,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
   private var mainWindowController: MainWindowController?
-  private var msgShowsWindowController: MsgShowsWindowController?
-  private var cmdlinesWindowController: CmdlinesWindowController?
-  private var popupmenuWindowController: PopupmenuWindowController?
 
   private func setupStore() async {
     let initialOuterGridSize: IntegerSize = if
@@ -73,53 +68,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
   }
 
-  private func setupSecondaryWindowControllers() {
-    msgShowsWindowController = MsgShowsWindowController(store: store!, parentWindow: mainWindowController!.window!)
-    cmdlinesWindowController = CmdlinesWindowController(store: store!, parentWindow: mainWindowController!.window!)
-    popupmenuWindowController = PopupmenuWindowController(
-      store: store!,
-      mainWindowController: mainWindowController!,
-      cmdlinesWindowController: cmdlinesWindowController!,
-      msgShowsWindowController: msgShowsWindowController!
-    )
-  }
-
   private func runStateUpdatesTask() {
-    let store = store!
-
-    stateUpdatesTask = Task { [weak self] in
+    stateUpdatesTask = Task { [weak self, store] in
       do {
-        for try await stateUpdates in store {
+        for try await stateUpdates in store! {
           guard !Task.isCancelled else {
             return
           }
 
           self?.mainWindowController?.render(stateUpdates)
-          self?.msgShowsWindowController?.render(stateUpdates)
-          self?.cmdlinesWindowController?.render(stateUpdates)
-          self?.popupmenuWindowController?.render(stateUpdates)
 
           if stateUpdates.isOuterGridLayoutUpdated {
-            let outerGridSize = store.state.outerGrid!.size
+            let outerGridSize = store!.state.outerGrid!.size
             UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
             UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
           }
 
           if stateUpdates.isFontUpdated {
-            UserDefaults.standard.setValue(store.state.font.nsFont().pointSize, forKey: "fontSize")
+            UserDefaults.standard.setValue(store!.state.font.nsFont().pointSize, forKey: "fontSize")
           }
 
           #if DEBUG
             if 
               stateUpdates.isDebugUpdated,
-              let encoded = try? JSONEncoder().encode(store.state.debug)
+              let encoded = try? JSONEncoder().encode(store!.state.debug)
             {
               UserDefaults.standard.setValue(encoded, forKey: "debug")
             }
           #endif
         }
       } catch {
-        assertionFailure(error)
+        let alert = NSAlert(error: error)
+        alert.informativeText = String(customDumping: error)
+        alert.runModal()
       }
 
       NSApplication.shared.terminate(nil)

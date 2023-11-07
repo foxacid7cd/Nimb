@@ -26,6 +26,8 @@ public class MainWindowController: NSWindowController {
     mainWindow.render(stateUpdates)
 
     if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
+      isWindowInitiallyShown = true
+
       let contentSize: CGSize = if
         let lastWindowWidth = UserDefaults.standard.value(forKey: "windowWidth") as? Double,
         let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double
@@ -37,7 +39,9 @@ public class MainWindowController: NSWindowController {
       mainWindow.setContentSize(contentSize)
 
       showWindow(nil)
-      isWindowInitiallyShown = true
+      Task {
+        try await Task.sleep(for: .seconds(1))
+      }
     }
   }
 
@@ -57,7 +61,7 @@ extension MainWindowController: NSWindowDelegate {
       return
     }
     mainWindow.reportOuterGridSizeChanged()
-    if !window!.inLiveResize {
+    if !mainWindow.inLiveResize {
       saveWindowFrame()
     }
   }

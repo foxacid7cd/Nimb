@@ -7,6 +7,7 @@ public class MainViewController: NSViewController {
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
+    msgShowsViewController = .init(store: store)
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -20,13 +21,13 @@ public class MainViewController: NSViewController {
   }
 
   override public func loadView() {
-    stackView.spacing = 0
-    stackView.orientation = .vertical
-    customView.addSubview(stackView)
-    stackView.edgesToSuperview()
+    let view = customView
 
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
-    stackView.addArrangedSubview(tablineView)
+    view.addSubview(tablineView)
+    tablineView.topToSuperview()
+    tablineView.leading(to: view)
+    tablineView.trailing(to: view)
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleTablineDoubleClick))
     tablineDoubleClickGestureRecognizer.delaysPrimaryMouseButtonEvents = false
@@ -34,21 +35,28 @@ public class MainViewController: NSViewController {
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
     gridsContainerView.clipsToBounds = true
-    stackView.addArrangedSubview(gridsContainerView)
-
-    gridsContainerView.addSubview(gridsView)
-
-    gridsView.centerXToSuperview()
-    gridsView.topToSuperview()
-
+    view.addSubview(gridsContainerView)
+    gridsContainerView.topToBottom(of: tablineView)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
     gridsContainerViewConstraints = (
       gridsContainerView.width(0, relation: .equalOrGreater),
       gridsContainerView.height(0, relation: .equalOrGreater)
     )
+    gridsContainerView.leading(to: view)
+    gridsContainerView.trailing(to: view)
+    gridsContainerView.bottomToSuperview()
 
-    view = customView
+    gridsContainerView.addSubview(gridsView)
+    gridsView.centerXToSuperview()
+    gridsView.topToSuperview()
+
+    view.addSubview(msgShowsViewController.view)
+    msgShowsViewController.view.leading(to: view)
+    msgShowsViewController.view.bottomToSuperview()
+    addChild(msgShowsViewController)
+
+    self.view = view
   }
 
   override public func viewDidLoad() {
@@ -67,9 +75,6 @@ public class MainViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    tablineView.render(stateUpdates)
-    gridsView.render(stateUpdates)
-
     if stateUpdates.isFontUpdated {
       updateMinGridsContainerViewSize()
       reportOuterGridSizeChanged()
@@ -78,6 +83,11 @@ public class MainViewController: NSViewController {
     if stateUpdates.isMouseUserInteractionEnabledUpdated {
       customView.isUserInteractionEnabled = store.state.isMouseUserInteractionEnabled
     }
+
+    tablineView.render(stateUpdates)
+    gridsView.render(stateUpdates)
+
+    msgShowsViewController.render(stateUpdates)
 
     view.layoutSubtreeIfNeeded()
   }
@@ -100,13 +110,9 @@ public class MainViewController: NSViewController {
     )
   }
 
-  override public func keyDown(with event: NSEvent) {
-    super.keyDown(with: event)
-  }
-
   private let store: Store
+  private let msgShowsViewController: MsgShowsViewController
   private lazy var customView = CustomView()
-  private lazy var stackView = NSStackView(views: [])
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private let gridsContainerView = NSView()
