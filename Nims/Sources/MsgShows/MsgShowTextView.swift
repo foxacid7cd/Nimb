@@ -27,9 +27,9 @@ public class MsgShowTextView: NSView {
   }
 
   public func render() {
-    let bigVerticalInset = max(5, store.font.cellHeight * 0.75)
+    let bigVerticalInset = max(5, store.font.cellHeight * 0.6)
     let smallVerticalInset = max(1, store.font.cellHeight * 0.15)
-    let horizontalInset = bigVerticalInset
+    let horizontalInset = max(5, store.font.cellHeight * 0.75)
     insets = .init(
       top: isFirst ? bigVerticalInset : smallVerticalInset,
       left: horizontalInset,

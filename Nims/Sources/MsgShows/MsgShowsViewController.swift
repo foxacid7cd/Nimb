@@ -15,13 +15,18 @@ public class MsgShowsViewController: NSViewController {
 
   override public func loadView() {
     let view = NSView()
+    view.wantsLayer = true
+    view.layer!.masksToBounds = true
+    view.layer!.cornerRadius = 8
+    view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
+    view.layer!.borderWidth = 1
     view.width(max: 640)
     view.height(max: 480)
     view.alphaValue = 0
 
     let blurView = NSVisualEffectView()
-    blurView.blendingMode = .behindWindow
-    blurView.state = .active
+    blurView.blendingMode = .withinWindow
+    blurView.material = .popover
     view.addSubview(blurView)
     blurView.edgesToSuperview()
 
@@ -114,7 +119,7 @@ public class MsgShowsViewController: NSViewController {
 
       case .separator:
         let separatorView = NSView()
-        separatorView.alphaValue = 0.15
+        separatorView.alphaValue = 0.2
         separatorView.wantsLayer = true
         separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
         contentView.addArrangedSubview(separatorView)

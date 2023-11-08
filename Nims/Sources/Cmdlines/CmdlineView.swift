@@ -26,10 +26,8 @@ public class CmdlineView: NSView {
       promptTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
       promptTextField.topAnchor.constraint(equalTo: topAnchor, constant: 10),
 
-      firstCharacterView.widthAnchor.constraint(equalToConstant: 20),
-      firstCharacterView.heightAnchor.constraint(equalToConstant: 20),
-      firstCharacterView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 9),
-      firstCharacterView.firstBaselineAnchor.constraint(equalTo: contentTextView.firstBaselineAnchor),
+      firstCharacterView.topAnchor.constraint(equalTo: contentTextView.topAnchor),
+      firstCharacterView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
 
       contentTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
       contentTextView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
@@ -132,14 +130,16 @@ private class CmdlineFirstCharacterView: NSView {
     }
   }
 
-  override var firstBaselineOffsetFromTop: CGFloat {
-    store.font.nsFont().ascender + ctFrameYOffset
+  override var intrinsicContentSize: NSSize {
+    .init(width: store.font.cellHeight, height: store.font.cellHeight)
   }
 
   func render() {
+    invalidateIntrinsicContentSize()
+
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
       .font: store.font.nsFont(isBold: true),
-      .foregroundColor: NSColor.textColor,
+      .foregroundColor: store.appearance.defaultForegroundColor.appKit,
     ])
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
@@ -147,7 +147,7 @@ private class CmdlineFirstCharacterView: NSView {
       ctFramesetter,
       stringRange,
       nil,
-      bounds.size,
+      .init(width: store.font.cellWidth * 2, height: store.font.cellHeight * 2),
       nil
     )
 
@@ -159,8 +159,6 @@ private class CmdlineFirstCharacterView: NSView {
       x: (bounds.width - boundingSize.width) / 2,
       y: (bounds.height - size.height) / 2
     )
-    ctFrameYOffset = origin.y
-
     ctFrame = CTFramesetterCreateFrame(
       ctFramesetter,
       stringRange,
@@ -179,18 +177,17 @@ private class CmdlineFirstCharacterView: NSView {
       ),
       saturation: 0.8,
       brightness: 0.8,
-      alpha: 0.6
+      alpha: 0.4
     )
   }
 
   override func draw(_: NSRect) {
     let context = NSGraphicsContext.current!.cgContext
 
+    let path = CGPath(roundedRect: bounds, cornerWidth: 3, cornerHeight: 3, transform: nil)
     if let backgroundColor {
       backgroundColor.setFill()
-      context.addPath(
-        .init(roundedRect: bounds, cornerWidth: 5, cornerHeight: 5, transform: nil)
-      )
+      context.addPath(path)
       context.fillPath()
     }
 
@@ -204,7 +201,6 @@ private class CmdlineFirstCharacterView: NSView {
   private let level: Int
   private var ctFrame: CTFrame?
   private var backgroundColor: NSColor?
-  private var ctFrameYOffset: Double = 0
 
   private var firstCharacter: String {
     store.state.cmdlines.dictionary[level]!.firstCharacter
@@ -238,10 +234,6 @@ private class CmdlineTextView: NSView {
         render()
       }
     }
-  }
-
-  override var firstBaselineOffsetFromTop: CGFloat {
-    store.font.nsFont().ascender
   }
 
   func render() {

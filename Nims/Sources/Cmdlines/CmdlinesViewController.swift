@@ -32,7 +32,7 @@ public class CmdlinesViewController: NSViewController {
 
         if index < cmdlines.count - 1 {
           let separatorView = NSView()
-          separatorView.alphaValue = 0.15
+          separatorView.alphaValue = 0.2
           separatorView.wantsLayer = true
           separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
           contentView.addArrangedSubview(separatorView)
@@ -51,12 +51,17 @@ public class CmdlinesViewController: NSViewController {
 
   override public func loadView() {
     let view = NSView(frame: .zero)
+    view.wantsLayer = true
+    view.layer!.masksToBounds = true
+    view.layer!.cornerRadius = 8
+    view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
+    view.layer!.borderWidth = 1
     view.width(500)
     view.height(max: 160)
 
     let blurView = NSVisualEffectView()
-    blurView.blendingMode = .behindWindow
-    blurView.state = .active
+    blurView.blendingMode = .withinWindow
+    blurView.material = .popover
     view.addSubview(blurView)
     blurView.edgesToSuperview()
 

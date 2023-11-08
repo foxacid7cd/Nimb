@@ -84,6 +84,11 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
 
   override public func loadView() {
     let view = NSView()
+    view.wantsLayer = true
+    view.layer!.masksToBounds = true
+    view.layer!.cornerRadius = 8
+    view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
+    view.layer!.borderWidth = 1
     view.alphaValue = 0
     view.height(176)
 

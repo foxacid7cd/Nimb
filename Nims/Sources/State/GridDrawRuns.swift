@@ -185,10 +185,7 @@ public struct DrawRun: Sendable {
     )
     let attributedString = NSAttributedString(
       string: text,
-      attributes: [
-        .font: nsFont,
-        .ligature: 2,
-      ]
+      attributes: [.font: nsFont]
     )
 
     let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(attributedString, nil)!
@@ -507,10 +504,10 @@ public struct CursorDrawRun: Sendable {
     rect.fill()
 
     if shouldDrawParentText {
-      context.setShouldAntialias(true)
       rect.clip()
 
       context.setFillColor(cursorForegroundColor.appKit.cgColor)
+      context.setShouldAntialias(true)
 
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column - parentDrawRun.boundingRange.lowerBound, row: parentOrigin.row),
