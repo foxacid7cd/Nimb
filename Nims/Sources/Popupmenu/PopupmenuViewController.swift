@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CasePaths
 import Library
 
 public final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
@@ -37,7 +38,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
           anchorConstraints = [
             view.leading(to: gridView, offset: offset.x - 13),
             view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
-            view.width(300),
+            view.width(290),
           ]
 
         case .cmdline:
@@ -73,10 +74,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
       }
     } else {
       if isVisibleAnimatedOn != false {
-        NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
-          view.animator().alphaValue = 0
-        }
+        view.alphaValue = 0
         isVisibleAnimatedOn = false
       }
     }
@@ -85,14 +83,21 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   override public func loadView() {
     let view = NSView()
     view.wantsLayer = true
-    view.layer!.masksToBounds = true
+    view.shadow = .init()
     view.layer!.cornerRadius = 8
     view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
     view.layer!.borderWidth = 1
+    view.layer!.shadowRadius = 2
+    view.layer!.shadowOffset = .init(width: 4, height: -4)
+    view.layer!.shadowOpacity = 0.1
+    view.layer!.shadowColor = .black
     view.alphaValue = 0
     view.height(176)
 
     let blurView = NSVisualEffectView()
+    blurView.wantsLayer = true
+    blurView.layer!.masksToBounds = true
+    blurView.layer!.cornerRadius = 8
     blurView.blendingMode = .withinWindow
     blurView.material = .popover
     view.addSubview(blurView)
@@ -126,14 +131,13 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     var itemView = tableView.makeView(withIdentifier: PopupmenuItemView.ReuseIdentifier, owner: self) as? PopupmenuItemView
     if itemView == nil {
-      itemView = .init()
+      itemView = .init(store: store)
       itemView!.identifier = PopupmenuItemView.ReuseIdentifier
     }
     if let popupmenu = store.state.popupmenu, row < popupmenu.items.count {
       itemView!.set(
         item: popupmenu.items[row],
-        isSelected: popupmenu.selectedItemIndex == row,
-        font: store.font
+        isSelected: popupmenu.selectedItemIndex == row
       )
     }
     return itemView

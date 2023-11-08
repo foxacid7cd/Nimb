@@ -2,8 +2,9 @@
 
 import AppKit
 
-public final class PopupmenuItemView: NSView {
-  public init() {
+public class PopupmenuItemView: NSView {
+  public init(store: Store) {
+    self.store = store
     super.init(frame: .zero)
 
     textField.translatesAutoresizingMaskIntoConstraints = false
@@ -54,7 +55,7 @@ public final class PopupmenuItemView: NSView {
     super.draw(dirtyRect)
   }
 
-  public func set(item: PopupmenuItem, isSelected: Bool, font: NimsFont) {
+  public func set(item: PopupmenuItem, isSelected: Bool) {
     let secondaryText = [item.kind, item.menu, item.info]
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .filter { !$0.isEmpty }
@@ -67,7 +68,7 @@ public final class PopupmenuItemView: NSView {
         startingAt: 0
       ),
       saturation: 0.6,
-      brightness: 0.9
+      brightness: 0.6
     )
     darkerAccentColor = accentColor.withAlphaComponent(0.5)
 
@@ -75,16 +76,17 @@ public final class PopupmenuItemView: NSView {
     needsDisplay = true
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
-      .foregroundColor: NSColor.white,
-      .font: font.nsFont(),
+      .foregroundColor: store.appearance.defaultForegroundColor.appKit,
+      .font: store.font.nsFont(),
     ])
 
     secondTextField.attributedStringValue = .init(string: secondaryText, attributes: [
-      .foregroundColor: isSelected ? NSColor.textColor : accentColor,
-      .font: font.nsFont(isItalic: true),
+      .foregroundColor: isSelected ? store.appearance.defaultForegroundColor.appKit : accentColor,
+      .font: store.font.nsFont(isItalic: true),
     ])
   }
 
+  private let store: Store
   private let textField = NSTextField(labelWithString: "")
   private let secondTextField = NSTextField(labelWithString: "")
   private var isSelected = false
