@@ -81,6 +81,8 @@ public class CmdlinesViewController: NSViewController {
     view.layer!.shadowOffset = .init(width: 4, height: -4)
     view.layer!.shadowOpacity = 0.2
     view.layer!.shadowColor = .black
+    view.alphaValue = 0
+    view.isHidden = true
     view.width(500)
     view.height(max: 160)
 

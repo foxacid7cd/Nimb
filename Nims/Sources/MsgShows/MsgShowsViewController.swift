@@ -27,6 +27,7 @@ public class MsgShowsViewController: NSViewController {
     view.width(max: 640)
     view.height(max: 480)
     view.alphaValue = 0
+    view.isHidden = true
 
     let blurView = NSVisualEffectView()
     blurView.wantsLayer = true

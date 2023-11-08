@@ -98,6 +98,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     view.layer!.shadowOpacity = 0.2
     view.layer!.shadowColor = .black
     view.alphaValue = 0
+    view.isHidden = true
     view.height(176)
 
     let blurView = NSVisualEffectView()
