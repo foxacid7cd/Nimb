@@ -229,6 +229,9 @@ public class GridsView: NSView {
 
     NSLayoutConstraint.deactivate(deactivated)
     NSLayoutConstraint.activate(activated)
+    if !deactivated.isEmpty || !activated.isEmpty {
+      layoutSubtreeIfNeeded()
+    }
 
     if stateUpdates.isGridsOrderUpdated {
       sortSubviews(

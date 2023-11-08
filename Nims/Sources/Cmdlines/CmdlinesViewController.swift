@@ -63,7 +63,7 @@ public class CmdlinesViewController: NSViewController {
       }
     }
 
-    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated {
+    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated {
       for (_, cmdlineView) in cmdlineViews {
         cmdlineView.setNeedsDisplayTextView()
       }

@@ -110,8 +110,6 @@ public class MainViewController: NSViewController {
     msgShowsViewController.render(stateUpdates)
     cmdlinesViewController.render(stateUpdates)
     popupmenuViewController.render(stateUpdates)
-
-    view.layoutSubtreeIfNeeded()
   }
 
   public func reportOuterGridSizeChanged() {

@@ -6,45 +6,77 @@ import Library
 @PublicInit
 public struct NimsFont: Sendable, Hashable {
   public init(_ appKit: NSFont) {
-    self = FontBridge.shared.wrap(appKit)
+    let wrapped = FontBridge.shared.wrap(appKit)
+    id = wrapped.index
   }
 
   public var id: Int = 0
 
   public var cellWidth: Double {
-    unwrapped.cellWidth
+    wrapped.cellWidth
   }
 
   public var cellHeight: Double {
-    unwrapped.cellHeight
+    wrapped.cellHeight
   }
 
   public var cellSize: CGSize {
     .init(width: cellWidth, height: cellHeight)
   }
 
-  public func nsFont(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
+  public func appKit(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
     if isBold, isItalic {
-      unwrapped.boldItalic
-
+      wrapped.boldItalic
     } else if isBold {
-      unwrapped.bold
-
+      wrapped.bold
     } else if isItalic {
-      unwrapped.italic
-
+      wrapped.italic
     } else {
-      unwrapped.regular
+      wrapped.regular
     }
   }
 
-  private var unwrapped: FontBridge.WrappedFont {
-    FontBridge.shared.unwrap(self)
+  private var wrapped: FontBridge.WrappedFont {
+    FontBridge.shared.wrapped(for: self)
   }
 }
 
 final class FontBridge {
+  init(dispatchQueue: DispatchQueue) {
+    self.dispatchQueue = dispatchQueue
+
+    let systemFont = NSFont.monospacedSystemFont(
+      ofSize: NSFont.systemFontSize,
+      weight: .regular
+    )
+    let wrapped = WrappedFont(index: 0, appKit: systemFont)
+    array = [wrapped]
+    indexes = [Key(systemFont): wrapped.index]
+  }
+
   struct WrappedFont {
+    init(index: Int, appKit: NSFont) {
+      self.index = index
+
+      var regular = appKit
+      let fontManager = NSFontManager.shared
+      if fontManager.traits(of: regular).contains(.boldFontMask) {
+        regular = fontManager.convert(regular, toNotHaveTrait: .boldFontMask)
+      }
+      if fontManager.traits(of: regular).contains(.italicFontMask) {
+        regular = fontManager.convert(regular, toNotHaveTrait: .italicFontMask)
+      }
+      self.regular = regular
+
+      bold = fontManager.convert(appKit, toHaveTrait: .boldFontMask)
+      italic = fontManager.convert(appKit, toHaveTrait: .italicFontMask)
+      boldItalic = fontManager.convert(bold, toHaveTrait: .italicFontMask)
+
+      cellWidth = appKit.makeCellWidth()
+      cellHeight = appKit.makeCellHeight()
+    }
+
+    var index: Int
     var regular: NSFont
     var bold: NSFont
     var italic: NSFont
@@ -53,40 +85,40 @@ final class FontBridge {
     var cellHeight: Double
   }
 
-  static let shared = FontBridge()
-
-  func wrap(_ appKit: NSFont) -> NimsFont {
-    let bold = NSFontManager.shared.convert(appKit, toHaveTrait: .boldFontMask)
-    let italic = NSFontManager.shared.convert(appKit, toHaveTrait: .italicFontMask)
-    let boldItalic = NSFontManager.shared.convert(bold, toHaveTrait: .italicFontMask)
-
-    let cellWidth = appKit.makeCellWidth()
-    let cellHeight = appKit.makeCellHeight()
-
-    let font = NimsFont(id: .init(wrappedFonts.count))
-    wrappedFonts.append(.init(
-      regular: appKit,
-      bold: bold,
-      italic: italic,
-      boldItalic: boldItalic,
-      cellWidth: cellWidth,
-      cellHeight: cellHeight
-    ))
-    return font
-  }
-
-  func unwrap(_ font: NimsFont) -> WrappedFont {
-    if font.id == .zero, wrappedFonts.isEmpty {
-      _ = wrap(
-        .monospacedSystemFont(
-          ofSize: NSFont.systemFontSize,
-          weight: .regular
-        )
-      )
+  struct Key: Hashable {
+    init(_ appKit: NSFont) {
+      familyName = appKit.familyName ?? appKit.fontName
+      size = appKit.pointSize
     }
 
-    return wrappedFonts[font.id]
+    var familyName: String
+    var size: Double
   }
 
-  private var wrappedFonts = [WrappedFont]()
+  static let shared = FontBridge(dispatchQueue: .init(
+    label: "\(Bundle.main.bundleIdentifier!).FontBridge",
+    attributes: .concurrent
+  ))
+
+  @discardableResult
+  func wrap(_ appKit: NSFont) -> WrappedFont {
+    let key = Key(appKit)
+    if let existing = dispatchQueue.sync(execute: { indexes[key].map { array[$0] } }) {
+      return existing
+    }
+    return dispatchQueue.sync(flags: .barrier) {
+      let wrapped = WrappedFont(index: array.count, appKit: appKit)
+      array.append(wrapped)
+      indexes[key] = wrapped.index
+      return wrapped
+    }
+  }
+
+  func wrapped(for font: NimsFont) -> WrappedFont {
+    dispatchQueue.sync { array[font.id] }
+  }
+
+  private let dispatchQueue: DispatchQueue
+  private var array: [WrappedFont]
+  private var indexes: [Key: Int]
 }

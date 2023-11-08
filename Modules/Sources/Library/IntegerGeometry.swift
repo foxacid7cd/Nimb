@@ -72,6 +72,11 @@ public struct IntegerRectangle: Sendable, Hashable {
   public func applying(offset: IntegerSize) -> IntegerRectangle {
     .init(origin: origin + offset, size: size)
   }
+
+  @inlinable
+  public func contains(_ point: IntegerPoint) -> Bool {
+    columns.contains(point.column) && rows.contains(point.row)
+  }
 }
 
 @inlinable

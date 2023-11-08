@@ -85,7 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
           if stateUpdates.isFontUpdated {
-            UserDefaults.standard.setValue(store!.state.font.nsFont().pointSize, forKey: "fontSize")
+            UserDefaults.standard.setValue(store!.state.font.appKit().pointSize, forKey: "fontSize")
           }
 
           #if DEBUG

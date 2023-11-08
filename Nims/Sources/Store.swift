@@ -341,7 +341,7 @@ public final class Store: Sendable {
   private func dispatch(reducer: Reducer) async throws {
     var (state, updates) = try await reducer.reduce(state: backgroundState)
 
-    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isBusyUpdated || updates.isCmdlinesUpdated
+    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
     if shouldResetCursorBlinkingTask {
       cursorBlinkingTask?.cancel()
       cursorBlinkingTask = nil

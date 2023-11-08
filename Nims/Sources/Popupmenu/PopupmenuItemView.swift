@@ -77,12 +77,12 @@ public class PopupmenuItemView: NSView {
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
       .foregroundColor: store.appearance.defaultForegroundColor.appKit,
-      .font: store.font.nsFont(),
+      .font: store.font.appKit(),
     ])
 
     secondTextField.attributedStringValue = .init(string: secondaryText, attributes: [
       .foregroundColor: isSelected ? store.appearance.defaultForegroundColor.appKit : accentColor,
-      .font: store.font.nsFont(isItalic: true),
+      .font: store.font.appKit(isItalic: true),
     ])
   }
 

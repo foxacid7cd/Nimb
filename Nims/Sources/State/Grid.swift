@@ -197,10 +197,7 @@ public struct Grid: Sendable, Identifiable {
         return nil
       }
       drawRuns.cursorDrawRun = nil
-      return .dirtyRectangles([.init(
-        origin: cursorDrawRun.position,
-        size: .init(columnsCount: 1, rowsCount: 1)
-      )])
+      return .dirtyRectangles([cursorDrawRun.rectangle])
     }
   }
 

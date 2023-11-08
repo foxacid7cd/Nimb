@@ -179,13 +179,15 @@ public struct DrawRun: Sendable {
   public init(text: String, columnsCount: Int, highlightID: Highlight.ID, font: NimsFont, appearance: Appearance) {
     let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
 
-    let nsFont = font.nsFont(
-      isBold: appearance.isBold(for: highlightID),
-      isItalic: appearance.isItalic(for: highlightID)
+    let isBold = appearance.isBold(for: highlightID)
+    let isItalic = appearance.isItalic(for: highlightID)
+    let appKitFont = font.appKit(
+      isBold: isBold,
+      isItalic: isItalic
     )
     let attributedString = NSAttributedString(
       string: text,
-      attributes: [.font: nsFont]
+      attributes: [.font: appKitFont]
     )
 
     let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(attributedString, nil)!
@@ -222,7 +224,13 @@ public struct DrawRun: Sendable {
           initializedCount = glyphCount
         }
 
+        let attributes = CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
+        let appKitFont = attributes[.font] as? NSFont
+
         return .init(
+          font: appKitFont.map(NimsFont.init) ?? font,
+          isBold: isBold,
+          isItalic: isItalic,
           textMatrix: CTRunGetTextMatrix(ctRun),
           glyphs: glyphs,
           positions: positions,
@@ -359,11 +367,6 @@ public struct DrawRun: Sendable {
     appearance.backgroundColor(for: highlightID).appKit.setFill()
     context.fill([rect])
 
-    let nsFont = font.nsFont(
-      isBold: appearance.isBold(for: highlightID),
-      isItalic: appearance.isItalic(for: highlightID)
-    )
-
     context.setShouldAntialias(true)
 
     context.setLineWidth(1)
@@ -403,7 +406,7 @@ public struct DrawRun: Sendable {
       context.textMatrix = glyphRun.textMatrix
       context.textPosition = textPosition
       CTFontDrawGlyphs(
-        nsFont,
+        glyphRun.appKitFont,
         glyphRun.glyphs,
         glyphRun.positions,
         glyphRun.glyphs.count,
@@ -415,10 +418,17 @@ public struct DrawRun: Sendable {
 
 @PublicInit
 public struct GlyphRun: Sendable {
+  public var font: NimsFont
+  public var isBold: Bool
+  public var isItalic: Bool
   public var textMatrix: CGAffineTransform
   public var glyphs: [CGGlyph]
   public var positions: [CGPoint]
   public var advances: [CGSize]
+
+  public var appKitFont: NSFont {
+    font.appKit(isBold: isBold, isItalic: isItalic)
+  }
 }
 
 @PublicInit
@@ -504,6 +514,8 @@ public struct CursorDrawRun: Sendable {
     rect.fill()
 
     if shouldDrawParentText {
+      context.saveGState()
+
       rect.clip()
 
       context.setFillColor(cursorForegroundColor.appKit.cgColor)
@@ -520,13 +532,15 @@ public struct CursorDrawRun: Sendable {
         context.textMatrix = glyphRun.textMatrix
         context.textPosition = parentRect.origin
         CTFontDrawGlyphs(
-          font.nsFont(),
+          glyphRun.appKitFont,
           glyphRun.glyphs,
           glyphRun.positions,
           glyphRun.glyphs.count,
           context
         )
       }
+
+      context.restoreGState()
     }
   }
 }

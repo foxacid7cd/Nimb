@@ -13,7 +13,7 @@ public struct NimsColor: Sendable, Hashable {
 
   public var swiftUI: SwiftUI.Color {
     .init(
-      .sRGB,
+      .displayP3,
       red: red,
       green: green,
       blue: blue
@@ -23,7 +23,7 @@ public struct NimsColor: Sendable, Hashable {
 
   public var appKit: NSColor {
     .init(
-      red: red,
+      displayP3Red: red,
       green: green,
       blue: blue,
       alpha: alpha

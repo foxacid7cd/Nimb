@@ -41,7 +41,7 @@ public class MsgShowTextView: NSView {
 
     for contentPart in contentParts {
       var attributes: [NSAttributedString.Key: Any] = [
-        .font: store.font.nsFont(),
+        .font: store.font.appKit(),
         .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
       ]
 

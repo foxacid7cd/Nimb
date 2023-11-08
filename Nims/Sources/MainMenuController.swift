@@ -159,7 +159,7 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleFont() {
-    let selectedFont = store.state.font.nsFont()
+    let selectedFont = store.state.font.appKit()
 
     let fontManager = NSFontManager.shared
     fontManager.target = self
@@ -181,7 +181,7 @@ final class MainMenuController: NSObject {
   }
 
   private func changeFontSize(_ modifier: (_ fontSize: Double) -> Double) {
-    let currentFont = store.font.nsFont()
+    let currentFont = store.font.appKit()
     let newFontSize = modifier(currentFont.pointSize)
     guard newFontSize != currentFont.pointSize else {
       return
@@ -239,7 +239,7 @@ extension MainMenuController: NSFontChanging {
       return
     }
 
-    let newFont = sender.convert(store.font.nsFont())
+    let newFont = sender.convert(store.font.appKit())
     Task {
       await store.set(font: .init(newFont))
     }
@@ -255,7 +255,7 @@ extension MainMenuController: NSMenuDelegate {
       menu.items = FontMenuLayout.map { item in
         switch item {
         case .currentFontDescription:
-          let currentFont = store.font.nsFont()
+          let currentFont = store.font.appKit()
           let name = (currentFont.displayName ?? currentFont.fontName)
             .trimmingCharacters(in: .whitespacesAndNewlines)
           return makeItem("\(name), \(currentFont.pointSize)")

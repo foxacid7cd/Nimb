@@ -140,7 +140,7 @@ private class CmdlineFirstCharacterView: NSView {
     invalidateIntrinsicContentSize()
 
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
-      .font: store.font.nsFont(isBold: true),
+      .font: store.font.appKit(isBold: true),
       .foregroundColor: store.appearance.defaultForegroundColor.appKit,
     ])
     let stringRange = CFRange(location: 0, length: attributedString.length)
@@ -255,7 +255,7 @@ private class CmdlineTextView: NSView {
           string: contentPart.text
             .replacingOccurrences(of: "\r", with: "↲"),
           attributes: .init([
-            .font: store.font.nsFont(),
+            .font: store.font.appKit(),
             .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
           ])
         ))
@@ -266,7 +266,7 @@ private class CmdlineTextView: NSView {
       if blockLineIndex < blockLines.count - 1 {
         blockLinesAttributedString.append(.init(
           string: "\n",
-          attributes: [.font: store.font.nsFont()]
+          attributes: [.font: store.font.appKit()]
         ))
       }
     }
@@ -279,7 +279,7 @@ private class CmdlineTextView: NSView {
         withPad: " ",
         startingAt: 0
       ),
-      attributes: [.font: store.font.nsFont()]
+      attributes: [.font: store.font.appKit()]
     ))
 
     cursorParentHighlightID = nil
@@ -290,7 +290,7 @@ private class CmdlineTextView: NSView {
         string: contentPart.text
           .replacingOccurrences(of: "\r", with: "↲"),
         attributes: .init([
-          .font: store.font.nsFont(),
+          .font: store.font.appKit(),
           .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
         ])
       ))
@@ -301,14 +301,14 @@ private class CmdlineTextView: NSView {
     }
     cmdlineAttributedString.append(.init(
       string: " ",
-      attributes: [.font: store.font.nsFont()]
+      attributes: [.font: store.font.appKit()]
     ))
     if !cmdline.specialCharacter.isEmpty {
       cmdlineAttributedString.insert(
         .init(
           string: cmdline.specialCharacter,
           attributes: [
-            .font: store.font.nsFont(),
+            .font: store.font.appKit(),
             .foregroundColor: store.appearance.defaultSpecialColor.appKit,
           ]
         ),
@@ -377,7 +377,7 @@ private class CmdlineTextView: NSView {
       context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+        y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
       )
       CTLineDraw(cmdlineCTLine, context)
 
@@ -425,10 +425,10 @@ private class CmdlineTextView: NSView {
           for glyphRun in glyphRuns {
             context.textMatrix = .init(
               translationX: 0,
-              y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+              y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
             )
             CTFontDrawGlyphs(
-              store.font.nsFont(),
+              store.font.appKit(),
               CTRunGetGlyphsPtr(glyphRun)!,
               CTRunGetPositionsPtr(glyphRun)!,
               CTRunGetGlyphCount(glyphRun),
@@ -448,7 +448,7 @@ private class CmdlineTextView: NSView {
       context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - store.font.nsFont().descender
+        y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
       )
       CTLineDraw(blockLineCTLine, context)
 

@@ -27,20 +27,20 @@ public class GridView: NSView {
     grid.zIndex
   }
 
-  public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
-    if stateUpdates.isFontUpdated {
-      invalidateIntrinsicContentSize()
-    }
+  override public var isOpaque: Bool {
+    true
+  }
 
-    var needsDisplay = false
+  public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
+    var viewNeedsDisplay = false
     var dirtyRectangles = [IntegerRectangle]()
 
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
-      needsDisplay = true
+      viewNeedsDisplay = true
     }
 
     if
-      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated,
+      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated,
       let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
       dirtyRectangles.append(cursorDrawRun.rectangle)
@@ -52,12 +52,12 @@ public class GridView: NSView {
         dirtyRectangles += value
 
       case .needsDisplay:
-        needsDisplay = true
+        viewNeedsDisplay = true
       }
     }
 
-    if needsDisplay {
-      self.needsDisplay = true
+    if viewNeedsDisplay {
+      needsDisplay = true
 
     } else {
       for dirtyRectangle in dirtyRectangles {
@@ -67,6 +67,8 @@ public class GridView: NSView {
         )
       }
     }
+
+    displayIfNeeded()
   }
 
   override public func draw(_: NSRect) {
@@ -77,15 +79,10 @@ public class GridView: NSView {
     getRectsBeingDrawn(&rectsPointer, count: &rectsCount)
 
     for i in 0 ..< rectsCount {
-      context.saveGState()
-
       let rect = rectsPointer
         .advanced(by: i)
         .pointee
-
-      if wantsDefaultClipping {
-        rect.clip()
-      }
+        .intersection(bounds)
 
       let upsideDownRect = rect
         .applying(upsideDownTransform)
@@ -100,7 +97,6 @@ public class GridView: NSView {
           rowsCount: Int(ceil(upsideDownRect.size.height / store.font.cellHeight))
         )
       )
-      .intersection(with: .init(size: grid.size))
 
       grid.drawRuns.draw(
         to: context,
@@ -112,10 +108,9 @@ public class GridView: NSView {
 
       if
         store.state.cursorBlinkingPhase,
-        !store.state.isBusy,
+        store.state.isMouseUserInteractionEnabled,
         let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        (integerFrame.minColumn ..< integerFrame.maxColumn).contains(cursorDrawRun.position.column),
-        (integerFrame.minRow ..< integerFrame.maxRow).contains(cursorDrawRun.position.row)
+        integerFrame.contains(cursorDrawRun.position)
       {
         cursorDrawRun.draw(
           to: context,
@@ -124,8 +119,6 @@ public class GridView: NSView {
           upsideDownTransform: upsideDownTransform
         )
       }
-
-      context.restoreGState()
     }
   }
 
