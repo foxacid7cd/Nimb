@@ -4,8 +4,9 @@ import AppKit
 import Library
 
 public final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
-  public init(store: Store, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
+  public init(store: Store, getGridsView: @escaping () -> GridsView, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
+    self.getGridsView = getGridsView
     self.getGridView = getGridView
     self.getCmdlinesView = getCmdlinesView
     super.init(nibName: nil, bundle: nil)
@@ -16,7 +17,17 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var anchorConstraints = [NSLayoutConstraint]()
+  public var anchorConstraints = [NSLayoutConstraint]() {
+    didSet {
+      NSLayoutConstraint.deactivate(oldValue)
+    }
+  }
+
+  override public func viewDidLayout() {
+    super.viewDidLayout()
+
+    reportPumBounds()
+  }
 
   public func setIsUserInteractionEnabled(_ value: Bool) {
     customView.isUserInteractionEnabled = value
@@ -25,14 +36,13 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   public func render(_ stateUpdates: State.Updates) {
     if let popupmenu = store.state.popupmenu {
       if stateUpdates.isPopupmenuUpdated {
-        NSLayoutConstraint.deactivate(anchorConstraints)
         switch popupmenu.anchor {
         case let .grid(id, origin):
           let gridView = getGridView(id)
           let offset = origin * store.font.cellSize
           anchorConstraints = [
-            view.leading(to: gridView, offset: offset.x),
-            view.top(to: gridView, offset: offset.y + store.font.cellHeight),
+            view.leading(to: gridView, offset: offset.x - 13),
+            view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
             view.width(300),
           ]
 
@@ -54,6 +64,8 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
           NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             view.animator().alphaValue = 1
+          } completionHandler: { [weak self] in
+            self?.reportPumBounds()
           }
           isVisibleAnimatedOn = true
         }
@@ -83,11 +95,10 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     view.height(176)
 
     let blurView = NSVisualEffectView()
-    blurView.blendingMode = .behindWindow
-    blurView.state = .active
-    blurView.frame = view.bounds
-    blurView.autoresizingMask = [.width, .height]
+    blurView.blendingMode = .withinWindow
+    blurView.material = .popover
     view.addSubview(blurView)
+    blurView.edgesToSuperview()
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
@@ -138,6 +149,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   private let store: Store
+  private let getGridsView: () -> GridsView
   private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
   private lazy var customView = CustomView()
@@ -145,4 +157,26 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   private lazy var tableView = NSTableView()
   private var isVisibleAnimatedOn: Bool?
   private var reportPopupmenuItemSelectedTask: Task<Void, Never>?
+
+  private func reportPumBounds() {
+    guard let outerGrid = store.state.outerGrid else {
+      return
+    }
+    let gridsView = getGridsView()
+    let viewFrame = gridsView.convert(view.frame, from: nil)
+    let size = IntegerSize(
+      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.up)),
+      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.up))
+    )
+    let rectangle = IntegerRectangle(
+      origin: .init(
+        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.down)),
+        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.down)) - size.rowsCount
+      ),
+      size: size
+    )
+    Task {
+      await store.reportPumBounds(rectangle: rectangle)
+    }
+  }
 }

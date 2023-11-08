@@ -12,6 +12,7 @@ public class MainViewController: NSViewController {
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,
+      getGridsView: { [gridsView] in gridsView },
       getGridView: { [gridsView] gridID in
         gridsView.gridView(forGridWithID: gridID)
       },
@@ -135,6 +136,8 @@ public class MainViewController: NSViewController {
     )
   }
 
+  let gridsView: GridsView
+
   private let store: Store
   private let msgShowsViewController: MsgShowsViewController
   private let cmdlinesViewController: CmdlinesViewController
@@ -144,7 +147,6 @@ public class MainViewController: NSViewController {
   private lazy var tablineView = TablineView(store: store)
   private let gridsContainerView = NSView()
   private var gridsContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  private let gridsView: GridsView
   private var preMaximizeWindowFrame: CGRect?
 
   private func updateMinGridsContainerViewSize() {
