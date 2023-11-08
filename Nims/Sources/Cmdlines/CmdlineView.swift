@@ -3,8 +3,8 @@
 import AppKit
 import CustomDump
 
-final class CmdlineView: NSView {
-  init(store: Store, level: Int) {
+public class CmdlineView: NSView {
+  public init(store: Store, level: Int) {
     self.level = level
     self.store = store
     firstCharacterView = .init(store: store, level: level)
@@ -58,7 +58,7 @@ final class CmdlineView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func render() {
+  public func render() {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
         .foregroundColor: NSColor.textColor,
@@ -88,7 +88,7 @@ final class CmdlineView: NSView {
     contentTextView.render()
   }
 
-  func setNeedsDisplayTextView() {
+  public func setNeedsDisplayTextView() {
     contentTextView.needsDisplay = true
   }
 
@@ -112,7 +112,7 @@ final class CmdlineView: NSView {
   }
 }
 
-private final class CmdlineFirstCharacterView: NSView {
+private class CmdlineFirstCharacterView: NSView {
   init(store: Store, level: Int) {
     self.store = store
     self.level = level
@@ -211,7 +211,7 @@ private final class CmdlineFirstCharacterView: NSView {
   }
 }
 
-private final class CmdlineTextView: NSView {
+private class CmdlineTextView: NSView {
   init(store: Store, level: Int) {
     self.store = store
     self.level = level

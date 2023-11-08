@@ -259,6 +259,21 @@ public class GridsView: NSView {
     gridViews[gridID]?.windowFrame(forGridFrame: gridFrame)
   }
 
+  public func gridView(forGridWithID id: Grid.ID) -> GridView {
+    if let gridView = gridViews[id] {
+      return gridView
+
+    } else {
+      let gridView = GridView(store: store, gridID: id)
+      gridView.translatesAutoresizingMaskIntoConstraints = false
+      addSubview(gridView)
+      gridView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+      gridView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+      gridViews[id] = gridView
+      return gridView
+    }
+  }
+
   override public func mouseMoved(with event: NSEvent) {
     guard store.state.isMouseUserInteractionEnabled else {
       return

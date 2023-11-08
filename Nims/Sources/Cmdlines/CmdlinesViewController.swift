@@ -4,7 +4,7 @@ import AppKit
 import Library
 import TinyConstraints
 
-public final class CmdlinesViewController: NSViewController {
+public class CmdlinesViewController: NSViewController {
   public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -15,35 +15,37 @@ public final class CmdlinesViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func reloadData() {
-    cmdlineViews = [:]
-    contentView.arrangedSubviews
-      .forEach { $0.removeFromSuperview() }
+  public func render(_ stateUpdates: State.Updates) {
+    if stateUpdates.isCmdlinesUpdated {
+      cmdlineViews = [:]
+      contentView.arrangedSubviews
+        .forEach { $0.removeFromSuperview() }
 
-    let cmdlines = store.state.cmdlines.dictionary.values
-      .sorted(by: { $0.level < $1.level })
+      let cmdlines = store.state.cmdlines.dictionary.values
+        .sorted(by: { $0.level < $1.level })
 
-    for (index, cmdline) in cmdlines.enumerated() {
-      let cmdlineView = CmdlineView(store: store, level: cmdline.level)
-      contentView.addArrangedSubview(cmdlineView)
-      cmdlineView.width(to: contentView)
-      cmdlineViews[cmdline.level] = cmdlineView
+      for (index, cmdline) in cmdlines.enumerated() {
+        let cmdlineView = CmdlineView(store: store, level: cmdline.level)
+        contentView.addArrangedSubview(cmdlineView)
+        cmdlineView.width(to: contentView)
+        cmdlineViews[cmdline.level] = cmdlineView
 
-      if index < cmdlines.count - 1 {
-        let separatorView = NSView()
-        separatorView.alphaValue = 0.15
-        separatorView.wantsLayer = true
-        separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
-        contentView.addArrangedSubview(separatorView)
-        separatorView.height(1)
-        separatorView.width(to: contentView)
+        if index < cmdlines.count - 1 {
+          let separatorView = NSView()
+          separatorView.alphaValue = 0.15
+          separatorView.wantsLayer = true
+          separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
+          contentView.addArrangedSubview(separatorView)
+          separatorView.height(1)
+          separatorView.width(to: contentView)
+        }
       }
     }
-  }
 
-  public func setNeedsDisplayCmdlineTextViews() {
-    for (_, cmdlineView) in cmdlineViews {
-      cmdlineView.setNeedsDisplayTextView()
+    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isBusyUpdated {
+      for (_, cmdlineView) in cmdlineViews {
+        cmdlineView.setNeedsDisplayTextView()
+      }
     }
   }
 

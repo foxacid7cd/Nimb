@@ -50,7 +50,7 @@ public class MsgShowsViewController: NSViewController {
     renderContent()
   }
 
-  func render(_ stateUpdates: State.Updates) {
+  public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isMsgShowsUpdated {
       renderContent()
     }

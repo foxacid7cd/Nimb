@@ -7,7 +7,18 @@ public class MainViewController: NSViewController {
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
+    gridsView = .init(store: store)
     msgShowsViewController = .init(store: store)
+    cmdlinesViewController = .init(store: store)
+    popupmenuViewController = .init(
+      store: store,
+      getGridView: { [gridsView] gridID in
+        gridsView.gridView(forGridWithID: gridID)
+      },
+      getCmdlinesView: { [cmdlinesViewController] in
+        cmdlinesViewController.view
+      }
+    )
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -56,6 +67,18 @@ public class MainViewController: NSViewController {
     msgShowsViewController.view.bottomToSuperview()
     addChild(msgShowsViewController)
 
+    view.addSubview(cmdlinesViewController.view)
+    cmdlinesViewController.view.centerXToSuperview()
+    cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
+    addChild(cmdlinesViewController)
+
+    view.addSubview(popupmenuViewController.view)
+    popupmenuViewController.anchorConstraints = [
+      popupmenuViewController.view.centerXToSuperview(),
+      popupmenuViewController.view.centerYToSuperview(),
+    ]
+    addChild(popupmenuViewController)
+
     self.view = view
   }
 
@@ -88,6 +111,8 @@ public class MainViewController: NSViewController {
     gridsView.render(stateUpdates)
 
     msgShowsViewController.render(stateUpdates)
+    cmdlinesViewController.render(stateUpdates)
+    popupmenuViewController.render(stateUpdates)
 
     view.layoutSubtreeIfNeeded()
   }
@@ -112,12 +137,14 @@ public class MainViewController: NSViewController {
 
   private let store: Store
   private let msgShowsViewController: MsgShowsViewController
+  private let cmdlinesViewController: CmdlinesViewController
+  private let popupmenuViewController: PopupmenuViewController
   private lazy var customView = CustomView()
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private let gridsContainerView = NSView()
   private var gridsContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
-  private lazy var gridsView = GridsView(store: store)
+  private let gridsView: GridsView
   private var preMaximizeWindowFrame: CGRect?
 
   private func updateMinGridsContainerViewSize() {

@@ -94,6 +94,7 @@ public struct APIFunctionsFile: GeneratableFile {
             try FunctionDeclSyntax(
               """
               \(raw: function.deprecationAttributeIfNeeded)
+              @discardableResult
               func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(raw: function.returnType.swift.signature)
               """
             ) {
