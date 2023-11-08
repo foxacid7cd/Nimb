@@ -62,6 +62,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
           } completionHandler: { [weak self] in
             self?.reportPumBounds()
           }
+          view.isHidden = false
           isVisibleAnimatedOn = true
         }
       }
@@ -74,7 +75,12 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
       }
     } else {
       if isVisibleAnimatedOn != false {
-        view.alphaValue = 0
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          view.animator().alphaValue = 0
+        } completionHandler: { [view] in
+          view.isHidden = true
+        }
         isVisibleAnimatedOn = false
       }
     }
@@ -87,9 +93,9 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     view.layer!.cornerRadius = 8
     view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
     view.layer!.borderWidth = 1
-    view.layer!.shadowRadius = 2
+    view.layer!.shadowRadius = 5
     view.layer!.shadowOffset = .init(width: 4, height: -4)
-    view.layer!.shadowOpacity = 0.1
+    view.layer!.shadowOpacity = 0.2
     view.layer!.shadowColor = .black
     view.alphaValue = 0
     view.height(176)

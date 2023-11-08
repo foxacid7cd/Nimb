@@ -9,6 +9,8 @@ public class CmdlineView: NSView {
     self.store = store
     firstCharacterView = .init(store: store, level: level)
     contentTextView = .init(store: store, level: level)
+    cmdline = store.state.cmdlines.dictionary[level]!
+    blockLines = store.state.cmdlines.blockLines[level] ?? []
     super.init(frame: .init())
 
     promptTextField.translatesAutoresizingMaskIntoConstraints = false
@@ -57,6 +59,9 @@ public class CmdlineView: NSView {
   }
 
   public func render() {
+    cmdline = store.state.cmdlines.dictionary[level]!
+    blockLines = store.state.cmdlines.blockLines[level] ?? []
+
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
         .foregroundColor: NSColor.textColor,
@@ -83,6 +88,8 @@ public class CmdlineView: NSView {
       contentToLeadingConstraint!.isActive = false
     }
 
+    contentTextView.cmdline = cmdline
+    contentTextView.blockLines = blockLines
     contentTextView.render()
   }
 
@@ -101,13 +108,8 @@ public class CmdlineView: NSView {
   private var contentToTopConstraint: NSLayoutConstraint?
   private var contentToLeadingConstraint: NSLayoutConstraint?
 
-  private var cmdline: Cmdline {
-    store.state.cmdlines.dictionary[level]!
-  }
-
-  private var blockLines: [[Cmdline.ContentPart]] {
-    store.state.cmdlines.blockLines[level] ?? []
-  }
+  private var cmdline: Cmdline
+  private var blockLines: [[Cmdline.ContentPart]]
 }
 
 private class CmdlineFirstCharacterView: NSView {
@@ -219,6 +221,9 @@ private class CmdlineTextView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  public var cmdline: Cmdline?
+  public var blockLines: [[Cmdline.ContentPart]]?
+
   override var intrinsicContentSize: NSSize {
     let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
 
@@ -237,6 +242,9 @@ private class CmdlineTextView: NSView {
   }
 
   func render() {
+    guard let cmdline, let blockLines else {
+      return
+    }
     let blockLinesAttributedString = NSMutableAttributedString()
 
     for (blockLineIndex, contentParts) in blockLines.enumerated() {
@@ -358,6 +366,9 @@ private class CmdlineTextView: NSView {
   }
 
   override func draw(_: NSRect) {
+    guard let cmdline else {
+      return
+    }
     let context = NSGraphicsContext.current!.cgContext
 
     var ctLineIndex = 0
@@ -457,12 +468,4 @@ private class CmdlineTextView: NSView {
   private var blockLineCTLines = [CTLine]()
   private var cmdlineCTLines = [CTLine]()
   private var cursorParentHighlightID: Highlight.ID?
-
-  private var cmdline: Cmdline {
-    store.state.cmdlines.dictionary[level]!
-  }
-
-  private var blockLines: [[Cmdline.ContentPart]] {
-    store.state.cmdlines.blockLines[level] ?? []
-  }
 }
