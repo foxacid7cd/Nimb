@@ -7,14 +7,6 @@ public class GridsView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
-
-    trackingArea = .init(
-      rect: bounds,
-      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
-      owner: self,
-      userInfo: nil
-    )
-    addTrackingArea(trackingArea!)
   }
 
   @available(*, unavailable)
@@ -27,6 +19,32 @@ public class GridsView: NSView {
       return .init()
     }
     return outerGrid.size * store.font.cellSize
+  }
+
+  override public func updateTrackingAreas() {
+    super.updateTrackingAreas()
+
+    for trackingArea in trackingAreas {
+      removeTrackingArea(trackingArea)
+    }
+
+    addTrackingArea(.init(
+      rect: bounds,
+      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
+      owner: self,
+      userInfo: nil
+    ))
+  }
+
+  override public func mouseMoved(with event: NSEvent) {
+    guard let superview else {
+      return
+    }
+    let location = superview.convert(event.locationInWindow, from: nil)
+    let viewAtLocation = hitTest(location)
+    if let gridView = viewAtLocation as? GridView {
+      gridView.reportMouseMove(for: event)
+    }
   }
 
   public func render(_ stateUpdates: State.Updates) {
@@ -45,27 +63,12 @@ public class GridsView: NSView {
       invalidateIntrinsicContentSize()
     }
 
-    func gridViewOrCreate(forGridID gridID: Grid.ID) -> GridView {
-      if let gridView = gridViews[gridID] {
-        return gridView
-
-      } else {
-        let gridView = GridView(store: store, gridID: gridID)
-        gridView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(gridView)
-        gridView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        gridView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-        gridViews[gridID] = gridView
-        return gridView
-      }
-    }
-
     var activated = [NSLayoutConstraint]()
     var deactivated = [NSLayoutConstraint]()
 
     for gridID in updatedLayoutGridIDs {
       let grid = store.state.grids[gridID]!
-      let gridView = gridViewOrCreate(forGridID: gridID)
+      let gridView = gridView(forGridWithID: gridID)
       gridView.invalidateIntrinsicContentSize()
 
       if gridID == Grid.OuterID {
@@ -135,7 +138,7 @@ public class GridsView: NSView {
             gridView.floatingWindowConstraints = nil
           }
 
-          let anchorGridView = gridViewOrCreate(forGridID: value.anchorGridID)
+          let anchorGridView = self.gridView(forGridWithID: value.anchorGridID)
 
           let horizontalConstant: Double = value.anchorColumn * store.font.cellWidth
           let verticalConstant: Double = value.anchorRow * store.font.cellHeight
@@ -274,17 +277,6 @@ public class GridsView: NSView {
     }
   }
 
-  override public func mouseMoved(with event: NSEvent) {
-    guard store.state.isMouseUserInteractionEnabled else {
-      return
-    }
-    let location = convert(event.locationInWindow, from: nil)
-    if let gridView = hitTest(location) as? GridView {
-      gridView.reportMouseMove(for: event)
-    }
-  }
-
   private var store: Store
   private var gridViews = IntKeyedDictionary<GridView>()
-  private var trackingArea: NSTrackingArea?
 }

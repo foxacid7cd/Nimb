@@ -150,8 +150,8 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportPopupmenuItemSelected(atIndex index: Int) async throws {
-    try await api.nvimSelectPopupmenuItem(item: index, insert: true, finish: false, opts: [:])
+  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) async throws {
+    try await api.nvimSelectPopupmenuItem(item: index, insert: true, finish: isFinish, opts: [:])
   }
 
   public func reportTablineBufferSelected(withID id: Buffer.ID) async throws {

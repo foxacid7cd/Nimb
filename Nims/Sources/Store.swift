@@ -87,15 +87,10 @@ public final class Store: Sendable {
 
   public func report(keyPress: KeyPress) async {
     await instance.report(keyPress: keyPress)
-
     scheduleHideMsgShowsIfPossible()
   }
 
   public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
-    guard !state.cmdlines.dictionary.isEmpty else {
-      return
-    }
-
     if
       let previousMouseMove,
       previousMouseMove.modifier == modifier,
@@ -121,9 +116,9 @@ public final class Store: Sendable {
     }
   }
 
-  public func reportPopupmenuItemSelected(atIndex index: Int) async {
+  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) async {
     do {
-      try await instance.reportPopupmenuItemSelected(atIndex: index)
+      try await instance.reportPopupmenuItemSelected(atIndex: index, isFinish: isFinish)
     } catch {
       await handleActionError(error)
     }

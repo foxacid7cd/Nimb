@@ -17,11 +17,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var anchorConstraints = [NSLayoutConstraint]() {
-    didSet {
-      NSLayoutConstraint.deactivate(oldValue)
-    }
-  }
+  public var anchorConstraints = [NSLayoutConstraint]()
 
   override public func viewDidLayout() {
     super.viewDidLayout()
@@ -29,13 +25,11 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     reportPumBounds()
   }
 
-  public func setIsUserInteractionEnabled(_ value: Bool) {
-    customView.isUserInteractionEnabled = value
-  }
-
   public func render(_ stateUpdates: State.Updates) {
     if let popupmenu = store.state.popupmenu {
       if stateUpdates.isPopupmenuUpdated {
+        NSLayoutConstraint.deactivate(anchorConstraints)
+
         switch popupmenu.anchor {
         case let .grid(id, origin):
           let gridView = getGridView(id)
@@ -74,7 +68,6 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
         tableView.reloadData()
 
         if let selectedItemIndex = popupmenu.selectedItemIndex {
-          tableView.selectRowIndexes([selectedItemIndex], byExtendingSelection: false)
           tableView.scrollRowToVisible(selectedItemIndex)
         }
       }
@@ -90,7 +83,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   override public func loadView() {
-    let view = customView
+    let view = NSView()
     view.alphaValue = 0
     view.height(176)
 
@@ -132,31 +125,29 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
       itemView!.identifier = PopupmenuItemView.ReuseIdentifier
     }
     if let popupmenu = store.state.popupmenu, row < popupmenu.items.count {
-      itemView!.set(item: popupmenu.items[row], isSelected: tableView.isRowSelected(row), font: store.font)
+      itemView!.set(
+        item: popupmenu.items[row],
+        isSelected: popupmenu.selectedItemIndex == row,
+        font: store.font
+      )
     }
     return itemView
   }
 
   public func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-    guard reportPopupmenuItemSelectedTask == nil else {
-      return false
+    Task {
+      await store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
     }
-    reportPopupmenuItemSelectedTask = Task {
-      await store.reportPopupmenuItemSelected(atIndex: row)
-      reportPopupmenuItemSelectedTask = nil
-    }
-    return true
+    return false
   }
 
   private let store: Store
   private let getGridsView: () -> GridsView
   private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
-  private lazy var customView = CustomView()
   private lazy var scrollView = NSScrollView()
-  private lazy var tableView = NSTableView()
+  private lazy var tableView = TableView()
   private var isVisibleAnimatedOn: Bool?
-  private var reportPopupmenuItemSelectedTask: Task<Void, Never>?
 
   private func reportPumBounds() {
     guard let outerGrid = store.state.outerGrid else {
@@ -178,5 +169,11 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     Task {
       await store.reportPumBounds(rectangle: rectangle)
     }
+  }
+}
+
+private class TableView: NSTableView {
+  override var acceptsFirstResponder: Bool {
+    false
   }
 }

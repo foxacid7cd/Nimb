@@ -357,7 +357,7 @@ public struct DrawRun: Sendable {
         height: font.cellHeight
       )
     )
-    context.clip(to: [rect])
+    rect.clip()
 
     appearance.backgroundColor(for: highlightID).appKit.setFill()
     context.fill([rect])
@@ -366,6 +366,8 @@ public struct DrawRun: Sendable {
       isBold: appearance.isBold(for: highlightID),
       isItalic: appearance.isItalic(for: highlightID)
     )
+
+    context.setShouldAntialias(true)
 
     context.setLineWidth(1)
 
@@ -394,7 +396,6 @@ public struct DrawRun: Sendable {
       context.strokePath()
     }
 
-    context.setShouldAntialias(true)
     context.setFillColor(foregroundColor.appKit.cgColor)
 
     let textPosition = CGPoint(

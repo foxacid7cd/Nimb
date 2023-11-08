@@ -20,7 +20,7 @@ public class MainWindow: NSWindow {
     titlebarAppearsTransparent = true
     title = ""
     renderBackgroundColor()
-    renderIsMouseOn()
+    renderIsMouseUserInteractionEnabled()
   }
 
   override public var canBecomeMain: Bool {
@@ -43,8 +43,8 @@ public class MainWindow: NSWindow {
       renderBackgroundColor()
     }
 
-    if stateUpdates.isMouseOnUpdated {
-      renderIsMouseOn()
+    if stateUpdates.isMouseUserInteractionEnabledUpdated {
+      renderIsMouseUserInteractionEnabled()
     }
 
     viewController.render(stateUpdates)
@@ -70,8 +70,8 @@ public class MainWindow: NSWindow {
     backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
   }
 
-  private func renderIsMouseOn() {
-    if store.state.isMouseOn {
+  private func renderIsMouseUserInteractionEnabled() {
+    if store.state.isMouseUserInteractionEnabled {
       styleMask.insert(.resizable)
     } else {
       styleMask.remove(.resizable)

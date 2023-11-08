@@ -77,9 +77,15 @@ public class GridView: NSView {
     getRectsBeingDrawn(&rectsPointer, count: &rectsCount)
 
     for i in 0 ..< rectsCount {
+      context.saveGState()
+
       let rect = rectsPointer
         .advanced(by: i)
         .pointee
+
+      if wantsDefaultClipping {
+        rect.clip()
+      }
 
       let upsideDownRect = rect
         .applying(upsideDownTransform)
@@ -118,6 +124,8 @@ public class GridView: NSView {
           upsideDownTransform: upsideDownTransform
         )
       }
+
+      context.restoreGState()
     }
   }
 
@@ -158,6 +166,10 @@ public class GridView: NSView {
   }
 
   override public func scrollWheel(with event: NSEvent) {
+    guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
+      return
+    }
+
     if event.phase == .began {
       isScrollingHorizontal = nil
       xScrollingAccumulator = 0
@@ -220,6 +232,9 @@ public class GridView: NSView {
   }
 
   public func reportMouseMove(for event: NSEvent) {
+    guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
+      return
+    }
     Task {
       await store.reportMouseMove(
         modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
@@ -260,6 +275,9 @@ public class GridView: NSView {
   }
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
+    guard store.state.isMouseUserInteractionEnabled else {
+      return
+    }
     Task {
       await store.report(
         mouseButton: mouseButton,
