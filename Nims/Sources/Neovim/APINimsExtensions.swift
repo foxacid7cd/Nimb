@@ -8,7 +8,7 @@ public extension API {
   @discardableResult
   func nims(method: String, parameters: [Value] = []) async throws -> Value? {
     let rawResult = try await nvimExecLua(
-      code: "return require('nims').\(method)(\(parameters.isEmpty ? "" : "..."))",
+      code: "return require('nims-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
       args: parameters
     )
     switch rawResult {

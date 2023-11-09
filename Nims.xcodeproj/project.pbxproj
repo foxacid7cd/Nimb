@@ -34,6 +34,7 @@
 		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
+		68A6C5512AFC9C7F00FEB611 /* NeovimRuntime in Resources */ = {isa = PBXBuildFile; fileRef = 68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */; };
 		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -114,7 +115,6 @@
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsLayout.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* NimsFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimsFont.swift; sourceTree = "<group>"; };
-		687807EF2AD246930047BDD4 /* lua */ = {isa = PBXFileReference; lastKnownFileType = folder; path = lua; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
@@ -130,6 +130,7 @@
 		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlineView.swift; sourceTree = "<group>"; };
+		68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NeovimRuntime; sourceTree = "<group>"; };
 		68A8FF382AD29F650017C28D /* Instance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instance.swift; sourceTree = "<group>"; };
 		68A8FF392AD29F650017C28D /* Windows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Windows.swift; sourceTree = "<group>"; };
 		68A8FF3A2AD29F650017C28D /* MsgShow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MsgShow.swift; sourceTree = "<group>"; };
@@ -192,7 +193,6 @@
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				687807EF2AD246930047BDD4 /* lua */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				68FAC3F12AF6724200490F09 /* State */,
 				68A8FF362AD29F110017C28D /* Neovim */,
@@ -265,6 +265,7 @@
 			isa = PBXGroup;
 			children = (
 				687E9AA12ACEF117008B1E76 /* nvim */,
+				68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
 			name = Locations;
@@ -367,7 +368,7 @@
 				684385012934D180000C4A1D /* Embed Frameworks */,
 				684385182934D225000C4A1D /* Embed XPC Services */,
 				68A323C7293B79AB0028A87D /* Copy nvim Executable */,
-				6898DEAC29B3205100DCAD2E /* Copy Runtime Dependencies */,
+				6898DEAC29B3205100DCAD2E /* Copy Neovim Runtime */,
 			);
 			buildRules = (
 			);
@@ -425,13 +426,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				68D1803629AA4A9000732402 /* Assets.xcassets in Resources */,
+				68A6C5512AFC9C7F00FEB611 /* NeovimRuntime in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		6898DEAC29B3205100DCAD2E /* Copy Runtime Dependencies */ = {
+		6898DEAC29B3205100DCAD2E /* Copy Neovim Runtime */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -441,14 +443,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Copy Runtime Dependencies";
+			name = "Copy Neovim Runtime";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  mkdir -p \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/Nims/Sources/lua/runtime/\" \"$DESTINATION_DIR/share/nvim/runtime/lua\"\n}\n";
+			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  mkdir -p \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/NeovimRuntime/\" \"$DESTINATION_DIR/share/nvim/runtime\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
