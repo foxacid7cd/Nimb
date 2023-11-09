@@ -388,7 +388,7 @@ private class CmdlineTextView: NSView {
         cmdline.specialCharacter.isEmpty,
         let currentCursorStyle = store.state.currentCursorStyle,
         let highlightID = currentCursorStyle.attrID,
-        let cellFrame = currentCursorStyle.cellFrame(font: store.font),
+        let cellFrame = currentCursorStyle.cellFrame(columnsCount: 1, font: store.font),
         cmdline.cursorPosition >= range.location,
         cmdline.cursorPosition < range.location + range.length
       {

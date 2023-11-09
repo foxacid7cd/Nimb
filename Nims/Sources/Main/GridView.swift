@@ -97,6 +97,7 @@ public class GridView: NSView {
           rowsCount: Int(ceil(upsideDownRect.size.height / store.font.cellHeight))
         )
       )
+      .intersection(with: .init(size: grid.size))
 
       grid.drawRuns.draw(
         to: context,
@@ -110,7 +111,7 @@ public class GridView: NSView {
         store.state.cursorBlinkingPhase,
         store.state.isMouseUserInteractionEnabled,
         let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        integerFrame.contains(cursorDrawRun.position)
+        integerFrame.contains(cursorDrawRun.origin)
       {
         cursorDrawRun.draw(
           to: context,

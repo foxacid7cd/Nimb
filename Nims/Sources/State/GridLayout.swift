@@ -41,27 +41,27 @@ public struct Cell: Sendable {
 @PublicInit
 public struct RowLayout: Sendable {
   public init(rowCells: [Cell]) {
-    let chunks = rowCells
-      .chunked { $0.highlightID == $1.highlightID }
+    let chunks = rowCells.chunked {
+      !$0.text.isEmpty && $0.highlightID == $1.highlightID
+    }
 
+    var rowColumnsCount = 0
     var parts = [RowPart]()
-    var cellRanges = [(location: Int, length: Int)]()
-
-    var charactersCount = 0
 
     for cells in chunks {
-      let partLocation = charactersCount
-
-      var text = ""
-      var partLength = 0
+      var partText = ""
+      var partCells = [RowPart.Cell]()
+      var partColumnsCount = 0
 
       for cellIndex in cells.indices {
         let nextCellIndex = cellIndex + 1
 
-        let cell = cells[cellIndex]
-        text.append(cell.text)
+        let text = cells[cellIndex].text
 
-        let cellLength = if !cell.text.isEmpty {
+        let textRangeStart = partText.endIndex
+        partText.append(text)
+
+        let columnsCount = if !text.isEmpty {
           if nextCellIndex < cells.endIndex, cells[nextCellIndex].text.isEmpty {
             2
           } else {
@@ -71,35 +71,52 @@ public struct RowLayout: Sendable {
           0
         }
 
-        cellRanges.append((partLocation + partLength, cellLength))
+        let columnsRangeStart = partColumnsCount
+        partColumnsCount += columnsCount
 
-        partLength += cellLength
+        partCells.append(.init(
+          textRange: textRangeStart ..< partText.endIndex,
+          columnsRange: columnsRangeStart ..< partColumnsCount
+        ))
       }
 
-      parts.append(
-        .init(
-          highlightID: cells.first!.highlightID,
-          text: text,
-          range: (charactersCount, partLength)
-        )
-      )
+      let columnsRangeStart = rowColumnsCount
+      rowColumnsCount += partColumnsCount
 
-      charactersCount += partLength
+      parts.append(.init(
+        highlightID: cells.first!.highlightID,
+        text: partText,
+        cells: partCells,
+        columnsRange: columnsRangeStart ..< rowColumnsCount
+      ))
     }
 
     self.init(
-      parts: parts,
-      cellRanges: cellRanges
+      parts: parts
     )
   }
 
   public var parts: [RowPart]
-  public var cellRanges: [(location: Int, length: Int)]
 }
 
 @PublicInit
-public struct RowPart: Sendable {
+public struct RowPart: Sendable, Hashable {
+  @PublicInit
+  public struct Cell: Sendable, Hashable {
+    public var textRange: Range<String.Index>
+    public var columnsRange: Range<Int>
+
+    public var columnsCount: Int {
+      columnsRange.count
+    }
+  }
+
   public var highlightID: Highlight.ID
   public var text: String
-  public var range: (location: Int, length: Int)
+  public var cells: [Cell]
+  public var columnsRange: Range<Int>
+
+  public var columnsCount: Int {
+    columnsRange.count
+  }
 }

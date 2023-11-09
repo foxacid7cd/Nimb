@@ -111,8 +111,8 @@ public struct Grid: Sendable, Identifiable {
 
       if
         let cursorDrawRun,
-        cursorDrawRun.position.column < integerSize.columnsCount,
-        cursorDrawRun.position.row < integerSize.rowsCount
+        cursorDrawRun.origin.column < integerSize.columnsCount,
+        cursorDrawRun.origin.row < integerSize.rowsCount
       {
         drawRuns.cursorDrawRun = cursorDrawRun
       }
@@ -158,8 +158,8 @@ public struct Grid: Sendable, Identifiable {
 
         if
           drawRuns.cursorDrawRun != nil,
-          drawRuns.cursorDrawRun!.position.row == toRow,
-          rectangle.columns.contains(drawRuns.cursorDrawRun!.position.column)
+          drawRuns.cursorDrawRun!.origin.row == toRow,
+          rectangle.columns.contains(drawRuns.cursorDrawRun!.origin.column)
         {
           shouldUpdateCursorDrawRun = true
         }
@@ -179,17 +179,29 @@ public struct Grid: Sendable, Identifiable {
       return .needsDisplay
 
     case let .cursor(style, position):
+      let columnsCount = if
+        let rowPart = layout.rowLayouts[position.row].parts
+          .first(where: { $0.columnsRange.contains(position.column) }),
+        let rowPartCell = rowPart.cells
+          .first(where: { $0.columnsRange.lowerBound == position.column })
+      {
+        rowPartCell.columnsRange.count
+      } else {
+        1
+      }
+
       drawRuns.cursorDrawRun = .init(
         layout: layout,
         rowDrawRuns: drawRuns.rowDrawRuns,
-        position: position,
+        origin: position,
+        columnsCount: columnsCount,
         style: style,
         font: font,
         appearance: appearance
       )
       return .dirtyRectangles([.init(
         origin: position,
-        size: .init(columnsCount: 1, rowsCount: 1)
+        size: .init(columnsCount: columnsCount, rowsCount: 1)
       )])
 
     case .clearCursor:
@@ -219,9 +231,8 @@ public struct Grid: Sendable, Identifiable {
 
       if 
         let cursorDrawRun = drawRuns.cursorDrawRun,
-        cursorDrawRun.position.row == row,
-        cursorDrawRun.position.column >= originColumn,
-        cursorDrawRun.position.column < originColumn + cells.count
+        cursorDrawRun.origin.row == row,
+        (originColumn ..< originColumn + cells.count).contains(cursorDrawRun.origin.column)
       {
         shouldUpdateCursorDrawRun = true
       }
@@ -253,7 +264,8 @@ public struct Grid: Sendable, Identifiable {
       drawRuns.cursorDrawRun = .init(
         layout: layout,
         rowDrawRuns: drawRuns.rowDrawRuns,
-        position: cursorDrawRun.position,
+        origin: cursorDrawRun.origin,
+        columnsCount: cursorDrawRun.columnsCount,
         style: cursorDrawRun.style,
         font: font,
         appearance: appearance

@@ -58,17 +58,24 @@ public struct CursorStyle: Sendable {
     }
   }
 
-  public func cellFrame(font: NimsFont) -> CGRect? {
+  public func cellFrame(columnsCount: Int, font: NimsFont) -> CGRect? {
     guard let cursorShape else {
       return nil
     }
+
     switch cursorShape {
     case .block:
-      return .init(origin: .init(), size: font.cellSize)
+      return .init(
+        origin: .init(),
+        size: .init(
+          width: font.cellWidth * Double(columnsCount),
+          height: font.cellHeight
+        )
+      )
 
     case .horizontal:
       let size = CGSize(
-        width: font.cellWidth,
+        width: font.cellWidth * Double(columnsCount),
         height: font.cellHeight / 100.0 * Double(cellPercentage ?? 25)
       )
       return .init(

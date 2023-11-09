@@ -18,10 +18,6 @@ public class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func screenFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    mainWindow.screenFrame(forGridID: gridID, gridFrame: gridFrame)
-  }
-
   public func render(_ stateUpdates: State.Updates) {
     mainWindow.render(stateUpdates)
 
@@ -37,11 +33,7 @@ public class MainWindowController: NSWindowController {
         mainWindow.estimatedContentSize(outerGridSize: outerGrid.size)
       }
       mainWindow.setContentSize(contentSize)
-
       showWindow(nil)
-      Task {
-        try await Task.sleep(for: .seconds(1))
-      }
     }
   }
 

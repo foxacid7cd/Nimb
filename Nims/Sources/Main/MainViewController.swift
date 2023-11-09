@@ -33,7 +33,7 @@ public class MainViewController: NSViewController {
   }
 
   override public func loadView() {
-    let view = customView
+    let view = NSView()
 
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     view.addSubview(tablineView)
@@ -46,15 +46,12 @@ public class MainViewController: NSViewController {
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
-    gridsContainerView.clipsToBounds = true
     view.addSubview(gridsContainerView)
+    gridsContainerView.translatesAutoresizingMaskIntoConstraints = false
+    gridsContainerView.clipsToBounds = true
     gridsContainerView.topToBottom(of: tablineView)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
-    gridsContainerViewConstraints = (
-      gridsContainerView.width(0, relation: .equalOrGreater),
-      gridsContainerView.height(0, relation: .equalOrGreater)
-    )
     gridsContainerView.leading(to: view)
     gridsContainerView.trailing(to: view)
     gridsContainerView.bottomToSuperview()
@@ -83,12 +80,6 @@ public class MainViewController: NSViewController {
     self.view = view
   }
 
-  override public func viewDidLoad() {
-    super.viewDidLoad()
-
-    updateMinGridsContainerViewSize()
-  }
-
   override public func viewDidLayout() {
     super.viewDidLayout()
 
@@ -100,7 +91,6 @@ public class MainViewController: NSViewController {
 
   public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
-      updateMinGridsContainerViewSize()
       reportOuterGridSizeChanged()
     }
 
@@ -136,18 +126,11 @@ public class MainViewController: NSViewController {
   private let msgShowsViewController: MsgShowsViewController
   private let cmdlinesViewController: CmdlinesViewController
   private let popupmenuViewController: PopupmenuViewController
-  private lazy var customView = CustomView()
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private let gridsContainerView = NSView()
-  private var gridsContainerViewConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)?
+  private var gridsContainerViewFrame: CTFrame?
   private var preMaximizeWindowFrame: CGRect?
-
-  private func updateMinGridsContainerViewSize() {
-    let size = minOuterGridSize * store.font.cellSize
-    gridsContainerViewConstraints!.width.constant = size.width
-    gridsContainerViewConstraints!.height.constant = size.height
-  }
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
     guard let window = view.window, let screen = window.screen ?? .main else {

@@ -15,7 +15,7 @@ public final class Store: Sendable {
     self.state = state
 
     Task { @StateActor in
-      resetCursorBlinkingTask()
+      startCursorBlinkingTask()
     }
 
     instanceTask = Task { @StateActor [weak self] in
@@ -305,9 +305,7 @@ public final class Store: Sendable {
   private var previousReportedOuterGridSize: IntegerSize?
 
   @StateActor
-  private func resetCursorBlinkingTask() {
-    cursorBlinkingTask?.cancel()
-
+  private func startCursorBlinkingTask() {
     if
       let cursorStyle = backgroundState.currentCursorStyle,
       let blinkWait = cursorStyle.blinkWait,
@@ -344,7 +342,6 @@ public final class Store: Sendable {
     let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
     if shouldResetCursorBlinkingTask {
       cursorBlinkingTask?.cancel()
-      cursorBlinkingTask = nil
 
       if !state.cursorBlinkingPhase {
         state.cursorBlinkingPhase = true
@@ -395,7 +392,7 @@ public final class Store: Sendable {
     }
 
     if shouldResetCursorBlinkingTask {
-      resetCursorBlinkingTask()
+      startCursorBlinkingTask()
     }
   }
 
