@@ -141,7 +141,7 @@ private class CmdlineFirstCharacterView: NSView {
 
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
       .font: store.font.appKit(isBold: true),
-      .foregroundColor: store.appearance.defaultForegroundColor.appKit,
+      .foregroundColor: NSColor.textColor,
     ])
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
@@ -291,7 +291,7 @@ private class CmdlineTextView: NSView {
           .replacingOccurrences(of: "\r", with: "↲"),
         attributes: .init([
           .font: store.font.appKit(),
-          .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+          .foregroundColor: contentPart.highlightID == Highlight.DefaultID ? NSColor.textColor : store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
         ])
       ))
       if cmdline.cursorPosition >= location, cmdline.cursorPosition < location + contentPart.text.count {
@@ -404,7 +404,7 @@ private class CmdlineTextView: NSView {
 
         if highlightID == Highlight.DefaultID, let cursorParentHighlightID {
           cursorForegroundColor = store.appearance.backgroundColor(for: cursorParentHighlightID)
-          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorParentHighlightID)
+          cursorBackgroundColor = NimsColor(rgb: 0xF0F0F0) // store.appearance.foregroundColor(for: cursorParentHighlightID)
 
         } else {
           cursorForegroundColor = store.appearance.foregroundColor(for: highlightID)

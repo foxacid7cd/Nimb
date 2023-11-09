@@ -67,8 +67,8 @@ public class PopupmenuItemView: NSView {
         withPad: secondaryText,
         startingAt: 0
       ),
-      saturation: 0.6,
-      brightness: 0.6
+      saturation: 0.7,
+      brightness: 0.7
     )
     darkerAccentColor = accentColor.withAlphaComponent(0.5)
 
@@ -76,12 +76,12 @@ public class PopupmenuItemView: NSView {
     needsDisplay = true
 
     textField.attributedStringValue = .init(string: item.word, attributes: [
-      .foregroundColor: store.appearance.defaultForegroundColor.appKit,
+      .foregroundColor: NSColor.textColor,
       .font: store.font.appKit(),
     ])
 
     secondTextField.attributedStringValue = .init(string: secondaryText, attributes: [
-      .foregroundColor: isSelected ? store.appearance.defaultForegroundColor.appKit : accentColor,
+      .foregroundColor: isSelected ? NSColor.textColor : accentColor,
       .font: store.font.appKit(isItalic: true),
     ])
   }
