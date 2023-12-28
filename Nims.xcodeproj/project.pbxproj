@@ -450,7 +450,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  mkdir -p \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/NeovimRuntime/\" \"$DESTINATION_DIR/share/nvim/runtime\"\n}\n";
+			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  mkdir -p \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/lua/\" \"$DESTINATION_DIR/share/nvim/runtime\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
