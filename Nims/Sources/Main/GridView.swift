@@ -33,7 +33,7 @@ public class GridView: NSView {
 
   public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
     var viewNeedsDisplay = false
-    var dirtyRectangles = [IntegerRectangle]()
+    dirtyRectangles.removeAll(keepingCapacity: true)
 
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       viewNeedsDisplay = true
@@ -67,8 +67,6 @@ public class GridView: NSView {
         )
       }
     }
-
-    displayIfNeeded()
   }
 
   override public func draw(_: NSRect) {
@@ -258,6 +256,7 @@ public class GridView: NSView {
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
+  private var dirtyRectangles = [IntegerRectangle]()
 
   private var grid: Grid {
     store.state.grids[gridID]!
