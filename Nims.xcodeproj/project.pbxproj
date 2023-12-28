@@ -34,7 +34,6 @@
 		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
-		68A6C5512AFC9C7F00FEB611 /* NeovimRuntime in Resources */ = {isa = PBXBuildFile; fileRef = 68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */; };
 		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -426,7 +425,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				68D1803629AA4A9000732402 /* Assets.xcassets in Resources */,
-				68A6C5512AFC9C7F00FEB611 /* NeovimRuntime in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
