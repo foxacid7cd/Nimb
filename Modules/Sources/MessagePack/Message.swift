@@ -107,7 +107,7 @@ public enum Message: Sendable, Hashable {
         }
       }
 
-      public func map<Success>(_ casePath: CasePath<Value, Success>) throws -> Success {
+      public func map<Success>(_ casePath: AnyCasePath<Value, Success>) throws -> Success {
         switch self {
         case let .success(value):
           guard let value = casePath.extract(from: value) else {
