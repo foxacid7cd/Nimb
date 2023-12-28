@@ -227,10 +227,9 @@ public final class Instance: Sendable {
   }
 
   public func report(errorMessages: [String]) async throws {
-    try await api.fastCallsTransaction(
-      with: errorMessages
-        .map(APIFunctions.NvimErrWriteln.init(str:))
-    )
+    try await api.fastCall(APIFunctions.NvimErrWriteln(
+      str: errorMessages.joined(separator: "\n")
+    ))
   }
 
   public func stopinsert() async {

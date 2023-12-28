@@ -401,12 +401,12 @@ public final class Store: Sendable {
       error.errorMessages
     } else if let error = error as? NeovimError {
       String(customDumping: error.raw)
+        .trimmingCharacters(in: .newlines)
         .components(separatedBy: .newlines)
-        .filter(\.isEmpty)
     } else {
       String(customDumping: error)
+        .trimmingCharacters(in: .newlines)
         .components(separatedBy: .newlines)
-        .filter(\.isEmpty)
     }
     if !errorMessages.isEmpty {
       try? await instance.report(errorMessages: errorMessages)
