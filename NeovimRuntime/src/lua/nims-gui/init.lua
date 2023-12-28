@@ -21,50 +21,55 @@ end
 function M.edit(path)
   vim.cmd([[stopinsert]])
 
-  vim.v.errmsg = ""
-  vim.cmd([[silent! edit ]] .. path)
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+  local status, error = pcall(function()
+    vim.cmd([[edit ]] .. path)
+  end)
+  if not status and error then
+    return r.failure(error)
   end
 end
 
 function M.write()
   vim.cmd([[stopinsert]])
 
-  vim.v.errmsg = ""
-  vim.cmd([[silent! write]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+  local status, error = pcall(function()
+    vim.cmd([[write]])
+  end)
+  if not status and error then
+    return r.failure(error)
   end
 end
 
 function M.save_as(path)
   vim.cmd([[stopinsert]])
 
-  vim.v.errmsg = ""
-  vim.cmd([[silent! saveas ]] .. path)
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+  local status, error = pcall(function()
+    vim.cmd([[saveas ]] .. path)
+  end)
+  if not status and error then
+    return r.failure(error)
   end
 end
 
 function M.quit()
   vim.cmd([[stopinsert]])
 
-  vim.v.errmsg = ""
-  vim.cmd([[silent! quit]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+  local status, error = pcall(function()
+    vim.cmd([[quit]])
+  end)
+  if not status and error then
+    return r.failure(error)
   end
 end
 
 function M.quit_all()
   vim.cmd([[stopinsert]])
 
-  vim.v.errmsg = ""
-  vim.cmd([[silent! quitall]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+  local status, error = pcall(function()
+    vim.cmd([[quitall]])
+  end)
+  if not status and error then
+    return r.failure(error)
   end
 end
 
