@@ -31,17 +31,10 @@ public actor Generator {
           throw GeneratorError.invalidData(details: "No MessagePack value.")
         }
 
-        var valueDump = ""
-        customDump(value, to: &valueDump)
-        print("Raw MessagePack output:\n\(valueDump)\n")
-
         guard let metadata = Metadata(value) else {
           throw GeneratorError.invalidData(details: "No API metadata.")
         }
-
-        var metadataDump = ""
-        customDump(metadata, to: &metadataDump)
-        print("Parsed API metadata:\n\(metadataDump)")
+        customDump(metadata, name: "metadata")
 
         return metadata
 
