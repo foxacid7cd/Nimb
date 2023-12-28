@@ -82,22 +82,27 @@ public class MsgShowsViewController: NSViewController {
 
     if shouldHide {
       if isVisibleAnimatedOn != false {
+        isVisibleAnimatedOn = false
         NSAnimationContext.runAnimationGroup { context in
           context.duration = 0.12
           view.animator().alphaValue = 0
-        } completionHandler: { [view] in
-          view.isHidden = true
+        } completionHandler: { [weak self] in
+          guard let self else {
+            return
+          }
+          if isVisibleAnimatedOn == false {
+            view.isHidden = true
+          }
         }
-        isVisibleAnimatedOn = false
       }
     } else {
       if isVisibleAnimatedOn != true {
+        isVisibleAnimatedOn = true
+        view.isHidden = false
         NSAnimationContext.runAnimationGroup { context in
           context.duration = 0.12
           view.animator().alphaValue = 1
         }
-        view.isHidden = false
-        isVisibleAnimatedOn = true
       }
     }
   }

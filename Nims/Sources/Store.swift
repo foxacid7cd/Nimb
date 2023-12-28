@@ -69,8 +69,6 @@ public final class Store: Sendable {
         hideMsgShowsTask?.cancel()
 
         hideMsgShowsTask = Task { [weak self] in
-          defer { hideMsgShowsTask = nil }
-
           do {
             try await Task.sleep(for: .milliseconds(50))
 
@@ -78,7 +76,9 @@ public final class Store: Sendable {
               return
             }
 
-            try await dispatch(reducer: Action.setIsMsgShowsDismissed(true))
+            hideMsgShowsTask = nil
+
+            try? await dispatch(reducer: Action.setIsMsgShowsDismissed(true))
           } catch {}
         }
       }
