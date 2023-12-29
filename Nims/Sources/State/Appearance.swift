@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+import Collections
 import Library
 
 @PublicInit
 public struct Appearance: Sendable {
   public var highlights: IntKeyedDictionary<Highlight> = [:]
+  public var highlightsInfo: TreeDictionary<String, (id: Int, kind: String)> = [:]
   public var defaultForegroundColor: NimsColor = .black
   public var defaultBackgroundColor: NimsColor = .black
   public var defaultSpecialColor: NimsColor = .black

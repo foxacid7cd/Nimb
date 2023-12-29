@@ -145,13 +145,13 @@ public class MainViewController: NSViewController {
         window.setFrame(
           screen.visibleFrame,
           display: true,
-          animate: true
+          animate: false
         )
       }
 
     } else {
       if let preMaximizeWindowFrame, window.frame != preMaximizeWindowFrame {
-        window.setFrame(preMaximizeWindowFrame, display: true, animate: true)
+        window.setFrame(preMaximizeWindowFrame, display: true, animate: false)
       }
     }
   }

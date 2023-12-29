@@ -166,12 +166,19 @@ public struct ApplyUIEvents: Reducer {
           ))
         }
 
-      case let .hlAttrDefine(id, rgbAttrs, _, _):
+      case let .hlAttrDefine(id, rgbAttrs, ctermAttrs, rawInfo):
+        let hlAttrDefine = try UIEventsChunk.HlAttrDefine(
+          id: id,
+          rgbAttrs: rgbAttrs,
+          ctermAttrs: ctermAttrs,
+          rawInfo: rawInfo
+        )
+
         if
           let previousChunk = uiEventsChunks.last,
           case .gridLines(let chunkGridID, var hlAttrDefines, let chunkGridLines) = previousChunk
         {
-          hlAttrDefines.append(.init(id: id, rgbAttrs: rgbAttrs))
+          hlAttrDefines.append(hlAttrDefine)
           uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
             gridID: chunkGridID,
             hlAttrDefines: hlAttrDefines,
@@ -262,8 +269,8 @@ public struct ApplyUIEvents: Reducer {
 
           appearanceUpdated()
 
-        case let .hlAttrDefine(id, rgbAttrs, _, _):
-          applyHlAttrDefine(id: id, rgbAttrs: rgbAttrs)
+        case let .hlAttrDefine(id, rgbAttrs, ctermAttrs, rawInfo):
+          try applyHlAttrDefine(.init(id: id, rgbAttrs: rgbAttrs, ctermAttrs: ctermAttrs, rawInfo: rawInfo))
 
         case let .gridResize(gridID, width, height):
           let size = IntegerSize(
@@ -633,7 +640,7 @@ public struct ApplyUIEvents: Reducer {
 
       case let .gridLines(gridID, hlAttrDefines, gridLines):
         for hlAttrDefine in hlAttrDefines {
-          applyHlAttrDefine(id: hlAttrDefine.id, rgbAttrs: hlAttrDefine.rgbAttrs)
+          applyHlAttrDefine(hlAttrDefine)
         }
 
         let results: [Grid.LineUpdatesResult] = if gridLines.count <= 15 {
@@ -817,13 +824,13 @@ public struct ApplyUIEvents: Reducer {
         }
       }
 
-      func applyHlAttrDefine(id: Int, rgbAttrs: [Value: Value]) {
-        let noCombine = rgbAttrs["noCombine"]
+      func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) {
+        let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
           .flatMap((/Value.boolean).extract(from:)) ?? false
 
-        var highlight = (noCombine ? state.appearance.highlights[id] : nil) ?? .init(id: id)
+        var highlight = (noCombine ? state.appearance.highlights[hlAttrDefine.id] : nil) ?? .init(id: hlAttrDefine.id)
 
-        for (key, value) in rgbAttrs {
+        for (key, value) in hlAttrDefine.rgbAttrs {
           guard case let .string(key) = key else {
             continue
           }
@@ -905,7 +912,13 @@ public struct ApplyUIEvents: Reducer {
           }
         }
 
-        state.appearance.highlights[id] = highlight
+        state.appearance.highlights[hlAttrDefine.id] = highlight
+
+        if let infoItem = hlAttrDefine.info.last {
+          state.appearance.highlightsInfo[infoItem.name] = (infoItem.id, infoItem.name)
+        } else {
+          assertionFailure(Failure("empty hlAttrDefine info array", hlAttrDefine))
+        }
       }
     }
 

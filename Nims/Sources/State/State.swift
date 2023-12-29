@@ -149,10 +149,6 @@ public struct State: Sendable {
       return true
     }
 
-    if !cmdlines.dictionary.isEmpty {
-      return true
-    }
-
     return false
   }
 

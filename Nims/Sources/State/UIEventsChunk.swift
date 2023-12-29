@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import Library
 import MessagePack
 
@@ -7,14 +8,45 @@ public enum UIEventsChunk: Sendable {
   case single(UIEvent)
   case gridLines(gridID: Grid.ID, hlAttrDefines: [HlAttrDefine], gridLines: IntKeyedDictionary<[GridLine]>)
 
+  @PublicInit
   public struct HlAttrDefine: Sendable {
-    var id: Int
-    var rgbAttrs: [Value: Value]
+    public init(id: Int, rgbAttrs: [Value: Value], ctermAttrs: [Value: Value], rawInfo: [Value]) throws {
+      self.id = id
+      self.rgbAttrs = rgbAttrs
+      self.ctermAttrs = ctermAttrs
+      info = try rawInfo.map(HlAttrDefineInfoItem.init(raw:))
+    }
+
+    public var id: Int
+    public var rgbAttrs: [Value: Value]
+    public var ctermAttrs: [Value: Value]
+    public var info: [HlAttrDefineInfoItem]
   }
 
+  @PublicInit
+  public struct HlAttrDefineInfoItem: Sendable {
+    public init(raw: Value) throws {
+      guard 
+        case let .dictionary(raw) = raw,
+        case let .string(kind) = raw["kind"],
+        case let .string(name) = raw["hi_name"],
+        case let .integer(id) = raw["id"]
+      else {
+        throw Failure("invalid raw HlAttrDefineInfoItem value", raw)
+      }
+
+      self.init(kind: kind, name: name, id: id)
+    }
+
+    public var kind: String
+    public var name: String
+    public var id: Int
+  }
+
+  @PublicInit
   public struct GridLine: Sendable {
-    var originColumn: Int
-    var data: [Value]
-    var wrap: Bool
+    public var originColumn: Int
+    public var data: [Value]
+    public var wrap: Bool
   }
 }
