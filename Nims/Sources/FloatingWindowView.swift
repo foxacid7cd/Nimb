@@ -22,6 +22,47 @@ public class FloatingWindowView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  @discardableResult
+  public func animate(hide: Bool, completionHandler: @escaping (_ isCompleted: Bool) -> Void = { _ in }) -> Bool {
+    if hide {
+      if isVisibleAnimatedOn != false {
+        isVisibleAnimatedOn = false
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+          guard let self else {
+            return
+          }
+          if isVisibleAnimatedOn == false {
+            isHidden = true
+          }
+          completionHandler(isVisibleAnimatedOn == false)
+        }
+        return true
+      } else {
+        return false
+      }
+    } else {
+      if isVisibleAnimatedOn != true {
+        isVisibleAnimatedOn = true
+        isHidden = false
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration = 0.12
+          animator().alphaValue = 1
+        } completionHandler: { [weak self] in
+          guard let self else {
+            return
+          }
+          completionHandler(isVisibleAnimatedOn == true)
+        }
+        return true
+      } else {
+        return false
+      }
+    }
+  }
+
   public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.updatedObservedHighlightNames.contains(.normalFloat) {
       renderAppearance()
@@ -29,6 +70,7 @@ public class FloatingWindowView: NSView {
   }
 
   private let store: Store
+  private var isVisibleAnimatedOn: Bool?
 
   private func renderAppearance() {
     layer!.backgroundColor = store.state.appearance.backgroundColor(for: .normalFloat)

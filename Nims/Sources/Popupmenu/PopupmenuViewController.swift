@@ -51,27 +51,8 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
             view.topToBottom(of: cmdlinesView, offset: 8),
           ]
         }
-
-        if isVisibleAnimatedOn != true {
-          isVisibleAnimatedOn = true
-          scrollView.contentView.scroll(to: .init(
-            x: -scrollView.contentInsets.left,
-            y: -scrollView.contentInsets.top
-          ))
-          view.isHidden = false
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            view.animator().alphaValue = 1
-          } completionHandler: { [weak self] in
-            guard let self else {
-              return
-            }
-            if isVisibleAnimatedOn == true {
-              reportPumBounds()
-            }
-          }
-        }
       }
+
       if stateUpdates.isPopupmenuUpdated || stateUpdates.isPopupmenuSelectionUpdated {
         tableView.reloadData()
 
@@ -79,20 +60,23 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
           tableView.scrollRowToVisible(selectedItemIndex)
         }
       }
-    } else {
-      if isVisibleAnimatedOn != false {
-        isVisibleAnimatedOn = false
-        NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
-          view.animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-          guard let self else {
-            return
-          }
-          if isVisibleAnimatedOn == false {
-            view.isHidden = true
-          }
+    }
+
+    if stateUpdates.isPopupmenuUpdated {
+      let hide = store.state.popupmenu == nil
+      let isSuccess = (view as! FloatingWindowView).animate(hide: hide) { [weak self] isCompleted in
+        guard let self else {
+          return
         }
+        if !hide, isCompleted {
+          reportPumBounds()
+        }
+      }
+      if !hide, isSuccess {
+        scrollView.contentView.scroll(to: .init(
+          x: -scrollView.contentInsets.left,
+          y: -scrollView.contentInsets.top
+        ))
       }
     }
   }
@@ -156,7 +140,6 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   private let getCmdlinesView: () -> NSView
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
-  private var isVisibleAnimatedOn: Bool?
 
   private func reportPumBounds() {
     guard let outerGrid = store.state.outerGrid else {

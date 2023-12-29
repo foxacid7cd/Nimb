@@ -15,8 +15,8 @@ public class MsgShowsViewController: NSViewController {
 
   override public func loadView() {
     let view = FloatingWindowView(store: store)
-    view.width(max: 640)
-    view.height(max: 480)
+    view.width(max: 800)
+    view.height(max: 600)
     view.alphaValue = 0
     view.isHidden = true
 
@@ -57,36 +57,11 @@ public class MsgShowsViewController: NSViewController {
   private let store: Store
   private let scrollView = NSScrollView()
   private let contentView = NSStackView(views: [])
-  private var isVisibleAnimatedOn: Bool?
 
   private func renderIsVisible() {
-    let shouldHide = store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed
-
-    if shouldHide {
-      if isVisibleAnimatedOn != false {
-        isVisibleAnimatedOn = false
-        NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
-          view.animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-          guard let self else {
-            return
-          }
-          if isVisibleAnimatedOn == false {
-            view.isHidden = true
-          }
-        }
-      }
-    } else {
-      if isVisibleAnimatedOn != true {
-        isVisibleAnimatedOn = true
-        view.isHidden = false
-        NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
-          view.animator().alphaValue = 1
-        }
-      }
-    }
+    (view as! FloatingWindowView).animate(
+      hide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed
+    )
   }
 
   private func renderContent() {

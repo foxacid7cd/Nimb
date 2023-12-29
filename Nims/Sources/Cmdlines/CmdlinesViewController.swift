@@ -43,31 +43,11 @@ public class CmdlinesViewController: NSViewController {
             separatorView.width(to: contentView)
           }
         }
-
-        if isVisibleAnimatedOn != true {
-          isVisibleAnimatedOn = true
-          view.isHidden = false
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            view.animator().alphaValue = 1
-          }
-        }
-      } else {
-        if isVisibleAnimatedOn != false {
-          isVisibleAnimatedOn = false
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            view.animator().alphaValue = 0
-          } completionHandler: { [weak self] in
-            guard let self else {
-              return
-            }
-            if isVisibleAnimatedOn == false {
-              view.isHidden = true
-            }
-          }
-        }
       }
+
+      (view as! FloatingWindowView).animate(
+        hide: store.state.cmdlines.dictionary.isEmpty
+      )
     }
 
     if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated {
@@ -107,5 +87,4 @@ public class CmdlinesViewController: NSViewController {
   private let scrollView = NSScrollView()
   private let contentView = NSStackView(views: [])
   private var cmdlineViews = IntKeyedDictionary<CmdlineView>()
-  private var isVisibleAnimatedOn: Bool?
 }
