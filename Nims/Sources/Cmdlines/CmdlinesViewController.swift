@@ -18,7 +18,7 @@ public class CmdlinesViewController: NSViewController {
   public func render(_ stateUpdates: State.Updates) {
     (view as! FloatingWindowView).render(stateUpdates)
 
-    if stateUpdates.isCmdlinesUpdated {
+    if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
       if !store.state.cmdlines.dictionary.isEmpty {
         cmdlineViews = [:]
         contentView.arrangedSubviews

@@ -53,7 +53,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
         }
       }
 
-      if stateUpdates.isPopupmenuUpdated || stateUpdates.isPopupmenuSelectionUpdated {
+      if stateUpdates.isPopupmenuUpdated || stateUpdates.isPopupmenuSelectionUpdated || stateUpdates.isAppearanceUpdated {
         tableView.reloadData()
 
         if let selectedItemIndex = popupmenu.selectedItemIndex {

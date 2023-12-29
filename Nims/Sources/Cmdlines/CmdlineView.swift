@@ -64,7 +64,7 @@ public class CmdlineView: NSView {
 
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
-        .foregroundColor: NSColor.textColor,
+        .foregroundColor: store.state.appearance.foregroundColor(for: .normalFloat),
         .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
       ])
 
@@ -141,7 +141,7 @@ private class CmdlineFirstCharacterView: NSView {
 
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
       .font: store.font.appKit(isBold: true),
-      .foregroundColor: NSColor.textColor,
+      .foregroundColor: store.state.appearance.foregroundColor(for: .normalFloat).appKit,
     ])
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
@@ -179,7 +179,7 @@ private class CmdlineFirstCharacterView: NSView {
       ),
       saturation: 0.8,
       brightness: 0.8,
-      alpha: 0.4
+      alpha: 0.2
     )
   }
 
@@ -286,13 +286,25 @@ private class CmdlineTextView: NSView {
 
     var location = 0
     for contentPart in cmdline.contentParts {
+      var foregroundColor = store.appearance.foregroundColor(for: contentPart.highlightID)
+      if foregroundColor == store.state.appearance.defaultForegroundColor {
+        foregroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+      }
+
+      var attributes: [NSAttributedString.Key: Any] = [
+        .font: store.font.appKit(),
+        .foregroundColor: foregroundColor.appKit,
+      ]
+
+      let backgroundColor = store.appearance.backgroundColor(for: contentPart.highlightID)
+      if backgroundColor != store.state.appearance.defaultBackgroundColor {
+        attributes[.backgroundColor] = backgroundColor.appKit
+      }
+
       cmdlineAttributedString.append(.init(
         string: contentPart.text
           .replacingOccurrences(of: "\r", with: "↲"),
-        attributes: .init([
-          .font: store.font.appKit(),
-          .foregroundColor: contentPart.highlightID == Highlight.DefaultID ? NSColor.textColor : store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
-        ])
+        attributes: attributes
       ))
       if cmdline.cursorPosition >= location, cmdline.cursorPosition < location + contentPart.text.count {
         cursorParentHighlightID = contentPart.highlightID
@@ -309,7 +321,7 @@ private class CmdlineTextView: NSView {
           string: cmdline.specialCharacter,
           attributes: [
             .font: store.font.appKit(),
-            .foregroundColor: store.appearance.defaultSpecialColor.appKit,
+            .foregroundColor: store.appearance.specialColor(for: .normalFloat).appKit,
           ]
         ),
         at: cmdline.cursorPosition + cmdline.indent
