@@ -51,19 +51,23 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
         }
 
         if isVisibleAnimatedOn != true {
+          isVisibleAnimatedOn = true
           scrollView.contentView.scroll(to: .init(
             x: -scrollView.contentInsets.left,
             y: -scrollView.contentInsets.top
           ))
-
+          view.isHidden = false
           NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             view.animator().alphaValue = 1
           } completionHandler: { [weak self] in
-            self?.reportPumBounds()
+            guard let self else {
+              return
+            }
+            if isVisibleAnimatedOn == true {
+              reportPumBounds()
+            }
           }
-          view.isHidden = false
-          isVisibleAnimatedOn = true
         }
       }
       if stateUpdates.isPopupmenuUpdated || stateUpdates.isPopupmenuSelectionUpdated {
@@ -75,13 +79,18 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
       }
     } else {
       if isVisibleAnimatedOn != false {
+        isVisibleAnimatedOn = false
         NSAnimationContext.runAnimationGroup { context in
           context.duration = 0.12
           view.animator().alphaValue = 0
-        } completionHandler: { [view] in
-          view.isHidden = true
+        } completionHandler: { [weak self] in
+          guard let self else {
+            return
+          }
+          if isVisibleAnimatedOn == false {
+            view.isHidden = true
+          }
         }
-        isVisibleAnimatedOn = false
       }
     }
   }
@@ -172,13 +181,13 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     let gridsView = getGridsView()
     let viewFrame = gridsView.convert(view.frame, from: nil)
     let size = IntegerSize(
-      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.up)),
-      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.up))
+      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.down)),
+      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.down))
     )
     let rectangle = IntegerRectangle(
       origin: .init(
-        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.down)),
-        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.down)) - size.rowsCount
+        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.up)),
+        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.up)) - size.rowsCount
       ),
       size: size
     )
