@@ -21,6 +21,7 @@ public struct State: Sendable {
     public var isTitleUpdated: Bool = false
     public var isFontUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
+    public var updatedObservedHighlightNames: Set<Appearance.ObservedHighlightName> = []
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
@@ -49,6 +50,7 @@ public struct State: Sendable {
       isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
       isFontUpdated = isFontUpdated || updates.isFontUpdated
       isAppearanceUpdated = isAppearanceUpdated || updates.isAppearanceUpdated
+      updatedObservedHighlightNames.formUnion(updates.updatedObservedHighlightNames)
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated

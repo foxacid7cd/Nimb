@@ -16,6 +16,8 @@ public class CmdlinesViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
+    (view as! FloatingWindowView).render(stateUpdates)
+
     if stateUpdates.isCmdlinesUpdated {
       if !store.state.cmdlines.dictionary.isEmpty {
         cmdlineViews = [:]
@@ -76,29 +78,11 @@ public class CmdlinesViewController: NSViewController {
   }
 
   override public func loadView() {
-    let view = NSView(frame: .zero)
-    view.wantsLayer = true
-    view.shadow = .init()
-    view.layer!.cornerRadius = 8
-    view.layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
-    view.layer!.borderWidth = 1
-    view.layer!.shadowRadius = 5
-    view.layer!.shadowOffset = .init(width: 4, height: -4)
-    view.layer!.shadowOpacity = 0.2
-    view.layer!.shadowColor = .black
+    let view = FloatingWindowView(store: store)
     view.alphaValue = 0
     view.isHidden = true
     view.width(500)
     view.height(max: 160)
-
-    let blurView = NSVisualEffectView()
-    blurView.wantsLayer = true
-    blurView.layer!.masksToBounds = true
-    blurView.layer!.cornerRadius = 8
-    blurView.blendingMode = .withinWindow
-    blurView.material = .popover
-    view.addSubview(blurView)
-    blurView.edgesToSuperview()
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init()

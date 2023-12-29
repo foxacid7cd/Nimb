@@ -915,7 +915,10 @@ public struct ApplyUIEvents: Reducer {
         state.appearance.highlights[hlAttrDefine.id] = highlight
 
         if let infoItem = hlAttrDefine.info.last {
-          state.appearance.highlightsInfo[infoItem.name] = (infoItem.id, infoItem.name)
+          if let name = Appearance.ObservedHighlightName(rawValue: infoItem.name) {
+            state.appearance.observedHighlights[name] = (infoItem.id, infoItem.kind)
+            updates.updatedObservedHighlightNames.insert(name)
+          }
         } else {
           assertionFailure(Failure("empty hlAttrDefine info array", hlAttrDefine))
         }

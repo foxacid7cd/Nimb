@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CustomDump
 import Library
 
 public class MsgShowTextView: NSView {
@@ -95,7 +96,10 @@ public class MsgShowTextView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
+    cgContext.saveGState()
+    cgContext.translateBy(x: 0, y: store.font.appKit().descender / 2)
     CTFrameDraw(ctFrame, cgContext)
+    cgContext.restoreGState()
   }
 
   private let store: Store

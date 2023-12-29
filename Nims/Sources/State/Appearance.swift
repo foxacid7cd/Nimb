@@ -5,11 +5,63 @@ import Library
 
 @PublicInit
 public struct Appearance: Sendable {
+  public enum ObservedHighlightName: String, CaseIterable, Sendable {
+    case normal = "Normal"
+    case normalNC = "NormalNC"
+    case normalFloat = "NormalFloat"
+    case errorMsg = "ErrorMsg"
+  }
+
   public var highlights: IntKeyedDictionary<Highlight> = [:]
-  public var highlightsInfo: TreeDictionary<String, (id: Int, kind: String)> = [:]
+  public var observedHighlights: TreeDictionary<ObservedHighlightName, (id: Int, kind: String)> = [:]
   public var defaultForegroundColor: NimsColor = .black
   public var defaultBackgroundColor: NimsColor = .black
   public var defaultSpecialColor: NimsColor = .black
+
+  public var floatingWindowBorderColor: NimsColor {
+    foregroundColor(for: .normalFloat)
+      .with(alpha: 0.3)
+  }
+
+  public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
+    guard let (id, _) = observedHighlights[name] else {
+      return nil
+    }
+    return highlights[id]
+  }
+
+  public func foregroundColor(for name: ObservedHighlightName) -> NimsColor {
+    guard 
+      let (id, _) = observedHighlights[name],
+      let highlight = highlights[id],
+      let foregroundColor = highlight.foregroundColor
+    else {
+      return defaultForegroundColor
+    }
+    return foregroundColor
+  }
+
+  public func backgroundColor(for name: ObservedHighlightName) -> NimsColor {
+    guard
+      let (id, _) = observedHighlights[name],
+      let highlight = highlights[id],
+      let backgroundColor = highlight.backgroundColor
+    else {
+      return defaultBackgroundColor
+    }
+    return backgroundColor
+  }
+
+  public func specialColor(for name: ObservedHighlightName) -> NimsColor {
+    guard
+      let (id, _) = observedHighlights[name],
+      let highlight = highlights[id],
+      let specialColor = highlight.specialColor
+    else {
+      return defaultSpecialColor
+    }
+    return specialColor
+  }
 
   public func isItalic(for highlightID: Highlight.ID) -> Bool {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
