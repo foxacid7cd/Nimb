@@ -24,7 +24,7 @@ public struct State: Sendable {
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
-    public var isMsgShowsUpdated: Bool = false
+    public var isMessagesUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var isGridsOrderUpdated: Bool = false
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
@@ -33,7 +33,6 @@ public struct State: Sendable {
     public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
-    public var isMsgShowsDismissedUpdated: Bool = false
     public var isMouseOnUpdated: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
@@ -53,7 +52,7 @@ public struct State: Sendable {
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
-      isMsgShowsUpdated = isMsgShowsUpdated || updates.isMsgShowsUpdated
+      isMessagesUpdated = isMessagesUpdated || updates.isMessagesUpdated
       for gridID in updates.destroyedGridIDs {
         updatedLayoutGridIDs.remove(gridID)
         gridUpdates.removeValue(forKey: gridID)
@@ -76,7 +75,6 @@ public struct State: Sendable {
       isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates.isPopupmenuSelectionUpdated
       isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates.isCursorBlinkingPhaseUpdated
       isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
-      isMsgShowsDismissedUpdated = isMsgShowsDismissedUpdated || updates.isMsgShowsDismissedUpdated
       isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
     }
   }
@@ -109,12 +107,12 @@ public struct State: Sendable {
   public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
+  public var isMsgShowsDismissed: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
-  public var isMsgShowsDismissed: Bool = false
   public var isMouseOn: Bool = true
 
   public var outerGrid: Grid? {

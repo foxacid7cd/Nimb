@@ -53,8 +53,8 @@ public struct ApplyUIEvents: Reducer {
       updates.isCmdlinesUpdated = true
     }
 
-    func msgShowsUpdated() {
-      updates.isMsgShowsUpdated = true
+    func messagesUpdated() {
+      updates.isMessagesUpdated = true
     }
 
     func cursorUpdated(oldCursor: Cursor? = nil) {
@@ -571,43 +571,20 @@ public struct ApplyUIEvents: Reducer {
             try state.msgShows.append(.init(
               index: state.msgShows.count,
               kind: kind,
-              contentParts: content.map { rawContentPart in
-                guard
-                  case let .array(rawContentPart) = rawContentPart,
-                  rawContentPart.count == 2,
-                  case let .integer(highlightID) = rawContentPart[0],
-                  case let .string(text) = rawContentPart[1]
-                else {
-                  throw Failure("invalid raw msg_show content part", rawContentPart)
-                }
-
-                return .init(
-                  highlightID: highlightID,
-                  text: text
-                )
-              }
+              contentParts: content.map(MsgShow.ContentPart.init(raw:))
             ))
           }
 
-          msgShowsUpdated()
+          state.isMsgShowsDismissed = false
+          messagesUpdated()
 
         case .msgClear:
           state.msgShows = []
-          msgShowsUpdated()
+          messagesUpdated()
 
         case let .popupmenuShow(rawItems, selected, row, col, gridID):
-          var items = [PopupmenuItem]()
-
-          for rawItem in rawItems {
-            if let item = PopupmenuItem(rawItem: rawItem) {
-              items.append(item)
-
-            } else {
-              assertionFailure(rawItem)
-
-              items.append(.init(word: "-", kind: "-", menu: "", info: ""))
-            }
-          }
+          let items = try rawItems
+            .map(PopupmenuItem.init(raw:))
 
           let selectedItemIndex: Int? = selected >= 0 ? selected : nil
 

@@ -17,16 +17,16 @@ public struct Popupmenu: Sendable, Hashable {
 
 @PublicInit
 public struct PopupmenuItem: Sendable, Hashable {
-  init?(rawItem: Value) {
+  public init(raw: Value) throws {
     guard
-      case let .array(rawItem) = rawItem,
-      rawItem.count == 4,
-      case let .string(word) = rawItem[0],
-      case let .string(kind) = rawItem[1],
-      case let .string(menu) = rawItem[2],
-      case let .string(info) = rawItem[3]
+      case let .array(raw) = raw,
+      raw.count == 4,
+      case let .string(word) = raw[0],
+      case let .string(kind) = raw[1],
+      case let .string(menu) = raw[2],
+      case let .string(info) = raw[3]
     else {
-      return nil
+      throw Failure("invalid raw popupmenu item", raw)
     }
 
     self.init(word: word, kind: kind, menu: menu, info: info)

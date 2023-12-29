@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Library
+import MessagePack
 
 @PublicInit
 public struct MsgShow: Identifiable, Sendable, Hashable {
@@ -29,6 +30,22 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
 
   @PublicInit
   public struct ContentPart: Sendable, Hashable {
+    public init(raw: Value) throws {
+      guard
+        case let .array(raw) = raw,
+        raw.count == 2,
+        case let .integer(highlightID) = raw[0],
+        case let .string(text) = raw[1]
+      else {
+        throw Failure("invalid raw content part", raw)
+      }
+
+      self.init(
+        highlightID: highlightID,
+        text: text
+      )
+    }
+
     public var highlightID: Highlight.ID
     public var text: String
   }

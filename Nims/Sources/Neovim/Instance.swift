@@ -209,8 +209,8 @@ public final class Instance: Sendable {
     )
   }
 
-  public func quit() async throws {
-    try await api.nims(method: "quit")
+  public func close() async throws {
+    try await api.nims(method: "close")
   }
 
   public func quitAll() async throws {
@@ -226,10 +226,11 @@ public final class Instance: Sendable {
     )
   }
 
-  public func report(errorMessages: [String]) async throws {
-    try await api.fastCall(APIFunctions.NvimErrWriteln(
-      str: errorMessages.joined(separator: "\n")
-    ))
+  public func report(errorMessage: String) async throws {
+    try await api.nims(
+      method: "echo_err",
+      parameters: [.string(errorMessage)]
+    )
   }
 
   public func stopinsert() async {

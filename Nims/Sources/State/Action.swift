@@ -6,7 +6,7 @@ public enum Action: Reducer {
   case toggleDebugUIEventsLogging
   case setCursorBlinkingPhase(Bool)
   case setFont(NimsFont)
-  case setIsMsgShowsDismissed(Bool)
+  case dismissMessages
 
   public func reduce(state: State) async throws -> (state: State, updates: State.Updates) {
     var state = state
@@ -26,9 +26,9 @@ public enum Action: Reducer {
       state.flushDrawRuns()
       updates.isFontUpdated = true
 
-    case let .setIsMsgShowsDismissed(value):
-      state.isMsgShowsDismissed = value
-      updates.isMsgShowsDismissedUpdated = true
+    case .dismissMessages:
+      state.isMsgShowsDismissed = true
+      updates.isMessagesUpdated = true
     }
 
     return (state, updates)

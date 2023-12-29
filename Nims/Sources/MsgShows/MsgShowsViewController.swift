@@ -64,10 +64,8 @@ public class MsgShowsViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isMsgShowsUpdated {
+    if stateUpdates.isMessagesUpdated {
       renderContent()
-    }
-    if stateUpdates.isMsgShowsUpdated || stateUpdates.isMsgShowsDismissedUpdated {
       renderIsVisible()
     }
   }
@@ -111,7 +109,9 @@ public class MsgShowsViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    let layout = MsgShowsLayout(store.state.msgShows)
+    let layout = MsgShowsLayout(
+      msgShows: store.state.msgShows
+    )
 
     for item in layout.items {
       switch item {

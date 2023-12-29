@@ -142,7 +142,7 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      await store.quit()
+      await store.close()
     }
   }
 

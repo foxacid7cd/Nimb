@@ -78,7 +78,7 @@ public final class Store: Sendable {
 
             hideMsgShowsTask = nil
 
-            try? await dispatch(reducer: Action.setIsMsgShowsDismissed(true))
+            try? await dispatch(reducer: Action.dismissMessages)
           } catch {}
         }
       }
@@ -262,9 +262,9 @@ public final class Store: Sendable {
     }
   }
 
-  public func quit() async {
+  public func close() async {
     do {
-      try await instance.quit()
+      try await instance.close()
     } catch {
       await handleActionError(error)
     }
@@ -349,15 +349,12 @@ public final class Store: Sendable {
       }
     }
 
-    if updates.isMsgShowsUpdated, !state.msgShows.isEmpty {
+    if updates.isMessagesUpdated, !state.isMsgShowsDismissed {
       hideMsgShowsTask?.cancel()
       hideMsgShowsTask = nil
-
-      state.isMsgShowsDismissed = false
-      updates.isMsgShowsDismissedUpdated = true
     }
 
-    backgroundState = state
+    backgroundState = consume state
     stateUpdatesAccumulator.formUnion(updates)
 
     if stateThrottlingTask == nil {
@@ -365,8 +362,8 @@ public final class Store: Sendable {
       defer { lastSetStateInstant = .now }
 
       if sincePrevious > stateThrottlingInterval {
-        Task { @MainActor [state, stateUpdatesAccumulator] in
-          self.state = state
+        Task { @MainActor [backgroundState, stateUpdatesAccumulator] in
+          self.state = backgroundState
           await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
         }
         stateUpdatesAccumulator = .init()
@@ -397,19 +394,19 @@ public final class Store: Sendable {
   }
 
   private func handleActionError(_ error: any Error) async {
-    let errorMessages: [String] = if let error = error as? NimsNeovimError {
-      error.errorMessages
+    let errorMessage: String = if let error = error as? NimsNeovimError {
+      error.errorMessages.joined(separator: "\n")
     } else if let error = error as? NeovimError {
       String(customDumping: error.raw)
-        .trimmingCharacters(in: .newlines)
-        .components(separatedBy: .newlines)
     } else {
       String(customDumping: error)
-        .trimmingCharacters(in: .newlines)
-        .components(separatedBy: .newlines)
     }
-    if !errorMessages.isEmpty {
-      try? await instance.report(errorMessages: errorMessages)
+    if !errorMessage.isEmpty {
+      do {
+        try await instance.report(errorMessage: errorMessage)
+      } catch {
+        assertionFailure(Failure("reporting error message failed", error))
+      }
     }
   }
 }

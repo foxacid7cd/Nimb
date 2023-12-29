@@ -4,7 +4,7 @@ import Library
 
 @PublicInit
 public struct MsgShowsLayout: Sendable {
-  public init(_ msgShows: [MsgShow]) {
+  public init(msgShows: [MsgShow]) {
     var items = [Item]()
 
     var accumulator = [[MsgShow.ContentPart]]()

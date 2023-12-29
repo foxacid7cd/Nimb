@@ -5,81 +5,66 @@ local r = require("nims-gui.response")
 local M = {}
 
 function M.buf_text_for_copy()
-  vim.cmd([[stopinsert]])
-
   local a_orig = vim.fn.getreg("a")
   local mode = vim.fn.mode()
 
-  local status, error = pcall(function()
-    if mode ~= "v" and mode ~= "V" then
-      vim.cmd([[normal! V]])
-    end
-    vim.cmd([[normal! "aygv]])
-  end)
+  if mode ~= "v" and mode ~= "V" then
+    vim.cmd([[normal! V]])
+  end
+
+  vim.cmd([[normal! "aygv]])
 
   local text = vim.fn.getreg("a")
   vim.fn.setreg("a", a_orig)
 
-  if not status and error then
-    return r.failure(error)
-  else
-    return r.success(text)
-  end
+  return r.success(text)
 end
 
 function M.edit(path)
-  vim.cmd([[stopinsert]])
-
-  local status, error = pcall(function()
-    vim.cmd([[edit ]] .. path)
-  end)
-  if not status and error then
-    return r.failure(error)
+  local escaped = vim.fn.escape(path, "\"\\")
+  vim.v.errmsg = ""
+  vim.cmd(([[silent! edit %s]]):format(escaped))
+  if vim.v.errmsg ~= "" then
+    return r.failure(vim.v.errmsg)
   end
 end
 
 function M.write()
-  vim.cmd([[stopinsert]])
-
-  local status, error = pcall(function()
-    vim.cmd([[write]])
-  end)
-  if not status and error then
-    return r.failure(error)
+  vim.v.errmsg = ""
+  vim.cmd([[silent! write]])
+  if vim.v.errmsg ~= "" then
+    return r.failure(vim.v.errmsg)
   end
 end
 
 function M.save_as(path)
-  vim.cmd([[stopinsert]])
-
-  local status, error = pcall(function()
-    vim.cmd([[saveas ]] .. path)
-  end)
-  if not status and error then
-    return r.failure(error)
+  local escaped = vim.fn.escape(path, "\"\\")
+  vim.v.errmsg = ""
+  vim.cmd(([[silent! saveas %s]]):format(escaped))
+  if vim.v.errmsg ~= "" then
+    return r.failure(vim.v.errmsg)
   end
 end
 
-function M.quit()
-  vim.cmd([[stopinsert]])
-
-  local status, error = pcall(function()
-    vim.cmd([[quit]])
-  end)
-  if not status and error then
-    return r.failure(error)
+function M.close()
+  vim.v.errmsg = ""
+  vim.cmd([[silent! close]])
+  if vim.v.errmsg ~= "" then
+    return r.failure(vim.v.errmsg)
   end
 end
 
 function M.quit_all()
-  vim.cmd([[stopinsert]])
-
-  local status, error = pcall(function()
-    vim.cmd([[quitall]])
-  end)
-  if not status and error then
-    return r.failure(error)
+  vim.v.errmsg = ""
+  vim.cmd([[silent! qa]])
+  if vim.v.errmsg ~= "" then
+    return r.failure(vim.v.errmsg)
   end
+end
+
+function M.echo_err(text)
+  local escaped = vim.fn.escape(text, "\"\\")
+  vim.cmd(([[echohl ErrorMsg | echomsg "%s" | echohl None]]):format(escaped))
 end
 
 return M
