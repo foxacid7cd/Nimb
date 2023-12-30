@@ -40,8 +40,10 @@ public class PopupmenuItemView: NSView {
 
     dirtyRect.clip()
 
-    (isSelected ? darkerAccentColor : .clear)
+    store.appearance.backgroundColor(for: isSelected ? .pmenuSel : .pmenu)
+      .appKit
       .setFill()
+    dirtyRect.fill()
 
     let roundedRectPath = CGPath(
       roundedRect: bounds.insetBy(dx: -8, dy: 0),
@@ -56,42 +58,73 @@ public class PopupmenuItemView: NSView {
   }
 
   public func set(item: PopupmenuItem, isSelected: Bool) {
-    let secondaryText = [item.kind, item.menu, item.info]
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .filter { !$0.isEmpty }
-      .joined(separator: " ")
-
-    accentColor = NSColor(
-      hueSource: "".padding(
-        toLength: secondaryText.count * 4,
-        withPad: secondaryText,
-        startingAt: 0
-      ),
-      saturation: 0.7,
-      brightness: 0.8
-    )
-    darkerAccentColor = accentColor.withAlphaComponent(0.3)
-
     self.isSelected = isSelected
     needsDisplay = true
 
-    let foregroudColor = store.state.appearance.foregroundColor(for: .normalFloat)
-
+    let observedHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
     textField.attributedStringValue = .init(string: item.word, attributes: [
-      .foregroundColor: foregroudColor.appKit,
-      .font: store.font.appKit(),
+      .foregroundColor: store.state.appearance.foregroundColor(for: observedHighlightName).appKit,
+      .font: store.font.appKit(
+        isBold: store.state.appearance.isBold(for: observedHighlightName),
+        isItalic: store.state.appearance.isItalic(for: observedHighlightName)
+      ),
     ])
 
-    secondTextField.attributedStringValue = .init(string: secondaryText, attributes: [
-      .foregroundColor: isSelected ? foregroudColor.appKit : accentColor,
-      .font: store.font.appKit(),
-    ])
+    var secondaryTextParts = [SecondaryTextPart]()
+
+    let kind = item.kind.trimmingCharacters(in: .whitespaces)
+    if !kind.isEmpty {
+      secondaryTextParts.append(.kind(kind))
+    }
+
+    let extra = [item.menu, item.info]
+      .map { $0.trimmingCharacters(in: .whitespaces) }
+      .filter { !$0.isEmpty }
+      .joined(separator: " ")
+    if !extra.isEmpty {
+      secondaryTextParts.append(.extra(extra))
+    }
+
+    let secondaryTextAttributedString = NSMutableAttributedString()
+    for (index, part) in secondaryTextParts.enumerated() {
+      if index > 0 {
+        secondaryTextAttributedString.append(.init(
+          string: " ",
+          attributes: [.font: store.font.appKit()]
+        ))
+      }
+      let text: String
+      let observedHighlightName: Appearance.ObservedHighlightName
+      switch part {
+      case let .kind(kind):
+        text = kind
+        observedHighlightName = isSelected ? .pmenuKindSel : .pmenuKind
+      case let .extra(extra):
+        text = extra
+        observedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
+      }
+      secondaryTextAttributedString.append(.init(
+        string: text,
+        attributes: [
+          .font: store.font.appKit(
+            isBold: store.appearance.isBold(for: observedHighlightName),
+            isItalic: store.appearance.isItalic(for: observedHighlightName)
+          ),
+          .foregroundColor: store.appearance.foregroundColor(for: observedHighlightName).appKit,
+          .backgroundColor: store.appearance.backgroundColor(for: observedHighlightName).appKit,
+        ]
+      ))
+    }
+    secondTextField.attributedStringValue = secondaryTextAttributedString
+
+    enum SecondaryTextPart {
+      case kind(String)
+      case extra(String)
+    }
   }
 
   private let store: Store
   private let textField = NSTextField(labelWithString: "")
   private let secondTextField = NSTextField(labelWithString: "")
   private var isSelected = false
-  private var accentColor = NSColor.white
-  private var darkerAccentColor = NSColor.white
 }

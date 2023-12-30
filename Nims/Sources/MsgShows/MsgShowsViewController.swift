@@ -93,7 +93,7 @@ public class MsgShowsViewController: NSViewController {
       case .separator:
         let separatorView = NSView()
         separatorView.wantsLayer = true
-        separatorView.layer!.backgroundColor = store.state.appearance.floatingWindowBorderColor
+        separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
           .appKit
           .cgColor
         contentView.addArrangedSubview(separatorView)

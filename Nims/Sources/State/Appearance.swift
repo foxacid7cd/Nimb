@@ -10,6 +10,12 @@ public struct Appearance: Sendable {
     case normalNC = "NormalNC"
     case normalFloat = "NormalFloat"
     case errorMsg = "ErrorMsg"
+    case pmenu = "Pmenu"
+    case pmenuSel = "PmenuSel"
+    case pmenuKind = "PmenuKind"
+    case pmenuKindSel = "PmenuKindSel"
+    case pmenuExtra = "PmenuExtra"
+    case pmenuExtraSel = "PmenuExtraSel"
   }
 
   public var highlights: IntKeyedDictionary<Highlight> = [:]
@@ -18,16 +24,31 @@ public struct Appearance: Sendable {
   public var defaultBackgroundColor: NimsColor = .black
   public var defaultSpecialColor: NimsColor = .black
 
-  public var floatingWindowBorderColor: NimsColor {
-    foregroundColor(for: .normalFloat)
-      .with(alpha: 0.3)
-  }
-
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
     guard let (id, _) = observedHighlights[name] else {
       return nil
     }
     return highlights[id]
+  }
+
+  public func isItalic(for name: ObservedHighlightName) -> Bool {
+    guard
+      let (id, _) = observedHighlights[name],
+      let highlight = highlights[id]
+    else {
+      return false
+    }
+    return highlight.isItalic
+  }
+
+  public func isBold(for name: ObservedHighlightName) -> Bool {
+    guard
+      let (id, _) = observedHighlights[name],
+      let highlight = highlights[id]
+    else {
+      return false
+    }
+    return highlight.isBold
   }
 
   public func foregroundColor(for name: ObservedHighlightName) -> NimsColor {

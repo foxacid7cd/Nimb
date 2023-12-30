@@ -82,7 +82,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   override public func loadView() {
-    let view = FloatingWindowView(store: store)
+    let view = FloatingWindowView(store: store, observedHighlightName: .pmenu)
     view.alphaValue = 0
     view.isHidden = true
     view.height(176)

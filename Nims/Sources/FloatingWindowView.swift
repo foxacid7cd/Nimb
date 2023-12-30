@@ -3,8 +3,9 @@
 import AppKit
 
 public class FloatingWindowView: NSView {
-  public init(store: Store) {
+  public init(store: Store, observedHighlightName: Appearance.ObservedHighlightName = .normalFloat) {
     self.store = store
+    self.observedHighlightName = observedHighlightName
     super.init(frame: .zero)
     wantsLayer = true
     shadow = .init()
@@ -64,19 +65,21 @@ public class FloatingWindowView: NSView {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.updatedObservedHighlightNames.contains(.normalFloat) {
+    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(observedHighlightName) {
       renderAppearance()
     }
   }
 
   private let store: Store
+  private let observedHighlightName: Appearance.ObservedHighlightName
   private var isVisibleAnimatedOn: Bool?
 
   private func renderAppearance() {
-    layer!.backgroundColor = store.state.appearance.backgroundColor(for: .normalFloat)
+    layer!.backgroundColor = store.state.appearance.backgroundColor(for: observedHighlightName)
       .appKit
       .cgColor
-    layer!.borderColor = store.state.appearance.floatingWindowBorderColor
+    layer!.borderColor = store.state.appearance.foregroundColor(for: observedHighlightName)
+      .with(alpha: 0.3)
       .appKit
       .cgColor
   }
