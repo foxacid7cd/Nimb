@@ -6,12 +6,12 @@ import Foundation
 import Library
 
 @MainActor
-public final class Store: Sendable {
+public class Store: Sendable {
   public init(instance: Instance, debug: State.Debug, font: NimsFont) {
     self.instance = instance
 
     let state = State(debug: debug, font: font)
-    backgroundState = state
+    stateContainer = .init(state)
     self.state = state
 
     Task { @StateActor in
@@ -26,11 +26,11 @@ public final class Store: Sendable {
           }
           try Task.checkCancellation()
 
-          if self.backgroundState.debug.isUIEventsLoggingEnabled {
+          if stateContainer.state.debug.isUIEventsLoggingEnabled {
             Loggers.uiEvents.debug("\(String(customDumping: uiEvents))")
           }
 
-          try await self.dispatch(reducer: ApplyUIEvents(uiEvents: uiEvents))
+          try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
         }
 
         self?.stateUpdatesChannel.finish()
@@ -60,12 +60,12 @@ public final class Store: Sendable {
   }
 
   public func set(font: NimsFont) async {
-    try? await dispatch(reducer: Action.setFont(font))
+    try? await dispatch(Actions.SetFont(value: font))
   }
 
   public func scheduleHideMsgShowsIfPossible() {
     Task { @StateActor in
-      if !backgroundState.hasModalMsgShows, !backgroundState.isMsgShowsDismissed {
+      if !stateContainer.state.hasModalMsgShows, !stateContainer.state.isMsgShowsDismissed {
         hideMsgShowsTask?.cancel()
 
         hideMsgShowsTask = Task { [weak self] in
@@ -78,7 +78,7 @@ public final class Store: Sendable {
 
             hideMsgShowsTask = nil
 
-            try? await dispatch(reducer: Action.dismissMessages)
+            try? await dispatch(Actions.DismissMessages())
           } catch {}
         }
       }
@@ -193,7 +193,7 @@ public final class Store: Sendable {
   }
 
   public func requestTextForCopy() async -> String? {
-    let backgroundState = await backgroundState
+    let backgroundState = await stateContainer.state
 
     guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
       return nil
@@ -234,7 +234,7 @@ public final class Store: Sendable {
 
   public func toggleUIEventsLogging() {
     Task {
-      try await dispatch(reducer: Action.toggleDebugUIEventsLogging)
+      try await dispatch(Actions.ToggleDebugUIEventsLogging())
     }
   }
 
@@ -288,7 +288,7 @@ public final class Store: Sendable {
   }
 
   private let instance: Instance
-  @StateActor private var backgroundState: State
+  @StateActor private var stateContainer: StateContainer
   private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
   @StateActor private var lastSetStateInstant = ContinuousClock.now
   @StateActor private var stateUpdatesAccumulator = State.Updates()
@@ -307,7 +307,7 @@ public final class Store: Sendable {
   @StateActor
   private func startCursorBlinkingTask() {
     if
-      let cursorStyle = backgroundState.currentCursorStyle,
+      let cursorStyle = stateContainer.state.currentCursorStyle,
       let blinkWait = cursorStyle.blinkWait,
       blinkWait > 0,
       let blinkOff = cursorStyle.blinkOff,
@@ -324,10 +324,10 @@ public final class Store: Sendable {
               return
             }
 
-            try await dispatch(reducer: Action.setCursorBlinkingPhase(false))
+            try await dispatch(Actions.SetCursorBlinkingPhase(value: false))
             try await Task.sleep(for: .milliseconds(blinkOff))
 
-            try await dispatch(reducer: Action.setCursorBlinkingPhase(true))
+            try await dispatch(Actions.SetCursorBlinkingPhase(value: true))
             try await Task.sleep(for: .milliseconds(blinkOn))
           }
         } catch {}
@@ -336,25 +336,24 @@ public final class Store: Sendable {
   }
 
   @StateActor
-  private func dispatch(reducer: Reducer) async throws {
-    var (state, updates) = try await reducer.reduce(state: backgroundState)
+  private func dispatch(_ action: Action) async throws {
+    var updates = try await action.apply(to: stateContainer)
 
     let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
     if shouldResetCursorBlinkingTask {
       cursorBlinkingTask?.cancel()
 
-      if !state.cursorBlinkingPhase {
-        state.cursorBlinkingPhase = true
+      if !stateContainer.state.cursorBlinkingPhase {
+        stateContainer.state.cursorBlinkingPhase = true
         updates.isCursorBlinkingPhaseUpdated = true
       }
     }
 
-    if updates.isMessagesUpdated, !state.isMsgShowsDismissed {
+    if updates.isMessagesUpdated, !stateContainer.state.isMsgShowsDismissed {
       hideMsgShowsTask?.cancel()
       hideMsgShowsTask = nil
     }
 
-    backgroundState = consume state
     stateUpdatesAccumulator.formUnion(updates)
 
     if stateThrottlingTask == nil {
@@ -362,11 +361,7 @@ public final class Store: Sendable {
       defer { lastSetStateInstant = .now }
 
       if sincePrevious > stateThrottlingInterval {
-        Task { @MainActor [backgroundState, stateUpdatesAccumulator] in
-          self.state = backgroundState
-          await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
-        }
-        stateUpdatesAccumulator = .init()
+        synchronizeState()
       } else {
         stateThrottlingTask = Task { [weak self] in
           guard let self else {
@@ -375,16 +370,19 @@ public final class Store: Sendable {
 
           do {
             try await Task.sleep(for: stateThrottlingInterval - sincePrevious)
-
-            Task { @MainActor [backgroundState, stateUpdatesAccumulator] in
-              self.state = backgroundState
-              await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
-            }
-            stateUpdatesAccumulator = .init()
+            synchronizeState()
           } catch {}
 
           stateThrottlingTask = nil
         }
+      }
+
+      func synchronizeState() {
+        Task { @MainActor [state = stateContainer.state, stateUpdatesAccumulator] in
+          self.state = state
+          await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
+        }
+        stateUpdatesAccumulator = .init()
       }
     }
 
