@@ -8,10 +8,8 @@ final class TablineView: NSView {
     self.store = store
     super.init(frame: .zero)
 
-    visualEffectView.blendingMode = .behindWindow
-    visualEffectView.material = .titlebar
-    addSubview(visualEffectView)
-    visualEffectView.edgesToSuperview()
+    wantsLayer = true
+    renderBackgroundColor()
 
     buffersScrollView.automaticallyAdjustsContentInsets = false
     buffersScrollView.contentInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
@@ -117,7 +115,7 @@ final class TablineView: NSView {
       return
     }
 
-    if stateUpdates.tabline.isBuffersUpdated {
+    if stateUpdates.tabline.isBuffersUpdated || stateUpdates.isAppearanceUpdated {
       reloadBuffers()
     } else if stateUpdates.tabline.isSelectedBufferUpdated {
       for (bufferIndex, buffer) in tabline.buffers.enumerated() {
@@ -135,7 +133,7 @@ final class TablineView: NSView {
       }
     }
 
-    if stateUpdates.tabline.isTabpagesUpdated {
+    if stateUpdates.tabline.isTabpagesUpdated || stateUpdates.isAppearanceUpdated {
       reloadTabpages()
     } else if stateUpdates.tabline.isTabpagesContentUpdated {
       for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
@@ -165,7 +163,9 @@ final class TablineView: NSView {
       }
     }
 
-    if stateUpdates.isTitleUpdated {
+    if stateUpdates.isTitleUpdated || stateUpdates.isAppearanceUpdated {
+      renderBackgroundColor()
+
       let paragraphStyle = NSMutableParagraphStyle()
       paragraphStyle.alignment = .right
       paragraphStyle.lineBreakMode = .byTruncatingTail
@@ -173,7 +173,9 @@ final class TablineView: NSView {
       titleTextField.attributedStringValue = .init(
         string: store.state.title ?? "",
         attributes: [
-          .foregroundColor: NSColor.labelColor,
+          .foregroundColor: store.appearance
+            .foregroundColor(for: .tabLineFill)
+            .appKit,
           .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
           .paragraphStyle: paragraphStyle,
         ]
@@ -182,7 +184,6 @@ final class TablineView: NSView {
   }
 
   private let store: Store
-  private let visualEffectView = NSVisualEffectView()
   private let buffersScrollView = NSScrollView()
   private let buffersStackView = NSStackView(views: [])
   private let buffersMaskLayer = CALayer()
@@ -273,5 +274,12 @@ final class TablineView: NSView {
       itemView.heightToSuperview()
       itemView.setContentCompressionResistancePriority(.init(rawValue: 800), for: .horizontal)
     }
+  }
+
+  private func renderBackgroundColor() {
+    layer!.backgroundColor = store.appearance
+      .backgroundColor(for: .tabLineFill)
+      .appKit
+      .cgColor
   }
 }

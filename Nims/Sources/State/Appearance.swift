@@ -16,6 +16,9 @@ public struct Appearance: Sendable {
     case pmenuKindSel = "PmenuKindSel"
     case pmenuExtra = "PmenuExtra"
     case pmenuExtraSel = "PmenuExtraSel"
+    case tabLine = "TabLine"
+    case tabLineFill = "TabLineFill"
+    case tabLineSel = "TabLineSel"
   }
 
   public var highlights: IntKeyedDictionary<Highlight> = [:]

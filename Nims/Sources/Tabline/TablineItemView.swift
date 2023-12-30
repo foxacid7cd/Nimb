@@ -16,6 +16,10 @@ final class TablineItemView: NSView {
     textField.trailing(to: self, offset: -10)
     textField.centerY(to: self)
 
+    addSubview(selectedTextField)
+    selectedTextField.center(in: textField)
+    selectedTextField.isHidden = true
+
     trackingArea = .init(
       rect: bounds,
       options: [.inVisibleRect, .activeAlways, .mouseEnteredAndExited],
@@ -58,35 +62,58 @@ final class TablineItemView: NSView {
   func render() {
     renderBackgroundImage()
 
-    let foregroundColor = if isSelected {
-      NSColor.textBackgroundColor
-    } else if isMouseInside {
-      NSColor.textColor.withAlphaComponent(0.6)
-    } else {
-      NSColor.textColor.withAlphaComponent(0.3)
-    }
     textField.attributedStringValue = .init(
       string: text,
       attributes: [
-        .font: NSFont.labelFont(ofSize: NSFont.systemFontSize(for: .regular)),
-        .foregroundColor: foregroundColor,
+        .font: makeFont(for: .tabLine),
+        .foregroundColor: store.appearance
+          .foregroundColor(for: .tabLine)
+          .appKit
+          .highlight(withLevel: isMouseInside ? 0.1 : 0)!,
       ]
     )
+    textField.isHidden = isSelected
+
+    selectedTextField.attributedStringValue = .init(
+      string: text,
+      attributes: [
+        .font: makeFont(for: .tabLineSel),
+        .foregroundColor: store.appearance
+          .foregroundColor(for: .tabLineSel)
+          .appKit,
+      ]
+    )
+    selectedTextField.isHidden = !isSelected
   }
 
   private let store: Store
   private let backgroundImageView = NSImageView()
   private let textField = NSTextField(labelWithString: "")
+  private let selectedTextField = NSTextField(labelWithString: "")
   private var trackingArea: NSTrackingArea?
   private var isMouseInside = false
 
   private func renderBackgroundImage() {
-    let color = isSelected ? NSColor.textColor : NSColor.textBackgroundColor
+    let color = store.appearance
+      .backgroundColor(for: isSelected ? .tabLineSel : .tabLine)
+      .appKit
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
-      fill: .gradient(from: color.withAlphaComponent(0.7), to: color)
+      fill: .color(color)
     )
+  }
+
+  private func makeFont(for highlightName: Appearance.ObservedHighlightName) -> NSFont {
+    let size = (NSFont.systemFontSize + NSFont.systemFontSize(for: .small)) / 2
+    var font = NSFont.systemFont(
+      ofSize: size,
+      weight: store.appearance.isBold(for: highlightName) ? .medium : .regular
+    )
+    if store.appearance.isItalic(for: highlightName) {
+      font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
+    }
+    return font
   }
 
   @objc private func handleClick(_: NSClickGestureRecognizer) {
