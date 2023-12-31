@@ -34,6 +34,7 @@ public class MainViewController: NSViewController {
 
   override public func loadView() {
     let view = NSView()
+    view.wantsLayer = true
 
     tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
     view.addSubview(tablineView)

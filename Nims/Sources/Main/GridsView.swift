@@ -7,6 +7,7 @@ public class GridsView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
+    wantsLayer = true
   }
 
   @available(*, unavailable)
@@ -19,6 +20,10 @@ public class GridsView: NSView {
       return .init()
     }
     return outerGrid.size * store.font.cellSize
+  }
+
+  override public var isOpaque: Bool {
+    true
   }
 
   override public func updateTrackingAreas() {

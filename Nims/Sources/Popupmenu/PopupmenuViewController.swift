@@ -148,13 +148,13 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     let gridsView = getGridsView()
     let viewFrame = gridsView.convert(view.frame, from: nil)
     let size = IntegerSize(
-      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.down)),
-      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.down))
+      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.up)),
+      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.up))
     )
     let rectangle = IntegerRectangle(
       origin: .init(
-        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.up)),
-        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.up)) - size.rowsCount
+        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.down)),
+        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.down)) - size.rowsCount
       ),
       size: size
     )

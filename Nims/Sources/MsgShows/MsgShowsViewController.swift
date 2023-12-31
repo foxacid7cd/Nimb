@@ -95,6 +95,7 @@ public class MsgShowsViewController: NSViewController {
         separatorView.wantsLayer = true
         separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
           .appKit
+          .withAlphaComponent(0.3)
           .cgColor
         contentView.addArrangedSubview(separatorView)
         separatorView.height(1)

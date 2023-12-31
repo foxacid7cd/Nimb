@@ -9,6 +9,7 @@ public class GridView: NSView {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
+    wantsLayer = true
   }
 
   @available(*, unavailable)

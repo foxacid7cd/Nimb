@@ -94,6 +94,10 @@ final class TablineView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override public var isOpaque: Bool {
+    true
+  }
+
   override var intrinsicContentSize: NSSize {
     .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
   }
