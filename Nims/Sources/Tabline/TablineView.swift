@@ -107,7 +107,12 @@ final class TablineView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
-    window!.performDrag(with: event)
+    let location = convert(event.locationInWindow, from: nil)
+    if buffersScrollView.frame.contains(location) || tabsScrollView.frame.contains(location) {
+      super.mouseDown(with: event)
+    } else {
+      window!.performDrag(with: event)
+    }
   }
 
   func render(_ stateUpdates: State.Updates) {

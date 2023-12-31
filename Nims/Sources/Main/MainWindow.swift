@@ -19,6 +19,7 @@ public class MainWindow: NSWindow {
     contentViewController = viewController
     titlebarAppearsTransparent = true
     title = ""
+    isMovable = false
     renderBackgroundColor()
     renderIsMouseUserInteractionEnabled()
   }

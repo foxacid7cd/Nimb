@@ -94,9 +94,20 @@ final class TablineItemView: NSView {
   private var isMouseInside = false
 
   private func renderBackgroundImage() {
-    let color = store.appearance
-      .backgroundColor(for: isSelected ? .tabLineSel : .tabLine)
-      .appKit
+    let color = if isSelected {
+      store.appearance
+        .backgroundColor(for: .tabLineSel)
+        .appKit
+    } else if isMouseInside {
+      store.appearance
+        .backgroundColor(for: .tabLineSel)
+        .appKit
+        .withAlphaComponent(0.3)
+    } else {
+      store.appearance
+        .backgroundColor(for: .tabLine)
+        .appKit
+    }
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
@@ -105,9 +116,8 @@ final class TablineItemView: NSView {
   }
 
   private func makeFont(for highlightName: Appearance.ObservedHighlightName) -> NSFont {
-    let size = (NSFont.systemFontSize + NSFont.systemFontSize(for: .small)) / 2
     var font = NSFont.systemFont(
-      ofSize: size,
+      ofSize: NSFont.systemFontSize,
       weight: store.appearance.isBold(for: highlightName) ? .medium : .regular
     )
     if store.appearance.isItalic(for: highlightName) {
