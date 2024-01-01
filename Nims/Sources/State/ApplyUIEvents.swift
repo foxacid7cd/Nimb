@@ -921,13 +921,13 @@ public extension Actions {
 
           container.state.appearance.highlights[hlAttrDefine.id] = highlight
 
-          if let infoItem = hlAttrDefine.info.last {
-            if let name = Appearance.ObservedHighlightName(rawValue: infoItem.name) {
-              container.state.appearance.observedHighlights[name] = (infoItem.id, infoItem.kind)
-              updates.updatedObservedHighlightNames.insert(name)
-            }
-          } else {
-            assertionFailure(Failure("empty hlAttrDefine info array", hlAttrDefine))
+          if 
+            let infoItem = hlAttrDefine.info.last,
+            let rawName = infoItem.name,
+            let name = Appearance.ObservedHighlightName(rawValue: rawName)
+          {
+            container.state.appearance.observedHighlights[name] = (infoItem.id, infoItem.kind)
+            updates.updatedObservedHighlightNames.insert(name)
           }
         }
       }

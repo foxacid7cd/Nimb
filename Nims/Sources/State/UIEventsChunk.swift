@@ -29,17 +29,20 @@ public enum UIEventsChunk: Sendable {
       guard 
         case let .dictionary(raw) = raw,
         case let .string(kind) = raw["kind"],
-        case let .string(name) = raw["hi_name"],
         case let .integer(id) = raw["id"]
       else {
         throw Failure("invalid raw HlAttrDefineInfoItem value", raw)
       }
-
+      let name: String? = if case let .string(value) = raw["hi_name"] {
+        value
+      } else {
+        nil
+      }
       self.init(kind: kind, name: name, id: id)
     }
 
     public var kind: String
-    public var name: String
+    public var name: String?
     public var id: Int
   }
 
