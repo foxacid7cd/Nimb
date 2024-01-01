@@ -5,9 +5,8 @@ import CasePaths
 import Library
 
 public final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
-  public init(store: Store, getGridsView: @escaping () -> GridsView, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
+  public init(store: Store, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
-    self.getGridsView = getGridsView
     self.getGridView = getGridView
     self.getCmdlinesView = getCmdlinesView
     super.init(nibName: nil, bundle: nil)
@@ -20,11 +19,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
 
   public var anchorConstraints = [NSLayoutConstraint]()
 
-  override public func viewDidLayout() {
-    super.viewDidLayout()
-
-    reportPumBounds()
-  }
+  public var didShowPopupmenu: (() -> Void)?
 
   public func render(_ stateUpdates: State.Updates) {
     (view as! FloatingWindowView).render(stateUpdates)
@@ -69,7 +64,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
           return
         }
         if !hide, isCompleted {
-          reportPumBounds()
+          didShowPopupmenu?()
         }
       }
       if !hide, isSuccess {
@@ -135,33 +130,10 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
   }
 
   private let store: Store
-  private let getGridsView: () -> GridsView
   private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
-
-  private func reportPumBounds() {
-    guard let outerGrid = store.state.outerGrid else {
-      return
-    }
-    let gridsView = getGridsView()
-    let viewFrame = gridsView.convert(view.frame, from: nil)
-    let size = IntegerSize(
-      columnsCount: Int((viewFrame.size.width / store.font.cellWidth).rounded(.up)),
-      rowsCount: Int((viewFrame.size.height / store.font.cellHeight).rounded(.up))
-    )
-    let rectangle = IntegerRectangle(
-      origin: .init(
-        column: Int((viewFrame.origin.x / store.font.cellWidth).rounded(.down)),
-        row: outerGrid.rowsCount - Int((viewFrame.origin.y / store.font.cellHeight).rounded(.down)) - size.rowsCount
-      ),
-      size: size
-    )
-    Task {
-      await store.reportPumBounds(rectangle: rectangle)
-    }
-  }
 }
 
 private class TableView: NSTableView {

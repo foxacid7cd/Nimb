@@ -12,7 +12,6 @@ public class MainViewController: NSViewController {
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,
-      getGridsView: { [gridsView] in gridsView },
       getGridView: { [gridsView] gridID in
         gridsView.gridView(forGridWithID: gridID)
       },
@@ -70,6 +69,12 @@ public class MainViewController: NSViewController {
     cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
     addChild(cmdlinesViewController)
 
+    popupmenuViewController.didShowPopupmenu = { [weak self] in
+      guard let self else {
+        return
+      }
+      reportPopupmenuPumBounds()
+    }
     view.addSubview(popupmenuViewController.view)
     popupmenuViewController.anchorConstraints = [
       popupmenuViewController.view.centerXToSuperview(),
@@ -153,6 +158,31 @@ public class MainViewController: NSViewController {
       if let preMaximizeWindowFrame, window.frame != preMaximizeWindowFrame {
         window.setFrame(preMaximizeWindowFrame, display: true, animate: false)
       }
+    }
+  }
+
+  private func reportPopupmenuPumBounds() {
+    guard let outerGrid = store.state.outerGrid else {
+      return
+    }
+
+    var popupmenuFrame = popupmenuViewController.view.frame
+    popupmenuFrame = view.convert(popupmenuFrame, to: gridsContainerView)
+    popupmenuFrame = gridsContainerView.convert(popupmenuFrame, to: gridsView)
+
+    let size = IntegerSize(
+      columnsCount: Int(ceil(popupmenuFrame.size.width / store.font.cellWidth)),
+      rowsCount: Int(ceil(popupmenuFrame.size.height / store.font.cellHeight))
+    )
+    let rectangle = IntegerRectangle(
+      origin: .init(
+        column: Int(popupmenuFrame.origin.x / store.font.cellWidth),
+        row: outerGrid.rowsCount - Int(popupmenuFrame.origin.y / store.font.cellHeight) - size.rowsCount
+      ),
+      size: size
+    )
+    Task {
+      await store.reportPumBounds(rectangle: rectangle)
     }
   }
 }
