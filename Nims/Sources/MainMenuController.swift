@@ -74,12 +74,14 @@ final class MainMenuController: NSObject {
       defer { actionTask = nil }
 
       let panel = NSOpenPanel()
-      panel.showsHiddenFiles = true
       panel.canChooseDirectories = true
+      panel.showsHiddenFiles = true
 
-      if panel.runModal() == .OK, let url = panel.url {
-        await store.edit(url: url)
+      let response = await panel.begin()
+      guard !Task.isCancelled, response == .OK, let url = panel.url else {
+        return
       }
+      await store.edit(url: url)
     }
   }
 
@@ -121,16 +123,22 @@ final class MainMenuController: NSObject {
         return
       }
 
-      let url = URL(filePath: name)
-
       let panel = NSSavePanel()
       panel.showsHiddenFiles = true
-      panel.directoryURL = url.deletingLastPathComponent()
-      panel.nameFieldStringValue = url.lastPathComponent
-
-      if panel.runModal() == .OK, let url = panel.url {
-        await store.saveAs(url: url)
+      if name.isEmpty {
+        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+        panel.nameFieldStringValue = "Untitled"
+      } else {
+        let url = URL(filePath: name)
+        panel.directoryURL = url.deletingLastPathComponent()
+        panel.nameFieldStringValue = url.lastPathComponent
       }
+
+      let response = await panel.begin()
+      guard !Task.isCancelled, response == .OK, let url = panel.url else {
+        return
+      }
+      await store.saveAs(url: url)
     }
   }
 
@@ -159,13 +167,10 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleFont() {
-    let selectedFont = store.state.font.appKit()
-
     let fontManager = NSFontManager.shared
     fontManager.target = self
+    fontManager.setSelectedFont(store.state.font.appKit(), isMultiple: false)
     fontManager.fontPanel(true)!.makeKeyAndOrderFront(nil)
-
-    fontManager.setSelectedFont(selectedFont, isMultiple: false)
   }
 
   @objc private func handleIncreaseFontSize() {
