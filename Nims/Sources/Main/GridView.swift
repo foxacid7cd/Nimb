@@ -17,6 +17,13 @@ public class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  public var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
+  public var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
+
+  override public var intrinsicContentSize: NSSize {
+    grid.size * store.font.cellSize
+  }
+
   public var zIndex: Double {
     grid.zIndex
   }
@@ -26,10 +33,6 @@ public class GridView: NSView {
   }
 
   public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
-    if stateUpdates.isFontUpdated || stateUpdates.updatedLayoutGridIDs.contains(gridID) {
-      renderUpsideDownTransform()
-    }
-
     var viewNeedsDisplay = false
     dirtyRectangles.removeAll(keepingCapacity: true)
 
@@ -78,6 +81,7 @@ public class GridView: NSView {
       let rect = rectsPointer
         .advanced(by: i)
         .pointee
+        .intersection(bounds)
 
       let upsideDownRect = rect
         .applying(upsideDownTransform)
@@ -254,10 +258,14 @@ public class GridView: NSView {
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
   private var dirtyRectangles = [IntegerRectangle]()
-  private var upsideDownTransform = CGAffineTransform.identity
 
   private var grid: Grid {
     store.state.grids[gridID]!
+  }
+
+  private var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
   }
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
@@ -274,10 +282,5 @@ public class GridView: NSView {
       )
     }
     store.scheduleHideMsgShowsIfPossible()
-  }
-
-  private func renderUpsideDownTransform() {
-    upsideDownTransform = .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
   }
 }
