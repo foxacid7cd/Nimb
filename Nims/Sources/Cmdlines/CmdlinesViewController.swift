@@ -37,7 +37,10 @@ public class CmdlinesViewController: NSViewController {
             let separatorView = NSView()
             separatorView.alphaValue = 0.2
             separatorView.wantsLayer = true
-            separatorView.layer!.backgroundColor = NSColor.textColor.cgColor
+            separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+              .appKit
+              .withAlphaComponent(0.3)
+              .cgColor
             contentView.addArrangedSubview(separatorView)
             separatorView.height(1)
             separatorView.width(to: contentView)

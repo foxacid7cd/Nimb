@@ -9,7 +9,7 @@ public class GridView: NSView {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
-    wantsLayer = true
+    clipsToBounds = true
   }
 
   @available(*, unavailable)
@@ -81,7 +81,6 @@ public class GridView: NSView {
       let rect = rectsPointer
         .advanced(by: i)
         .pointee
-        .intersection(bounds)
 
       let upsideDownRect = rect
         .applying(upsideDownTransform)

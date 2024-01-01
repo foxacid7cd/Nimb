@@ -20,6 +20,7 @@ public class MainWindow: NSWindow {
     titlebarAppearsTransparent = true
     title = ""
     isMovable = false
+    isOpaque = true
     renderBackgroundColor()
     renderIsMouseUserInteractionEnabled()
   }

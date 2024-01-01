@@ -7,7 +7,7 @@ public class GridsView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
-    wantsLayer = true
+    clipsToBounds = true
   }
 
   @available(*, unavailable)
