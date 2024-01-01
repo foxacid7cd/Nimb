@@ -17,7 +17,7 @@ public class GridsView: NSView {
 
   override public var intrinsicContentSize: NSSize {
     guard let outerGrid = store.state.outerGrid else {
-      return .init()
+      return .zero
     }
     return outerGrid.size * store.font.cellSize
   }

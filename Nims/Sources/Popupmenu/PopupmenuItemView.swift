@@ -1,30 +1,31 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import TinyConstraints
 
 public class PopupmenuItemView: NSView {
   public init(store: Store) {
     self.store = store
     super.init(frame: .zero)
 
+    clipsToBounds = true
+    wantsLayer = true
+    layer!.cornerRadius = 5
+
     textField.translatesAutoresizingMaskIntoConstraints = false
     textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
     textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     addSubview(textField)
+    textField.leading(to: self, offset: 5)
+    textField.centerYToSuperview()
 
     secondTextField.translatesAutoresizingMaskIntoConstraints = false
     secondTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     secondTextField.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     addSubview(secondTextField)
-
-    addConstraints([
-      textField.leadingAnchor.constraint(equalTo: leadingAnchor),
-      textField.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-      secondTextField.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: 4),
-      secondTextField.trailingAnchor.constraint(equalTo: trailingAnchor),
-      secondTextField.centerYAnchor.constraint(equalTo: centerYAnchor),
-    ])
+    secondTextField.leadingToTrailing(of: textField, offset: 5)
+    secondTextField.centerYToSuperview()
+    secondTextField.trailing(to: self, offset: -5)
   }
 
   @available(*, unavailable)
@@ -32,34 +33,22 @@ public class PopupmenuItemView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public static let ReuseIdentifier = NSUserInterfaceItemIdentifier(.init(describing: PopupmenuItemView.self))
+  public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
+    String(describing: PopupmenuItemView.self)
+  )
 
-  override public func draw(_ dirtyRect: NSRect) {
-    let graphicsContext = NSGraphicsContext.current!
-    let cgContext = graphicsContext.cgContext
+  public var item: PopupmenuItem?
+  public var isSelected = false
 
-    dirtyRect.clip()
+  public func render() {
+    guard let item else {
+      return
+    }
 
-    store.appearance.backgroundColor(for: isSelected ? .pmenuSel : .pmenu)
+    layer!.backgroundColor = store.appearance
+      .backgroundColor(for: isSelected ? .pmenuSel : .pmenu)
       .appKit
-      .setFill()
-    dirtyRect.fill()
-
-    let roundedRectPath = CGPath(
-      roundedRect: bounds.insetBy(dx: -8, dy: 0),
-      cornerWidth: 5,
-      cornerHeight: 5,
-      transform: nil
-    )
-    cgContext.addPath(roundedRectPath)
-    cgContext.drawPath(using: .fill)
-
-    super.draw(dirtyRect)
-  }
-
-  public func set(item: PopupmenuItem, isSelected: Bool) {
-    self.isSelected = isSelected
-    needsDisplay = true
+      .cgColor
 
     let observedHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
     textField.attributedStringValue = .init(string: item.word, attributes: [
@@ -111,7 +100,6 @@ public class PopupmenuItemView: NSView {
             isItalic: store.appearance.isItalic(for: observedHighlightName)
           ),
           .foregroundColor: store.appearance.foregroundColor(for: observedHighlightName).appKit,
-          .backgroundColor: store.appearance.backgroundColor(for: observedHighlightName).appKit,
         ]
       ))
     }
@@ -126,5 +114,4 @@ public class PopupmenuItemView: NSView {
   private let store: Store
   private let textField = NSTextField(labelWithString: "")
   private let secondTextField = NSTextField(labelWithString: "")
-  private var isSelected = false
 }

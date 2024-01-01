@@ -414,7 +414,7 @@ private class CmdlineTextView: NSView {
         let cursorForegroundColor: NimsColor
         let cursorBackgroundColor: NimsColor
 
-        if highlightID == Highlight.DefaultID, let cursorParentHighlightID {
+        if highlightID == Highlight.defaultID, let cursorParentHighlightID {
           cursorForegroundColor = store.appearance.backgroundColor(for: cursorParentHighlightID)
           cursorBackgroundColor = NimsColor(rgb: 0xF0F0F0) // store.appearance.foregroundColor(for: cursorParentHighlightID)
 

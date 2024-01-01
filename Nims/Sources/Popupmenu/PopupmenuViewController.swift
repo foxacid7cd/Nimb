@@ -4,7 +4,7 @@ import AppKit
 import CasePaths
 import Library
 
-public final class PopupmenuViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
+public class PopupmenuViewController: NSViewController {
   public init(store: Store, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
     self.getGridView = getGridView
@@ -83,7 +83,7 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     view.height(176)
 
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 5, left: 5, bottom: 5, right: 5)
+    scrollView.contentInsets = .init(top: 8, left: 0, bottom: 8, right: 0)
     scrollView.drawsBackground = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
@@ -93,31 +93,38 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     tableView.dataSource = self
     tableView.backgroundColor = .clear
     tableView.addTableColumn(
-      .init(identifier: PopupmenuItemView.ReuseIdentifier)
+      .init(identifier: PopupmenuItemView.reuseIdentifier)
     )
     tableView.rowHeight = 20
-    tableView.style = .plain
+    tableView.style = .fullWidth
     tableView.selectionHighlightStyle = .none
     scrollView.documentView = tableView
 
     self.view = view
   }
 
+  private let store: Store
+  private let getGridView: (Grid.ID) -> GridView
+  private let getCmdlinesView: () -> NSView
+  private lazy var scrollView = NSScrollView()
+  private lazy var tableView = TableView()
+}
+
+extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   public func numberOfRows(in tableView: NSTableView) -> Int {
     store.state.popupmenu?.items.count ?? 0
   }
 
   public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    var itemView = tableView.makeView(withIdentifier: PopupmenuItemView.ReuseIdentifier, owner: self) as? PopupmenuItemView
+    var itemView = tableView.makeView(withIdentifier: PopupmenuItemView.reuseIdentifier, owner: self) as? PopupmenuItemView
     if itemView == nil {
       itemView = .init(store: store)
-      itemView!.identifier = PopupmenuItemView.ReuseIdentifier
+      itemView!.identifier = PopupmenuItemView.reuseIdentifier
     }
     if let popupmenu = store.state.popupmenu, row < popupmenu.items.count {
-      itemView!.set(
-        item: popupmenu.items[row],
-        isSelected: popupmenu.selectedItemIndex == row
-      )
+      itemView!.item = popupmenu.items[row]
+      itemView!.isSelected = popupmenu.selectedItemIndex == row
+      itemView!.render()
     }
     return itemView
   }
@@ -128,12 +135,6 @@ public final class PopupmenuViewController: NSViewController, NSTableViewDataSou
     }
     return false
   }
-
-  private let store: Store
-  private let getGridView: (Grid.ID) -> GridView
-  private let getCmdlinesView: () -> NSView
-  private lazy var scrollView = NSScrollView()
-  private lazy var tableView = TableView()
 }
 
 private class TableView: NSTableView {

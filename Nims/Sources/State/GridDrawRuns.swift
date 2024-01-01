@@ -461,7 +461,7 @@ public struct CursorDrawRun: Sendable {
       columnsCount: columnsCount,
       style: style,
       cellFrame: cellFrame,
-      highlightID: style.attrID ?? Highlight.DefaultID,
+      highlightID: style.attrID ?? Highlight.defaultID,
       parentOrigin: parentOrigin,
       parentDrawRun: parentDrawRun,
       shouldDrawParentText: style.shouldDrawParentText
@@ -507,7 +507,7 @@ public struct CursorDrawRun: Sendable {
     let cursorForegroundColor: NimsColor
     let cursorBackgroundColor: NimsColor
 
-    if highlightID == Highlight.DefaultID {
+    if highlightID == Highlight.defaultID {
       cursorForegroundColor = appearance.backgroundColor(for: parentDrawRun.highlightID)
       cursorBackgroundColor = appearance.foregroundColor(for: parentDrawRun.highlightID)
 
