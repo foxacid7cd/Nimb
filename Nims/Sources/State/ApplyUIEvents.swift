@@ -106,10 +106,9 @@ public extension Actions {
         updates.isBusyUpdated = true
       }
 
-      func blockLine(fromRawLine rawLine: Value) -> [Cmdline.ContentPart] {
+      func blockLine(fromRawLine rawLine: Value) throws -> [Cmdline.ContentPart] {
         guard case let .array(rawLine) = rawLine else {
-          assertionFailure(rawLine)
-          return []
+          throw Failure("invalid cmdline raw line value", rawLine)
         }
 
         var contentParts = [Cmdline.ContentPart]()
@@ -121,8 +120,7 @@ public extension Actions {
             case let .integer(rawHighlightID) = rawContentPart[0],
             case let .string(text) = rawContentPart[1]
           else {
-            assertionFailure(rawContentPart)
-            return []
+            throw Failure("invalid cmdline raw content part value", rawContentPart)
           }
 
           contentParts.append(
@@ -382,8 +380,8 @@ public extension Actions {
             updatedLayout(forGridWithID: gridID)
 
           case let .tablineUpdate(currentTabpageID, rawTabpages, currentBufferID, rawBuffers):
-            let tabpages = rawTabpages
-              .compactMap { rawTabpage -> Tabpage? in
+            let tabpages = try rawTabpages
+              .map { rawTabpage -> Tabpage in
                 guard
                   case let .dictionary(rawTabpage) = rawTabpage,
                   let rawID = rawTabpage["tab"]
@@ -391,8 +389,7 @@ public extension Actions {
                   let name = rawTabpage["name"]
                     .flatMap({ $0[case: \.string] })
                 else {
-                  assertionFailure("Invalid tabline raw value")
-                  return nil
+                  throw Failure("invalid tabline raw value", rawTabpage)
                 }
 
                 return .init(
@@ -412,8 +409,8 @@ public extension Actions {
               }
             }
 
-            let buffers = rawBuffers
-              .compactMap { rawBuffer -> Buffer? in
+            let buffers = try rawBuffers
+              .map { rawBuffer -> Buffer in
                 guard
                   case let .dictionary(rawBuffer) = rawBuffer,
                   let rawID = rawBuffer["buffer"]
@@ -421,8 +418,7 @@ public extension Actions {
                   let name = rawBuffer["name"]
                     .flatMap({ $0[case: \.string] })
                 else {
-                  assertionFailure(rawBuffer)
-                  return nil
+                  throw Failure("invalid raw buffer value", rawBuffer)
                 }
 
                 return .init(
@@ -456,17 +452,16 @@ public extension Actions {
           case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
             let oldCursor = container.state.cursor
 
-            let cmdline = Cmdline(
+            let cmdline = try Cmdline(
               contentParts: content
-                .compactMap { rawContentPart in
+                .map { rawContentPart in
                   guard
                     case let .array(rawContentPart) = rawContentPart,
                     rawContentPart.count == 2,
                     case let .integer(rawHighlightID) = rawContentPart[0],
                     case let .string(text) = rawContentPart[1]
                   else {
-                    assertionFailure(rawContentPart)
-                    return nil
+                    throw Failure("invalid cmdline raw content part", rawContentPart)
                   }
 
                   return .init(
@@ -517,13 +512,13 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .cmdlineBlockShow(rawLines):
-            container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!] = rawLines
-              .map { blockLine(fromRawLine: $0) }
+            try container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!] = rawLines
+              .map(blockLine(fromRawLine:))
 
             cmdlinesUpdated()
 
           case let .cmdlineBlockAppend(rawLine):
-            container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!]!
+            try container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!]!
               .append(blockLine(fromRawLine: .array(rawLine)))
 
             cmdlinesUpdated()
@@ -611,90 +606,32 @@ public extension Actions {
 
         case let .gridLines(gridID, hlAttrDefines, gridLines):
           for hlAttrDefine in hlAttrDefines {
-            applyHlAttrDefine(hlAttrDefine)
+            try applyHlAttrDefine(hlAttrDefine)
           }
 
+          let grids = container.state.grids
+          let font = container.state.font
+          let appearance = container.state.appearance
+
           let results: [Grid.LineUpdatesResult] = if gridLines.count <= 15 {
-            applyLineUpdates(for: gridLines)
+            try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
           } else {
-            await withTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
+            try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
               let gridLines = Array(gridLines)
               let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 15)
-
-              let grids = container.state.grids
-              let font = container.state.font
-              let appearance = container.state.appearance
-
-              for gridLines in gridLines.chunks(ofCount: chunkSize) {
+              for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
                 taskGroup.addTask {
-                  var accumulator = [Grid.LineUpdatesResult]()
-
-                  for (row, rowGridLines) in gridLines {
-                    var lineUpdates = [(originColumn: Int, cells: [Cell])]()
-
-                    for gridLine in rowGridLines {
-                      var cells = [Cell]()
-                      var highlightID = 0
-
-                      for value in gridLine.data {
-                        guard
-                          case let .array(arrayValue) = value,
-                          !arrayValue.isEmpty,
-                          case let .string(text) = arrayValue[0]
-                        else {
-                          assertionFailure(value)
-                          continue
-                        }
-
-                        var repeatCount = 1
-
-                        if arrayValue.count > 1 {
-                          guard
-                            case let .integer(newHighlightID) = arrayValue[1]
-                          else {
-                            assertionFailure(arrayValue)
-                            continue
-                          }
-
-                          highlightID = newHighlightID
-
-                          if arrayValue.count > 2 {
-                            guard
-                              case let .integer(newRepeatCount) = arrayValue[2]
-                            else {
-                              assertionFailure(arrayValue)
-                              continue
-                            }
-
-                            repeatCount = newRepeatCount
-                          }
-                        }
-
-                        let cell = Cell(text: text, highlightID: highlightID)
-                        for _ in 0 ..< repeatCount {
-                          cells.append(cell)
-                        }
-                      }
-
-                      lineUpdates.append((gridLine.originColumn, cells))
-                    }
-
-                    accumulator.append(
-                      grids[gridID]!.applying(
-                        lineUpdates: lineUpdates,
-                        forRow: row,
-                        font: font,
-                        appearance: appearance
-                      )
-                    )
+                  var gridLines = IntKeyedDictionary<[UIEventsChunk.GridLine]>(minimumCapacity: gridLinesChunk.count)
+                  for (key, value) in gridLinesChunk {
+                    gridLines[key] = value
                   }
-
-                  return accumulator
+                  return try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
                 }
               }
 
               var accumulator = [Grid.LineUpdatesResult]()
-              for await results in taskGroup {
+              accumulator.reserveCapacity(gridLines.count)
+              for try await results in taskGroup {
                 accumulator += results
               }
 
@@ -733,7 +670,12 @@ public extension Actions {
             }
           }
 
-          func applyLineUpdates(for gridLines: IntKeyedDictionary<[UIEventsChunk.GridLine]>) -> [Grid.LineUpdatesResult] {
+          @Sendable func applyLineUpdates(
+            for gridLines: IntKeyedDictionary<[UIEventsChunk.GridLine]>,
+            grids: IntKeyedDictionary<Grid>,
+            font: Font,
+            appearance: Appearance
+          ) throws -> [Grid.LineUpdatesResult] {
             var accumulator = [Grid.LineUpdatesResult]()
 
             for (row, rowGridLines) in gridLines {
@@ -749,8 +691,7 @@ public extension Actions {
                     !arrayValue.isEmpty,
                     case let .string(text) = arrayValue[0]
                   else {
-                    assertionFailure(value)
-                    continue
+                    throw Failure("invalid grid line cell value", value)
                   }
 
                   var repeatCount = 1
@@ -759,8 +700,7 @@ public extension Actions {
                     guard
                       case let .integer(newHighlightID) = arrayValue[1]
                     else {
-                      assertionFailure(arrayValue)
-                      continue
+                      throw Failure("invalid grid line cell highlight value", arrayValue[1])
                     }
 
                     highlightID = newHighlightID
@@ -769,8 +709,7 @@ public extension Actions {
                       guard
                         case let .integer(newRepeatCount) = arrayValue[2]
                       else {
-                        assertionFailure(arrayValue)
-                        continue
+                        throw Failure("invalid grid line cell repeat count value", arrayValue[2])
                       }
 
                       repeatCount = newRepeatCount
@@ -787,11 +726,11 @@ public extension Actions {
               }
 
               accumulator.append(
-                container.state.grids[gridID]!.applying(
+                grids[gridID]!.applying(
                   lineUpdates: lineUpdates,
                   forRow: row,
-                  font: container.state.font,
-                  appearance: container.state.appearance
+                  font: font,
+                  appearance: appearance
                 )
               )
             }
@@ -800,7 +739,7 @@ public extension Actions {
           }
         }
 
-        func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) {
+        func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) throws {
           let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
             .flatMap { $0[case: \.boolean] } ?? false
 
@@ -884,7 +823,7 @@ public extension Actions {
               continue
 
             default:
-              assertionFailure(key)
+              throw Failure("unknown hl attr define rgb attr key", key)
             }
           }
 

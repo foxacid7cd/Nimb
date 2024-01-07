@@ -65,7 +65,7 @@
 		68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* Loggers.swift */; };
 		68FAC3F32AF685AB00490F09 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F22AF685AB00490F09 /* Action.swift */; };
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
-		68FAC3F72AF6932F00490F09 /* SimpleAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* SimpleAction.swift */; };
+		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
 /* End PBXBuildFile section */
 
@@ -165,7 +165,7 @@
 		68F0D4F22AECFDFC000954FF /* Loggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loggers.swift; sourceTree = "<group>"; };
 		68FAC3F22AF685AB00490F09 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyUIEvents.swift; sourceTree = "<group>"; };
-		68FAC3F62AF6932F00490F09 /* SimpleAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleAction.swift; sourceTree = "<group>"; };
+		68FAC3F62AF6932F00490F09 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
 		68FAD38B2AD102E20042A103 /* SlantedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlantedBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -338,7 +338,7 @@
 				681F402F2B40D6B30083A87B /* StateContainer.swift */,
 				68A8FF422AD29F650017C28D /* State.swift */,
 				68FAC3F22AF685AB00490F09 /* Action.swift */,
-				68FAC3F62AF6932F00490F09 /* SimpleAction.swift */,
+				68FAC3F62AF6932F00490F09 /* Actions.swift */,
 				68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */,
 				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
@@ -524,7 +524,7 @@
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */,
 				68A8FF5A2AD29F660017C28D /* Tabline.swift in Sources */,
-				68FAC3F72AF6932F00490F09 /* SimpleAction.swift in Sources */,
+				68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */,
 				68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */,
 				68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */,
 				68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */,
