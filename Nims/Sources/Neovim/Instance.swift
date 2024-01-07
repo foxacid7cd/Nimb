@@ -43,7 +43,7 @@ public final class Instance: Sendable {
           for try await uiEvents in api {
             try Task.checkCancellation()
 
-            bufferedUIEvents += uiEvents
+            bufferedUIEvents.append(contentsOf: uiEvents)
 
             if let last = uiEvents.last, case .flush = last {
               await uiEventsChannel.send(bufferedUIEvents)
@@ -63,7 +63,6 @@ public final class Instance: Sendable {
             .extPopupmenu,
             .extTabline,
           ]
-
           try await api.call(APIFunctions.NvimUIAttach(
             width: initialOuterGridSize.columnsCount,
             height: initialOuterGridSize.rowsCount,

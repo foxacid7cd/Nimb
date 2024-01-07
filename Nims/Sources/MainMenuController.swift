@@ -234,7 +234,9 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleToggleUIEventsLogging() {
-    store.toggleUIEventsLogging()
+    Task {
+      await store.toggleUIEventsLogging()
+    }
   }
 }
 

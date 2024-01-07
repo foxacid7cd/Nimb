@@ -194,17 +194,18 @@ public class GridView: NSView {
     }
 
     if let direction, count > 0 {
-      Task {
+      let point = point(for: event)
+      let modifier = event.modifierFlags.makeModifier(isSpecialKey: false)
+      Task { @StateActor [count] in
         await store.reportScrollWheel(
           with: direction,
-          modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
+          modifier: modifier,
           gridID: gridID,
-          point: point(for: event),
+          point: point,
           count: count
         )
+        store.scheduleHideMsgShowsIfPossible()
       }
-
-      store.scheduleHideMsgShowsIfPossible()
     }
   }
 
@@ -255,15 +256,17 @@ public class GridView: NSView {
     guard store.state.isMouseUserInteractionEnabled else {
       return
     }
-    Task {
+    let modifier = event.modifierFlags.makeModifier(isSpecialKey: false)
+    let point = point(for: event)
+    Task { @StateActor in
       await store.report(
         mouseButton: mouseButton,
         action: action,
-        modifier: event.modifierFlags.makeModifier(isSpecialKey: false),
+        modifier: modifier,
         gridID: gridID,
-        point: point(for: event)
+        point: point
       )
+      store.scheduleHideMsgShowsIfPossible()
     }
-    store.scheduleHideMsgShowsIfPossible()
   }
 }

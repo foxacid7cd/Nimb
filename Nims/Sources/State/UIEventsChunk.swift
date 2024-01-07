@@ -33,16 +33,17 @@ public enum UIEventsChunk: Sendable {
       else {
         throw Failure("invalid raw HlAttrDefineInfoItem value", raw)
       }
-      let name: String? = if case let .string(value) = raw["hi_name"] {
-        value
-      } else {
-        nil
-      }
-      self.init(kind: kind, name: name, id: id)
+      self.init(
+        kind: kind,
+        hiName: raw["hi_name"].flatMap(/Value.string),
+        uiName: raw["ui_name"].flatMap(/Value.string),
+        id: id
+      )
     }
 
     public var kind: String
-    public var name: String?
+    public var hiName: String?
+    public var uiName: String?
     public var id: Int
   }
 
