@@ -23,9 +23,9 @@ public struct Appearance: Sendable {
 
   public var highlights: IntKeyedDictionary<Highlight> = [:]
   public var observedHighlights: TreeDictionary<ObservedHighlightName, (id: Int, kind: String)> = [:]
-  public var defaultForegroundColor: NimsColor = .black
-  public var defaultBackgroundColor: NimsColor = .black
-  public var defaultSpecialColor: NimsColor = .black
+  public var defaultForegroundColor: Color = .black
+  public var defaultBackgroundColor: Color = .black
+  public var defaultSpecialColor: Color = .black
 
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
     guard let (id, _) = observedHighlights[name] else {
@@ -54,7 +54,7 @@ public struct Appearance: Sendable {
     return highlight.isBold
   }
 
-  public func foregroundColor(for name: ObservedHighlightName) -> NimsColor {
+  public func foregroundColor(for name: ObservedHighlightName) -> Color {
     guard 
       let (id, _) = observedHighlights[name],
       let highlight = highlights[id],
@@ -65,7 +65,7 @@ public struct Appearance: Sendable {
     return foregroundColor
   }
 
-  public func backgroundColor(for name: ObservedHighlightName) -> NimsColor {
+  public func backgroundColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
       let highlight = highlights[id],
@@ -76,7 +76,7 @@ public struct Appearance: Sendable {
     return backgroundColor
   }
 
-  public func specialColor(for name: ObservedHighlightName) -> NimsColor {
+  public func specialColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
       let highlight = highlights[id],
@@ -111,7 +111,7 @@ public struct Appearance: Sendable {
     return highlight.decorations
   }
 
-  public func foregroundColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func foregroundColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultForegroundColor
     }
@@ -121,7 +121,7 @@ public struct Appearance: Sendable {
       highlight.foregroundColor ?? defaultForegroundColor
   }
 
-  public func backgroundColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func backgroundColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultBackgroundColor
     }
@@ -134,7 +134,7 @@ public struct Appearance: Sendable {
     return color.with(alpha: alpha)
   }
 
-  public func specialColor(for highlightID: Highlight.ID) -> NimsColor {
+  public func specialColor(for highlightID: Highlight.ID) -> Color {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return defaultSpecialColor
     }

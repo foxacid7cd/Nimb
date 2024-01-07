@@ -44,7 +44,7 @@
 		68A8FF552AD29F660017C28D /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3F2AD29F650017C28D /* API.swift */; };
 		68A8FF572AD29F660017C28D /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF412AD29F650017C28D /* Grid.swift */; };
 		68A8FF582AD29F660017C28D /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF422AD29F650017C28D /* State.swift */; };
-		68A8FF592AD29F660017C28D /* NimsColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF432AD29F650017C28D /* NimsColor.swift */; };
+		68A8FF592AD29F660017C28D /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF432AD29F650017C28D /* Color.swift */; };
 		68A8FF5A2AD29F660017C28D /* Tabline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF442AD29F650017C28D /* Tabline.swift */; };
 		68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF452AD29F650017C28D /* UIOptions.swift */; };
 		68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF462AD29F650017C28D /* Cmdlines.swift */; };
@@ -142,7 +142,7 @@
 		68A8FF3F2AD29F650017C28D /* API.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
 		68A8FF412AD29F650017C28D /* Grid.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		68A8FF422AD29F650017C28D /* State.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
-		68A8FF432AD29F650017C28D /* NimsColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NimsColor.swift; sourceTree = "<group>"; };
+		68A8FF432AD29F650017C28D /* Color.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
 		68A8FF442AD29F650017C28D /* Tabline.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tabline.swift; sourceTree = "<group>"; };
 		68A8FF452AD29F650017C28D /* UIOptions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOptions.swift; sourceTree = "<group>"; };
 		68A8FF462AD29F650017C28D /* Cmdlines.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cmdlines.swift; sourceTree = "<group>"; };
@@ -206,7 +206,6 @@
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				6895C20C2AC42006006122D5 /* NSColorExtensions.swift */,
-				6861FA6129B462B8002C3C0B /* Font.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
@@ -344,7 +343,8 @@
 				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
 				68A8FF462AD29F650017C28D /* Cmdlines.swift */,
-				68A8FF432AD29F650017C28D /* NimsColor.swift */,
+				68A8FF432AD29F650017C28D /* Color.swift */,
+				6861FA6129B462B8002C3C0B /* Font.swift */,
 				68A8FF4C2AD29F660017C28D /* Cursor.swift */,
 				68A8FF412AD29F650017C28D /* Grid.swift */,
 				688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */,
@@ -514,7 +514,7 @@
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
-				68A8FF592AD29F660017C28D /* NimsColor.swift in Sources */,
+				68A8FF592AD29F660017C28D /* Color.swift in Sources */,
 				682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */,
 				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,

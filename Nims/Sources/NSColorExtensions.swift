@@ -9,7 +9,7 @@ extension NSColor {
       .partialValue
 
     var hue: CGFloat = 0
-    NimsColor(rgb: rgb)
+    Color(rgb: rgb)
       .appKit
       .getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
 

@@ -5,8 +5,8 @@ import Library
 import SwiftUI
 
 @PublicInit
-public struct NimsColor: Sendable, Hashable {
-  public static let black = NimsColor(rgb: 0)
+public struct Color: Sendable, Hashable {
+  public static let black = Color(rgb: 0)
 
   public var rgb: Int
   public var alpha: Double = 1
@@ -30,7 +30,7 @@ public struct NimsColor: Sendable, Hashable {
     )
   }
 
-  public func with(alpha: Double) -> NimsColor {
+  public func with(alpha: Double) -> Color {
     var copy = self
     copy.alpha = alpha
     return copy

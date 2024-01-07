@@ -496,8 +496,8 @@ public struct CursorDrawRun: Sendable {
     context.saveGState()
     defer { context.restoreGState() }
 
-    let cursorForegroundColor: NimsColor
-    let cursorBackgroundColor: NimsColor
+    let cursorForegroundColor: Color
+    let cursorBackgroundColor: Color
 
     if highlightID == Highlight.defaultID {
       cursorForegroundColor = appearance.backgroundColor(for: parentDrawRun.highlightID)
