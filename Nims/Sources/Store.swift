@@ -7,7 +7,7 @@ import Library
 
 @MainActor
 public class Store: Sendable {
-  public init(instance: Instance, debug: State.Debug, font: NimsFont) {
+  public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
     let state = State(debug: debug, font: font)
@@ -51,7 +51,7 @@ public class Store: Sendable {
 
   public private(set) var state: State
 
-  public var font: NimsFont {
+  public var font: Font {
     state.font
   }
 
@@ -60,7 +60,7 @@ public class Store: Sendable {
   }
 
   @StateActor
-  public func set(font: NimsFont) async {
+  public func set(font: Font) async {
     try? await dispatch(Actions.SetFont(value: font))
   }
 

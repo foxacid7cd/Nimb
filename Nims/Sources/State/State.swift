@@ -101,7 +101,7 @@ public struct State: Sendable {
   public var debug: Debug = .init()
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
-  public var font: NimsFont
+  public var font: Font
   public var appearance: Appearance = .init()
   public var modeInfo: ModeInfo? = nil
   public var mode: Mode? = nil

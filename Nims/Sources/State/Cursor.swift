@@ -91,7 +91,7 @@ public struct CursorStyle: Sendable {
     }
   }
 
-  public func cellFrame(columnsCount: Int, font: NimsFont) -> CGRect? {
+  public func cellFrame(columnsCount: Int, font: Font) -> CGRect? {
     guard let cursorShape else {
       return nil
     }

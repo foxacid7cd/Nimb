@@ -2,17 +2,16 @@
 
 import AppKit
 import Library
-import SwiftUI
 
-public struct NimsFont: Sendable, Hashable {
+public struct Font: Sendable, Hashable {
   @MainActor
   public init(_ appKit: NSFont) {
     wrapped = FontBridge.shared.wrap(appKit)
   }
 
   @MainActor
-  public init(id: Int = 0) {
-    wrapped = FontBridge.shared.wrapped(forID: id)
+  public init() {
+    wrapped = FontBridge.shared.defaultWrappedFont
   }
 
   public var id: Int {
@@ -31,7 +30,7 @@ public struct NimsFont: Sendable, Hashable {
     wrapped.cellHeight
   }
 
-  public static func == (lhs: NimsFont, rhs: NimsFont) -> Bool {
+  public static func == (lhs: Font, rhs: Font) -> Bool {
     lhs.id == rhs.id
   }
 
@@ -109,6 +108,10 @@ final class FontBridge {
 
   static let shared = FontBridge()
 
+  var defaultWrappedFont: WrappedFont {
+    array[0]
+  }
+
   func wrap(_ appKit: NSFont) -> WrappedFont {
     let key = Key(appKit)
     if let existing = indexes[key].map({ array[$0] }) {
@@ -118,10 +121,6 @@ final class FontBridge {
     array.append(wrapped)
     indexes[key] = wrapped.index
     return wrapped
-  }
-
-  func wrapped(forID id: Int) -> WrappedFont {
-    array[id]
   }
 
   private var array: [WrappedFont]

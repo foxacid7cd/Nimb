@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         debug = decoded
       }
     #endif
-    let font: NimsFont = if
+    let font: Font = if
       let name = UserDefaults.standard.value(forKey: "fontName") as? String,
       let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,
       let nsFont = NSFont(name: name, size: size)

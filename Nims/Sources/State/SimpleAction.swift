@@ -23,7 +23,7 @@ public enum Actions {
 
   @PublicInit
   public struct SetFont: Action {
-    public var value: NimsFont
+    public var value: Font
 
     public func apply(to container: StateContainer) async throws -> State.Updates {
       container.state.font = value

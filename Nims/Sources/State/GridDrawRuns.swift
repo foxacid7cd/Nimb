@@ -8,7 +8,7 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  public init(layout: GridLayout, font: NimsFont, appearance: Appearance) {
+  public init(layout: GridLayout, font: Font, appearance: Appearance) {
     rowDrawRuns = []
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
@@ -16,7 +16,7 @@ public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  public mutating func renderDrawRuns(for layout: GridLayout, font: NimsFont, appearance: Appearance) {
+  public mutating func renderDrawRuns(for layout: GridLayout, font: Font, appearance: Appearance) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
       .map { row, layout in
@@ -34,7 +34,7 @@ public struct GridDrawRuns: Sendable {
   public func draw(
     to context: CGContext,
     boundingRect: IntegerRectangle,
-    font: NimsFont,
+    font: Font,
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
@@ -52,7 +52,7 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  public init(row: Int, layout: RowLayout, font: NimsFont, appearance: Appearance, old: RowDrawRun?) {
+  public init(row: Int, layout: RowLayout, font: Font, appearance: Appearance, old: RowDrawRun?) {
     var drawRuns = [DrawRun]()
     var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
     var previousReusedOldDrawRunIndex: Int?
@@ -129,7 +129,7 @@ public struct RowDrawRun: Sendable {
   public func draw(
     at origin: CGPoint,
     to context: CGContext,
-    font: NimsFont,
+    font: Font,
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
@@ -156,7 +156,7 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public init(text: String, rowPartCells: [RowPart.Cell], columnsCount: Int, highlightID: Highlight.ID, font: NimsFont, appearance: Appearance) {
+  public init(text: String, rowPartCells: [RowPart.Cell], columnsCount: Int, highlightID: Highlight.ID, font: Font, appearance: Appearance) {
     let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
 
     let isBold = appearance.isBold(for: highlightID)
@@ -325,7 +325,7 @@ public struct DrawRun: Sendable {
   public func draw(
     to context: CGContext,
     at origin: CGPoint,
-    font: NimsFont,
+    font: Font,
     appearance: Appearance
   ) {
     context.saveGState()
@@ -414,7 +414,7 @@ public struct GlyphRun: @unchecked Sendable {
 
 @PublicInit
 public struct CursorDrawRun: Sendable {
-  public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], origin: IntegerPoint, columnsCount: Int, style: CursorStyle, font: NimsFont, appearance: Appearance) {
+  public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], origin: IntegerPoint, columnsCount: Int, style: CursorStyle, font: Font, appearance: Appearance) {
     var parentOrigin: IntegerPoint?
     var parentDrawRun: DrawRun?
     var cursorColumnsCount: Int?
@@ -492,7 +492,7 @@ public struct CursorDrawRun: Sendable {
   }
 
   @MainActor
-  public func draw(to context: CGContext, font: NimsFont, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
+  public func draw(to context: CGContext, font: Font, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
     context.saveGState()
     defer { context.restoreGState() }
 
