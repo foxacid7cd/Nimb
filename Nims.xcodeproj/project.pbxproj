@@ -27,7 +27,6 @@
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
 		6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 6895C20A2AC41DD3006122D5 /* TinyConstraints */; };
-		6895C20D2AC42006006122D5 /* NSColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6895C20C2AC42006006122D5 /* NSColorExtensions.swift */; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
 		689D9E2729B4FA7000345713 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2629B4FA7000345713 /* main.swift */; };
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
@@ -124,7 +123,6 @@
 		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
 		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		689081352B3F321000252558 /* FloatingWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowView.swift; sourceTree = "<group>"; };
-		6895C20C2AC42006006122D5 /* NSColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColorExtensions.swift; sourceTree = "<group>"; };
 		689870A82AF80D1B00C4F2FD /* NeovimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimError.swift; sourceTree = "<group>"; };
 		689D9E2629B4FA7000345713 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
@@ -205,7 +203,6 @@
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
-				6895C20C2AC42006006122D5 /* NSColorExtensions.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
@@ -534,7 +531,6 @@
 				68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */,
 				689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */,
 				6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */,
-				6895C20D2AC42006006122D5 /* NSColorExtensions.swift in Sources */,
 				68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
