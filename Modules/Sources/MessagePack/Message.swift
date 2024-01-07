@@ -9,11 +9,11 @@ public enum Message: Sendable, Hashable {
   case notification(Notification)
 
   init(value: Value) throws {
-    guard let arrayValue = (/Value.array).extract(from: value), !arrayValue.isEmpty else {
+    guard case let .array(arrayValue) = value, !arrayValue.isEmpty else {
       throw Failure("Invalid message raw value \(value)")
     }
 
-    let rawMessageType = (/Value.integer).extract(from: arrayValue[0])
+    let rawMessageType = arrayValue[0][case: \.integer]
     switch rawMessageType {
     case Request.rawMessageType:
       self = try .request(
@@ -40,10 +40,9 @@ public enum Message: Sendable, Hashable {
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 4,
-        let id = (/Value.integer)
-          .extract(from: arrayValue[1]),
-        let method = (/Value.string).extract(from: arrayValue[2]),
-        let parameters = (/Value.array).extract(from: arrayValue[3])
+        case let .integer(id) = arrayValue[1],
+        case let .string(method) = arrayValue[2],
+        case let .array(parameters) = arrayValue[3]
       else {
         throw Failure("Invalid request raw array value \(arrayValue)")
       }
@@ -78,7 +77,7 @@ public enum Message: Sendable, Hashable {
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 4,
-        let id = (/Value.integer).extract(from: arrayValue[1])
+        case let .integer(id) = arrayValue[1]
       else {
         throw Failure("Invalid response raw array value \(arrayValue)")
       }
@@ -106,19 +105,6 @@ public enum Message: Sendable, Hashable {
           throw failureBody(error)
         }
       }
-
-      public func map<Success>(_ casePath: AnyCasePath<Value, Success>) throws -> Success {
-        switch self {
-        case let .success(value):
-          guard let value = casePath.extract(from: value) else {
-            throw Failure("Unexpected type of value", value)
-          }
-          return value
-
-        case let .failure(error):
-          throw Failure("Neovim error", error)
-        }
-      }
     }
 
     public static var rawMessageType: Int {
@@ -134,8 +120,8 @@ public enum Message: Sendable, Hashable {
     init(arrayValue: [Value]) throws {
       guard
         arrayValue.count == 3,
-        let method = (/Value.string).extract(from: arrayValue[1]),
-        let parameters = (/Value.array).extract(from: arrayValue[2])
+        case let .string(method) = arrayValue[1],
+        case let .array(parameters) = arrayValue[2]
       else {
         throw Failure("Invalid notification raw array value \(arrayValue)")
       }

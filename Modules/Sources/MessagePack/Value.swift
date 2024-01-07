@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import Foundation
 import msgpack
 
+@CasePathable
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
 {

@@ -10,7 +10,7 @@ import SwiftSyntaxBuilder
 @PublicInit
 public struct Metadata: Sendable {
   public init?(_ value: Value) {
-    guard let dictionary = (/Value.dictionary).extract(from: value) else {
+    guard case let .dictionary(dictionary) = value else {
       return nil
     }
 
@@ -131,10 +131,9 @@ public struct Metadata: Sendable {
         custom = .init(
           signature: "\(type.name).ID",
           valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".data)"),
-          valueDecoder: (
-            "(/Value.ext).extract(from:",
-            ").flatMap(References.\(type.name).init(type:data:))"
-          )
+          valueDecoder: { expr, name in
+            "let \(name) = \(expr)[case: \\.ext].flatMap(References.\(type.name).init(type:data:))"
+          }
         )
       }
 

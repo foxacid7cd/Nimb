@@ -221,7 +221,7 @@ public final class Instance: Sendable {
     async let rawBuftype = api.nvimBufGetOption(bufferID: .current, name: "buftype")
     return try await (
       name: name,
-      buftype: (/Value.string).extract(from: rawBuftype) ?? ""
+      buftype: rawBuftype[case: \.string] ?? ""
     )
   }
 

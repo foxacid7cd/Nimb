@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
+
 public struct ValueType: Sendable {
   public struct Custom: Sendable {
     public var signature: String
     public var valueEncoder: (prefix: String, suffix: String)
-    public var valueDecoder: (prefix: String, suffix: String)
+    public var valueDecoder: @Sendable (_ expr: String, _ name: String) -> String
   }
 
+  @CasePathable
   public enum SwiftType {
     case integer
     case float
@@ -111,36 +114,34 @@ public struct ValueType: Sendable {
     }
   }
 
-  public func wrapWithValueDecoder(_ expr: String, force: Bool = false) -> String {
-    let forceUnwrapSuffix = force ? "!" : ""
-
+  public func wrapWithValueDecoder(_ expr: String, name: String) -> String {
     switch swift {
     case .integer:
-      return "(/Value.integer).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .integer(\(name)) = \(expr)"
 
     case .float:
-      return "(/Value.float).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .float(\(name)) = \(expr)"
 
     case .string:
-      return "(/Value.string).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .string(\(name)) = \(expr)"
 
     case .boolean:
-      return "(/Value.boolean).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .boolean(\(name)) = \(expr)"
 
     case .dictionary:
-      return "(/Value.dictionary).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .dictionary(\(name)) = \(expr)"
 
     case .array:
-      return "(/Value.array).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .array(\(name)) = \(expr)"
 
     case .binary:
-      return "(/Value.binary).extract(from: \(expr))\(forceUnwrapSuffix)"
+      "case let .binary(\(name)) = \(expr)"
 
     case let .custom(custom):
-      return custom.valueDecoder.prefix + expr + custom.valueDecoder.suffix + forceUnwrapSuffix
+      custom.valueDecoder(expr, name)
 
     case .value:
-      return expr
+      expr
     }
   }
 }

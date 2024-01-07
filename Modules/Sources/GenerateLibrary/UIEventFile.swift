@@ -52,7 +52,7 @@ public struct UIEventFile: GeneratableFile {
               try ForStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
                 StmtSyntax(
                   """
-                  guard let rawParameter = (/Value.array).extract(from: rawParameter) else {
+                  guard case let .array(rawParameter) = rawParameter else {
                     throw Failure(rawRedrawNotificationParameters)
                   }
                   """
@@ -60,7 +60,7 @@ public struct UIEventFile: GeneratableFile {
 
                 StmtSyntax(
                   """
-                  guard let uiEventName = rawParameter.first.flatMap(/Value.string) else {
+                  guard let uiEventName = rawParameter.first.flatMap({ $0[case: \\.string] }) else {
                     throw Failure(rawRedrawNotificationParameters)
                   }
                   """
@@ -75,7 +75,7 @@ public struct UIEventFile: GeneratableFile {
                         try ForStmtSyntax("for rawUIEvent in rawParameter.dropFirst()") {
                           StmtSyntax(
                             """
-                            guard let rawUIEventParameters = (/Value.array).extract(from: rawUIEvent) else {
+                            guard case let .array(rawUIEventParameters) = rawUIEvent else {
                               throw Failure(rawRedrawNotificationParameters)
                             }
                             """
@@ -92,8 +92,8 @@ public struct UIEventFile: GeneratableFile {
                           let parameterTypeConditions = otherParameters
                             .map { index, parameter -> String in
                               let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                              let initializer = parameter.type.wrapWithValueDecoder("rawUIEventParameters[\(index)]")
-                              return "let \(identifier) = \(initializer)"
+                              let initializer = parameter.type.wrapWithValueDecoder("rawUIEventParameters[\(index)]", name: identifier)
+                              return initializer
                             }
 
                           let guardConditions = [

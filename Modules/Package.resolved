@@ -6,7 +6,7 @@
       "location" : "https://github.com/apple/swift-algorithms",
       "state" : {
         "branch" : "main",
-        "revision" : "288d8b00f2d7d746dce8997124f4a7d902100af7"
+        "revision" : "c3b3acbca3aa70adbd30756fe137b14e25140c0d"
       }
     },
     {
@@ -15,7 +15,7 @@
       "location" : "https://github.com/apple/swift-argument-parser",
       "state" : {
         "branch" : "main",
-        "revision" : "c5050aa63ed5bb23209e7120b7ff6618ee06e0ee"
+        "revision" : "6c7ec363da47357aaf1f2f423d30117ff077f696"
       }
     },
     {
@@ -24,7 +24,7 @@
       "location" : "https://github.com/apple/swift-async-algorithms",
       "state" : {
         "branch" : "main",
-        "revision" : "ffa6ee9f0bec1ebe569bd8815e6a7d406e929e53"
+        "revision" : "da4e36f86544cdf733a40d59b3a2267e3a7bbf36"
       }
     },
     {
@@ -33,7 +33,7 @@
       "location" : "https://github.com/pointfreeco/swift-case-paths",
       "state" : {
         "branch" : "main",
-        "revision" : "06521836988c440ed8329bab4f5e5fba04ef5663"
+        "revision" : "45d8ed7e9f3e4d764ae4bfeaac6a4f32a5755386"
       }
     },
     {
@@ -42,7 +42,7 @@
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
         "branch" : "main",
-        "revision" : "53a8adc54374f620002a3b6401d39e0feb3c57ae"
+        "revision" : "cc1c037a734c5f3b0ca7d47505389ccd31381052"
       }
     },
     {
@@ -51,7 +51,7 @@
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
       "state" : {
         "branch" : "main",
-        "revision" : "adef407be35bdf71b16212e78a39e2affba94541"
+        "revision" : "aedcf6f4cd486ccef5b312ccac85d4b3f6e58605"
       }
     },
     {
@@ -60,7 +60,7 @@
       "location" : "https://github.com/pointfreeco/swift-identified-collections",
       "state" : {
         "branch" : "main",
-        "revision" : "609bde5ff7cf3dc5c101a7a2ed319774ccef110f"
+        "revision" : "658ee2769351a72d88e2418f05dab54b22dfd564"
       }
     },
     {
@@ -87,7 +87,7 @@
       "location" : "https://github.com/apple/swift-syntax",
       "state" : {
         "branch" : "main",
-        "revision" : "7cff2603808f6e9e6e3e4232001f042b565d7ccf"
+        "revision" : "44f69680412c7802a7512f4e34f143c210b4dee2"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "62041e6016a30f56952f5d7d3f12a3fd7029e1cd",
-        "version" : "0.8.3"
+        "revision" : "23cbf2294e350076ea4dbd7d5d047c1e76b03631",
+        "version" : "1.0.2"
       }
     }
   ],

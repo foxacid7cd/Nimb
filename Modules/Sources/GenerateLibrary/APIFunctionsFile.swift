@@ -57,17 +57,17 @@ public struct APIFunctionsFile: GeneratableFile {
                 )
               }
 
-              if (/ValueType.SwiftType.value).extract(from: function.returnType.swift) == nil {
+              if function.returnType.swift[case: \.value] == nil {
                 try FunctionDeclSyntax("public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)") {
                   StmtSyntax(
                     """
-                    guard let success = \(raw: function.returnType.wrapWithValueDecoder("raw")) else {
+                    guard \(raw: function.returnType.wrapWithValueDecoder("raw", name: "value")) else {
                       throw Failure("failed decoding success return value", raw)
                     }
                     """
                   )
                   StmtSyntax(
-                    "return success"
+                    "return value"
                   )
                 }
               }

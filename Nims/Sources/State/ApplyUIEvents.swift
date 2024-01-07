@@ -214,28 +214,28 @@ public extension Actions {
 
                   return CursorStyle(
                     name: rawCursorStyle["name"]
-                      .flatMap((/Value.string).extract(from:)),
+                      .flatMap { $0[case: \.string] },
                     shortName: rawCursorStyle["short_name"]
-                      .flatMap((/Value.string).extract(from:)),
+                      .flatMap { $0[case: \.string] },
                     mouseShape: rawCursorStyle["mouse_shape"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     blinkOn: rawCursorStyle["blinkon"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     blinkOff: rawCursorStyle["blinkoff"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     blinkWait: rawCursorStyle["blinkwait"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     cellPercentage: rawCursorStyle["cell_percentage"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     cursorShape: rawCursorStyle["cursor_shape"]
-                      .flatMap((/Value.string).extract(from:))
+                      .flatMap { $0[case: \.string] }
                       .flatMap(CursorShape.init(rawValue:)),
                     idLm: rawCursorStyle["id_lm"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     attrID: rawCursorStyle["attr_id"]
-                      .flatMap((/Value.integer).extract(from:)),
+                      .flatMap { $0[case: \.integer] },
                     attrIDLm: rawCursorStyle["attr_id_lm"]
-                      .flatMap((/Value.integer).extract(from:))
+                      .flatMap { $0[case: \.integer] }
                   )
                 }
             )
@@ -418,9 +418,9 @@ public extension Actions {
                 guard
                   case let .dictionary(rawTabpage) = rawTabpage,
                   let rawID = rawTabpage["tab"]
-                    .flatMap((/Value.ext).extract(from:)),
+                    .flatMap({ $0[case: \.ext] }),
                   let name = rawTabpage["name"]
-                    .flatMap((/Value.string).extract(from:))
+                    .flatMap({ $0[case: \.string] })
                 else {
                   assertionFailure("Invalid tabline raw value")
                   return nil
@@ -448,9 +448,9 @@ public extension Actions {
                 guard
                   case let .dictionary(rawBuffer) = rawBuffer,
                   let rawID = rawBuffer["buffer"]
-                    .flatMap((/Value.ext).extract(from:)),
+                    .flatMap({ $0[case: \.ext] }),
                   let name = rawBuffer["name"]
-                    .flatMap((/Value.string).extract(from:))
+                    .flatMap({ $0[case: \.string] })
                 else {
                   assertionFailure(rawBuffer)
                   return nil
@@ -669,9 +669,9 @@ public extension Actions {
 
                       for value in gridLine.data {
                         guard
-                          let arrayValue = (/Value.array).extract(from: value),
+                          case let .array(arrayValue) = value,
                           !arrayValue.isEmpty,
-                          let text = (/Value.string).extract(from: arrayValue[0])
+                          case let .string(text) = arrayValue[0]
                         else {
                           assertionFailure(value)
                           continue
@@ -681,7 +681,7 @@ public extension Actions {
 
                         if arrayValue.count > 1 {
                           guard
-                            let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                            case let .integer(newHighlightID) = arrayValue[1]
                           else {
                             assertionFailure(arrayValue)
                             continue
@@ -691,7 +691,7 @@ public extension Actions {
 
                           if arrayValue.count > 2 {
                             guard
-                              let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                              case let .integer(newRepeatCount) = arrayValue[2]
                             else {
                               assertionFailure(arrayValue)
                               continue
@@ -776,9 +776,9 @@ public extension Actions {
 
                 for value in gridLine.data {
                   guard
-                    let arrayValue = (/Value.array).extract(from: value),
+                    case let .array(arrayValue) = value,
                     !arrayValue.isEmpty,
-                    let text = (/Value.string).extract(from: arrayValue[0])
+                    case let .string(text) = arrayValue[0]
                   else {
                     assertionFailure(value)
                     continue
@@ -788,7 +788,7 @@ public extension Actions {
 
                   if arrayValue.count > 1 {
                     guard
-                      let newHighlightID = (/Value.integer).extract(from: arrayValue[1])
+                      case let .integer(newHighlightID) = arrayValue[1]
                     else {
                       assertionFailure(arrayValue)
                       continue
@@ -798,7 +798,7 @@ public extension Actions {
 
                     if arrayValue.count > 2 {
                       guard
-                        let newRepeatCount = (/Value.integer).extract(from: arrayValue[2])
+                        case let .integer(newRepeatCount) = arrayValue[2]
                       else {
                         assertionFailure(arrayValue)
                         continue
@@ -833,7 +833,7 @@ public extension Actions {
 
         func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) {
           let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
-            .flatMap((/Value.boolean).extract(from:)) ?? false
+            .flatMap { $0[case: \.boolean] } ?? false
 
           var highlight = (noCombine ? container.state.appearance.highlights[hlAttrDefine.id] : nil) ?? .init(id: hlAttrDefine.id)
 
