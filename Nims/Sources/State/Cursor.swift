@@ -2,6 +2,7 @@
 
 import Foundation
 import Library
+import MessagePack
 
 @PublicInit
 public struct Cursor: Sendable {
@@ -29,6 +30,38 @@ public enum CursorShape: String, Sendable {
 
 @PublicInit
 public struct CursorStyle: Sendable {
+  public init(raw: Value) throws {
+    guard case let .dictionary(raw) = raw else {
+      throw Failure("invalid raw cursor style", raw)
+    }
+
+    self.init(
+      name: raw["name"]
+        .flatMap { $0[case: \.string] },
+      shortName: raw["short_name"]
+        .flatMap { $0[case: \.string] },
+      mouseShape: raw["mouse_shape"]
+        .flatMap { $0[case: \.integer] },
+      blinkOn: raw["blinkon"]
+        .flatMap { $0[case: \.integer] },
+      blinkOff: raw["blinkoff"]
+        .flatMap { $0[case: \.integer] },
+      blinkWait: raw["blinkwait"]
+        .flatMap { $0[case: \.integer] },
+      cellPercentage: raw["cell_percentage"]
+        .flatMap { $0[case: \.integer] },
+      cursorShape: raw["cursor_shape"]
+        .flatMap { $0[case: \.string] }
+        .flatMap(CursorShape.init(rawValue:)),
+      idLm: raw["id_lm"]
+        .flatMap { $0[case: \.integer] },
+      attrID: raw["attr_id"]
+        .flatMap { $0[case: \.integer] },
+      attrIDLm: raw["attr_id_lm"]
+        .flatMap { $0[case: \.integer] }
+    )
+  }
+
   public var name: String?
   public var shortName: String?
   public var mouseShape: Int?

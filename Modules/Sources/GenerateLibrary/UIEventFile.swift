@@ -60,7 +60,7 @@ public struct UIEventFile: GeneratableFile {
 
                 StmtSyntax(
                   """
-                  guard let uiEventName = rawParameter.first.flatMap({ $0[case: \\.string] }) else {
+                  guard case let .string(uiEventName) = rawParameter.first else {
                     throw Failure(rawRedrawNotificationParameters)
                   }
                   """
@@ -85,8 +85,7 @@ public struct UIEventFile: GeneratableFile {
                           let (valueParameters, otherParameters) = uiEvent.parameters
                             .enumerated()
                             .partitioned(by: {
-                              (/ValueType.SwiftType.value)
-                                .extract(from: $0.element.type.swift) == nil
+                              $0.element.type.swift[case: \.value] == nil
                             })
 
                           let parameterTypeConditions = otherParameters

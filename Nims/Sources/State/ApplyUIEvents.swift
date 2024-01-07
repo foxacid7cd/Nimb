@@ -203,41 +203,10 @@ public extension Actions {
             titleUpdated()
 
           case let .modeInfoSet(enabled, cursorStyles):
-            container.state.modeInfo = ModeInfo(
+            container.state.modeInfo = try ModeInfo(
               enabled: enabled,
               cursorStyles: cursorStyles
-                .compactMap { rawCursorStyle -> CursorStyle? in
-                  guard case let .dictionary(rawCursorStyle) = rawCursorStyle else {
-                    assertionFailure(rawCursorStyle)
-                    return nil
-                  }
-
-                  return CursorStyle(
-                    name: rawCursorStyle["name"]
-                      .flatMap { $0[case: \.string] },
-                    shortName: rawCursorStyle["short_name"]
-                      .flatMap { $0[case: \.string] },
-                    mouseShape: rawCursorStyle["mouse_shape"]
-                      .flatMap { $0[case: \.integer] },
-                    blinkOn: rawCursorStyle["blinkon"]
-                      .flatMap { $0[case: \.integer] },
-                    blinkOff: rawCursorStyle["blinkoff"]
-                      .flatMap { $0[case: \.integer] },
-                    blinkWait: rawCursorStyle["blinkwait"]
-                      .flatMap { $0[case: \.integer] },
-                    cellPercentage: rawCursorStyle["cell_percentage"]
-                      .flatMap { $0[case: \.integer] },
-                    cursorShape: rawCursorStyle["cursor_shape"]
-                      .flatMap { $0[case: \.string] }
-                      .flatMap(CursorShape.init(rawValue:)),
-                    idLm: rawCursorStyle["id_lm"]
-                      .flatMap { $0[case: \.integer] },
-                    attrID: rawCursorStyle["attr_id"]
-                      .flatMap { $0[case: \.integer] },
-                    attrIDLm: rawCursorStyle["attr_id_lm"]
-                      .flatMap { $0[case: \.integer] }
-                  )
-                }
+                .map(CursorStyle.init(raw:))
             )
 
             cursorUpdated()

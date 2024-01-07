@@ -18,10 +18,10 @@ public struct Metadata: Sendable {
       rawTypes
         .compactMap { name, rawType in
           guard
-            let name = (/Value.string).extract(from: name),
-            let rawType = (/Value.dictionary).extract(from: rawType),
-            let rawID = rawType["id"].flatMap(/Value.integer),
-            let prefix = rawType["prefix"].flatMap(/Value.string)
+            case let .string(name) = name,
+            case let .dictionary(rawType) = rawType,
+            case let .integer(rawID) = rawType["id"],
+            case let .string(prefix) = rawType["prefix"]
           else {
             return nil
           }
@@ -36,7 +36,7 @@ public struct Metadata: Sendable {
 
     if let functionsValue = dictionary["functions"].flatMap(/Value.array) {
       functions = functionsValue.compactMap { functionValue -> Function? in
-        guard let dictionary = (/Value.dictionary).extract(from: functionValue) else {
+        guard case let .dictionary(dictionary) = functionValue else {
           return nil
         }
 
@@ -69,9 +69,9 @@ public struct Metadata: Sendable {
     if let rawUIEvents = dictionary["ui_events"].flatMap(/Value.array) {
       uiEvents = rawUIEvents.compactMap { rawUIEvent -> UIEvent? in
         guard
-          let rawUIEvent = (/Value.dictionary).extract(from: rawUIEvent),
-          let rawParameters = rawUIEvent["parameters"].flatMap(/Value.array),
-          let name = rawUIEvent["name"].flatMap(/Value.string)
+          case let .dictionary(rawUIEvent) = rawUIEvent,
+          case let .array(rawParameters) = rawUIEvent["parameters"],
+          case let .string(name) = rawUIEvent["name"]
         else {
           return nil
         }
@@ -88,7 +88,7 @@ public struct Metadata: Sendable {
 
     if let rawUIOptions = dictionary["ui_options"].flatMap(/Value.array) {
       uiOptions = rawUIOptions
-        .compactMap((/Value.string).extract(from:))
+        .compactMap { $0[case: \.string] }
 
     } else {
       uiOptions = []
@@ -117,9 +117,10 @@ public struct Metadata: Sendable {
   public struct Parameter: Sendable {
     public init?(_ value: Value, types: [Metadata.`Type`]) {
       guard
-        let arrayValue = (/Value.array).extract(from: value), arrayValue.count == 2,
-        let rawType = (/Value.string).extract(from: arrayValue[0]),
-        var name = (/Value.string).extract(from: arrayValue[1])
+        case let .array(arrayValue) = value,
+        arrayValue.count == 2,
+        case let .string(rawType) = arrayValue[0],
+        case var .string(name) = arrayValue[1]
       else {
         return nil
       }
@@ -132,7 +133,13 @@ public struct Metadata: Sendable {
           signature: "\(type.name).ID",
           valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".data)"),
           valueDecoder: { expr, name in
-            "let \(name) = \(expr)[case: \\.ext].flatMap(References.\(type.name).init(type:data:))"
+            let capitalizedName = name.capitalized
+            let rawTypeIdentifier = "raw\(capitalizedName)Type"
+            let rawDataIdentifier = "raw\(capitalizedName)Data"
+            return """
+              case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(expr),
+              let \(name) = References.\(type.name)(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
+            """
           }
         )
       }

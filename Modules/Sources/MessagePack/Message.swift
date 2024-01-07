@@ -12,26 +12,24 @@ public enum Message: Sendable, Hashable {
     guard case let .array(arrayValue) = value, !arrayValue.isEmpty else {
       throw Failure("Invalid message raw value \(value)")
     }
-
-    let rawMessageType = arrayValue[0][case: \.integer]
+    guard case let .integer(rawMessageType) = arrayValue[0] else {
+      throw Failure("Unknown raw message type value \(arrayValue[0])")
+    }
     switch rawMessageType {
     case Request.rawMessageType:
       self = try .request(
         Request(arrayValue: arrayValue)
       )
-
     case Response.rawMessageType:
       self = try .response(
         Response(arrayValue: arrayValue)
       )
-
     case Notification.rawMessageType:
       self = try .notification(
         Notification(arrayValue: arrayValue)
       )
-
     default:
-      throw Failure("Unknown raw message type \(arrayValue[0])")
+      throw Failure("Unknown raw message type value \(arrayValue[0])")
     }
   }
 
