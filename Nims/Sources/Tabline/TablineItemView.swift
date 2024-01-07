@@ -98,11 +98,6 @@ final class TablineItemView: NSView {
       store.appearance
         .backgroundColor(for: .tabLineSel)
         .appKit
-    } else if isMouseInside {
-      store.appearance
-        .backgroundColor(for: .tabLineSel)
-        .appKit
-        .withAlphaComponent(0.3)
     } else {
       store.appearance
         .backgroundColor(for: .tabLine)

@@ -47,14 +47,20 @@ public class PopupmenuViewController: NSViewController {
           ]
         }
       }
+    }
 
-      if stateUpdates.isPopupmenuUpdated || stateUpdates.isPopupmenuSelectionUpdated || stateUpdates.isAppearanceUpdated {
+    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated {
+      tableView.reloadData()
+      storePreviousSelectedItemIndex()
+      scrollToSelectedRow()
+    } else if stateUpdates.isPopupmenuSelectionUpdated {
+      scrollToSelectedRow()
+      if let previousSelectedItemIndex, let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
+        tableView.reloadData(forRowIndexes: [previousSelectedItemIndex, selectedItemIndex], columnIndexes: [0])
+      } else {
         tableView.reloadData()
-
-        if let selectedItemIndex = popupmenu.selectedItemIndex {
-          tableView.scrollRowToVisible(selectedItemIndex)
-        }
       }
+      storePreviousSelectedItemIndex()
     }
 
     if stateUpdates.isPopupmenuUpdated {
@@ -72,6 +78,18 @@ public class PopupmenuViewController: NSViewController {
           x: -scrollView.contentInsets.left,
           y: -scrollView.contentInsets.top
         ))
+      }
+    }
+
+    func storePreviousSelectedItemIndex() {
+      if let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
+        previousSelectedItemIndex = selectedItemIndex
+      }
+    }
+
+    func scrollToSelectedRow() {
+      if let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
+        tableView.scrollRowToVisible(selectedItemIndex)
       }
     }
   }
@@ -108,6 +126,7 @@ public class PopupmenuViewController: NSViewController {
   private let getCmdlinesView: () -> NSView
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
+  private var previousSelectedItemIndex: Int?
 }
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
