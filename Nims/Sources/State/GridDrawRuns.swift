@@ -340,7 +340,6 @@ public struct DrawRun: Sendable {
         height: font.cellHeight
       )
     )
-    rect.clip()
 
     appearance.backgroundColor(for: highlightID).appKit.setFill()
     context.fill([rect])
