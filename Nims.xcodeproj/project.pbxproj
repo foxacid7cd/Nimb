@@ -15,6 +15,7 @@
 		682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682BFD0B2AE8913400EDA77E /* GlobalActors.swift */; };
 		6835C8B72AFA997800A29E15 /* MainWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6835C8B62AFA997800A29E15 /* MainWindow.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
+		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
 		68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		68554B002AFAAD10006488CD /* MsgShowsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */; };
@@ -112,6 +113,7 @@
 		6835C8B62AFA997800A29E15 /* MainWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindow.swift; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		683D88BF293AD3C700FF2688 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
 		68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowTextView.swift; sourceTree = "<group>"; };
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsLayout.swift; sourceTree = "<group>"; };
@@ -204,6 +206,7 @@
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
+				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				68F0D4F22AECFDFC000954FF /* Loggers.swift */,
@@ -529,6 +532,7 @@
 				68FAC3F32AF685AB00490F09 /* Action.swift in Sources */,
 				6835C8B72AFA997800A29E15 /* MainWindow.swift in Sources */,
 				68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */,
+				684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */,
 				689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */,
 				6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */,
 				68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */,

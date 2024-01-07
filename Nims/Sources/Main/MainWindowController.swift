@@ -24,14 +24,7 @@ public class MainWindowController: NSWindowController {
     if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
       isWindowInitiallyShown = true
 
-      let contentSize: CGSize = if
-        let lastWindowWidth = UserDefaults.standard.value(forKey: "windowWidth") as? Double,
-        let lastWindowHeight = UserDefaults.standard.value(forKey: "windowHeight") as? Double
-      {
-        .init(width: lastWindowWidth, height: lastWindowHeight)
-      } else {
-        mainWindow.estimatedContentSize(outerGridSize: outerGrid.size)
-      }
+      let contentSize = UserDefaults.standard.lastWindowSize ?? mainWindow.estimatedContentSize(outerGridSize: outerGrid.size)
       mainWindow.setContentSize(contentSize)
       showWindow(nil)
     }
@@ -42,8 +35,7 @@ public class MainWindowController: NSWindowController {
   private var isWindowInitiallyShown = false
 
   private func saveWindowFrame() {
-    UserDefaults.standard.setValue(window!.frame.width, forKey: "windowWidth")
-    UserDefaults.standard.setValue(window!.frame.height, forKey: "windowHeight")
+    UserDefaults.standard.lastWindowSize = window!.frame.size
   }
 }
 

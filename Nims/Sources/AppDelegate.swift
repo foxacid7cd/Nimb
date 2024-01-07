@@ -26,38 +26,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var mainWindowController: MainWindowController?
 
   private func setupStore() async {
-    let initialOuterGridSize: IntegerSize = if
-      let rowsCount = UserDefaults.standard.value(forKey: "rowsCount") as? Int,
-      let columnsCount = UserDefaults.standard.value(forKey: "columnsCount") as? Int
-    {
-      .init(columnsCount: columnsCount, rowsCount: rowsCount)
-    } else {
-      .init(columnsCount: 110, rowsCount: 34)
-    }
     let instance = await Instance(
       neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
-      initialOuterGridSize: initialOuterGridSize
+      initialOuterGridSize: UserDefaults.standard.outerGridSize
     )
 
-    var debug = State.Debug()
-    #if DEBUG
-      if 
-        let data = UserDefaults.standard.data(forKey: "debug"),
-        let decoded = try? JSONDecoder().decode(State.Debug.self, from: data)
-      {
-        debug = decoded
-      }
-    #endif
     let font: Font = if
-      let name = UserDefaults.standard.value(forKey: "fontName") as? String,
-      let size = UserDefaults.standard.value(forKey: "fontSize") as? Double,
+      let name = UserDefaults.standard.fontName,
+      let size = UserDefaults.standard.fontSize,
       let nsFont = NSFont(name: name, size: size)
     {
       .init(nsFont)
     } else {
       .init()
     }
-    store = .init(instance: instance, debug: debug, font: font)
+    store = .init(instance: instance, debug: UserDefaults.standard.debug, font: font)
   }
 
   private func setupMainMenuController() {
@@ -83,23 +66,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           self?.mainWindowController?.render(stateUpdates)
 
           if stateUpdates.isOuterGridLayoutUpdated {
-            let outerGridSize = store!.state.outerGrid!.size
-            UserDefaults.standard.setValue(outerGridSize.rowsCount, forKey: "rowsCount")
-            UserDefaults.standard.setValue(outerGridSize.columnsCount, forKey: "columnsCount")
+            UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
           }
 
           if stateUpdates.isFontUpdated {
-            UserDefaults.standard.setValue(store!.state.font.appKit().pointSize, forKey: "fontSize")
+            UserDefaults.standard.fontSize = store!.state.font.appKit().pointSize
+            UserDefaults.standard.fontName = store!.state.font.appKit().fontName
           }
 
-          #if DEBUG
-            if 
-              stateUpdates.isDebugUpdated,
-              let encoded = try? JSONEncoder().encode(store!.state.debug)
-            {
-              UserDefaults.standard.setValue(encoded, forKey: "debug")
-            }
-          #endif
+          if stateUpdates.isDebugUpdated {
+            UserDefaults.standard.debug = store!.state.debug
+          }
         }
       } catch {
         let alert = NSAlert(error: error)

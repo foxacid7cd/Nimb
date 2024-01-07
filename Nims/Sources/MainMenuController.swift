@@ -245,13 +245,10 @@ extension MainMenuController: NSFontChanging {
     guard let sender else {
       return
     }
-
     let newFont = sender.convert(store.font.appKit())
     Task {
       await store.set(font: .init(newFont))
     }
-    UserDefaults.standard.setValue(newFont.fontName, forKey: "fontName")
-    UserDefaults.standard.setValue(newFont.pointSize, forKey: "fontSize")
   }
 }
 
