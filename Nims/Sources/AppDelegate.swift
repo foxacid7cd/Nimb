@@ -7,6 +7,10 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+  override nonisolated init() {
+    super.init()
+  }
+
   func applicationDidFinishLaunching(_: Notification) {
     Task {
       await setupStore()

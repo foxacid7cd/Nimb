@@ -133,7 +133,8 @@ public struct Metadata: Sendable {
           signature: "\(type.name).ID",
           valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".data)"),
           valueDecoder: { expr, name in
-            let capitalizedName = name.capitalized
+            var capitalizedName = name.first?.uppercased() ?? ""
+            capitalizedName += name.dropFirst()
             let rawTypeIdentifier = "raw\(capitalizedName)Type"
             let rawDataIdentifier = "raw\(capitalizedName)Data"
             return """

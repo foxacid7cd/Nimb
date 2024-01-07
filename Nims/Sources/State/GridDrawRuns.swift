@@ -205,12 +205,10 @@ public struct DrawRun: Sendable {
         }
 
         let attributes = CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
-        let appKitFont = attributes[.font] as? NSFont
+        let attributesFont = attributes[.font] as? NSFont
 
         return .init(
-          font: appKitFont.map(NimsFont.init) ?? font,
-          isBold: isBold,
-          isItalic: isItalic,
+          appKitFont: attributesFont ?? appKitFont,
           textMatrix: CTRunGetTextMatrix(ctRun),
           glyphs: glyphs,
           positions: positions,
@@ -406,18 +404,12 @@ public struct DrawRun: Sendable {
 }
 
 @PublicInit
-public struct GlyphRun: Sendable {
-  public var font: NimsFont
-  public var isBold: Bool
-  public var isItalic: Bool
+public struct GlyphRun: @unchecked Sendable {
+  public var appKitFont: NSFont
   public var textMatrix: CGAffineTransform
   public var glyphs: [CGGlyph]
   public var positions: [CGPoint]
   public var advances: [CGSize]
-
-  public var appKitFont: NSFont {
-    font.appKit(isBold: isBold, isItalic: isItalic)
-  }
 }
 
 @PublicInit

@@ -2,15 +2,26 @@
 
 import AppKit
 import Library
+import SwiftUI
 
-@PublicInit
 public struct NimsFont: Sendable, Hashable {
+  @MainActor
   public init(_ appKit: NSFont) {
-    let wrapped = FontBridge.shared.wrap(appKit)
-    id = wrapped.index
+    wrapped = FontBridge.shared.wrap(appKit)
   }
 
-  public var id: Int = 0
+  @MainActor
+  public init(id: Int = 0) {
+    wrapped = FontBridge.shared.wrapped(forID: id)
+  }
+
+  public var id: Int {
+    wrapped.index
+  }
+
+  public var cellSize: CGSize {
+    .init(width: wrapped.cellWidth, height: wrapped.cellHeight)
+  }
 
   public var cellWidth: Double {
     wrapped.cellWidth
@@ -20,8 +31,12 @@ public struct NimsFont: Sendable, Hashable {
     wrapped.cellHeight
   }
 
-  public var cellSize: CGSize {
-    .init(width: cellWidth, height: cellHeight)
+  public static func == (lhs: NimsFont, rhs: NimsFont) -> Bool {
+    lhs.id == rhs.id
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
   }
 
   public func appKit(isBold: Bool = false, isItalic: Bool = false) -> NSFont {
@@ -36,15 +51,12 @@ public struct NimsFont: Sendable, Hashable {
     }
   }
 
-  private var wrapped: FontBridge.WrappedFont {
-    FontBridge.shared.wrapped(for: self)
-  }
+  private var wrapped: FontBridge.WrappedFont
 }
 
+@MainActor
 final class FontBridge {
-  init(dispatchQueue: DispatchQueue) {
-    self.dispatchQueue = dispatchQueue
-
+  init() {
     let systemFont = NSFont.monospacedSystemFont(
       ofSize: NSFont.systemFontSize,
       weight: .regular
@@ -54,7 +66,7 @@ final class FontBridge {
     indexes = [Key(systemFont): wrapped.index]
   }
 
-  struct WrappedFont {
+  struct WrappedFont: @unchecked Sendable {
     init(index: Int, appKit: NSFont) {
       self.index = index
 
@@ -95,30 +107,23 @@ final class FontBridge {
     var size: Double
   }
 
-  static let shared = FontBridge(dispatchQueue: .init(
-    label: "\(Bundle.main.bundleIdentifier!).FontBridge",
-    attributes: .concurrent
-  ))
+  static let shared = FontBridge()
 
-  @discardableResult
   func wrap(_ appKit: NSFont) -> WrappedFont {
     let key = Key(appKit)
-    if let existing = dispatchQueue.sync(execute: { indexes[key].map { array[$0] } }) {
+    if let existing = indexes[key].map({ array[$0] }) {
       return existing
     }
-    return dispatchQueue.sync(flags: .barrier) {
-      let wrapped = WrappedFont(index: array.count, appKit: appKit)
-      array.append(wrapped)
-      indexes[key] = wrapped.index
-      return wrapped
-    }
+    let wrapped = WrappedFont(index: array.count, appKit: appKit)
+    array.append(wrapped)
+    indexes[key] = wrapped.index
+    return wrapped
   }
 
-  func wrapped(for font: NimsFont) -> WrappedFont {
-    dispatchQueue.sync { array[font.id] }
+  func wrapped(forID id: Int) -> WrappedFont {
+    array[id]
   }
 
-  private let dispatchQueue: DispatchQueue
   private var array: [WrappedFont]
   private var indexes: [Key: Int]
 }
