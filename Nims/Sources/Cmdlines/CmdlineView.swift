@@ -141,7 +141,7 @@ private class CmdlineFirstCharacterView: NSView {
 
     let attributedString = NSAttributedString(string: firstCharacter, attributes: [
       .font: store.font.appKit(isBold: true),
-      .foregroundColor: store.state.appearance.foregroundColor(for: .normalFloat).appKit,
+      .foregroundColor: store.state.appearance.backgroundColor(for: .normalFloat).appKit,
     ])
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
@@ -171,16 +171,7 @@ private class CmdlineFirstCharacterView: NSView {
       nil
     )
 
-    backgroundColor = .init(
-      hueSource: "".padding(
-        toLength: firstCharacter.count * 4,
-        withPad: firstCharacter,
-        startingAt: 0
-      ),
-      saturation: 0.8,
-      brightness: 0.8,
-      alpha: 0.2
-    )
+    backgroundColor = store.appearance.foregroundColor(for: .normalFloat).appKit
   }
 
   override func draw(_: NSRect) {

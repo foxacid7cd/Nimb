@@ -29,7 +29,7 @@ public class FloatingWindowView: NSView {
       if isVisibleAnimatedOn != false {
         isVisibleAnimatedOn = false
         NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
+          context.duration = 0.1
           animator().alphaValue = 0
         } completionHandler: { [weak self] in
           guard let self else {
@@ -49,7 +49,7 @@ public class FloatingWindowView: NSView {
         isVisibleAnimatedOn = true
         isHidden = false
         NSAnimationContext.runAnimationGroup { context in
-          context.duration = 0.12
+          context.duration = 0.1
           animator().alphaValue = 1
         } completionHandler: { [weak self] in
           guard let self else {
