@@ -621,11 +621,7 @@ public extension Actions {
               let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 15)
               for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
                 taskGroup.addTask {
-                  var gridLines = IntKeyedDictionary<[UIEventsChunk.GridLine]>(minimumCapacity: gridLinesChunk.count)
-                  for (key, value) in gridLinesChunk {
-                    gridLines[key] = value
-                  }
-                  return try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
+                  try applyLineUpdates(for: gridLinesChunk, grids: grids, font: font, appearance: appearance)
                 }
               }
 
@@ -671,7 +667,7 @@ public extension Actions {
           }
 
           @Sendable func applyLineUpdates(
-            for gridLines: IntKeyedDictionary<[UIEventsChunk.GridLine]>,
+            for gridLines: some Sequence<(key: Int, value: [UIEventsChunk.GridLine])>,
             grids: IntKeyedDictionary<Grid>,
             font: Font,
             appearance: Appearance
