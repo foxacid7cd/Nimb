@@ -54,30 +54,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     stateUpdatesTask = Task { [weak self, store] in
       do {
         for try await stateUpdates in store! {
-          guard !Task.isCancelled else {
+          guard !Task.isCancelled, let self else {
             return
           }
-
-          self?.mainWindowController?.render(stateUpdates)
-
           if stateUpdates.isOuterGridLayoutUpdated {
             UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
           }
-
           if stateUpdates.isFontUpdated {
             UserDefaults.standard.appKitFont = store!.state.font.appKit()
           }
-
           if stateUpdates.isDebugUpdated {
             UserDefaults.standard.debug = store!.state.debug
           }
+          mainWindowController!.render(stateUpdates)
         }
       } catch {
         let alert = NSAlert(error: error)
         alert.informativeText = String(customDumping: error)
         alert.runModal()
       }
-
       NSApplication.shared.terminate(nil)
     }
   }

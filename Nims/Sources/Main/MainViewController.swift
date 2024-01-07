@@ -69,11 +69,8 @@ public class MainViewController: NSViewController {
     cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
     addChild(cmdlinesViewController)
 
-    popupmenuViewController.didShowPopupmenu = { [weak self] in
-      guard let self else {
-        return
-      }
-      reportPopupmenuPumBounds()
+    popupmenuViewController.willShowPopupmenu = { [weak self] in
+      self?.reportPopupmenuPumBounds()
     }
     view.addSubview(popupmenuViewController.view)
     popupmenuViewController.anchorConstraints = [
@@ -162,13 +159,12 @@ public class MainViewController: NSViewController {
   }
 
   private func reportPopupmenuPumBounds() {
-    guard let outerGrid = store.state.outerGrid else {
-      return
-    }
+    view.layoutSubtreeIfNeeded()
 
     var popupmenuFrame = popupmenuViewController.view.frame
     popupmenuFrame = view.convert(popupmenuFrame, to: gridsContainerView)
     popupmenuFrame = gridsContainerView.convert(popupmenuFrame, to: gridsView)
+    popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
 
     let size = IntegerSize(
       columnsCount: Int(ceil(popupmenuFrame.size.width / store.font.cellWidth)),
@@ -177,7 +173,7 @@ public class MainViewController: NSViewController {
     let rectangle = IntegerRectangle(
       origin: .init(
         column: Int(popupmenuFrame.origin.x / store.font.cellWidth),
-        row: outerGrid.rowsCount - Int(popupmenuFrame.origin.y / store.font.cellHeight) - size.rowsCount
+        row: Int(popupmenuFrame.origin.y / store.font.cellHeight)
       ),
       size: size
     )

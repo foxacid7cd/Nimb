@@ -23,6 +23,14 @@ public class GridsView: NSView {
     return outerGrid.size * store.font.cellSize
   }
 
+  public var upsideDownTransform: CGAffineTransform {
+    guard let outerGrid = store.state.outerGrid else {
+      return .identity
+    }
+    return .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(outerGrid.rowsCount) * store.font.cellHeight)
+  }
+
   override public var isOpaque: Bool {
     true
   }

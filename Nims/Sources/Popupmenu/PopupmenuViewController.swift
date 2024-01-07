@@ -19,7 +19,7 @@ public class PopupmenuViewController: NSViewController {
 
   public var anchorConstraints = [NSLayoutConstraint]()
 
-  public var didShowPopupmenu: (() -> Void)?
+  public var willShowPopupmenu: (() -> Void)?
 
   public func render(_ stateUpdates: State.Updates) {
     (view as! FloatingWindowView).render(stateUpdates)
@@ -65,14 +65,10 @@ public class PopupmenuViewController: NSViewController {
 
     if stateUpdates.isPopupmenuUpdated {
       let hide = store.state.popupmenu == nil
-      let isSuccess = (view as! FloatingWindowView).animate(hide: hide) { [weak self] isCompleted in
-        guard let self else {
-          return
-        }
-        if !hide, isCompleted {
-          didShowPopupmenu?()
-        }
+      if !hide {
+        willShowPopupmenu?()
       }
+      let isSuccess = (view as! FloatingWindowView).animate(hide: hide)
       if !hide, isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
