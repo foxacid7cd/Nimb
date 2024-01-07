@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
+import AppKit
 import Library
 
 public extension UserDefaults {
@@ -41,21 +41,24 @@ public extension UserDefaults {
     }
   }
 
-  var fontName: String? {
+  var appKitFont: NSFont? {
     get {
-      value(forKey: "fontName") as? String
+      guard
+        let name = value(forKey: "fontName") as? String,
+        let size = value(forKey: "fontSize") as? Double
+      else {
+        return nil
+      }
+      return .init(name: name, size: size)
     }
     set(value) {
-      set(value, forKey: "fontName")
-    }
-  }
-
-  var fontSize: Double? {
-    get {
-      value(forKey: "fontSize") as? Double
-    }
-    set(value) {
-      set(value, forKey: "fontSize")
+      if let value {
+        set(value.fontName, forKey: "fontName")
+        set(value.pointSize, forKey: "fontSize")
+      } else {
+        removeObject(forKey: "fontName")
+        removeObject(forKey: "fontSize")
+      }
     }
   }
 

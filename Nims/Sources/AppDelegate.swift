@@ -31,16 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       initialOuterGridSize: UserDefaults.standard.outerGridSize
     )
 
-    let font: Font = if
-      let name = UserDefaults.standard.fontName,
-      let size = UserDefaults.standard.fontSize,
-      let nsFont = NSFont(name: name, size: size)
-    {
-      .init(nsFont)
-    } else {
-      .init()
-    }
-    store = .init(instance: instance, debug: UserDefaults.standard.debug, font: font)
+    store = .init(
+      instance: instance,
+      debug: UserDefaults.standard.debug,
+      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
+    )
   }
 
   private func setupMainMenuController() {
@@ -70,8 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           }
 
           if stateUpdates.isFontUpdated {
-            UserDefaults.standard.fontSize = store!.state.font.appKit().pointSize
-            UserDefaults.standard.fontName = store!.state.font.appKit().fontName
+            UserDefaults.standard.appKitFont = store!.state.font.appKit()
           }
 
           if stateUpdates.isDebugUpdated {
