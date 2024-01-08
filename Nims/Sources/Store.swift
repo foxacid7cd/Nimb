@@ -92,7 +92,7 @@ public class Store: Sendable {
   }
 
   @StateActor
-  public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
     if
       let previousMouseMove,
       previousMouseMove.modifier == modifier,
@@ -107,12 +107,12 @@ public class Store: Sendable {
   }
 
   @StateActor
-  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
+  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
     await instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
   @StateActor
-  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
     if stateContainer.state.shouldNextMouseEventStopinsert {
       await instance.stopinsert()
     } else {
@@ -314,7 +314,7 @@ public class Store: Sendable {
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
   @StateActor private var previousPumBounds: IntegerRectangle?
-  @StateActor private var previousMouseMove: (modifier: String?, gridID: Int, point: IntegerPoint)?
+  @StateActor private var previousMouseMove: (modifier: String, gridID: Int, point: IntegerPoint)?
   @StateActor private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
   @StateActor private var outerGridSizeThrottlingTask: Task<Void, Never>?
   @StateActor private var previousReportedOuterGridSizeInstant = ContinuousClock.now

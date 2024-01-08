@@ -113,23 +113,23 @@ public final class Instance: Sendable {
     try? await api.fastCall(APIFunctions.NvimInput(keys: keys))
   }
 
-  public func reportMouseMove(modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
     try? await api.fastCall(APIFunctions.NvimInputMouse(
       button: "move",
       action: "",
-      modifier: modifier ?? "",
+      modifier: modifier,
       grid: gridID,
       row: point.row,
       col: point.column
     ))
   }
 
-  public func reportScrollWheel(with direction: ScrollDirection, modifier: String?, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
+  public func reportScrollWheel(with direction: ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
     try? await api.fastCallsTransaction(with: Array(
       repeating: APIFunctions.NvimInputMouse(
         button: "wheel",
         action: direction.rawValue,
-        modifier: modifier ?? "",
+        modifier: modifier,
         grid: gridID,
         row: point.row,
         col: point.column
@@ -138,11 +138,11 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String?, gridID: Grid.ID, point: IntegerPoint) async {
+  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
     try? await api.fastCall(APIFunctions.NvimInputMouse(
       button: mouseButton.rawValue,
       action: action.rawValue,
-      modifier: modifier ?? "",
+      modifier: modifier,
       grid: gridID,
       row: point.row,
       col: point.column

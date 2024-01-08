@@ -28,23 +28,20 @@ public struct KeyPress: Sendable {
     guard let unicodeScalar = characters.unicodeScalars.first else {
       return characters
     }
-
     let specialKey: String? = if keyCode == kVK_Escape {
       "Esc"
     } else {
       specialKeys[Int(unicodeScalar.value)]
     }
-
-    let modifier = modifierFlags.makeModifier(isSpecialKey: specialKey != nil)
-
-    if let modifier, let specialKey {
-      return "<\(modifier)-\(specialKey)>"
-    } else if let modifier {
-      return "<\(modifier)-\(Character(unicodeScalar))>"
+    let modifiers = modifierFlags.makeModifiers(isSpecialKey: specialKey != nil)
+    if !modifiers.isEmpty, let specialKey {
+      return "<\((modifiers + [specialKey]).joined(separator: "-"))>"
+    } else if !modifiers.isEmpty {
+      return "<\((modifiers + [String(unicodeScalar)]).joined(separator: "-"))>"
     } else if let specialKey {
       return "<\(specialKey)>"
     } else {
-      var string = "\(Character(unicodeScalar))"
+      var string = String(unicodeScalar)
       if modifierFlags.contains(.shift) {
         string = string.uppercased()
       }
@@ -54,18 +51,21 @@ public struct KeyPress: Sendable {
 }
 
 public extension NSEvent.ModifierFlags {
-  func makeModifier(isSpecialKey: Bool) -> String? {
+  func makeModifiers(isSpecialKey: Bool) -> [String] {
+    var accumulator = [String]()
     if contains(.shift), isSpecialKey {
-      "S"
-    } else if contains(.control) {
-      "C"
-    } else if contains(.option) {
-      "M"
-    } else if contains(.command) {
-      "D"
-    } else {
-      nil
+      accumulator.append("S")
     }
+    if contains(.control) {
+      accumulator.append("C")
+    }
+    if contains(.option) {
+      accumulator.append("M")
+    }
+    if contains(.command) {
+      accumulator.append("D")
+    }
+    return accumulator
   }
 }
 
