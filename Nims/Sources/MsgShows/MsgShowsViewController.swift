@@ -19,12 +19,17 @@ public class MsgShowsViewController: NSViewController {
     view.height(max: 600)
     view.alphaValue = 0
     view.isHidden = true
+    view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
+    view.layer!.cornerRadius = 16
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
     scrollView.automaticallyAdjustsContentInsets = false
     view.addSubview(scrollView)
-    scrollView.edgesToSuperview()
+    scrollView.leading(to: view, offset: 1)
+    scrollView.trailing(to: view)
+    scrollView.topToSuperview()
+    scrollView.bottomToSuperview(offset: -1)
 
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .horizontal)

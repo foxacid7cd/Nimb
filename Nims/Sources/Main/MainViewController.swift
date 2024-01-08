@@ -60,8 +60,8 @@ public class MainViewController: NSViewController {
     gridsView.topToSuperview()
 
     view.addSubview(msgShowsViewController.view)
-    msgShowsViewController.view.leading(to: view, offset: 10)
-    msgShowsViewController.view.bottomToSuperview(offset: -10)
+    msgShowsViewController.view.leading(to: view, offset: -1)
+    msgShowsViewController.view.bottomToSuperview(offset: 1)
     addChild(msgShowsViewController)
 
     view.addSubview(cmdlinesViewController.view)
