@@ -20,16 +20,15 @@ public class MsgShowsViewController: NSViewController {
     view.alphaValue = 0
     view.isHidden = true
     view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
-    view.layer!.cornerRadius = 16
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
     scrollView.automaticallyAdjustsContentInsets = false
     view.addSubview(scrollView)
-    scrollView.leading(to: view, offset: 1)
+    scrollView.leading(to: view)
     scrollView.trailing(to: view)
     scrollView.topToSuperview()
-    scrollView.bottomToSuperview(offset: -1)
+    scrollView.bottomToSuperview(offset: 1)
 
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .horizontal)
@@ -73,7 +72,7 @@ public class MsgShowsViewController: NSViewController {
     contentView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    let layout = MsgShowsLayout(msgShows: store.state.msgShows)
+    let layout = MsgShowsLayout(store.state.msgShows)
 
     for item in layout.items {
       switch item {

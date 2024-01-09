@@ -28,9 +28,9 @@ public class MsgShowTextView: NSView {
   }
 
   public func render() {
-    let bigVerticalInset = max(5, store.font.cellHeight * 0.6)
-    let smallVerticalInset = max(1, store.font.cellHeight * 0.15)
-    let horizontalInset = max(5, store.font.cellHeight * 0.75)
+    let bigVerticalInset = max(12, store.font.cellWidth * 1.15)
+    let smallVerticalInset = max(1, store.font.cellWidth * 0.15)
+    let horizontalInset = max(16, store.font.cellHeight * 0.85)
     insets = .init(
       top: isFirst ? bigVerticalInset : smallVerticalInset,
       left: horizontalInset,
@@ -96,10 +96,7 @@ public class MsgShowTextView: NSView {
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
 
-    cgContext.saveGState()
-    cgContext.translateBy(x: 0, y: store.font.appKit().descender / 2)
     CTFrameDraw(ctFrame, cgContext)
-    cgContext.restoreGState()
   }
 
   private let store: Store
