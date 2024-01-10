@@ -11,31 +11,24 @@ import MessagePack
 @StateActor
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
-    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
-    let nvimArguments = ["--embed"]
-    let nvimCommand = ([nvimExecutablePath] + nvimArguments)
-      .joined(separator: " ")
-
-    let process = Process()
-    self.process = process
-    process.executableURL = URL(filePath: "/bin/zsh")
-    process.arguments = ["-l", "-c", nvimCommand]
-    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-
-    let environmentOverlay: [String: String] = [
-      "VIMRUNTIME": neovimRuntimeURL.standardizedFileURL.path(),
-    ]
-
     var environment = ProcessInfo.processInfo.environment
-    environment.merge(environmentOverlay, uniquingKeysWith: { $1 })
+    environment["VIMRUNTIME"] = neovimRuntimeURL.standardizedFileURL.path()
     process.environment = environment
+
+    let shell = environment["SHELL"] ?? "/bin/zsh"
+    process.executableURL = URL(filePath: shell)
+
+    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed"]
+
+    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel)
     let api = API(rpc)
     self.api = api
 
-    task = Task { [uiEventsChannel] in
+    task = Task { [uiEventsChannel, process] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @StateActor in
           var bufferedUIEvents = [UIEvent]()
@@ -239,7 +232,7 @@ public final class Instance: Sendable {
     ))
   }
 
-  private let process: Process
+  private let process = Process()
   private let api: API<ProcessChannel>
   private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
   private var task: Task<Void, Never>?
