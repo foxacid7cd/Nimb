@@ -51,11 +51,10 @@ public class CmdlinesViewController: NSViewController {
 
           if index < cmdlines.count - 1 {
             let separatorView = NSView()
-            separatorView.alphaValue = 0.2
             separatorView.wantsLayer = true
             separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+              .with(alpha: 0.3)
               .appKit
-              .withAlphaComponent(0.3)
               .cgColor
             contentView.addArrangedSubview(separatorView)
             separatorView.height(1)

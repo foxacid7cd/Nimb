@@ -185,7 +185,7 @@ private class CmdlineTextView: NSView {
         string: text,
         attributes: [
           .font: store.font.appKit(isBold: true),
-          .foregroundColor: store.appearance.specialColor(for: .normalFloat).appKit,
+          .foregroundColor: store.appearance.foregroundColor(for: .special).appKit,
         ]
       ))
       indent += text.count
