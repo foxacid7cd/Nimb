@@ -20,22 +20,18 @@ public class CmdlineView: NSView {
     contentTextView.setContentHuggingPriority(.init(rawValue: 999), for: .vertical)
     addSubview(contentTextView)
 
-    addConstraints([
-      promptTextField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-      promptTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-      promptTextField.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-
-      contentTextView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-      contentTextView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
-    ])
-
-    promptToContentConstraint = promptTextField.bottomAnchor.constraint(equalTo: contentTextView.topAnchor, constant: -4)
-    promptToContentConstraint!.priority = .defaultHigh
-
-    contentToTopConstraint = contentTextView.topAnchor.constraint(equalTo: topAnchor, constant: 10)
-    contentToTopConstraint!.priority = .defaultHigh
-
-    contentTextView.leading(to: self, offset: 10)
+    promptConstraints = (
+      promptTextField.leading(to: self, priority: .defaultHigh),
+      promptTextField.trailing(to: self, priority: .defaultHigh),
+      promptTextField.top(to: self, priority: .defaultHigh),
+      promptTextField.bottomToTop(of: contentTextView, priority: .defaultHigh)
+    )
+    contentConstraints = (
+      contentTextView.leading(to: self, priority: .defaultHigh),
+      contentTextView.trailing(to: self, priority: .defaultHigh),
+      contentTextView.top(to: self, priority: .defaultHigh),
+      contentTextView.bottom(to: self, priority: .defaultHigh)
+    )
 
     render()
   }
@@ -52,24 +48,36 @@ public class CmdlineView: NSView {
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
         .foregroundColor: store.state.appearance.foregroundColor(for: .normalFloat).appKit,
-        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+        .font: NSFont.systemFont(ofSize: store.font.appKit().pointSize * 0.9),
       ])
 
       promptTextField.isHidden = false
 
-      promptToContentConstraint!.isActive = true
-      contentToTopConstraint!.isActive = false
+      promptConstraints!.content.isActive = true
+      contentConstraints!.top.isActive = false
 
     } else {
       promptTextField.isHidden = true
 
-      promptToContentConstraint!.isActive = false
-      contentToTopConstraint!.isActive = true
+      promptConstraints!.content.isActive = false
+      contentConstraints!.top.isActive = true
     }
 
     contentTextView.cmdline = cmdline
     contentTextView.blockLines = blockLines
     contentTextView.render()
+
+    let horizontalInset = max(10, store.font.cellWidth)
+    let verticalInset = max(10, store.font.cellWidth)
+    let smallVerticalInset = max(2, store.font.cellWidth * 0.2)
+    promptConstraints!.leading.constant = horizontalInset
+    promptConstraints!.trailing.constant = -horizontalInset
+    promptConstraints!.top.constant = verticalInset
+    promptConstraints!.content.constant = -smallVerticalInset
+    contentConstraints!.leading.constant = horizontalInset
+    contentConstraints!.trailing.constant = -horizontalInset
+    contentConstraints!.top.constant = verticalInset
+    contentConstraints!.bottom.constant = -verticalInset
   }
 
   public func setNeedsDisplayTextView() {
@@ -80,10 +88,18 @@ public class CmdlineView: NSView {
   private let level: Int
   private let promptTextField = NSTextField(labelWithString: "")
   private let contentTextView: CmdlineTextView
-
-  private var promptToContentConstraint: NSLayoutConstraint?
-  private var contentToTopConstraint: NSLayoutConstraint?
-
+  private var promptConstraints: (
+    leading: NSLayoutConstraint,
+    trailing: NSLayoutConstraint,
+    top: NSLayoutConstraint,
+    content: NSLayoutConstraint
+  )?
+  private var contentConstraints: (
+    leading: NSLayoutConstraint,
+    trailing: NSLayoutConstraint,
+    top: NSLayoutConstraint,
+    bottom: NSLayoutConstraint
+  )?
   private var cmdline: Cmdline
   private var blockLines: [[Cmdline.ContentPart]]
 }
@@ -105,7 +121,6 @@ private class CmdlineTextView: NSView {
 
   override var intrinsicContentSize: NSSize {
     let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
-
     return .init(
       width: frame.width,
       height: store.font.cellHeight * Double(linesCount)
