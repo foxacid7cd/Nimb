@@ -81,10 +81,8 @@ public class MsgShowTextView: NSView {
     guard let ctFrame else {
       return
     }
-
     let graphicsContext = NSGraphicsContext.current!
     let cgContext = graphicsContext.cgContext
-
     CTFrameDraw(ctFrame, cgContext)
   }
 

@@ -291,16 +291,16 @@ private class CmdlineTextView: NSView {
     guard let cmdline else {
       return
     }
+    let appKitFont = store.font.appKit()
     let cursorPosition = indent + cmdline.cursorPosition
     let context = NSGraphicsContext.current!.cgContext
 
     var ctLineIndex = 0
 
     for cmdlineCTLine in cmdlineCTLines.reversed() {
-      context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
+        y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
       )
       CTLineDraw(cmdlineCTLine, context)
 
@@ -344,12 +344,12 @@ private class CmdlineTextView: NSView {
           context.setFillColor(cursorForegroundColor.appKit.cgColor)
           let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
           for glyphRun in glyphRuns {
-            context.textMatrix = .init(
-              translationX: 0,
-              y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
-            )
+            context.textMatrix = CTRunGetTextMatrix(glyphRun)
+            context.textPosition = .init(x: 0, y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender)
+            let attributes = CTRunGetAttributes(glyphRun) as! [NSAttributedString.Key: Any]
+            let attributesFont = attributes[.font] as? NSFont
             CTFontDrawGlyphs(
-              store.font.appKit(),
+              attributesFont ?? appKitFont,
               CTRunGetGlyphsPtr(glyphRun)!,
               CTRunGetPositionsPtr(glyphRun)!,
               CTRunGetGlyphCount(glyphRun),
@@ -362,19 +362,16 @@ private class CmdlineTextView: NSView {
       }
 
       ctLineIndex += 1
-      context.restoreGState()
     }
 
     for blockLineCTLine in blockLineCTLines.reversed() {
-      context.saveGState()
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - store.font.appKit().descender
+        y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
       )
       CTLineDraw(blockLineCTLine, context)
 
       ctLineIndex += 1
-      context.restoreGState()
     }
   }
 
