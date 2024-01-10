@@ -20,6 +20,7 @@ public class MsgShowsViewController: NSViewController {
     view.alphaValue = 0
     view.isHidden = true
     view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
+    view.layer!.cornerRadius = 14
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
@@ -74,11 +75,17 @@ public class MsgShowsViewController: NSViewController {
 
     let layout = MsgShowsLayout(store.state.msgShows)
 
-    for item in layout.items {
+    for itemIndex in layout.items.indices {
+      let item = layout.items[itemIndex]
+      let isFirstItem = itemIndex == layout.items.startIndex
+      let isLastItem = itemIndex == layout.items.index(before: layout.items.endIndex)
+
       switch item {
       case let .texts(texts):
         for textIndex in texts.indices {
           let text = texts[textIndex]
+          let isFirstText = textIndex == texts.startIndex
+          let isLastText = textIndex == texts.index(before: texts.endIndex)
 
           let textView = MsgShowTextView(store: store)
           textView.setContentHuggingPriority(.init(rawValue: 800), for: .horizontal)
@@ -86,9 +93,33 @@ public class MsgShowsViewController: NSViewController {
           textView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
           textView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
           textView.contentParts = text
-          textView.isFirst = textIndex == texts.startIndex
-          textView.isLast = textIndex == texts.index(before: texts.endIndex)
           textView.preferredMaxWidth = 640
+          let bigVerticalInset = max(12, store.font.cellWidth * 1.15)
+          let verticalInset = bigVerticalInset * 0.7
+          let smallVerticalInset = max(1, store.font.cellWidth * 0.15)
+          let horizontalInset = max(14, store.font.cellHeight * 0.65)
+          let topInset: Double = switch (isFirstItem, isFirstText) {
+          case (true, true):
+            bigVerticalInset
+          case (false, true):
+            verticalInset
+          default:
+            smallVerticalInset
+          }
+          let bottomInset: Double = switch (isLastItem, isLastText) {
+          case (true, true):
+            bigVerticalInset
+          case (false, true):
+            verticalInset
+          default:
+            smallVerticalInset
+          }
+          textView.insets = .init(
+            top: topInset,
+            left: horizontalInset,
+            bottom: bottomInset,
+            right: horizontalInset
+          )
           textView.render()
           contentView.addArrangedSubview(textView)
           textView.width(to: view)

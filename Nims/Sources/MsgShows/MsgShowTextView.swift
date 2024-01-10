@@ -17,8 +17,7 @@ public class MsgShowTextView: NSView {
 
   public var contentParts = [MsgShow.ContentPart]()
   public var preferredMaxWidth: Double = 0
-  public var isFirst = false
-  public var isLast = false
+  public var insets = NSEdgeInsets()
 
   override public var intrinsicContentSize: NSSize {
     .init(
@@ -28,16 +27,6 @@ public class MsgShowTextView: NSView {
   }
 
   public func render() {
-    let bigVerticalInset = max(12, store.font.cellWidth * 1.15)
-    let smallVerticalInset = max(1, store.font.cellWidth * 0.15)
-    let horizontalInset = max(16, store.font.cellHeight * 0.85)
-    insets = .init(
-      top: isFirst ? bigVerticalInset : smallVerticalInset,
-      left: horizontalInset,
-      bottom: isLast ? bigVerticalInset : smallVerticalInset,
-      right: horizontalInset
-    )
-
     let attributedString = NSMutableAttributedString()
 
     for contentPart in contentParts {
@@ -102,5 +91,4 @@ public class MsgShowTextView: NSView {
   private let store: Store
   private var boundingSize = CGSize()
   private var ctFrame: CTFrame?
-  private var insets = NSEdgeInsets()
 }
