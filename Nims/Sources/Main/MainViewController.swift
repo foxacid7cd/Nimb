@@ -61,9 +61,8 @@ public class MainViewController: NSViewController {
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black
-      .withAlphaComponent(0.3)
+      .withAlphaComponent(0.35)
       .cgColor
-    modalOverlayView.alphaValue = 0
     modalOverlayView.isHidden = true
     view.addSubview(modalOverlayView)
     modalOverlayView.edgesToSuperview()
@@ -109,8 +108,7 @@ public class MainViewController: NSViewController {
     gridsView.render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
-      let shouldHide = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty
-      modalOverlayView.animate(shouldHide: shouldHide)
+      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty
     }
 
     msgShowsViewController.render(stateUpdates)

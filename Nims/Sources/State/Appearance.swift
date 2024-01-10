@@ -10,6 +10,7 @@ public struct Appearance: Sendable {
     case normalNC = "NormalNC"
     case normalFloat = "NormalFloat"
     case errorMsg = "ErrorMsg"
+    case special = "Special"
     case pmenu = "Pmenu"
     case pmenuSel = "PmenuSel"
     case pmenuKind = "PmenuKind"

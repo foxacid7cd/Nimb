@@ -3,19 +3,17 @@
 import AppKit
 
 public class FloatingWindowView: NSView {
-  public init(store: Store, observedHighlightName: Appearance.ObservedHighlightName = .normalFloat) {
+  public init(store: Store) {
     self.store = store
-    self.observedHighlightName = observedHighlightName
     super.init(frame: .zero)
     wantsLayer = true
     shadow = .init()
     layer!.cornerRadius = 8
     layer!.borderWidth = 1
-    layer!.shadowRadius = 5
-    layer!.shadowOffset = .init(width: 4, height: -4)
-    layer!.shadowOpacity = 0.3
+    layer!.shadowRadius = 3
+    layer!.shadowOffset = .init(width: 2, height: -2)
+    layer!.shadowOpacity = 0.15
     layer!.shadowColor = .black
-    renderAppearance()
   }
 
   @available(*, unavailable)
@@ -23,23 +21,14 @@ public class FloatingWindowView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(observedHighlightName) {
-      renderAppearance()
-    }
+  public var colors: (background: Color, border: Color, highlightedBorder: Color)?
+  public var isHighlighted = false
+
+  public func render() {
+    layer!.backgroundColor = colors!.background.appKit.cgColor
+    let borderColor = isHighlighted ? colors!.highlightedBorder : colors!.border
+    layer!.borderColor = borderColor.appKit.cgColor
   }
 
   private let store: Store
-  private let observedHighlightName: Appearance.ObservedHighlightName
-  private var isVisibleAnimatedOn: Bool?
-
-  private func renderAppearance() {
-    layer!.backgroundColor = store.state.appearance.backgroundColor(for: observedHighlightName)
-      .appKit
-      .cgColor
-    layer!.borderColor = store.state.appearance.foregroundColor(for: observedHighlightName)
-      .with(alpha: 0.3)
-      .appKit
-      .cgColor
-  }
 }

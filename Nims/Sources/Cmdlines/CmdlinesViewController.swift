@@ -16,7 +16,23 @@ public class CmdlinesViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    (view as! FloatingWindowView).render(stateUpdates)
+    var isCustomViewUpdated = false
+    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(where: CmdlinesViewController.observedHighlightName.contains(_:)) {
+      customView.colors = (
+        background: store.appearance.backgroundColor(for: .normalFloat),
+        border: store.appearance.foregroundColor(for: .normalFloat)
+          .with(alpha: 0.3),
+        highlightedBorder: store.appearance.foregroundColor(for: .special)
+      )
+      isCustomViewUpdated = true
+    }
+    if stateUpdates.isCmdlinesUpdated {
+      customView.isHighlighted = !store.state.cmdlines.dictionary.isEmpty
+      isCustomViewUpdated = true
+    }
+    if isCustomViewUpdated {
+      customView.render()
+    }
 
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
       if !store.state.cmdlines.dictionary.isEmpty {
@@ -59,7 +75,7 @@ public class CmdlinesViewController: NSViewController {
   }
 
   override public func loadView() {
-    let view = FloatingWindowView(store: store)
+    let view = customView
     view.alphaValue = 0
     view.isHidden = true
     view.width(500)
@@ -84,8 +100,11 @@ public class CmdlinesViewController: NSViewController {
     self.view = view
   }
 
+  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [.normalFloat, .special]
+
   private let store: Store
-  private let scrollView = NSScrollView()
-  private let contentView = NSStackView(views: [])
+  private lazy var customView = FloatingWindowView(store: store)
+  private lazy var scrollView = NSScrollView()
+  private lazy var contentView = NSStackView(views: [])
   private var cmdlineViews = IntKeyedDictionary<CmdlineView>()
 }
