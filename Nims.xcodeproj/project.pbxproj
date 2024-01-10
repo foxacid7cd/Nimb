@@ -67,6 +67,7 @@
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
 		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
+		68FFE9112B4E259E0000BF75 /* NSViewAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFE9102B4E259E0000BF75 /* NSViewAnimation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -167,6 +168,7 @@
 		68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyUIEvents.swift; sourceTree = "<group>"; };
 		68FAC3F62AF6932F00490F09 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
 		68FAD38B2AD102E20042A103 /* SlantedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlantedBackground.swift; sourceTree = "<group>"; };
+		68FFE9102B4E259E0000BF75 /* NSViewAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewAnimation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +207,7 @@
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
+				68FFE9102B4E259E0000BF75 /* NSViewAnimation.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
@@ -503,6 +506,7 @@
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,
+				68FFE9112B4E259E0000BF75 /* NSViewAnimation.swift in Sources */,
 				6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */,
 				689D9E2D29B50BF400345713 /* GridsView.swift in Sources */,
 				68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */,

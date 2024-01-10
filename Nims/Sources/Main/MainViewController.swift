@@ -59,6 +59,15 @@ public class MainViewController: NSViewController {
     gridsView.centerXToSuperview()
     gridsView.topToSuperview()
 
+    modalOverlayView.wantsLayer = true
+    modalOverlayView.layer!.backgroundColor = NSColor.black
+      .withAlphaComponent(0.3)
+      .cgColor
+    modalOverlayView.alphaValue = 0
+    modalOverlayView.isHidden = true
+    view.addSubview(modalOverlayView)
+    modalOverlayView.edgesToSuperview()
+
     view.addSubview(msgShowsViewController.view)
     msgShowsViewController.view.leading(to: view, offset: -1)
     msgShowsViewController.view.bottomToSuperview(offset: 1)
@@ -99,6 +108,11 @@ public class MainViewController: NSViewController {
     tablineView.render(stateUpdates)
     gridsView.render(stateUpdates)
 
+    if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
+      let shouldHide = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty
+      modalOverlayView.animate(shouldHide: shouldHide)
+    }
+
     msgShowsViewController.render(stateUpdates)
     cmdlinesViewController.render(stateUpdates)
     popupmenuViewController.render(stateUpdates)
@@ -130,9 +144,10 @@ public class MainViewController: NSViewController {
   private let popupmenuViewController: PopupmenuViewController
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
-  private let gridsContainerView = NSView()
+  private lazy var gridsContainerView = NSView()
   private var gridsContainerViewFrame: CTFrame?
   private var preMaximizeWindowFrame: CGRect?
+  private lazy var modalOverlayView = NSView()
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
     guard let window = view.window, let screen = window.screen ?? .main else {

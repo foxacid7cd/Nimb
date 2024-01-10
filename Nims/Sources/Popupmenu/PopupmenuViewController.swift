@@ -49,27 +49,29 @@ public class PopupmenuViewController: NSViewController {
       }
     }
 
-    if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated {
-      tableView.reloadData()
-      storePreviousSelectedItemIndex()
-      scrollToSelectedRow()
-    } else if stateUpdates.isPopupmenuSelectionUpdated {
-      scrollToSelectedRow()
-      if let previousSelectedItemIndex, let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
-        tableView.reloadData(forRowIndexes: [previousSelectedItemIndex, selectedItemIndex], columnIndexes: [0])
-      } else {
+    if let popupmenu = store.state.popupmenu {
+      if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated {
         tableView.reloadData()
+        storePreviousSelectedItemIndex(for: popupmenu)
+        scrollToSelectedRow(for: popupmenu)
+      } else if stateUpdates.isPopupmenuSelectionUpdated {
+        scrollToSelectedRow(for: popupmenu)
+        if let previousSelectedItemIndex, let selectedItemIndex = popupmenu.selectedItemIndex {
+          tableView.reloadData(forRowIndexes: [previousSelectedItemIndex, selectedItemIndex], columnIndexes: [0])
+        } else {
+          tableView.reloadData()
+        }
+        storePreviousSelectedItemIndex(for: popupmenu)
       }
-      storePreviousSelectedItemIndex()
     }
 
     if stateUpdates.isPopupmenuUpdated {
-      let hide = store.state.popupmenu == nil
-      if !hide {
+      let shouldHide = store.state.popupmenu == nil
+      if !shouldHide {
         willShowPopupmenu?()
       }
-      let isSuccess = (view as! FloatingWindowView).animate(hide: hide)
-      if !hide, isSuccess {
+      let isSuccess = view.animate(shouldHide: shouldHide)
+      if !shouldHide, isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
           y: -scrollView.contentInsets.top
@@ -77,14 +79,14 @@ public class PopupmenuViewController: NSViewController {
       }
     }
 
-    func storePreviousSelectedItemIndex() {
-      if let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
+    func storePreviousSelectedItemIndex(for popupmenu: Popupmenu) {
+      if let selectedItemIndex = popupmenu.selectedItemIndex {
         previousSelectedItemIndex = selectedItemIndex
       }
     }
 
-    func scrollToSelectedRow() {
-      if let selectedItemIndex = store.state.popupmenu?.selectedItemIndex {
+    func scrollToSelectedRow(for popupmenu: Popupmenu) {
+      if let selectedItemIndex = popupmenu.selectedItemIndex {
         tableView.scrollRowToVisible(selectedItemIndex)
       }
     }

@@ -54,7 +54,9 @@ public class MsgShowsViewController: NSViewController {
     (view as! FloatingWindowView).render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
-      renderContent()
+      if !store.state.msgShows.isEmpty {
+        renderContent()
+      }
       renderIsVisible()
     }
   }
@@ -64,9 +66,7 @@ public class MsgShowsViewController: NSViewController {
   private let contentView = NSStackView(views: [])
 
   private func renderIsVisible() {
-    (view as! FloatingWindowView).animate(
-      hide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed
-    )
+    view.animate(shouldHide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed)
   }
 
   private func renderContent() {

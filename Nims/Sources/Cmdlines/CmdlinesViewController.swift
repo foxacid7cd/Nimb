@@ -48,9 +48,7 @@ public class CmdlinesViewController: NSViewController {
         }
       }
 
-      (view as! FloatingWindowView).animate(
-        hide: store.state.cmdlines.dictionary.isEmpty
-      )
+      view.animate(shouldHide: store.state.cmdlines.dictionary.isEmpty)
     }
 
     if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated {
