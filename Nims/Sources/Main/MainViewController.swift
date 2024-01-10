@@ -61,7 +61,7 @@ public class MainViewController: NSViewController {
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black
-      .withAlphaComponent(0.35)
+      .withAlphaComponent(0.3)
       .cgColor
     modalOverlayView.isHidden = true
     view.addSubview(modalOverlayView)
@@ -136,12 +136,6 @@ public class MainViewController: NSViewController {
 
   let gridsView: GridsView
 
-  private class ModalOverlayView: NSView {
-    override func hitTest(_ point: NSPoint) -> NSView? {
-      !isHidden && frame.contains(point) ? self : nil
-    }
-  }
-
   private let store: Store
   private let msgShowsViewController: MsgShowsViewController
   private let cmdlinesViewController: CmdlinesViewController
@@ -151,7 +145,7 @@ public class MainViewController: NSViewController {
   private lazy var gridsContainerView = NSView()
   private var gridsContainerViewFrame: CTFrame?
   private var preMaximizeWindowFrame: CGRect?
-  private lazy var modalOverlayView = ModalOverlayView()
+  private lazy var modalOverlayView = NSView()
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
     guard let window = view.window, let screen = window.screen ?? .main else {

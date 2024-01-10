@@ -19,13 +19,10 @@ public extension NSView {
           context.duration = animationDuration
           context.timingFunction = .init(name: timingFunctionName)
           animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-          guard let self else {
-            return
-          }
-          let isCompleted = lastAnimatedIsHiddenValue == true
+        } completionHandler: {
+          let isCompleted = self.lastAnimatedIsHiddenValue == true
           if isCompleted {
-            isHidden = true
+            self.isHidden = true
           }
           completionHandler(isCompleted)
         }
@@ -41,11 +38,8 @@ public extension NSView {
           context.duration = animationDuration
           context.timingFunction = .init(name: timingFunctionName)
           animator().alphaValue = 1
-        } completionHandler: { [weak self] in
-          guard let self else {
-            return
-          }
-          completionHandler(lastAnimatedIsHiddenValue == false)
+        } completionHandler: {
+          completionHandler(self.lastAnimatedIsHiddenValue == false)
         }
         return true
       } else {
@@ -54,7 +48,7 @@ public extension NSView {
     }
   }
 
-  private static let lastAnimatedIsHiddenValueKey: Bool = false
+  private static let lastAnimatedIsHiddenValueKey: Void = ()
 
   private var lastAnimatedIsHiddenValue: Bool? {
     get {
@@ -65,7 +59,7 @@ public extension NSView {
     }
     set(value) {
       withUnsafePointer(to: NSView.lastAnimatedIsHiddenValueKey) { keyPointer in
-        objc_setAssociatedObject(self, .init(keyPointer), value.map(NSNumber.init(value:)), .OBJC_ASSOCIATION_COPY_NONATOMIC)
+        objc_setAssociatedObject(self, .init(keyPointer), value.map(NSNumber.init(value:)), .OBJC_ASSOCIATION_COPY)
       }
     }
   }

@@ -7,13 +7,8 @@ public class FloatingWindowView: NSView {
     self.store = store
     super.init(frame: .zero)
     wantsLayer = true
-    shadow = .init()
     layer!.cornerRadius = 8
-    layer!.borderWidth = 1
-    layer!.shadowRadius = 3
-    layer!.shadowOffset = .init(width: 2, height: -2)
-    layer!.shadowOpacity = 0.15
-    layer!.shadowColor = .black
+    shadow = .init()
   }
 
   @available(*, unavailable)
@@ -26,8 +21,23 @@ public class FloatingWindowView: NSView {
 
   public func render() {
     layer!.backgroundColor = colors!.background.appKit.cgColor
-    let borderColor = isHighlighted ? colors!.highlightedBorder : colors!.border
-    layer!.borderColor = borderColor.appKit.cgColor
+
+    if isHighlighted {
+      let color = colors!.highlightedBorder.appKit.cgColor
+      layer!.borderColor = color
+      layer!.borderWidth = 1
+      layer!.shadowOffset = .zero
+      layer!.shadowColor = color
+      layer!.shadowOpacity = 0.15
+      layer!.shadowRadius = 16
+    } else {
+      layer!.borderColor = colors!.border.appKit.cgColor
+      layer!.borderWidth = 1
+      layer!.shadowOffset = .init(width: 3, height: -3)
+      layer!.shadowColor = .black
+      layer!.shadowOpacity = 0.15
+      layer!.shadowRadius = 2
+    }
   }
 
   private let store: Store
