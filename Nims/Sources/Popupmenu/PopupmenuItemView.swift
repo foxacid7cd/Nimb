@@ -23,7 +23,7 @@ public class PopupmenuItemView: NSView {
     addSubview(kindTextField)
     kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
     kindTextField.centerYToSuperview()
-    kindTextField.trailing(to: self, offset: -5)
+    kindTextField.trailing(to: self, offset: -7)
   }
 
   @available(*, unavailable)
@@ -75,16 +75,16 @@ public class PopupmenuItemView: NSView {
     )
     if !item.menu.isEmpty {
       let menuHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
-      kindAttributedString.insert(.init(
-        string: "\(item.menu) ",
+      kindAttributedString.append(.init(
+        string: " \(item.menu)",
         attributes: [
-          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.3).appKit,
+          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.5).appKit,
           .font: font.appKit(
             isBold: appearance.isBold(for: menuHighlightName),
             isItalic: appearance.isItalic(for: menuHighlightName)
           ),
         ]
-      ), at: 0)
+      ))
     }
     kindTextField.attributedStringValue = kindAttributedString
   }

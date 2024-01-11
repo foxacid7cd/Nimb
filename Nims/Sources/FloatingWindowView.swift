@@ -31,7 +31,7 @@ public class FloatingWindowView: NSView {
       render(isHighlighted: isHighlighted)
     }
 
-    animate(hide: shouldHide, animationDuration: shouldHide ? 0.1 : 0.01) { isCompleted in
+    animate(hide: shouldHide, animationDuration: shouldHide ? 0.1 : 0) { isCompleted in
       if self.isHighlighted {
         if isCompleted, self.unhighlighTask == nil {
           self.unhighlighTask = Task {
