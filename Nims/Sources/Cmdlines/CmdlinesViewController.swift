@@ -21,17 +21,14 @@ public class CmdlinesViewController: NSViewController {
       customView.colors = (
         background: store.appearance.backgroundColor(for: .normalFloat),
         border: store.appearance.foregroundColor(for: .normalFloat)
-          .with(alpha: 0.3),
-        highlightedBorder: store.appearance.foregroundColor(for: .special)
+          .with(alpha: 0.3)
       )
       isCustomViewUpdated = true
     }
     if stateUpdates.isCmdlinesUpdated {
       customView.isHighlighted = !store.state.cmdlines.dictionary.isEmpty
+      customView.shouldHide = store.state.cmdlines.dictionary.isEmpty
       isCustomViewUpdated = true
-    }
-    if isCustomViewUpdated {
-      customView.render()
     }
 
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
@@ -62,14 +59,16 @@ public class CmdlinesViewController: NSViewController {
           }
         }
       }
-
-      view.animate(shouldHide: store.state.cmdlines.dictionary.isEmpty)
     }
 
     if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated {
       for (_, cmdlineView) in cmdlineViews {
         cmdlineView.setNeedsDisplayTextView()
       }
+    }
+
+    if isCustomViewUpdated {
+      customView.render()
     }
   }
 

@@ -5,14 +5,14 @@ import AppKit
 public extension NSView {
   @discardableResult
   func animate(
-    shouldHide: Bool,
+    hide: Bool,
     animationDuration: Double = 0.1,
     timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut,
     completionHandler: @escaping (_ isCompleted: Bool) -> Void = { _ in }
   )
     -> Bool
   {
-    if shouldHide {
+    if hide {
       if lastAnimatedIsHiddenValue != true {
         lastAnimatedIsHiddenValue = true
         NSAnimationContext.runAnimationGroup { context in

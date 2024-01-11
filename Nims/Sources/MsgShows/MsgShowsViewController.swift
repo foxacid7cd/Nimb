@@ -19,8 +19,8 @@ public class MsgShowsViewController: NSViewController {
     view.height(max: 600)
     view.alphaValue = 0
     view.isHidden = true
-    view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
     view.layer!.cornerRadius = 14
+    view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
 
     scrollView.drawsBackground = false
     scrollView.scrollsDynamically = false
@@ -56,24 +56,23 @@ public class MsgShowsViewController: NSViewController {
       customView.colors = (
         background: store.appearance.backgroundColor(for: .normalFloat),
         border: store.appearance.foregroundColor(for: .normalFloat)
-          .with(alpha: 0.3),
-        highlightedBorder: store.appearance.foregroundColor(for: .special)
+          .with(alpha: 0.3)
       )
       isCustomViewUpdated = true
     }
-    if stateUpdates.isCmdlinesUpdated {
-      customView.isHighlighted = store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty
+    if stateUpdates.isMessagesUpdated {
+      customView.shouldHide = store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed
       isCustomViewUpdated = true
-    }
-    if isCustomViewUpdated {
-      customView.render()
     }
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
       if !store.state.msgShows.isEmpty {
         renderContent()
       }
-      renderIsVisible()
+    }
+
+    if isCustomViewUpdated {
+      customView.render()
     }
   }
 
@@ -83,10 +82,6 @@ public class MsgShowsViewController: NSViewController {
   private lazy var customView = FloatingWindowView(store: store)
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
-
-  private func renderIsVisible() {
-    view.animate(shouldHide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed)
-  }
 
   private func renderContent() {
     contentView.arrangedSubviews

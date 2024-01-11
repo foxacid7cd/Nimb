@@ -22,8 +22,14 @@ public class PopupmenuViewController: NSViewController {
   public var willShowPopupmenu: (() -> Void)?
 
   public func render(_ stateUpdates: State.Updates) {
+    var isCustomViewUpdated = false
     if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(.normalFloat) {
-      renderCustomView()
+      customView.colors = (
+        background: store.appearance.backgroundColor(for: .normalFloat),
+        border: store.appearance.foregroundColor(for: .normalFloat)
+          .with(alpha: 0.3)
+      )
+      isCustomViewUpdated = true
     }
 
     if let popupmenu = store.state.popupmenu {
@@ -37,7 +43,7 @@ public class PopupmenuViewController: NSViewController {
           anchorConstraints = [
             view.leading(to: gridView, offset: offset.x - 13),
             view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
-            view.width(390),
+            view.width(352),
           ]
 
         case .cmdline:
@@ -49,9 +55,6 @@ public class PopupmenuViewController: NSViewController {
           ]
         }
       }
-    }
-
-    if let popupmenu = store.state.popupmenu {
       if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated {
         tableView.reloadData()
         storePreviousSelectedItemIndex(for: popupmenu)
@@ -68,12 +71,16 @@ public class PopupmenuViewController: NSViewController {
     }
 
     if stateUpdates.isPopupmenuUpdated {
-      let shouldHide = store.state.popupmenu == nil
-      if !shouldHide {
+      customView.shouldHide = store.state.popupmenu == nil
+      isCustomViewUpdated = true
+    }
+
+    if isCustomViewUpdated {
+      if !customView.shouldHide {
         willShowPopupmenu?()
       }
-      let isSuccess = view.animate(shouldHide: shouldHide)
-      if !shouldHide, isSuccess {
+      customView.render()
+      if !customView.shouldHide {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
           y: -scrollView.contentInsets.top
@@ -121,12 +128,6 @@ public class PopupmenuViewController: NSViewController {
     self.view = view
   }
 
-  override public func viewDidLoad() {
-    super.viewDidLoad()
-
-    renderCustomView()
-  }
-
   private let store: Store
   private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
@@ -134,17 +135,6 @@ public class PopupmenuViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
   private var previousSelectedItemIndex: Int?
-
-  private func renderCustomView() {
-    customView.colors = (
-      background: store.appearance.backgroundColor(for: .normalFloat),
-      border: store.appearance.foregroundColor(for: .normalFloat)
-        .with(alpha: 0.3),
-      highlightedBorder: .black
-    )
-    customView.isHighlighted = false
-    customView.render()
-  }
 }
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
