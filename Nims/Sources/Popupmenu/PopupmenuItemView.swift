@@ -12,20 +12,18 @@ public class PopupmenuItemView: NSView {
     wantsLayer = true
     layer!.cornerRadius = 5
 
-    textField.translatesAutoresizingMaskIntoConstraints = false
-    textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-    textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-    addSubview(textField)
-    textField.leading(to: self, offset: 5)
-    textField.centerYToSuperview()
+    wordTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+    wordTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    addSubview(wordTextField)
+    wordTextField.leading(to: self, offset: 7)
+    wordTextField.centerYToSuperview()
 
-    secondTextField.translatesAutoresizingMaskIntoConstraints = false
-    secondTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    secondTextField.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-    addSubview(secondTextField)
-    secondTextField.leadingToTrailing(of: textField, offset: 5)
-    secondTextField.centerYToSuperview()
-    secondTextField.trailing(to: self, offset: -5)
+    kindTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    kindTextField.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    addSubview(kindTextField)
+    kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
+    kindTextField.centerYToSuperview()
+    kindTextField.trailing(to: self, offset: -5)
   }
 
   @available(*, unavailable)
@@ -44,74 +42,56 @@ public class PopupmenuItemView: NSView {
     guard let item else {
       return
     }
+    let font = store.font
+    let appearance = store.appearance
 
-    layer!.backgroundColor = store.appearance
+    layer!.backgroundColor = appearance
       .backgroundColor(for: isSelected ? .pmenuSel : .pmenu)
       .appKit
       .cgColor
 
-    let observedHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
-    textField.attributedStringValue = .init(string: item.word, attributes: [
-      .foregroundColor: store.state.appearance.foregroundColor(for: observedHighlightName).appKit,
-      .font: store.font.appKit(
-        isBold: store.state.appearance.isBold(for: observedHighlightName),
-        isItalic: store.state.appearance.isItalic(for: observedHighlightName)
-      ),
-    ])
+    let wordHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
+    wordTextField.attributedStringValue = .init(
+      string: item.word,
+      attributes: [
+        .foregroundColor: appearance.foregroundColor(for: wordHighlightName).appKit,
+        .font: font.appKit(
+          isBold: appearance.isBold(for: wordHighlightName),
+          isItalic: appearance.isItalic(for: wordHighlightName)
+        ),
+      ]
+    )
 
-    var secondaryTextParts = [SecondaryTextPart]()
-
-    let kind = item.kind.trimmingCharacters(in: .whitespaces)
-    if !kind.isEmpty {
-      secondaryTextParts.append(.kind(kind))
-    }
-
-    let extra = [item.menu, item.info]
-      .map { $0.trimmingCharacters(in: .whitespaces) }
-      .filter { !$0.isEmpty }
-      .joined(separator: " ")
-    if !extra.isEmpty {
-      secondaryTextParts.append(.extra(extra))
-    }
-
-    let secondaryTextAttributedString = NSMutableAttributedString()
-    for (index, part) in secondaryTextParts.enumerated() {
-      if index > 0 {
-        secondaryTextAttributedString.append(.init(
-          string: " ",
-          attributes: [.font: store.font.appKit()]
-        ))
-      }
-      let text: String
-      let observedHighlightName: Appearance.ObservedHighlightName
-      switch part {
-      case let .kind(kind):
-        text = kind
-        observedHighlightName = isSelected ? .pmenuKindSel : .pmenuKind
-      case let .extra(extra):
-        text = extra
-        observedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
-      }
-      secondaryTextAttributedString.append(.init(
-        string: text,
+    let kindHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuKindSel : .pmenuKind
+    let kindAttributedString = NSMutableAttributedString(
+      string: item.kind,
+      attributes: [
+        .foregroundColor: appearance.foregroundColor(for: kindHighlightName).appKit,
+        .font: font.appKit(
+          isBold: appearance.isBold(for: kindHighlightName),
+          isItalic: appearance.isItalic(for: kindHighlightName)
+        ),
+      ]
+    )
+    if !item.menu.isEmpty {
+      let menuHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
+      var menuAppKitFont = font.appKit(
+        isBold: appearance.isBold(for: menuHighlightName),
+        isItalic: appearance.isItalic(for: menuHighlightName)
+      )
+      menuAppKitFont = NSFontManager.shared.convert(menuAppKitFont, toSize: menuAppKitFont.pointSize * 0.8)
+      kindAttributedString.insert(.init(
+        string: "\(item.menu) ",
         attributes: [
-          .font: store.font.appKit(
-            isBold: store.appearance.isBold(for: observedHighlightName),
-            isItalic: store.appearance.isItalic(for: observedHighlightName)
-          ),
-          .foregroundColor: store.appearance.foregroundColor(for: observedHighlightName).appKit,
+          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.3).appKit,
+          .font: menuAppKitFont,
         ]
-      ))
+      ), at: 0)
     }
-    secondTextField.attributedStringValue = secondaryTextAttributedString
-
-    enum SecondaryTextPart {
-      case kind(String)
-      case extra(String)
-    }
+    kindTextField.attributedStringValue = kindAttributedString
   }
 
   private let store: Store
-  private let textField = NSTextField(labelWithString: "")
-  private let secondTextField = NSTextField(labelWithString: "")
+  private let wordTextField = NSTextField(labelWithString: "")
+  private let kindTextField = NSTextField(labelWithString: "")
 }
