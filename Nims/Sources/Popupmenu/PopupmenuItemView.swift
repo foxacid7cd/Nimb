@@ -75,16 +75,14 @@ public class PopupmenuItemView: NSView {
     )
     if !item.menu.isEmpty {
       let menuHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
-      var menuAppKitFont = font.appKit(
-        isBold: appearance.isBold(for: menuHighlightName),
-        isItalic: appearance.isItalic(for: menuHighlightName)
-      )
-      menuAppKitFont = NSFontManager.shared.convert(menuAppKitFont, toSize: menuAppKitFont.pointSize * 0.8)
       kindAttributedString.insert(.init(
         string: "\(item.menu) ",
         attributes: [
           .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.3).appKit,
-          .font: menuAppKitFont,
+          .font: font.appKit(
+            isBold: appearance.isBold(for: menuHighlightName),
+            isItalic: appearance.isItalic(for: menuHighlightName)
+          ),
         ]
       ), at: 0)
     }
