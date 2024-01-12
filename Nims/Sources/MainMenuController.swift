@@ -9,6 +9,8 @@ final class MainMenuController: NSObject {
     super.init()
 
     let appMenu = NSMenu()
+    settingsMenuItem.target = self
+    appMenu.addItem(settingsMenuItem)
     quitMenuItem.target = self
     appMenu.addItem(quitMenuItem)
 
@@ -52,7 +54,10 @@ final class MainMenuController: NSObject {
 
   let menu = NSMenu()
 
+  var settingsClicked: (@MainActor () -> Void)?
+
   private let store: Store
+  private let settingsMenuItem = NSMenuItem(title: "Settings...", action: #selector(handleSettings), keyEquivalent: "")
   private let quitMenuItem = NSMenuItem(title: "Quit Nims", action: #selector(handleQuit), keyEquivalent: "q")
   private let openMenuItem = NSMenuItem(title: "Open", action: #selector(handleOpen), keyEquivalent: "o")
   private let saveMenuItem = NSMenuItem(title: "Save", action: #selector(handleSave), keyEquivalent: "s")
@@ -64,6 +69,10 @@ final class MainMenuController: NSObject {
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
   private var actionTask: Task<Void, Never>?
+
+  @objc private func handleSettings() {
+    settingsClicked?()
+  }
 
   @objc private func handleOpen() {
     guard actionTask == nil else {

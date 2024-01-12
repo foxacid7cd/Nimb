@@ -119,23 +119,7 @@ private class CmdlineTextView: NSView {
   public var cmdline: Cmdline?
   public var blockLines: [[Cmdline.ContentPart]]?
 
-  override var intrinsicContentSize: NSSize {
-    let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
-    return .init(
-      width: frame.width,
-      height: store.font.cellHeight * Double(linesCount)
-    )
-  }
-
-  override var frame: NSRect {
-    didSet {
-      if oldValue.width != frame.width {
-        render()
-      }
-    }
-  }
-
-  func render() {
+  public func render() {
     guard let cmdline, let blockLines else {
       return
     }
@@ -285,6 +269,22 @@ private class CmdlineTextView: NSView {
 
     invalidateIntrinsicContentSize()
     setNeedsDisplay(bounds)
+  }
+
+  override var intrinsicContentSize: NSSize {
+    let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
+    return .init(
+      width: frame.width,
+      height: store.font.cellHeight * Double(linesCount)
+    )
+  }
+
+  override var frame: NSRect {
+    didSet {
+      if oldValue.width != frame.width {
+        render()
+      }
+    }
   }
 
   override func draw(_: NSRect) {

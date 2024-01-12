@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
   private var mainWindowController: MainWindowController?
+  private var settingsWindowController: SettingsWindowController?
 
   private func setupStore() async {
     let instance = await Instance(
@@ -40,6 +41,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupMainMenuController() {
     mainMenuController = MainMenuController(store: store!)
+    mainMenuController!.settingsClicked = { [unowned self] in
+      if settingsWindowController == nil {
+        settingsWindowController = .init(store: store!)
+      }
+      settingsWindowController!.showWindow(nil)
+    }
     NSApplication.shared.mainMenu = mainMenuController!.menu
   }
 

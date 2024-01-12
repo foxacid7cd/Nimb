@@ -15,15 +15,6 @@ public class CmdlinesViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var animatingToggling: ((_ on: Bool, _ animationDuration: Double) -> Void)? {
-    get {
-      customView.animatingToggling
-    }
-    set(value) {
-      customView.animatingToggling = value
-    }
-  }
-
   public func render(_ stateUpdates: State.Updates) {
     if
       stateUpdates.isAppearanceUpdated,

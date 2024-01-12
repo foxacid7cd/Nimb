@@ -20,6 +20,7 @@
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		68554B002AFAAD10006488CD /* MsgShowsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
+		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
@@ -118,6 +119,7 @@
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsLayout.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
+		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
@@ -204,6 +206,7 @@
 				68554AFA2AFAAB36006488CD /* MsgShows */,
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
+				686CAFE92B50F3B700AED2CC /* Settings */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
@@ -231,6 +234,14 @@
 				68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */,
 			);
 			path = MsgShows;
+			sourceTree = "<group>";
+		};
+		686CAFE92B50F3B700AED2CC /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		6882EB472AC5B3C8001FAA2E /* Tabline */ = {
@@ -520,6 +531,7 @@
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
+				686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */,
 				68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */,

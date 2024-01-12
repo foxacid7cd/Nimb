@@ -83,18 +83,7 @@ public class MainViewController: NSViewController {
 
     view.addSubview(cmdlinesViewController.view)
     cmdlinesViewController.view.centerXToSuperview()
-    let cmdlinesYConstraint = cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65, priority: .defaultHigh)
-    cmdlinesViewController.animatingToggling = { [weak view] on, animationDuration in
-      guard animationDuration != 0, let view else {
-        return
-      }
-      if on {
-        cmdlinesYConstraint.constant = -4
-        view.layoutSubtreeIfNeeded()
-      }
-      cmdlinesYConstraint.animator().constant = 0
-      view.layoutSubtreeIfNeeded()
-    }
+    cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
     addChild(cmdlinesViewController)
 
     popupmenuViewController.willShowPopupmenu = { [weak self] in
