@@ -17,8 +17,6 @@ public class MsgShowsViewController: NSViewController {
     let view = customView
     view.width(max: 800)
     view.height(max: 600)
-    view.alphaValue = 0
-    view.isHidden = true
     view.layer!.cornerRadius = 14
     view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
 
@@ -47,22 +45,18 @@ public class MsgShowsViewController: NSViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
 
+    customView.animate(hide: true)
+    renderCustomView()
     renderContent()
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    var isCustomViewUpdated = false
-    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(where: MsgShowsViewController.observedHighlightName.contains(_:)) {
-      customView.colors = (
-        background: store.appearance.backgroundColor(for: .normalFloat),
-        border: store.appearance.foregroundColor(for: .normalFloat)
-          .with(alpha: 0.3)
-      )
-      isCustomViewUpdated = true
-    }
-    if stateUpdates.isMessagesUpdated {
-      customView.shouldHide = store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed
-      isCustomViewUpdated = true
+    if 
+      stateUpdates.isAppearanceUpdated,
+      stateUpdates.updatedObservedHighlightNames
+        .contains(where: MsgShowsViewController.observedHighlightName.contains(_:))
+    {
+      renderCustomView()
     }
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
@@ -71,8 +65,11 @@ public class MsgShowsViewController: NSViewController {
       }
     }
 
-    if isCustomViewUpdated {
-      customView.render()
+    if stateUpdates.isMessagesUpdated {
+      customView.animate(
+        hide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed,
+        duration: 0.12
+      )
     }
   }
 
@@ -82,6 +79,15 @@ public class MsgShowsViewController: NSViewController {
   private lazy var customView = FloatingWindowView(store: store)
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
+
+  private func renderCustomView() {
+    customView.colors = (
+      background: store.appearance.backgroundColor(for: .normalFloat),
+      border: store.appearance.foregroundColor(for: .normalFloat)
+        .with(alpha: 0.3)
+    )
+    customView.render()
+  }
 
   private func renderContent() {
     contentView.arrangedSubviews

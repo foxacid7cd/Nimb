@@ -16,19 +16,12 @@ public class CmdlinesViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    var isCustomViewUpdated = false
-    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(where: CmdlinesViewController.observedHighlightName.contains(_:)) {
-      customView.colors = (
-        background: store.appearance.backgroundColor(for: .normalFloat),
-        border: store.appearance.foregroundColor(for: .normalFloat)
-          .with(alpha: 0.3)
-      )
-      isCustomViewUpdated = true
-    }
-    if stateUpdates.isCmdlinesUpdated {
-      customView.isHighlighted = !store.state.cmdlines.dictionary.isEmpty
-      customView.shouldHide = store.state.cmdlines.dictionary.isEmpty
-      isCustomViewUpdated = true
+    if
+      stateUpdates.isAppearanceUpdated,
+      stateUpdates.updatedObservedHighlightNames
+        .contains(where: CmdlinesViewController.observedHighlightName.contains(_:))
+    {
+      renderCustomView()
     }
 
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
@@ -67,15 +60,13 @@ public class CmdlinesViewController: NSViewController {
       }
     }
 
-    if isCustomViewUpdated {
-      customView.render()
+    if stateUpdates.isCmdlinesUpdated {
+      customView.animate(hide: store.state.cmdlines.dictionary.isEmpty, duration: 0.07)
     }
   }
 
   override public func loadView() {
     let view = customView
-    view.alphaValue = 0
-    view.isHidden = true
     view.width(500)
     view.height(max: 160)
 
@@ -98,6 +89,13 @@ public class CmdlinesViewController: NSViewController {
     self.view = view
   }
 
+  override public func viewDidLoad() {
+    super.viewDidLoad()
+
+    customView.animate(hide: true)
+    renderCustomView()
+  }
+
   private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [.normalFloat, .special]
 
   private let store: Store
@@ -105,4 +103,12 @@ public class CmdlinesViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
   private var cmdlineViews = IntKeyedDictionary<CmdlineView>()
+
+  private func renderCustomView() {
+    customView.colors = (
+      background: store.appearance.backgroundColor(for: .normalFloat),
+      border: store.appearance.foregroundColor(for: .normalFloat).with(alpha: 0.3)
+    )
+    customView.render()
+  }
 }

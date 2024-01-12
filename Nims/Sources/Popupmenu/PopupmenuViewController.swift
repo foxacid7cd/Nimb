@@ -22,14 +22,11 @@ public class PopupmenuViewController: NSViewController {
   public var willShowPopupmenu: (() -> Void)?
 
   public func render(_ stateUpdates: State.Updates) {
-    var isCustomViewUpdated = false
-    if stateUpdates.isAppearanceUpdated, stateUpdates.updatedObservedHighlightNames.contains(.normalFloat) {
-      customView.colors = (
-        background: store.appearance.backgroundColor(for: .normalFloat),
-        border: store.appearance.foregroundColor(for: .normalFloat)
-          .with(alpha: 0.3)
-      )
-      isCustomViewUpdated = true
+    if
+      stateUpdates.isAppearanceUpdated,
+      stateUpdates.updatedObservedHighlightNames.contains(.normalFloat)
+    {
+      renderCustomView()
     }
 
     if let popupmenu = store.state.popupmenu {
@@ -71,16 +68,12 @@ public class PopupmenuViewController: NSViewController {
     }
 
     if stateUpdates.isPopupmenuUpdated {
-      customView.shouldHide = store.state.popupmenu == nil
-      isCustomViewUpdated = true
-    }
-
-    if isCustomViewUpdated {
-      if !customView.shouldHide {
+      let hide = store.state.popupmenu == nil
+      if !hide {
         willShowPopupmenu?()
       }
-      customView.render()
-      if !customView.shouldHide {
+      let isSuccess = customView.animate(hide: hide, duration: 0.07)
+      if isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
           y: -scrollView.contentInsets.top
@@ -103,8 +96,6 @@ public class PopupmenuViewController: NSViewController {
 
   override public func loadView() {
     let view = customView
-    view.alphaValue = 0
-    view.isHidden = true
     view.height(200)
 
     scrollView.automaticallyAdjustsContentInsets = false
@@ -128,6 +119,13 @@ public class PopupmenuViewController: NSViewController {
     self.view = view
   }
 
+  override public func viewDidLoad() {
+    super.viewDidLoad()
+
+    customView.animate(hide: true)
+    renderCustomView()
+  }
+
   private let store: Store
   private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
@@ -135,6 +133,15 @@ public class PopupmenuViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
   private var previousSelectedItemIndex: Int?
+
+  private func renderCustomView() {
+    customView.colors = (
+      background: store.appearance.backgroundColor(for: .normalFloat),
+      border: store.appearance.foregroundColor(for: .normalFloat)
+        .with(alpha: 0.3)
+    )
+    customView.render()
+  }
 }
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
