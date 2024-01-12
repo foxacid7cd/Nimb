@@ -45,7 +45,7 @@ public class MsgShowsViewController: NSViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
 
-    customView.animate(hide: true)
+    customView.toggle(on: false)
     renderCustomView()
     renderContent()
   }
@@ -66,9 +66,9 @@ public class MsgShowsViewController: NSViewController {
     }
 
     if stateUpdates.isMessagesUpdated {
-      customView.animate(
-        hide: store.state.msgShows.isEmpty || store.state.isMsgShowsDismissed,
-        duration: 0.12
+      customView.toggle(
+        on: !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed,
+        animationDuration: 0.12
       )
     }
   }

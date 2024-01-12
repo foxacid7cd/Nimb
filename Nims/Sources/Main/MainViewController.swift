@@ -61,7 +61,7 @@ public class MainViewController: NSViewController {
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black
-      .withAlphaComponent(0.3)
+      .withAlphaComponent(0.4)
       .cgColor
     modalOverlayView.isHidden = true
     view.addSubview(modalOverlayView)
@@ -74,7 +74,16 @@ public class MainViewController: NSViewController {
 
     view.addSubview(cmdlinesViewController.view)
     cmdlinesViewController.view.centerXToSuperview()
-    cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
+    let cmdlinesYConstraint = cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65, priority: .defaultHigh)
+    cmdlinesViewController.animatingToggling = { [weak view] on, animationDuration in
+      guard animationDuration != 0, let view else {
+        return
+      }
+      cmdlinesYConstraint.constant = on ? -8 : 0
+      view.layoutSubtreeIfNeeded()
+      cmdlinesYConstraint.animator().constant = on ? 0 : -8
+      view.layoutSubtreeIfNeeded()
+    }
     addChild(cmdlinesViewController)
 
     popupmenuViewController.willShowPopupmenu = { [weak self] in

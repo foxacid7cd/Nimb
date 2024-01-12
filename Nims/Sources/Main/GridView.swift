@@ -67,12 +67,10 @@ public class GridView: NSView {
 
   override public func draw(_ dirtyRect: NSRect) {
     let context = NSGraphicsContext.current!.cgContext
-    let font = store.font
-    let appearance = store.appearance
 
     let boundingRect = IntegerRectangle(
       frame: dirtyRect.applying(upsideDownTransform),
-      cellSize: font.cellSize
+      cellSize: store.font.cellSize
     )
     grid.drawRuns.draw(
       to: context,

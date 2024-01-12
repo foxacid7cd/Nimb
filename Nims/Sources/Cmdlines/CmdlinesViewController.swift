@@ -15,6 +15,15 @@ public class CmdlinesViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
+  public var animatingToggling: ((_ on: Bool, _ animationDuration: Double) -> Void)? {
+    get {
+      customView.animatingToggling
+    }
+    set(value) {
+      customView.animatingToggling = value
+    }
+  }
+
   public func render(_ stateUpdates: State.Updates) {
     if
       stateUpdates.isAppearanceUpdated,
@@ -61,14 +70,15 @@ public class CmdlinesViewController: NSViewController {
     }
 
     if stateUpdates.isCmdlinesUpdated {
-      customView.animate(hide: store.state.cmdlines.dictionary.isEmpty, duration: 0.07)
+      let on = !store.state.cmdlines.dictionary.isEmpty
+      customView.toggle(on: on, animationDuration: on ? 0.07 : 0.12)
     }
   }
 
   override public func loadView() {
     let view = customView
-    view.width(500)
-    view.height(max: 160)
+    view.width(524)
+    view.height(max: 148)
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init()
@@ -92,7 +102,7 @@ public class CmdlinesViewController: NSViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
 
-    customView.animate(hide: true)
+    customView.toggle(on: false)
     renderCustomView()
   }
 

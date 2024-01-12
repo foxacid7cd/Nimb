@@ -68,11 +68,11 @@ public class PopupmenuViewController: NSViewController {
     }
 
     if stateUpdates.isPopupmenuUpdated {
-      let hide = store.state.popupmenu == nil
-      if !hide {
+      let on = store.state.popupmenu != nil
+      if on {
         willShowPopupmenu?()
       }
-      let isSuccess = customView.animate(hide: hide, duration: 0.07)
+      let isSuccess = customView.toggle(on: on, animationDuration: on ? 0 : 0.07)
       if isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
@@ -122,7 +122,7 @@ public class PopupmenuViewController: NSViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
 
-    customView.animate(hide: true)
+    customView.toggle(on: false)
     renderCustomView()
   }
 
