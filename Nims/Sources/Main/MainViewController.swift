@@ -89,13 +89,11 @@ public class MainViewController: NSViewController {
         return
       }
       if on {
-        cmdlinesYConstraint.constant = 8
-        view.layoutSubtreeIfNeeded()
-        cmdlinesYConstraint.animator().constant = 0
-        view.layoutSubtreeIfNeeded()
-      } else {
+        cmdlinesYConstraint.constant = -4
         view.layoutSubtreeIfNeeded()
       }
+      cmdlinesYConstraint.animator().constant = 0
+      view.layoutSubtreeIfNeeded()
     }
     addChild(cmdlinesViewController)
 
@@ -107,6 +105,7 @@ public class MainViewController: NSViewController {
       popupmenuViewController.view.centerXToSuperview(),
       popupmenuViewController.view.centerYToSuperview(),
     ]
+
     addChild(popupmenuViewController)
 
     self.view = view

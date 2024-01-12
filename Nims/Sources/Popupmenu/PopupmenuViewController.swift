@@ -40,7 +40,7 @@ public class PopupmenuViewController: NSViewController {
           anchorConstraints = [
             view.leading(to: gridView, offset: offset.x - 13),
             view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
-            view.width(352),
+            view.width(290),
           ]
 
         case .cmdline:
@@ -72,8 +72,8 @@ public class PopupmenuViewController: NSViewController {
       if on {
         willShowPopupmenu?()
       }
-      let isSuccess = customView.toggle(on: on, animationDuration: on ? 0 : 0.07)
-      if isSuccess {
+      let isSuccess = customView.toggle(on: on)
+      if on, isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
           y: -scrollView.contentInsets.top
@@ -96,7 +96,7 @@ public class PopupmenuViewController: NSViewController {
 
   override public func loadView() {
     let view = customView
-    view.height(200)
+    view.height(156)
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 8, left: 0, bottom: 8, right: 0)

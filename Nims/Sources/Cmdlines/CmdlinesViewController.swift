@@ -71,7 +71,7 @@ public class CmdlinesViewController: NSViewController {
 
     if stateUpdates.isCmdlinesUpdated {
       let on = !store.state.cmdlines.dictionary.isEmpty
-      customView.toggle(on: on, animationDuration: on ? 0.12 : 0.1)
+      customView.toggle(on: on, animationDuration: on ? 0.07 : 0.15)
     }
   }
 
