@@ -175,23 +175,14 @@ public class MainViewController: NSViewController {
     view.layoutSubtreeIfNeeded()
 
     var popupmenuFrame = popupmenuViewController.view.frame
-    popupmenuFrame = view.convert(popupmenuFrame, to: gridsContainerView)
-    popupmenuFrame = gridsContainerView.convert(popupmenuFrame, to: gridsView)
+    popupmenuFrame = view.convert(popupmenuFrame, to: nil)
+    popupmenuFrame = gridsView.convert(popupmenuFrame, from: nil)
     popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
-
-    let size = IntegerSize(
-      columnsCount: Int(ceil(popupmenuFrame.size.width / store.font.cellWidth)),
-      rowsCount: Int(ceil(popupmenuFrame.size.height / store.font.cellHeight))
-    )
-    let rectangle = IntegerRectangle(
-      origin: .init(
-        column: Int(popupmenuFrame.origin.x / store.font.cellWidth),
-        row: Int(popupmenuFrame.origin.y / store.font.cellHeight)
-      ),
-      size: size
-    )
     Task {
-      await store.reportPumBounds(rectangle: rectangle)
+      await store.reportPumBounds(rectangle: .init(
+        frame: popupmenuFrame,
+        cellSize: store.font.cellSize
+      ))
     }
   }
 }

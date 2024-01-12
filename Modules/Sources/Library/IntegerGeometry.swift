@@ -2,17 +2,28 @@
 
 import Foundation
 
+@PublicInit
 public struct IntegerRectangle: Sendable, Hashable {
-  public init(
-    origin: IntegerPoint = .init(),
-    size: IntegerSize = .init()
-  ) {
-    self.origin = origin
-    self.size = size
+  public init(frame: CGRect, cellSize: CGSize) {
+    let origin = IntegerPoint(
+      column: Int(frame.minX / cellSize.width),
+      row: Int(frame.minY / cellSize.height)
+    )
+    let farthestPoint = IntegerPoint(
+      column: Int((frame.maxX / cellSize.width).rounded(.up)),
+      row: Int((frame.maxY / cellSize.height).rounded(.up))
+    )
+    self.init(
+      origin: origin,
+      size: .init(
+        columnsCount: farthestPoint.column - origin.column,
+        rowsCount: farthestPoint.row - origin.row
+      )
+    )
   }
 
-  public var origin: IntegerPoint
-  public var size: IntegerSize
+  public var origin: IntegerPoint = .init()
+  public var size: IntegerSize = .init()
 
   @inlinable
   public var minColumn: Int {
@@ -89,17 +100,10 @@ public func + (first: IntegerRectangle, second: IntegerPoint) -> IntegerRectangl
   .init(origin: first.origin + second, size: first.size)
 }
 
+@PublicInit
 public struct IntegerPoint: Sendable, Hashable {
-  public init(
-    column: Int = 0,
-    row: Int = 0
-  ) {
-    self.column = column
-    self.row = row
-  }
-
-  public var column: Int
-  public var row: Int
+  public var column: Int = 0
+  public var row: Int = 0
 }
 
 @inlinable
@@ -137,17 +141,10 @@ public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
   .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
 }
 
+@PublicInit
 public struct IntegerSize: Sendable, Hashable {
-  public init(
-    columnsCount: Int = 0,
-    rowsCount: Int = 0
-  ) {
-    self.columnsCount = columnsCount
-    self.rowsCount = rowsCount
-  }
-
-  public var columnsCount: Int
-  public var rowsCount: Int
+  public var columnsCount: Int = 0
+  public var rowsCount: Int = 0
 }
 
 @inlinable

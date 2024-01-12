@@ -67,25 +67,16 @@ public class GridView: NSView {
 
   override public func draw(_ dirtyRect: NSRect) {
     let context = NSGraphicsContext.current!.cgContext
+    let font = store.font
+    let appearance = store.appearance
 
-    let upsideDownRect = dirtyRect
-      .applying(upsideDownTransform)
-
-    let integerFrame = IntegerRectangle(
-      origin: .init(
-        column: Int(upsideDownRect.origin.x / store.font.cellWidth),
-        row: Int(upsideDownRect.origin.y / store.font.cellHeight)
-      ),
-      size: .init(
-        columnsCount: Int(ceil(upsideDownRect.size.width / store.font.cellWidth)),
-        rowsCount: Int(ceil(upsideDownRect.size.height / store.font.cellHeight))
-      )
+    let boundingRect = IntegerRectangle(
+      frame: dirtyRect.applying(upsideDownTransform),
+      cellSize: font.cellSize
     )
-    .intersection(with: .init(size: grid.size))
-
     grid.drawRuns.draw(
       to: context,
-      boundingRect: integerFrame,
+      boundingRect: boundingRect,
       font: store.font,
       appearance: store.appearance,
       upsideDownTransform: upsideDownTransform
@@ -95,7 +86,7 @@ public class GridView: NSView {
       store.state.cursorBlinkingPhase,
       store.state.isMouseUserInteractionEnabled,
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      integerFrame.contains(cursorDrawRun.origin)
+      boundingRect.contains(cursorDrawRun.origin)
     {
       cursorDrawRun.draw(
         to: context,
