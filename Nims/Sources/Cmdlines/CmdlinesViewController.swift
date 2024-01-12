@@ -71,13 +71,13 @@ public class CmdlinesViewController: NSViewController {
 
     if stateUpdates.isCmdlinesUpdated {
       let on = !store.state.cmdlines.dictionary.isEmpty
-      customView.toggle(on: on, animationDuration: on ? 0.07 : 0.12)
+      customView.toggle(on: on, animationDuration: on ? 0.12 : 0.1)
     }
   }
 
   override public func loadView() {
     let view = customView
-    view.width(524)
+    view.width(452)
     view.height(max: 148)
 
     scrollView.automaticallyAdjustsContentInsets = false

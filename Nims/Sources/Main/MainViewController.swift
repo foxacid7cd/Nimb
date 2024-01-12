@@ -69,8 +69,17 @@ public class MainViewController: NSViewController {
 
     view.addSubview(msgShowsViewController.view)
     msgShowsViewController.view.leading(to: view, offset: -1)
-    msgShowsViewController.view.bottomToSuperview(offset: 1)
+    let msgShowsYConstraint = msgShowsViewController.view.bottomToSuperview(offset: 1, priority: .defaultHigh)
     addChild(msgShowsViewController)
+    msgShowsViewController.animatingToggling = { [weak view] on, animationDuration in
+      guard animationDuration != 0, let view else {
+        return
+      }
+      msgShowsYConstraint.constant = on ? 9 : 1
+      view.layoutSubtreeIfNeeded()
+      msgShowsYConstraint.animator().constant = on ? 1 : 9
+      view.layoutSubtreeIfNeeded()
+    }
 
     view.addSubview(cmdlinesViewController.view)
     cmdlinesViewController.view.centerXToSuperview()
@@ -79,10 +88,14 @@ public class MainViewController: NSViewController {
       guard animationDuration != 0, let view else {
         return
       }
-      cmdlinesYConstraint.constant = on ? -8 : 0
-      view.layoutSubtreeIfNeeded()
-      cmdlinesYConstraint.animator().constant = on ? 0 : -8
-      view.layoutSubtreeIfNeeded()
+      if on {
+        cmdlinesYConstraint.constant = 8
+        view.layoutSubtreeIfNeeded()
+        cmdlinesYConstraint.animator().constant = 0
+        view.layoutSubtreeIfNeeded()
+      } else {
+        view.layoutSubtreeIfNeeded()
+      }
     }
     addChild(cmdlinesViewController)
 
