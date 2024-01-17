@@ -3,15 +3,14 @@
 import AppKit
 import CustomDump
 import Library
-import SwiftUI
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
-  override nonisolated init() {
+public class AppDelegate: NSObject, NSApplicationDelegate {
+  override public nonisolated init() {
     super.init()
   }
 
-  func applicationDidFinishLaunching(_: Notification) {
+  public func applicationDidFinishLaunching(_: Notification) {
     Task {
       await setupStore()
       setupMainMenuController()

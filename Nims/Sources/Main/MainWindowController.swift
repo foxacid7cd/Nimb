@@ -7,10 +7,26 @@ import Library
 public class MainWindowController: NSWindowController {
   public init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
-    mainWindow = MainWindow(store: store, minOuterGridSize: minOuterGridSize)
-    super.init(window: mainWindow)
+    viewController = .init(
+      store: store,
+      minOuterGridSize: minOuterGridSize
+    )
+    customWindow.contentViewController = viewController
+    customWindow.titlebarAppearsTransparent = true
+    customWindow.title = ""
+    customWindow.isMovable = false
+    customWindow.isOpaque = true
+    customWindow.keyPressed = { keyPress in
+      Task {
+        await store.report(keyPress: keyPress)
+      }
+    }
+    super.init(window: customWindow)
 
-    mainWindow.delegate = self
+    customWindow.delegate = self
+
+    renderBackgroundColor()
+    renderIsMouseUserInteractionEnabled()
   }
 
   @available(*, unavailable)
@@ -19,39 +35,80 @@ public class MainWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    mainWindow.render(stateUpdates)
+    if stateUpdates.isAppearanceUpdated {
+      renderBackgroundColor()
+    }
+
+    if stateUpdates.isMouseUserInteractionEnabledUpdated {
+      renderIsMouseUserInteractionEnabled()
+    }
+
+    viewController.render(stateUpdates)
 
     if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
       isWindowInitiallyShown = true
 
-      let contentSize = UserDefaults.standard.lastWindowSize ?? mainWindow.estimatedContentSize(outerGridSize: outerGrid.size)
-      mainWindow.setContentSize(contentSize)
-      showWindow(nil)
+      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController.estimatedContentSize(outerGridSize: outerGrid.size)
+      customWindow.setContentSize(contentSize)
+      customWindow.makeKeyAndOrderFront(nil)
+    }
+  }
+
+  private class CustomWindow: NSWindow {
+    var keyPressed: ((KeyPress) -> Void)?
+
+    override var canBecomeMain: Bool {
+      true
+    }
+
+    override var canBecomeKey: Bool {
+      true
+    }
+
+    override func keyDown(with event: NSEvent) {
+      keyPressed?(.init(event: event))
     }
   }
 
   private let store: Store
-  private let mainWindow: MainWindow
+  private let customWindow = CustomWindow(
+    contentRect: .init(),
+    styleMask: [.titled, .miniaturizable, .fullSizeContentView],
+    backing: .buffered,
+    defer: true
+  )
+  private let viewController: MainViewController
   private var isWindowInitiallyShown = false
 
   private func saveWindowFrame() {
-    UserDefaults.standard.lastWindowSize = window!.frame.size
+    UserDefaults.standard.lastWindowSize = customWindow.frame.size
+  }
+
+  private func renderBackgroundColor() {
+    customWindow.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+  }
+
+  private func renderIsMouseUserInteractionEnabled() {
+    if store.state.isMouseUserInteractionEnabled {
+      customWindow.styleMask.insert(.resizable)
+    } else {
+      customWindow.styleMask.remove(.resizable)
+    }
   }
 }
 
 extension MainWindowController: NSWindowDelegate {
   public func windowDidResize(_: Notification) {
-    guard isWindowInitiallyShown else {
-      return
-    }
-    mainWindow.reportOuterGridSizeChanged()
-    if !mainWindow.inLiveResize {
-      saveWindowFrame()
+    if isWindowInitiallyShown {
+      viewController.reportOuterGridSizeChanged()
+      if !customWindow.inLiveResize {
+        saveWindowFrame()
+      }
     }
   }
 
   public func windowDidEndLiveResize(_: Notification) {
-    mainWindow.reportOuterGridSizeChanged()
+    viewController.reportOuterGridSizeChanged()
     saveWindowFrame()
   }
 }
