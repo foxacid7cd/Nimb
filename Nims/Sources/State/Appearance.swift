@@ -104,6 +104,14 @@ public struct Appearance: Sendable {
     return highlight.isBold
   }
 
+  public func isReverse(for highlightID: Highlight.ID) -> Bool {
+    guard highlightID != .zero, let highlight = highlights[highlightID] else {
+      return false
+    }
+
+    return highlight.isReverse
+  }
+
   public func decorations(for highlightID: Highlight.ID) -> Highlight.Decorations {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return .init()

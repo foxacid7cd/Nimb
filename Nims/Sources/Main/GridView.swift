@@ -72,7 +72,16 @@ public class GridView: NSView {
       frame: dirtyRect.applying(upsideDownTransform),
       cellSize: store.font.cellSize
     )
-    grid.drawRuns.draw(
+    context.setShouldAntialias(false)
+    grid.drawRuns.drawBackground(
+      to: context,
+      boundingRect: boundingRect,
+      font: store.font,
+      appearance: store.appearance,
+      upsideDownTransform: upsideDownTransform
+    )
+    context.setShouldAntialias(true)
+    grid.drawRuns.drawForeground(
       to: context,
       boundingRect: boundingRect,
       font: store.font,

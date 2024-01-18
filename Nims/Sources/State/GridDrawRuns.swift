@@ -31,7 +31,7 @@ public struct GridDrawRuns: Sendable {
   }
 
   @MainActor
-  public func draw(
+  public func drawBackground(
     to context: CGContext,
     boundingRect: IntegerRectangle,
     font: Font,
@@ -39,7 +39,26 @@ public struct GridDrawRuns: Sendable {
     upsideDownTransform: CGAffineTransform
   ) {
     for row in max(boundingRect.minRow, 0) ..< min(boundingRect.maxRow, rowDrawRuns.count) {
-      rowDrawRuns[row].draw(
+      rowDrawRuns[row].drawBackground(
+        at: .init(x: 0, y: Double(row) * font.cellHeight),
+        to: context,
+        font: font,
+        appearance: appearance,
+        upsideDownTransform: upsideDownTransform
+      )
+    }
+  }
+
+  @MainActor
+  public func drawForeground(
+    to context: CGContext,
+    boundingRect: IntegerRectangle,
+    font: Font,
+    appearance: Appearance,
+    upsideDownTransform: CGAffineTransform
+  ) {
+    for row in max(boundingRect.minRow, 0) ..< min(boundingRect.maxRow, rowDrawRuns.count) {
+      rowDrawRuns[row].drawForeground(
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         to: context,
         font: font,
@@ -126,7 +145,7 @@ public struct RowDrawRun: Sendable {
   public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
 
   @MainActor
-  public func draw(
+  public func drawBackground(
     at origin: CGPoint,
     to context: CGContext,
     font: Font,
@@ -143,7 +162,35 @@ public struct RowDrawRun: Sendable {
       )
       .applying(upsideDownTransform)
 
-      drawRun.draw(
+      drawRun.drawBackground(
+        to: context,
+        at: rect.origin,
+        font: font,
+        appearance: appearance
+      )
+      currentColumn += drawRun.columnsCount
+    }
+  }
+
+  @MainActor
+  public func drawForeground(
+    at origin: CGPoint,
+    to context: CGContext,
+    font: Font,
+    appearance: Appearance,
+    upsideDownTransform: CGAffineTransform
+  ) {
+    var currentColumn = 0
+    for drawRun in drawRuns {
+      let rect = CGRect(
+        x: Double(currentColumn) * font.cellWidth + origin.x,
+        y: origin.y,
+        width: Double(drawRun.columnsCount) * font.cellWidth,
+        height: font.cellHeight
+      )
+      .applying(upsideDownTransform)
+
+      drawRun.drawForeground(
         to: context,
         at: rect.origin,
         font: font,
@@ -322,17 +369,7 @@ public struct DrawRun: Sendable {
   public var underlineLineDashLengths: [CGFloat]
 
   @MainActor
-  public func draw(
-    to context: CGContext,
-    at origin: CGPoint,
-    font: Font,
-    appearance: Appearance
-  ) {
-    context.saveGState()
-    defer { context.restoreGState() }
-
-    context.setShouldAntialias(false)
-
+  public func drawBackground(to context: CGContext, at origin: CGPoint, font: Font, appearance: Appearance) {
     let rect = CGRect(
       origin: origin,
       size: .init(
@@ -343,9 +380,10 @@ public struct DrawRun: Sendable {
 
     appearance.backgroundColor(for: highlightID).appKit.setFill()
     context.fill([rect])
+  }
 
-    context.setShouldAntialias(true)
-
+  @MainActor
+  public func drawForeground(to context: CGContext, at origin: CGPoint, font: Font, appearance: Appearance) {
     context.setLineWidth(1)
 
     let foregroundColor = appearance.foregroundColor(for: highlightID)
@@ -492,15 +530,12 @@ public struct CursorDrawRun: Sendable {
 
   @MainActor
   public func draw(to context: CGContext, font: Font, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
-    context.saveGState()
-    defer { context.restoreGState() }
-
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
 
-    if highlightID == Highlight.defaultID {
-      cursorForegroundColor = appearance.backgroundColor(for: parentDrawRun.highlightID)
-      cursorBackgroundColor = appearance.foregroundColor(for: parentDrawRun.highlightID)
+    if appearance.isReverse(for: highlightID) {
+      cursorForegroundColor = appearance.defaultBackgroundColor
+      cursorBackgroundColor = appearance.defaultForegroundColor
 
     } else {
       cursorForegroundColor = appearance.foregroundColor(for: highlightID)
