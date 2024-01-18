@@ -19,8 +19,19 @@ public final class Instance: Sendable {
     let shell = environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
 
+    let vimrcArgument: String = switch UserDefaults.standard.vimrc {
+    case .default:
+      ""
+    case .norc:
+      " -u NORC"
+    case .none:
+      " -u NONE"
+    case let .custom(url):
+      " -u '\(url.path())'"
+    }
+
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
-    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed"]
+    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed" + vimrcArgument]
 
     process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 

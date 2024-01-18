@@ -24,7 +24,7 @@ public class SettingsVimrcView: NSView {
   }
 
   private let popUpButton = NSPopUpButton(frame: .zero, pullsDown: true)
-  private let pathTextField = NSTextField(labelWithString: "~/.config/nvim/init.lua")
+  private let pathTextField = NSTextField(labelWithString: "")
   private lazy var folderButton = NSButton(
     image: .init(
       systemSymbolName: "folder.fill",
@@ -106,7 +106,22 @@ public class SettingsVimrcView: NSView {
     }
   }
 
-  @objc private func handleFolderButtonAction() {}
+  @objc private func handleFolderButtonAction() {
+    Task {
+      let panel = NSOpenPanel()
+      panel.canChooseDirectories = false
+      panel.canChooseFiles = true
+      panel.allowsMultipleSelection = false
+      panel.showsHiddenFiles = true
+
+      let response = await panel.begin()
+      guard !Task.isCancelled, response == .OK, let url = panel.url else {
+        return
+      }
+      UserDefaults.standard.vimrc = .custom(url)
+      reloadData()
+    }
+  }
 
   @objc private func handlePopUpButtonAction() {
     let selectedItem = Item.allCases[popUpButton.indexOfSelectedItem]
