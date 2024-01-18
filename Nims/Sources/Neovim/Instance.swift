@@ -12,6 +12,7 @@ import MessagePack
 public final class Instance: Sendable {
   public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
     var environment = ProcessInfo.processInfo.environment
+    environment.merge(UserDefaults.standard.environmentOverlay, uniquingKeysWith: { _, newValue in newValue })
     environment["VIMRUNTIME"] = neovimRuntimeURL.standardizedFileURL.path()
     process.environment = environment
 

@@ -73,4 +73,20 @@ public extension UserDefaults {
       set(value.isUIEventsLoggingEnabled, forKey: "isUIEventsLoggingEnabled")
     }
   }
+
+  var environmentOverlay: [String: String] {
+    get {
+      guard
+        let encoded = value(forKey: "environmentOverlay") as? Data,
+        let value = try? JSONDecoder().decode([String: String].self, from: encoded)
+      else {
+        return [:]
+      }
+      return value
+    }
+    set(value) {
+      let encoded = try? JSONEncoder().encode(value)
+      setValue(encoded, forKey: "environmentOverlay")
+    }
+  }
 }
