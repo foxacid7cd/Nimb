@@ -153,10 +153,9 @@ public struct RowDrawRun: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    var currentColumn = 0
     for drawRun in drawRuns {
       let rect = CGRect(
-        x: Double(currentColumn) * font.cellWidth + origin.x,
+        x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
         width: Double(drawRun.columnsRange.count) * font.cellWidth,
         height: font.cellHeight
@@ -169,7 +168,6 @@ public struct RowDrawRun: Sendable {
         font: font,
         appearance: appearance
       )
-      currentColumn += drawRun.columnsRange.count
     }
   }
 
@@ -181,10 +179,9 @@ public struct RowDrawRun: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    var currentColumn = 0
     for drawRun in drawRuns {
       let rect = CGRect(
-        x: Double(currentColumn) * font.cellWidth + origin.x,
+        x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
         width: Double(drawRun.columnsRange.count) * font.cellWidth,
         height: font.cellHeight
@@ -197,7 +194,6 @@ public struct RowDrawRun: Sendable {
         font: font,
         appearance: appearance
       )
-      currentColumn += drawRun.columnsRange.count
     }
   }
 }
@@ -227,8 +223,9 @@ public struct DrawRun: Sendable {
     CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-    let yOffset = (size.height - bounds.height) / 2 + descent
-    let offset = CGPoint(x: 0, y: yOffset)
+    let xOffset = (font.cellWidth - bounds.width / Double(columnsRange.count)) / 2
+    let yOffset = (font.cellHeight - bounds.height) / 2 + descent
+    let offset = CGPoint(x: xOffset, y: yOffset)
 
     let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 

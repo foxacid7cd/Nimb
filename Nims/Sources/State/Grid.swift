@@ -183,7 +183,7 @@ public struct Grid: Sendable, Identifiable {
         let rowPart = layout.rowLayouts[position.row].parts
           .first(where: { $0.columnsRange.contains(position.column) }),
         let rowPartCell = rowPart.cells
-          .first(where: { $0.columnsRange.lowerBound == position.column })
+          .first(where: { (($0.columnsRange.lowerBound + rowPart.columnsRange.lowerBound) ..< ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)).contains(position.column) })
       {
         rowPartCell.columnsRange.count
       } else {
