@@ -25,18 +25,7 @@ public struct MsgShowsLayout: Sendable {
         items.append(.separator)
       }
 
-      var text = [MsgShow.ContentPart]()
-      for var contentPart in msgShow.contentParts {
-        contentPart.text = contentPart.text
-          .trimmingCharacters(in: .newlines)
-
-        if !contentPart.text.isEmpty {
-          text.append(contentPart)
-        }
-      }
-      if !text.isEmpty {
-        accumulator.append(text)
-      }
+      accumulator.append(msgShow.contentParts)
     }
     finishTextsItem()
 
