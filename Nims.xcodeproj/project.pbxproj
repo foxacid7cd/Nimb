@@ -21,6 +21,7 @@
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
+		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
 		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
@@ -120,6 +121,7 @@
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
+		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
 		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
@@ -243,6 +245,7 @@
 				686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */,
 				68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */,
 				68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */,
+				687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -523,6 +526,7 @@
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
 				68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */,
+				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,

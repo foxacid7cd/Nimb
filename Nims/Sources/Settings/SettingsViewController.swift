@@ -9,17 +9,23 @@ public class SettingsViewController: NSViewController {
     let stackView = NSStackView(views: [
       sectionHeaderView(title: "Additional environment variables:"),
       environmentView,
+      sectionHeaderView(title: "Use following vimrc:"),
+      vimrcView,
     ])
     stackView.orientation = .vertical
     stackView.alignment = .leading
     stackView.spacing = 0
     view.addSubview(stackView)
-    stackView.edgesToSuperview(insets: .init(top: 15, left: 16, bottom: 16, right: 16))
+    stackView.edgesToSuperview(insets: .init(top: 16, left: 16, bottom: 16, right: 16))
+
+    stackView.setCustomSpacing(16, after: environmentView)
+    vimrcView.width(to: environmentView)
 
     self.view = view
   }
 
   private lazy var environmentView = SettingsEnvironmentView()
+  private lazy var vimrcView = SettingsVimrcView()
 
   private func sectionHeaderView(title: String) -> NSView {
     let headerView = NSView()

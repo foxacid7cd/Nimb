@@ -101,7 +101,7 @@ public class SettingsEnvironmentView: NSView {
     clipsToBounds = true
     layer!.cornerRadius = 8
     layer!.borderWidth = 1
-    layer!.borderColor = NSColor.textColor.withAlphaComponent(0.3).cgColor
+    layer!.borderColor = NSColor.textColor.withAlphaComponent(0.2).cgColor
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 0, left: 0, bottom: 4, right: 0)

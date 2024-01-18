@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CasePaths
 import Library
 
 public extension UserDefaults {
@@ -89,4 +90,42 @@ public extension UserDefaults {
       setValue(encoded, forKey: "environmentOverlay")
     }
   }
+
+  var vimrc: Vimrc {
+    get {
+      var value = Vimrc.default
+      if let encoded = self.value(forKey: "vimrc") as? String {
+        switch encoded {
+        case "norc":
+          value = .norc
+        case "none":
+          value = .none
+        default:
+          value = .custom(.init(filePath: encoded))
+        }
+      }
+      return value
+    }
+    set(value) {
+      let encoded: String? = switch value {
+      case .default:
+        nil
+      case .norc:
+        "norc"
+      case .none:
+        "none"
+      case let .custom(url):
+        url.standardizedFileURL.path()
+      }
+      setValue(encoded, forKey: "vimrc")
+    }
+  }
+}
+
+@CasePathable
+public enum Vimrc {
+  case `default`
+  case norc
+  case none
+  case custom(URL)
 }
