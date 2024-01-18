@@ -91,6 +91,19 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
+  public var isFocusable: Bool {
+    switch associatedWindow {
+    case .plain:
+      true
+    case let .floating(floatingWindow):
+      floatingWindow.isFocusable
+    case .external:
+      true
+    default:
+      true
+    }
+  }
+
   public mutating func apply(update: Update, font: Font, appearance: Appearance) -> UpdateResult? {
     switch update {
     case let .resize(integerSize):
