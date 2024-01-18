@@ -103,14 +103,15 @@ public struct RowDrawRun: Sendable {
         }
       }
 
-      let drawRun = reusedDrawRun ?? .init(
+      var drawRun = reusedDrawRun ?? .init(
         text: part.text,
         rowPartCells: part.cells,
-        columnsCount: part.columnsCount,
+        columnsRange: part.columnsRange,
         highlightID: part.highlightID,
         font: font,
         appearance: appearance
       )
+      drawRun.columnsRange = part.columnsRange
       drawRunsCache[.init(drawRun)] = (
         index: drawRuns.count,
         drawRun: drawRun
@@ -127,7 +128,7 @@ public struct RowDrawRun: Sendable {
     public init(_ drawRun: DrawRun) {
       text = drawRun.text
       highlightID = drawRun.highlightID
-      columnsCount = drawRun.columnsCount
+      columnsCount = drawRun.columnsRange.count
     }
 
     public init(_ rowPart: RowPart) {
@@ -157,7 +158,7 @@ public struct RowDrawRun: Sendable {
       let rect = CGRect(
         x: Double(currentColumn) * font.cellWidth + origin.x,
         y: origin.y,
-        width: Double(drawRun.columnsCount) * font.cellWidth,
+        width: Double(drawRun.columnsRange.count) * font.cellWidth,
         height: font.cellHeight
       )
       .applying(upsideDownTransform)
@@ -168,7 +169,7 @@ public struct RowDrawRun: Sendable {
         font: font,
         appearance: appearance
       )
-      currentColumn += drawRun.columnsCount
+      currentColumn += drawRun.columnsRange.count
     }
   }
 
@@ -185,7 +186,7 @@ public struct RowDrawRun: Sendable {
       let rect = CGRect(
         x: Double(currentColumn) * font.cellWidth + origin.x,
         y: origin.y,
-        width: Double(drawRun.columnsCount) * font.cellWidth,
+        width: Double(drawRun.columnsRange.count) * font.cellWidth,
         height: font.cellHeight
       )
       .applying(upsideDownTransform)
@@ -196,15 +197,15 @@ public struct RowDrawRun: Sendable {
         font: font,
         appearance: appearance
       )
-      currentColumn += drawRun.columnsCount
+      currentColumn += drawRun.columnsRange.count
     }
   }
 }
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public init(text: String, rowPartCells: [RowPart.Cell], columnsCount: Int, highlightID: Highlight.ID, font: Font, appearance: Appearance) {
-    let size = CGSize(width: Double(columnsCount) * font.cellWidth, height: font.cellHeight)
+  public init(text: String, rowPartCells: [RowPart.Cell], columnsRange: Range<Int>, highlightID: Highlight.ID, font: Font, appearance: Appearance) {
+    let size = CGSize(width: Double(columnsRange.count) * font.cellWidth, height: font.cellHeight)
 
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
@@ -315,7 +316,7 @@ public struct DrawRun: Sendable {
         let widthDivider = 3
 
         let xStep = font.cellWidth / Double(widthDivider)
-        let pointsCount = columnsCount * widthDivider + 3
+        let pointsCount = columnsRange.count * widthDivider + 3
 
         let oddUnderlineY = underlineY + 3
         let evenUnderlineY = underlineY
@@ -351,7 +352,7 @@ public struct DrawRun: Sendable {
       text: text,
       rowPartCells: rowPartCells,
       highlightID: highlightID,
-      columnsCount: columnsCount,
+      columnsRange: columnsRange,
       glyphRuns: glyphRuns,
       strikethroughPath: strikethroughPath,
       underlinePath: underlinePath,
@@ -362,7 +363,7 @@ public struct DrawRun: Sendable {
   public var text: String
   public var rowPartCells: [RowPart.Cell]
   public var highlightID: Highlight.ID
-  public var columnsCount: Int
+  public var columnsRange: Range<Int>
   public var glyphRuns: [GlyphRun]
   public var strikethroughPath: Path?
   public var underlinePath: Path?
@@ -373,7 +374,7 @@ public struct DrawRun: Sendable {
     let rect = CGRect(
       origin: origin,
       size: .init(
-        width: Double(columnsCount) * font.cellWidth,
+        width: Double(columnsRange.count) * font.cellWidth,
         height: font.cellHeight
       )
     )
@@ -432,7 +433,7 @@ public struct DrawRun: Sendable {
       text == rowPart.text,
       highlightID == rowPart.highlightID,
       rowPartCells == rowPart.cells,
-      columnsCount == rowPart.columnsCount
+      columnsRange.count == rowPart.columnsRange.count
     else {
       return false
     }
@@ -454,33 +455,31 @@ public struct CursorDrawRun: Sendable {
   public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], origin: IntegerPoint, columnsCount: Int, style: CursorStyle, font: Font, appearance: Appearance) {
     var parentOrigin: IntegerPoint?
     var parentDrawRun: DrawRun?
-    var cursorColumnsCount: Int?
+    var cursorColumnsRange: Range<Int>?
 
-    var currentColumn = 0
     drawRunsLoop:
       for drawRun in rowDrawRuns[origin.row].drawRuns
     {
-      if (currentColumn ..< currentColumn + drawRun.columnsCount).contains(origin.column) {
-        parentOrigin = .init(column: currentColumn, row: origin.row)
+      if drawRun.columnsRange.contains(origin.column) {
+        parentOrigin = .init(column: drawRun.columnsRange.lowerBound, row: origin.row)
         parentDrawRun = drawRun
         for rowPartCell in drawRun.rowPartCells {
-          if currentColumn == origin.column {
-            cursorColumnsCount = rowPartCell.columnsCount
+          let lowerBound = drawRun.columnsRange.lowerBound + rowPartCell.columnsRange.lowerBound
+          let upperBound = drawRun.columnsRange.lowerBound + rowPartCell.columnsRange.upperBound
+          if (lowerBound ..< upperBound).contains(origin.column) {
+            cursorColumnsRange = rowPartCell.columnsRange
             break drawRunsLoop
           }
-          currentColumn += rowPartCell.columnsCount
         }
         assertionFailure()
         break
-      } else {
-        currentColumn += drawRun.columnsCount
       }
     }
     guard
       let parentOrigin,
       let parentDrawRun,
-      let cursorColumnsCount,
-      let cellFrame = style.cellFrame(columnsCount: cursorColumnsCount, font: font)
+      let cursorColumnsRange,
+      let cellFrame = style.cellFrame(columnsCount: cursorColumnsRange.count, font: font)
     else {
       assertionFailure()
       return nil
@@ -519,12 +518,12 @@ public struct CursorDrawRun: Sendable {
   public mutating func updateParent(with layout: GridLayout, rowDrawRuns: [RowDrawRun]) {
     var currentColumn = 0
     for drawRun in rowDrawRuns[origin.row].drawRuns {
-      let columnsRange = currentColumn ..< currentColumn + drawRun.columnsCount
+      let columnsRange = currentColumn ..< currentColumn + drawRun.columnsRange.count
       if columnsRange.contains(origin.column) {
         parentOrigin = .init(column: currentColumn, row: origin.row)
         parentDrawRun = drawRun
       }
-      currentColumn += drawRun.columnsCount
+      currentColumn += drawRun.columnsRange.count
     }
   }
 
@@ -547,7 +546,6 @@ public struct CursorDrawRun: Sendable {
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(upsideDownTransform)
 
-    context.setShouldAntialias(false)
     cursorBackgroundColor.appKit.setFill()
     rect.fill()
 
@@ -555,11 +553,10 @@ public struct CursorDrawRun: Sendable {
       rect.clip()
 
       cursorForegroundColor.appKit.setFill()
-      context.setShouldAntialias(true)
 
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
-        size: .init(columnsCount: parentDrawRun.columnsCount, rowsCount: 1)
+        size: .init(columnsCount: parentDrawRun.columnsRange.count, rowsCount: 1)
       )
       let parentRect = (parentRectangle * font.cellSize)
         .applying(upsideDownTransform)
