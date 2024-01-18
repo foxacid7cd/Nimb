@@ -5,7 +5,7 @@ set -e
   local nvim_path=".build/nvim-macos/bin/nvim"
   local generate_cmd="swift run --package-path Modules generate"
 
-  local generated_dir="Nims/Sources/Neovim/generated"
+  local generated_dir="Nims/Sources/generated"
   $nvim_path --api-info | eval "$generate_cmd $generated_dir"
 
   local swiftformat="/opt/homebrew/bin/swiftformat"

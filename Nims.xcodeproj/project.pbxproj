@@ -201,7 +201,7 @@
 		684384D02934D04A000C4A1D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				689D9E2E29B5127F00345713 /* Store.swift */,
+				68A8FF672AD2AC710017C28D /* generated */,
 				68FAC3F12AF6724200490F09 /* State */,
 				68A8FF362AD29F110017C28D /* Neovim */,
 				6888C7D92AC84E2800686608 /* Main */,
@@ -210,6 +210,7 @@
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				686CAFE92B50F3B700AED2CC /* Settings */,
+				689D9E2E29B5127F00345713 /* Store.swift */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
@@ -293,7 +294,6 @@
 		68A8FF362AD29F110017C28D /* Neovim */ = {
 			isa = PBXGroup;
 			children = (
-				68A8FF672AD2AC710017C28D /* generated */,
 				68A8FF3F2AD29F650017C28D /* API.swift */,
 				6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */,
 				6878932C2AF7F2B300005A8E /* APIFunction.swift */,
