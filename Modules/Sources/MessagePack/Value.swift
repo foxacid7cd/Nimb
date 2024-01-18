@@ -43,9 +43,12 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleBy
 
       let string = String(
         unsafeUninitializedCapacity: size,
-        initializingUTF8With: { buffer in let pointer = buffer.baseAddress!
-
-          memcpy(pointer, str.ptr, size)
+        initializingUTF8With: { buffer in
+          memcpy(
+            buffer.baseAddress!,
+            str.ptr,
+            size
+          )
           return size
         }
       )
@@ -57,7 +60,9 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleBy
       let count = Int(cArray.size)
       var accumulator = [Value]()
 
-      for index in 0 ..< count { accumulator.append(Value(cArray.ptr.advanced(by: index).pointee)) }
+      for index in 0 ..< count {
+        accumulator.append(Value(cArray.ptr.advanced(by: index).pointee))
+      }
 
       self = .array(accumulator)
 
