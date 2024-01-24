@@ -18,8 +18,6 @@ final class MainMenuController: NSObject {
     openMenuItem.target = self
     fileMenu.addItem(openMenuItem)
     fileMenu.addItem(.separator())
-    saveMenuItem.target = self
-    fileMenu.addItem(saveMenuItem)
     saveAsMenuItem.target = self
     saveAsMenuItem.keyEquivalentModifierMask = [.shift, .command]
     fileMenu.addItem(saveAsMenuItem)
@@ -60,7 +58,6 @@ final class MainMenuController: NSObject {
   private let settingsMenuItem = NSMenuItem(title: "Settings...", action: #selector(handleSettings), keyEquivalent: "")
   private let quitMenuItem = NSMenuItem(title: "Quit Nims", action: #selector(handleQuit), keyEquivalent: "q")
   private let openMenuItem = NSMenuItem(title: "Open", action: #selector(handleOpen), keyEquivalent: "o")
-  private let saveMenuItem = NSMenuItem(title: "Save", action: #selector(handleSave), keyEquivalent: "s")
   private let saveAsMenuItem = NSMenuItem(title: "Save As", action: #selector(handleSaveAs), keyEquivalent: "s")
   private let closeWindowMenuItem = NSMenuItem(title: "Close Window", action: #selector(handleCloseWindow), keyEquivalent: "w")
   private let editMenu = NSMenu(title: "Edit")
@@ -91,27 +88,6 @@ final class MainMenuController: NSObject {
         return
       }
       await store.edit(url: url)
-    }
-  }
-
-  @objc private func handleSave() {
-    guard actionTask == nil else {
-      return
-    }
-
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      let validBuftypes: Set<String> = ["", "help", "acwrite"]
-
-      guard
-        let (_, buftype) = await store.requestCurrentBufferInfo(),
-        validBuftypes.contains(buftype)
-      else {
-        return
-      }
-
-      await store.write()
     }
   }
 
