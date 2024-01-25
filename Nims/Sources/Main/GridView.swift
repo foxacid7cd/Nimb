@@ -17,9 +17,8 @@ public class GridView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var windowConstraints: (leading: NSLayoutConstraint, top: NSLayoutConstraint)?
-  public var floatingWindowConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint)?
   public var getNextWindowZIndex: (() -> Int)?
+  public var gridConstraints: (horizontal: NSLayoutConstraint, vertical: NSLayoutConstraint, secondView: NSView, anchor: FloatingWindow.Anchor?)?
 
   override public var intrinsicContentSize: NSSize {
     grid.size * store.font.cellSize

@@ -106,156 +106,88 @@ public class GridsView: NSView {
         if gridID == Grid.OuterID {
           UserDefaults.standard.outerGridSize = gridView.gridSize
           invalidateIntrinsicContentSize()
-
-          if let (horizontal, vertical) = gridView.floatingWindowConstraints {
-            deactivated.append(horizontal)
-            deactivated.append(vertical)
-            gridView.floatingWindowConstraints = nil
-          }
-
-          if let (leading, top) = gridView.windowConstraints {
-            deactivated.append(leading)
-            deactivated.append(top)
-          }
-
-          let leading = gridView.leading(to: self, priority: .init(rawValue: 800))
-          let top = gridView.topToSuperview(priority: .init(rawValue: 800))
-          activated.append(leading)
-          activated.append(top)
-          gridView.windowConstraints = (leading, top)
-
-          gridView.isHidden = false
+          setupConstraints(to: self)
         } else if let gridWindow = gridView.gridWindow {
           switch gridWindow {
           case let .plain(value):
-            let origin = value.origin * store.font.cellSize
-
-            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
-              deactivated.append(horizontal)
-              deactivated.append(vertical)
-              gridView.floatingWindowConstraints = nil
-            }
-
-            if let (leading, top) = gridView.windowConstraints {
-              deactivated.append(leading)
-              deactivated.append(top)
-            }
-            let leading = gridView.leadingAnchor.constraint(
-              equalTo: leadingAnchor,
-              constant: origin.x
+            setupConstraints(
+              to: self,
+              origin: value.origin * store.font.cellSize
             )
-            leading.priority = .defaultHigh
-            activated.append(leading)
-
-            let top = gridView.topAnchor.constraint(equalTo: topAnchor, constant: origin.y)
-            top.priority = .defaultHigh
-            activated.append(top)
-
-            gridView.windowConstraints = (leading, top)
-
-            gridView.isHidden = false
 
           case let .floating(value):
-            if let (leading, top) = gridView.windowConstraints {
-              deactivated.append(leading)
-              deactivated.append(top)
-              gridView.windowConstraints = nil
-            }
-
-            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
-              deactivated.append(horizontal)
-              deactivated.append(vertical)
-              gridView.floatingWindowConstraints = nil
-            }
-
             if let anchorGridView = gridViews[value.anchorGridID] {
-              let horizontalConstant: Double = value.anchorColumn * store.font.cellWidth
-              let verticalConstant: Double = value.anchorRow * store.font.cellHeight
-
-              let horizontal: NSLayoutConstraint
-              let vertical: NSLayoutConstraint
-
-              switch value.anchor {
-              case .northWest:
-                horizontal = gridView.leadingAnchor.constraint(
-                  equalTo: anchorGridView.leadingAnchor,
-                  constant: horizontalConstant
-                )
-                vertical = gridView.topAnchor.constraint(
-                  equalTo: anchorGridView.topAnchor,
-                  constant: verticalConstant
-                )
-
-              case .northEast:
-                horizontal = gridView.trailingAnchor.constraint(
-                  equalTo: anchorGridView.leadingAnchor,
-                  constant: horizontalConstant
-                )
-                vertical = gridView.topAnchor.constraint(
-                  equalTo: anchorGridView.topAnchor,
-                  constant: verticalConstant
-                )
-
-              case .southWest:
-                horizontal = gridView.leadingAnchor.constraint(
-                  equalTo: anchorGridView.leadingAnchor,
-                  constant: horizontalConstant
-                )
-                vertical = gridView.bottomAnchor.constraint(
-                  equalTo: anchorGridView.topAnchor,
-                  constant: verticalConstant
-                )
-
-              case .southEast:
-                horizontal = gridView.trailingAnchor.constraint(
-                  equalTo: anchorGridView.leadingAnchor,
-                  constant: horizontalConstant
-                )
-                vertical = gridView.bottomAnchor.constraint(
-                  equalTo: anchorGridView.topAnchor,
-                  constant: verticalConstant
-                )
-              }
-
-              activated.append(horizontal)
-              activated.append(vertical)
-              gridView.floatingWindowConstraints = (horizontal, vertical)
-
-              gridView.isHidden = false
+              let origin = CGPoint(x: value.anchorColumn * store.font.cellWidth, y: value.anchorRow * store.font.cellHeight)
+              setupConstraints(to: anchorGridView, origin: origin, anchor: value.anchor)
             } else {
               Loggers.problems.error("floating window anchor was set to grid that is not created or destroyed already")
-              gridView.isHidden = true
             }
 
           case .external:
-            if let (leading, top) = gridView.windowConstraints {
-              deactivated.append(leading)
-              deactivated.append(top)
-              gridView.windowConstraints = nil
-            }
-
-            if let (horizontal, vertical) = gridView.floatingWindowConstraints {
-              deactivated.append(horizontal)
-              deactivated.append(vertical)
-              gridView.floatingWindowConstraints = nil
-            }
-
             gridView.isHidden = true
           }
         } else {
-          if let (leading, top) = gridView.windowConstraints {
-            deactivated.append(leading)
-            deactivated.append(top)
-            gridView.windowConstraints = nil
-          }
-
-          if let (horizontal, vertical) = gridView.floatingWindowConstraints {
-            deactivated.append(horizontal)
-            deactivated.append(vertical)
-            gridView.floatingWindowConstraints = nil
-          }
-
           gridView.isHidden = true
+        }
+
+        func setupConstraints(to secondView: NSView, origin: CGPoint = .zero, anchor: FloatingWindow.Anchor? = nil) {
+          if let existing = gridView.gridConstraints {
+            if existing.secondView === secondView, existing.anchor == anchor {
+              existing.horizontal.constant = origin.x
+              existing.vertical.constant = origin.y
+            } else {
+              deactivated.append(existing.horizontal)
+              deactivated.append(existing.vertical)
+              gridView.gridConstraints = nil
+            }
+          }
+          if gridView.gridConstraints == nil {
+            let horizontal: NSLayoutConstraint
+            let vertical: NSLayoutConstraint
+
+            switch anchor {
+            case .northEast:
+              horizontal = gridView.trailingAnchor.constraint(
+                equalTo: secondView.leadingAnchor,
+                constant: origin.x
+              )
+              vertical = gridView.topAnchor.constraint(
+                equalTo: secondView.topAnchor,
+                constant: origin.y
+              )
+            case .southWest:
+              horizontal = gridView.leadingAnchor.constraint(
+                equalTo: secondView.leadingAnchor,
+                constant: origin.x
+              )
+              vertical = gridView.bottomAnchor.constraint(
+                equalTo: secondView.topAnchor,
+                constant: origin.y
+              )
+            case .southEast:
+              horizontal = gridView.trailingAnchor.constraint(
+                equalTo: secondView.leadingAnchor,
+                constant: origin.x
+              )
+              vertical = gridView.bottomAnchor.constraint(
+                equalTo: secondView.topAnchor,
+                constant: origin.y
+              )
+            default:
+              horizontal = gridView.leadingAnchor.constraint(
+                equalTo: secondView.leadingAnchor,
+                constant: origin.x
+              )
+              vertical = gridView.topAnchor.constraint(
+                equalTo: secondView.topAnchor,
+                constant: origin.y
+              )
+            }
+            activated.append(horizontal)
+            activated.append(vertical)
+
+            gridView.gridConstraints = (horizontal, vertical, secondView, anchor)
+          }
         }
       }
     }
