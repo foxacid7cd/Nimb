@@ -11,7 +11,7 @@ public struct KeyPress: Sendable {
   ) {
     self.init(
       keyCode: Int(event.keyCode),
-      characters: event.charactersIgnoringModifiers?.lowercased() ?? "",
+      characters: event.charactersIgnoringModifiers ?? "",
       modifierFlags: event.modifierFlags
     )
   }
@@ -29,9 +29,9 @@ public struct KeyPress: Sendable {
       return characters
     }
     let specialKey: String? = if keyCode == kVK_Escape {
-      "Esc"
+      "esc"
     } else {
-      specialKeys[Int(unicodeScalar.value)]
+      specialKeys[Int(unicodeScalar.value)]?.lowercased()
     }
     let modifiers = modifierFlags.makeModifiers(isSpecialKey: specialKey != nil)
     if !modifiers.isEmpty, let specialKey {
@@ -41,11 +41,7 @@ public struct KeyPress: Sendable {
     } else if let specialKey {
       return "<\(specialKey)>"
     } else {
-      var string = String(unicodeScalar)
-      if modifierFlags.contains(.shift) {
-        string = string.uppercased()
-      }
-      return string.replacingOccurrences(of: "<", with: "<lt>")
+      return characters.replacingOccurrences(of: "<", with: "<lt>")
     }
   }
 }
@@ -54,16 +50,16 @@ public extension NSEvent.ModifierFlags {
   func makeModifiers(isSpecialKey: Bool) -> [String] {
     var accumulator = [String]()
     if contains(.shift), isSpecialKey {
-      accumulator.append("S")
+      accumulator.append("s")
     }
     if contains(.control) {
-      accumulator.append("C")
+      accumulator.append("c")
     }
     if contains(.option) {
-      accumulator.append("M")
+      accumulator.append("m")
     }
     if contains(.command) {
-      accumulator.append("D")
+      accumulator.append("d")
     }
     return accumulator
   }

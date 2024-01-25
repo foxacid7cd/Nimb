@@ -14,7 +14,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       await setupStore()
       setupMainMenuController()
-      showMainWindowController()
       runStateUpdatesTask()
     }
   }
@@ -49,10 +48,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     NSApplication.shared.mainMenu = mainMenuController!.menu
   }
 
-  private func showMainWindowController() {
+  private func setupMainWindowController(initialOuterGridSize: IntegerSize) {
     mainWindowController = MainWindowController(
       store: store!,
-      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
+      initialOuterGridSize: initialOuterGridSize
     )
   }
 
@@ -63,8 +63,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           guard !Task.isCancelled, let self else {
             return
           }
-          if stateUpdates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
+          if mainWindowController == nil, !stateUpdates.gridsUpdates.isEmpty {
+            if case let (gridID, update) = stateUpdates.gridsUpdates[0], gridID == Grid.OuterID, case let .resize(size) = update {
+              setupMainWindowController(initialOuterGridSize: size)
+
+            } else {
+              Loggers.problems.error("first grid event is not resize outer grid \(String(customDumping: stateUpdates.gridsUpdates[0]))")
+            }
           }
           if stateUpdates.isFontUpdated {
             UserDefaults.standard.appKitFont = store!.state.font.appKit()
@@ -72,7 +77,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           if stateUpdates.isDebugUpdated {
             UserDefaults.standard.debug = store!.state.debug
           }
-          mainWindowController!.render(stateUpdates)
+          try await mainWindowController!.render(stateUpdates)
         }
       } catch {
         let alert = NSAlert(error: error)

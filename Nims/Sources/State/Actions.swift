@@ -27,8 +27,7 @@ public enum Actions {
 
     public func apply(to container: StateContainer) async throws -> State.Updates {
       container.state.font = value
-      container.state.flushDrawRuns()
-      return .init(isFontUpdated: true)
+      return .init(font: value)
     }
   }
 

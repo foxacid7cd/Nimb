@@ -14,65 +14,63 @@ public struct State: Sendable {
     public var isUIEventsLoggingEnabled: Bool = false
   }
 
+  public enum GridUpdate: Sendable {
+    case resize(IntegerSize)
+    case clear
+    case cursorGoto
+    case lines(IntKeyedDictionary<[UIEventsChunk.GridLine]>)
+    case scroll(frame: IntegerRectangle, offset: IntegerSize)
+    case destroy
+    case winPos(windowID: Window.ID, frame: IntegerRectangle)
+    case winFloatPos(windowID: Window.ID, anchor: FloatingWindow.Anchor, anchorGridID: Int, anchorOrigin: (column: Double, row: Double), isFocusable: Bool, zIndex: Int)
+    case winExternalPos(windowID: Window.ID)
+    case winHide
+    case winClose
+  }
+
   @PublicInit
   public struct Updates: Sendable {
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
-    public var isFontUpdated: Bool = false
-    public var isAppearanceUpdated: Bool = false
+    public var font: Font? = nil
+    public var appearance: Appearance? = nil
     public var updatedObservedHighlightNames: Set<Appearance.ObservedHighlightName> = []
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
     public var isMessagesUpdated: Bool = false
-    public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var isGridsOrderUpdated: Bool = false
-    public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
-    public var destroyedGridIDs: Set<Grid.ID> = []
+    public var gridsUpdates: [(gridID: Int, update: GridUpdate)] = []
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
     public var isMouseOnUpdated: Bool = false
 
-    public var isOuterGridLayoutUpdated: Bool {
-      updatedLayoutGridIDs.contains(Grid.OuterID)
-    }
-
     public var isMouseUserInteractionEnabledUpdated: Bool {
       isMouseOnUpdated || isBusyUpdated
+    }
+
+    public var isFontUpdated: Bool {
+      font != nil
+    }
+
+    public var isAppearanceUpdated: Bool {
+      appearance != nil
     }
 
     public mutating func formUnion(_ updates: Updates) {
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated
       isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
-      isFontUpdated = isFontUpdated || updates.isFontUpdated
-      isAppearanceUpdated = isAppearanceUpdated || updates.isAppearanceUpdated
+      font = updates.font
+      appearance = updates.appearance
       updatedObservedHighlightNames.formUnion(updates.updatedObservedHighlightNames)
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
       isMessagesUpdated = isMessagesUpdated || updates.isMessagesUpdated
-      for gridID in updates.destroyedGridIDs {
-        updatedLayoutGridIDs.remove(gridID)
-        gridUpdates.removeValue(forKey: gridID)
-        destroyedGridIDs.insert(gridID)
-      }
-      for gridID in updates.updatedLayoutGridIDs {
-        updatedLayoutGridIDs.insert(gridID)
-      }
-      isGridsOrderUpdated = isGridsOrderUpdated || updates.isGridsOrderUpdated
-      for (gridID, gridUpdate) in updates.gridUpdates {
-        update(&gridUpdates[gridID]) { accumulator in
-          if accumulator == nil {
-            accumulator = gridUpdate
-          } else {
-            accumulator!.formUnion(gridUpdate)
-          }
-        }
-      }
+      gridsUpdates += updates.gridsUpdates
       isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
       isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates.isPopupmenuSelectionUpdated
       isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates.isCursorBlinkingPhaseUpdated
@@ -110,21 +108,11 @@ public struct State: Sendable {
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
   public var isMsgShowsDismissed: Bool = false
-  public var grids: IntKeyedDictionary<Grid> = [:]
   public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
-
-  public var outerGrid: Grid? {
-    get {
-      grids[Grid.OuterID]
-    }
-    set {
-      grids[Grid.OuterID] = newValue
-    }
-  }
 
   public var currentCursorStyle: CursorStyle? {
     guard let modeInfo, let mode, mode.cursorStyleIndex < modeInfo.cursorStyles.count else {
@@ -154,27 +142,22 @@ public struct State: Sendable {
     return false
   }
 
-  public mutating func nextWindowZIndex() -> Int {
-    windowZIndexCounter += 1
-    return windowZIndexCounter
-  }
-
-  public func orderedGridIDs() -> [Grid.ID] {
-    grids
-      .map { $1 }
-      .sorted(by: { first, second in
-        if first.zIndex != second.zIndex {
-          first.zIndex < second.zIndex
-        } else {
-          first.id < second.id
-        }
-      })
-      .map(\.id)
-  }
-
-  public mutating func flushDrawRuns() {
-    for gridID in grids.keys {
-      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
-    }
-  }
+//  public func orderedGridIDs() -> [Grid.ID] {
+//    grids
+//      .map { $1 }
+//      .sorted(by: { first, second in
+//        if first.zIndex != second.zIndex {
+//          first.zIndex < second.zIndex
+//        } else {
+//          first.id < second.id
+//        }
+//      })
+//      .map(\.id)
+//  }
+//
+//  public mutating func flushDrawRuns() {
+//    for gridID in grids.keys {
+//      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
+//    }
+//  }
 }

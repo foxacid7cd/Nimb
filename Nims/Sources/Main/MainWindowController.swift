@@ -5,11 +5,12 @@ import AsyncAlgorithms
 import Library
 
 public class MainWindowController: NSWindowController {
-  public init(store: Store, minOuterGridSize: IntegerSize) {
+  public init(store: Store, minOuterGridSize: IntegerSize, initialOuterGridSize: IntegerSize) {
     self.store = store
     viewController = .init(
       store: store,
-      minOuterGridSize: minOuterGridSize
+      minOuterGridSize: minOuterGridSize,
+      initialOuterGridSize: initialOuterGridSize
     )
     customWindow.contentViewController = viewController
     customWindow.titlebarAppearsTransparent = true
@@ -34,7 +35,7 @@ public class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: State.Updates) {
+  public func render(_ stateUpdates: State.Updates) async throws {
     if stateUpdates.isAppearanceUpdated {
       renderBackgroundColor()
     }
@@ -43,12 +44,12 @@ public class MainWindowController: NSWindowController {
       renderIsMouseUserInteractionEnabled()
     }
 
-    viewController.render(stateUpdates)
+    try await viewController.render(stateUpdates)
 
-    if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
+    if !isWindowInitiallyShown {
       isWindowInitiallyShown = true
 
-      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController.estimatedContentSize(outerGridSize: outerGrid.size)
+      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController.estimatedContentSize(outerGridSize: viewController.gridsView.outerGridView.gridSize)
       customWindow.setContentSize(contentSize)
       customWindow.makeKeyAndOrderFront(nil)
     }

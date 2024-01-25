@@ -468,7 +468,6 @@ public struct CursorDrawRun: Sendable {
             break drawRunsLoop
           }
         }
-        assertionFailure()
         break
       }
     }
@@ -478,7 +477,6 @@ public struct CursorDrawRun: Sendable {
       let cursorColumnsRange,
       let cellFrame = style.cellFrame(columnsCount: cursorColumnsRange.count, font: font)
     else {
-      assertionFailure()
       return nil
     }
     self = .init(

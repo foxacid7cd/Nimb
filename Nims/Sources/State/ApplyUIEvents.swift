@@ -23,12 +23,6 @@ public extension Actions {
         updates.isTitleUpdated = true
       }
 
-      func appearanceUpdated() {
-        if !updates.isAppearanceUpdated {
-          updates.isAppearanceUpdated = true
-        }
-      }
-
       func tablineTabpagesUpdated() {
         updates.tabline.isTabpagesUpdated = true
       }
@@ -57,41 +51,49 @@ public extension Actions {
         updates.isMessagesUpdated = true
       }
 
+      func appearanceUpdated() {
+        updates.appearance = container.state.appearance
+      }
+
       func cursorUpdated(oldCursor: Cursor? = nil) {
         if let oldCursor {
-          apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
+//          apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
         }
         if container.state.cmdlines.dictionary.isEmpty, let cursor = container.state.cursor, let style = container.state.currentCursorStyle {
-          apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
+//          apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
         }
         updates.isCursorUpdated = true
       }
 
-      func updatedLayout(forGridWithID gridID: Grid.ID) {
-        updates.updatedLayoutGridIDs.insert(gridID)
-      }
+//      func updatedLayout(forGridWithID gridID: Grid.ID) {
+//        updates.updatedLayoutGridIDs.insert(gridID)
+//      }
+//
+//      func updatedGridsOrder() {
+//        updates.isGridsOrderUpdated = true
+//      }
 
-      func updatedGridsOrder() {
-        updates.isGridsOrderUpdated = true
-      }
+//      func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
+//        let font = container.state.font
+//        let appearance = container.state.appearance
+//
+//        let result = container.state.grids[gridID]!.apply(
+//          update: update,
+//          font: font,
+//          appearance: appearance
+//        )
+//        if let result {
+//          Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
+//            if gridUpdate == nil {
+//              gridUpdate = .dirtyRectangles([])
+//            }
+//            gridUpdate!.formUnion(result)
+//          }
+//        }
+//      }
 
-      func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
-        let font = container.state.font
-        let appearance = container.state.appearance
-
-        let result = container.state.grids[gridID]!.apply(
-          update: update,
-          font: font,
-          appearance: appearance
-        )
-        if let result {
-          Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
-            if gridUpdate == nil {
-              gridUpdate = .dirtyRectangles([])
-            }
-            gridUpdate!.formUnion(result)
-          }
-        }
+      func append(gridUpdate: State.GridUpdate, forGridWithID gridID: Int) {
+        updates.gridsUpdates.append((gridID, gridUpdate))
       }
 
       func popupmenuUpdated() {
@@ -232,7 +234,7 @@ public extension Actions {
             container.state.appearance.defaultForegroundColor = .init(rgb: rgbFg)
             container.state.appearance.defaultBackgroundColor = .init(rgb: rgbBg)
             container.state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
-            container.state.flushDrawRuns()
+//            container.state.flushDrawRuns()
 
             appearanceUpdated()
 
@@ -240,100 +242,110 @@ public extension Actions {
             try applyHlAttrDefine(.init(id: id, rgbAttrs: rgbAttrs, ctermAttrs: ctermAttrs, rawInfo: rawInfo))
 
           case let .gridResize(gridID, width, height):
-            let size = IntegerSize(
-              columnsCount: width,
-              rowsCount: height
+            append(
+              gridUpdate: .resize(.init(
+                columnsCount: width,
+                rowsCount: height
+              )),
+              forGridWithID: gridID
             )
-            if container.state.grids[gridID]?.size != size || container.state.grids[gridID]?.isDestroyed == true {
-              let font = container.state.font
-              let appearance = container.state.appearance
-              update(&container.state.grids[gridID]) { grid in
-                if grid == nil || grid?.isDestroyed == true {
-                  let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
-                  let layout = GridLayout(cells: cells)
-                  grid = .init(
-                    id: gridID,
-                    layout: layout,
-                    drawRuns: .init(
-                      layout: layout,
-                      font: font,
-                      appearance: appearance
-                    ),
-                    associatedWindow: nil,
-                    isHidden: false,
-                    isDestroyed: false
-                  )
-                }
-              }
-
-              if
-                let cursor = container.state.cursor,
-                cursor.gridID == gridID,
-                cursor.position.column >= size.columnsCount,
-                cursor.position.row >= size.rowsCount
-              {
-                container.state.cursor = nil
-
-                cursorUpdated(oldCursor: cursor)
-              }
-
-              updatedLayout(forGridWithID: gridID)
-              apply(update: .resize(size), toGridWithID: gridID)
-            }
+//            if container.state.grids[gridID]?.size != size || container.state.grids[gridID]?.isDestroyed == true {
+//              let font = container.state.font
+//              let appearance = container.state.appearance
+//              update(&container.state.grids[gridID]) { grid in
+//                if grid == nil || grid?.isDestroyed == true {
+//                  let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+//                  let layout = GridLayout(cells: cells)
+//                  grid = .init(
+//                    id: gridID,
+//                    layout: layout,
+//                    drawRuns: .init(
+//                      layout: layout,
+//                      font: font,
+//                      appearance: appearance
+//                    ),
+//                    associatedWindow: nil,
+//                    isHidden: false,
+//                    isDestroyed: false
+//                  )
+//                }
+//              }
+//
+//              if
+//                let cursor = container.state.cursor,
+//                cursor.gridID == gridID,
+//                cursor.position.column >= size.columnsCount,
+//                cursor.position.row >= size.rowsCount
+//              {
+//                container.state.cursor = nil
+//
+//                cursorUpdated(oldCursor: cursor)
+//              }
+//
+//              updatedLayout(forGridWithID: gridID)
+//              apply(update: .resize(size), toGridWithID: gridID)
+//            }
 
           case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
-            let rectangle = IntegerRectangle(
-              origin: .init(column: left, row: top),
-              size: .init(columnsCount: right - left, rowsCount: bottom - top)
+            append(
+              gridUpdate: .scroll(
+                frame: .init(
+                  origin: .init(column: left, row: top),
+                  size: .init(columnsCount: right - left, rowsCount: bottom - top)
+                ),
+                offset: .init(columnsCount: columnsCount, rowsCount: rowsCount)
+              ), forGridWithID: gridID
             )
-            let offset = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
-            apply(update: .scroll(rectangle: rectangle, offset: offset), toGridWithID: gridID)
 
           case let .gridClear(gridID):
-            apply(update: .clear, toGridWithID: gridID)
+            append(gridUpdate: .clear, forGridWithID: gridID)
 
           case let .gridDestroy(gridID):
-            container.state.grids[gridID]!.isDestroyed = true
-            updates.destroyedGridIDs.insert(gridID)
+            append(gridUpdate: .destroy, forGridWithID: gridID)
 
-          case let .gridCursorGoto(gridID, row, column):
-            let oldCursor = container.state.cursor
-
-            let cursorPosition = IntegerPoint(
-              column: column,
-              row: row
-            )
-            container.state.cursor = .init(
-              gridID: gridID,
-              position: cursorPosition
-            )
-
-            cursorUpdated(oldCursor: oldCursor)
+          case let .gridCursorGoto(gridID, _, _):
+            break
+//            append(gridUpdate: .cursorGoto, forGridWithID: gridID)
+//            let oldCursor = container.state.cursor
+//
+//            let cursorPosition = IntegerPoint(
+//              column: column,
+//              row: row
+//            )
+//            container.state.cursor = .init(
+//              gridID: gridID,
+//              position: cursorPosition
+//            )
+//
+//            cursorUpdated(oldCursor: oldCursor)
 
           case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             let origin = IntegerPoint(column: originColumn, row: originRow)
             let size = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
-
-            let previousOrderedGridIDs = container.state.orderedGridIDs()
-
-            let zIndex = container.state.nextWindowZIndex()
-            container.state.grids[gridID]!.associatedWindow = .plain(
-              .init(
-                id: windowID,
-                origin: origin,
-                zIndex: zIndex
-              )
+            append(
+              gridUpdate: .winPos(windowID: windowID, frame: .init(origin: origin, size: size)),
+              forGridWithID: gridID
             )
-            container.state.grids[gridID]!.isHidden = false
-
-            updatedLayout(forGridWithID: gridID)
-            if size != container.state.grids[gridID]!.size {
-              apply(update: .resize(size), toGridWithID: gridID)
-            }
-
-            if previousOrderedGridIDs != container.state.orderedGridIDs() {
-              updatedGridsOrder()
-            }
+//            let previousOrderedGridIDs = container.state.orderedGridIDs()
+//
+//            let zIndex = container.state.nextWindowZIndex()
+//            container.state.grids[gridID]!.associatedWindow = .plain(
+//              .init(
+//                id: windowID,
+//                origin: origin,
+//                zIndex: zIndex
+//              )
+//            )
+//            container.state.grids[gridID]!.isHidden = false
+//
+//            updatedLayout(forGridWithID: gridID)
+//            if size != container.state.grids[gridID]!.size {
+//              apply(update: .resize(size), toGridWithID: gridID)
+//            }
+//
+//            if previousOrderedGridIDs != container.state.orderedGridIDs() {
+//              updatedGridsOrder()
+//            }
 
           case let .winFloatPos(
             gridID,
@@ -343,41 +355,48 @@ public extension Actions {
             anchorRow,
             anchorColumn,
             isFocusable,
-            _
+            zIndex
           ):
-            let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
-
-            let previousOrderedGridIDs = container.state.orderedGridIDs()
-
-            let zIndex = container.state.nextWindowZIndex()
-            container.state.grids[gridID]!.associatedWindow = .floating(
-              .init(
-                id: windowID,
-                anchor: anchor,
-                anchorGridID: anchorGridID,
-                anchorRow: anchorRow,
-                anchorColumn: anchorColumn,
-                isFocusable: isFocusable,
-                zIndex: zIndex
-              )
+            let anchor = FloatingWindow.Anchor(rawValue: rawAnchor) ?? {
+              Loggers.problems.error("unknown raw floating window anchor received \(rawAnchor)")
+              return .northWest
+            }()
+            append(
+              gridUpdate: .winFloatPos(windowID: windowID, anchor: anchor, anchorGridID: anchorGridID, anchorOrigin: (column: anchorColumn, row: anchorRow), isFocusable: isFocusable, zIndex: zIndex),
+              forGridWithID: gridID
             )
-            container.state.grids[gridID]!.isHidden = false
-
-            updatedLayout(forGridWithID: gridID)
-
-            if previousOrderedGridIDs != container.state.orderedGridIDs() {
-              updatedGridsOrder()
-            }
+//
+//
+//            let previousOrderedGridIDs = container.state.orderedGridIDs()
+//
+//            let zIndex = container.state.nextWindowZIndex()
+//            container.state.grids[gridID]!.associatedWindow = .floating(
+//              .init(
+//                id: windowID,
+//                anchor: anchor,
+//                anchorGridID: anchorGridID,
+//                anchorRow: anchorRow,
+//                anchorColumn: anchorColumn,
+//                isFocusable: isFocusable,
+//                zIndex: zIndex
+//              )
+//            )
+//            container.state.grids[gridID]!.isHidden = false
+//
+//            updatedLayout(forGridWithID: gridID)
+//
+//            if previousOrderedGridIDs != container.state.orderedGridIDs() {
+//              updatedGridsOrder()
+//            }
 
           case let .winHide(gridID):
-            container.state.grids[gridID]?.isHidden = true
-
-            updatedLayout(forGridWithID: gridID)
+            append(gridUpdate: .winHide, forGridWithID: gridID)
+//            container.state.grids[gridID]?.isHidden = true
+//
+//            updatedLayout(forGridWithID: gridID)
 
           case let .winClose(gridID):
-            container.state.grids[gridID]?.associatedWindow = nil
-
-            updatedLayout(forGridWithID: gridID)
+            append(gridUpdate: .winClose, forGridWithID: gridID)
 
           case let .tablineUpdate(currentTabpageID, rawTabpages, currentBufferID, rawBuffers):
             let tabpages = try rawTabpages
@@ -608,131 +627,134 @@ public extension Actions {
           for hlAttrDefine in hlAttrDefines {
             try applyHlAttrDefine(hlAttrDefine)
           }
+          updates.appearance = container.state.appearance
 
-          let grids = container.state.grids
-          let font = container.state.font
-          let appearance = container.state.appearance
-
-          let results: [Grid.LineUpdatesResult] = if gridLines.count <= 15 {
-            try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
-          } else {
-            try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
-              let gridLines = Array(gridLines)
-              let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 15)
-              for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
-                taskGroup.addTask {
-                  try applyLineUpdates(for: gridLinesChunk, grids: grids, font: font, appearance: appearance)
-                }
-              }
-
-              var accumulator = [Grid.LineUpdatesResult]()
-              accumulator.reserveCapacity(gridLines.count)
-              for try await results in taskGroup {
-                accumulator += results
-              }
-
-              return accumulator
-            }
-          }
-
-          update(&container.state.grids[gridID]!) { grid in
-            for result in results {
-              grid.layout.cells.rows[result.row] = result.rowCells
-              grid.layout.rowLayouts[result.row] = result.rowLayout
-              grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
-
-              if result.shouldUpdateCursorDrawRun {
-                grid.drawRuns.cursorDrawRun!.updateParent(
-                  with: grid.layout,
-                  rowDrawRuns: grid.drawRuns.rowDrawRuns
-                )
-              }
-            }
-          }
-
-          update(&updates.gridUpdates[gridID]) { updates in
-            let dirtyRectangles = results.flatMap(\.dirtyRectangles)
-
-            switch updates {
-            case var .dirtyRectangles(accumulator):
-              accumulator += dirtyRectangles
-              updates = .dirtyRectangles(accumulator)
-
-            case .none:
-              updates = .dirtyRectangles(dirtyRectangles)
-
-            default:
-              break
-            }
-          }
-
-          @Sendable func applyLineUpdates(
-            for gridLines: some Sequence<(key: Int, value: [UIEventsChunk.GridLine])>,
-            grids: IntKeyedDictionary<Grid>,
-            font: Font,
-            appearance: Appearance
-          ) throws -> [Grid.LineUpdatesResult] {
-            var accumulator = [Grid.LineUpdatesResult]()
-
-            for (row, rowGridLines) in gridLines {
-              var lineUpdates = [(originColumn: Int, cells: [Cell])]()
-
-              for gridLine in rowGridLines {
-                var cells = [Cell]()
-                var highlightID = 0
-
-                for value in gridLine.data {
-                  guard
-                    case let .array(arrayValue) = value,
-                    !arrayValue.isEmpty,
-                    case let .string(text) = arrayValue[0]
-                  else {
-                    throw Failure("invalid grid line cell value", value)
-                  }
-
-                  var repeatCount = 1
-
-                  if arrayValue.count > 1 {
-                    guard
-                      case let .integer(newHighlightID) = arrayValue[1]
-                    else {
-                      throw Failure("invalid grid line cell highlight value", arrayValue[1])
-                    }
-
-                    highlightID = newHighlightID
-
-                    if arrayValue.count > 2 {
-                      guard
-                        case let .integer(newRepeatCount) = arrayValue[2]
-                      else {
-                        throw Failure("invalid grid line cell repeat count value", arrayValue[2])
-                      }
-
-                      repeatCount = newRepeatCount
-                    }
-                  }
-
-                  let cell = Cell(text: text, highlightID: highlightID)
-                  for _ in 0 ..< repeatCount {
-                    cells.append(cell)
-                  }
-                }
-
-                lineUpdates.append((gridLine.originColumn, cells))
-              }
-
-              accumulator.append(
-                grids[gridID]!.applying(
-                  lineUpdates: lineUpdates,
-                  forRow: row,
-                  font: font,
-                  appearance: appearance
-                )
-              )
-            }
-
-            return accumulator
-          }
+          append(gridUpdate: .lines(gridLines), forGridWithID: gridID)
+//
+//          let grids = container.state.grids
+//          let font = container.state.font
+//          let appearance = container.state.appearance
+//
+//          let results: [Grid.LineUpdatesResult] = if gridLines.count <= 15 {
+//            try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
+//          } else {
+//            try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
+//              let gridLines = Array(gridLines)
+//              let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 15)
+//              for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
+//                taskGroup.addTask {
+//                  try applyLineUpdates(for: gridLinesChunk, grids: grids, font: font, appearance: appearance)
+//                }
+//              }
+//
+//              var accumulator = [Grid.LineUpdatesResult]()
+//              accumulator.reserveCapacity(gridLines.count)
+//              for try await results in taskGroup {
+//                accumulator += results
+//              }
+//
+//              return accumulator
+//            }
+//          }
+//
+//          update(&container.state.grids[gridID]!) { grid in
+//            for result in results {
+//              grid.layout.cells.rows[result.row] = result.rowCells
+//              grid.layout.rowLayouts[result.row] = result.rowLayout
+//              grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
+//
+//              if result.shouldUpdateCursorDrawRun {
+//                grid.drawRuns.cursorDrawRun!.updateParent(
+//                  with: grid.layout,
+//                  rowDrawRuns: grid.drawRuns.rowDrawRuns
+//                )
+//              }
+//            }
+//          }
+//
+//          update(&updates.gridUpdates[gridID]) { updates in
+//            let dirtyRectangles = results.flatMap(\.dirtyRectangles)
+//
+//            switch updates {
+//            case var .dirtyRectangles(accumulator):
+//              accumulator += dirtyRectangles
+//              updates = .dirtyRectangles(accumulator)
+//
+//            case .none:
+//              updates = .dirtyRectangles(dirtyRectangles)
+//
+//            default:
+//              break
+//            }
+//          }
+//
+//          @Sendable func applyLineUpdates(
+//            for gridLines: some Sequence<(key: Int, value: [UIEventsChunk.GridLine])>,
+//            grids: IntKeyedDictionary<Grid>,
+//            font: Font,
+//            appearance: Appearance
+//          ) throws -> [Grid.LineUpdatesResult] {
+//            var accumulator = [Grid.LineUpdatesResult]()
+//
+//            for (row, rowGridLines) in gridLines {
+//              var lineUpdates = [(originColumn: Int, cells: [Cell])]()
+//
+//              for gridLine in rowGridLines {
+//                var cells = [Cell]()
+//                var highlightID = 0
+//
+//                for value in gridLine.data {
+//                  guard
+//                    case let .array(arrayValue) = value,
+//                    !arrayValue.isEmpty,
+//                    case let .string(text) = arrayValue[0]
+//                  else {
+//                    throw Failure("invalid grid line cell value", value)
+//                  }
+//
+//                  var repeatCount = 1
+//
+//                  if arrayValue.count > 1 {
+//                    guard
+//                      case let .integer(newHighlightID) = arrayValue[1]
+//                    else {
+//                      throw Failure("invalid grid line cell highlight value", arrayValue[1])
+//                    }
+//
+//                    highlightID = newHighlightID
+//
+//                    if arrayValue.count > 2 {
+//                      guard
+//                        case let .integer(newRepeatCount) = arrayValue[2]
+//                      else {
+//                        throw Failure("invalid grid line cell repeat count value", arrayValue[2])
+//                      }
+//
+//                      repeatCount = newRepeatCount
+//                    }
+//                  }
+//
+//                  let cell = Cell(text: text, highlightID: highlightID)
+//                  for _ in 0 ..< repeatCount {
+//                    cells.append(cell)
+//                  }
+//                }
+//
+//                lineUpdates.append((gridLine.originColumn, cells))
+//              }
+//
+//              accumulator.append(
+//                grids[gridID]!.applying(
+//                  lineUpdates: lineUpdates,
+//                  forRow: row,
+//                  font: font,
+//                  appearance: appearance
+//                )
+//              )
+//            }
+//
+//            return accumulator
+//          }
         }
 
         func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) throws {

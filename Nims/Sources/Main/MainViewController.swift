@@ -4,16 +4,21 @@ import AppKit
 import Library
 
 public class MainViewController: NSViewController {
-  init(store: Store, minOuterGridSize: IntegerSize) {
+  init(store: Store, minOuterGridSize: IntegerSize, initialOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
-    gridsView = .init(store: store)
+    gridsView = .init(store: store, initialOuterGridSize: initialOuterGridSize)
     msgShowsViewController = .init(store: store)
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,
       getGridView: { [gridsView] gridID in
-        gridsView.gridView(forGridWithID: gridID)
+        if let gridView = gridsView.gridViews[gridID] {
+          return gridView
+        } else {
+          Loggers.problems.error("popupmenu view controller trying to get not created or destroyed grid view")
+          return gridsView.outerGridView
+        }
       },
       getCmdlinesView: { [cmdlinesViewController] in
         cmdlinesViewController.view
@@ -109,13 +114,13 @@ public class MainViewController: NSViewController {
     }
   }
 
-  public func render(_ stateUpdates: State.Updates) {
+  public func render(_ stateUpdates: State.Updates) async throws {
     if stateUpdates.isFontUpdated {
       reportOuterGridSizeChanged()
     }
 
     tablineView.render(stateUpdates)
-    gridsView.render(stateUpdates)
+    try await gridsView.render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
       modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty

@@ -13,17 +13,16 @@ public class Store: Sendable {
     let state = State(debug: debug, font: font)
     stateContainer = .init(state)
     self.state = state
+    self.font = state.font
+    appearance = state.appearance
 
     Task { @StateActor in
       startCursorBlinkingTask()
     }
 
-    instanceTask = Task { @StateActor [weak self] in
+    instanceTask = Task { @StateActor [unowned self] in
       do {
         for try await uiEvents in instance {
-          guard let self else {
-            return
-          }
           try Task.checkCancellation()
 
           if stateContainer.state.debug.isUIEventsLoggingEnabled {
@@ -33,10 +32,10 @@ public class Store: Sendable {
           try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
         }
 
-        self?.stateUpdatesChannel.finish()
+        stateUpdatesChannel.finish()
       } catch is CancellationError {
       } catch {
-        self?.stateUpdatesChannel.fail(error)
+        stateUpdatesChannel.fail(error)
       }
     }
   }
@@ -50,14 +49,8 @@ public class Store: Sendable {
   }
 
   public private(set) var state: State
-
-  public var font: Font {
-    state.font
-  }
-
-  public var appearance: Appearance {
-    state.appearance
-  }
+  public private(set) var font: Font
+  public private(set) var appearance: Appearance
 
   @StateActor
   public func set(font: Font) async {
@@ -395,6 +388,12 @@ public class Store: Sendable {
 
       func synchronizeState() {
         Task { @MainActor [state = stateContainer.state, stateUpdatesAccumulator] in
+          if let font = stateUpdatesAccumulator.font {
+            self.font = font
+          }
+          if let appearance = stateUpdatesAccumulator.appearance {
+            self.appearance = appearance
+          }
           self.state = state
           await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
         }
@@ -419,7 +418,7 @@ public class Store: Sendable {
       do {
         try await instance.report(errorMessage: errorMessage)
       } catch {
-        assertionFailure(Failure("reporting error message failed", error))
+        Loggers.problems.error("reporting error message failed with error \(error)")
       }
     }
   }

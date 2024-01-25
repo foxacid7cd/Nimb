@@ -82,6 +82,7 @@ public final class Instance: Sendable {
           } catch {
             taskGroup.cancelAll()
             uiEventsChannel.fail(error)
+            return
           }
         }
 
