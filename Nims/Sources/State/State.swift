@@ -17,7 +17,6 @@ public struct State: Sendable {
   public enum GridUpdate: Sendable {
     case resize(IntegerSize)
     case clear
-    case cursorGoto
     case lines(IntKeyedDictionary<[UIEventsChunk.GridLine]>)
     case scroll(frame: IntegerRectangle, offset: IntegerSize)
     case destroy

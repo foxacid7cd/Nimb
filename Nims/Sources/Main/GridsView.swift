@@ -77,6 +77,7 @@ public class GridsView: NSView {
         if gridViews[gridID] == nil {
           makeGridView(id: gridID, size: size)
           shouldGridViewApplyUpdate = false
+          shouldSortSubviews = true
         }
         isLayoutUpdated = true
 
@@ -189,6 +190,8 @@ public class GridsView: NSView {
             gridView.gridConstraints = (horizontal, vertical, secondView, anchor)
           }
         }
+
+        gridView.invalidateIntrinsicContentSize()
       }
     }
 
@@ -215,25 +218,29 @@ public class GridsView: NSView {
       )
     }
 
-//    if stateUpdates.isGridsOrderUpdated {
-//      sortSubviews(
-//        { firstView, secondView, _ in
-//          let firstOrdinal = (firstView as! GridView).zIndex
-//          let secondOrdinal = (secondView as! GridView).zIndex
-//
-//          if firstOrdinal == secondOrdinal {
-//            return .orderedSame
-//
-//          } else if firstOrdinal < secondOrdinal {
-//            return .orderedAscending
-//
-//          } else {
-//            return .orderedDescending
-//          }
-//        },
-//        context: nil
-//      )
-//    }
+    if stateUpdates.isCursorUpdated {
+      if let previousGridCursor, let cursor = store.state.cursor, previousGridCursor.gridID == cursor.gridID {
+        gridViews[cursor.gridID]?.applyGridCursorMove(from: previousGridCursor.position, to: cursor.position)
+        self.previousGridCursor = cursor
+      } else {
+        if let previousGridCursor {
+          gridViews[previousGridCursor.gridID]?.applyGridCursorMove(from: previousGridCursor.position, to: nil)
+        }
+        if let cursor = store.state.cursor, cursor.gridID >= Grid.OuterID {
+          gridViews[cursor.gridID]?.applyGridCursorMove(to: cursor.position)
+          previousGridCursor = cursor
+        } else {
+          previousGridCursor = nil
+        }
+      }
+    }
+    if 
+      stateUpdates.isCursorBlinkingPhaseUpdated,
+      let previousGridCursor,
+      let gridView = gridViews[previousGridCursor.gridID]
+    {
+      gridView.cursorBlinkingPhaseUpdated()
+    }
   }
 
   public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
@@ -242,6 +249,7 @@ public class GridsView: NSView {
 
   private var store: Store
   private var windowZIndexCounter = 0
+  private var previousGridCursor: Cursor?
 
   @discardableResult
   private func makeGridView(id: Int, size: IntegerSize) -> GridView {

@@ -5,7 +5,7 @@ import CustomDump
 import Library
 
 public class GridView: NSView {
-  init(store: Store, id: Int, size: IntegerSize) {
+  public init(store: Store, id: Int, size: IntegerSize) {
     self.store = store
     grid = .init(id: id, size: size, font: store.font, appearance: store.appearance)
     super.init(frame: .init())
@@ -74,8 +74,6 @@ public class GridView: NSView {
       grid.drawRuns.renderDrawRuns(for: grid.layout, font: store.font, appearance: store.appearance)
 
       needsDisplay = true
-    case .cursorGoto:
-      break
     case let .lines(lines):
       let grid = grid
       let font = store.font
@@ -116,10 +114,7 @@ public class GridView: NSView {
         }
 
         for dirtyRectangle in result.dirtyRectangles {
-          setNeedsDisplay(
-            (dirtyRectangle * store.font.cellSize)
-              .applying(upsideDownTransform)
-          )
+          setNeedsDisplay(dirtyRectangle)
         }
       }
 
@@ -240,10 +235,7 @@ public class GridView: NSView {
         grid.drawRuns.cursorDrawRun!.updateParent(with: grid.layout, rowDrawRuns: grid.drawRuns.rowDrawRuns)
       }
 
-      setNeedsDisplay(
-        (toRectangle * store.font.cellSize)
-          .applying(upsideDownTransform)
-      )
+      setNeedsDisplay(toRectangle)
 
     case .destroy:
       break
@@ -288,39 +280,46 @@ public class GridView: NSView {
     case .winClose:
       isHidden = true
     }
+  }
 
-    //  public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
-    //    if shouldDisplay() {
-    //      needsDisplay = true
-    //    }
-    //
-    //    func shouldDisplay() -> Bool {
-    //      if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
-    //        return true
-    //      }
-    //
-    //      if
-    //        stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated,
-    //        grid.drawRuns.cursorDrawRun != nil
-    //      {
-    //        return true
-    //      }
-    //
-    //      if let gridUpdate {
-    //        switch gridUpdate {
-    //        case let .dirtyRectangles(value):
-    //          if !value.isEmpty {
-    //            return true
-    //          }
-    //
-    //        case .needsDisplay:
-    //          return true
-    //        }
-    //      }
-    //
-    //      return false
-    //    }
-    //  }
+  public func applyGridCursorMove(from: IntegerPoint? = nil, to: IntegerPoint?) {
+    if let from {
+      let invalidRectangle = grid.drawRuns.cursorDrawRun?.rectangle ?? .init(
+        origin: from,
+        size: .init(columnsCount: 1, rowsCount: 1)
+      )
+      grid.drawRuns.cursorDrawRun = nil
+      setNeedsDisplay(invalidRectangle)
+    }
+    if let to, let cursorStyle = store.state.currentCursorStyle {
+      let cursorDrawRun = CursorDrawRun(
+        layout: grid.layout,
+        rowDrawRuns: grid.drawRuns.rowDrawRuns,
+        origin: to,
+        columnsCount: 1,
+        style: cursorStyle,
+        font: store.font,
+        appearance: store.appearance
+      )
+      if let cursorDrawRun {
+        grid.drawRuns.cursorDrawRun = cursorDrawRun
+        setNeedsDisplay(cursorDrawRun.rectangle)
+      }
+    }
+  }
+
+  public func cursorBlinkingPhaseUpdated() {
+    guard let cursorDrawRun = grid.drawRuns.cursorDrawRun else {
+      return
+    }
+    setNeedsDisplay(cursorDrawRun.rectangle)
+  }
+
+  public func setNeedsDisplay(_ invalidRectangle: IntegerRectangle) {
+    setNeedsDisplay(
+      (invalidRectangle * store.font.cellSize)
+        .applying(upsideDownTransform)
+    )
   }
 
   override public func draw(_ dirtyRect: NSRect) {

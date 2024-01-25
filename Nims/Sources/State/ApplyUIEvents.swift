@@ -55,13 +55,7 @@ public extension Actions {
         updates.appearance = container.state.appearance
       }
 
-      func cursorUpdated(oldCursor: Cursor? = nil) {
-        if let oldCursor {
-//          apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
-        }
-        if container.state.cmdlines.dictionary.isEmpty, let cursor = container.state.cursor, let style = container.state.currentCursorStyle {
-//          apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
-        }
+      func cursorUpdated() {
         updates.isCursorUpdated = true
       }
 
@@ -199,7 +193,6 @@ public extension Actions {
           switch uiEvent {
           case let .setTitle(title):
             container.state.title = title
-
             titleUpdated()
 
           case let .modeInfoSet(enabled, cursorStyles):
@@ -208,7 +201,6 @@ public extension Actions {
               cursorStyles: cursorStyles
                 .map(CursorStyle.init(raw:))
             )
-
             cursorUpdated()
 
           case let .optionSet(name, value):
@@ -223,9 +215,7 @@ public extension Actions {
               name: name,
               cursorStyleIndex: cursorStyleIndex
             )
-
             modeUpdated()
-
             if container.state.cursor != nil {
               cursorUpdated()
             }
@@ -303,21 +293,15 @@ public extension Actions {
           case let .gridDestroy(gridID):
             append(gridUpdate: .destroy, forGridWithID: gridID)
 
-          case let .gridCursorGoto(gridID, _, _):
-            break
-//            append(gridUpdate: .cursorGoto, forGridWithID: gridID)
-//            let oldCursor = container.state.cursor
-//
-//            let cursorPosition = IntegerPoint(
-//              column: column,
-//              row: row
-//            )
-//            container.state.cursor = .init(
-//              gridID: gridID,
-//              position: cursorPosition
-//            )
-//
-//            cursorUpdated(oldCursor: oldCursor)
+          case let .gridCursorGoto(gridID, row, column):
+            container.state.cursor = .init(
+              gridID: gridID,
+              position: .init(
+                column: column,
+                row: row
+              )
+            )
+            cursorUpdated()
 
           case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
             let origin = IntegerPoint(column: originColumn, row: originRow)
@@ -469,8 +453,6 @@ public extension Actions {
             )
 
           case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-            let oldCursor = container.state.cursor
-
             let cmdline = try Cmdline(
               contentParts: content
                 .map { rawContentPart in
@@ -497,23 +479,16 @@ public extension Actions {
               shiftAfterSpecialCharacter: false
             )
             let oldCmdline = container.state.cmdlines.dictionary[level]
-
             container.state.cmdlines.lastCmdlineLevel = level
-
             if cmdline != oldCmdline {
               container.state.cmdlines.dictionary[level] = cmdline
-              cursorUpdated(oldCursor: oldCursor)
               cmdlinesUpdated()
             }
 
           case let .cmdlinePos(pos, level):
-            let oldCursor = container.state.cursor
-
             update(&container.state.cmdlines.dictionary[level]) {
               $0?.cursorPosition = pos
             }
-
-            cursorUpdated(oldCursor: oldCursor)
             cmdlinesUpdated()
 
           case let .cmdlineSpecialChar(c, shift, level):

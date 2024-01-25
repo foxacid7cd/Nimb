@@ -8,6 +8,13 @@ import MessagePack
 public struct Cursor: Sendable {
   public var gridID: Grid.ID
   public var position: IntegerPoint
+
+  public var frame: IntegerRectangle {
+    .init(
+      origin: position,
+      size: .init(columnsCount: 1, rowsCount: 1)
+    )
+  }
 }
 
 @PublicInit
