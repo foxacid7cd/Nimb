@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
+import Collections
 import CustomDump
 import Foundation
 import Library
@@ -27,8 +28,13 @@ public class Store: Sendable {
           try Task.checkCancellation()
 
           if stateContainer.state.debug.isUIEventsLoggingEnabled {
-            Loggers.uiEvents.debug("\(String(customDumping: uiEvents))")
+            logger.debug("\(String(customDumping: uiEvents))")
           }
+
+          while latestUIEventBatches.count > 2 {
+            latestUIEventBatches.removeFirst()
+          }
+          latestUIEventBatches.append(uiEvents)
 
           try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
         }
@@ -303,6 +309,14 @@ public class Store: Sendable {
     }
   }
 
+  @StateActor
+  public func dumpState() -> String {
+    latestUIEventBatches.map {
+      String(customDumping: $0)
+    }
+    .joined(separator: "\n\n")
+  }
+
   private let instance: Instance
   @StateActor private var stateContainer: StateContainer
   private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
@@ -319,6 +333,7 @@ public class Store: Sendable {
   @StateActor private var outerGridSizeThrottlingTask: Task<Void, Never>?
   @StateActor private var previousReportedOuterGridSizeInstant = ContinuousClock.now
   @StateActor private var previousReportedOuterGridSize: IntegerSize?
+  @StateActor private var latestUIEventBatches = Deque<[UIEvent]>()
 
   @StateActor
   private func startCursorBlinkingTask() {

@@ -33,15 +33,12 @@ final class MainMenuController: NSObject {
 
     viewMenu.delegate = self
 
+    debugMenu.delegate = self
+
     let windowMenu = NSMenu(title: "Window")
     let helpMenu = NSMenu(title: "Help")
 
-    var submenus = [appMenu, fileMenu, editMenu, viewMenu, windowMenu, helpMenu]
-
-    #if DEBUG
-      debugMenu.delegate = self
-      submenus.insert(debugMenu, at: submenus.count - 2)
-    #endif
+    let submenus = [appMenu, fileMenu, editMenu, viewMenu, debugMenu, windowMenu, helpMenu]
 
     for submenu in submenus {
       let menuItem = NSMenuItem()
@@ -223,6 +220,35 @@ final class MainMenuController: NSObject {
       await store.toggleUIEventsLogging()
     }
   }
+
+  @objc private func handleLogState() {
+    Task { @StateActor in
+      let dump = store.dumpState()
+
+      let temporaryFileURL = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).txt")
+      FileManager.default.createFile(atPath: temporaryFileURL.path(), contents: nil)
+
+      do {
+        let fileHandle = try FileHandle(forWritingTo: temporaryFileURL)
+        try fileHandle.write(contentsOf: dump.data(using: .utf8)!)
+        try fileHandle.close()
+
+        NSWorkspace.shared.open(temporaryFileURL)
+      } catch {
+        logger.error("could not create or write file handle to temporary file with error \(String(describing: error), privacy: .public)")
+      }
+    }
+  }
+}
+
+extension OutputStream: TextOutputStream {
+  public func write(_ string: String) {
+    var string = string
+
+    string.withUTF8 { buffer in
+      _ = write(buffer.baseAddress!, maxLength: buffer.count)
+    }
+  }
 }
 
 extension MainMenuController: NSFontChanging {
@@ -265,13 +291,22 @@ extension MainMenuController: NSMenuDelegate {
           return makeItem("Reset Font Size", action: #selector(handleResetFontSize), keyEquivalent: "o", keyEquivalentModifierMask: [.control, .command])
         }
       }
-
     case debugMenu:
-      let title = store.state.debug.isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging"
-      let item = NSMenuItem(title: title, action: #selector(handleToggleUIEventsLogging), keyEquivalent: "")
-      item.target = self
-      menu.items = [item]
+      let toggleUIEventsLoggingMenuItem = NSMenuItem(
+        title: store.state.debug.isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging",
+        action: #selector(handleToggleUIEventsLogging),
+        keyEquivalent: ""
+      )
+      toggleUIEventsLoggingMenuItem.target = self
 
+      let logStateMenuItem = NSMenuItem(
+        title: "Log current application state",
+        action: #selector(handleLogState),
+        keyEquivalent: ""
+      )
+      logStateMenuItem.target = self
+
+      menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem]
     default:
       break
     }

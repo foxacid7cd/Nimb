@@ -65,7 +65,7 @@
 		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
 		68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */; };
 		68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */; };
-		68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* Loggers.swift */; };
+		68F0D4F32AECFDFC000954FF /* logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* logger.swift */; };
 		68FAC3F32AF685AB00490F09 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F22AF685AB00490F09 /* Action.swift */; };
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
 		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
@@ -167,7 +167,7 @@
 		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsEnvironmentView.swift; sourceTree = "<group>"; };
-		68F0D4F22AECFDFC000954FF /* Loggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loggers.swift; sourceTree = "<group>"; };
+		68F0D4F22AECFDFC000954FF /* logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logger.swift; sourceTree = "<group>"; };
 		68FAC3F22AF685AB00490F09 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyUIEvents.swift; sourceTree = "<group>"; };
 		68FAC3F62AF6932F00490F09 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
@@ -215,8 +215,8 @@
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
-				68F0D4F22AECFDFC000954FF /* Loggers.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
+				68F0D4F22AECFDFC000954FF /* logger.swift */,
 				68EFD2682B58834E0010DD54 /* main.swift */,
 			);
 			path = Sources;
@@ -525,7 +525,7 @@
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
-				68F0D4F32AECFDFC000954FF /* Loggers.swift in Sources */,
+				68F0D4F32AECFDFC000954FF /* logger.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
