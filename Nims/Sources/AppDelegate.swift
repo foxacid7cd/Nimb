@@ -3,6 +3,7 @@
 import AppKit
 import CustomDump
 import Library
+import RollbarNotifier
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate {
@@ -11,6 +12,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   public func applicationDidFinishLaunching(_: Notification) {
+    #if DEBUG
+    #else
+      let config = RollbarConfig.mutableConfig(withAccessToken: "714fb2995cb34335a86187d3a72a818c")
+      Rollbar.initWithConfiguration(config)
+    #endif
+
     Task {
       await setupStore()
       setupMainMenuController()

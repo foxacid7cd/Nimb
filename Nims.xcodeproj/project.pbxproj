@@ -59,6 +59,7 @@
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
 		68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68BA57392AE9E7A9002E041B /* Metal.framework */; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
+		68CC71EA2B631B8500C192EF /* RollbarNotifier in Frameworks */ = {isa = PBXBuildFile; productRef = 68CC71E92B631B8500C192EF /* RollbarNotifier */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
@@ -180,6 +181,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				682272BB293DD63800A36AB9 /* Library in Frameworks */,
+				68CC71EA2B631B8500C192EF /* RollbarNotifier in Frameworks */,
 				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
 				68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */,
 				6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */,
@@ -399,6 +401,7 @@
 				682272BA293DD63800A36AB9 /* Library */,
 				682272BC293DD63800A36AB9 /* MessagePack */,
 				6895C20A2AC41DD3006122D5 /* TinyConstraints */,
+				68CC71E92B631B8500C192EF /* RollbarNotifier */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -430,6 +433,7 @@
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
 				6895C2092AC41DD3006122D5 /* XCRemoteSwiftPackageReference "TinyConstraints" */,
+				68CC71E82B631B8500C192EF /* XCRemoteSwiftPackageReference "rollbar-apple" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -795,6 +799,14 @@
 				kind = branch;
 			};
 		};
+		68CC71E82B631B8500C192EF /* XCRemoteSwiftPackageReference "rollbar-apple" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rollbar/rollbar-apple";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.2.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -810,6 +822,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6895C2092AC41DD3006122D5 /* XCRemoteSwiftPackageReference "TinyConstraints" */;
 			productName = TinyConstraints;
+		};
+		68CC71E92B631B8500C192EF /* RollbarNotifier */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68CC71E82B631B8500C192EF /* XCRemoteSwiftPackageReference "rollbar-apple" */;
+			productName = RollbarNotifier;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
