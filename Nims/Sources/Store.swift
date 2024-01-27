@@ -434,7 +434,7 @@ public class Store: Sendable {
       do {
         try await instance.report(errorMessage: errorMessage)
       } catch {
-        assertionFailure(Failure("reporting error message failed", error))
+        logger.error("reporting error message failed with error \(error)")
       }
     }
   }

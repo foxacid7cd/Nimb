@@ -75,8 +75,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           mainWindowController!.render(stateUpdates)
         }
       } catch {
+        logger.error("store state updates resulted in error \(error))")
+
         let alert = NSAlert(error: error)
-        alert.informativeText = String(customDumping: error)
         alert.runModal()
       }
       NSApplication.shared.terminate(nil)

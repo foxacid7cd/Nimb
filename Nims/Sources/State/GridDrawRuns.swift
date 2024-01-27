@@ -468,7 +468,7 @@ public struct CursorDrawRun: Sendable {
             break drawRunsLoop
           }
         }
-        assertionFailure()
+        logger.fault("inconsistency error")
         break
       }
     }
@@ -478,7 +478,7 @@ public struct CursorDrawRun: Sendable {
       let cursorColumnsRange,
       let cellFrame = style.cellFrame(columnsCount: cursorColumnsRange.count, font: font)
     else {
-      assertionFailure()
+      logger.fault("inconsistency error")
       return nil
     }
     self = .init(
