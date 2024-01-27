@@ -58,7 +58,12 @@ public class PopupmenuViewController: NSViewController {
         scrollToSelectedRow(for: popupmenu)
       } else if stateUpdates.isPopupmenuSelectionUpdated {
         scrollToSelectedRow(for: popupmenu)
-        if let previousSelectedItemIndex, let selectedItemIndex = popupmenu.selectedItemIndex {
+        if 
+          let previousSelectedItemIndex,
+          previousSelectedItemIndex < popupmenu.items.count,
+          let selectedItemIndex = popupmenu.selectedItemIndex,
+          selectedItemIndex < popupmenu.items.count
+        {
           tableView.reloadData(forRowIndexes: [previousSelectedItemIndex, selectedItemIndex], columnIndexes: [0])
         } else {
           tableView.reloadData()
