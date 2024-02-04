@@ -9,7 +9,6 @@ public class GridView: NSView {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
-    clipsToBounds = true
   }
 
   @available(*, unavailable)
@@ -30,74 +29,83 @@ public class GridView: NSView {
   }
 
   public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
-    if shouldDisplay() {
+    dirtyRectangles.removeAll(keepingCapacity: true)
+
+    if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
       needsDisplay = true
+      return
     }
 
-    func shouldDisplay() -> Bool {
-      if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
-        return true
+    if
+      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated,
+      let cursorDrawRun = grid.drawRuns.cursorDrawRun
+    {
+      dirtyRectangles.append(cursorDrawRun.rectangle)
+    }
+
+    if let gridUpdate {
+      switch gridUpdate {
+      case let .dirtyRectangles(value):
+        dirtyRectangles.append(contentsOf: value)
+
+      case .needsDisplay:
+        needsDisplay = true
+        return
       }
+    }
 
-      if
-        stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated,
-        grid.drawRuns.cursorDrawRun != nil
-      {
-        return true
-      }
-
-      if let gridUpdate {
-        switch gridUpdate {
-        case let .dirtyRectangles(value):
-          if !value.isEmpty {
-            return true
-          }
-
-        case .needsDisplay:
-          return true
-        }
-      }
-
-      return false
+    for dirtyRectangle in dirtyRectangles {
+      setNeedsDisplay(
+        (dirtyRectangle * store.font.cellSize)
+          .applying(upsideDownTransform)
+      )
     }
   }
 
-  override public func draw(_ dirtyRect: NSRect) {
+  override public func draw(_: NSRect) {
     let context = NSGraphicsContext.current!.cgContext
 
-    let boundingRect = IntegerRectangle(
-      frame: dirtyRect.applying(upsideDownTransform),
-      cellSize: store.font.cellSize
-    )
-    context.setShouldAntialias(false)
-    grid.drawRuns.drawBackground(
-      to: context,
-      boundingRect: boundingRect,
-      font: store.font,
-      appearance: store.appearance,
-      upsideDownTransform: upsideDownTransform
-    )
-    context.setShouldAntialias(true)
-    grid.drawRuns.drawForeground(
-      to: context,
-      boundingRect: boundingRect,
-      font: store.font,
-      appearance: store.appearance,
-      upsideDownTransform: upsideDownTransform
-    )
+    var rects: UnsafePointer<NSRect>!
+    var rectsCount = 0
+    getRectsBeingDrawn(&rects, count: &rectsCount)
 
-    if
-      store.state.cursorBlinkingPhase,
-      store.state.isMouseUserInteractionEnabled,
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      boundingRect.contains(cursorDrawRun.origin)
-    {
-      cursorDrawRun.draw(
+    for rectIndex in 0 ..< rectsCount {
+      let dirtyRect = rects.advanced(by: rectIndex).pointee
+
+      let boundingRect = IntegerRectangle(
+        frame: dirtyRect.applying(upsideDownTransform),
+        cellSize: store.font.cellSize
+      )
+      context.setShouldAntialias(false)
+      grid.drawRuns.drawBackground(
         to: context,
+        boundingRect: boundingRect,
         font: store.font,
         appearance: store.appearance,
         upsideDownTransform: upsideDownTransform
       )
+      context.setShouldAntialias(true)
+      grid.drawRuns.drawForeground(
+        to: context,
+        boundingRect: boundingRect,
+        font: store.font,
+        appearance: store.appearance,
+        upsideDownTransform: upsideDownTransform
+      )
+
+      if
+        store.state.cursorBlinkingPhase,
+        store.state.isMouseUserInteractionEnabled,
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+        boundingRect.contains(cursorDrawRun.origin)
+      {
+        cursorDrawRun.draw(
+          to: context,
+          font: store.font,
+          appearance: store.appearance,
+          upsideDownTransform: upsideDownTransform
+        )
+      }
     }
   }
 
@@ -240,9 +248,16 @@ public class GridView: NSView {
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var yScrollingAccumulator: Double = 0
+  private var dirtyRectangles = [IntegerRectangle]()
 
   private var grid: Grid {
-    store.state.grids[gridID]!
+    if let grid = store.state.grids[gridID] {
+      return grid
+    } else {
+      let gridID = gridID
+      logger.fault("grid view trying to access not created or destroyed grid with id \(gridID)")
+      fatalError()
+    }
   }
 
   private var upsideDownTransform: CGAffineTransform {

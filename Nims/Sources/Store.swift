@@ -119,11 +119,7 @@ public class Store: Sendable {
 
   @StateActor
   public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
-    if stateContainer.state.shouldNextMouseEventStopinsert {
-      await instance.stopinsert()
-    } else {
-      await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
-    }
+    await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 
   @StateActor
