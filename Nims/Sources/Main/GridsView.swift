@@ -92,7 +92,10 @@ public class GridsView: NSView {
         invalidateIntrinsicContentSize()
       }
 
-      let grid = store.state.grids[gridID]!
+      guard let grid = store.state.grids[gridID] else {
+        continue
+      }
+
       let (gridView, constraints) = arrangedGridView(forGridWithID: gridID)
       gridView.invalidateIntrinsicContentSize()
       gridView.isHidden = grid.isHidden

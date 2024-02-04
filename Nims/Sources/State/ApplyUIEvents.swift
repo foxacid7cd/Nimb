@@ -293,8 +293,10 @@ public extension Actions {
             apply(update: .clear, toGridWithID: gridID)
 
           case let .gridDestroy(gridID):
-            container.state.grids[gridID]!.isDestroyed = true
-            updates.destroyedGridIDs.insert(gridID)
+            if container.state.grids[gridID] != nil {
+              container.state.grids[gridID]!.isDestroyed = true
+              updates.destroyedGridIDs.insert(gridID)
+            }
 
           case let .gridCursorGoto(gridID, row, column):
             let oldCursor = container.state.cursor
