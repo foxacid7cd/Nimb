@@ -153,7 +153,6 @@ public class MainViewController: NSViewController {
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
-  private var gridsContainerViewFrame: CTFrame?
   private var preMaximizeWindowFrame: CGRect?
   private lazy var modalOverlayView = NSView()
 

@@ -11,13 +11,23 @@ public extension FileHandle {
 
         if data.isEmpty {
           continuation.finish()
-
         } else {
           continuation.yield(data)
         }
       }
 
-      continuation.onTermination = { _ in self.readabilityHandler = nil }
+      continuation.onTermination = { [weak self] termination in
+        guard let self else {
+          return
+        }
+
+        switch termination {
+        case .cancelled:
+          readabilityHandler = nil
+        default:
+          break
+        }
+      }
     }
   }
 }
