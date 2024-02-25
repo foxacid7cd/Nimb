@@ -13,7 +13,7 @@ public struct ProcessChannel: Channel {
     standardOutput.fileHandleForReading.dataBatches
   }
 
-  public func write(_ data: Data) async throws {
+  public func write(_ data: Data) throws {
     try standardInput.fileHandleForWriting
       .write(contentsOf: data)
   }

@@ -92,13 +92,13 @@ public class Store: Sendable {
   }
 
   @StateActor
-  public func report(keyPress: KeyPress) async {
-    await instance.report(keyPress: keyPress)
+  public func report(keyPress: KeyPress) {
+    instance.report(keyPress: keyPress)
     scheduleHideMsgShowsIfPossible()
   }
 
   @StateActor
-  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
+  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) {
     if
       let previousMouseMove,
       previousMouseMove.modifier == modifier,
@@ -109,48 +109,48 @@ public class Store: Sendable {
     }
     previousMouseMove = (modifier, gridID, point)
 
-    await instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
+    instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
   @StateActor
-  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
-    await instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
+  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) {
+    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
   @StateActor
-  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
-    await instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
+  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+    instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 
   @StateActor
-  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) async {
+  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
     do {
-      try await instance.reportPopupmenuItemSelected(atIndex: index, isFinish: isFinish)
+      try instance.reportPopupmenuItemSelected(atIndex: index, isFinish: isFinish)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
   @StateActor
-  public func reportTablineBufferSelected(withID id: Buffer.ID) async {
+  public func reportTablineBufferSelected(withID id: Buffer.ID) {
     do {
-      try await instance.reportTablineBufferSelected(withID: id)
+      try instance.reportTablineBufferSelected(withID: id)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
   @StateActor
-  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async {
+  public func reportTablineTabpageSelected(withID id: Tabpage.ID) {
     do {
-      try await instance.reportTablineTabpageSelected(withID: id)
+      try instance.reportTablineTabpageSelected(withID: id)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
   @StateActor
-  public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
+  public func reportOuterGrid(changedSizeTo size: IntegerSize) {
     guard size != previousReportedOuterGridSize else {
       return
     }
@@ -163,7 +163,7 @@ public class Store: Sendable {
 
     let sincePrevious = previousReportedOuterGridSizeInstant.duration(to: .now)
     if sincePrevious > outerGridSizeThrottlingInterval {
-      await instance.reportOuterGrid(changedSizeTo: size)
+      instance.reportOuterGrid(changedSizeTo: size)
     } else {
       outerGridSizeThrottlingTask = Task { [weak self] in
         guard let self else {
@@ -173,7 +173,7 @@ public class Store: Sendable {
         do {
           try await Task.sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
 
-          await instance.reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
+          instance.reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
         } catch {}
 
         outerGridSizeThrottlingTask = nil
@@ -182,25 +182,25 @@ public class Store: Sendable {
   }
 
   @StateActor
-  public func reportPumBounds(rectangle: IntegerRectangle) async {
+  public func reportPumBounds(rectangle: IntegerRectangle) {
     guard rectangle != previousPumBounds else {
       return
     }
     previousPumBounds = rectangle
 
     do {
-      try await instance.reportPumBounds(rectangle: rectangle)
+      try instance.reportPumBounds(rectangle: rectangle)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
   @StateActor
-  public func reportPaste(text: String) async {
+  public func reportPaste(text: String) {
     do {
-      try await instance.reportPaste(text: text)
+      try instance.reportPaste(text: text)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -224,7 +224,7 @@ public class Store: Sendable {
       do {
         return try await instance.bufTextForCopy()
       } catch {
-        await handleActionError(error)
+        handleActionError(error)
         return nil
       }
 
@@ -255,7 +255,7 @@ public class Store: Sendable {
     do {
       try await instance.edit(url: url)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -264,7 +264,7 @@ public class Store: Sendable {
     do {
       try await instance.write()
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -273,7 +273,7 @@ public class Store: Sendable {
     do {
       try await instance.saveAs(url: url)
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -282,7 +282,7 @@ public class Store: Sendable {
     do {
       try await instance.close()
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -291,7 +291,7 @@ public class Store: Sendable {
     do {
       try await instance.quitAll()
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
     }
   }
 
@@ -300,7 +300,7 @@ public class Store: Sendable {
     do {
       return try await instance.requestCurrentBufferInfo()
     } catch {
-      await handleActionError(error)
+      handleActionError(error)
       return nil
     }
   }
@@ -418,7 +418,8 @@ public class Store: Sendable {
     }
   }
 
-  private func handleActionError(_ error: any Error) async {
+  @StateActor
+  private func handleActionError(_ error: any Error) {
     let errorMessage: String = if let error = error as? NimsNeovimError {
       error.errorMessages.joined(separator: "\n")
     } else if let error = error as? NeovimError {
@@ -427,10 +428,12 @@ public class Store: Sendable {
       String(customDumping: error)
     }
     if !errorMessage.isEmpty {
-      do {
-        try await instance.report(errorMessage: errorMessage)
-      } catch {
-        logger.error("reporting error message failed with error \(error)")
+      Task {
+        do {
+          try await instance.report(errorMessage: errorMessage)
+        } catch {
+          logger.error("reporting error message failed with error \(error)")
+        }
       }
     }
   }

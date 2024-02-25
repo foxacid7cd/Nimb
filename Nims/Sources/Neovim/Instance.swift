@@ -113,13 +113,13 @@ public final class Instance: Sendable {
     case right
   }
 
-  public func report(keyPress: KeyPress) async {
+  public func report(keyPress: KeyPress) {
     let keys = keyPress.makeNvimKeyCode()
-    try? await api.fastCall(APIFunctions.NvimInput(keys: keys))
+    try? api.fastCall(APIFunctions.NvimInput(keys: keys))
   }
 
-  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
-    try? await api.fastCall(APIFunctions.NvimInputMouse(
+  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+    try? api.fastCall(APIFunctions.NvimInputMouse(
       button: "move",
       action: "",
       modifier: modifier,
@@ -129,8 +129,8 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportScrollWheel(with direction: ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) async {
-    try? await api.fastCallsTransaction(with: Array(
+  public func reportScrollWheel(with direction: ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) {
+    try? api.fastCallsTransaction(with: Array(
       repeating: APIFunctions.NvimInputMouse(
         button: "wheel",
         action: direction.rawValue,
@@ -143,8 +143,8 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) async {
-    try? await api.fastCall(APIFunctions.NvimInputMouse(
+  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+    try? api.fastCall(APIFunctions.NvimInputMouse(
       button: mouseButton.rawValue,
       action: action.rawValue,
       modifier: modifier,
@@ -154,28 +154,28 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) async throws {
-    try await api.nvimSelectPopupmenuItem(item: index, insert: true, finish: isFinish, opts: [:])
+  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) throws {
+    try api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: isFinish, opts: [:]))
   }
 
-  public func reportTablineBufferSelected(withID id: Buffer.ID) async throws {
-    try await api.fastCall(APIFunctions.NvimSetCurrentBuf(bufferID: id))
+  public func reportTablineBufferSelected(withID id: Buffer.ID) throws {
+    try api.fastCall(APIFunctions.NvimSetCurrentBuf(bufferID: id))
   }
 
-  public func reportTablineTabpageSelected(withID id: Tabpage.ID) async throws {
-    try await api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
+  public func reportTablineTabpageSelected(withID id: Tabpage.ID) throws {
+    try api.fastCall(APIFunctions.NvimSetCurrentTabpage(tabpageID: id))
   }
 
-  public func reportOuterGrid(changedSizeTo size: IntegerSize) async {
-    try? await api.fastCall(APIFunctions.NvimUITryResizeGrid(
+  public func reportOuterGrid(changedSizeTo size: IntegerSize) {
+    try? api.fastCall(APIFunctions.NvimUITryResizeGrid(
       grid: Grid.OuterID,
       width: size.columnsCount,
       height: size.rowsCount
     ))
   }
 
-  public func reportPumBounds(rectangle: IntegerRectangle) async throws {
-    try await api.fastCall(APIFunctions.NvimUIPumSetBounds(
+  public func reportPumBounds(rectangle: IntegerRectangle) throws {
+    try api.fastCall(APIFunctions.NvimUIPumSetBounds(
       width: Double(rectangle.size.columnsCount),
       height: Double(rectangle.size.rowsCount),
       row: Double(rectangle.origin.row),
@@ -183,8 +183,8 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportPaste(text: String) async throws {
-    try await api.fastCall(APIFunctions.NvimPaste(data: text, crlf: false, phase: -1))
+  public func reportPaste(text: String) throws {
+    try api.fastCall(APIFunctions.NvimPaste(data: text, crlf: false, phase: -1))
   }
 
   public func bufTextForCopy() async throws -> String {
@@ -237,8 +237,8 @@ public final class Instance: Sendable {
     )
   }
 
-  public func stopinsert() async {
-    try? await api.fastCall(APIFunctions.NvimCmd(
+  public func stopinsert() {
+    try? api.fastCall(APIFunctions.NvimCmd(
       cmd: [.string("cmd"): .string("stopinsert")],
       opts: [:]
     ))

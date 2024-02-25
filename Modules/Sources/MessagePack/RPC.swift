@@ -2,11 +2,12 @@
 
 import AsyncAlgorithms
 import CasePaths
+import Collections
 import CustomDump
 import Foundation
 import Library
 
-public struct RPC<Target: Channel>: Sendable {
+public class RPC<Target: Channel> {
   public init(_ target: Target) {
     self.target = target
     messageBatches = .init(target.dataBatches)
@@ -21,7 +22,7 @@ public struct RPC<Target: Channel>: Sendable {
   {
     await withUnsafeContinuation { continuation in
       Task {
-        try await send(
+        try send(
           request: .init(
             id: store.announceRequest {
               continuation.resume(returning: $0.result)
@@ -34,8 +35,8 @@ public struct RPC<Target: Channel>: Sendable {
     }
   }
 
-  public func fastCall(method: String, withParameters parameters: [Value]) async throws {
-    try await send(
+  public func fastCall(method: String, withParameters parameters: [Value]) throws {
+    try send(
       request: .init(
         id: store.announceRequest(),
         method: method,
@@ -44,11 +45,11 @@ public struct RPC<Target: Channel>: Sendable {
     )
   }
 
-  public func fastCallsTransaction(with calls: some Sequence<(method: String, parameters: [Value])>) async throws {
+  public func fastCallsTransaction(with calls: some Sequence<(method: String, parameters: [Value])>) throws {
     var data = Data()
 
     for call in calls {
-      await data.append(
+      data.append(
         packer.pack(
           Message.Request(
             id: store.announceRequest(),
@@ -60,12 +61,12 @@ public struct RPC<Target: Channel>: Sendable {
       )
     }
 
-    try await target.write(data)
+    try target.write(data)
   }
 
-  public func send(request: Message.Request) async throws {
-    let data = await packer.pack(request.makeValue())
-    try await target.write(data)
+  public func send(request: Message.Request) throws {
+    let data = packer.pack(request.makeValue())
+    try target.write(data)
   }
 
   private let target: Target
@@ -106,7 +107,7 @@ extension RPC: AsyncSequence {
             throw Failure("Unexpected request message received \(request)")
 
           case let .response(response):
-            await store.responseReceived(
+            store.responseReceived(
               response,
               forRequestWithID: response.id
             )
@@ -127,7 +128,7 @@ extension RPC: AsyncSequence {
   }
 }
 
-private actor Store {
+private class Store {
   func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Int {
     let id = announcedRequestsCount
     announcedRequestsCount += 1
@@ -147,5 +148,5 @@ private actor Store {
   }
 
   private var announcedRequestsCount = 0
-  private var currentRequests = [Int: @Sendable (Message.Response) -> Void]()
+  private var currentRequests = TreeDictionary < Int, @Sendable (Message.Response) -> Void > ()
 }

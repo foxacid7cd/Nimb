@@ -21,7 +21,7 @@ public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence, Se
 
       try Task.checkCancellation()
 
-      return try await unpacker.unpack(data)
+      return try unpacker.unpack(data)
         .map(Message.init(value:))
     }
 

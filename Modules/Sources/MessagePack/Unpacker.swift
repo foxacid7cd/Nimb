@@ -5,7 +5,7 @@ import Foundation
 import Library
 import msgpack
 
-public actor Unpacker {
+public class Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
     msgpack_unpacked_init(&unpacked)

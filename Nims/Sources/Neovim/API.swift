@@ -3,7 +3,7 @@
 import Library
 import MessagePack
 
-public struct API<Target: Channel>: Sendable {
+public class API<Target: Channel> {
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
   }
@@ -17,15 +17,15 @@ public struct API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
-  public func fastCall<T: Nims.APIFunction>(_ apiFunction: T) async throws {
-    try await rpc.fastCall(
+  public func fastCall<T: Nims.APIFunction>(_ apiFunction: T) throws {
+    try rpc.fastCall(
       method: T.method,
       withParameters: apiFunction.parameters
     )
   }
 
-  public func fastCallsTransaction(with apiFunctions: some Sequence<any APIFunction>) async throws {
-    try await rpc.fastCallsTransaction(with: apiFunctions.map {
+  public func fastCallsTransaction(with apiFunctions: some Sequence<any APIFunction>) throws {
+    try rpc.fastCallsTransaction(with: apiFunctions.map {
       (
         method: type(of: $0).method,
         parameters: $0.parameters

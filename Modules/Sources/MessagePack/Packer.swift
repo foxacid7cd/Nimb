@@ -4,7 +4,7 @@ import Foundation
 import Library
 import msgpack
 
-public actor Packer {
+public class Packer {
   public init() {
     msgpack_sbuffer_init(&sbuf)
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)
