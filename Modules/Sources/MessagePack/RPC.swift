@@ -8,8 +8,9 @@ import Foundation
 import Library
 
 public class RPC<Target: Channel> {
-  public init(_ target: Target) {
+  public init(_ target: Target, loopedRequestsCount: Int) {
     self.target = target
+    store = .init(loopedRequestsCount: loopedRequestsCount)
     messageBatches = .init(target.dataBatches)
   }
 
@@ -70,8 +71,8 @@ public class RPC<Target: Channel> {
   }
 
   private let target: Target
+  private let store: Store
   private let packer = Packer()
-  private let store = Store()
   private let messageBatches: AsyncMessageBatches<Target.S>
 }
 
@@ -129,9 +130,15 @@ extension RPC: AsyncSequence {
 }
 
 private class Store {
+  init(loopedRequestsCount: Int) {
+    self.loopedRequestsCount = loopedRequestsCount
+  }
+
   func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Int {
     let id = announcedRequestsCount
-    announcedRequestsCount += 1
+
+    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
+      .remainderReportingOverflow(dividingBy: loopedRequestsCount)
 
     if let handler {
       currentRequests[id] = handler
@@ -147,6 +154,7 @@ private class Store {
     handler(response)
   }
 
+  private let loopedRequestsCount: Int
   private var announcedRequestsCount = 0
   private var currentRequests = TreeDictionary < Int, @Sendable (Message.Response) -> Void > ()
 }

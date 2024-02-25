@@ -36,7 +36,7 @@ public final class Instance: Sendable {
     process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
     let processChannel = ProcessChannel(process)
-    let rpc = RPC(processChannel)
+    let rpc = RPC(processChannel, loopedRequestsCount: 256)
     let api = API(rpc)
     self.api = api
 
