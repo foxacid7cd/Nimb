@@ -149,50 +149,54 @@ public class GridView: NSView {
     guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
       return
     }
+    
+    let xThreshold = store.font.cellWidth * 6
+    let yThreshold = store.font.cellHeight * 3
 
     if event.phase == .began {
       isScrollingHorizontal = nil
-      xScrollingAccumulator = 0
-      yScrollingAccumulator = 0
+      xScrollingAccumulator = xThreshold / 2
+      xScrollingReported = 0
+      yScrollingAccumulator = yThreshold / 2
+      yScrollingReported = 0
     }
 
     xScrollingAccumulator -= event.scrollingDeltaX
     yScrollingAccumulator -= event.scrollingDeltaY
 
-    let xThreshold = store.font.cellWidth * 6
-    let yThreshold = store.font.cellHeight * 3
-
     var direction: Instance.ScrollDirection?
     var count = 0
 
-    if isScrollingHorizontal != true, abs(yScrollingAccumulator) > yThreshold {
+    let xScrollingDelta = xScrollingAccumulator - xScrollingReported
+    let yScrollingDelta = yScrollingAccumulator - yScrollingReported
+    if isScrollingHorizontal != true, abs(yScrollingDelta) > yThreshold {
       if isScrollingHorizontal == nil {
         isScrollingHorizontal = false
       }
 
-      count = Int(abs(yScrollingAccumulator) / yThreshold)
+      count = Int(abs(yScrollingDelta) / yThreshold)
       let yScrollingToBeReported = yThreshold * Double(count)
-      if yScrollingAccumulator > 0 {
+      if yScrollingDelta > 0 {
         direction = .down
-        yScrollingAccumulator -= yScrollingToBeReported
+        yScrollingReported += yScrollingToBeReported
       } else {
         direction = .up
-        yScrollingAccumulator += yScrollingToBeReported
+        yScrollingReported -= yScrollingToBeReported
       }
 
-    } else if isScrollingHorizontal != false, abs(xScrollingAccumulator) > xThreshold {
+    } else if isScrollingHorizontal != false, abs(xScrollingDelta) > xThreshold {
       if isScrollingHorizontal == nil {
         isScrollingHorizontal = true
       }
 
-      count = Int(abs(xScrollingAccumulator) / xThreshold)
+      count = Int(abs(xScrollingDelta) / xThreshold)
       let xScrollingToBeReported = xThreshold * Double(count)
-      if xScrollingAccumulator > 0 {
+      if xScrollingDelta > 0 {
         direction = .right
-        xScrollingAccumulator -= xScrollingToBeReported
+        xScrollingReported += xScrollingToBeReported
       } else {
         direction = .left
-        xScrollingAccumulator += xScrollingToBeReported
+        xScrollingReported -= xScrollingToBeReported
       }
     }
 
@@ -247,7 +251,9 @@ public class GridView: NSView {
   private let store: Store
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
+  private var xScrollingReported: Double = 0
   private var yScrollingAccumulator: Double = 0
+  private var yScrollingReported: Double = 0
   private var dirtyRectangles = [IntegerRectangle]()
 
   private var grid: Grid {
