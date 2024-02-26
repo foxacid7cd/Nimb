@@ -146,23 +146,28 @@ public class GridView: NSView {
   }
 
   override public func scrollWheel(with event: NSEvent) {
-    guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
+    guard 
+      store.state.isMouseUserInteractionEnabled,
+      store.state.cmdlines.dictionary.isEmpty
+    else {
       return
     }
-    
-    let xThreshold = store.font.cellWidth * 6
-    let yThreshold = store.font.cellHeight * 3
+
+    let scrollingSpeedMultiplier = 0.8
+    let xThreshold = store.font.cellWidth * 6 * scrollingSpeedMultiplier
+    let yThreshold = store.font.cellHeight * 3 * scrollingSpeedMultiplier
 
     if event.phase == .began {
       isScrollingHorizontal = nil
-      xScrollingAccumulator = xThreshold / 2
-      xScrollingReported = 0
-      yScrollingAccumulator = yThreshold / 2
-      yScrollingReported = 0
+      xScrollingAccumulator = 0
+      xScrollingReported = -xThreshold / 2
+      yScrollingAccumulator = 0
+      yScrollingReported = -yThreshold / 2
     }
 
-    xScrollingAccumulator -= event.scrollingDeltaX
-    yScrollingAccumulator -= event.scrollingDeltaY
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
+    xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
+    yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
     var direction: Instance.ScrollDirection?
     var count = 0
