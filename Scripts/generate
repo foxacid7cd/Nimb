@@ -2,7 +2,7 @@
 set -e
 
 () {
-  local nvim_path=".build/nvim-macos/bin/nvim"
+  local nvim_path=".build/nvim-macos-arm64/bin/nvim"
   local generate_cmd="swift run --package-path Modules generate"
 
   local generated_dir="Nims/Sources/generated"

@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="/Applications/Nims.app/Contents/Resources/nvim"
+cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="/Applications/Nims.app/Contents/Resources/nvim"
 cmake --build .build/ --target package
 
 rm -rf .build/nvim-macos/
-tar -C .build/ -xvf .build/nvim-macos.tar.gz
+tar -C .build/ -xvf .build/nvim-macos-arm64.tar.gz
