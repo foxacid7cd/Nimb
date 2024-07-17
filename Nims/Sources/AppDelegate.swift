@@ -27,7 +27,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func setupStore() async {
     let instance = await Instance(
-      neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/share/nvim/runtime"),
+      neovimRuntimeURL: Bundle.main.resourceURL!.appending(path: "nvim/runtime"),
       initialOuterGridSize: UserDefaults.standard.outerGridSize
     )
 
