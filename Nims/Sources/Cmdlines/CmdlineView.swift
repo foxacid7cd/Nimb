@@ -176,7 +176,6 @@ private class CmdlineTextView: NSView {
     }
 
     let cursorPosition = indent + cmdline.cursorPosition
-    cursorParentHighlightID = nil
 
     var location = 0
     for contentPart in cmdline.contentParts {
@@ -200,9 +199,6 @@ private class CmdlineTextView: NSView {
           .replacingOccurrences(of: "\r", with: "↲"),
         attributes: attributes
       ))
-      if cursorPosition >= location, cursorPosition < location + contentPart.text.count {
-        cursorParentHighlightID = contentPart.highlightID
-      }
       location += contentPart.text.count
     }
     cmdlineAttributedString.append(.init(
@@ -324,9 +320,9 @@ private class CmdlineTextView: NSView {
 
         let cursorForegroundColor: Color
         let cursorBackgroundColor: Color
-        if highlightID == Highlight.defaultID, let cursorParentHighlightID {
-          cursorForegroundColor = store.appearance.backgroundColor(for: cursorParentHighlightID)
-          cursorBackgroundColor = store.appearance.foregroundColor(for: cursorParentHighlightID)
+        if highlightID == Highlight.defaultID {
+          cursorForegroundColor = store.appearance.defaultBackgroundColor
+          cursorBackgroundColor = store.appearance.defaultForegroundColor
         } else {
           cursorForegroundColor = store.appearance.foregroundColor(for: highlightID)
           cursorBackgroundColor = store.appearance.backgroundColor(for: highlightID)
@@ -385,6 +381,5 @@ private class CmdlineTextView: NSView {
   private var cmdlineCTFrame: CTFrame?
   private var blockLineCTLines = [CTLine]()
   private var cmdlineCTLines = [CTLine]()
-  private var cursorParentHighlightID: Highlight.ID?
   private var indent = 0
 }

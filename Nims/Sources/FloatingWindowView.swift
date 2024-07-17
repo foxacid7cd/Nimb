@@ -12,7 +12,7 @@ public class FloatingWindowView: NSView {
     layer!.borderWidth = 1
     layer!.shadowOffset = .init(width: 3, height: -3)
     layer!.shadowColor = .black
-    layer!.shadowOpacity = 0.15
+    layer!.shadowOpacity = 0.1
     layer!.shadowRadius = 2
   }
 
@@ -35,9 +35,8 @@ public class FloatingWindowView: NSView {
         isToggledOn = true
         isHidden = false
         NSAnimationContext.runAnimationGroup { context in
-          context.allowsImplicitAnimation = true
-          context.duration = 0.1
-          context.timingFunction = .init(name: .easeInEaseOut)
+          context.duration = 0.07
+          context.timingFunction = .init(name: .linear)
           let animator = animator()
           animator.alphaValue = 1
         }
