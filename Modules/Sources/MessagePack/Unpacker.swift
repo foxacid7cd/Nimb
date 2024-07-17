@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 import AsyncAlgorithms
+import Cmsgpack
 import Foundation
 import Library
-import msgpack
 
 public class Unpacker {
   public init() {

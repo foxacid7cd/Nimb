@@ -1,3 +1,3 @@
 [submodule "Third-Party/neovim"]
-	path = Third-Party/neovim
+  path = Third-Party/neovim
 	url = git@github.com:neovim/neovim.git

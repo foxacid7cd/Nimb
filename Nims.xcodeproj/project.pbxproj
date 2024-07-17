@@ -22,13 +22,13 @@
 		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
-		687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 687E9AA12ACEF117008B1E76 /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
 		6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */; };
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
-		6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 6895C20A2AC41DD3006122D5 /* TinyConstraints */; };
+		689738F32C480AF8002159BD /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 689738F22C480AF7002159BD /* TinyConstraints */; };
+		689738F52C480C64002159BD /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 689738F42C480C51002159BD /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
 		689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2A29B4FBA700345713 /* MainViewController.swift */; };
@@ -99,7 +99,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				687E9AA32ACEF124008B1E76 /* nvim in Copy nvim Executable */,
+				689738F52C480C64002159BD /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -122,12 +122,12 @@
 		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
-		687E9AA12ACEF117008B1E76 /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos/bin/nvim"; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
 		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
 		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		689081352B3F321000252558 /* FloatingWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowView.swift; sourceTree = "<group>"; };
+		689738F42C480C51002159BD /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = ".build/nvim-macos-arm64/bin/nvim"; sourceTree = "<group>"; };
 		689870A82AF80D1B00C4F2FD /* NeovimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimError.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		689D9E2A29B4FBA700345713 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -182,7 +182,7 @@
 				682272BB293DD63800A36AB9 /* Library in Frameworks */,
 				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
 				68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */,
-				6895C20B2AC41DD3006122D5 /* TinyConstraints in Frameworks */,
+				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,7 +284,7 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
-				687E9AA12ACEF117008B1E76 /* nvim */,
+				689738F42C480C51002159BD /* nvim */,
 				68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
@@ -398,7 +398,7 @@
 			packageProductDependencies = (
 				682272BA293DD63800A36AB9 /* Library */,
 				682272BC293DD63800A36AB9 /* MessagePack */,
-				6895C20A2AC41DD3006122D5 /* TinyConstraints */,
+				689738F22C480AF7002159BD /* TinyConstraints */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
@@ -429,7 +429,7 @@
 			);
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
-				6895C2092AC41DD3006122D5 /* XCRemoteSwiftPackageReference "TinyConstraints" */,
+				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -469,7 +469,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  rm -rf \"$DESTINATION_DIR\"\n  mkdir \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/\" \"$DESTINATION_DIR/share/nvim/runtime\"\n}\n";
+			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos-arm64\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  rm -rf \"$DESTINATION_DIR\"\n  mkdir \"$DESTINATION_DIR\"\n\n  setopt extendedglob\n  cp -R \"$NVIM_RESOURCES_DIR\"/^bin \"$DESTINATION_DIR\"\n  \n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/\" \"$DESTINATION_DIR/share/nvim/runtime\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -787,12 +787,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		6895C2092AC41DD3006122D5 /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
+		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/roberthein/TinyConstraints.git";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -806,9 +806,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = MessagePack;
 		};
-		6895C20A2AC41DD3006122D5 /* TinyConstraints */ = {
+		689738F22C480AF7002159BD /* TinyConstraints */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6895C2092AC41DD3006122D5 /* XCRemoteSwiftPackageReference "TinyConstraints" */;
+			package = 689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */;
 			productName = TinyConstraints;
 		};
 /* End XCSwiftPackageProductDependency section */

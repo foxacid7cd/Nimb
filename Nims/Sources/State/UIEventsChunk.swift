@@ -35,8 +35,8 @@ public enum UIEventsChunk: Sendable {
       }
       self.init(
         kind: kind,
-        hiName: raw["hi_name"].flatMap(/Value.string),
-        uiName: raw["ui_name"].flatMap(/Value.string),
+        hiName: raw["hi_name"].flatMap(\.string),
+        uiName: raw["ui_name"].flatMap(\.string),
         id: id
       )
     }

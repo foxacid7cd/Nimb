@@ -673,7 +673,9 @@ public extension Actions {
             grids: IntKeyedDictionary<Grid>,
             font: Font,
             appearance: Appearance
-          ) throws -> [Grid.LineUpdatesResult] {
+          ) throws
+            -> [Grid.LineUpdatesResult]
+          {
             var accumulator = [Grid.LineUpdatesResult]()
 
             for (row, rowGridLines) in gridLines {

@@ -156,5 +156,5 @@ private class Store {
 
   private let loopedRequestsCount: Int
   private var announcedRequestsCount = 0
-  private var currentRequests = TreeDictionary < Int, @Sendable (Message.Response) -> Void > ()
+  private var currentRequests = TreeDictionary<Int, @Sendable (Message.Response) -> Void>()
 }

@@ -1,0 +1,4 @@
+module Cmsgpack [system] {
+  header "/opt/homebrew/include/msgpack.h"
+  export *
+}

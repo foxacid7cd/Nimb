@@ -58,7 +58,7 @@ let package = Package(
       name: "MessagePack",
       dependencies: [
         .target(name: "Library"),
-        .target(name: "msgpack"),
+        .target(name: "Cmsgpack"),
       ]
     ),
     .target(
@@ -84,11 +84,9 @@ let package = Package(
       ]
     ),
     .systemLibrary(
-      name: "msgpack",
+      name: "Cmsgpack",
       pkgConfig: "msgpack-c",
-      providers: [
-        .brewItem(["msgpack"])
-      ]
+      providers: [.brewItem(["msgpack"])]
     ),
   ]
 )

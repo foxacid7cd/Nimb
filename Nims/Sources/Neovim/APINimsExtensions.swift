@@ -18,7 +18,7 @@ public extension API {
         case let .array(rawErrorMessages) = rawFailure
       {
         throw NimsNeovimError(
-          errorMessages: rawErrorMessages.compactMap(/Value.string)
+          errorMessages: rawErrorMessages.compactMap(\.string)
         )
       } else if let rawSuccess = dictionary["success"] {
         return rawSuccess

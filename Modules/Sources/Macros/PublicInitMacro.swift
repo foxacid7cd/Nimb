@@ -5,7 +5,9 @@ public struct PublicInitMacro: MemberMacro {
     of node: AttributeSyntax,
     providingMembersOf declaration: some DeclGroupSyntax,
     in context: some MacroExpansionContext
-  ) throws -> [DeclSyntax] {
+  ) throws
+    -> [DeclSyntax]
+  {
     guard let structDecl = declaration.as(StructDeclSyntax.self) else {
       throw Error.notAStruct
     }

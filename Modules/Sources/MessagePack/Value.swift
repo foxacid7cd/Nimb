@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
+import Cmsgpack
 import Foundation
-import msgpack
 
 @CasePathable
+@dynamicMemberLookup
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
 {

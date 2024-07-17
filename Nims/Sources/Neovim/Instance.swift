@@ -189,7 +189,7 @@ public final class Instance: Sendable {
 
   public func bufTextForCopy() async throws -> String {
     let rawSuccess = try await api.nims(method: "buf_text_for_copy")
-    guard let text = rawSuccess.flatMap(/Value.string) else {
+    guard let text = rawSuccess.flatMap(\.string) else {
       throw Failure("success result is not a string", rawSuccess as Any)
     }
     return text
