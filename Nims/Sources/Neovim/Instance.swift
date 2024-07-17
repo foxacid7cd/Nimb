@@ -10,10 +10,10 @@ import MessagePack
 
 @StateActor
 public final class Instance: Sendable {
-  public init(neovimRuntimeURL: URL, initialOuterGridSize: IntegerSize) {
+  public init(nvimResourcesURL: URL, initialOuterGridSize: IntegerSize) {
     var environment = ProcessInfo.processInfo.environment
     environment.merge(UserDefaults.standard.environmentOverlay, uniquingKeysWith: { _, newValue in newValue })
-    environment["VIMRUNTIME"] = neovimRuntimeURL.standardizedFileURL.path()
+    environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime").standardizedFileURL.path()
     process.environment = environment
 
     let shell = environment["SHELL"] ?? "/bin/zsh"
@@ -31,7 +31,7 @@ public final class Instance: Sendable {
     }
 
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
-    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed" + vimrcArgument]
+    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed --headless" + vimrcArgument]
 
     process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
 
@@ -60,6 +60,9 @@ public final class Instance: Sendable {
         taskGroup.addTask { @StateActor in
           try process.run()
 
+          let initLua = try String(data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")), encoding: .utf8)!
+          try await api.nvimExecLua(code: initLua, args: [])
+
           let uiOptions: UIOptions = [
             .extMultigrid,
             .extHlstate,
@@ -68,11 +71,7 @@ public final class Instance: Sendable {
             .extPopupmenu,
             .extTabline,
           ]
-          try await api.call(APIFunctions.NvimUIAttach(
-            width: initialOuterGridSize.columnsCount,
-            height: initialOuterGridSize.rowsCount,
-            options: uiOptions.nvimUIAttachOptions
-          ))
+          try await api.nvimUIAttach(width: initialOuterGridSize.columnsCount, height: initialOuterGridSize.rowsCount, options: uiOptions.nvimUIAttachOptions)
         }
 
         while !taskGroup.isEmpty {
