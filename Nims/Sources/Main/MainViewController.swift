@@ -13,7 +13,7 @@ public class MainViewController: NSViewController {
     popupmenuViewController = .init(
       store: store,
       getGridView: { [gridsView] gridID in
-        gridsView.arrangedGridView(forGridWithID: gridID, existing: true).0
+        gridsView.arrangedGridView(forGridWithID: gridID).0
       },
       getCmdlinesView: { [cmdlinesViewController] in
         cmdlinesViewController.view

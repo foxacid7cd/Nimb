@@ -38,7 +38,12 @@ public struct GridDrawRuns: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    for row in max(boundingRect.minRow, 0) ..< min(boundingRect.maxRow, rowDrawRuns.count) {
+    let fromRow = max(boundingRect.minRow, 0)
+    let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
+    guard fromRow < toRow else {
+      return
+    }
+    for row in fromRow ..< toRow {
       rowDrawRuns[row].drawBackground(
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         to: context,
@@ -57,7 +62,12 @@ public struct GridDrawRuns: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    for row in max(boundingRect.minRow, 0) ..< min(boundingRect.maxRow, rowDrawRuns.count) {
+    let fromRow = max(boundingRect.minRow, 0)
+    let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
+    guard fromRow < toRow else {
+      return
+    }
+    for row in fromRow ..< toRow {
       rowDrawRuns[row].drawForeground(
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         to: context,

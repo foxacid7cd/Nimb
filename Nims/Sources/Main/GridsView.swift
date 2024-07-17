@@ -140,7 +140,7 @@ public class GridsView: NSView {
           let horizontalConstant: Double = floatingWindow.anchorColumn * store.font.cellWidth
           let verticalConstant: Double = floatingWindow.anchorRow * store.font.cellHeight
 
-          let (anchorGridView, _) = arrangedGridView(forGridWithID: floatingWindow.anchorGridID, existing: true)
+          let (anchorGridView, _) = arrangedGridView(forGridWithID: floatingWindow.anchorGridID)
 
           if let constraints, constraints.to === anchorGridView, constraints.anchor == floatingWindow.anchor {
             constraints.horizontal.constant = horizontalConstant
@@ -217,7 +217,14 @@ public class GridsView: NSView {
     NSLayoutConstraint.deactivate(deactivated)
     NSLayoutConstraint.activate(activated)
 
-    if stateUpdates.isGridsOrderUpdated {
+    for (gridID, (gridView, _)) in arrangedGridViews {
+      gridView.render(
+        stateUpdates: stateUpdates,
+        gridUpdate: stateUpdates.gridUpdates[gridID]
+      )
+    }
+
+    if stateUpdates.isGridsOrderUpdated || hasAddedGridViews {
       sortSubviews(
         { firstView, secondView, _ in
           let firstOrdinal = (firstView as! GridView).zIndex
@@ -233,13 +240,7 @@ public class GridsView: NSView {
         },
         context: nil
       )
-    }
-
-    for (gridID, (gridView, _)) in arrangedGridViews {
-      gridView.render(
-        stateUpdates: stateUpdates,
-        gridUpdate: stateUpdates.gridUpdates[gridID]
-      )
+      hasAddedGridViews = false
     }
   }
 
@@ -247,25 +248,23 @@ public class GridsView: NSView {
     arrangedGridViews[gridID]?.view.windowFrame(forGridFrame: gridFrame)
   }
 
-  public func arrangedGridView(forGridWithID id: Grid.ID, existing: Bool = false) -> (GridView, ArrangedGridViewConstraints?) {
+  public func arrangedGridView(forGridWithID id: Grid.ID) -> (GridView, ArrangedGridViewConstraints?) {
     if let context = arrangedGridViews[id] {
       return context
 
     } else {
-      if existing {
-        logger.warning("grid view should have existed but did not")
-      }
-
       let view = GridView(store: store, gridID: id)
       view.translatesAutoresizingMaskIntoConstraints = false
       addSubview(view)
       view.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
       view.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
       arrangedGridViews[id] = (view, nil)
+      hasAddedGridViews = true
       return (view, nil)
     }
   }
 
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<(view: GridView, constraints: ArrangedGridViewConstraints?)>()
+  private var hasAddedGridViews = false
 }
