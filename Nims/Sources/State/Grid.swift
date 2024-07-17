@@ -193,8 +193,10 @@ public struct Grid: Sendable, Identifiable {
 
     case let .cursor(style, position):
       let columnsCount = if
+        position.row < layout.rowLayouts.count,
         let rowPart = layout.rowLayouts[position.row].parts
           .first(where: { $0.columnsRange.contains(position.column) }),
+        position.column < rowPart.columnsCount,
         let rowPartCell = rowPart.cells
           .first(where: { (($0.columnsRange.lowerBound + rowPart.columnsRange.lowerBound) ..< ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)).contains(position.column) })
       {

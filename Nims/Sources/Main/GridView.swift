@@ -57,6 +57,7 @@ public class GridView: NSView {
     for dirtyRectangle in dirtyRectangles {
       setNeedsDisplay(
         (dirtyRectangle * store.font.cellSize)
+          .insetBy(dx: -store.font.cellSize.width * 2, dy: -store.font.cellSize.height * 2)
           .applying(upsideDownTransform)
       )
     }

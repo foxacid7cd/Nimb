@@ -22,7 +22,6 @@ public class FloatingWindowView: NSView {
   }
 
   public var colors: (background: Color, border: Color) = (.black, .black)
-  public var animatingToggling: ((_ on: Bool, _ animationDuration: Double) -> Void)?
 
   public func render() {
     layer!.backgroundColor = colors.background.appKit.cgColor
@@ -30,42 +29,25 @@ public class FloatingWindowView: NSView {
   }
 
   @discardableResult
-  public func toggle(on: Bool, animationDuration: Double = 0) -> Bool {
+  public func toggle(on: Bool) -> Bool {
     if on {
       if isToggledOn != true {
         isToggledOn = true
         isHidden = false
-        if animationDuration == 0 {
-          alphaValue = 1
-          animatingToggling?(on, animationDuration)
-        } else {
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = animationDuration
-            context.timingFunction = .init(name: on ? .easeOut : .easeIn)
-            animator().alphaValue = 1
-            animatingToggling?(on, animationDuration)
-          }
+        NSAnimationContext.runAnimationGroup { context in
+          context.allowsImplicitAnimation = true
+          context.duration = 0.1
+          context.timingFunction = .init(name: .easeInEaseOut)
+          let animator = animator()
+          animator.alphaValue = 1
         }
         return true
       }
     } else {
       if isToggledOn != false {
         isToggledOn = false
-        if animationDuration == 0 {
-          alphaValue = 0
-          animatingToggling?(on, animationDuration)
-          isHidden = true
-        } else {
-          NSAnimationContext.runAnimationGroup { context in
-            context.duration = animationDuration
-            animator().alphaValue = 0
-            animatingToggling?(on, animationDuration)
-          } completionHandler: {
-            if self.isToggledOn == false {
-              self.isHidden = true
-            }
-          }
-        }
+        alphaValue = 0
+        isHidden = true
         return true
       }
     }

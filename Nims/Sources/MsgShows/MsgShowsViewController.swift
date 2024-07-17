@@ -13,15 +13,6 @@ public class MsgShowsViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var animatingToggling: ((_ on: Bool, _ animationDuration: Double) -> Void)? {
-    get {
-      customView.animatingToggling
-    }
-    set(value) {
-      customView.animatingToggling = value
-    }
-  }
-
   override public func loadView() {
     let view = customView
     view.width(max: 800)
@@ -76,8 +67,7 @@ public class MsgShowsViewController: NSViewController {
 
     if stateUpdates.isMessagesUpdated {
       customView.toggle(
-        on: !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed,
-        animationDuration: 0.12
+        on: !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
       )
     }
   }
