@@ -223,7 +223,7 @@ public final class Instance: Sendable {
 
   public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
     async let name = api.nvimBufGetName(bufferID: .current)
-    async let rawBuftype = api.nvimBufGetOption(bufferID: .current, name: "buftype")
+    async let rawBuftype = api.nvimGetOptionValue(name: "buftype", opts: ["buf": .integer(0)])
     return try await (
       name: name,
       buftype: rawBuftype[case: \.string] ?? ""

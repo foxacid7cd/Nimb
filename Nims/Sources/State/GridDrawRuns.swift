@@ -529,7 +529,7 @@ public struct CursorDrawRun: Sendable {
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
 
-    if appearance.isReverse(for: highlightID) {
+    if highlightID == .zero {
       cursorForegroundColor = appearance.defaultBackgroundColor
       cursorBackgroundColor = appearance.defaultForegroundColor
 
