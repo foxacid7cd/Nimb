@@ -4,11 +4,17 @@ import AppKit
 import CustomDump
 import Library
 
-public class GridView: NSView {
+public class GridView: NSView, CALayerDelegate {
   init(store: Store, gridID: Grid.ID) {
     self.store = store
     self.gridID = gridID
     super.init(frame: .init())
+
+    layer = CALayer()
+    layer!.delegate = self
+    layer!.drawsAsynchronously = true
+    layer!.isOpaque = true
+    wantsLayer = true
   }
 
   @available(*, unavailable)
@@ -24,15 +30,19 @@ public class GridView: NSView {
     grid.zIndex
   }
 
-  override public var isOpaque: Bool {
-    true
+  override public func viewWillMove(toWindow newWindow: NSWindow?) {
+    super.viewWillMove(toWindow: newWindow)
+
+    if let newWindow {
+      layer!.contentsScale = newWindow.backingScaleFactor
+    }
   }
 
   public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
     dirtyRectangles.removeAll(keepingCapacity: true)
 
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
-      needsDisplay = true
+      layer!.setNeedsDisplay()
       return
     }
 
@@ -49,64 +59,60 @@ public class GridView: NSView {
         dirtyRectangles.append(contentsOf: value)
 
       case .needsDisplay:
-        needsDisplay = true
+        layer!.setNeedsDisplay()
         return
       }
     }
 
     for dirtyRectangle in dirtyRectangles {
-      setNeedsDisplay(
+      layer!.setNeedsDisplay(
         (dirtyRectangle * store.font.cellSize)
-          .insetBy(dx: -store.font.cellSize.width * 2, dy: -store.font.cellSize.height * 2)
+          .insetBy(dx: -store.font.cellSize.width * 2, dy: -store.font.cellSize.height)
           .applying(upsideDownTransform)
       )
     }
   }
 
-  override public func draw(_: NSRect) {
-    let context = NSGraphicsContext.current!.cgContext
+  public func draw(_ layer: CALayer, in ctx: CGContext) {
+    let boundingRect = IntegerRectangle(
+      frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
+      cellSize: store.font.cellSize
+    )
 
-    var rects: UnsafePointer<NSRect>!
-    var rectsCount = 0
-    getRectsBeingDrawn(&rects, count: &rectsCount)
+    ctx.setShouldAntialias(false)
+    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+    grid.drawRuns.drawBackground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: store.font,
+      appearance: store.appearance,
+      upsideDownTransform: upsideDownTransform
+    )
+    ctx.endTransparencyLayer()
 
-    for rectIndex in 0 ..< rectsCount {
-      let dirtyRect = rects.advanced(by: rectIndex).pointee
+    ctx.setShouldAntialias(true)
+    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+    grid.drawRuns.drawForeground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: store.font,
+      appearance: store.appearance,
+      upsideDownTransform: upsideDownTransform
+    )
+    ctx.endTransparencyLayer()
 
-      let boundingRect = IntegerRectangle(
-        frame: dirtyRect.applying(upsideDownTransform),
-        cellSize: store.font.cellSize
-      )
-      context.setShouldAntialias(false)
-      grid.drawRuns.drawBackground(
-        to: context,
-        boundingRect: boundingRect,
+    if
+      store.state.cursorBlinkingPhase,
+      store.state.isMouseUserInteractionEnabled,
+      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+      boundingRect.contains(cursorDrawRun.origin)
+    {
+      cursorDrawRun.draw(
+        to: ctx,
         font: store.font,
         appearance: store.appearance,
         upsideDownTransform: upsideDownTransform
       )
-      context.setShouldAntialias(true)
-      grid.drawRuns.drawForeground(
-        to: context,
-        boundingRect: boundingRect,
-        font: store.font,
-        appearance: store.appearance,
-        upsideDownTransform: upsideDownTransform
-      )
-
-      if
-        store.state.cursorBlinkingPhase,
-        store.state.isMouseUserInteractionEnabled,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        boundingRect.contains(cursorDrawRun.origin)
-      {
-        cursorDrawRun.draw(
-          to: context,
-          font: store.font,
-          appearance: store.appearance,
-          upsideDownTransform: upsideDownTransform
-        )
-      }
     }
   }
 

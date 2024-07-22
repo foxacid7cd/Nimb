@@ -69,7 +69,7 @@ public class MainViewController: NSViewController {
 
     view.addSubview(msgShowsViewController.view)
     msgShowsViewController.view.leading(to: view, offset: -1)
-    let msgShowsYConstraint = msgShowsViewController.view.bottomToSuperview(offset: 1, priority: .defaultHigh)
+    msgShowsViewController.view.bottomToSuperview(offset: 1, priority: .defaultHigh)
     addChild(msgShowsViewController)
 
     view.addSubview(cmdlinesViewController.view)

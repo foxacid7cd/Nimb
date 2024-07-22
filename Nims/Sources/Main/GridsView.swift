@@ -217,12 +217,15 @@ public class GridsView: NSView {
     NSLayoutConstraint.deactivate(deactivated)
     NSLayoutConstraint.activate(activated)
 
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
     for (gridID, (gridView, _)) in arrangedGridViews {
       gridView.render(
         stateUpdates: stateUpdates,
         gridUpdate: stateUpdates.gridUpdates[gridID]
       )
     }
+    CATransaction.commit()
 
     if stateUpdates.isGridsOrderUpdated || hasAddedGridViews {
       sortSubviews(

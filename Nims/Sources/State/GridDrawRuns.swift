@@ -386,7 +386,7 @@ public struct DrawRun: Sendable {
       )
     )
 
-    appearance.backgroundColor(for: highlightID).appKit.setFill()
+    context.setFillColor(appearance.backgroundColor(for: highlightID).cg)
     context.fill([rect])
   }
 
@@ -553,13 +553,14 @@ public struct CursorDrawRun: Sendable {
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(upsideDownTransform)
 
-    cursorBackgroundColor.appKit.setFill()
-    rect.fill()
+    context.setFillColor(cursorBackgroundColor.cg)
+    context.fill([rect])
 
     if shouldDrawParentText {
-      rect.clip()
+      context.saveGState()
+      context.clip(to: [rect])
 
-      cursorForegroundColor.appKit.setFill()
+      context.setFillColor(cursorForegroundColor.cg)
 
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
@@ -579,6 +580,7 @@ public struct CursorDrawRun: Sendable {
           context
         )
       }
+      context.restoreGState()
     }
   }
 }

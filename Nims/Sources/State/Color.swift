@@ -30,6 +30,10 @@ public struct Color: Sendable, Hashable {
     )
   }
 
+  public var cg: CGColor {
+    appKit.cgColor
+  }
+
   public func with(alpha: Double) -> Color {
     var copy = self
     copy.alpha = alpha

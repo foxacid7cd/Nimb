@@ -15,6 +15,7 @@
 		682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682BFD0B2AE8913400EDA77E /* GlobalActors.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
+		6841680B2C4EAF0B0052B79B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6841680A2C4EAF0B0052B79B /* QuartzCore.framework */; };
 		68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		68554B002AFAAD10006488CD /* MsgShowsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */; };
@@ -115,6 +116,7 @@
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
+		6841680A2C4EAF0B0052B79B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowTextView.swift; sourceTree = "<group>"; };
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsLayout.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6841680B2C4EAF0B0052B79B /* QuartzCore.framework in Frameworks */,
 				682272BB293DD63800A36AB9 /* Library in Frameworks */,
 				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
 				68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */,
@@ -225,6 +228,7 @@
 		6843851A2934D3EE000C4A1D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				6841680A2C4EAF0B0052B79B /* QuartzCore.framework */,
 				68BA57392AE9E7A9002E041B /* Metal.framework */,
 			);
 			name = Frameworks;
