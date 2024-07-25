@@ -14,7 +14,7 @@ public struct Metadata: Sendable {
       return nil
     }
 
-    let types: [Type] = if let rawTypes = dictionary["types"].flatMap(/Value.dictionary) {
+    let types: [Type] = if let rawTypes = dictionary["types"].flatMap(\.dictionary) {
       rawTypes
         .compactMap { name, rawType in
           guard
@@ -34,20 +34,20 @@ public struct Metadata: Sendable {
     }
     self.types = types
 
-    if let functionsValue = dictionary["functions"].flatMap(/Value.array) {
+    if let functionsValue = dictionary["functions"].flatMap(\.array) {
       functions = functionsValue.compactMap { functionValue -> Function? in
         guard case let .dictionary(dictionary) = functionValue else {
           return nil
         }
 
         guard
-          let parameterValues = dictionary["parameters"].flatMap(/Value.array),
-          let name = dictionary["name"].flatMap(/Value.string),
+          let parameterValues = dictionary["parameters"].flatMap(\.array),
+          let name = dictionary["name"].flatMap(\.string),
           let returnType = dictionary["return_type"]
-            .flatMap(/Value.string)
+            .flatMap(\.string)
             .map({ ValueType(rawValue: $0) }),
-          let method = dictionary["method"].flatMap(/Value.boolean),
-          let since = dictionary["since"].flatMap(/Value.integer)
+          let method = dictionary["method"].flatMap(\.boolean),
+          let since = dictionary["since"].flatMap(\.integer)
         else {
           return nil
         }
@@ -59,14 +59,14 @@ public struct Metadata: Sendable {
           returnType: returnType,
           method: method,
           since: since,
-          deprecatedSince: dictionary["deprecated_since"].flatMap(/Value.integer)
+          deprecatedSince: dictionary["deprecated_since"].flatMap(\.integer)
         )
       }
     } else {
       functions = []
     }
 
-    if let rawUIEvents = dictionary["ui_events"].flatMap(/Value.array) {
+    if let rawUIEvents = dictionary["ui_events"].flatMap(\.array) {
       uiEvents = rawUIEvents.compactMap { rawUIEvent -> UIEvent? in
         guard
           case let .dictionary(rawUIEvent) = rawUIEvent,
@@ -86,7 +86,7 @@ public struct Metadata: Sendable {
       uiEvents = []
     }
 
-    if let rawUIOptions = dictionary["ui_options"].flatMap(/Value.array) {
+    if let rawUIOptions = dictionary["ui_options"].flatMap(\.array) {
       uiOptions = rawUIOptions
         .compactMap { $0[case: \.string] }
 

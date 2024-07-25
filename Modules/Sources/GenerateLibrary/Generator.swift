@@ -23,7 +23,7 @@ public actor Generator {
       do {
         let unpacker = Unpacker()
         for try await data in dataBatches {
-          let values = try await unpacker.unpack(data)
+          let values = try unpacker.unpack(data)
 
           accumulator += values
         }
