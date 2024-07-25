@@ -11,6 +11,7 @@ private let generatableFileTypes: [GeneratableFile.Type] = [
   UIEventFile.self,
   ReferencesFile.self,
   UIOptionFile.self,
+  APIErrorFile.self,
 ]
 
 public actor Generator {
@@ -30,15 +31,13 @@ public actor Generator {
         guard let value = accumulator.first else {
           throw GeneratorError.invalidData(details: "No MessagePack value.")
         }
+        customDump(value)
 
-        guard let metadata = Metadata(value) else {
-          throw GeneratorError.invalidData(details: "No API metadata.")
-        }
-        customDump(metadata, name: "metadata")
+        return try Metadata(value)
 
-        return metadata
-
-      } catch { throw GeneratorError.invalidData(details: "\(error)") }
+      } catch {
+        throw GeneratorError.invalidData(details: "\(error)")
+      }
     }
   }
 

@@ -9,10 +9,10 @@ public extension StringProtocol {
       .enumerated()
       .map { offset, word in
         if acronyms.contains(word.uppercased()) {
-          offset == 0 && !capitalized ? word : word.uppercased()
+          offset == 0 && !capitalized ? word.lowercased() : word.uppercased()
 
         } else {
-          offset == 0 && !capitalized ? word : word.capitalized
+          offset == 0 && !capitalized ? word.lowercased() : word.capitalized
         }
       }
       .joined()
