@@ -57,29 +57,61 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func runStateUpdatesTask() {
-    stateUpdatesTask = Task { [weak self, store] in
-      do {
-        for try await stateUpdates in store! {
-          guard !Task.isCancelled, let self else {
-            return
-          }
-          if stateUpdates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
-          }
-          if stateUpdates.isFontUpdated {
-            UserDefaults.standard.appKitFont = store!.state.font.appKit()
-          }
-          if stateUpdates.isDebugUpdated {
-            UserDefaults.standard.debug = store!.state.debug
-          }
-          mainWindowController!.render(stateUpdates)
-        }
-      } catch {
-        logger.error("store state updates resulted in error \(error))")
+    stateUpdatesTask = Task { [weak self] in
+      await withUnsafeContinuation { continuation in
+        Task {
+          let store = self!.store!
+          let mainWindowController = self!.mainWindowController!
 
-        let alert = NSAlert(error: error)
-        alert.runModal()
+          do {
+            for try await stateUpdates in store {
+              guard !Task.isCancelled else {
+                return
+              }
+              if stateUpdates.isOuterGridLayoutUpdated {
+                UserDefaults.standard.outerGridSize = store.state.outerGrid!.size
+              }
+              if stateUpdates.isFontUpdated {
+                UserDefaults.standard.appKitFont = store.state.font.appKit()
+              }
+              if stateUpdates.isDebugUpdated {
+                UserDefaults.standard.debug = store.state.debug
+              }
+              mainWindowController.render(stateUpdates)
+            }
+
+            continuation.resume(returning: ())
+          } catch {
+            var errorLog = ""
+            customDump(error, to: &errorLog)
+            logger.error("Store state updates loop resulted in error: \(errorLog))")
+
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = "Something went wrong!"
+            alert.informativeText = "Store state updates loop ended with uncaught error"
+            alert.addButton(withTitle: "Show log")
+            alert.addButton(withTitle: "Close")
+            alert.beginSheetModal(for: self!.mainWindowController!.window!) { response in
+              switch response {
+              case .alertFirstButtonReturn:
+                let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                let logFileName = "Nims-error-log-\(ProcessInfo().globallyUniqueString).txt"
+                let temporaryFileURL = temporaryDirectoryURL.appending(component: logFileName)
+
+                try! errorLog.data(using: .utf8)!.write(to: temporaryFileURL, options: .atomic)
+                NSWorkspace.shared.open(temporaryFileURL)
+
+              default:
+                break
+              }
+
+              continuation.resume(returning: ())
+            }
+          }
+        }
       }
+
       NSApplication.shared.terminate(nil)
     }
   }
