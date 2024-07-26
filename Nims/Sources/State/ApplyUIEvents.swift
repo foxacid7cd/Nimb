@@ -9,8 +9,8 @@ import Overture
 
 public extension Actions {
   @PublicInit
-  struct ApplyUIEvents: Action {
-    public var uiEvents: [UIEvent]
+  struct ApplyUIEvents<S: Sequence>: Action where S.Element == UIEvent, S: Sendable {
+    public var uiEvents: S
 
     public func apply(to container: StateContainer) async throws -> State.Updates {
       var updates = State.Updates()

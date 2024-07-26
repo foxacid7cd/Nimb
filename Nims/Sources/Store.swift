@@ -20,6 +20,8 @@ public class Store: Sendable {
     }
 
     instanceTask = Task { @StateActor [weak self] in
+      var bufferedUIEvents = [[UIEvent]]()
+
       do {
         for try await neovimNotification in instance {
           guard let self else {
@@ -30,15 +32,23 @@ public class Store: Sendable {
           switch neovimNotification {
           case let .redraw(uiEvents):
             if stateContainer.state.debug.isUIEventsLoggingEnabled {
-              logger.debug("\(String(customDumping: uiEvents))")
+              customDump(uiEvents)
             }
 
-            while latestUIEventBatches.count > 2 {
-              latestUIEventBatches.removeFirst()
-            }
-            latestUIEventBatches.append(uiEvents)
+            latestUIEventsBatch = uiEvents
 
-            try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
+            bufferedUIEvents.append(uiEvents)
+
+            if case .flush = uiEvents.last {
+              try await dispatch(
+                Actions.ApplyUIEvents(
+                  uiEvents: bufferedUIEvents
+                    .lazy
+                    .flatMap { $0 }
+                )
+              )
+              bufferedUIEvents.removeAll(keepingCapacity: true)
+            }
 
           case let .nvimErrorEvent(event):
             customDump(event)
@@ -313,10 +323,9 @@ public class Store: Sendable {
 
   @StateActor
   public func dumpState() -> String {
-    latestUIEventBatches.map {
-      String(customDumping: $0)
-    }
-    .joined(separator: "\n\n")
+    var string = ""
+    customDump(latestUIEventsBatch, to: &string)
+    return string
   }
 
   private let instance: Instance
@@ -335,7 +344,7 @@ public class Store: Sendable {
   @StateActor private var outerGridSizeThrottlingTask: Task<Void, Never>?
   @StateActor private var previousReportedOuterGridSizeInstant = ContinuousClock.now
   @StateActor private var previousReportedOuterGridSize: IntegerSize?
-  @StateActor private var latestUIEventBatches = Deque<[UIEvent]>()
+  @StateActor private var latestUIEventsBatch: [UIEvent]?
 
   @StateActor
   private func startCursorBlinkingTask() {

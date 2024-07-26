@@ -36,10 +36,6 @@ public class GridsView: NSView {
       .translatedBy(x: 0, y: -Double(outerGrid.rowsCount) * store.font.cellHeight)
   }
 
-  override public var isOpaque: Bool {
-    true
-  }
-
   override public func updateTrackingAreas() {
     super.updateTrackingAreas()
 
@@ -68,10 +64,8 @@ public class GridsView: NSView {
 
   public func render(_ stateUpdates: State.Updates) {
     for gridID in stateUpdates.destroyedGridIDs {
-      if let context = arrangedGridViews.removeValue(forKey: gridID) {
-        context.view.removeFromSuperview()
-      } else {
-        logger.warning("were asked to destroy unexisting grid view")
+      if let context = arrangedGridViews[gridID] {
+        context.view.isHidden = true
       }
     }
 
@@ -81,9 +75,6 @@ public class GridsView: NSView {
     } else {
       stateUpdates.updatedLayoutGridIDs
     }
-
-    var activated = [NSLayoutConstraint]()
-    var deactivated = [NSLayoutConstraint]()
 
     for gridID in updatedLayoutGridIDs {
       if gridID == Grid.OuterID {
@@ -104,14 +95,14 @@ public class GridsView: NSView {
           constraints.vertical.constant = 0
         } else {
           if let constraints {
-            deactivated.append(constraints.horizontal)
-            deactivated.append(constraints.vertical)
+            constraints.horizontal.isActive = false
+            constraints.vertical.isActive = false
           }
 
           let leading = gridView.leading(to: self, priority: .defaultHigh)
           let top = gridView.topToSuperview(priority: .defaultHigh)
-          activated.append(leading)
-          activated.append(top)
+          leading.isActive = true
+          top.isActive = true
           arrangedGridViews[gridID]!.constraints = .init(to: self, horizontal: leading, vertical: top)
         }
       } else if let associatedWindow = grid.associatedWindow {
@@ -124,14 +115,14 @@ public class GridsView: NSView {
             constraints.vertical.constant = origin.y
           } else {
             if let constraints {
-              deactivated.append(constraints.horizontal)
-              deactivated.append(constraints.vertical)
+              constraints.horizontal.isActive = false
+              constraints.vertical.isActive = false
             }
 
             let leading = gridView.leading(to: self, offset: origin.x, priority: .defaultHigh)
             let top = gridView.topToSuperview(offset: origin.y, priority: .defaultHigh)
-            activated.append(leading)
-            activated.append(top)
+            leading.isActive = true
+            top.isActive = true
             arrangedGridViews[gridID]!.constraints = .init(to: self, horizontal: leading, vertical: top)
           }
         case let .floating(floatingWindow):
@@ -145,8 +136,8 @@ public class GridsView: NSView {
             constraints.vertical.constant = verticalConstant
           } else {
             if let constraints {
-              deactivated.append(constraints.horizontal)
-              deactivated.append(constraints.vertical)
+              constraints.horizontal.isActive = false
+              constraints.vertical.isActive = false
             }
 
             let horizontal: NSLayoutConstraint
@@ -184,8 +175,8 @@ public class GridsView: NSView {
             horizontal.constant = horizontalConstant
             vertical.constant = verticalConstant
 
-            activated.append(horizontal)
-            activated.append(vertical)
+            horizontal.isActive = true
+            vertical.isActive = true
 
             arrangedGridViews[gridID]!.constraints = .init(
               to: anchorGridView,
@@ -196,34 +187,28 @@ public class GridsView: NSView {
           }
         case .external:
           if let constraints {
-            deactivated.append(constraints.horizontal)
-            deactivated.append(constraints.vertical)
+            constraints.horizontal.isActive = false
+            constraints.vertical.isActive = false
             arrangedGridViews[gridID]!.constraints = nil
           }
           gridView.isHidden = true
         }
       } else {
         if let constraints {
-          deactivated.append(constraints.horizontal)
-          deactivated.append(constraints.vertical)
+          constraints.horizontal.isActive = false
+          constraints.vertical.isActive = false
           arrangedGridViews[gridID]!.constraints = nil
         }
         gridView.isHidden = true
       }
     }
 
-    NSLayoutConstraint.deactivate(deactivated)
-    NSLayoutConstraint.activate(activated)
-
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
     for (gridID, (gridView, _)) in arrangedGridViews {
       gridView.render(
         stateUpdates: stateUpdates,
         gridUpdate: stateUpdates.gridUpdates[gridID]
       )
     }
-    CATransaction.commit()
 
     if stateUpdates.isGridsOrderUpdated || hasAddedGridViews {
       sortSubviews(
@@ -241,8 +226,22 @@ public class GridsView: NSView {
         },
         context: nil
       )
+//      for subview in subviews {
+//        let gridView = subview as! GridView
+//        gridView.layer!.zPosition = gridView.zIndex
+//        gridView.layer?.setNeedsDisplay()
+//      }
       hasAddedGridViews = false
     }
+
+    for gridID in stateUpdates.destroyedGridIDs {
+      if let context = arrangedGridViews.removeValue(forKey: gridID) {
+        context.view.removeFromSuperview()
+      }
+    }
+
+    needsLayout = true
+    needsDisplay = true
   }
 
   public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {

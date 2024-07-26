@@ -35,6 +35,9 @@ public class MainWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
+    CATransaction.begin()
+    defer { CATransaction.commit() }
+
     if stateUpdates.isAppearanceUpdated {
       renderBackgroundColor()
     }

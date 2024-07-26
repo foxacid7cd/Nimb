@@ -106,6 +106,7 @@ public class MainViewController: NSViewController {
     }
 
     tablineView.render(stateUpdates)
+
     gridsView.render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {

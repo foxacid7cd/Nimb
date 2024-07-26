@@ -11,10 +11,19 @@ public class GridView: NSView, CALayerDelegate {
     super.init(frame: .init())
 
     layer = CALayer()
+    layer!.actions = [
+      "onOrderIn": NSNull(),
+      "onOrderOut": NSNull(),
+      "sublayers": NSNull(),
+      "contents": NSNull(),
+      "bounds": NSNull(),
+    ]
     layer!.delegate = self
     layer!.drawsAsynchronously = true
-    layer!.isOpaque = true
     wantsLayer = true
+
+    layer!.bounds = bounds
+    layer!.setNeedsDisplay()
   }
 
   @available(*, unavailable)
@@ -35,6 +44,7 @@ public class GridView: NSView, CALayerDelegate {
 
     if let newWindow {
       layer!.contentsScale = newWindow.backingScaleFactor
+      layer!.setNeedsDisplay()
     }
   }
 
@@ -114,6 +124,8 @@ public class GridView: NSView, CALayerDelegate {
         upsideDownTransform: upsideDownTransform
       )
     }
+
+    ctx.flush()
   }
 
   override public func mouseDown(with event: NSEvent) {
