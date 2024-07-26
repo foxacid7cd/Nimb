@@ -21,22 +21,28 @@ public class Store: Sendable {
 
     instanceTask = Task { @StateActor [weak self] in
       do {
-        for try await uiEvents in instance {
+        for try await neovimNotification in instance {
           guard let self else {
             return
           }
           try Task.checkCancellation()
 
-          if stateContainer.state.debug.isUIEventsLoggingEnabled {
-            logger.debug("\(String(customDumping: uiEvents))")
-          }
+          switch neovimNotification {
+          case let .redraw(uiEvents):
+            if stateContainer.state.debug.isUIEventsLoggingEnabled {
+              logger.debug("\(String(customDumping: uiEvents))")
+            }
 
-          while latestUIEventBatches.count > 2 {
-            latestUIEventBatches.removeFirst()
-          }
-          latestUIEventBatches.append(uiEvents)
+            while latestUIEventBatches.count > 2 {
+              latestUIEventBatches.removeFirst()
+            }
+            latestUIEventBatches.append(uiEvents)
 
-          try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
+            try await dispatch(Actions.ApplyUIEvents(uiEvents: consume uiEvents))
+
+          case let .nvimErrorEvent(event):
+            customDump(event)
+          }
         }
 
         self?.stateUpdatesChannel.finish()

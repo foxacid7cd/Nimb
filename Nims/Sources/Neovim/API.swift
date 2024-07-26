@@ -37,7 +37,7 @@ public class API<Target: Channel> {
 }
 
 extension API: AsyncSequence {
-  public typealias Element = [UIEvent]
+  public typealias Element = NeovimNotification
 
   public func makeAsyncIterator() -> AsyncIterator {
     .init(rpc.makeAsyncIterator())
@@ -48,9 +48,7 @@ extension API: AsyncSequence {
       self.rpcIterator = rpcIterator
     }
 
-    public mutating func next() async throws -> [UIEvent]? {
-      var accumulator = [UIEvent]()
-
+    public mutating func next() async throws -> NeovimNotification? {
       while true {
         if let notifications = try await rpcIterator.next() {
           try Task.checkCancellation()
@@ -60,16 +58,25 @@ extension API: AsyncSequence {
               throw Failure("Unknown neovim API method \(notification.method)")
             }
 
-            accumulator += try .init(rawRedrawNotificationParameters: notification.parameters)
-          }
+            switch notification.method {
+            case "redraw":
+              let uiEvents = try [UIEvent](rawRedrawNotificationParameters: notification.parameters)
+              return .redraw(uiEvents)
 
-          if !accumulator.isEmpty {
-            return accumulator
+            case "nvim_error_event":
+              let nvimErrorEvent = try NeovimErrorEvent(parameters: notification.parameters)
+              return .nvimErrorEvent(nvimErrorEvent)
+
+            default:
+              logger.info("Unknown neovim API notification: \(notification.method)")
+            }
           }
         } else {
-          return accumulator.isEmpty ? nil : accumulator
+          break
         }
       }
+
+      return nil
     }
 
     private var rpcIterator: RPC<Target>.AsyncIterator

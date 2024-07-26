@@ -40,20 +40,13 @@ public final class Instance: Sendable {
     let api = API(rpc)
     self.api = api
 
-    task = Task { [uiEventsChannel, process] in
+    task = Task { [neovimNotificationChannel, process] in
       await withThrowingTaskGroup(of: Void.self) { taskGroup in
         taskGroup.addTask { @StateActor in
-          var bufferedUIEvents = [UIEvent]()
-
-          for try await uiEvents in api {
+          for try await notification in api {
             try Task.checkCancellation()
 
-            bufferedUIEvents.append(contentsOf: uiEvents)
-
-            if let last = uiEvents.last, case .flush = last {
-              await uiEventsChannel.send(bufferedUIEvents)
-              bufferedUIEvents.removeAll(keepingCapacity: true)
-            }
+            await neovimNotificationChannel.send(notification)
           }
         }
 
@@ -62,6 +55,8 @@ public final class Instance: Sendable {
 
           let initLua = try String(data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")), encoding: .utf8)!
           try await api.nvimExecLua(code: initLua, args: [])
+
+          try await api.nvimSubscribe(event: "nvim_error_event")
 
           let uiOptions: UIOptions = [
             .extMultigrid,
@@ -80,11 +75,11 @@ public final class Instance: Sendable {
           } catch is CancellationError {
           } catch {
             taskGroup.cancelAll()
-            uiEventsChannel.fail(error)
+            neovimNotificationChannel.fail(error)
           }
         }
 
-        uiEventsChannel.finish()
+        neovimNotificationChannel.finish()
       }
     }
   }
@@ -245,14 +240,14 @@ public final class Instance: Sendable {
 
   private let process = Process()
   private let api: API<ProcessChannel>
-  private let uiEventsChannel = AsyncThrowingChannel<[UIEvent], any Error>()
+  private let neovimNotificationChannel = AsyncThrowingChannel<NeovimNotification, any Error>()
   private var task: Task<Void, Never>?
 }
 
 extension Instance: AsyncSequence {
-  public typealias Element = [UIEvent]
+  public typealias Element = NeovimNotification
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<[UIEvent], any Error>.AsyncIterator {
-    uiEventsChannel.makeAsyncIterator()
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<NeovimNotification, any Error>.AsyncIterator {
+    neovimNotificationChannel.makeAsyncIterator()
   }
 }

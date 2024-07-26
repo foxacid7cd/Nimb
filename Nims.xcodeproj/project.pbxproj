@@ -15,6 +15,7 @@
 		682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682BFD0B2AE8913400EDA77E /* GlobalActors.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
+		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
 		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
 		6841680B2C4EAF0B0052B79B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6841680A2C4EAF0B0052B79B /* QuartzCore.framework */; };
 		68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */; };
@@ -22,6 +23,7 @@
 		68554B002AFAAD10006488CD /* MsgShowsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
+		687644882C5373670022D916 /* NeovimNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687644872C5373670022D916 /* NeovimNotification.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
@@ -117,6 +119,7 @@
 		682DF1D5293DC59500DACFE7 /* Modules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Modules; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
 		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
 		6841680A2C4EAF0B0052B79B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowTextView.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 		68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsLayout.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		687644872C5373670022D916 /* NeovimNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimNotification.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
@@ -306,7 +310,9 @@
 				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
 				68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */,
+				687644872C5373670022D916 /* NeovimNotification.swift */,
 				689870A82AF80D1B00C4F2FD /* NeovimError.swift */,
+				6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */,
 			);
 			path = Neovim;
 			sourceTree = "<group>";
@@ -520,6 +526,7 @@
 				6861FA6229B462B8002C3C0B /* Font.swift in Sources */,
 				68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */,
 				68A8FF582AD29F660017C28D /* State.swift in Sources */,
+				6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */,
 				68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				681F40302B40D6B30083A87B /* StateContainer.swift in Sources */,
@@ -535,6 +542,7 @@
 				68F0D4F32AECFDFC000954FF /* logger.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
+				687644882C5373670022D916 /* NeovimNotification.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
