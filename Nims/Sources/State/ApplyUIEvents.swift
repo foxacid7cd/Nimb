@@ -352,6 +352,9 @@ public extension Actions {
             let previousOrderedGridIDs = container.state.orderedGridIDs()
 
             let zIndex = container.state.nextWindowZIndex()
+            if container.state.grids[gridID] == nil {
+              container.state.grids[gridID] = .init(id: gridID, size: container.state.outerGrid!.size, font: container.state.font, appearance: container.state.appearance)
+            }
             container.state.grids[gridID]!.associatedWindow = .floating(
               .init(
                 id: windowID,

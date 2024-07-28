@@ -6,6 +6,17 @@ import Overture
 
 @PublicInit
 public struct Grid: Sendable, Identifiable {
+  public init(id: Int, size: IntegerSize, font: Font, appearance: Appearance) {
+    let layout = GridLayout(cells: .init(size: size, repeatingElement: Cell.default))
+
+    self.id = id
+    self.layout = layout
+    drawRuns = .init(layout: layout, font: font, appearance: appearance)
+    associatedWindow = nil
+    isHidden = false
+    isDestroyed = false
+  }
+
   public enum AssociatedWindow: Sendable {
     case plain(Window)
     case floating(FloatingWindow)

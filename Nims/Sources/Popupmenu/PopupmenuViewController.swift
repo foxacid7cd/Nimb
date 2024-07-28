@@ -5,9 +5,8 @@ import CasePaths
 import Library
 
 public class PopupmenuViewController: NSViewController {
-  public init(store: Store, getGridView: @escaping (Grid.ID) -> GridView, getCmdlinesView: @escaping () -> NSView) {
+  public init(store: Store, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
-    self.getGridView = getGridView
     self.getCmdlinesView = getCmdlinesView
     super.init(nibName: nil, bundle: nil)
   }
@@ -35,13 +34,13 @@ public class PopupmenuViewController: NSViewController {
 
         switch popupmenu.anchor {
         case let .grid(id, origin):
-          let gridView = getGridView(id)
-          let offset = origin * store.font.cellSize
-          anchorConstraints = [
-            view.leading(to: gridView, offset: offset.x - 13),
-            view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
-            view.width(290),
-          ]
+          break
+//          let offset = origin * store.font.cellSize
+//          anchorConstraints = [
+//            view.leading(to: gridView, offset: offset.x - 13),
+//            view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
+//            view.width(290),
+//          ]
 
         case .cmdline:
           let cmdlinesView = getCmdlinesView()
@@ -132,7 +131,6 @@ public class PopupmenuViewController: NSViewController {
   }
 
   private let store: Store
-  private let getGridView: (Grid.ID) -> GridView
   private let getCmdlinesView: () -> NSView
   private lazy var customView = FloatingWindowView(store: store)
   private lazy var scrollView = NSScrollView()

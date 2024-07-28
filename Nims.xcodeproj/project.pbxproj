@@ -26,6 +26,7 @@
 		687644882C5373670022D916 /* NeovimNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687644872C5373670022D916 /* NeovimNotification.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
+		687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687ACD612C56E93500600058 /* AnchorLayouting.swift */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
 		6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */; };
@@ -64,7 +65,7 @@
 		68BA573A2AE9E7A9002E041B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68BA57392AE9E7A9002E041B /* Metal.framework */; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
-		68EF609129B2B6D20056E48D /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridView.swift */; };
+		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
 		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
 		68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */; };
@@ -130,6 +131,7 @@
 		687644872C5373670022D916 /* NeovimNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimNotification.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
+		687ACD612C56E93500600058 /* AnchorLayouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorLayouting.swift; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
 		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
 		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
@@ -170,7 +172,7 @@
 		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		68EF609029B2B6D20056E48D /* GridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridView.swift; sourceTree = "<group>"; };
+		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
 		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
@@ -277,7 +279,8 @@
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* GridsView.swift */,
-				68EF609029B2B6D20056E48D /* GridView.swift */,
+				68EF609029B2B6D20056E48D /* GridLayer.swift */,
+				687ACD612C56E93500600058 /* AnchorLayouting.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -517,6 +520,7 @@
 				68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */,
 				68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
+				687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */,
 				68A8FF552AD29F660017C28D /* API.swift in Sources */,
 				68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */,
 				68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */,
@@ -562,7 +566,7 @@
 				68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */,
 				68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */,
 				68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */,
-				68EF609129B2B6D20056E48D /* GridView.swift in Sources */,
+				68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */,
 				68FAC3F32AF685AB00490F09 /* Action.swift in Sources */,
 				68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */,
 				684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */,
