@@ -243,11 +243,51 @@ public class GridsView: NSView, AnchorLayoutingLayer {
 
   private var store: Store
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
+  private var leftMouseInteractionTarget: GridLayer?
+  private var rightMouseInteractionTarget: GridLayer?
+  private var otherMouseInteractionTarget: GridLayer?
 
   private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
-    let location = layer!.convert(event.locationInWindow, from: nil)
-    if let gridLayer = layer!.hitTest(location) as? GridLayer {
-      gridLayer.report(mouseButton: mouseButton, action: action, with: event)
+    switch action {
+    case .press:
+      let location = layer!.convert(event.locationInWindow, from: nil)
+      if let gridLayer = layer!.hitTest(location) as? GridLayer {
+        switch mouseButton {
+        case .left:
+          leftMouseInteractionTarget = gridLayer
+        case .right:
+          rightMouseInteractionTarget = gridLayer
+        case .middle:
+          otherMouseInteractionTarget = gridLayer
+        }
+        gridLayer.report(mouseButton: mouseButton, action: action, with: event)
+      }
+
+    case .drag:
+      let gridLayer = switch mouseButton {
+      case .left:
+        leftMouseInteractionTarget
+      case .right:
+        rightMouseInteractionTarget
+      case .middle:
+        otherMouseInteractionTarget
+      }
+      gridLayer?.report(mouseButton: mouseButton, action: action, with: event)
+
+    case .release:
+      let gridLayer: GridLayer?
+      switch mouseButton {
+      case .left:
+        gridLayer = leftMouseInteractionTarget
+        leftMouseInteractionTarget = nil
+      case .right:
+        gridLayer = rightMouseInteractionTarget
+        rightMouseInteractionTarget = nil
+      case .middle:
+        gridLayer = otherMouseInteractionTarget
+        otherMouseInteractionTarget = nil
+      }
+      gridLayer?.report(mouseButton: mouseButton, action: action, with: event)
     }
   }
 

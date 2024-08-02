@@ -164,8 +164,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
         upsideDownTransform: upsideDownTransform
       )
     }
-
-    ctx.flush()
   }
 
   @MainActor
@@ -177,7 +175,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return
     }
 
-    let scrollingSpeedMultiplier = 0.8
+    let scrollingSpeedMultiplier = 1.2
     let xThreshold = store.font.cellWidth * 6 * scrollingSpeedMultiplier
     let yThreshold = store.font.cellHeight * 3 * scrollingSpeedMultiplier
 
@@ -189,7 +187,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.8
     xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
