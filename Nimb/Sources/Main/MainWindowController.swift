@@ -16,9 +16,6 @@ public class MainWindowController: NSWindowController {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
-    customWindow.titlebarSeparatorStyle = .shadow
-    customWindow.animationBehavior = .documentWindow
-    customWindow.backgroundColor = .windowBackgroundColor
     customWindow.keyPressed = { keyPress in
       store.report(keyPress: keyPress)
     }
@@ -26,7 +23,6 @@ public class MainWindowController: NSWindowController {
 
     customWindow.delegate = self
 
-    renderBackgroundColor()
     renderIsMouseUserInteractionEnabled()
   }
 
@@ -36,10 +32,6 @@ public class MainWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated {
-      renderBackgroundColor()
-    }
-
     if stateUpdates.isMouseUserInteractionEnabledUpdated {
       renderIsMouseUserInteractionEnabled()
     }
@@ -84,11 +76,6 @@ public class MainWindowController: NSWindowController {
 
   private func saveWindowFrame() {
     UserDefaults.standard.lastWindowSize = customWindow.frame.size
-  }
-
-  private func renderBackgroundColor() {
-//    customWindow.backgroundColor =
-//    store.state.appearance.defaultBackgroundColor.appKit
   }
 
   private func renderIsMouseUserInteractionEnabled() {

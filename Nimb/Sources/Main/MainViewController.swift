@@ -35,6 +35,16 @@ public class MainViewController: NSViewController {
 
   override public func loadView() {
     let view = NSView()
+    view.wantsLayer = true
+
+//    let visualEffectView = NSVisualEffectView()
+//    visualEffectView.blendingMode = .withinWindow
+//    visualEffectView.material = .titlebar
+//    visualEffectView.translatesAutoresizingMaskIntoConstraints = false
+//    view.addSubview(visualEffectView)
+//    visualEffectView.topToSuperview()
+//    visualEffectView.leading(to: view)
+//    visualEffectView.trailing(to: view)
 
     tablineView.setContentCompressionResistancePriority(
       .init(rawValue: 900),
@@ -44,6 +54,7 @@ public class MainViewController: NSViewController {
     tablineView.topToSuperview()
     tablineView.leading(to: view)
     tablineView.trailing(to: view)
+//    tablineView.bottom(to: visualEffectView)
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(
       target: self,
@@ -53,6 +64,15 @@ public class MainViewController: NSViewController {
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
+    let topSeparatorView = NSView()
+    view.addSubview(topSeparatorView)
+    topSeparatorView.topToBottom(of: tablineView)
+    topSeparatorView.leading(to: view)
+    topSeparatorView.trailing(to: view)
+    topSeparatorView.height(1)
+    topSeparatorView.wantsLayer = true
+    topSeparatorView.layer!.backgroundColor = NSColor.black.withAlphaComponent(0.3).cgColor
+
     view.addSubview(
       gridsContainerView,
       positioned: .below,
@@ -60,7 +80,7 @@ public class MainViewController: NSViewController {
     )
     gridsContainerView.translatesAutoresizingMaskIntoConstraints = false
     gridsContainerView.clipsToBounds = true
-    gridsContainerView.topToBottom(of: tablineView)
+    gridsContainerView.topToBottom(of: topSeparatorView)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
     gridsContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
     gridsContainerView.leading(to: view)
@@ -106,6 +126,12 @@ public class MainViewController: NSViewController {
     self.view = view
   }
 
+  override public func viewDidLoad() {
+    super.viewDidLoad()
+
+    renderBackground()
+  }
+
   override public func viewDidLayout() {
     super.viewDidLayout()
 
@@ -119,6 +145,10 @@ public class MainViewController: NSViewController {
   public func render(_ stateUpdates: State.Updates) {
     if stateUpdates.isFontUpdated {
       reportOuterGridSizeChanged()
+    }
+
+    if stateUpdates.isAppearanceUpdated {
+      renderBackground()
     }
 
     tablineView.render(stateUpdates)
@@ -199,5 +229,9 @@ public class MainViewController: NSViewController {
       frame: popupmenuFrame,
       cellSize: store.font.cellSize
     ))
+  }
+
+  private func renderBackground() {
+    view.layer!.backgroundColor = store.appearance.defaultBackgroundColor.appKit.cgColor
   }
 }

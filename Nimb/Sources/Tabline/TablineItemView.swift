@@ -64,11 +64,11 @@ final class TablineItemView: NSView {
     let fill: SlantedBackgroundFill =
       if isSelected {
         .gradient(
-          from: color.withAlphaComponent(0.75),
-          to: color.withAlphaComponent(0.35)
+          from: color.withAlphaComponent(0.8),
+          to: color.withAlphaComponent(0.5)
         )
       } else {
-        .color(NSColor.black.withAlphaComponent(0.2))
+        .color(NSColor.black.withAlphaComponent(0.25))
       }
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
@@ -89,10 +89,10 @@ final class TablineItemView: NSView {
       string: text,
       attributes: [
         .font: NSFont.systemFont(
-          ofSize: NSFont.systemFontSize,
+          ofSize: NSFont.systemFontSize * 0.925,
           weight: .medium
         ),
-        .foregroundColor: NSColor.windowFrameTextColor,
+        .foregroundColor: isSelected ? NSColor.labelColor : NSColor.secondaryLabelColor,
       ]
     )
   }

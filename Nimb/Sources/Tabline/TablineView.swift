@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import AsyncAlgorithms
 import TinyConstraints
 
-final class TablineView: NSView {
+extension Notification: @unchecked Sendable { }
+
+final class TablineView: NSVisualEffectView {
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
 
+    material = .titlebar
+    blendingMode = .withinWindow
+
     wantsLayer = true
-    layer!.shadowOpacity = 0.6
-    layer!.shadowRadius = 2
-    layer!.shadowOffset = .init(width: 0, height: 2)
-    renderBackgroundColor()
 
     buffersScrollView.automaticallyAdjustsContentInsets = false
     buffersScrollView.contentInsets = .init(
@@ -138,6 +140,10 @@ final class TablineView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  deinit {
+    notificationsTask?.cancel()
+  }
+
   override public var isOpaque: Bool {
     true
   }
@@ -154,6 +160,29 @@ final class TablineView: NSView {
     }
   }
 
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+
+    notificationsTask?.cancel()
+
+    if let window {
+      let didBecomeKeyNotifications = NotificationCenter.default.notifications(
+        named: NSWindow.didBecomeKeyNotification,
+        object: window
+      )
+      let didResignKeyNotifications = NotificationCenter.default.notifications(
+        named: NSWindow.didResignKeyNotification,
+        object: window
+      )
+
+      notificationsTask = Task { [weak self] in
+        for await _ in merge(didBecomeKeyNotifications, didResignKeyNotifications) {
+          self?.render()
+        }
+      }
+    }
+  }
+
   override func mouseDown(with event: NSEvent) {
     let location = convert(event.locationInWindow, from: nil)
     if
@@ -166,7 +195,7 @@ final class TablineView: NSView {
     }
   }
 
-  func render(_ stateUpdates: State.Updates) {
+  func render(_ stateUpdates: Nimb.State.Updates) {
     guard let tabline = store.state.tabline else {
       return
     }
@@ -230,23 +259,39 @@ final class TablineView: NSView {
     }
 
     if stateUpdates.isTitleUpdated || stateUpdates.isAppearanceUpdated {
-      renderBackgroundColor()
+      render()
+    }
+  }
 
-      let paragraphStyle = NSMutableParagraphStyle()
-      paragraphStyle.alignment = .right
-      paragraphStyle.lineBreakMode = .byTruncatingTail
+  func render() {
+    let paragraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.alignment = .right
+    paragraphStyle.lineBreakMode = .byTruncatingTail
 
-      titleTextField.attributedStringValue = .init(
-        string: store.state.title ?? "",
-        attributes: [
-          .foregroundColor: NSColor.windowFrameTextColor,
-          .font: NSFont.systemFont(
-            ofSize: NSFont.systemFontSize,
-            weight: .medium
-          ),
-          .paragraphStyle: paragraphStyle,
-        ]
-      )
+    titleTextField.attributedStringValue = .init(
+      string: store.state.title ?? "",
+      attributes: [
+        .foregroundColor: window?.isKeyWindow == true ? NSColor.labelColor : NSColor
+          .secondaryLabelColor,
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+        .paragraphStyle: paragraphStyle,
+      ]
+    )
+
+    let sublayersOpacity: Float = window?.isKeyWindow == true ? 1 : 0.7
+    buffersScrollView.layer!.opacity = sublayersOpacity
+    tabsScrollView.layer!.opacity = sublayersOpacity
+
+    if window?.isKeyWindow == true {
+      buffersScrollView.layer!.filters = []
+      tabsScrollView.layer!.filters = []
+    } else {
+      let monochromeFilter = CIFilter(
+        name: "CIColorControls",
+        parameters: [kCIInputSaturationKey: 0]
+      )!
+      buffersScrollView.layer!.filters = [monochromeFilter]
+      tabsScrollView.layer!.filters = [monochromeFilter]
     }
   }
 
@@ -260,6 +305,7 @@ final class TablineView: NSView {
   private let tabsMaskLayer = CALayer()
   private var tabsScrollViewFrameObservation: NSKeyValueObservation?
   private let titleTextField = NSTextField(labelWithString: "")
+  private var notificationsTask: Task<Void, Never>?
 
   private func reloadBuffers() {
     buffersStackView.arrangedSubviews
@@ -348,13 +394,5 @@ final class TablineView: NSView {
         for: .horizontal
       )
     }
-  }
-
-  private func renderBackgroundColor() {
-//    layer!.backgroundColor = store.appearance
-//      .backgroundColor(for: .tabLineFill)
-//      .appKit
-//      .cgColor
-    layer!.backgroundColor = NSColor.windowBackgroundColor.cgColor
   }
 }
