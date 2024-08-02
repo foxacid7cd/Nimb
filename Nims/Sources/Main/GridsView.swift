@@ -41,6 +41,10 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
   }
 
+  override public var mouseDownCanMoveWindow: Bool {
+    true
+  }
+
   override public func updateTrackingAreas() {
     super.updateTrackingAreas()
 
@@ -67,14 +71,10 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   }
 
   override public func mouseMoved(with event: NSEvent) {
-    //    guard let superview else {
-    //      return
-    //    }
-    //    let location = superview.convert(event.locationInWindow, from: nil)
-    //    let viewAtLocation = hitTest(location)
-    //    if let gridView = viewAtLocation as? GridView {
-    //      gridView.reportMouseMove(for: event)
-    //    }
+    let location = layer!.convert(event.locationInWindow, from: nil)
+    if let gridLayer = layer!.hitTest(location) as? GridLayer {
+      gridLayer.reportMouseMove(for: event)
+    }
   }
 
   public func render(_ stateUpdates: State.Updates) {
