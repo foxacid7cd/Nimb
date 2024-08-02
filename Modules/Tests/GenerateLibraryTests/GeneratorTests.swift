@@ -21,7 +21,10 @@ class GeneratorTests: XCTestCase {
       directoryHint: .isDirectory
     )
 
-    let metadataFixtureURL = Bundle.module.url(forResource: "metadata", withExtension: "msgpack")!
+    let metadataFixtureURL = Bundle.module.url(
+      forResource: "metadata",
+      withExtension: "msgpack"
+    )!
 
     let data = try! Data(contentsOf: metadataFixtureURL, options: [])
 
@@ -39,7 +42,8 @@ class GeneratorTests: XCTestCase {
   }
 
   override func tearDown() {
-    try? FileManager.default.removeItem(atPath: temporaryDirectoryURL.relativePath)
+    try? FileManager.default
+      .removeItem(atPath: temporaryDirectoryURL.relativePath)
 
     generator = nil
   }

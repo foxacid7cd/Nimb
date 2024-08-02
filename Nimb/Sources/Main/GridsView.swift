@@ -39,7 +39,10 @@ public class GridsView: NSView, AnchorLayoutingLayer {
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
+      .translatedBy(
+        x: 0,
+        y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight
+      )
   }
 
   override public func updateTrackingAreas() {
@@ -113,10 +116,14 @@ public class GridsView: NSView, AnchorLayoutingLayer {
           gridLayer.anchoringLayer = self
           anchoredLayers[.init(gridLayer)] = gridLayer
 
-          gridLayer.positionInAnchoringLayer = window.origin * store.font.cellSize
+          gridLayer.positionInAnchoringLayer = window.origin * store.font
+            .cellSize
 
         case let .floating(floatingWindow):
-          let anchoringLayer = arrangedGridLayer(forGridWithID: floatingWindow.anchorGridID)
+          let anchoringLayer = arrangedGridLayer(
+            forGridWithID: floatingWindow
+              .anchorGridID
+          )
 
           gridLayer.anchoringLayer = anchoringLayer
           anchoringLayer.anchoredLayers[.init(gridLayer)] = gridLayer
@@ -163,7 +170,12 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     }
   }
 
-  public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+  public func windowFrame(
+    forGridID gridID: Grid.ID,
+    gridFrame: IntegerRectangle
+  )
+    -> CGRect?
+  {
     arrangedGridLayers[gridID]?.windowFrame(forGridFrame: gridFrame)
   }
 

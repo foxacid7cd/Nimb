@@ -19,7 +19,10 @@ public class CmdlinesViewController: NSViewController {
     if
       stateUpdates.isAppearanceUpdated,
       stateUpdates.updatedObservedHighlightNames
-        .contains(where: CmdlinesViewController.observedHighlightName.contains(_:))
+        .contains(
+          where: CmdlinesViewController.observedHighlightName
+            .contains(_:)
+        )
     {
       renderCustomView()
     }
@@ -101,7 +104,10 @@ public class CmdlinesViewController: NSViewController {
     renderCustomView()
   }
 
-  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [
+  private static let observedHighlightName: Set<
+    Appearance
+      .ObservedHighlightName
+  > = [
     .normalFloat,
     .special,
   ]
@@ -115,7 +121,8 @@ public class CmdlinesViewController: NSViewController {
   private func renderCustomView() {
     customView.colors = (
       background: store.appearance.backgroundColor(for: .normalFloat),
-      border: store.appearance.foregroundColor(for: .normalFloat).with(alpha: 0.3)
+      border: store.appearance.foregroundColor(for: .normalFloat)
+        .with(alpha: 0.3)
     )
     customView.render()
   }

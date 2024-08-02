@@ -17,7 +17,10 @@ public class CmdlineView: NSView {
     addSubview(promptTextField)
 
     contentTextView.translatesAutoresizingMaskIntoConstraints = false
-    contentTextView.setContentHuggingPriority(.init(rawValue: 999), for: .vertical)
+    contentTextView.setContentHuggingPriority(
+      .init(rawValue: 999),
+      for: .vertical
+    )
     addSubview(contentTextView)
 
     promptConstraints = (
@@ -46,10 +49,14 @@ public class CmdlineView: NSView {
     blockLines = store.state.cmdlines.blockLines[level] ?? []
 
     if !cmdline.prompt.isEmpty {
-      promptTextField.attributedStringValue = .init(string: cmdline.prompt, attributes: [
-        .foregroundColor: store.state.appearance.foregroundColor(for: .normalFloat).appKit,
-        .font: NSFont.systemFont(ofSize: store.font.appKit().pointSize * 0.9),
-      ])
+      promptTextField.attributedStringValue = .init(
+        string: cmdline.prompt,
+        attributes: [
+          .foregroundColor: store.state.appearance
+            .foregroundColor(for: .normalFloat).appKit,
+          .font: NSFont.systemFont(ofSize: store.font.appKit().pointSize * 0.9),
+        ]
+      )
 
       promptTextField.isHidden = false
 
@@ -134,7 +141,8 @@ private class CmdlineTextView: NSView {
             .replacingOccurrences(of: "\r", with: "↲"),
           attributes: .init([
             .font: store.font.appKit(),
-            .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+            .foregroundColor: store.appearance
+              .foregroundColor(for: contentPart.highlightID).appKit,
           ])
         ))
       }
@@ -169,7 +177,8 @@ private class CmdlineTextView: NSView {
         string: text,
         attributes: [
           .font: store.font.appKit(isBold: true),
-          .foregroundColor: store.appearance.foregroundColor(for: .special).appKit,
+          .foregroundColor: store.appearance.foregroundColor(for: .special)
+            .appKit,
         ]
       ))
       indent += text.count
@@ -179,9 +188,11 @@ private class CmdlineTextView: NSView {
 
     var location = 0
     for contentPart in cmdline.contentParts {
-      var foregroundColor = store.appearance.foregroundColor(for: contentPart.highlightID)
+      var foregroundColor = store.appearance
+        .foregroundColor(for: contentPart.highlightID)
       if foregroundColor == store.state.appearance.defaultForegroundColor {
-        foregroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+        foregroundColor = store.state.appearance
+          .foregroundColor(for: .normalFloat)
       }
 
       var attributes: [NSAttributedString.Key: Any] = [
@@ -189,7 +200,8 @@ private class CmdlineTextView: NSView {
         .foregroundColor: foregroundColor.appKit,
       ]
 
-      let backgroundColor = store.appearance.backgroundColor(for: contentPart.highlightID)
+      let backgroundColor = store.appearance
+        .backgroundColor(for: contentPart.highlightID)
       if backgroundColor != store.state.appearance.defaultBackgroundColor {
         attributes[.backgroundColor] = backgroundColor.appKit
       }
@@ -211,7 +223,8 @@ private class CmdlineTextView: NSView {
           string: cmdline.specialCharacter,
           attributes: [
             .font: store.font.appKit(),
-            .foregroundColor: store.appearance.specialColor(for: .normalFloat).appKit,
+            .foregroundColor: store.appearance.specialColor(for: .normalFloat)
+              .appKit,
           ]
         ),
         at: cursorPosition
@@ -235,10 +248,14 @@ private class CmdlineTextView: NSView {
     func makeCTLines(for attributedString: NSAttributedString)
       -> (ctFramesetter: CTFramesetter, ctFrame: CTFrame, ctLines: [CTLine])
     {
-      let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
+      let ctFramesetter =
+        CTFramesetterCreateWithAttributedString(attributedString)
 
       let stringRange = CFRange(location: 0, length: 0)
-      let containerSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
+      let containerSize = CGSize(
+        width: bounds.width,
+        height: .greatestFiniteMagnitude
+      )
       let boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
         ctFramesetter,
         stringRange,
@@ -249,11 +266,19 @@ private class CmdlineTextView: NSView {
       let path = CGPath(
         rect: .init(
           origin: .zero,
-          size: .init(width: containerSize.width, height: ceil(boundingSize.height))
+          size: .init(
+            width: containerSize.width,
+            height: ceil(boundingSize.height)
+          )
         ),
         transform: nil
       )
-      let ctFrame = CTFramesetterCreateFrame(ctFramesetter, stringRange, path, nil)
+      let ctFrame = CTFramesetterCreateFrame(
+        ctFramesetter,
+        stringRange,
+        path,
+        nil
+      )
       return (
         ctFramesetter,
         ctFrame,
@@ -317,11 +342,18 @@ private class CmdlineTextView: NSView {
         cmdline.specialCharacter.isEmpty,
         let currentCursorStyle = store.state.currentCursorStyle,
         let highlightID = currentCursorStyle.attrID,
-        let cellFrame = currentCursorStyle.cellFrame(columnsCount: 1, font: store.font),
+        let cellFrame = currentCursorStyle.cellFrame(
+          columnsCount: 1,
+          font: store.font
+        ),
         cursorPosition >= range.location,
         cursorPosition < range.location + range.length
       {
-        let offset = CTLineGetOffsetForStringIndex(cmdlineCTLine, cursorPosition, nil)
+        let offset = CTLineGetOffsetForStringIndex(
+          cmdlineCTLine,
+          cursorPosition,
+          nil
+        )
         let rect = cellFrame
           .offsetBy(
             dx: offset,
@@ -334,8 +366,10 @@ private class CmdlineTextView: NSView {
           cursorForegroundColor = store.appearance.defaultBackgroundColor
           cursorBackgroundColor = store.appearance.defaultForegroundColor
         } else {
-          cursorForegroundColor = store.appearance.foregroundColor(for: highlightID)
-          cursorBackgroundColor = store.appearance.backgroundColor(for: highlightID)
+          cursorForegroundColor = store.appearance
+            .foregroundColor(for: highlightID)
+          cursorBackgroundColor = store.appearance
+            .backgroundColor(for: highlightID)
         }
 
         context.saveGState()
@@ -353,9 +387,11 @@ private class CmdlineTextView: NSView {
             context.textMatrix = CTRunGetTextMatrix(glyphRun)
             context.textPosition = .init(
               x: 0,
-              y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
+              y: Double(ctLineIndex) * store.font.cellHeight - appKitFont
+                .descender
             )
-            let attributes = CTRunGetAttributes(glyphRun) as! [NSAttributedString.Key: Any]
+            let attributes =
+              CTRunGetAttributes(glyphRun) as! [NSAttributedString.Key: Any]
             let attributesFont = attributes[.font] as? NSFont
             CTFontDrawGlyphs(
               attributesFont ?? appKitFont,

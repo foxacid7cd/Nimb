@@ -140,19 +140,24 @@ public struct Metadata: @unchecked Sendable {
 
         custom = .init(
           signature: "\(type.name).ID",
-          valueEncoder: (".ext(type: References.\(type.name).type, data: ", ".data)"),
+          valueEncoder: (
+            ".ext(type: References.\(type.name).type, data: ",
+            ".data)"
+          ),
           valueDecoder: { expr, name in
             var capitalizedName = name.first?.uppercased() ?? ""
             capitalizedName += name.dropFirst()
             let rawTypeIdentifier = "raw\(capitalizedName)Type"
             let rawDataIdentifier = "raw\(capitalizedName)Data"
             return """
-              case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(expr),
-              let \(name) = References.\(
-                type
-                  .name
+            case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(
+              expr
+            ),
+            let \(name) = References.\(
+              type
+                .name
             )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
-              """
+            """
           }
         )
       }

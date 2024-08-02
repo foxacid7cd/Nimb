@@ -30,7 +30,10 @@ public class MsgShowsViewController: NSViewController {
     scrollView.bottomToSuperview(offset: 1)
 
     contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
-    contentView.setContentHuggingPriority(.init(rawValue: 900), for: .horizontal)
+    contentView.setContentHuggingPriority(
+      .init(rawValue: 900),
+      for: .horizontal
+    )
     contentView.orientation = .vertical
     contentView.edgeInsets = .init()
     contentView.spacing = 0
@@ -54,7 +57,10 @@ public class MsgShowsViewController: NSViewController {
     if 
       stateUpdates.isAppearanceUpdated,
       stateUpdates.updatedObservedHighlightNames
-        .contains(where: MsgShowsViewController.observedHighlightName.contains(_:))
+        .contains(
+          where: MsgShowsViewController.observedHighlightName
+            .contains(_:)
+        )
     {
       renderCustomView()
     }
@@ -72,7 +78,10 @@ public class MsgShowsViewController: NSViewController {
     }
   }
 
-  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [
+  private static let observedHighlightName: Set<
+    Appearance
+      .ObservedHighlightName
+  > = [
     .normalFloat,
     .special,
   ]
@@ -100,7 +109,8 @@ public class MsgShowsViewController: NSViewController {
     for itemIndex in layout.items.indices {
       let item = layout.items[itemIndex]
       let isFirstItem = itemIndex == layout.items.startIndex
-      let isLastItem = itemIndex == layout.items.index(before: layout.items.endIndex)
+      let isLastItem = itemIndex == layout.items
+        .index(before: layout.items.endIndex)
 
       switch item {
       case let .texts(texts):
@@ -110,10 +120,22 @@ public class MsgShowsViewController: NSViewController {
           let isLastText = textIndex == texts.index(before: texts.endIndex)
 
           let textView = MsgShowTextView(store: store)
-          textView.setContentHuggingPriority(.init(rawValue: 800), for: .horizontal)
-          textView.setContentHuggingPriority(.init(rawValue: 800), for: .vertical)
-          textView.setCompressionResistance(.init(rawValue: 900), for: .horizontal)
-          textView.setCompressionResistance(.init(rawValue: 900), for: .vertical)
+          textView.setContentHuggingPriority(
+            .init(rawValue: 800),
+            for: .horizontal
+          )
+          textView.setContentHuggingPriority(
+            .init(rawValue: 800),
+            for: .vertical
+          )
+          textView.setCompressionResistance(
+            .init(rawValue: 900),
+            for: .horizontal
+          )
+          textView.setCompressionResistance(
+            .init(rawValue: 900),
+            for: .vertical
+          )
           textView.contentParts = text
           textView.preferredMaxWidth = 640
           let bigVerticalInset = max(12, store.font.cellWidth * 1.15)

@@ -56,7 +56,9 @@ public struct IntegerRectangle: Sendable, Hashable {
   }
 
   @inlinable
-  public func intersection(with rectangle: IntegerRectangle) -> IntegerRectangle {
+  public func intersection(with rectangle: IntegerRectangle)
+    -> IntegerRectangle
+  {
     let origin = IntegerPoint(
       column: max(minColumn, rectangle.minColumn),
       row: max(minRow, rectangle.minRow)
@@ -96,7 +98,12 @@ public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
 }
 
 @inlinable
-public func + (first: IntegerRectangle, second: IntegerPoint) -> IntegerRectangle {
+public func + (
+  first: IntegerRectangle,
+  second: IntegerPoint
+)
+  -> IntegerRectangle
+{
   .init(origin: first.origin + second, size: first.size)
 }
 
@@ -143,7 +150,10 @@ public prefix func - (point: CGPoint) -> CGPoint {
 
 @inlinable
 public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
-  .init(x: Double(first.column) * second.width, y: Double(first.row) * second.height)
+  .init(
+    x: Double(first.column) * second.width,
+    y: Double(first.row) * second.height
+  )
 }
 
 @PublicInit

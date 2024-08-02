@@ -19,7 +19,10 @@ public struct PublicInitMacro: MemberMacro {
     public init(
     \(raw: included.map { "\($0.bindings)" }.joined(separator: ",\n"))
     ) {
-    \(raw: included.map { "self.\($0.identifier) = \($0.identifier)" }.joined(separator: "\n"))
+    \(
+      raw: included.map { "self.\($0.identifier) = \($0.identifier)" }
+        .joined(separator: "\n")
+    )
     }
     """
 
@@ -29,7 +32,10 @@ public struct PublicInitMacro: MemberMacro {
   enum Error: String, Swift.Error, DiagnosticMessage {
     case notAStruct
 
-    var diagnosticID: MessageID { .init(domain: "PublicInitMacro", id: rawValue) }
+    var diagnosticID: MessageID {
+      .init(domain: "PublicInitMacro", id: rawValue)
+    }
+
     var severity: DiagnosticSeverity { .error }
     var message: String {
       switch self {
@@ -77,7 +83,10 @@ extension VariableDeclSyntax {
 
   var identifier: TokenSyntax {
     for binding in bindings {
-      if let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier {
+      if
+        let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?
+          .identifier
+      {
         return identifier
       }
     }

@@ -21,7 +21,10 @@ extension NSImage {
   )
     -> NSImage
   {
-    .init(size: .init(width: size.width + 24, height: size.height), flipped: false) { _ in
+    .init(
+      size: .init(width: size.width + 24, height: size.height),
+      flipped: false
+    ) { _ in
       guard let graphicsContext = NSGraphicsContext.current else {
         return false
       }
@@ -31,7 +34,10 @@ extension NSImage {
       cgContext.move(to: .init())
       cgContext.addLine(to: .init(x: isFlatLeft ? 0 : 12, y: size.height))
       cgContext.addLine(to: .init(x: size.width + 24, y: size.height))
-      cgContext.addLine(to: .init(x: isFlatRight ? size.width + 24 : size.width + 12, y: 0))
+      cgContext.addLine(to: .init(
+        x: isFlatRight ? size.width + 24 : size.width + 12,
+        y: 0
+      ))
       cgContext.closePath()
 
       switch fill {

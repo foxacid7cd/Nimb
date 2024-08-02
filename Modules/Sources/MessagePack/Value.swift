@@ -6,7 +6,8 @@ import Foundation
 
 @CasePathable
 @dynamicMemberLookup
-public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
+public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
+  ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
 {
   case integer(Int)
@@ -99,7 +100,9 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral, ExpressibleBy
 
     case MSGPACK_OBJECT_NIL: self = .nil
 
-    default: preconditionFailure("Not implemented behavior for type \(object.type)")
+    default: preconditionFailure(
+        "Not implemented behavior for type \(object.type)"
+      )
     }
   }
 }

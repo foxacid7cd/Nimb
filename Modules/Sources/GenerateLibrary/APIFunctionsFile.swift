@@ -47,7 +47,8 @@ public struct APIFunctionsFile: GeneratableFile {
 
               let parametersInArray = function.parameters
                 .map { parameter in
-                  let name = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                  let name = parameter.name
+                    .camelCasedAssumingSnakeCased(capitalized: false)
 
                   return parameter.type.wrapWithValueEncoder(String(name))
                 }
@@ -86,13 +87,15 @@ public struct APIFunctionsFile: GeneratableFile {
           for function in metadata.functions {
             let parametersInSignature = function.parameters
               .map {
-                let name = $0.name.camelCasedAssumingSnakeCased(capitalized: false)
+                let name = $0.name
+                  .camelCasedAssumingSnakeCased(capitalized: false)
                 return "\(name): \($0.type.swift.signature)"
               }
               .joined(separator: ", ")
             let initializingWithParameters = function.parameters
               .map {
-                let name = $0.name.camelCasedAssumingSnakeCased(capitalized: false)
+                let name = $0.name
+                  .camelCasedAssumingSnakeCased(capitalized: false)
                 return "\(name): \(name)"
               }
               .joined(separator: ", ")
@@ -104,7 +107,9 @@ public struct APIFunctionsFile: GeneratableFile {
               """
               \(raw: function.deprecationAttributeIfNeeded)
               @discardableResult
-              func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(
+              func \(raw: camelCasedFunctionName)(\(
+                raw: parametersInSignature
+              )) async throws -> \(
                 raw: function
                   .returnType.swift.signature
               )

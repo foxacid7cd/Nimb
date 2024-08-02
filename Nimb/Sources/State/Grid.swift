@@ -7,7 +7,10 @@ import Overture
 @PublicInit
 public struct Grid: Sendable, Identifiable {
   public init(id: Int, size: IntegerSize, font: Font, appearance: Appearance) {
-    let layout = GridLayout(cells: .init(size: size, repeatingElement: Cell.default))
+    let layout = GridLayout(cells: .init(
+      size: size,
+      repeatingElement: Cell.default
+    ))
 
     self.id = id
     self.layout = layout
@@ -37,7 +40,10 @@ public struct Grid: Sendable, Identifiable {
 
     public mutating func formUnion(_ other: Self) {
       switch (self, other) {
-      case (.dirtyRectangles(var accumulator), let .dirtyRectangles(dirtyRectangles)):
+      case (
+        .dirtyRectangles(var accumulator),
+        let .dirtyRectangles(dirtyRectangles)
+      ):
         accumulator += dirtyRectangles
         self = .dirtyRectangles(accumulator)
 
@@ -115,13 +121,22 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  public mutating func apply(update: Update, font: Font, appearance: Appearance) -> UpdateResult? {
+  public mutating func apply(
+    update: Update,
+    font: Font,
+    appearance: Appearance
+  )
+    -> UpdateResult?
+  {
     switch update {
     case let .resize(integerSize):
       let copyColumnsCount = min(layout.columnsCount, integerSize.columnsCount)
       let copyColumnsRange = 0 ..< copyColumnsCount
       let copyRowsCount = min(layout.rowsCount, integerSize.rowsCount)
-      var cells = TwoDimensionalArray<Cell>(size: integerSize, repeatingElement: .default)
+      var cells = TwoDimensionalArray<Cell>(
+        size: integerSize,
+        repeatingElement: .default
+      )
       for row in 0 ..< copyRowsCount {
         cells.rows[row].replaceSubrange(
           copyColumnsRange,
@@ -190,7 +205,10 @@ public struct Grid: Sendable, Identifiable {
       }
 
       if shouldUpdateCursorDrawRun {
-        drawRuns.cursorDrawRun!.updateParent(with: layout, rowDrawRuns: drawRuns.rowDrawRuns)
+        drawRuns.cursorDrawRun!.updateParent(
+          with: layout,
+          rowDrawRuns: drawRuns.rowDrawRuns
+        )
       }
 
       return .dirtyRectangles([toRectangle])
@@ -212,7 +230,10 @@ public struct Grid: Sendable, Identifiable {
           let rowPartCell = rowPart.cells
             .first(where: {
               (
-                ($0.columnsRange.lowerBound + rowPart.columnsRange.lowerBound) ..<
+                (
+                  $0.columnsRange.lowerBound + rowPart.columnsRange
+                    .lowerBound
+                ) ..<
                   ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
               ).contains(position.column)
             })
@@ -271,7 +292,8 @@ public struct Grid: Sendable, Identifiable {
       if 
         let cursorDrawRun = drawRuns.cursorDrawRun,
         cursorDrawRun.origin.row == row,
-        (originColumn ..< originColumn + cells.count).contains(cursorDrawRun.origin.column)
+        (originColumn ..< originColumn + cells.count)
+          .contains(cursorDrawRun.origin.column)
       {
         shouldUpdateCursorDrawRun = true
       }

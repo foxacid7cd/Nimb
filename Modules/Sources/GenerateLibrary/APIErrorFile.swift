@@ -26,7 +26,8 @@ public struct APIErrorFile: GeneratableFile {
           """
         ) {
           for errorType in metadata.errorTypes {
-            let camelCasedTypeName = errorType.name.camelCasedAssumingSnakeCased(capitalized: false)
+            let camelCasedTypeName = errorType.name
+              .camelCasedAssumingSnakeCased(capitalized: false)
             DeclSyntax(
               """
               case \(raw: camelCasedTypeName) = \(literal: errorType.id)

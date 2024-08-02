@@ -79,7 +79,13 @@ public struct IntKeyedDictionary<Value> {
       keysBackingStore.index(i, offsetBy: distance)
     }
 
-    public func index(_ i: Key, offsetBy distance: Int, limitedBy limit: Key) -> Key? {
+    public func index(
+      _ i: Key,
+      offsetBy distance: Int,
+      limitedBy limit: Key
+    )
+      -> Key?
+    {
       keysBackingStore.index(i, offsetBy: distance, limitedBy: limit)
     }
 
@@ -166,10 +172,16 @@ extension IntKeyedDictionary: ExpressibleByDictionaryLiteral {
 extension IntKeyedDictionary: Sendable where Value: Sendable { }
 
 extension IntKeyedDictionary: Equatable where Value: Equatable {
-  public static func == (lhs: IntKeyedDictionary<Value>, rhs: IntKeyedDictionary<Value>) -> Bool {
-    lhs.keysBackingStore == rhs.keysBackingStore && !lhs.keysBackingStore.contains(where: { key in
-      lhs.valuesBackingStore[key] != rhs.valuesBackingStore[key]
-    })
+  public static func == (
+    lhs: IntKeyedDictionary<Value>,
+    rhs: IntKeyedDictionary<Value>
+  )
+    -> Bool
+  {
+    lhs.keysBackingStore == rhs.keysBackingStore && !lhs.keysBackingStore
+      .contains(where: { key in
+        lhs.valuesBackingStore[key] != rhs.valuesBackingStore[key]
+      })
   }
 }
 
@@ -201,7 +213,8 @@ extension IntKeyedDictionary: Sequence {
       }
 
       let key = dictionary.keysBackingStore[currentKeyIndex]
-      currentKeyIndex = dictionary.keysBackingStore.index(after: currentKeyIndex)
+      currentKeyIndex = dictionary.keysBackingStore
+        .index(after: currentKeyIndex)
 
       let value = dictionary.valuesBackingStore[key]!
       return (key, value)

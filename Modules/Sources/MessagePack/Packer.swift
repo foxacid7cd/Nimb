@@ -63,12 +63,21 @@ public class Packer {
 
     case let .ext(type, data):
       data.withUnsafeBytes { buffer in
-        _ = msgpack_pack_ext_with_body(&self.pk, buffer.baseAddress!, buffer.count, type)
+        _ = msgpack_pack_ext_with_body(
+          &self.pk,
+          buffer.baseAddress!,
+          buffer.count,
+          type
+        )
       }
 
     case let .binary(data):
       data.withUnsafeBytes { buffer in
-        _ = msgpack_pack_bin_with_body(&self.pk, buffer.baseAddress!, buffer.count)
+        _ = msgpack_pack_bin_with_body(
+          &self.pk,
+          buffer.baseAddress!,
+          buffer.count
+        )
       }
 
     case .nil: msgpack_pack_nil(&pk)

@@ -24,7 +24,8 @@ public struct UIOptionFile: GeneratableFile {
         try .init {
           try EnumDeclSyntax("public enum UIOption: String") {
             for uiOption in metadata.uiOptions {
-              let camelCased = uiOption.camelCasedAssumingSnakeCased(capitalized: false)
+              let camelCased = uiOption
+                .camelCasedAssumingSnakeCased(capitalized: false)
               "case \(raw: camelCased) = \(literal: uiOption)" as DeclSyntax
             }
           }

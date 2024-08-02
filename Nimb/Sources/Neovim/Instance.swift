@@ -41,9 +41,14 @@ public final class Instance: Sendable {
       }
 
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
-    process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed --headless" + vimrcArgument]
+    process.arguments = [
+      "-l",
+      "-c",
+      "'\(nvimExecutablePath)' --embed --headless" + vimrcArgument,
+    ]
 
-    process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+    process.currentDirectoryURL = FileManager.default
+      .homeDirectoryForCurrentUser
 
     process.qualityOfService = .userInteractive
 
@@ -104,7 +109,11 @@ public final class Instance: Sendable {
     try? api.fastCall(APIFunctions.NvimInput(keys: keys))
   }
 
-  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+  public func reportMouseMove(
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
     try? api.fastCall(APIFunctions.NvimInputMouse(
       button: "move",
       action: "",
@@ -148,7 +157,10 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) throws {
+  public func reportPopupmenuItemSelected(
+    atIndex index: Int,
+    isFinish: Bool
+  ) throws {
     try api.fastCall(APIFunctions.NvimSelectPopupmenuItem(
       item: index,
       insert: true,
@@ -220,9 +232,14 @@ public final class Instance: Sendable {
     try await api.nimb(method: "quit_all")
   }
 
-  public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
+  public func requestCurrentBufferInfo() async throws
+    -> (name: String, buftype: String)
+  {
     async let name = api.nvimBufGetName(bufferID: .current)
-    async let rawBuftype = api.nvimGetOptionValue(name: "buftype", opts: ["buf": .integer(0)])
+    async let rawBuftype = api.nvimGetOptionValue(
+      name: "buftype",
+      opts: ["buf": .integer(0)]
+    )
     return try await (
       name: name,
       buftype: rawBuftype[case: \.string] ?? ""
@@ -247,13 +264,16 @@ public final class Instance: Sendable {
   private let initialOuterGridSize: IntegerSize
   private let process = Process()
   private let api: API<ProcessChannel>
-  private nonisolated let neovimNotificationsIterator: API<ProcessChannel>.AsyncIterator
+  private nonisolated let neovimNotificationsIterator: API<ProcessChannel>
+    .AsyncIterator
 }
 
 extension Instance: AsyncSequence {
   public typealias Element = [NeovimNotification]
 
-  public nonisolated func makeAsyncIterator() -> API<ProcessChannel>.AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> API<ProcessChannel>
+    .AsyncIterator
+  {
     neovimNotificationsIterator
   }
 }

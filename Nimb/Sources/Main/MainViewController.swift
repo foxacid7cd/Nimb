@@ -24,14 +24,22 @@ public class MainViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
+  public func windowFrame(
+    forGridID gridID: Grid.ID,
+    gridFrame: IntegerRectangle
+  )
+    -> CGRect?
+  {
     gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
   override public func loadView() {
     let view = NSView()
 
-    tablineView.setContentCompressionResistancePriority(.init(rawValue: 900), for: .vertical)
+    tablineView.setContentCompressionResistancePriority(
+      .init(rawValue: 900),
+      for: .vertical
+    )
     view.addSubview(tablineView)
     tablineView.topToSuperview()
     tablineView.leading(to: view)
@@ -45,7 +53,11 @@ public class MainViewController: NSViewController {
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
-    view.addSubview(gridsContainerView, positioned: .below, relativeTo: tablineView)
+    view.addSubview(
+      gridsContainerView,
+      positioned: .below,
+      relativeTo: tablineView
+    )
     gridsContainerView.translatesAutoresizingMaskIntoConstraints = false
     gridsContainerView.clipsToBounds = true
     gridsContainerView.topToBottom(of: tablineView)
@@ -69,7 +81,10 @@ public class MainViewController: NSViewController {
 
     view.addSubview(msgShowsViewController.view)
     msgShowsViewController.view.leading(to: view, offset: -1)
-    msgShowsViewController.view.bottomToSuperview(offset: 1, priority: .defaultHigh)
+    msgShowsViewController.view.bottomToSuperview(
+      offset: 1,
+      priority: .defaultHigh
+    )
     addChild(msgShowsViewController)
 
     view.addSubview(cmdlinesViewController.view)
@@ -95,7 +110,8 @@ public class MainViewController: NSViewController {
     super.viewDidLayout()
 
     if let window = view.window {
-      let titleBarHeight = window.contentView!.frame.height - window.contentLayoutRect.height
+      let titleBarHeight = window.contentView!.frame.height - window
+        .contentLayoutRect.height
       tablineView.preferredViewHeight = titleBarHeight
     }
   }
@@ -110,7 +126,8 @@ public class MainViewController: NSViewController {
     gridsView.render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary
+      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state
+        .cmdlines.dictionary
         .isEmpty
     }
 

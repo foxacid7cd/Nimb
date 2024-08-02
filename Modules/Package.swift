@@ -21,13 +21,31 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.1.2"),
     .package(url: "https://github.com/apple/swift-syntax", from: "510.0.2"),
-    .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
+    .package(
+      url: "https://github.com/apple/swift-argument-parser",
+      from: "1.5.0"
+    ),
     .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
-    .package(url: "https://github.com/pointfreeco/swift-identified-collections", from: "1.1.0"),
-    .package(url: "https://github.com/pointfreeco/swift-case-paths", from: "1.3.2"),
-    .package(url: "https://github.com/pointfreeco/swift-overture", from: "0.5.0"),
-    .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.3.2"),
-    .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
+    .package(
+      url: "https://github.com/pointfreeco/swift-identified-collections",
+      from: "1.1.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-case-paths",
+      from: "1.3.2"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-overture",
+      from: "0.5.0"
+    ),
+    .package(
+      url: "https://github.com/pointfreeco/swift-custom-dump",
+      from: "1.3.2"
+    ),
+    .package(
+      url: "https://github.com/apple/swift-async-algorithms",
+      branch: "main"
+    ),
   ],
   targets: [
     .executableTarget(
@@ -68,7 +86,10 @@ let package = Package(
         .product(name: "Collections", package: "swift-collections"),
         .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
         .product(name: "Algorithms", package: "swift-algorithms"),
-        .product(name: "IdentifiedCollections", package: "swift-identified-collections"),
+        .product(
+          name: "IdentifiedCollections",
+          package: "swift-identified-collections"
+        ),
         .product(name: "CasePaths", package: "swift-case-paths"),
         .product(name: "Overture", package: "swift-overture"),
         .product(name: "CustomDump", package: "swift-custom-dump"),

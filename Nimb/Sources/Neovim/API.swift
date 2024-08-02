@@ -24,7 +24,9 @@ public class API<Target: Channel> {
     )
   }
 
-  public func fastCallsTransaction(with apiFunctions: some Sequence<any APIFunction>) throws {
+  public func fastCallsTransaction(
+    with apiFunctions: some Sequence<any APIFunction>
+  ) throws {
     try rpc.fastCallsTransaction(with: apiFunctions.map {
       (
         method: type(of: $0).method,
@@ -61,15 +63,23 @@ extension API: AsyncSequence {
         for notification in notifications {
           switch notification.method {
           case "redraw":
-            let uiEvents = try [UIEvent](rawRedrawNotificationParameters: notification.parameters)
+            let uiEvents =
+              try [UIEvent](
+                rawRedrawNotificationParameters: notification
+                  .parameters
+              )
             accumulator.append(.redraw(uiEvents))
 
           case "nvim_error_event":
-            let nvimErrorEvent = try NeovimErrorEvent(parameters: notification.parameters)
+            let nvimErrorEvent = try NeovimErrorEvent(
+              parameters: notification
+                .parameters
+            )
             accumulator.append(.nvimErrorEvent(nvimErrorEvent))
 
           default:
-            logger.info("Unknown neovim API notification: \(notification.method)")
+            logger
+              .info("Unknown neovim API notification: \(notification.method)")
           }
         }
 

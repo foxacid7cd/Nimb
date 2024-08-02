@@ -32,10 +32,12 @@ public class MsgShowTextView: NSView {
     for contentPart in contentParts {
       var attributes: [NSAttributedString.Key: Any] = [
         .font: store.font.appKit(),
-        .foregroundColor: store.appearance.foregroundColor(for: contentPart.highlightID).appKit,
+        .foregroundColor: store.appearance
+          .foregroundColor(for: contentPart.highlightID).appKit,
       ]
 
-      let backgroundColor = store.appearance.backgroundColor(for: contentPart.highlightID)
+      let backgroundColor = store.appearance
+        .backgroundColor(for: contentPart.highlightID)
       if backgroundColor != store.appearance.defaultBackgroundColor {
         attributes[.backgroundColor] = store.appearance
           .backgroundColor(for: contentPart.highlightID).appKit

@@ -13,13 +13,19 @@ public class PopupmenuItemView: NSView {
     layer!.cornerRadius = 5
 
     wordTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
-    wordTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    wordTextField.setContentCompressionResistancePriority(
+      .defaultLow,
+      for: .horizontal
+    )
     addSubview(wordTextField)
     wordTextField.leading(to: self, offset: 7)
     wordTextField.centerYToSuperview()
 
     kindTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    kindTextField.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    kindTextField.setContentCompressionResistancePriority(
+      .defaultHigh,
+      for: .horizontal
+    )
     addSubview(kindTextField)
     kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
     kindTextField.centerYToSuperview()
@@ -50,11 +56,13 @@ public class PopupmenuItemView: NSView {
       .appKit
       .cgColor
 
-    let wordHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
+    let wordHighlightName: Appearance
+      .ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
     wordTextField.attributedStringValue = .init(
       string: item.word,
       attributes: [
-        .foregroundColor: appearance.foregroundColor(for: wordHighlightName).appKit,
+        .foregroundColor: appearance.foregroundColor(for: wordHighlightName)
+          .appKit,
         .font: font.appKit(
           isBold: appearance.isBold(for: wordHighlightName),
           isItalic: appearance.isItalic(for: wordHighlightName)
@@ -67,7 +75,8 @@ public class PopupmenuItemView: NSView {
     let kindAttributedString = NSMutableAttributedString(
       string: item.kind,
       attributes: [
-        .foregroundColor: appearance.foregroundColor(for: kindHighlightName).appKit,
+        .foregroundColor: appearance.foregroundColor(for: kindHighlightName)
+          .appKit,
         .font: font.appKit(
           isBold: appearance.isBold(for: kindHighlightName),
           isItalic: appearance.isItalic(for: kindHighlightName)
@@ -80,7 +89,8 @@ public class PopupmenuItemView: NSView {
       kindAttributedString.append(.init(
         string: " \(item.menu)",
         attributes: [
-          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.5)
+          .foregroundColor: appearance.foregroundColor(for: menuHighlightName)
+            .with(alpha: 0.5)
             .appKit,
           .font: font.appKit(
             isBold: appearance.isBold(for: menuHighlightName),

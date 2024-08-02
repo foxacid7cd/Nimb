@@ -65,7 +65,10 @@ public extension UserDefaults {
 
   var debug: State.Debug {
     get {
-      guard let isUIEventsLoggingEnabled = value(forKey: "isUIEventsLoggingEnabled") as? Bool else {
+      guard
+        let isUIEventsLoggingEnabled =
+        value(forKey: "isUIEventsLoggingEnabled") as? Bool
+      else {
         return .init(isUIEventsLoggingEnabled: false)
       }
       return .init(isUIEventsLoggingEnabled: isUIEventsLoggingEnabled)
@@ -79,7 +82,10 @@ public extension UserDefaults {
     get {
       guard
         let encoded = value(forKey: "environmentOverlay") as? Data,
-        let value = try? JSONDecoder().decode([String: String].self, from: encoded)
+        let value = try? JSONDecoder().decode(
+          [String: String].self,
+          from: encoded
+        )
       else {
         return [:]
       }

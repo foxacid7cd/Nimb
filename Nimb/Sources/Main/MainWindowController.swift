@@ -87,7 +87,8 @@ public class MainWindowController: NSWindowController {
   }
 
   private func renderBackgroundColor() {
-//    customWindow.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+//    customWindow.backgroundColor =
+//    store.state.appearance.defaultBackgroundColor.appKit
   }
 
   private func renderIsMouseUserInteractionEnabled() {

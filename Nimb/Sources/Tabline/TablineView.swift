@@ -15,7 +15,12 @@ final class TablineView: NSView {
     renderBackgroundColor()
 
     buffersScrollView.automaticallyAdjustsContentInsets = false
-    buffersScrollView.contentInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
+    buffersScrollView.contentInsets = .init(
+      top: 0,
+      left: 12,
+      bottom: 0,
+      right: 12
+    )
     buffersScrollView.horizontalScrollElasticity = .none
     buffersScrollView.verticalScrollElasticity = .none
     buffersScrollView.drawsBackground = false
@@ -37,9 +42,16 @@ final class TablineView: NSView {
     buffersScrollView.leading(to: self, offset: 68)
     buffersScrollView.top(to: self)
     buffersScrollView.bottom(to: self)
-    buffersScrollView.widthToSuperview(nil, multiplier: 0.5, relation: .equalOrLess)
+    buffersScrollView.widthToSuperview(
+      nil,
+      multiplier: 0.5,
+      relation: .equalOrLess
+    )
     buffersScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    buffersScrollView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    buffersScrollView.setContentCompressionResistancePriority(
+      .defaultHigh,
+      for: .horizontal
+    )
 
     buffersStackView.orientation = .horizontal
     buffersStackView.spacing = 14
@@ -49,7 +61,8 @@ final class TablineView: NSView {
 
     buffersScrollView.width(
       to: buffersStackView,
-      offset: buffersScrollView.contentInsets.left + buffersScrollView.contentInsets.right,
+      offset: buffersScrollView.contentInsets.left + buffersScrollView
+        .contentInsets.right,
       priority: .init(rawValue: 500)
     )
 
@@ -78,7 +91,11 @@ final class TablineView: NSView {
     tabsScrollView.top(to: self)
     tabsScrollView.bottom(to: self)
     tabsScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    tabsScrollView.widthToSuperview(nil, multiplier: 0.3, relation: .equalOrLess)
+    tabsScrollView.widthToSuperview(
+      nil,
+      multiplier: 0.3,
+      relation: .equalOrLess
+    )
 
     tabsStackView.orientation = .horizontal
     tabsStackView.spacing = 14
@@ -88,17 +105,32 @@ final class TablineView: NSView {
 
     tabsScrollView.width(
       to: tabsStackView,
-      offset: tabsScrollView.contentInsets.left + tabsScrollView.contentInsets.right,
+      offset: tabsScrollView.contentInsets.left + tabsScrollView.contentInsets
+        .right,
       priority: .init(rawValue: 500)
     )
 
     addSubview(titleTextField)
     titleTextField.centerX(to: self, priority: .init(rawValue: 100))
     titleTextField.centerY(to: self)
-    titleTextField.leadingToTrailing(of: buffersScrollView, offset: 10, relation: .equalOrGreater)
-    titleTextField.trailingToLeading(of: tabsScrollView, offset: -10, relation: .equalOrLess)
-    titleTextField.setContentHuggingPriority(.init(rawValue: 100), for: .horizontal)
-    titleTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    titleTextField.leadingToTrailing(
+      of: buffersScrollView,
+      offset: 10,
+      relation: .equalOrGreater
+    )
+    titleTextField.trailingToLeading(
+      of: tabsScrollView,
+      offset: -10,
+      relation: .equalOrLess
+    )
+    titleTextField.setContentHuggingPriority(
+      .init(rawValue: 100),
+      for: .horizontal
+    )
+    titleTextField.setContentCompressionResistancePriority(
+      .defaultLow,
+      for: .horizontal
+    )
   }
 
   @available(*, unavailable)
@@ -124,7 +156,10 @@ final class TablineView: NSView {
 
   override func mouseDown(with event: NSEvent) {
     let location = convert(event.locationInWindow, from: nil)
-    if buffersScrollView.frame.contains(location) || tabsScrollView.frame.contains(location) {
+    if
+      buffersScrollView.frame.contains(location) || tabsScrollView.frame
+        .contains(location)
+    {
       super.mouseDown(with: event)
     } else {
       window!.performDrag(with: event)
@@ -136,11 +171,15 @@ final class TablineView: NSView {
       return
     }
 
-    if stateUpdates.tabline.isBuffersUpdated || stateUpdates.isAppearanceUpdated {
+    if
+      stateUpdates.tabline.isBuffersUpdated || stateUpdates
+        .isAppearanceUpdated
+    {
       reloadBuffers()
     } else if stateUpdates.tabline.isSelectedBufferUpdated {
       for (bufferIndex, buffer) in tabline.buffers.enumerated() {
-        let itemView = buffersStackView.arrangedSubviews[bufferIndex] as! TablineItemView
+        let itemView = buffersStackView
+          .arrangedSubviews[bufferIndex] as! TablineItemView
         let isSelected = buffer.id == tabline.currentBufferID
         if isSelected != itemView.isSelected {
           itemView.isSelected = isSelected
@@ -154,11 +193,15 @@ final class TablineView: NSView {
       }
     }
 
-    if stateUpdates.tabline.isTabpagesUpdated || stateUpdates.isAppearanceUpdated {
+    if
+      stateUpdates.tabline.isTabpagesUpdated || stateUpdates
+        .isAppearanceUpdated
+    {
       reloadTabpages()
     } else if stateUpdates.tabline.isTabpagesContentUpdated {
       for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView.arrangedSubviews[tabpageIndex] as! TablineItemView
+        let itemView = tabsStackView
+          .arrangedSubviews[tabpageIndex] as! TablineItemView
         itemView.text = "\(tabpageIndex + 1)"
 
         itemView.isSelected = tabpage.id == tabline.currentTabpageID
@@ -171,7 +214,8 @@ final class TablineView: NSView {
 
     } else if stateUpdates.tabline.isSelectedTabpageUpdated {
       for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView.arrangedSubviews[tabpageIndex] as! TablineItemView
+        let itemView = tabsStackView
+          .arrangedSubviews[tabpageIndex] as! TablineItemView
 
         let isSelected = tabpage.id == tabline.currentTabpageID
         if isSelected != itemView.isSelected {
@@ -196,7 +240,10 @@ final class TablineView: NSView {
         string: store.state.title ?? "",
         attributes: [
           .foregroundColor: NSColor.windowFrameTextColor,
-          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
+          .font: NSFont.systemFont(
+            ofSize: NSFont.systemFontSize,
+            weight: .medium
+          ),
           .paragraphStyle: paragraphStyle,
         ]
       )
@@ -237,14 +284,15 @@ final class TablineView: NSView {
       itemView.isSelected = isSelected
       if isSelected {
         var observation: NSKeyValueObservation?
-        observation = itemView.observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
-          Task { @MainActor in
-            if itemView.frame.size != .zero, observation != nil {
-              buffersScrollView.contentView.scrollToVisible(itemView.frame)
-              observation = nil
+        observation = itemView
+          .observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
+            Task { @MainActor in
+              if itemView.frame.size != .zero, observation != nil {
+                buffersScrollView.contentView.scrollToVisible(itemView.frame)
+                observation = nil
+              }
             }
           }
-        }
       }
       itemView.isLast = false
       itemView.clicked = { [store] in
@@ -254,7 +302,10 @@ final class TablineView: NSView {
       buffersStackView.addArrangedSubview(itemView)
 
       itemView.heightToSuperview()
-      itemView.setContentCompressionResistancePriority(.init(rawValue: 800), for: .horizontal)
+      itemView.setContentCompressionResistancePriority(
+        .init(rawValue: 800),
+        for: .horizontal
+      )
     }
   }
 
@@ -274,14 +325,15 @@ final class TablineView: NSView {
       itemView.isSelected = isSelected
       if isSelected {
         var observation: NSKeyValueObservation?
-        observation = itemView.observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
-          Task { @MainActor in
-            if itemView.frame.size != .zero, observation != nil {
-              tabsScrollView.contentView.scrollToVisible(itemView.frame)
-              observation = nil
+        observation = itemView
+          .observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
+            Task { @MainActor in
+              if itemView.frame.size != .zero, observation != nil {
+                tabsScrollView.contentView.scrollToVisible(itemView.frame)
+                observation = nil
+              }
             }
           }
-        }
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
       itemView.clicked = { [store] in
@@ -291,7 +343,10 @@ final class TablineView: NSView {
       tabsStackView.addArrangedSubview(itemView)
 
       itemView.heightToSuperview()
-      itemView.setContentCompressionResistancePriority(.init(rawValue: 800), for: .horizontal)
+      itemView.setContentCompressionResistancePriority(
+        .init(rawValue: 800),
+        for: .horizontal
+      )
     }
   }
 

@@ -16,7 +16,11 @@ public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
-  public mutating func renderDrawRuns(for layout: GridLayout, font: Font, appearance: Appearance) {
+  public mutating func renderDrawRuns(
+    for layout: GridLayout,
+    font: Font,
+    appearance: Appearance
+  ) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
       .map { row, layout in
@@ -81,7 +85,13 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  public init(row: Int, layout: RowLayout, font: Font, appearance: Appearance, old: RowDrawRun?) {
+  public init(
+    row: Int,
+    layout: RowLayout,
+    font: Font,
+    appearance: Appearance,
+    old: RowDrawRun?
+  ) {
     var drawRuns = [DrawRun]()
     var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
     var previousReusedOldDrawRunIndex: Int?
@@ -101,7 +111,10 @@ public struct RowDrawRun: Sendable {
           previousReusedOldDrawRunIndex = index
         } else {
           for index in old.drawRuns.indices {
-            if let previousReusedOldDrawRunIndex, index == previousReusedOldDrawRunIndex + 1 {
+            if
+              let previousReusedOldDrawRunIndex,
+              index == previousReusedOldDrawRunIndex + 1
+            {
               continue
             }
             if old.drawRuns[index].shouldBeReused(for: part) {
@@ -218,7 +231,10 @@ public struct DrawRun: Sendable {
     font: Font,
     appearance: Appearance
   ) {
-    let size = CGSize(width: Double(columnsRange.count) * font.cellWidth, height: font.cellHeight)
+    let size = CGSize(
+      width: Double(columnsRange.count) * font.cellWidth,
+      height: font.cellHeight
+    )
 
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
@@ -231,7 +247,10 @@ public struct DrawRun: Sendable {
       attributes: [.font: appKitFont]
     )
 
-    let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(attributedString, nil)!
+    let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(
+      attributedString,
+      nil
+    )!
     let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
 
     var ascent: CGFloat = 0
@@ -240,7 +259,8 @@ public struct DrawRun: Sendable {
     CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
     let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-    let xOffset = (font.cellWidth - bounds.width / Double(columnsRange.count)) / 2
+    let xOffset = (font.cellWidth - bounds.width / Double(columnsRange.count)) /
+      2
     let yOffset = (font.cellHeight - bounds.height) / 2 + descent
     let offset = CGPoint(x: xOffset, y: yOffset)
 
@@ -269,7 +289,8 @@ public struct DrawRun: Sendable {
             initializedCount = glyphCount
           }
 
-        let attributes = CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
+        let attributes =
+          CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
         let attributesFont = attributes[.font] as? NSFont
 
         return .init(
@@ -417,7 +438,10 @@ public struct DrawRun: Sendable {
     let foregroundColor = appearance.foregroundColor(for: highlightID)
 
     if let strikethroughPath {
-      var offsetAffineTransform = CGAffineTransform(translationX: origin.x, y: origin.y)
+      var offsetAffineTransform = CGAffineTransform(
+        translationX: origin.x,
+        y: origin.y
+      )
 
       context.addPath(
         strikethroughPath.cgPath.copy(using: &offsetAffineTransform)!
@@ -427,7 +451,10 @@ public struct DrawRun: Sendable {
     }
 
     if let underlinePath {
-      var offsetAffineTransform = CGAffineTransform(translationX: origin.x, y: origin.y)
+      var offsetAffineTransform = CGAffineTransform(
+        translationX: origin.x,
+        y: origin.y
+      )
 
       if !underlineLineDashLengths.isEmpty {
         context.setLineDash(phase: 0.5, lengths: underlineLineDashLengths)
@@ -435,7 +462,11 @@ public struct DrawRun: Sendable {
       context.addPath(
         underlinePath.cgPath.copy(using: &offsetAffineTransform)!
       )
-      context.setStrokeColor(appearance.specialColor(for: highlightID).appKit.cgColor)
+      context
+        .setStrokeColor(
+          appearance.specialColor(for: highlightID).appKit
+            .cgColor
+        )
       context.strokePath()
     }
 
@@ -496,11 +527,16 @@ public struct CursorDrawRun: Sendable {
       for drawRun in rowDrawRuns[origin.row].drawRuns
     {
       if drawRun.columnsRange.contains(origin.column) {
-        parentOrigin = .init(column: drawRun.columnsRange.lowerBound, row: origin.row)
+        parentOrigin = .init(
+          column: drawRun.columnsRange.lowerBound,
+          row: origin.row
+        )
         parentDrawRun = drawRun
         for rowPartCell in drawRun.rowPartCells {
-          let lowerBound = drawRun.columnsRange.lowerBound + rowPartCell.columnsRange.lowerBound
-          let upperBound = drawRun.columnsRange.lowerBound + rowPartCell.columnsRange.upperBound
+          let lowerBound = drawRun.columnsRange.lowerBound + rowPartCell
+            .columnsRange.lowerBound
+          let upperBound = drawRun.columnsRange.lowerBound + rowPartCell
+            .columnsRange.upperBound
           if (lowerBound ..< upperBound).contains(origin.column) {
             cursorColumnsRange = rowPartCell.columnsRange
             break drawRunsLoop
@@ -514,7 +550,10 @@ public struct CursorDrawRun: Sendable {
       let parentOrigin,
       let parentDrawRun,
       let cursorColumnsRange,
-      let cellFrame = style.cellFrame(columnsCount: cursorColumnsRange.count, font: font)
+      let cellFrame = style.cellFrame(
+        columnsCount: cursorColumnsRange.count,
+        font: font
+      )
     else {
       logger.fault("inconsistency error")
       return nil
@@ -550,10 +589,14 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
-  public mutating func updateParent(with layout: GridLayout, rowDrawRuns: [RowDrawRun]) {
+  public mutating func updateParent(
+    with layout: GridLayout,
+    rowDrawRuns: [RowDrawRun]
+  ) {
     var currentColumn = 0
     for drawRun in rowDrawRuns[origin.row].drawRuns {
-      let columnsRange = currentColumn ..< currentColumn + drawRun.columnsRange.count
+      let columnsRange = currentColumn ..< currentColumn + drawRun.columnsRange
+        .count
       if columnsRange.contains(origin.column) {
         parentOrigin = .init(column: currentColumn, row: origin.row)
         parentDrawRun = drawRun
@@ -597,7 +640,10 @@ public struct CursorDrawRun: Sendable {
 
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
-        size: .init(columnsCount: parentDrawRun.columnsRange.count, rowsCount: 1)
+        size: .init(
+          columnsCount: parentDrawRun.columnsRange.count,
+          rowsCount: 1
+        )
       )
       let parentRect = (parentRectangle * font.cellSize)
         .applying(upsideDownTransform)

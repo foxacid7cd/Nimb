@@ -24,7 +24,8 @@ public struct UIEventFile: GeneratableFile {
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
-              let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
+              let caseName = uiEvent.name
+                .camelCasedAssumingSnakeCased(capitalized: false)
 
               if !uiEvent.parameters.isEmpty {
                 let parametersSignature: String = uiEvent.parameters
@@ -51,7 +52,9 @@ public struct UIEventFile: GeneratableFile {
             ) {
               "var accumulator = [UIEvent]()" as DeclSyntax
 
-              try ForStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
+              try ForStmtSyntax(
+                "for rawParameter in rawRedrawNotificationParameters"
+              ) {
                 StmtSyntax(
                   """
                   guard case let .array(rawParameter) = rawParameter else {
@@ -72,9 +75,12 @@ public struct UIEventFile: GeneratableFile {
                   try SwitchCaseListSyntax {
                     for uiEvent in metadata.uiEvents {
                       try SwitchCaseSyntax("case \(literal: uiEvent.name):") {
-                        let caseName = uiEvent.name.camelCasedAssumingSnakeCased(capitalized: false)
+                        let caseName = uiEvent.name
+                          .camelCasedAssumingSnakeCased(capitalized: false)
 
-                        try ForStmtSyntax("for rawUIEvent in rawParameter.dropFirst()") {
+                        try ForStmtSyntax(
+                          "for rawUIEvent in rawParameter.dropFirst()"
+                        ) {
                           StmtSyntax(
                             """
                             guard case let .array(rawUIEventParameters) = rawUIEvent else {
@@ -85,7 +91,8 @@ public struct UIEventFile: GeneratableFile {
 
                           let parametersCountCondition =
                             "rawUIEventParameters.count == \(uiEvent.parameters.count)"
-                          let (valueParameters, otherParameters) = uiEvent.parameters
+                          let (valueParameters, otherParameters) = uiEvent
+                            .parameters
                             .enumerated()
                             .partitioned(by: {
                               $0.element.type.swift[case: \.value] == nil
@@ -94,12 +101,13 @@ public struct UIEventFile: GeneratableFile {
                           let parameterTypeConditions = otherParameters
                             .map { index, parameter -> String in
                               let identifier = parameter.name
-                                .camelCasedAssumingSnakeCased(capitalized: false)
-                              let initializer = parameter.type.wrapWithValueDecoder(
+                                .camelCasedAssumingSnakeCased(
+                                  capitalized: false
+                                )
+                              return parameter.type.wrapWithValueDecoder(
                                 "rawUIEventParameters[\(index)]",
                                 name: identifier
                               )
-                              return initializer
                             }
 
                           let guardConditions = [
@@ -128,9 +136,10 @@ public struct UIEventFile: GeneratableFile {
                           if !uiEvent.parameters.isEmpty {
                             let associatedValuesSignature = uiEvent.parameters
                               .map { parameter in
-                                let name = parameter.name.camelCasedAssumingSnakeCased(
-                                  capitalized: false
-                                )
+                                let name = parameter.name
+                                  .camelCasedAssumingSnakeCased(
+                                    capitalized: false
+                                  )
                                 return "\(name): \(name)"
                               }
                               .joined(separator: ", ")
@@ -138,7 +147,9 @@ public struct UIEventFile: GeneratableFile {
                             ExprSyntax(
                               """
                               accumulator.append(
-                                .\(raw: caseName)(\(raw: associatedValuesSignature))
+                                .\(raw: caseName)(\(
+                                  raw: associatedValuesSignature
+                                ))
                               )
                               """
                             )

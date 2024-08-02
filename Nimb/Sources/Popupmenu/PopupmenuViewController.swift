@@ -178,7 +178,12 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
     return itemView
   }
 
-  public func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+  public func tableView(
+    _ tableView: NSTableView,
+    shouldSelectRow row: Int
+  )
+    -> Bool
+  {
     store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
     return false
   }

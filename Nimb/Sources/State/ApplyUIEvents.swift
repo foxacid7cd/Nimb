@@ -9,10 +9,14 @@ import Overture
 
 public extension Actions {
   @PublicInit
-  struct ApplyUIEvents<S: Sequence>: Action where S.Element == UIEvent, S: Sendable {
+  struct ApplyUIEvents<S: Sequence>: Action where S.Element == UIEvent,
+    S: Sendable
+  {
     public var uiEvents: S
 
-    public func apply(to container: StateContainer) async throws -> State.Updates {
+    public func apply(to container: StateContainer) async throws -> State
+      .Updates
+    {
       var updates = State.Updates()
 
       func modeUpdated() {
@@ -62,7 +66,8 @@ public extension Actions {
           apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
         }
         if
-          container.state.cmdlines.dictionary.isEmpty, let cursor = container.state.cursor,
+          container.state.cmdlines.dictionary.isEmpty,
+          let cursor = container.state.cursor,
           let style = container.state.currentCursorStyle
         {
           apply(
@@ -112,7 +117,9 @@ public extension Actions {
         updates.isBusyUpdated = true
       }
 
-      func blockLine(fromRawLine rawLine: Value) throws -> [Cmdline.ContentPart] {
+      func blockLine(fromRawLine rawLine: Value) throws
+        -> [Cmdline.ContentPart]
+      {
         guard case let .array(rawLine) = rawLine else {
           throw Failure("invalid cmdline raw line value", rawLine)
         }
@@ -126,7 +133,10 @@ public extension Actions {
             case let .integer(rawHighlightID) = rawContentPart[0],
             case let .string(text) = rawContentPart[1]
           else {
-            throw Failure("invalid cmdline raw content part value", rawContentPart)
+            throw Failure(
+              "invalid cmdline raw content part value",
+              rawContentPart
+            )
           }
 
           contentParts.append(
@@ -144,11 +154,19 @@ public extension Actions {
       for uiEvent in uiEvents {
         switch uiEvent {
         case let .gridLine(gridID, row, originColumn, data, wrap):
-          let gridLine = UIEventsChunk.GridLine(originColumn: originColumn, data: data, wrap: wrap)
+          let gridLine = UIEventsChunk.GridLine(
+            originColumn: originColumn,
+            data: data,
+            wrap: wrap
+          )
 
           if
             let previousChunk = uiEventsChunks.last,
-            case .gridLines(let chunkGridID, let hlAttrDefines, var chunkGridLines) = previousChunk,
+            case .gridLines(
+              let chunkGridID,
+              let hlAttrDefines,
+              var chunkGridLines
+            ) = previousChunk,
             chunkGridID == gridID
           {
             update(&chunkGridLines[row]) { rowGridLines in
@@ -180,7 +198,11 @@ public extension Actions {
 
           if
             let previousChunk = uiEventsChunks.last,
-            case .gridLines(let chunkGridID, var hlAttrDefines, let chunkGridLines) = previousChunk
+            case .gridLines(
+              let chunkGridID,
+              var hlAttrDefines,
+              let chunkGridLines
+            ) = previousChunk
           {
             hlAttrDefines.append(hlAttrDefine)
             uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
@@ -237,8 +259,10 @@ public extension Actions {
             }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
-            container.state.appearance.defaultForegroundColor = .init(rgb: rgbFg)
-            container.state.appearance.defaultBackgroundColor = .init(rgb: rgbBg)
+            container.state.appearance
+              .defaultForegroundColor = .init(rgb: rgbFg)
+            container.state.appearance
+              .defaultBackgroundColor = .init(rgb: rgbBg)
             container.state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
             container.state.flushDrawRuns()
 
@@ -258,14 +282,18 @@ public extension Actions {
               rowsCount: height
             )
             if
-              container.state.grids[gridID]?.size != size || container.state.grids[gridID]?
+              container.state.grids[gridID]?.size != size || container.state
+                .grids[gridID]?
                 .isDestroyed == true
             {
               let font = container.state.font
               let appearance = container.state.appearance
               update(&container.state.grids[gridID]) { grid in
                 if grid == nil || grid?.isDestroyed == true {
-                  let cells = TwoDimensionalArray(size: size, repeatingElement: Cell.default)
+                  let cells = TwoDimensionalArray(
+                    size: size,
+                    repeatingElement: Cell.default
+                  )
                   let layout = GridLayout(cells: cells)
                   grid = .init(
                     id: gridID,
@@ -297,13 +325,27 @@ public extension Actions {
               apply(update: .resize(size), toGridWithID: gridID)
             }
 
-          case let .gridScroll(gridID, top, bottom, left, right, rowsCount, columnsCount):
+          case let .gridScroll(
+            gridID,
+            top,
+            bottom,
+            left,
+            right,
+            rowsCount,
+            columnsCount
+          ):
             let rectangle = IntegerRectangle(
               origin: .init(column: left, row: top),
               size: .init(columnsCount: right - left, rowsCount: bottom - top)
             )
-            let offset = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
-            apply(update: .scroll(rectangle: rectangle, offset: offset), toGridWithID: gridID)
+            let offset = IntegerSize(
+              columnsCount: columnsCount,
+              rowsCount: rowsCount
+            )
+            apply(
+              update: .scroll(rectangle: rectangle, offset: offset),
+              toGridWithID: gridID
+            )
 
           case let .gridClear(gridID):
             apply(update: .clear, toGridWithID: gridID)
@@ -328,9 +370,19 @@ public extension Actions {
 
             cursorUpdated(oldCursor: oldCursor)
 
-          case let .winPos(gridID, windowID, originRow, originColumn, columnsCount, rowsCount):
+          case let .winPos(
+            gridID,
+            windowID,
+            originRow,
+            originColumn,
+            columnsCount,
+            rowsCount
+          ):
             let origin = IntegerPoint(column: originColumn, row: originRow)
-            let size = IntegerSize(columnsCount: columnsCount, rowsCount: rowsCount)
+            let size = IntegerSize(
+              columnsCount: columnsCount,
+              rowsCount: rowsCount
+            )
 
             let previousOrderedGridIDs = container.state.orderedGridIDs()
 
@@ -405,7 +457,12 @@ public extension Actions {
 
             updatedLayout(forGridWithID: gridID)
 
-          case let .tablineUpdate(currentTabpageID, rawTabpages, currentBufferID, rawBuffers):
+          case let .tablineUpdate(
+            currentTabpageID,
+            rawTabpages,
+            currentBufferID,
+            rawBuffers
+          ):
             let tabpages = try rawTabpages
               .map { rawTabpage -> Tabpage in
                 guard
@@ -428,7 +485,10 @@ public extension Actions {
               }
             let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
             if identifiedTabpages != container.state.tabline?.tabpages {
-              if identifiedTabpages.count == container.state.tabline?.tabpages.count {
+              if
+                identifiedTabpages.count == container.state.tabline?.tabpages
+                  .count
+              {
                 tablineTabpagesContentUpdated()
               } else {
                 tablineTabpagesUpdated()
@@ -461,14 +521,16 @@ public extension Actions {
             }
 
             if
-              updates.tabline.isTabpagesUpdated || currentTabpageID != container.state.tabline?
+              updates.tabline.isTabpagesUpdated || currentTabpageID != container
+                .state.tabline?
                 .currentTabpageID
             {
               tablineSelectedTabpageUpdated()
             }
 
             if
-              updates.tabline.isBuffersUpdated || currentBufferID != container.state.tabline?
+              updates.tabline.isBuffersUpdated || currentBufferID != container
+                .state.tabline?
                 .currentBufferID
             {
               tablineSelectedBufferUpdated()
@@ -493,7 +555,10 @@ public extension Actions {
                     case let .integer(rawHighlightID) = rawContentPart[0],
                     case let .string(text) = rawContentPart[1]
                   else {
-                    throw Failure("invalid cmdline raw content part", rawContentPart)
+                    throw Failure(
+                      "invalid cmdline raw content part",
+                      rawContentPart
+                    )
                   }
 
                   return .init(
@@ -551,7 +616,8 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .cmdlineBlockAppend(rawLine):
-            try container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!]!
+            try container.state.cmdlines
+              .blockLines[container.state.cmdlines.lastCmdlineLevel!]!
               .append(blockLine(fromRawLine: .array(rawLine)))
 
             cmdlinesUpdated()
@@ -613,7 +679,8 @@ public extension Actions {
 
           case let .popupmenuSelect(selected):
             if container.state.popupmenu != nil {
-              container.state.popupmenu!.selectedItemIndex = selected >= 0 ? selected : nil
+              container.state.popupmenu!
+                .selectedItemIndex = selected >= 0 ? selected : nil
               popupmenuSelectionUpdated()
             }
 
@@ -654,11 +721,20 @@ public extension Actions {
 
           let results: [Grid.LineUpdatesResult] =
             if gridLines.count < 9 {
-              try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
+              try applyLineUpdates(
+                for: gridLines,
+                grids: grids,
+                font: font,
+                appearance: appearance
+              )
             } else {
-              try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
+              try await withThrowingTaskGroup(
+                of: [Grid.LineUpdatesResult]
+                  .self
+              ) { taskGroup in
                 let gridLines = Array(gridLines)
-                let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 6)
+                let chunkSize = gridLines
+                  .optimalChunkSize(preferredChunkSize: 6)
                 for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
                   taskGroup.addTask {
                     try applyLineUpdates(
@@ -712,7 +788,10 @@ public extension Actions {
           }
 
           @Sendable func applyLineUpdates(
-            for gridLines: some Sequence<(key: Int, value: [UIEventsChunk.GridLine])>,
+            for gridLines: some Sequence<(
+              key: Int,
+              value: [UIEventsChunk.GridLine]
+            )>,
             grids: IntKeyedDictionary<Grid>,
             font: Font,
             appearance: Appearance
@@ -743,7 +822,10 @@ public extension Actions {
                     guard
                       case let .integer(newHighlightID) = arrayValue[1]
                     else {
-                      throw Failure("invalid grid line cell highlight value", arrayValue[1])
+                      throw Failure(
+                        "invalid grid line cell highlight value",
+                        arrayValue[1]
+                      )
                     }
 
                     highlightID = newHighlightID
@@ -752,7 +834,10 @@ public extension Actions {
                       guard
                         case let .integer(newRepeatCount) = arrayValue[2]
                       else {
-                        throw Failure("invalid grid line cell repeat count value", arrayValue[2])
+                        throw Failure(
+                          "invalid grid line cell repeat count value",
+                          arrayValue[2]
+                        )
                       }
 
                       repeatCount = newRepeatCount
@@ -782,7 +867,10 @@ public extension Actions {
           }
         }
 
-        func applyHlAttrDefine(_ hlAttrDefine: UIEventsChunk.HlAttrDefine) throws {
+        func applyHlAttrDefine(
+          _ hlAttrDefine: UIEventsChunk
+            .HlAttrDefine
+        ) throws {
           let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
             .flatMap { $0[case: \.boolean] } ?? false
 
@@ -883,7 +971,10 @@ public extension Actions {
             else {
               continue
             }
-            container.state.appearance.observedHighlights[hiName] = (infoItem.id, infoItem.kind)
+            container.state.appearance.observedHighlights[hiName] = (
+              infoItem.id,
+              infoItem.kind
+            )
             updates.updatedObservedHighlightNames.insert(hiName)
           }
         }

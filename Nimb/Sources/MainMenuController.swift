@@ -38,7 +38,15 @@ final class MainMenuController: NSObject {
     let windowMenu = NSMenu(title: "Window")
     let helpMenu = NSMenu(title: "Help")
 
-    let submenus = [appMenu, fileMenu, editMenu, viewMenu, debugMenu, windowMenu, helpMenu]
+    let submenus = [
+      appMenu,
+      fileMenu,
+      editMenu,
+      viewMenu,
+      debugMenu,
+      windowMenu,
+      helpMenu,
+    ]
 
     for submenu in submenus {
       let menuItem = NSMenuItem()
@@ -255,7 +263,10 @@ final class MainMenuController: NSObject {
 
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(path: "\(UUID().uuidString).txt")
-      FileManager.default.createFile(atPath: temporaryFileURL.path(), contents: nil)
+      FileManager.default.createFile(
+        atPath: temporaryFileURL.path(),
+        contents: nil
+      )
 
       do {
         let fileHandle = try FileHandle(forWritingTo: temporaryFileURL)
@@ -264,7 +275,10 @@ final class MainMenuController: NSObject {
 
         NSWorkspace.shared.open(temporaryFileURL)
       } catch {
-        logger.error("could not create or write file handle to temporary file with error \(error)")
+        logger
+          .error(
+            "could not create or write file handle to temporary file with error \(error)"
+          )
       }
     }
   }
@@ -305,7 +319,11 @@ extension MainMenuController: NSMenuDelegate {
           return makeItem("\(name), \(currentFont.pointSize)")
 
         case .select:
-          return makeItem("Select Font", action: #selector(handleFont), keyEquivalent: "t")
+          return makeItem(
+            "Select Font",
+            action: #selector(handleFont),
+            keyEquivalent: "t"
+          )
 
         case .separator:
           return .separator()
@@ -337,7 +355,8 @@ extension MainMenuController: NSMenuDelegate {
     case debugMenu:
       let toggleUIEventsLoggingMenuItem = NSMenuItem(
         title: store.state.debug
-          .isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging",
+          .isUIEventsLoggingEnabled ? "Disable UI Events Logging" :
+          "Enable UI Events Logging",
         action: #selector(handleToggleUIEventsLogging),
         keyEquivalent: ""
       )
@@ -365,7 +384,11 @@ extension MainMenuController: NSMenuDelegate {
   )
     -> NSMenuItem
   {
-    let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+    let item = NSMenuItem(
+      title: title,
+      action: action,
+      keyEquivalent: keyEquivalent
+    )
     item.target = self
     item.keyEquivalentModifierMask = keyEquivalentModifierMask
     return item

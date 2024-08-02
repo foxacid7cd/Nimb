@@ -63,7 +63,10 @@ public struct RowLayout: Sendable {
 
         let columnsCount =
           if !text.isEmpty {
-            if nextCellIndex < cells.endIndex, cells[nextCellIndex].text.isEmpty {
+            if
+              nextCellIndex < cells.endIndex,
+              cells[nextCellIndex].text.isEmpty
+            {
               2
             } else {
               1

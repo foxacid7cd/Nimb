@@ -92,7 +92,10 @@ public class Store: Sendable {
 
   public func scheduleHideMsgShowsIfPossible() {
     Task { @StateActor in
-      if !stateContainer.state.hasModalMsgShows, !stateContainer.state.isMsgShowsDismissed {
+      if
+        !stateContainer.state.hasModalMsgShows,
+        !stateContainer.state.isMsgShowsDismissed
+      {
         hideMsgShowsTask?.cancel()
 
         hideMsgShowsTask = Task { [weak self] in
@@ -117,7 +120,11 @@ public class Store: Sendable {
     scheduleHideMsgShowsIfPossible()
   }
 
-  public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+  public func reportMouseMove(
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
     if
       let previousMouseMove,
       previousMouseMove.modifier == modifier,
@@ -137,7 +144,12 @@ public class Store: Sendable {
     gridID: Grid.ID,
     point: IntegerPoint
   ) {
-    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point)
+    instance.reportScrollWheel(
+      with: direction,
+      modifier: modifier,
+      gridID: gridID,
+      point: point
+    )
   }
 
   public func report(
@@ -158,7 +170,10 @@ public class Store: Sendable {
 
   public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
     do {
-      try instance.reportPopupmenuItemSelected(atIndex: index, isFinish: isFinish)
+      try instance.reportPopupmenuItemSelected(
+        atIndex: index,
+        isFinish: isFinish
+      )
     } catch {
       handleActionError(error)
     }
@@ -201,9 +216,11 @@ public class Store: Sendable {
         }
 
         do {
-          try await Task.sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
+          try await Task
+            .sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
 
-          instance.reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
+          instance
+            .reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
         } catch { }
 
         outerGridSizeThrottlingTask = nil
@@ -236,7 +253,10 @@ public class Store: Sendable {
   public func requestTextForCopy() async -> String? {
     let backgroundState = stateContainer.state
 
-    guard let mode = backgroundState.mode, let modeInfo = backgroundState.modeInfo else {
+    guard
+      let mode = backgroundState.mode,
+      let modeInfo = backgroundState.modeInfo
+    else {
       return nil
     }
 
@@ -317,7 +337,9 @@ public class Store: Sendable {
     }
   }
 
-  public func requestCurrentBufferInfo() async -> (name: String, buftype: String)? {
+  public func requestCurrentBufferInfo() async
+    -> (name: String, buftype: String)?
+  {
     do {
       return try await instance.requestCurrentBufferInfo()
     } catch {
@@ -339,12 +361,19 @@ public class Store: Sendable {
   @StateActor private var lastSetStateInstant = ContinuousClock.now
   @StateActor private var stateUpdatesAccumulator = State.Updates()
   @StateActor private var stateThrottlingTask: Task<Void, Never>?
-  private let stateUpdatesChannel = AsyncThrowingChannel<State.Updates, any Error>()
+  private let stateUpdatesChannel = AsyncThrowingChannel<
+    State.Updates,
+    any Error
+  >()
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
   private var previousPumBounds: IntegerRectangle?
-  private var previousMouseMove: (modifier: String, gridID: Int, point: IntegerPoint)?
+  private var previousMouseMove: (
+    modifier: String,
+    gridID: Int,
+    point: IntegerPoint
+  )?
   private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
   private var outerGridSizeThrottlingTask: Task<Void, Never>?
   private var previousReportedOuterGridSizeInstant = ContinuousClock.now
@@ -426,7 +455,10 @@ public class Store: Sendable {
       }
 
       func synchronizeState() {
-        Task { @MainActor [state = stateContainer.state, stateUpdatesAccumulator] in
+        Task { @MainActor [
+          state = stateContainer.state,
+          stateUpdatesAccumulator
+        ] in
           self.state = state
           await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
         }
@@ -463,7 +495,8 @@ public class Store: Sendable {
 extension Store: AsyncSequence {
   public typealias Element = State.Updates
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>
+  public nonisolated func makeAsyncIterator()
+    -> AsyncThrowingChannel<State.Updates, any Error>
     .AsyncIterator
   {
     stateUpdatesChannel.makeAsyncIterator()

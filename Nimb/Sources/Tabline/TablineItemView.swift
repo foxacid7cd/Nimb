@@ -63,7 +63,10 @@ final class TablineItemView: NSView {
     let color = filledColor ?? .white
     let fill: SlantedBackgroundFill =
       if isSelected {
-        .gradient(from: color.withAlphaComponent(0.75), to: color.withAlphaComponent(0.35))
+        .gradient(
+          from: color.withAlphaComponent(0.75),
+          to: color.withAlphaComponent(0.35)
+        )
       } else {
         .color(NSColor.black.withAlphaComponent(0.2))
       }
@@ -85,13 +88,21 @@ final class TablineItemView: NSView {
     .init(
       string: text,
       attributes: [
-        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
+        .font: NSFont.systemFont(
+          ofSize: NSFont.systemFontSize,
+          weight: .medium
+        ),
         .foregroundColor: NSColor.windowFrameTextColor,
       ]
     )
   }
 
-  private func makeFont(for highlightName: Appearance.ObservedHighlightName) -> NSFont {
+  private func makeFont(
+    for highlightName: Appearance
+      .ObservedHighlightName
+  )
+    -> NSFont
+  {
     var font = NSFont.systemFont(
       ofSize: NSFont.systemFontSize,
       weight: store.appearance.isBold(for: highlightName) ? .heavy : .semibold

@@ -12,7 +12,10 @@ public struct NeovimErrorEvent: Sendable, Equatable {
       ),
       let message = parameters[1].string
     else {
-      throw Failure("Invalid nvim_error_event notification parameters", parameters)
+      throw Failure(
+        "Invalid nvim_error_event notification parameters",
+        parameters
+      )
     }
     self.init(error: error, message: message)
   }

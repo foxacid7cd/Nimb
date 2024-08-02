@@ -12,7 +12,8 @@ public extension StringProtocol {
         let uppercased = word.uppercased()
         let isAcronym = acronyms.contains(uppercased)
         let shouldCapitalize = offset != 0 || capitalized
-        return shouldCapitalize ? isAcronym ? uppercased : word.capitalized : word
+        return shouldCapitalize ? isAcronym ? uppercased : word
+          .capitalized : word
       }
       .joined()
   }

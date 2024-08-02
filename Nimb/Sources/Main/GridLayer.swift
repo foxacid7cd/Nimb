@@ -54,7 +54,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return grid
     } else {
       let gridID = gridID
-      logger.fault("grid view trying to access not created or destroyed grid with id \(gridID)")
+      logger
+        .fault(
+          "grid view trying to access not created or destroyed grid with id \(gridID)"
+        )
       fatalError()
     }
   }
@@ -79,7 +82,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     frame = .init(origin: origin, size: grid.size * store.font.cellSize)
       .applying(outerGridUpsideDownTransform)
 
-    anchoredLayers.forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin) }
+    anchoredLayers
+      .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin) }
 
     zPosition = grid.zIndex
 
@@ -87,7 +91,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   }
 
   @MainActor
-  public func render(stateUpdates: State.Updates, gridUpdate: Grid.UpdateResult?) {
+  public func render(
+    stateUpdates: State.Updates,
+    gridUpdate: Grid.UpdateResult?
+  ) {
     dirtyRectangles.removeAll(keepingCapacity: true)
 
     if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
@@ -117,7 +124,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     for dirtyRectangle in dirtyRectangles {
       setNeedsDisplay(
         (dirtyRectangle * store.font.cellSize)
-          .insetBy(dx: -store.font.cellSize.width * 2, dy: -store.font.cellSize.height)
+          .insetBy(
+            dx: -store.font.cellSize.width * 2,
+            dy: -store.font.cellSize.height
+          )
           .applying(upsideDownTransform)
       )
     }
@@ -190,9 +200,12 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
-    xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
-    yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase
+      .rawValue == 0 ? 1 : 0.6
+    xScrollingAccumulator -= event
+      .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
+    yScrollingAccumulator -= event
+      .scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
     var xScrollingDelta = xScrollingAccumulator - xScrollingReported
     var yScrollingDelta = yScrollingAccumulator - yScrollingReported
@@ -200,7 +213,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     var horizontalScrollCount = 0
     var verticalScrollCount = 0
 
-    if hasScrollingSlippedHorizontally || abs(xScrollingDelta) > xThreshold * 4 {
+    if
+      hasScrollingSlippedHorizontally || abs(xScrollingDelta) > xThreshold *
+      4
+    {
       if !hasScrollingSlippedHorizontally {
         xScrollingDelta = xScrollingAccumulator - xScrollingReported
       }
@@ -256,7 +272,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
   @MainActor
   public func reportMouseMove(for event: NSEvent) {
-    guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
+    guard
+      store.state.isMouseUserInteractionEnabled,
+      store.state.cmdlines.dictionary.isEmpty
+    else {
       return
     }
     store.reportMouseMove(
@@ -327,6 +346,9 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   @MainActor
   private var outerGridUpsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
+      .translatedBy(
+        x: 0,
+        y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight
+      )
   }
 }

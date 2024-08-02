@@ -23,7 +23,10 @@ public struct Appearance: Sendable {
   }
 
   public var highlights: IntKeyedDictionary<Highlight> = [:]
-  public var observedHighlights: TreeDictionary<ObservedHighlightName, (id: Int, kind: String)> =
+  public var observedHighlights: TreeDictionary<
+    ObservedHighlightName,
+    (id: Int, kind: String)
+  > =
     [:]
   public var defaultForegroundColor: Color = .black
   public var defaultBackgroundColor: Color = .black
@@ -113,7 +116,9 @@ public struct Appearance: Sendable {
     return highlight.isReverse
   }
 
-  public func decorations(for highlightID: Highlight.ID) -> Highlight.Decorations {
+  public func decorations(for highlightID: Highlight.ID) -> Highlight
+    .Decorations
+  {
     guard highlightID != .zero, let highlight = highlights[highlightID] else {
       return .init()
     }
@@ -150,6 +155,7 @@ public struct Appearance: Sendable {
     }
 
     return highlight
-      .specialColor ?? (highlight.isReverse ? defaultBackgroundColor : defaultForegroundColor)
+      .specialColor ??
+      (highlight.isReverse ? defaultBackgroundColor : defaultForegroundColor)
   }
 }

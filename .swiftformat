@@ -94,5 +94,4 @@
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---disable blankLinesBetweenChainedFunctions
---enable acronyms,blankLineAfterSwitchCase,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapMultilineConditionalAssignment,wrapSwitchCases
+--enable acronyms,blankLineAfterSwitchCase,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,redundantProperty,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapMultilineConditionalAssignment,wrapSwitchCases

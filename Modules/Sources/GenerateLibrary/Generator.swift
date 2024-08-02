@@ -42,14 +42,20 @@ public actor Generator {
   }
 
   public func writeFiles(to directoryURL: URL) async throws {
-    try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+    try? FileManager.default.createDirectory(
+      at: directoryURL,
+      withIntermediateDirectories: true
+    )
 
     let metadata = try await metadataTask.value
 
     for type in generatableFileTypes {
       let file = type.init(metadata: metadata)
 
-      let fileURL = directoryURL.appending(path: "\(file.name).swift", directoryHint: .notDirectory)
+      let fileURL = directoryURL.appending(
+        path: "\(file.name).swift",
+        directoryHint: .notDirectory
+      )
 
       do {
         try file.sourceFile.formatted().description

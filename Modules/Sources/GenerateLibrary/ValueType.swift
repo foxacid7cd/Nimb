@@ -6,7 +6,8 @@ public struct ValueType: Sendable {
   public struct Custom: Sendable {
     public var signature: String
     public var valueEncoder: (prefix: String, suffix: String)
-    public var valueDecoder: @Sendable (_ expr: String, _ name: String) -> String
+    public var valueDecoder: @Sendable (_ expr: String, _ name: String)
+      -> String
   }
 
   @CasePathable

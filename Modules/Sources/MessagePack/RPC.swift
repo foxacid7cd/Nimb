@@ -37,7 +37,10 @@ public class RPC<Target: Channel> {
     }
   }
 
-  public func fastCall(method: String, withParameters parameters: [Value]) throws {
+  public func fastCall(
+    method: String,
+    withParameters parameters: [Value]
+  ) throws {
     try send(
       request: .init(
         id: store.announceRequest(),
@@ -132,7 +135,8 @@ extension RPC: AsyncSequence {
     }
 
     private let store: Store
-    private var messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
+    private var messageBatchesIterator: AsyncMessageBatches<Target.S>
+      .AsyncIterator
     private var accumulator = [Message.Notification]()
   }
 }
@@ -143,7 +147,12 @@ private class Store {
     currentRequests = .init(repeating: nil, count: maximumConcurrentRequests)
   }
 
-  func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Int {
+  func announceRequest(
+    _ handler: (@Sendable (Message.Response) -> Void)? =
+      nil
+  )
+    -> Int
+  {
     let id = announcedRequestsCount
 
     (announcedRequestsCount, _) = (announcedRequestsCount + 1)
@@ -155,7 +164,10 @@ private class Store {
     return id
   }
 
-  func responseReceived(_ response: Message.Response, forRequestWithID id: Int) {
+  func responseReceived(
+    _ response: Message.Response,
+    forRequestWithID id: Int
+  ) {
     guard let handler = currentRequests[id] else {
       return
     }

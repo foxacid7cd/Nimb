@@ -58,13 +58,22 @@ public class SettingsVimrcView: NSView {
     folderButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     folderButton.isEnabled = false
 
-    let stackView = NSStackView(views: [popUpButton, pathTextField, folderButton])
+    let stackView = NSStackView(views: [
+      popUpButton,
+      pathTextField,
+      folderButton,
+    ])
     stackView.orientation = .horizontal
     stackView.alignment = .firstBaseline
     stackView.distribution = .fill
     stackView.spacing = 8
     addSubview(stackView)
-    stackView.edgesToSuperview(insets: .init(top: 4, left: 4, bottom: 4, right: 4))
+    stackView.edgesToSuperview(insets: .init(
+      top: 4,
+      left: 4,
+      bottom: 4,
+      right: 4
+    ))
 
     reloadData()
   }
@@ -98,7 +107,8 @@ public class SettingsVimrcView: NSView {
          .none,
          .norc:
       pathTextField.alphaValue = 0.3
-      pathTextField.stringValue = FileManager.default.homeDirectoryForCurrentUser.path()
+      pathTextField.stringValue = FileManager.default
+        .homeDirectoryForCurrentUser.path()
       folderButton.isEnabled = false
 
     case let .custom(url):

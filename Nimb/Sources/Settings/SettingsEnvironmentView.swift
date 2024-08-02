@@ -68,7 +68,11 @@ public class SettingsEnvironmentView: NSView {
       setup()
     }
 
-    lazy var button = NSButton(title: "Button", target: self, action: #selector(handleButtonAction))
+    lazy var button = NSButton(
+      title: "Button",
+      target: self,
+      action: #selector(handleButtonAction)
+    )
     var handleAction: (() -> Void)?
 
     private func setup() {
@@ -86,9 +90,12 @@ public class SettingsEnvironmentView: NSView {
 
   private var items = [Item]()
   private let scrollView = NSScrollView()
-  private let nameTableColumn = NSTableColumn(identifier: .init(rawValue: "name"))
-  private let valueTableColumn = NSTableColumn(identifier: .init(rawValue: "value"))
-  private let deleteTableColumn = NSTableColumn(identifier: .init(rawValue: "delete"))
+  private let nameTableColumn =
+    NSTableColumn(identifier: .init(rawValue: "name"))
+  private let valueTableColumn =
+    NSTableColumn(identifier: .init(rawValue: "value"))
+  private let deleteTableColumn =
+    NSTableColumn(identifier: .init(rawValue: "delete"))
   private let tableView = NSTableView()
   private let footerView = NSView()
   private lazy var addButton = NSButton(
@@ -188,7 +195,10 @@ public class SettingsEnvironmentView: NSView {
   }
 
   @objc private func handleAddButtonAction() {
-    if let last = items.last, last.name.trimmingCharacters(in: .whitespaces).isEmpty {
+    if
+      let last = items.last,
+      last.name.trimmingCharacters(in: .whitespaces).isEmpty
+    {
       return
     }
     items.append(.init(name: "", value: ""))
