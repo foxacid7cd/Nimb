@@ -49,6 +49,8 @@ public class Store: Sendable {
                   )
                 )
                 bufferedUIEventsBatches.removeAll(keepingCapacity: true)
+
+                await Task.yield()
               }
 
             case let .nvimErrorEvent(event):
@@ -129,8 +131,8 @@ public class Store: Sendable {
     instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
-  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) {
-    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
+  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+    instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point)
   }
 
   public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {

@@ -75,6 +75,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               guard !Task.isCancelled else {
                 return
               }
+
               if stateUpdates.isOuterGridLayoutUpdated {
                 UserDefaults.standard.outerGridSize = store.state.outerGrid!.size
               }
@@ -84,6 +85,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               if stateUpdates.isDebugUpdated {
                 UserDefaults.standard.debug = store.state.debug
               }
+
               CATransaction.begin()
               CATransaction.setDisableActions(true)
               mainWindowController.render(stateUpdates)

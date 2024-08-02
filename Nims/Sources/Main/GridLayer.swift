@@ -179,7 +179,9 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     let xThreshold = store.font.cellWidth * 4 * scrollingSpeedMultiplier
     let yThreshold = store.font.cellHeight * scrollingSpeedMultiplier
 
-    if event.phase == .began {
+    if 
+      event.phase == .began
+    {
       isScrollingHorizontal = nil
       xScrollingAccumulator = 0
       xScrollingReported = -xThreshold / 2
@@ -187,58 +189,97 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.8
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
     xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
-    var direction: Instance.ScrollDirection?
-    var count = 0
+    var xScrollingDelta = xScrollingAccumulator - xScrollingReported
+    var yScrollingDelta = yScrollingAccumulator - yScrollingReported
+//    if isScrollingHorizontal != true, abs(yScrollingDelta) > yThreshold {
+//      if isScrollingHorizontal == nil {
+//        isScrollingHorizontal = false
+//      }
+//
+//      count = Int(abs(yScrollingDelta) / yThreshold)
+//      let yScrollingToBeReported = yThreshold * Double(count)
+//      if yScrollingDelta > 0 {
+//        direction = .down
+//        yScrollingReported += yScrollingToBeReported
+//      } else {
+//        direction = .up
+//        yScrollingReported -= yScrollingToBeReported
+//      }
+//
+//    } else if isScrollingHorizontal != false, abs(xScrollingDelta) > xThreshold * 0.5 {
+//      if isScrollingHorizontal == nil {
+//        isScrollingHorizontal = true
+//      }
+//
+//      count = Int(abs(xScrollingDelta) / xThreshold)
+//      let xScrollingToBeReported = xThreshold * Double(count)
+//      if xScrollingDelta > 0 {
+//        direction = .right
+//        xScrollingReported += xScrollingToBeReported
+//      } else {
+//        direction = .left
+//        xScrollingReported -= xScrollingToBeReported
+//      }
+//    }
 
-    let xScrollingDelta = xScrollingAccumulator - xScrollingReported
-    let yScrollingDelta = yScrollingAccumulator - yScrollingReported
-    if isScrollingHorizontal != true, abs(yScrollingDelta) > yThreshold {
-      if isScrollingHorizontal == nil {
-        isScrollingHorizontal = false
-      }
+    var horizontalScrollCount = 0
+    var verticalScrollCount = 0
 
-      count = Int(abs(yScrollingDelta) / yThreshold)
-      let yScrollingToBeReported = yThreshold * Double(count)
-      if yScrollingDelta > 0 {
-        direction = .down
-        yScrollingReported += yScrollingToBeReported
-      } else {
-        direction = .up
-        yScrollingReported -= yScrollingToBeReported
+    if hasScrollingSlippedHorizontally || abs(xScrollingDelta) > xThreshold * 4 {
+      if !hasScrollingSlippedHorizontally {
+        xScrollingDelta = xScrollingAccumulator - xScrollingReported
       }
+      hasScrollingSlippedHorizontally = true
 
-    } else if isScrollingHorizontal != false, abs(xScrollingDelta) > xThreshold {
-      if isScrollingHorizontal == nil {
-        isScrollingHorizontal = true
-      }
+      horizontalScrollCount = Int(xScrollingDelta / xThreshold)
+      let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
 
-      count = Int(abs(xScrollingDelta) / xThreshold)
-      let xScrollingToBeReported = xThreshold * Double(count)
-      if xScrollingDelta > 0 {
-        direction = .right
-        xScrollingReported += xScrollingToBeReported
-      } else {
-        direction = .left
-        xScrollingReported -= xScrollingToBeReported
+      xScrollingReported += xScrollingToBeReported
+    }
+    if hasScrollingSlippedVertically || abs(yScrollingDelta) > yThreshold * 2 {
+      if !hasScrollingSlippedVertically {
+        yScrollingDelta = yScrollingAccumulator - yScrollingReported
       }
+      hasScrollingSlippedVertically = true
+
+      verticalScrollCount = Int(yScrollingDelta / yThreshold)
+      let yScrollingToBeReported = yThreshold * Double(verticalScrollCount)
+
+      yScrollingReported += yScrollingToBeReported
     }
 
-    if let direction, count > 0 {
+    if horizontalScrollCount != 0 {
       let point = point(for: event)
       store.reportScrollWheel(
-        with: direction,
+        with: horizontalScrollCount < 0 ? .left : .right,
         modifier: event.modifierFlags
           .makeModifiers(isSpecialKey: false)
           .joined(),
         gridID: gridID,
-        point: point,
-        count: count
+        point: point
       )
       store.scheduleHideMsgShowsIfPossible()
+    }
+    if verticalScrollCount != 0 {
+      let point = point(for: event)
+      store.reportScrollWheel(
+        with: verticalScrollCount < 0 ? .up : .down,
+        modifier: event.modifierFlags
+          .makeModifiers(isSpecialKey: false)
+          .joined(),
+        gridID: gridID,
+        point: point
+      )
+      store.scheduleHideMsgShowsIfPossible()
+    }
+
+    if event.phase == .ended || event.phase == .cancelled {
+      hasScrollingSlippedHorizontally = false
+      hasScrollingSlippedVertically = false
     }
   }
 
@@ -293,6 +334,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
   private let gridID: Grid.ID
   private let store: Store
+  private var hasScrollingSlippedHorizontally = false
+  private var hasScrollingSlippedVertically = false
   private var isScrollingHorizontal: Bool?
   private var xScrollingAccumulator: Double = 0
   private var xScrollingReported: Double = 0
