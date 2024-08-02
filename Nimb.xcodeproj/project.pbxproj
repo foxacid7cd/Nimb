@@ -485,7 +485,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos-arm64\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  rm -rf \"$DESTINATION_DIR\"\n  mkdir \"$DESTINATION_DIR\"\n  \n  local RUNTIME_DIR=\"$DESTINATION_DIR/runtime\"\n  mkdir \"$RUNTIME_DIR\"\n\n  cp -R \"$NVIM_RESOURCES_DIR/share/nvim/runtime/\" \"$RUNTIME_DIR\"\n  cp -R \"$NVIM_RESOURCES_DIR/lib/nvim/\" \"$RUNTIME_DIR\"\n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/nims-gui\" \"$RUNTIME_DIR/lua\"\n  cp \"$PROJECT_DIR/NeovimRuntime/src/init.lua\" \"$DESTINATION_DIR\"\n}\n";
+			shellScript = "() {\n  local NVIM_RESOURCES_DIR=\"$PROJECT_DIR/.build/nvim-macos-arm64\"\n  \n  if [[ ! -d $NVIM_RESOURCES_DIR ]]; then\n    >&2 echo \"Fatal: $NVIM_RESOURCES_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  rm -rf \"$DESTINATION_DIR\"\n  mkdir \"$DESTINATION_DIR\"\n  \n  local RUNTIME_DIR=\"$DESTINATION_DIR/runtime\"\n  mkdir \"$RUNTIME_DIR\"\n\n  cp -R \"$NVIM_RESOURCES_DIR/share/nvim/runtime/\" \"$RUNTIME_DIR\"\n  cp -R \"$NVIM_RESOURCES_DIR/lib/nvim/\" \"$RUNTIME_DIR\"\n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/nimb-gui\" \"$RUNTIME_DIR/lua\"\n  cp \"$PROJECT_DIR/NeovimRuntime/src/init.lua\" \"$DESTINATION_DIR\"\n}\n";
 		};
 		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
 			isa = PBXShellScriptBuildPhase;
