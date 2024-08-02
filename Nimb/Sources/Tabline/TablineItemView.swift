@@ -12,13 +12,9 @@ final class TablineItemView: NSView {
     backgroundImageView.centerInSuperview()
 
     addSubview(textField)
-    textField.leading(to: self, offset: 10)
-    textField.trailing(to: self, offset: -10)
+    textField.leading(to: self, offset: 12)
+    textField.trailing(to: self, offset: -12)
     textField.centerY(to: self)
-
-    addSubview(selectedTextField)
-    selectedTextField.center(in: textField)
-    selectedTextField.isHidden = true
 
     trackingArea = .init(
       rect: bounds,
@@ -45,11 +41,12 @@ final class TablineItemView: NSView {
   var isSelected = false
   var isLast = false
   var clicked: (() -> Void)?
+  var filledColor: NSColor?
 
   override func layout() {
     super.layout()
 
-    renderBackgroundImage()
+    render()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -63,61 +60,41 @@ final class TablineItemView: NSView {
   }
 
   func render() {
-    renderBackgroundImage()
-
-    textField.attributedStringValue = .init(
-      string: text,
-      attributes: [
-        .font: makeFont(for: .tabLine),
-        .foregroundColor: store.appearance
-          .foregroundColor(for: .tabLine)
-          .appKit
-          .highlight(withLevel: isMouseInside ? 0.1 : 0)!,
-      ]
+    let color = filledColor ?? .white
+    let fill: SlantedBackgroundFill =
+      if isSelected {
+        .gradient(from: color.withAlphaComponent(0.75), to: color.withAlphaComponent(0.35))
+      } else {
+        .color(NSColor.black.withAlphaComponent(0.2))
+      }
+    backgroundImageView.image = .makeSlantedBackground(
+      isFlatRight: isLast,
+      size: bounds.size,
+      fill: fill
     )
-    textField.isHidden = isSelected
-
-    selectedTextField.attributedStringValue = .init(
-      string: text,
-      attributes: [
-        .font: makeFont(for: .tabLineSel),
-        .foregroundColor: store.appearance
-          .foregroundColor(for: .tabLineSel)
-          .appKit,
-      ]
-    )
-    selectedTextField.isHidden = !isSelected
+    textField.attributedStringValue = makeAttributedString(for: text)
   }
 
   private let store: Store
   private let backgroundImageView = NSImageView()
   private let textField = NSTextField(labelWithString: "")
-  private let selectedTextField = NSTextField(labelWithString: "")
   private var trackingArea: NSTrackingArea?
   private var isMouseInside = false
 
-  private func renderBackgroundImage() {
-    let color =
-      if isSelected {
-        store.appearance
-          .backgroundColor(for: .tabLineSel)
-          .appKit
-      } else {
-        store.appearance
-          .backgroundColor(for: .tabLine)
-          .appKit
-      }
-    backgroundImageView.image = .makeSlantedBackground(
-      isFlatRight: isLast,
-      size: bounds.size,
-      fill: .color(color)
+  private func makeAttributedString(for text: String) -> NSAttributedString {
+    .init(
+      string: text,
+      attributes: [
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
+        .foregroundColor: NSColor.windowFrameTextColor,
+      ]
     )
   }
 
   private func makeFont(for highlightName: Appearance.ObservedHighlightName) -> NSFont {
     var font = NSFont.systemFont(
       ofSize: NSFont.systemFontSize,
-      weight: store.appearance.isBold(for: highlightName) ? .medium : .regular
+      weight: store.appearance.isBold(for: highlightName) ? .heavy : .semibold
     )
     if store.appearance.isItalic(for: highlightName) {
       font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)

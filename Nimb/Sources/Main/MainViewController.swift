@@ -45,7 +45,7 @@ public class MainViewController: NSViewController {
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
 
-    view.addSubview(gridsContainerView)
+    view.addSubview(gridsContainerView, positioned: .below, relativeTo: tablineView)
     gridsContainerView.translatesAutoresizingMaskIntoConstraints = false
     gridsContainerView.clipsToBounds = true
     gridsContainerView.topToBottom(of: tablineView)

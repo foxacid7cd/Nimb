@@ -9,6 +9,9 @@ final class TablineView: NSView {
     super.init(frame: .zero)
 
     wantsLayer = true
+    layer!.shadowOpacity = 0.6
+    layer!.shadowRadius = 2
+    layer!.shadowOffset = .init(width: 0, height: 2)
     renderBackgroundColor()
 
     buffersScrollView.automaticallyAdjustsContentInsets = false
@@ -39,7 +42,7 @@ final class TablineView: NSView {
     buffersScrollView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
 
     buffersStackView.orientation = .horizontal
-    buffersStackView.spacing = 16
+    buffersStackView.spacing = 14
     buffersScrollView.documentView = buffersStackView
     buffersStackView.height(to: buffersScrollView)
     buffersStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -78,7 +81,7 @@ final class TablineView: NSView {
     tabsScrollView.widthToSuperview(nil, multiplier: 0.3, relation: .equalOrLess)
 
     tabsStackView.orientation = .horizontal
-    tabsStackView.spacing = 12
+    tabsStackView.spacing = 14
     tabsScrollView.documentView = tabsStackView
     tabsStackView.height(to: tabsScrollView)
     tabsStackView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -138,16 +141,16 @@ final class TablineView: NSView {
     } else if stateUpdates.tabline.isSelectedBufferUpdated {
       for (bufferIndex, buffer) in tabline.buffers.enumerated() {
         let itemView = buffersStackView.arrangedSubviews[bufferIndex] as! TablineItemView
-
         let isSelected = buffer.id == tabline.currentBufferID
         if isSelected != itemView.isSelected {
           itemView.isSelected = isSelected
-          itemView.render()
 
           if itemView.isSelected {
             buffersScrollView.contentView.scrollToVisible(itemView.frame)
           }
         }
+
+        itemView.render()
       }
     }
 
@@ -157,12 +160,13 @@ final class TablineView: NSView {
       for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
         let itemView = tabsStackView.arrangedSubviews[tabpageIndex] as! TablineItemView
         itemView.text = "\(tabpageIndex + 1)"
-        itemView.isSelected = tabpage.id == tabline.currentTabpageID
-        itemView.render()
 
+        itemView.isSelected = tabpage.id == tabline.currentTabpageID
         if itemView.isSelected {
           tabsScrollView.contentView.scrollToVisible(itemView.frame)
         }
+
+        itemView.render()
       }
 
     } else if stateUpdates.tabline.isSelectedTabpageUpdated {
@@ -191,10 +195,8 @@ final class TablineView: NSView {
       titleTextField.attributedStringValue = .init(
         string: store.state.title ?? "",
         attributes: [
-          .foregroundColor: store.appearance
-            .foregroundColor(for: .tabLineFill)
-            .appKit,
-          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+          .foregroundColor: NSColor.windowFrameTextColor,
+          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
           .paragraphStyle: paragraphStyle,
         ]
       )
@@ -229,6 +231,7 @@ final class TablineView: NSView {
         }
 
       let itemView = TablineItemView(store: store)
+      itemView.filledColor = .systemGreen
       itemView.text = text
       let isSelected = buffer.id == tabline.currentBufferID
       itemView.isSelected = isSelected
@@ -265,6 +268,7 @@ final class TablineView: NSView {
 
     for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
       let itemView = TablineItemView(store: store)
+      itemView.filledColor = .cyan
       itemView.text = "\(tabpageIndex + 1)"
       let isSelected = tabpage.id == tabline.currentTabpageID
       itemView.isSelected = isSelected
@@ -292,9 +296,10 @@ final class TablineView: NSView {
   }
 
   private func renderBackgroundColor() {
-    layer!.backgroundColor = store.appearance
-      .backgroundColor(for: .tabLineFill)
-      .appKit
-      .cgColor
+//    layer!.backgroundColor = store.appearance
+//      .backgroundColor(for: .tabLineFill)
+//      .appKit
+//      .cgColor
+    layer!.backgroundColor = NSColor.windowBackgroundColor.cgColor
   }
 }

@@ -16,6 +16,9 @@ public class MainWindowController: NSWindowController {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
+    customWindow.titlebarSeparatorStyle = .shadow
+    customWindow.animationBehavior = .documentWindow
+    customWindow.backgroundColor = .windowBackgroundColor
     customWindow.keyPressed = { keyPress in
       store.report(keyPress: keyPress)
     }
@@ -84,7 +87,7 @@ public class MainWindowController: NSWindowController {
   }
 
   private func renderBackgroundColor() {
-    customWindow.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+//    customWindow.backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
   }
 
   private func renderIsMouseUserInteractionEnabled() {
