@@ -9,7 +9,7 @@ public class API<Target: Channel> {
   }
 
   @discardableResult
-  public func call<T: Nims.APIFunction>(_ apiFunction: T) async throws -> T.Success {
+  public func call<T: APIFunction>(_ apiFunction: T) async throws -> T.Success {
     try await rpc.call(
       method: T.method,
       withParameters: apiFunction.parameters
@@ -17,7 +17,7 @@ public class API<Target: Channel> {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
-  public func fastCall<T: Nims.APIFunction>(_ apiFunction: T) throws {
+  public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
     try rpc.fastCall(
       method: T.method,
       withParameters: apiFunction.parameters

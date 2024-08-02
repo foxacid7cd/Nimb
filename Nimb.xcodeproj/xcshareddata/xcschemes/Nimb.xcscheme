@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "68BFEF402934CF6100564FE2"
-               BuildableName = "Nims.app"
-               BlueprintName = "Nims"
-               ReferencedContainer = "container:Nims.xcodeproj">
+               BuildableName = "Nimb.app"
+               BlueprintName = "Nimb"
+               ReferencedContainer = "container:Nimb.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,9 +47,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68BFEF402934CF6100564FE2"
-            BuildableName = "Nims.app"
-            BlueprintName = "Nims"
-            ReferencedContainer = "container:Nims.xcodeproj">
+            BuildableName = "Nimb.app"
+            BlueprintName = "Nimb"
+            ReferencedContainer = "container:Nimb.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,9 +64,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "68BFEF402934CF6100564FE2"
-            BuildableName = "Nims.app"
-            BlueprintName = "Nims"
-            ReferencedContainer = "container:Nims.xcodeproj">
+            BuildableName = "Nimb.app"
+            BlueprintName = "Nimb"
+            ReferencedContainer = "container:Nimb.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

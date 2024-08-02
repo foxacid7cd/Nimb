@@ -28,7 +28,6 @@
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
 		687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687ACD612C56E93500600058 /* AnchorLayouting.swift */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
-		6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6886E1312AC5441D004AAEEF /* TablineView.swift */; };
 		6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */; };
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
@@ -41,6 +40,7 @@
 		689D9E2F29B5127F00345713 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2E29B5127F00345713 /* Store.swift */; };
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
+		68A4101D2C5D46F20092050B /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4101C2C5D46F20092050B /* TablineView.swift */; };
 		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -133,7 +133,6 @@
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
 		687ACD612C56E93500600058 /* AnchorLayouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorLayouting.swift; sourceTree = "<group>"; };
 		6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TablineItemView.swift; sourceTree = "<group>"; };
-		6886E1312AC5441D004AAEEF /* TablineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TablineView.swift; path = Nims/Sources/Tabline/TablineView.swift; sourceTree = SOURCE_ROOT; };
 		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
 		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		689081352B3F321000252558 /* FloatingWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowView.swift; sourceTree = "<group>"; };
@@ -145,6 +144,7 @@
 		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlineView.swift; sourceTree = "<group>"; };
+		68A4101C2C5D46F20092050B /* TablineView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TablineView.swift; sourceTree = "<group>"; };
 		68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NeovimRuntime; sourceTree = "<group>"; };
 		68A8FF382AD29F650017C28D /* Instance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instance.swift; sourceTree = "<group>"; };
 		68A8FF392AD29F650017C28D /* Windows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Windows.swift; sourceTree = "<group>"; };
@@ -169,8 +169,8 @@
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
 		68BA57392AE9E7A9002E041B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
-		68BFEF412934CF6100564FE2 /* Nims.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nims.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		68BFEF4B2934CF6200564FE2 /* Nims.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nims.entitlements; sourceTree = "<group>"; };
+		68BFEF412934CF6100564FE2 /* Nimb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nimb.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nimb.entitlements; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
@@ -266,7 +266,7 @@
 		6882EB472AC5B3C8001FAA2E /* Tabline */ = {
 			isa = PBXGroup;
 			children = (
-				6886E1312AC5441D004AAEEF /* TablineView.swift */,
+				68A4101C2C5D46F20092050B /* TablineView.swift */,
 				6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */,
 				68FAD38B2AD102E20042A103 /* SlantedBackground.swift */,
 			);
@@ -335,7 +335,7 @@
 		68BFEF382934CF6100564FE2 = {
 			isa = PBXGroup;
 			children = (
-				68BFEF432934CF6100564FE2 /* Nims */,
+				68BFEF432934CF6100564FE2 /* Nimb */,
 				682DF1D5293DC59500DACFE7 /* Modules */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
@@ -348,19 +348,19 @@
 		68BFEF422934CF6100564FE2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				68BFEF412934CF6100564FE2 /* Nims.app */,
+				68BFEF412934CF6100564FE2 /* Nimb.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		68BFEF432934CF6100564FE2 /* Nims */ = {
+		68BFEF432934CF6100564FE2 /* Nimb */ = {
 			isa = PBXGroup;
 			children = (
 				68D1803529AA4A9000732402 /* Assets.xcassets */,
-				68BFEF4B2934CF6200564FE2 /* Nims.entitlements */,
+				68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */,
 				684384D02934D04A000C4A1D /* Sources */,
 			);
-			path = Nims;
+			path = Nimb;
 			sourceTree = "<group>";
 		};
 		68FAC3F12AF6724200490F09 /* State */ = {
@@ -393,9 +393,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		68BFEF402934CF6100564FE2 /* Nims */ = {
+		68BFEF402934CF6100564FE2 /* Nimb */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nims" */;
+			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nimb" */;
 			buildPhases = (
 				68BFEF3D2934CF6100564FE2 /* Sources */,
 				68F379F0294C814B00A9E7FE /* Run swiftformat */,
@@ -410,14 +410,14 @@
 			);
 			dependencies = (
 			);
-			name = Nims;
+			name = Nimb;
 			packageProductDependencies = (
 				682272BA293DD63800A36AB9 /* Library */,
 				682272BC293DD63800A36AB9 /* MessagePack */,
 				689738F22C480AF7002159BD /* TinyConstraints */,
 			);
 			productName = Nims;
-			productReference = 68BFEF412934CF6100564FE2 /* Nims.app */;
+			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -435,7 +435,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nims" */;
+			buildConfigurationList = 68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nimb" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -451,7 +451,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				68BFEF402934CF6100564FE2 /* Nims */,
+				68BFEF402934CF6100564FE2 /* Nimb */,
 			);
 		};
 /* End PBXProject section */
@@ -504,7 +504,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nims/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n\nunset EXECUTABLE_FILE\n";
+			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nimb/Sources\" \"${PROJECT_DIR}/Modules/Sources\" \"${PROJECT_DIR}/Modules/Tests\"\n\nunset EXECUTABLE_FILE\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -521,6 +521,7 @@
 				68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */,
+				68A4101D2C5D46F20092050B /* TablineView.swift in Sources */,
 				68A8FF552AD29F660017C28D /* API.swift in Sources */,
 				68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */,
 				68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */,
@@ -537,7 +538,6 @@
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,
-				6886E1322AC5441D004AAEEF /* TablineView.swift in Sources */,
 				689D9E2D29B50BF400345713 /* GridsView.swift in Sources */,
 				68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */,
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
@@ -718,7 +718,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Debug";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nimb/Nimb.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -728,7 +728,7 @@
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_KEY_CFBundleDisplayName = Nims;
+				INFOPLIST_KEY_CFBundleDisplayName = Nimb;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -736,8 +736,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NimsDebug;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NimbDebug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EMIT_CONST_VALUES = YES;
@@ -753,7 +753,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Release";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Nims/Nims.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Nimb/Nimb.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -763,7 +763,7 @@
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_KEY_CFBundleDisplayName = Nims;
+				INFOPLIST_KEY_CFBundleDisplayName = Nimb;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022 foxacid7cd. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -771,9 +771,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nims;
+				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nimb;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EMIT_CONST_VALUES = YES;
@@ -786,7 +786,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nims" */ = {
+		68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nimb" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				68BFEF4C2934CF6200564FE2 /* Debug */,
@@ -795,7 +795,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nims" */ = {
+		68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nimb" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				68BFEF4F2934CF6200564FE2 /* Debug */,

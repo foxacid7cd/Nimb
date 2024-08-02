@@ -422,7 +422,7 @@ public class Store: Sendable {
   }
 
   private func handleActionError(_ error: any Error) {
-    let errorMessage: String = if let error = error as? NimsNeovimError {
+    let errorMessage: String = if let error = error as? NimbNeovimError {
       error.errorMessages.joined(separator: "\n")
     } else if let error = error as? NeovimError {
       String(customDumping: error.raw)

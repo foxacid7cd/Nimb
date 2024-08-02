@@ -108,7 +108,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               switch response {
               case .alertFirstButtonReturn:
                 let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-                let logFileName = "Nims-error-log-\(ProcessInfo().globallyUniqueString).txt"
+                let logFileName = "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
                 let temporaryFileURL = temporaryDirectoryURL.appending(component: logFileName)
 
                 try! errorLog.data(using: .utf8)!.write(to: temporaryFileURL, options: .atomic)

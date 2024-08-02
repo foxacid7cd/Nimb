@@ -150,7 +150,7 @@ public final class Instance: Sendable {
   }
 
   public func bufTextForCopy() async throws -> String {
-    let rawSuccess = try await api.nims(method: "buf_text_for_copy")
+    let rawSuccess = try await api.nimb(method: "buf_text_for_copy")
     guard let text = rawSuccess.flatMap(\.string) else {
       throw Failure("success result is not a string", rawSuccess as Any)
     }
@@ -158,29 +158,29 @@ public final class Instance: Sendable {
   }
 
   public func edit(url: URL) async throws {
-    try await api.nims(
+    try await api.nimb(
       method: "edit",
       parameters: [.string(url.path(percentEncoded: false))]
     )
   }
 
   public func write() async throws {
-    try await api.nims(method: "write")
+    try await api.nimb(method: "write")
   }
 
   public func saveAs(url: URL) async throws {
-    try await api.nims(
+    try await api.nimb(
       method: "save_as",
       parameters: [.string(url.path(percentEncoded: false))]
     )
   }
 
   public func close() async throws {
-    try await api.nims(method: "close")
+    try await api.nimb(method: "close")
   }
 
   public func quitAll() async throws {
-    try await api.nims(method: "quit_all")
+    try await api.nimb(method: "quit_all")
   }
 
   public func requestCurrentBufferInfo() async throws -> (name: String, buftype: String) {
@@ -193,7 +193,7 @@ public final class Instance: Sendable {
   }
 
   public func report(errorMessage: String) async throws {
-    try await api.nims(
+    try await api.nimb(
       method: "echo_err",
       parameters: [.string(errorMessage)]
     )

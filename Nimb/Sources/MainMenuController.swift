@@ -53,7 +53,7 @@ final class MainMenuController: NSObject {
 
   private let store: Store
   private let settingsMenuItem = NSMenuItem(title: "Settings...", action: #selector(handleSettings), keyEquivalent: "")
-  private let quitMenuItem = NSMenuItem(title: "Quit Nims", action: #selector(handleQuit), keyEquivalent: "q")
+  private let quitMenuItem = NSMenuItem(title: "Quit Nimb", action: #selector(handleQuit), keyEquivalent: "q")
   private let openMenuItem = NSMenuItem(title: "Open", action: #selector(handleOpen), keyEquivalent: "o")
   private let saveAsMenuItem = NSMenuItem(title: "Save As", action: #selector(handleSaveAs), keyEquivalent: "s")
   private let closeWindowMenuItem = NSMenuItem(title: "Close Window", action: #selector(handleCloseWindow), keyEquivalent: "w")

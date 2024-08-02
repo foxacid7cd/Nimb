@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 
-xcodebuild archive -project Nims.xcodeproj -scheme Nims -archivePath .build/Nims.xcarchive
-xcodebuild -exportArchive -archivePath .build/Nims.xcarchive -exportOptionsPlist ./Scripts/exportOptions.plist -exportPath /Applications/
+xcodebuild archive -project Nimb.xcodeproj -scheme Nimb -archivePath .build/Nimb.xcarchive
+xcodebuild -exportArchive -archivePath .build/Nimb.xcarchive -exportOptionsPlist ./Scripts/exportOptions.plist -exportPath /Applications/

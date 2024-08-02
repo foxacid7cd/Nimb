@@ -6,9 +6,9 @@ import MessagePack
 
 public extension API {
   @discardableResult
-  func nims(method: String, parameters: [Value] = []) async throws -> Value? {
+  func nimb(method: String, parameters: [Value] = []) async throws -> Value? {
     let rawResult = try await nvimExecLua(
-      code: "return require('nims-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
+      code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
       args: parameters
     )
     switch rawResult {
@@ -17,7 +17,7 @@ public extension API {
         let rawFailure = dictionary["failure"],
         case let .array(rawErrorMessages) = rawFailure
       {
-        throw NimsNeovimError(
+        throw NimbNeovimError(
           errorMessages: rawErrorMessages.compactMap(\.string)
         )
       } else if let rawSuccess = dictionary["success"] {
@@ -29,15 +29,15 @@ public extension API {
     return nil
   }
 
-  func nimsFast(method: String, parameters: [Value] = []) throws {
+  func nimbFast(method: String, parameters: [Value] = []) throws {
     try fastCall(APIFunctions.NvimExecLua(
-      code: "return require('nims-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
+      code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
       args: parameters
     ))
   }
 }
 
 @PublicInit
-public struct NimsNeovimError: Error, Sendable {
+public struct NimbNeovimError: Error, Sendable {
   public var errorMessages: [String]
 }

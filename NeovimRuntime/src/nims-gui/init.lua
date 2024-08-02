@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 
-local r = require("nims-gui.response")
+local r = require("nimb-gui.response")
 
 local M = {}
 
