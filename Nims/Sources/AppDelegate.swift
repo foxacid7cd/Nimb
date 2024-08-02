@@ -16,9 +16,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       setupMainMenuController()
       showMainWindowController()
       runStateUpdatesTask()
+
+      do {
+        try await instance!.run()
+      } catch {
+        customDump(error)
+        assertionFailure()
+      }
     }
   }
 
+  private var instance: Instance?
   private var store: Store?
   private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
@@ -26,13 +34,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   private var settingsWindowController: SettingsWindowController?
 
   private func setupStore() async {
-    let instance = await Instance(
+    instance = await Instance(
       nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
       initialOuterGridSize: UserDefaults.standard.outerGridSize
     )
-
     store = .init(
-      instance: instance,
+      instance: instance!,
       debug: UserDefaults.standard.debug,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )

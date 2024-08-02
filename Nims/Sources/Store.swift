@@ -20,38 +20,40 @@ public class Store: Sendable {
     }
 
     instanceTask = Task { @StateActor [weak self] in
-      var bufferedUIEvents = [[UIEvent]]()
+      var bufferedUIEventsBatches = [[UIEvent]]()
 
       do {
-        for try await neovimNotification in instance {
+        for try await neovimNotificationsBatch in instance {
           guard let self else {
             return
           }
           try Task.checkCancellation()
 
-          switch neovimNotification {
-          case let .redraw(uiEvents):
-            if stateContainer.state.debug.isUIEventsLoggingEnabled {
-              customDump(uiEvents)
-            }
+          for notification in neovimNotificationsBatch {
+            switch notification {
+            case let .redraw(uiEvents):
+              if stateContainer.state.debug.isUIEventsLoggingEnabled {
+                customDump(uiEvents, maxDepth: 1)
+              }
 
-            latestUIEventsBatch = uiEvents
+              latestUIEventsBatch = uiEvents
 
-            bufferedUIEvents.append(uiEvents)
+              bufferedUIEventsBatches.append(uiEvents)
 
-            if case .flush = uiEvents.last {
-              try await dispatch(
-                Actions.ApplyUIEvents(
-                  uiEvents: bufferedUIEvents
-                    .lazy
-                    .flatMap { $0 }
+              if case .flush = uiEvents.last {
+                try await dispatch(
+                  Actions.ApplyUIEvents(
+                    uiEvents: bufferedUIEventsBatches
+                      .lazy
+                      .flatMap { $0 }
+                  )
                 )
-              )
-              bufferedUIEvents.removeAll(keepingCapacity: true)
-            }
+                bufferedUIEventsBatches.removeAll(keepingCapacity: true)
+              }
 
-          case let .nvimErrorEvent(event):
-            customDump(event)
+            case let .nvimErrorEvent(event):
+              customDump(event)
+            }
           }
         }
 

@@ -122,6 +122,11 @@ public func + (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
 }
 
 @inlinable
+public func - (lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+  .init(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+}
+
+@inlinable
 public prefix func - (point: IntegerPoint) -> IntegerPoint {
   .init(column: -point.column, row: -point.row)
 }

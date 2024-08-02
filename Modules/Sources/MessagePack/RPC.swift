@@ -93,14 +93,14 @@ extension RPC: AsyncSequence {
     }
 
     public mutating func next() async throws -> [Message.Notification]? {
-      var accumulator = [Message.Notification]()
-
       while true {
         guard let messages = try await messageBatchesIterator.next() else {
-          return accumulator.isEmpty ? nil : accumulator
+          return nil
         }
 
         try Task.checkCancellation()
+
+        accumulator.removeAll(keepingCapacity: true)
 
         for message in messages {
           switch message {
@@ -126,6 +126,7 @@ extension RPC: AsyncSequence {
 
     private let store: Store
     private var messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
+    private var accumulator = [Message.Notification]()
   }
 }
 

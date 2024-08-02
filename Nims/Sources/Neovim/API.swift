@@ -37,7 +37,7 @@ public class API<Target: Channel> {
 }
 
 extension API: AsyncSequence {
-  public typealias Element = NeovimNotification
+  public typealias Element = [NeovimNotification]
 
   public func makeAsyncIterator() -> AsyncIterator {
     .init(rpc.makeAsyncIterator())
@@ -48,37 +48,38 @@ extension API: AsyncSequence {
       self.rpcIterator = rpcIterator
     }
 
-    public mutating func next() async throws -> NeovimNotification? {
+    public mutating func next() async throws -> [NeovimNotification]? {
       while true {
-        if let notifications = try await rpcIterator.next() {
-          try Task.checkCancellation()
+        guard let notifications = try await rpcIterator.next() else {
+          return nil
+        }
 
-          for notification in notifications {
-            guard notification.method == "redraw" else {
-              throw Failure("Unknown neovim API method \(notification.method)")
-            }
+        try Task.checkCancellation()
 
-            switch notification.method {
-            case "redraw":
-              let uiEvents = try [UIEvent](rawRedrawNotificationParameters: notification.parameters)
-              return .redraw(uiEvents)
+        accumulator.removeAll(keepingCapacity: true)
 
-            case "nvim_error_event":
-              let nvimErrorEvent = try NeovimErrorEvent(parameters: notification.parameters)
-              return .nvimErrorEvent(nvimErrorEvent)
+        for notification in notifications {
+          switch notification.method {
+          case "redraw":
+            let uiEvents = try [UIEvent](rawRedrawNotificationParameters: notification.parameters)
+            accumulator.append(.redraw(uiEvents))
 
-            default:
-              logger.info("Unknown neovim API notification: \(notification.method)")
-            }
+          case "nvim_error_event":
+            let nvimErrorEvent = try NeovimErrorEvent(parameters: notification.parameters)
+            accumulator.append(.nvimErrorEvent(nvimErrorEvent))
+
+          default:
+            logger.info("Unknown neovim API notification: \(notification.method)")
           }
-        } else {
-          break
+        }
+
+        if !accumulator.isEmpty {
+          return accumulator
         }
       }
-
-      return nil
     }
 
     private var rpcIterator: RPC<Target>.AsyncIterator
+    private var accumulator = [NeovimNotification]()
   }
 }

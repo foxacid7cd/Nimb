@@ -56,7 +56,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   public func removeAnchoring() {
     for (_, anchoredLayer) in anchoredLayers {
       anchoredLayer.anchoringLayer = nil
-//      rootLayer.anchoredLayers[.init(anchoredLayer)] = anchoredLayer
     }
     anchoredLayers.removeAll(keepingCapacity: true)
 
@@ -84,13 +83,12 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 
-    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
     frame = .init(origin: origin, size: grid.size * store.font.cellSize)
-      .applying(upsideDownTransform)
-    zPosition = grid.zIndex
+      .applying(outerGridUpsideDownTransform)
 
     anchoredLayers.forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin) }
+
+    zPosition = grid.zIndex
   }
 
   @MainActor
@@ -331,6 +329,12 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
+  }
+
+  @MainActor
+  private var outerGridUpsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
   }
 
 //  @MainActor

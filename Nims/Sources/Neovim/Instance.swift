@@ -11,6 +11,9 @@ import MessagePack
 @StateActor
 public final class Instance: Sendable {
   public init(nvimResourcesURL: URL, initialOuterGridSize: IntegerSize) {
+    self.nvimResourcesURL = nvimResourcesURL
+    self.initialOuterGridSize = initialOuterGridSize
+
     var environment = ProcessInfo.processInfo.environment
     environment.merge(UserDefaults.standard.environmentOverlay, uniquingKeysWith: { _, newValue in newValue })
     environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime").standardizedFileURL.path()
@@ -39,53 +42,7 @@ public final class Instance: Sendable {
     let rpc = RPC(processChannel, loopedRequestsCount: 256)
     let api = API(rpc)
     self.api = api
-
-    task = Task { [neovimNotificationChannel, process] in
-      await withThrowingTaskGroup(of: Void.self) { taskGroup in
-        taskGroup.addTask { @StateActor in
-          for try await notification in api {
-            try Task.checkCancellation()
-
-            await neovimNotificationChannel.send(notification)
-          }
-        }
-
-        taskGroup.addTask { @StateActor in
-          try process.run()
-
-          let initLua = try String(data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")), encoding: .utf8)!
-          try await api.nvimExecLua(code: initLua, args: [])
-
-          try await api.nvimSubscribe(event: "nvim_error_event")
-
-          let uiOptions: UIOptions = [
-            .extMultigrid,
-            .extHlstate,
-            .extCmdline,
-            .extMessages,
-            .extPopupmenu,
-            .extTabline,
-          ]
-          try await api.nvimUIAttach(width: initialOuterGridSize.columnsCount, height: initialOuterGridSize.rowsCount, options: uiOptions.nvimUIAttachOptions)
-        }
-
-        while !taskGroup.isEmpty {
-          do {
-            try await taskGroup.next()
-          } catch is CancellationError {
-          } catch {
-            taskGroup.cancelAll()
-            neovimNotificationChannel.fail(error)
-          }
-        }
-
-        neovimNotificationChannel.finish()
-      }
-    }
-  }
-
-  deinit {
-    task?.cancel()
+    neovimNotificationsIterator = api.makeAsyncIterator()
   }
 
   public enum MouseButton: String, Sendable {
@@ -105,6 +62,25 @@ public final class Instance: Sendable {
     case down
     case left
     case right
+  }
+
+  public func run() async throws {
+    try process.run()
+
+    let initLua = try String(data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")), encoding: .utf8)!
+    try await api.nvimExecLua(code: initLua, args: [])
+
+    try await api.nvimSubscribe(event: "nvim_error_event")
+
+    let uiOptions: UIOptions = [
+      .extMultigrid,
+      .extHlstate,
+      .extCmdline,
+      .extMessages,
+      .extPopupmenu,
+      .extTabline,
+    ]
+    try await api.nvimUIAttach(width: initialOuterGridSize.columnsCount, height: initialOuterGridSize.rowsCount, options: uiOptions.nvimUIAttachOptions)
   }
 
   public func report(keyPress: KeyPress) {
@@ -238,16 +214,17 @@ public final class Instance: Sendable {
     ))
   }
 
+  private let nvimResourcesURL: URL
+  private let initialOuterGridSize: IntegerSize
   private let process = Process()
   private let api: API<ProcessChannel>
-  private let neovimNotificationChannel = AsyncThrowingChannel<NeovimNotification, any Error>()
-  private var task: Task<Void, Never>?
+  private nonisolated let neovimNotificationsIterator: API<ProcessChannel>.AsyncIterator
 }
 
 extension Instance: AsyncSequence {
-  public typealias Element = NeovimNotification
+  public typealias Element = [NeovimNotification]
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<NeovimNotification, any Error>.AsyncIterator {
-    neovimNotificationChannel.makeAsyncIterator()
+  public nonisolated func makeAsyncIterator() -> API<ProcessChannel>.AsyncIterator {
+    neovimNotificationsIterator
   }
 }
