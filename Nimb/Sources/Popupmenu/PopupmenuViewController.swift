@@ -63,7 +63,10 @@ public class PopupmenuViewController: NSViewController {
           let selectedItemIndex = popupmenu.selectedItemIndex,
           selectedItemIndex < popupmenu.items.count
         {
-          tableView.reloadData(forRowIndexes: [previousSelectedItemIndex, selectedItemIndex], columnIndexes: [0])
+          tableView.reloadData(
+            forRowIndexes: [previousSelectedItemIndex, selectedItemIndex],
+            columnIndexes: [0]
+          )
         } else {
           tableView.reloadData()
         }
@@ -152,8 +155,17 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
     store.state.popupmenu?.items.count ?? 0
   }
 
-  public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    var itemView = tableView.makeView(withIdentifier: PopupmenuItemView.reuseIdentifier, owner: self) as? PopupmenuItemView
+  public func tableView(
+    _ tableView: NSTableView,
+    viewFor tableColumn: NSTableColumn?,
+    row: Int
+  )
+    -> NSView?
+  {
+    var itemView = tableView.makeView(
+      withIdentifier: PopupmenuItemView.reuseIdentifier,
+      owner: self
+    ) as? PopupmenuItemView
     if itemView == nil {
       itemView = .init(store: store)
       itemView!.identifier = PopupmenuItemView.reuseIdentifier

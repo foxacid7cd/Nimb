@@ -23,6 +23,7 @@ public extension API {
       } else if let rawSuccess = dictionary["success"] {
         return rawSuccess
       }
+
     default:
       break
     }

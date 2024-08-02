@@ -37,7 +37,10 @@ public class MainViewController: NSViewController {
     tablineView.leading(to: view)
     tablineView.trailing(to: view)
 
-    let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleTablineDoubleClick))
+    let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(
+      target: self,
+      action: #selector(handleTablineDoubleClick)
+    )
     tablineDoubleClickGestureRecognizer.delaysPrimaryMouseButtonEvents = false
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
     tablineView.addGestureRecognizer(tablineDoubleClickGestureRecognizer)
@@ -107,7 +110,8 @@ public class MainViewController: NSViewController {
     gridsView.render(stateUpdates)
 
     if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary.isEmpty
+      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state.cmdlines.dictionary
+        .isEmpty
     }
 
     msgShowsViewController.render(stateUpdates)

@@ -107,7 +107,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             alert.beginSheetModal(for: self!.mainWindowController!.window!) { response in
               switch response {
               case .alertFirstButtonReturn:
-                let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                let temporaryDirectoryURL = URL(
+                  fileURLWithPath: NSTemporaryDirectory(),
+                  isDirectory: true
+                )
                 let logFileName = "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
                 let temporaryFileURL = temporaryDirectoryURL.appending(component: logFileName)
 

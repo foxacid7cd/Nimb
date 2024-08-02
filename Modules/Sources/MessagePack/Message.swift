@@ -20,14 +20,17 @@ public enum Message: Sendable, Hashable {
       self = try .request(
         Request(arrayValue: arrayValue)
       )
+
     case Response.rawMessageType:
       self = try .response(
         Response(arrayValue: arrayValue)
       )
+
     case Notification.rawMessageType:
       self = try .notification(
         Notification(arrayValue: arrayValue)
       )
+
     default:
       throw Failure("Unknown raw message type value \(arrayValue[0])")
     }
@@ -80,12 +83,13 @@ public enum Message: Sendable, Hashable {
         throw Failure("Invalid response raw array value \(arrayValue)")
       }
 
-      let result: Result = if arrayValue[2] != .nil {
-        .failure(arrayValue[2])
+      let result: Result =
+        if arrayValue[2] != .nil {
+          .failure(arrayValue[2])
 
-      } else {
-        .success(arrayValue[3])
-      }
+        } else {
+          .success(arrayValue[3])
+        }
 
       self.init(id: id, result: result)
     }
@@ -94,7 +98,12 @@ public enum Message: Sendable, Hashable {
       case success(Value)
       case failure(Value)
 
-      public func map<Success>(_ successBody: (Value) throws -> Success, _ failureBody: (Value) -> any Error) throws -> Success {
+      public func map<Success>(
+        _ successBody: (Value) throws -> Success,
+        _ failureBody: (Value) -> any Error
+      ) throws
+        -> Success
+      {
         switch self {
         case let .success(value):
           return try successBody(value)

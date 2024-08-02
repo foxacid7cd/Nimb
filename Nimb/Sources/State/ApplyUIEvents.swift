@@ -61,8 +61,14 @@ public extension Actions {
         if let oldCursor {
           apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
         }
-        if container.state.cmdlines.dictionary.isEmpty, let cursor = container.state.cursor, let style = container.state.currentCursorStyle {
-          apply(update: .cursor(style: style, position: cursor.position), toGridWithID: cursor.gridID)
+        if
+          container.state.cmdlines.dictionary.isEmpty, let cursor = container.state.cursor,
+          let style = container.state.currentCursorStyle
+        {
+          apply(
+            update: .cursor(style: style, position: cursor.position),
+            toGridWithID: cursor.gridID
+          )
         }
         updates.isCursorUpdated = true
       }
@@ -239,14 +245,22 @@ public extension Actions {
             appearanceUpdated()
 
           case let .hlAttrDefine(id, rgbAttrs, ctermAttrs, rawInfo):
-            try applyHlAttrDefine(.init(id: id, rgbAttrs: rgbAttrs, ctermAttrs: ctermAttrs, rawInfo: rawInfo))
+            try applyHlAttrDefine(.init(
+              id: id,
+              rgbAttrs: rgbAttrs,
+              ctermAttrs: ctermAttrs,
+              rawInfo: rawInfo
+            ))
 
           case let .gridResize(gridID, width, height):
             let size = IntegerSize(
               columnsCount: width,
               rowsCount: height
             )
-            if container.state.grids[gridID]?.size != size || container.state.grids[gridID]?.isDestroyed == true {
+            if
+              container.state.grids[gridID]?.size != size || container.state.grids[gridID]?
+                .isDestroyed == true
+            {
               let font = container.state.font
               let appearance = container.state.appearance
               update(&container.state.grids[gridID]) { grid in
@@ -355,7 +369,12 @@ public extension Actions {
 
             let zIndex = container.state.nextWindowZIndex()
             if container.state.grids[gridID] == nil {
-              container.state.grids[gridID] = .init(id: gridID, size: container.state.outerGrid!.size, font: container.state.font, appearance: container.state.appearance)
+              container.state.grids[gridID] = .init(
+                id: gridID,
+                size: container.state.outerGrid!.size,
+                font: container.state.font,
+                appearance: container.state.appearance
+              )
             }
             container.state.grids[gridID]!.associatedWindow = .floating(
               .init(
@@ -441,11 +460,17 @@ public extension Actions {
               tablineBuffersUpdated()
             }
 
-            if updates.tabline.isTabpagesUpdated || currentTabpageID != container.state.tabline?.currentTabpageID {
+            if
+              updates.tabline.isTabpagesUpdated || currentTabpageID != container.state.tabline?
+                .currentTabpageID
+            {
               tablineSelectedTabpageUpdated()
             }
 
-            if updates.tabline.isBuffersUpdated || currentBufferID != container.state.tabline?.currentBufferID {
+            if
+              updates.tabline.isBuffersUpdated || currentBufferID != container.state.tabline?
+                .currentBufferID
+            {
               tablineSelectedBufferUpdated()
             }
 
@@ -519,7 +544,8 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .cmdlineBlockShow(rawLines):
-            try container.state.cmdlines.blockLines[container.state.cmdlines.lastCmdlineLevel!] = rawLines
+            try container.state.cmdlines
+              .blockLines[container.state.cmdlines.lastCmdlineLevel!] = rawLines
               .map(blockLine(fromRawLine:))
 
             cmdlinesUpdated()
@@ -531,7 +557,8 @@ public extension Actions {
             cmdlinesUpdated()
 
           case .cmdlineBlockHide:
-            container.state.cmdlines.blockLines.removeValue(forKey: container.state.cmdlines.lastCmdlineLevel!)
+            container.state.cmdlines.blockLines
+              .removeValue(forKey: container.state.cmdlines.lastCmdlineLevel!)
 
             cmdlinesUpdated()
 
@@ -568,15 +595,20 @@ public extension Actions {
 
             let selectedItemIndex: Int? = selected >= 0 ? selected : nil
 
-            let anchor: Popupmenu.Anchor = switch gridID {
-            case -1:
-              .cmdline(location: col)
+            let anchor: Popupmenu.Anchor =
+              switch gridID {
+              case -1:
+                .cmdline(location: col)
 
-            default:
-              .grid(id: gridID, origin: .init(column: col, row: row))
-            }
+              default:
+                .grid(id: gridID, origin: .init(column: col, row: row))
+              }
 
-            container.state.popupmenu = .init(items: items, selectedItemIndex: selectedItemIndex, anchor: anchor)
+            container.state.popupmenu = .init(
+              items: items,
+              selectedItemIndex: selectedItemIndex,
+              anchor: anchor
+            )
             popupmenuUpdated()
 
           case let .popupmenuSelect(selected):
@@ -620,27 +652,33 @@ public extension Actions {
           let font = container.state.font
           let appearance = container.state.appearance
 
-          let results: [Grid.LineUpdatesResult] = if gridLines.count < 9 {
-            try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
-          } else {
-            try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
-              let gridLines = Array(gridLines)
-              let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 6)
-              for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
-                taskGroup.addTask {
-                  try applyLineUpdates(for: gridLinesChunk, grids: grids, font: font, appearance: appearance)
+          let results: [Grid.LineUpdatesResult] =
+            if gridLines.count < 9 {
+              try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
+            } else {
+              try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
+                let gridLines = Array(gridLines)
+                let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 6)
+                for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
+                  taskGroup.addTask {
+                    try applyLineUpdates(
+                      for: gridLinesChunk,
+                      grids: grids,
+                      font: font,
+                      appearance: appearance
+                    )
+                  }
                 }
-              }
 
-              var accumulator = [Grid.LineUpdatesResult]()
-              accumulator.reserveCapacity(gridLines.count)
-              for try await results in taskGroup {
-                accumulator += results
-              }
+                var accumulator = [Grid.LineUpdatesResult]()
+                accumulator.reserveCapacity(gridLines.count)
+                for try await results in taskGroup {
+                  accumulator += results
+                }
 
-              return accumulator
+                return accumulator
+              }
             }
-          }
 
           update(&container.state.grids[gridID]!) { grid in
             for result in results {
@@ -748,7 +786,10 @@ public extension Actions {
           let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
             .flatMap { $0[case: \.boolean] } ?? false
 
-          var highlight = (noCombine ? container.state.appearance.highlights[hlAttrDefine.id] : nil) ?? .init(id: hlAttrDefine.id)
+          var highlight = (
+            noCombine ? container.state.appearance
+              .highlights[hlAttrDefine.id] : nil
+          ) ?? .init(id: hlAttrDefine.id)
 
           for (key, value) in hlAttrDefine.rgbAttrs {
             guard case let .string(key) = key else {

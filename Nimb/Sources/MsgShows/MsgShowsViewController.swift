@@ -72,7 +72,10 @@ public class MsgShowsViewController: NSViewController {
     }
   }
 
-  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [.normalFloat, .special]
+  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [
+    .normalFloat,
+    .special,
+  ]
 
   private let store: Store
   private lazy var customView = FloatingWindowView(store: store)
@@ -117,22 +120,24 @@ public class MsgShowsViewController: NSViewController {
           let verticalInset = bigVerticalInset * 0.7
           let smallVerticalInset = max(1, store.font.cellWidth * 0.15)
           let horizontalInset = max(14, store.font.cellHeight * 0.65)
-          let topInset: Double = switch (isFirstItem, isFirstText) {
-          case (true, true):
-            bigVerticalInset
-          case (false, true):
-            verticalInset
-          default:
-            smallVerticalInset
-          }
-          let bottomInset: Double = switch (isLastItem, isLastText) {
-          case (true, true):
-            bigVerticalInset
-          case (false, true):
-            verticalInset
-          default:
-            smallVerticalInset
-          }
+          let topInset: Double =
+            switch (isFirstItem, isFirstText) {
+            case (true, true):
+              bigVerticalInset
+            case (false, true):
+              verticalInset
+            default:
+              smallVerticalInset
+            }
+          let bottomInset: Double =
+            switch (isLastItem, isLastText) {
+            case (true, true):
+              bigVerticalInset
+            case (false, true):
+              verticalInset
+            default:
+              smallVerticalInset
+            }
           textView.insets = .init(
             top: topInset,
             left: horizontalInset,
@@ -147,7 +152,8 @@ public class MsgShowsViewController: NSViewController {
       case .separator:
         let separatorView = NSView()
         separatorView.wantsLayer = true
-        separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+        separatorView.layer!.backgroundColor = store.state.appearance
+          .foregroundColor(for: .normalFloat)
           .appKit
           .withAlphaComponent(0.3)
           .cgColor

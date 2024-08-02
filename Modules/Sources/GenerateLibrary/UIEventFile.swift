@@ -46,7 +46,9 @@ public struct UIEventFile: GeneratableFile {
           }
 
           try ExtensionDeclSyntax("public extension Array<UIEvent>") {
-            try InitializerDeclSyntax("init(rawRedrawNotificationParameters: some Sequence<Value>) throws") {
+            try InitializerDeclSyntax(
+              "init(rawRedrawNotificationParameters: some Sequence<Value>) throws"
+            ) {
               "var accumulator = [UIEvent]()" as DeclSyntax
 
               try ForStmtSyntax("for rawParameter in rawRedrawNotificationParameters") {
@@ -81,7 +83,8 @@ public struct UIEventFile: GeneratableFile {
                             """
                           )
 
-                          let parametersCountCondition = "rawUIEventParameters.count == \(uiEvent.parameters.count)"
+                          let parametersCountCondition =
+                            "rawUIEventParameters.count == \(uiEvent.parameters.count)"
                           let (valueParameters, otherParameters) = uiEvent.parameters
                             .enumerated()
                             .partitioned(by: {
@@ -90,8 +93,12 @@ public struct UIEventFile: GeneratableFile {
 
                           let parameterTypeConditions = otherParameters
                             .map { index, parameter -> String in
-                              let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
-                              let initializer = parameter.type.wrapWithValueDecoder("rawUIEventParameters[\(index)]", name: identifier)
+                              let identifier = parameter.name
+                                .camelCasedAssumingSnakeCased(capitalized: false)
+                              let initializer = parameter.type.wrapWithValueDecoder(
+                                "rawUIEventParameters[\(index)]",
+                                name: identifier
+                              )
                               return initializer
                             }
 
@@ -111,7 +118,8 @@ public struct UIEventFile: GeneratableFile {
                           )
 
                           for (index, parameter) in valueParameters {
-                            let identifier = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                            let identifier = parameter.name
+                              .camelCasedAssumingSnakeCased(capitalized: false)
                             DeclSyntax(
                               "let \(raw: identifier) = rawUIEventParameters[\(raw: index)]"
                             )

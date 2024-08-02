@@ -42,7 +42,8 @@ public class CmdlinesViewController: NSViewController {
           if index < cmdlines.count - 1 {
             let separatorView = NSView()
             separatorView.wantsLayer = true
-            separatorView.layer!.backgroundColor = store.state.appearance.foregroundColor(for: .normalFloat)
+            separatorView.layer!.backgroundColor = store.state.appearance
+              .foregroundColor(for: .normalFloat)
               .with(alpha: 0.3)
               .appKit
               .cgColor
@@ -54,7 +55,10 @@ public class CmdlinesViewController: NSViewController {
       }
     }
 
-    if stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated {
+    if
+      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates
+        .isMouseUserInteractionEnabledUpdated
+    {
       for (_, cmdlineView) in cmdlineViews {
         cmdlineView.setNeedsDisplayTextView()
       }
@@ -97,7 +101,10 @@ public class CmdlinesViewController: NSViewController {
     renderCustomView()
   }
 
-  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [.normalFloat, .special]
+  private static let observedHighlightName: Set<Appearance.ObservedHighlightName> = [
+    .normalFloat,
+    .special,
+  ]
 
   private let store: Store
   private lazy var customView = FloatingWindowView(store: store)

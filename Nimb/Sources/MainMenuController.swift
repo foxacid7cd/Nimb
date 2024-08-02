@@ -52,14 +52,42 @@ final class MainMenuController: NSObject {
   var settingsClicked: (@MainActor () -> Void)?
 
   private let store: Store
-  private let settingsMenuItem = NSMenuItem(title: "Settings...", action: #selector(handleSettings), keyEquivalent: "")
-  private let quitMenuItem = NSMenuItem(title: "Quit Nimb", action: #selector(handleQuit), keyEquivalent: "q")
-  private let openMenuItem = NSMenuItem(title: "Open", action: #selector(handleOpen), keyEquivalent: "o")
-  private let saveAsMenuItem = NSMenuItem(title: "Save As", action: #selector(handleSaveAs), keyEquivalent: "s")
-  private let closeWindowMenuItem = NSMenuItem(title: "Close Window", action: #selector(handleCloseWindow), keyEquivalent: "w")
+  private let settingsMenuItem = NSMenuItem(
+    title: "Settings...",
+    action: #selector(handleSettings),
+    keyEquivalent: ""
+  )
+  private let quitMenuItem = NSMenuItem(
+    title: "Quit Nimb",
+    action: #selector(handleQuit),
+    keyEquivalent: "q"
+  )
+  private let openMenuItem = NSMenuItem(
+    title: "Open",
+    action: #selector(handleOpen),
+    keyEquivalent: "o"
+  )
+  private let saveAsMenuItem = NSMenuItem(
+    title: "Save As",
+    action: #selector(handleSaveAs),
+    keyEquivalent: "s"
+  )
+  private let closeWindowMenuItem = NSMenuItem(
+    title: "Close Window",
+    action: #selector(handleCloseWindow),
+    keyEquivalent: "w"
+  )
   private let editMenu = NSMenu(title: "Edit")
-  private let copyItem = NSMenuItem(title: "Copy", action: #selector(handleCopy), keyEquivalent: "c")
-  private let pasteItem = NSMenuItem(title: "Paste", action: #selector(handlePaste), keyEquivalent: "v")
+  private let copyItem = NSMenuItem(
+    title: "Copy",
+    action: #selector(handleCopy),
+    keyEquivalent: "c"
+  )
+  private let pasteItem = NSMenuItem(
+    title: "Paste",
+    action: #selector(handlePaste),
+    keyEquivalent: "v"
+  )
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
   private var actionTask: Task<Void, Never>?
@@ -225,7 +253,8 @@ final class MainMenuController: NSObject {
     Task { @StateActor in
       let dump = store.dumpState()
 
-      let temporaryFileURL = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).txt")
+      let temporaryFileURL = FileManager.default.temporaryDirectory
+        .appending(path: "\(UUID().uuidString).txt")
       FileManager.default.createFile(atPath: temporaryFileURL.path(), contents: nil)
 
       do {
@@ -282,18 +311,33 @@ extension MainMenuController: NSMenuDelegate {
           return .separator()
 
         case .increaseSize:
-          return makeItem("Increase Font Size", action: #selector(handleIncreaseFontSize), keyEquivalent: "+")
+          return makeItem(
+            "Increase Font Size",
+            action: #selector(handleIncreaseFontSize),
+            keyEquivalent: "+"
+          )
 
         case .decreaseSize:
-          return makeItem("Decrease Font Size", action: #selector(handleDecreaseFontSize), keyEquivalent: "-")
+          return makeItem(
+            "Decrease Font Size",
+            action: #selector(handleDecreaseFontSize),
+            keyEquivalent: "-"
+          )
 
         case .resetSize:
-          return makeItem("Reset Font Size", action: #selector(handleResetFontSize), keyEquivalent: "o", keyEquivalentModifierMask: [.control, .command])
+          return makeItem(
+            "Reset Font Size",
+            action: #selector(handleResetFontSize),
+            keyEquivalent: "o",
+            keyEquivalentModifierMask: [.control, .command]
+          )
         }
       }
+
     case debugMenu:
       let toggleUIEventsLoggingMenuItem = NSMenuItem(
-        title: store.state.debug.isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging",
+        title: store.state.debug
+          .isUIEventsLoggingEnabled ? "Disable UI Events Logging" : "Enable UI Events Logging",
         action: #selector(handleToggleUIEventsLogging),
         keyEquivalent: ""
       )
@@ -307,12 +351,20 @@ extension MainMenuController: NSMenuDelegate {
       logStateMenuItem.target = self
 
       menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem]
+
     default:
       break
     }
   }
 
-  private func makeItem(_ title: String, action: Selector? = nil, keyEquivalent: String = "", keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command]) -> NSMenuItem {
+  private func makeItem(
+    _ title: String,
+    action: Selector? = nil,
+    keyEquivalent: String = "",
+    keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command]
+  )
+    -> NSMenuItem
+  {
     let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
     item.target = self
     item.keyEquivalentModifierMask = keyEquivalentModifierMask

@@ -210,7 +210,14 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public init(text: String, rowPartCells: [RowPart.Cell], columnsRange: Range<Int>, highlightID: Highlight.ID, font: Font, appearance: Appearance) {
+  public init(
+    text: String,
+    rowPartCells: [RowPart.Cell],
+    columnsRange: Range<Int>,
+    highlightID: Highlight.ID,
+    font: Font,
+    appearance: Appearance
+  ) {
     let size = CGSize(width: Double(columnsRange.count) * font.cellWidth, height: font.cellHeight)
 
     let isBold = appearance.isBold(for: highlightID)
@@ -243,21 +250,24 @@ public struct DrawRun: Sendable {
       .map { ctRun -> GlyphRun in
         let glyphCount = CTRunGetGlyphCount(ctRun)
 
-        let glyphs = [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-          CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
+        let glyphs =
+          [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+            CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
 
-        let positions = [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-          CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
-        .map { $0 + offset }
+        let positions =
+          [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+            CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
+          .map { $0 + offset }
 
-        let advances = [CGSize](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-          CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
+        let advances =
+          [CGSize](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
+            CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
 
         let attributes = CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
         let attributesFont = attributes[.font] as? NSFont
@@ -377,7 +387,12 @@ public struct DrawRun: Sendable {
   public var underlineLineDashLengths: [CGFloat]
 
   @MainActor
-  public func drawBackground(to context: CGContext, at origin: CGPoint, font: Font, appearance: Appearance) {
+  public func drawBackground(
+    to context: CGContext,
+    at origin: CGPoint,
+    font: Font,
+    appearance: Appearance
+  ) {
     let rect = CGRect(
       origin: origin,
       size: .init(
@@ -391,7 +406,12 @@ public struct DrawRun: Sendable {
   }
 
   @MainActor
-  public func drawForeground(to context: CGContext, at origin: CGPoint, font: Font, appearance: Appearance) {
+  public func drawForeground(
+    to context: CGContext,
+    at origin: CGPoint,
+    font: Font,
+    appearance: Appearance
+  ) {
     context.setLineWidth(1)
 
     let foregroundColor = appearance.foregroundColor(for: highlightID)
@@ -459,7 +479,15 @@ public struct GlyphRun: @unchecked Sendable {
 
 @PublicInit
 public struct CursorDrawRun: Sendable {
-  public init?(layout: GridLayout, rowDrawRuns: [RowDrawRun], origin: IntegerPoint, columnsCount: Int, style: CursorStyle, font: Font, appearance: Appearance) {
+  public init?(
+    layout: GridLayout,
+    rowDrawRuns: [RowDrawRun],
+    origin: IntegerPoint,
+    columnsCount: Int,
+    style: CursorStyle,
+    font: Font,
+    appearance: Appearance
+  ) {
     var parentOrigin: IntegerPoint?
     var parentDrawRun: DrawRun?
     var cursorColumnsRange: Range<Int>?
@@ -535,7 +563,12 @@ public struct CursorDrawRun: Sendable {
   }
 
   @MainActor
-  public func draw(to context: CGContext, font: Font, appearance: Appearance, upsideDownTransform: CGAffineTransform) {
+  public func draw(
+    to context: CGContext,
+    font: Font,
+    appearance: Appearance,
+    upsideDownTransform: CGAffineTransform
+  ) {
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
 

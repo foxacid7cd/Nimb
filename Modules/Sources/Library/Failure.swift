@@ -4,7 +4,12 @@ import CustomDump
 import Foundation
 
 public struct Failure: LocalizedError, Sendable {
-  public init(fileID: StaticString = #fileID, function: StaticString = #function, line: Int = #line, _ context: Any...) {
+  public init(
+    fileID: StaticString = #fileID,
+    function: StaticString = #function,
+    line: Int = #line,
+    _ context: Any...
+  ) {
     message = context
       .map { object in
         var dump = ""

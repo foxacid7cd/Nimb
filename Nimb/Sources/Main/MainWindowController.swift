@@ -46,7 +46,8 @@ public class MainWindowController: NSWindowController {
     if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
       isWindowInitiallyShown = true
 
-      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController.estimatedContentSize(outerGridSize: outerGrid.size)
+      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
+        .estimatedContentSize(outerGridSize: outerGrid.size)
       customWindow.setContentSize(contentSize)
       customWindow.makeKeyAndOrderFront(nil)
     }

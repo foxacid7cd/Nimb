@@ -37,7 +37,8 @@ public class MsgShowTextView: NSView {
 
       let backgroundColor = store.appearance.backgroundColor(for: contentPart.highlightID)
       if backgroundColor != store.appearance.defaultBackgroundColor {
-        attributes[.backgroundColor] = store.appearance.backgroundColor(for: contentPart.highlightID).appKit
+        attributes[.backgroundColor] = store.appearance
+          .backgroundColor(for: contentPart.highlightID).appKit
           .withAlphaComponent(0.6)
       }
 
@@ -49,7 +50,10 @@ public class MsgShowTextView: NSView {
 
     let stringRange = CFRange(location: 0, length: attributedString.length)
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-    let containerSize = CGSize(width: preferredMaxWidth - (insets.left + insets.right), height: .greatestFiniteMagnitude)
+    let containerSize = CGSize(
+      width: preferredMaxWidth - (insets.left + insets.right),
+      height: .greatestFiniteMagnitude
+    )
     boundingSize = CTFramesetterSuggestFrameSizeWithConstraints(
       framesetter,
       stringRange,

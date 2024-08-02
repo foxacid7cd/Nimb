@@ -28,11 +28,12 @@ public struct KeyPress: Sendable {
     guard let unicodeScalar = characters.unicodeScalars.first else {
       return characters
     }
-    let specialKey: String? = if keyCode == kVK_Escape {
-      "Esc"
-    } else {
-      specialKeys[Int(unicodeScalar.value)]
-    }
+    let specialKey: String? =
+      if keyCode == kVK_Escape {
+        "Esc"
+      } else {
+        specialKeys[Int(unicodeScalar.value)]
+      }
     let modifiers = modifierFlags.makeModifiers(isSpecialKey: specialKey != nil)
     if !modifiers.isEmpty, let specialKey {
       return "<\((modifiers + [specialKey]).joined(separator: "-"))>"
@@ -71,7 +72,8 @@ public extension NSEvent.ModifierFlags {
 
 private let specialKeys = [
   NSEnterCharacter: "CR", NSDeleteCharacter: "BS", NSBackspaceCharacter: "BS",
-  NSDeleteCharFunctionKey: "Del", NSTabCharacter: "Tab", NSBackTabCharacter: "Tab", NSCarriageReturnCharacter: "CR",
+  NSDeleteCharFunctionKey: "Del", NSTabCharacter: "Tab", NSBackTabCharacter: "Tab",
+  NSCarriageReturnCharacter: "CR",
   NSUpArrowFunctionKey: "Up", NSDownArrowFunctionKey: "Down", NSLeftArrowFunctionKey: "Left",
   NSRightArrowFunctionKey: "Right", NSInsertFunctionKey: "Insert", NSHomeFunctionKey: "Home",
   NSBeginFunctionKey: "Begin", NSEndFunctionKey: "End", NSPageUpFunctionKey: "PageUp",

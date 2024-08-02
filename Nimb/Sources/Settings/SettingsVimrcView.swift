@@ -72,16 +72,17 @@ public class SettingsVimrcView: NSView {
   private func reloadData() {
     vimrc = UserDefaults.standard.vimrc
 
-    let selectedItem: Item = switch vimrc {
-    case .default:
-      .default
-    case .norc:
-      .norc
-    case .none:
-      .none
-    case .custom:
-      .custom
-    }
+    let selectedItem: Item =
+      switch vimrc {
+      case .default:
+        .default
+      case .norc:
+        .norc
+      case .none:
+        .none
+      case .custom:
+        .custom
+      }
     let indexOfSelectedItem = Item.allCases.firstIndex(of: selectedItem)!
 
     popUpButton.removeAllItems()
@@ -99,6 +100,7 @@ public class SettingsVimrcView: NSView {
       pathTextField.alphaValue = 0.3
       pathTextField.stringValue = FileManager.default.homeDirectoryForCurrentUser.path()
       folderButton.isEnabled = false
+
     case let .custom(url):
       pathTextField.alphaValue = 1
       pathTextField.stringValue = url.path()
@@ -125,16 +127,17 @@ public class SettingsVimrcView: NSView {
 
   @objc private func handlePopUpButtonAction() {
     let selectedItem = Item.allCases[popUpButton.indexOfSelectedItem]
-    let vimrc: Vimrc = switch selectedItem {
-    case .default:
-      .default
-    case .norc:
-      .norc
-    case .none:
-      .none
-    case .custom:
-      .custom(FileManager.default.homeDirectoryForCurrentUser)
-    }
+    let vimrc: Vimrc =
+      switch selectedItem {
+      case .default:
+        .default
+      case .norc:
+        .norc
+      case .none:
+        .none
+      case .custom:
+        .custom(FileManager.default.homeDirectoryForCurrentUser)
+      }
     UserDefaults.standard.vimrc = vimrc
 
     reloadData()

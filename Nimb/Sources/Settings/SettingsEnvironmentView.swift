@@ -91,7 +91,11 @@ public class SettingsEnvironmentView: NSView {
   private let deleteTableColumn = NSTableColumn(identifier: .init(rawValue: "delete"))
   private let tableView = NSTableView()
   private let footerView = NSView()
-  private lazy var addButton = NSButton(title: "Add", target: self, action: #selector(handleAddButtonAction))
+  private lazy var addButton = NSButton(
+    title: "Add",
+    target: self,
+    action: #selector(handleAddButtonAction)
+  )
   private let statusTextField = NSTextField(labelWithString: "")
 
   private func setup() {
@@ -199,10 +203,19 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
     items.count
   }
 
-  public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+  public func tableView(
+    _ tableView: NSTableView,
+    viewFor tableColumn: NSTableColumn?,
+    row: Int
+  )
+    -> NSView?
+  {
     let item = items[row]
     if tableColumn === nameTableColumn {
-      var itemView = tableView.makeView(withIdentifier: nameTableColumn.identifier, owner: self) as? ItemView
+      var itemView = tableView.makeView(
+        withIdentifier: nameTableColumn.identifier,
+        owner: self
+      ) as? ItemView
       if itemView == nil {
         itemView = .init(frame: .zero)
         itemView!.identifier = nameTableColumn.identifier
@@ -218,7 +231,10 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
       }
       return itemView
     } else if tableColumn === valueTableColumn {
-      var itemView = tableView.makeView(withIdentifier: valueTableColumn.identifier, owner: self) as? ItemView
+      var itemView = tableView.makeView(
+        withIdentifier: valueTableColumn.identifier,
+        owner: self
+      ) as? ItemView
       if itemView == nil {
         itemView = .init(frame: .zero)
         itemView!.identifier = valueTableColumn.identifier
@@ -234,7 +250,10 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
       }
       return itemView
     } else if tableColumn === deleteTableColumn {
-      var buttonView = tableView.makeView(withIdentifier: deleteTableColumn.identifier, owner: self) as? ButtonView
+      var buttonView = tableView.makeView(
+        withIdentifier: deleteTableColumn.identifier,
+        owner: self
+      ) as? ButtonView
       if buttonView == nil {
         buttonView = .init(frame: .zero)
         buttonView!.identifier = deleteTableColumn.identifier

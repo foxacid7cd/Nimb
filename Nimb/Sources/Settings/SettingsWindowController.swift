@@ -15,7 +15,7 @@ public class SettingsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private class CustomWindow: NSPanel {}
+  private class CustomWindow: NSPanel { }
 
   private let store: Store
   private let customWindow = CustomWindow(

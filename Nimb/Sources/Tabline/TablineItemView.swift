@@ -28,7 +28,10 @@ final class TablineItemView: NSView {
     )
     addTrackingArea(trackingArea!)
 
-    let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(handleClick))
+    let clickGestureRecognizer = NSClickGestureRecognizer(
+      target: self,
+      action: #selector(handleClick)
+    )
     clickGestureRecognizer.delaysPrimaryMouseButtonEvents = true
     addGestureRecognizer(clickGestureRecognizer)
   }
@@ -94,15 +97,16 @@ final class TablineItemView: NSView {
   private var isMouseInside = false
 
   private func renderBackgroundImage() {
-    let color = if isSelected {
-      store.appearance
-        .backgroundColor(for: .tabLineSel)
-        .appKit
-    } else {
-      store.appearance
-        .backgroundColor(for: .tabLine)
-        .appKit
-    }
+    let color =
+      if isSelected {
+        store.appearance
+          .backgroundColor(for: .tabLineSel)
+          .appKit
+      } else {
+        store.appearance
+          .backgroundColor(for: .tabLine)
+          .appKit
+      }
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,

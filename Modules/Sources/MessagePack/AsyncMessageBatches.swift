@@ -2,7 +2,9 @@
 
 import Foundation
 
-public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence, Sendable where DataBatches.Element == Data, DataBatches: Sendable {
+public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence,
+  Sendable where DataBatches.Element == Data, DataBatches: Sendable
+{
   init(_ dataBatches: DataBatches) {
     self.dataBatches = dataBatches
   }

@@ -106,7 +106,7 @@ public class Store: Sendable {
             hideMsgShowsTask = nil
 
             try? await dispatch(Actions.DismissMessages())
-          } catch {}
+          } catch { }
         }
       }
     }
@@ -131,12 +131,29 @@ public class Store: Sendable {
     instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
-  public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+  public func reportScrollWheel(
+    with direction: Instance.ScrollDirection,
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
     instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point)
   }
 
-  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
-    instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
+  public func report(
+    mouseButton: Instance.MouseButton,
+    action: Instance.MouseAction,
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
+    instance.report(
+      mouseButton: mouseButton,
+      action: action,
+      modifier: modifier,
+      gridID: gridID,
+      point: point
+    )
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
@@ -187,7 +204,7 @@ public class Store: Sendable {
           try await Task.sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
 
           instance.reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
-        } catch {}
+        } catch { }
 
         outerGridSizeThrottlingTask = nil
       }
@@ -360,7 +377,7 @@ public class Store: Sendable {
             try await dispatch(Actions.SetCursorBlinkingPhase(value: true))
             try await Task.sleep(for: .milliseconds(blinkOn))
           }
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -369,7 +386,8 @@ public class Store: Sendable {
   private func dispatch(_ action: Action) async throws {
     var updates = try await action.apply(to: stateContainer)
 
-    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates.isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
+    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates
+      .isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
     if shouldResetCursorBlinkingTask {
       cursorBlinkingTask?.cancel()
 
@@ -401,7 +419,7 @@ public class Store: Sendable {
           do {
             try await Task.sleep(for: stateThrottlingInterval - sincePrevious)
             synchronizeState()
-          } catch {}
+          } catch { }
 
           stateThrottlingTask = nil
         }
@@ -422,13 +440,14 @@ public class Store: Sendable {
   }
 
   private func handleActionError(_ error: any Error) {
-    let errorMessage: String = if let error = error as? NimbNeovimError {
-      error.errorMessages.joined(separator: "\n")
-    } else if let error = error as? NeovimError {
-      String(customDumping: error.raw)
-    } else {
-      String(customDumping: error)
-    }
+    let errorMessage: String =
+      if let error = error as? NimbNeovimError {
+        error.errorMessages.joined(separator: "\n")
+      } else if let error = error as? NeovimError {
+        String(customDumping: error.raw)
+      } else {
+        String(customDumping: error)
+      }
     if !errorMessage.isEmpty {
       Task {
         do {
@@ -444,7 +463,9 @@ public class Store: Sendable {
 extension Store: AsyncSequence {
   public typealias Element = State.Updates
 
-  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>
+    .AsyncIterator
+  {
     stateUpdatesChannel.makeAsyncIterator()
   }
 }

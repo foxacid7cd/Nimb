@@ -1,18 +1,25 @@
 --acronyms ID,IDX,RPC,UI,URL,UUID
 --allman false
+--anonymousforeach convert
 --assetliterals visual-width
 --asynccapturing 
 --beforemarks 
 --binarygrouping 4,8
+--callsiteparen default
 --categorymark "MARK: %c"
 --classthreshold 0
 --closingparen balanced
 --closurevoid remove
 --commas always
+--complexattrs preserve
+--computedvarattrs preserve
+--condassignment after-property
 --conflictmarkers reject
+--dateformat system
 --decimalgrouping 3,6
+--doccomments before-declarations
 --elseposition same-line
---emptybraces no-space
+--emptybraces spaced
 --enumnamespaces always
 --enumthreshold 0
 --exponentcase lowercase
@@ -34,19 +41,24 @@
 --indent 2
 --indentcase false
 --indentstrings false
+--initcodernil false
 --lifecycle 
 --lineaftermarks true
 --linebreaks lf
 --markcategories false
 --markextensions never
 --marktypes never
---maxwidth 200
+--maxwidth 100
 --modifierorder 
 --nevertrailing 
+--nilinit remove
+--noncomplexattrs 
 --nospaceoperators 
 --nowrapoperators 
 --octalgrouping 4,8
+--onelineforeach ignore
 --operatorfunc spaced
+--organizationmode visibility
 --organizetypes actor,class,enum,struct
 --patternlet hoist
 --ranges spaced
@@ -57,17 +69,19 @@
 --shortoptionals always
 --smarttabs enabled
 --someany true
+--storedvarattrs preserve
 --stripunusedargs unnamed-only
 --structthreshold 0
---swiftversion 5.9
+--swiftversion 5.10
 --tabwidth unspecified
 --throwcapturing 
+--timezone system
 --trailingclosures 
 --trimwhitespace always
 --typeattributes preserve
 --typeblanklines remove
+--typedelimiter space-after
 --typemark "MARK: - %t"
---varattributes preserve
 --voidtype void
 --wraparguments before-first
 --wrapcollections before-first
@@ -80,4 +94,5 @@
 --wraptypealiases before-first
 --xcodeindentation disabled
 --yodaswap always
---enable acronyms,blankLineAfterImports,blankLinesBetweenImports,docComments,isEmpty,markTypes,organizeDeclarations,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapSwitchCases
+--disable blankLinesBetweenChainedFunctions
+--enable acronyms,blankLineAfterSwitchCase,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapMultilineConditionalAssignment,wrapSwitchCases

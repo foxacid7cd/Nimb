@@ -6,11 +6,20 @@ import MessagePack
 
 public enum UIEventsChunk: Sendable {
   case single(UIEvent)
-  case gridLines(gridID: Grid.ID, hlAttrDefines: [HlAttrDefine], gridLines: IntKeyedDictionary<[GridLine]>)
+  case gridLines(
+    gridID: Grid.ID,
+    hlAttrDefines: [HlAttrDefine],
+    gridLines: IntKeyedDictionary<[GridLine]>
+  )
 
   @PublicInit
   public struct HlAttrDefine: Sendable {
-    public init(id: Int, rgbAttrs: [Value: Value], ctermAttrs: [Value: Value], rawInfo: [Value]) throws {
+    public init(
+      id: Int,
+      rgbAttrs: [Value: Value],
+      ctermAttrs: [Value: Value],
+      rawInfo: [Value]
+    ) throws {
       self.id = id
       self.rgbAttrs = rgbAttrs
       self.ctermAttrs = ctermAttrs

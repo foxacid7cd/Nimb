@@ -40,7 +40,10 @@ public struct Metadata: @unchecked Sendable {
 
       errorTypes: rawErrorTypes
         .map { key, value -> Metadata.ErrorType in
-          guard let name = key.string, let dict = value.dictionary, let id = dict["id"]?.integer else {
+          guard
+            let name = key.string, let dict = value.dictionary,
+            let id = dict["id"]?.integer
+          else {
             throw Failure("Could not parse error_type", key, value)
           }
           return .init(id: id, name: name)
@@ -145,8 +148,11 @@ public struct Metadata: @unchecked Sendable {
             let rawDataIdentifier = "raw\(capitalizedName)Data"
             return """
               case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(expr),
-              let \(name) = References.\(type.name)(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
-            """
+              let \(name) = References.\(
+                type
+                  .name
+            )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
+              """
           }
         )
       }

@@ -107,16 +107,17 @@ public extension UserDefaults {
       return value
     }
     set(value) {
-      let encoded: String? = switch value {
-      case .default:
-        nil
-      case .norc:
-        "norc"
-      case .none:
-        "none"
-      case let .custom(url):
-        url.standardizedFileURL.path()
-      }
+      let encoded: String? =
+        switch value {
+        case .default:
+          nil
+        case .norc:
+          "norc"
+        case .none:
+          "none"
+        case let .custom(url):
+          url.standardizedFileURL.path()
+        }
       setValue(encoded, forKey: "vimrc")
     }
   }

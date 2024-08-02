@@ -83,12 +83,13 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       }
     }
 
-    let updatedLayoutGridIDs = if stateUpdates.isFontUpdated {
-      Set(store.state.grids.keys)
+    let updatedLayoutGridIDs =
+      if stateUpdates.isFontUpdated {
+        Set(store.state.grids.keys)
 
-    } else {
-      stateUpdates.updatedLayoutGridIDs
-    }
+      } else {
+        stateUpdates.updatedLayoutGridIDs
+      }
 
     for gridID in updatedLayoutGridIDs {
       if gridID == Grid.OuterID {
@@ -113,6 +114,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
           anchoredLayers[.init(gridLayer)] = gridLayer
 
           gridLayer.positionInAnchoringLayer = window.origin * store.font.cellSize
+
         case let .floating(floatingWindow):
           let anchoringLayer = arrangedGridLayer(forGridWithID: floatingWindow.anchorGridID)
 
@@ -138,6 +140,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
             x: gridColumn * store.font.cellWidth,
             y: gridRow * store.font.cellHeight
           )
+
         case .external:
           gridLayer.isHidden = true
         }
@@ -241,7 +244,11 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   private var rightMouseInteractionTarget: GridLayer?
   private var otherMouseInteractionTarget: GridLayer?
 
-  private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
+  private func report(
+    mouseButton: Instance.MouseButton,
+    action: Instance.MouseAction,
+    with event: NSEvent
+  ) {
     switch action {
     case .press:
       let location = layer!.convert(event.locationInWindow, from: nil)
@@ -258,14 +265,15 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       }
 
     case .drag:
-      let gridLayer = switch mouseButton {
-      case .left:
-        leftMouseInteractionTarget
-      case .right:
-        rightMouseInteractionTarget
-      case .middle:
-        otherMouseInteractionTarget
-      }
+      let gridLayer =
+        switch mouseButton {
+        case .left:
+          leftMouseInteractionTarget
+        case .right:
+          rightMouseInteractionTarget
+        case .middle:
+          otherMouseInteractionTarget
+        }
       gridLayer?.report(mouseButton: mouseButton, action: action, with: event)
 
     case .release:
@@ -274,9 +282,11 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       case .left:
         gridLayer = leftMouseInteractionTarget
         leftMouseInteractionTarget = nil
+
       case .right:
         gridLayer = rightMouseInteractionTarget
         rightMouseInteractionTarget = nil
+
       case .middle:
         gridLayer = otherMouseInteractionTarget
         otherMouseInteractionTarget = nil

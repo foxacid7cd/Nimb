@@ -61,15 +61,16 @@ public struct RowLayout: Sendable {
         let textRangeStart = partText.endIndex
         partText.append(text)
 
-        let columnsCount = if !text.isEmpty {
-          if nextCellIndex < cells.endIndex, cells[nextCellIndex].text.isEmpty {
-            2
+        let columnsCount =
+          if !text.isEmpty {
+            if nextCellIndex < cells.endIndex, cells[nextCellIndex].text.isEmpty {
+              2
+            } else {
+              1
+            }
           } else {
-            1
+            0
           }
-        } else {
-          0
-        }
 
         let columnsRangeStart = partColumnsCount
         partColumnsCount += columnsCount

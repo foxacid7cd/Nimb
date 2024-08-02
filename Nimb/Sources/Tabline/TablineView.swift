@@ -19,13 +19,17 @@ final class TablineView: NSView {
     buffersScrollView.isVerticalContentSizeConstraintActive = false
     buffersScrollView.wantsLayer = true
     buffersScrollView.layer!.mask = buffersMaskLayer
-    buffersScrollViewFrameObservation = buffersScrollView.observe(\.frame, options: .new) { [weak self] buffersScrollView, _ in
-      Task { @MainActor [self] in
-        let size = buffersScrollView.frame.size
-        self?.buffersMaskLayer.frame = .init(origin: .init(), size: size)
-        self?.buffersMaskLayer.contents = NSImage.makeSlantedBackground(size: size, fill: .color(.black))
+    buffersScrollViewFrameObservation = buffersScrollView
+      .observe(\.frame, options: .new) { [weak self] buffersScrollView, _ in
+        Task { @MainActor [self] in
+          let size = buffersScrollView.frame.size
+          self?.buffersMaskLayer.frame = .init(origin: .init(), size: size)
+          self?.buffersMaskLayer.contents = NSImage.makeSlantedBackground(
+            size: size,
+            fill: .color(.black)
+          )
+        }
       }
-    }
     addSubview(buffersScrollView)
     buffersScrollView.leading(to: self, offset: 68)
     buffersScrollView.top(to: self)
@@ -54,13 +58,18 @@ final class TablineView: NSView {
     tabsScrollView.isVerticalContentSizeConstraintActive = false
     tabsScrollView.wantsLayer = true
     tabsScrollView.layer!.mask = tabsMaskLayer
-    tabsScrollViewFrameObservation = tabsScrollView.observe(\.frame, options: .new) { [weak self] tabsScrollView, _ in
-      Task { @MainActor [self] in
-        let size = tabsScrollView.frame.size
-        self?.tabsMaskLayer.frame = .init(origin: .init(), size: size)
-        self?.tabsMaskLayer.contents = NSImage.makeSlantedBackground(isFlatRight: true, size: size, fill: .color(.black))
+    tabsScrollViewFrameObservation = tabsScrollView
+      .observe(\.frame, options: .new) { [weak self] tabsScrollView, _ in
+        Task { @MainActor [self] in
+          let size = tabsScrollView.frame.size
+          self?.tabsMaskLayer.frame = .init(origin: .init(), size: size)
+          self?.tabsMaskLayer.contents = NSImage.makeSlantedBackground(
+            isFlatRight: true,
+            size: size,
+            fill: .color(.black)
+          )
+        }
       }
-    }
     addSubview(tabsScrollView)
     tabsScrollView.trailing(to: self)
     tabsScrollView.top(to: self)
@@ -212,11 +221,12 @@ final class TablineView: NSView {
     }
 
     for buffer in tabline.buffers {
-      let text: String = if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
-        String(match.output.1)
-      } else {
-        buffer.name
-      }
+      let text: String =
+        if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
+          String(match.output.1)
+        } else {
+          buffer.name
+        }
 
       let itemView = TablineItemView(store: store)
       itemView.text = text

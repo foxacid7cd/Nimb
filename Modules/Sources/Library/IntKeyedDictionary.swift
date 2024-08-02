@@ -163,7 +163,7 @@ extension IntKeyedDictionary: ExpressibleByDictionaryLiteral {
   }
 }
 
-extension IntKeyedDictionary: Sendable where Value: Sendable {}
+extension IntKeyedDictionary: Sendable where Value: Sendable { }
 
 extension IntKeyedDictionary: Equatable where Value: Equatable {
   public static func == (lhs: IntKeyedDictionary<Value>, rhs: IntKeyedDictionary<Value>) -> Bool {

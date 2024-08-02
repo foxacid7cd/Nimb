@@ -22,7 +22,8 @@ public struct APIFunctionsFile: GeneratableFile {
 
         try EnumDeclSyntax("public enum APIFunctions") {
           for function in metadata.functions {
-            let camelCasedFunctionName = function.name.camelCasedAssumingSnakeCased(capitalized: true)
+            let camelCasedFunctionName = function.name
+              .camelCasedAssumingSnakeCased(capitalized: true)
 
             try StructDeclSyntax(
               """
@@ -36,7 +37,8 @@ public struct APIFunctionsFile: GeneratableFile {
               )
 
               for parameter in function.parameters {
-                let camelCasedParameterName = parameter.name.camelCasedAssumingSnakeCased(capitalized: false)
+                let camelCasedParameterName = parameter.name
+                  .camelCasedAssumingSnakeCased(capitalized: false)
 
                 DeclSyntax(
                   "public var \(raw: camelCasedParameterName): \(raw: parameter.type.swift.signature)"
@@ -58,10 +60,15 @@ public struct APIFunctionsFile: GeneratableFile {
               }
 
               if function.returnType.swift[case: \.value] == nil {
-                try FunctionDeclSyntax("public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)") {
+                try FunctionDeclSyntax(
+                  "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)"
+                ) {
                   StmtSyntax(
                     """
-                    guard \(raw: function.returnType.wrapWithValueDecoder("raw", name: "value")) else {
+                    guard \(raw: function.returnType.wrapWithValueDecoder(
+                      "raw",
+                      name: "value"
+                    )) else {
                       throw Failure("failed decoding success return value", raw)
                     }
                     """
@@ -89,13 +96,18 @@ public struct APIFunctionsFile: GeneratableFile {
                 return "\(name): \(name)"
               }
               .joined(separator: ", ")
-            let camelCasedFunctionName = function.name.camelCasedAssumingSnakeCased(capitalized: false)
-            let capitalizedCamelCasedFunctionName = function.name.camelCasedAssumingSnakeCased(capitalized: true)
+            let camelCasedFunctionName = function.name
+              .camelCasedAssumingSnakeCased(capitalized: false)
+            let capitalizedCamelCasedFunctionName = function.name
+              .camelCasedAssumingSnakeCased(capitalized: true)
             try FunctionDeclSyntax(
               """
               \(raw: function.deprecationAttributeIfNeeded)
               @discardableResult
-              func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(raw: function.returnType.swift.signature)
+              func \(raw: camelCasedFunctionName)(\(raw: parametersInSignature)) async throws -> \(
+                raw: function
+                  .returnType.swift.signature
+              )
               """
             ) {
               ExprSyntax(

@@ -70,6 +70,6 @@ public struct TwoDimensionalArray<Element> {
   }
 }
 
-extension TwoDimensionalArray: Sendable where Element: Sendable {}
+extension TwoDimensionalArray: Sendable where Element: Sendable { }
 
-extension TwoDimensionalArray: Equatable where Element: Equatable {}
+extension TwoDimensionalArray: Equatable where Element: Equatable { }

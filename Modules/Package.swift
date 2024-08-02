@@ -1,7 +1,7 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 
-import PackageDescription
 import CompilerPluginSupport
+import PackageDescription
 
 let package = Package(
   name: "Modules",
@@ -27,7 +27,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/swift-case-paths", from: "1.3.2"),
     .package(url: "https://github.com/pointfreeco/swift-overture", from: "0.5.0"),
     .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.3.2"),
-    .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main")
+    .package(url: "https://github.com/apple/swift-async-algorithms", branch: "main"),
   ],
   targets: [
     .executableTarget(

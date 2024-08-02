@@ -203,18 +203,24 @@ public struct Grid: Sendable, Identifiable {
       return .needsDisplay
 
     case let .cursor(style, position):
-      let columnsCount = if
-        position.row < layout.rowLayouts.count,
-        let rowPart = layout.rowLayouts[position.row].parts
-          .first(where: { $0.columnsRange.contains(position.column) }),
-        position.column < rowPart.columnsCount,
-        let rowPartCell = rowPart.cells
-          .first(where: { (($0.columnsRange.lowerBound + rowPart.columnsRange.lowerBound) ..< ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)).contains(position.column) })
-      {
-        rowPartCell.columnsRange.count
-      } else {
-        1
-      }
+      let columnsCount =
+        if
+          position.row < layout.rowLayouts.count,
+          let rowPart = layout.rowLayouts[position.row].parts
+            .first(where: { $0.columnsRange.contains(position.column) }),
+          position.column < rowPart.columnsCount,
+          let rowPartCell = rowPart.cells
+            .first(where: {
+              (
+                ($0.columnsRange.lowerBound + rowPart.columnsRange.lowerBound) ..<
+                  ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
+              ).contains(position.column)
+            })
+        {
+          rowPartCell.columnsRange.count
+        } else {
+          1
+        }
 
       drawRuns.cursorDrawRun = .init(
         layout: layout,
@@ -240,7 +246,14 @@ public struct Grid: Sendable, Identifiable {
   }
 
   @Sendable
-  public func applying(lineUpdates: [(originColumn: Int, cells: [Cell])], forRow row: Int, font: Font, appearance: Appearance) -> LineUpdatesResult {
+  public func applying(
+    lineUpdates: [(originColumn: Int, cells: [Cell])],
+    forRow row: Int,
+    font: Font,
+    appearance: Appearance
+  )
+    -> LineUpdatesResult
+  {
     var dirtyRectangles = [IntegerRectangle]()
     var shouldUpdateCursorDrawRun = false
 

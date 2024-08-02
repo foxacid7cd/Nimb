@@ -74,8 +74,10 @@ public struct State: Sendable {
         }
       }
       isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
-      isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates.isPopupmenuSelectionUpdated
-      isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates.isCursorBlinkingPhaseUpdated
+      isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates
+        .isPopupmenuSelectionUpdated
+      isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates
+        .isCursorBlinkingPhaseUpdated
       isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
       isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
     }

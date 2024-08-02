@@ -47,7 +47,10 @@ public class RPC<Target: Channel> {
     )
   }
 
-  public func fastCallsTransaction(with calls: some Sequence<(method: String, parameters: [Value])>) throws {
+  public func fastCallsTransaction(with calls: some Sequence<(
+    method: String,
+    parameters: [Value]
+  )>) throws {
     var data = Data()
 
     for call in calls {
@@ -88,7 +91,10 @@ extension RPC: AsyncSequence {
   }
 
   public struct AsyncIterator: AsyncIteratorProtocol {
-    fileprivate init(store: Store, messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator) {
+    fileprivate init(
+      store: Store,
+      messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
+    ) {
       self.store = store
       self.messageBatchesIterator = messageBatchesIterator
     }

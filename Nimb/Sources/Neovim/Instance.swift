@@ -15,23 +15,28 @@ public final class Instance: Sendable {
     self.initialOuterGridSize = initialOuterGridSize
 
     var environment = ProcessInfo.processInfo.environment
-    environment.merge(UserDefaults.standard.environmentOverlay, uniquingKeysWith: { _, newValue in newValue })
-    environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime").standardizedFileURL.path()
+    environment.merge(
+      UserDefaults.standard.environmentOverlay,
+      uniquingKeysWith: { _, newValue in newValue }
+    )
+    environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime").standardizedFileURL
+      .path()
     process.environment = environment
 
     let shell = environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
 
-    let vimrcArgument: String = switch UserDefaults.standard.vimrc {
-    case .default:
-      ""
-    case .norc:
-      " -u NORC"
-    case .none:
-      " -u NONE"
-    case let .custom(url):
-      " -u '\(url.path())'"
-    }
+    let vimrcArgument: String =
+      switch UserDefaults.standard.vimrc {
+      case .default:
+        ""
+      case .norc:
+        " -u NORC"
+      case .none:
+        " -u NONE"
+      case let .custom(url):
+        " -u '\(url.path())'"
+      }
 
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     process.arguments = ["-l", "-c", "'\(nvimExecutablePath)' --embed --headless" + vimrcArgument]
@@ -69,7 +74,10 @@ public final class Instance: Sendable {
   public func run() async throws {
     try process.run()
 
-    let initLua = try String(data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")), encoding: .utf8)!
+    let initLua = try String(
+      data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")),
+      encoding: .utf8
+    )!
     try await api.nvimExecLua(code: initLua, args: [])
 
     try await api.nvimSubscribe(event: "nvim_error_event")
@@ -82,7 +90,11 @@ public final class Instance: Sendable {
       .extPopupmenu,
       .extTabline,
     ]
-    try await api.nvimUIAttach(width: initialOuterGridSize.columnsCount, height: initialOuterGridSize.rowsCount, options: uiOptions.nvimUIAttachOptions)
+    try await api.nvimUIAttach(
+      width: initialOuterGridSize.columnsCount,
+      height: initialOuterGridSize.rowsCount,
+      options: uiOptions.nvimUIAttachOptions
+    )
   }
 
   public func report(keyPress: KeyPress) {
@@ -101,11 +113,29 @@ public final class Instance: Sendable {
     ))
   }
 
-  public func reportScrollWheel(with direction: ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
-    try? api.fastCall(APIFunctions.NvimInputMouse(button: "wheel", action: direction.rawValue, modifier: modifier, grid: gridID, row: point.row, col: point.column))
+  public func reportScrollWheel(
+    with direction: ScrollDirection,
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
+    try? api.fastCall(APIFunctions.NvimInputMouse(
+      button: "wheel",
+      action: direction.rawValue,
+      modifier: modifier,
+      grid: gridID,
+      row: point.row,
+      col: point.column
+    ))
   }
 
-  public func report(mouseButton: MouseButton, action: MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
+  public func report(
+    mouseButton: MouseButton,
+    action: MouseAction,
+    modifier: String,
+    gridID: Grid.ID,
+    point: IntegerPoint
+  ) {
     try? api.fastCall(APIFunctions.NvimInputMouse(
       button: mouseButton.rawValue,
       action: action.rawValue,
@@ -117,7 +147,12 @@ public final class Instance: Sendable {
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) throws {
-    try api.fastCall(APIFunctions.NvimSelectPopupmenuItem(item: index, insert: true, finish: isFinish, opts: [:]))
+    try api.fastCall(APIFunctions.NvimSelectPopupmenuItem(
+      item: index,
+      insert: true,
+      finish: isFinish,
+      opts: [:]
+    ))
   }
 
   public func reportTablineBufferSelected(withID id: Buffer.ID) throws {

@@ -62,7 +62,8 @@ public class PopupmenuItemView: NSView {
       ]
     )
 
-    let kindHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuKindSel : .pmenuKind
+    let kindHighlightName: Appearance
+      .ObservedHighlightName = isSelected ? .pmenuKindSel : .pmenuKind
     let kindAttributedString = NSMutableAttributedString(
       string: item.kind,
       attributes: [
@@ -74,11 +75,13 @@ public class PopupmenuItemView: NSView {
       ]
     )
     if !item.menu.isEmpty {
-      let menuHighlightName: Appearance.ObservedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
+      let menuHighlightName: Appearance
+        .ObservedHighlightName = isSelected ? .pmenuExtraSel : .pmenuExtra
       kindAttributedString.append(.init(
         string: " \(item.menu)",
         attributes: [
-          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.5).appKit,
+          .foregroundColor: appearance.foregroundColor(for: menuHighlightName).with(alpha: 0.5)
+            .appKit,
           .font: font.appKit(
             isBold: appearance.isBold(for: menuHighlightName),
             isItalic: appearance.isItalic(for: menuHighlightName)

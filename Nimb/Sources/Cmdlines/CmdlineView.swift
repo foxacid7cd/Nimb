@@ -232,7 +232,9 @@ private class CmdlineTextView: NSView {
       range: .init(location: 0, length: cmdlineAttributedString.length)
     )
 
-    func makeCTLines(for attributedString: NSAttributedString) -> (ctFramesetter: CTFramesetter, ctFrame: CTFrame, ctLines: [CTLine]) {
+    func makeCTLines(for attributedString: NSAttributedString)
+      -> (ctFramesetter: CTFramesetter, ctFrame: CTFrame, ctLines: [CTLine])
+    {
       let ctFramesetter = CTFramesetterCreateWithAttributedString(attributedString)
 
       let stringRange = CFRange(location: 0, length: 0)
@@ -260,8 +262,16 @@ private class CmdlineTextView: NSView {
     }
     self.blockLinesAttributedString = blockLinesAttributedString
     self.cmdlineAttributedString = cmdlineAttributedString
-    (blockLinesCTFramesetter, blockLinesCTFrame, blockLineCTLines) = makeCTLines(for: blockLinesAttributedString)
-    (cmdlineCTFramesetter, cmdlineCTFrame, cmdlineCTLines) = makeCTLines(for: cmdlineAttributedString)
+    (
+      blockLinesCTFramesetter,
+      blockLinesCTFrame,
+      blockLineCTLines
+    ) = makeCTLines(for: blockLinesAttributedString)
+    (
+      cmdlineCTFramesetter,
+      cmdlineCTFrame,
+      cmdlineCTLines
+    ) = makeCTLines(for: cmdlineAttributedString)
 
     invalidateIntrinsicContentSize()
     setNeedsDisplay(bounds)
@@ -341,7 +351,10 @@ private class CmdlineTextView: NSView {
           let glyphRuns = CTLineGetGlyphRuns(cmdlineCTLine) as! [CTRun]
           for glyphRun in glyphRuns {
             context.textMatrix = CTRunGetTextMatrix(glyphRun)
-            context.textPosition = .init(x: 0, y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender)
+            context.textPosition = .init(
+              x: 0,
+              y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
+            )
             let attributes = CTRunGetAttributes(glyphRun) as! [NSAttributedString.Key: Any]
             let attributesFont = attributes[.font] as? NSFont
             CTFontDrawGlyphs(

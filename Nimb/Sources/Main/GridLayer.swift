@@ -96,7 +96,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     }
 
     if
-      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates.isMouseUserInteractionEnabledUpdated,
+      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates
+        .isMouseUserInteractionEnabledUpdated,
       let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
       dirtyRectangles.append(cursorDrawRun.rectangle)
@@ -195,36 +196,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
     var xScrollingDelta = xScrollingAccumulator - xScrollingReported
     var yScrollingDelta = yScrollingAccumulator - yScrollingReported
-//    if isScrollingHorizontal != true, abs(yScrollingDelta) > yThreshold {
-//      if isScrollingHorizontal == nil {
-//        isScrollingHorizontal = false
-//      }
-//
-//      count = Int(abs(yScrollingDelta) / yThreshold)
-//      let yScrollingToBeReported = yThreshold * Double(count)
-//      if yScrollingDelta > 0 {
-//        direction = .down
-//        yScrollingReported += yScrollingToBeReported
-//      } else {
-//        direction = .up
-//        yScrollingReported -= yScrollingToBeReported
-//      }
-//
-//    } else if isScrollingHorizontal != false, abs(xScrollingDelta) > xThreshold * 0.5 {
-//      if isScrollingHorizontal == nil {
-//        isScrollingHorizontal = true
-//      }
-//
-//      count = Int(abs(xScrollingDelta) / xThreshold)
-//      let xScrollingToBeReported = xThreshold * Double(count)
-//      if xScrollingDelta > 0 {
-//        direction = .right
-//        xScrollingReported += xScrollingToBeReported
-//      } else {
-//        direction = .left
-//        xScrollingReported -= xScrollingToBeReported
-//      }
-//    }
 
     var horizontalScrollCount = 0
     var verticalScrollCount = 0
@@ -315,7 +286,11 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   }
 
   @MainActor
-  public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
+  public func report(
+    mouseButton: Instance.MouseButton,
+    action: Instance.MouseAction,
+    with event: NSEvent
+  ) {
     guard store.state.isMouseUserInteractionEnabled else {
       return
     }

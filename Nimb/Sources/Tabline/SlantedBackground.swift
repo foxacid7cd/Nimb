@@ -43,7 +43,12 @@ extension NSImage {
           colors: [from.cgColor, to.cgColor] as CFArray,
           locations: [0, 1]
         )!
-        cgContext.drawLinearGradient(gradient, start: .init(), end: .init(x: 0, y: size.height), options: [])
+        cgContext.drawLinearGradient(
+          gradient,
+          start: .init(),
+          end: .init(x: 0, y: size.height),
+          options: []
+        )
 
       case let .color(color):
         cgContext.setFillColor(color.cgColor)
