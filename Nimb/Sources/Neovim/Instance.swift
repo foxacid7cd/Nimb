@@ -19,8 +19,10 @@ public final class Instance: Sendable {
       UserDefaults.standard.environmentOverlay,
       uniquingKeysWith: { _, newValue in newValue }
     )
-    environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime").standardizedFileURL
+    environment["VIMRUNTIME"] = nvimResourcesURL.appending(path: "runtime")
+      .absoluteURL
       .path()
+      .replacing(/\/$/, with: "")
     process.environment = environment
 
     let shell = environment["SHELL"] ?? "/bin/zsh"
