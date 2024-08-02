@@ -36,6 +36,12 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
   public var positionInAnchoringLayer = CGPoint()
 
+  public var needsAnchorLayout = false {
+    didSet {
+      anchoringLayer?.needsAnchorLayout = true
+    }
+  }
+
   override public var frame: CGRect {
     didSet {
       setNeedsDisplay()
@@ -66,19 +72,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     positionInAnchoringLayer = .init()
   }
 
-//  override public var intrinsicContentSize: NSSize {
-//    grid.size * store.font.cellSize
-//  }
-
-//  override public func viewWillMove(toWindow newWindow: NSWindow?) {
-//    super.viewWillMove(toWindow: newWindow)
-//
-//    if let newWindow {
-//      layer!.contentsScale = newWindow.backingScaleFactor
-//      layer!.setNeedsDisplay()
-//    }
-//  }
-
   @MainActor
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
@@ -89,6 +82,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     anchoredLayers.forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin) }
 
     zPosition = grid.zIndex
+
+    needsAnchorLayout = false
   }
 
   @MainActor
@@ -310,11 +305,12 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 //    )
 //  }
 //
-//  public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
-//    let viewFrame = (gridFrame * store.font.cellSize)
-//      .applying(upsideDownTransform)
-//    return convert(viewFrame, to: nil)
-//  }
+  @MainActor
+  public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
+    let viewFrame = (gridFrame * store.font.cellSize)
+      .applying(upsideDownTransform)
+    return convert(viewFrame, to: nil)
+  }
 
   private let gridID: Grid.ID
   private let store: Store

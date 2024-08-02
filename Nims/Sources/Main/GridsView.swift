@@ -10,6 +10,13 @@ public class GridsView: NSView, AnchorLayoutingLayer {
 
     wantsLayer = true
     layer!.drawsAsynchronously = true
+    layer!.actions = [
+      "onOrderIn": NSNull(),
+      "onOrderOut": NSNull(),
+      "sublayers": NSNull(),
+      "contents": NSNull(),
+      "bounds": NSNull(),
+    ]
   }
 
   @available(*, unavailable)
@@ -20,6 +27,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   public var anchoringLayer: AnchorLayoutingLayer?
   public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
   public var positionInAnchoringLayer = CGPoint()
+  public var needsAnchorLayout = false
 
   override public var intrinsicContentSize: NSSize {
     guard let outerGrid = store.state.outerGrid else {
@@ -70,6 +78,10 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   }
 
   public func render(_ stateUpdates: State.Updates) {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
+
     for gridID in stateUpdates.destroyedGridIDs {
       if let layer = arrangedGridLayers.removeValue(forKey: gridID) {
         layer.removeAnchoring()
@@ -138,9 +150,11 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       } else {
         gridLayer.isHidden = true
       }
+
+      gridLayer.needsAnchorLayout = true
     }
 
-    if !stateUpdates.updatedLayoutGridIDs.isEmpty {
+    if needsAnchorLayout {
       layoutAnchoredLayers(anchoringLayerOrigin: .init())
     }
 
@@ -153,8 +167,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   }
 
   public func windowFrame(forGridID gridID: Grid.ID, gridFrame: IntegerRectangle) -> CGRect? {
-    //    arrangedGridLayers[gridID]?.layer.windowFrame(forGridFrame: gridFrame)
-    .init()
+    arrangedGridLayers[gridID]?.windowFrame(forGridFrame: gridFrame)
   }
 
   public func arrangedGridLayer(forGridWithID id: Grid.ID) -> GridLayer {
@@ -181,6 +194,8 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     for anchoredLayer in anchoredLayers {
       anchoredLayer.value.layoutAnchoredLayers(anchoringLayerOrigin: origin)
     }
+
+    needsAnchorLayout = false
   }
 
   private var store: Store
