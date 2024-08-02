@@ -175,9 +175,9 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return
     }
 
-    let scrollingSpeedMultiplier = 0.8
-    let xThreshold = store.font.cellWidth * 6 * scrollingSpeedMultiplier
-    let yThreshold = store.font.cellHeight * 3 * scrollingSpeedMultiplier
+    let scrollingSpeedMultiplier = 1.0
+    let xThreshold = store.font.cellWidth * 4 * scrollingSpeedMultiplier
+    let yThreshold = store.font.cellHeight * scrollingSpeedMultiplier
 
     if event.phase == .began {
       isScrollingHorizontal = nil
@@ -187,7 +187,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.8
     xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 

@@ -4,6 +4,26 @@ local r = require("nims-gui.response")
 
 local M = {}
 
+---@param direction string
+---@param count number
+function M.scroll(direction, count)
+  local directions = {
+    up = [[\<c-y>]],
+    down = [[\<c-e>]],
+    left = [[zhzh]],
+    right = [[zlzl]],
+  }
+  local suffix = directions[direction]
+
+  local cmd = [[exe "normal! ]]
+  for _=1,count do
+    cmd = cmd .. suffix
+  end
+  cmd = cmd .. [["]]
+
+  vim.cmd(cmd)
+end
+
 function M.buf_text_for_copy()
   local a_orig = vim.fn.getreg("a")
   local mode = vim.fn.mode()

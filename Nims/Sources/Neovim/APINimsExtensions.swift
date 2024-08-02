@@ -28,6 +28,13 @@ public extension API {
     }
     return nil
   }
+
+  func nimsFast(method: String, parameters: [Value] = []) throws {
+    try fastCall(APIFunctions.NvimExecLua(
+      code: "return require('nims-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
+      args: parameters
+    ))
+  }
 }
 
 @PublicInit

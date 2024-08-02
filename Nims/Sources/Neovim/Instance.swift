@@ -102,17 +102,7 @@ public final class Instance: Sendable {
   }
 
   public func reportScrollWheel(with direction: ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) {
-    try? api.fastCallsTransaction(with: Array(
-      repeating: APIFunctions.NvimInputMouse(
-        button: "wheel",
-        action: direction.rawValue,
-        modifier: modifier,
-        grid: gridID,
-        row: point.row,
-        col: point.column
-      ),
-      count: count
-    ))
+    try? api.nimsFast(method: "scroll", parameters: [.string(direction.rawValue), .integer(count)])
   }
 
   public func report(mouseButton: MouseButton, action: MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
