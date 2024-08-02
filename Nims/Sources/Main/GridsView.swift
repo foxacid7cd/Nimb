@@ -198,6 +198,65 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     needsAnchorLayout = false
   }
 
+  override public func mouseDown(with event: NSEvent) {
+    report(mouseButton: .left, action: .press, with: event)
+  }
+
+  override public func mouseDragged(with event: NSEvent) {
+    report(mouseButton: .left, action: .drag, with: event)
+  }
+
+  override public func mouseUp(with event: NSEvent) {
+    report(mouseButton: .left, action: .release, with: event)
+  }
+
+  override public func rightMouseDown(with event: NSEvent) {
+    report(mouseButton: .right, action: .press, with: event)
+  }
+
+  override public func rightMouseDragged(with event: NSEvent) {
+    report(mouseButton: .right, action: .drag, with: event)
+  }
+
+  override public func rightMouseUp(with event: NSEvent) {
+    report(mouseButton: .right, action: .release, with: event)
+  }
+
+  override public func otherMouseDown(with event: NSEvent) {
+    report(mouseButton: .middle, action: .press, with: event)
+  }
+
+  override public func otherMouseDragged(with event: NSEvent) {
+    report(mouseButton: .middle, action: .drag, with: event)
+  }
+
+  override public func otherMouseUp(with event: NSEvent) {
+    report(mouseButton: .middle, action: .release, with: event)
+  }
+
+  override public func scrollWheel(with event: NSEvent) {
+    let location = layer!.convert(event.locationInWindow, from: nil)
+    if let gridLayer = layer!.hitTest(location) as? GridLayer {
+      gridLayer.scrollWheel(with: event)
+    }
+  }
+
   private var store: Store
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
+
+  private func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, with event: NSEvent) {
+    let location = layer!.convert(event.locationInWindow, from: nil)
+    if let gridLayer = layer!.hitTest(location) as? GridLayer {
+      gridLayer.report(mouseButton: mouseButton, action: action, with: event)
+    }
+  }
+
+  private func point(for event: NSEvent) -> IntegerPoint {
+    let upsideDownLocation = convert(event.locationInWindow, from: nil)
+      .applying(upsideDownTransform)
+    return .init(
+      column: Int(upsideDownLocation.x / store.font.cellWidth),
+      row: Int(upsideDownLocation.y / store.font.cellHeight)
+    )
+  }
 }
