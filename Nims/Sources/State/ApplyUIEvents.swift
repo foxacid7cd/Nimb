@@ -618,12 +618,12 @@ public extension Actions {
           let font = container.state.font
           let appearance = container.state.appearance
 
-          let results: [Grid.LineUpdatesResult] = if gridLines.count < 15 {
+          let results: [Grid.LineUpdatesResult] = if gridLines.count < 9 {
             try applyLineUpdates(for: gridLines, grids: grids, font: font, appearance: appearance)
           } else {
             try await withThrowingTaskGroup(of: [Grid.LineUpdatesResult].self) { taskGroup in
               let gridLines = Array(gridLines)
-              let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 10)
+              let chunkSize = gridLines.optimalChunkSize(preferredChunkSize: 6)
               for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
                 taskGroup.addTask {
                   try applyLineUpdates(for: gridLinesChunk, grids: grids, font: font, appearance: appearance)
