@@ -9,6 +9,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     super.init(frame: .init())
 
     wantsLayer = true
+    layer!.masksToBounds = true
     layer!.drawsAsynchronously = true
     layer!.actions = [
       "onOrderIn": NSNull(),
@@ -41,10 +42,6 @@ public class GridsView: NSView, AnchorLayoutingLayer {
       .translatedBy(x: 0, y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight)
   }
 
-  override public var mouseDownCanMoveWindow: Bool {
-    true
-  }
-
   override public func updateTrackingAreas() {
     super.updateTrackingAreas()
 
@@ -66,7 +63,8 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     if let newWindow {
       let scale = newWindow.backingScaleFactor
       layer!.contentsScale = scale
-      layer!.sublayers?.forEach { $0.contentsScale = scale }
+
+      arrangedGridLayers.values.forEach { $0.contentsScale = scale }
     }
   }
 
@@ -78,10 +76,6 @@ public class GridsView: NSView, AnchorLayoutingLayer {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    defer { CATransaction.commit() }
-
     for gridID in stateUpdates.destroyedGridIDs {
       if let layer = arrangedGridLayers.removeValue(forKey: gridID) {
         layer.removeAnchoring()

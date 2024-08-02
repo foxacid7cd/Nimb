@@ -8,7 +8,7 @@ import Foundation
 import Library
 import MessagePack
 
-@StateActor
+@MainActor
 public final class Instance: Sendable {
   public init(nvimResourcesURL: URL, initialOuterGridSize: IntegerSize) {
     self.nvimResourcesURL = nvimResourcesURL
@@ -41,7 +41,7 @@ public final class Instance: Sendable {
     process.qualityOfService = .userInteractive
 
     let processChannel = ProcessChannel(process)
-    let rpc = RPC(processChannel, loopedRequestsCount: 256)
+    let rpc = RPC(processChannel, maximumConcurrentRequests: 500)
     let api = API(rpc)
     self.api = api
     neovimNotificationsIterator = api.makeAsyncIterator()

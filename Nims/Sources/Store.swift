@@ -88,34 +88,33 @@ public class Store: Sendable {
     try? await dispatch(Actions.SetFont(value: font))
   }
 
-  @StateActor
   public func scheduleHideMsgShowsIfPossible() {
-    if !stateContainer.state.hasModalMsgShows, !stateContainer.state.isMsgShowsDismissed {
-      hideMsgShowsTask?.cancel()
+    Task { @StateActor in
+      if !stateContainer.state.hasModalMsgShows, !stateContainer.state.isMsgShowsDismissed {
+        hideMsgShowsTask?.cancel()
 
-      hideMsgShowsTask = Task { [weak self] in
-        do {
-          try await Task.sleep(for: .milliseconds(50))
+        hideMsgShowsTask = Task { [weak self] in
+          do {
+            try await Task.sleep(for: .milliseconds(50))
 
-          guard let self else {
-            return
-          }
+            guard let self else {
+              return
+            }
 
-          hideMsgShowsTask = nil
+            hideMsgShowsTask = nil
 
-          try? await dispatch(Actions.DismissMessages())
-        } catch {}
+            try? await dispatch(Actions.DismissMessages())
+          } catch {}
+        }
       }
     }
   }
 
-  @StateActor
   public func report(keyPress: KeyPress) {
     instance.report(keyPress: keyPress)
     scheduleHideMsgShowsIfPossible()
   }
 
-  @StateActor
   public func reportMouseMove(modifier: String, gridID: Grid.ID, point: IntegerPoint) {
     if
       let previousMouseMove,
@@ -130,17 +129,14 @@ public class Store: Sendable {
     instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
   }
 
-  @StateActor
   public func reportScrollWheel(with direction: Instance.ScrollDirection, modifier: String, gridID: Grid.ID, point: IntegerPoint, count: Int) {
     instance.reportScrollWheel(with: direction, modifier: modifier, gridID: gridID, point: point, count: count)
   }
 
-  @StateActor
   public func report(mouseButton: Instance.MouseButton, action: Instance.MouseAction, modifier: String, gridID: Grid.ID, point: IntegerPoint) {
     instance.report(mouseButton: mouseButton, action: action, modifier: modifier, gridID: gridID, point: point)
   }
 
-  @StateActor
   public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
     do {
       try instance.reportPopupmenuItemSelected(atIndex: index, isFinish: isFinish)
@@ -149,7 +145,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func reportTablineBufferSelected(withID id: Buffer.ID) {
     do {
       try instance.reportTablineBufferSelected(withID: id)
@@ -158,7 +153,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func reportTablineTabpageSelected(withID id: Tabpage.ID) {
     do {
       try instance.reportTablineTabpageSelected(withID: id)
@@ -167,7 +161,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func reportOuterGrid(changedSizeTo size: IntegerSize) {
     guard size != previousReportedOuterGridSize else {
       return
@@ -199,7 +192,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func reportPumBounds(rectangle: IntegerRectangle) {
     guard rectangle != previousPumBounds else {
       return
@@ -213,7 +205,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func reportPaste(text: String) {
     do {
       try instance.reportPaste(text: text)
@@ -242,7 +233,7 @@ public class Store: Sendable {
       do {
         return try await instance.bufTextForCopy()
       } catch {
-        handleActionError(error)
+        await handleActionError(error)
         return nil
       }
 
@@ -263,12 +254,10 @@ public class Store: Sendable {
     return nil
   }
 
-  @StateActor
   public func toggleUIEventsLogging() async {
     try? await dispatch(Actions.ToggleDebugUIEventsLogging())
   }
 
-  @StateActor
   public func edit(url: URL) async {
     do {
       try await instance.edit(url: url)
@@ -277,7 +266,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func write() async {
     do {
       try await instance.write()
@@ -286,7 +274,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func saveAs(url: URL) async {
     do {
       try await instance.saveAs(url: url)
@@ -295,7 +282,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func close() async {
     do {
       try await instance.close()
@@ -304,7 +290,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func quitAll() async {
     do {
       try await instance.quitAll()
@@ -313,7 +298,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func requestCurrentBufferInfo() async -> (name: String, buftype: String)? {
     do {
       return try await instance.requestCurrentBufferInfo()
@@ -340,12 +324,12 @@ public class Store: Sendable {
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
   @StateActor private var hideMsgShowsTask: Task<Void, Never>?
-  @StateActor private var previousPumBounds: IntegerRectangle?
-  @StateActor private var previousMouseMove: (modifier: String, gridID: Int, point: IntegerPoint)?
-  @StateActor private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
-  @StateActor private var outerGridSizeThrottlingTask: Task<Void, Never>?
-  @StateActor private var previousReportedOuterGridSizeInstant = ContinuousClock.now
-  @StateActor private var previousReportedOuterGridSize: IntegerSize?
+  private var previousPumBounds: IntegerRectangle?
+  private var previousMouseMove: (modifier: String, gridID: Int, point: IntegerPoint)?
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
+  private var outerGridSizeThrottlingTask: Task<Void, Never>?
+  private var previousReportedOuterGridSizeInstant = ContinuousClock.now
+  private var previousReportedOuterGridSize: IntegerSize?
   @StateActor private var latestUIEventsBatch: [UIEvent]?
 
   @StateActor
@@ -435,7 +419,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   private func handleActionError(_ error: any Error) {
     let errorMessage: String = if let error = error as? NimsNeovimError {
       error.errorMessages.joined(separator: "\n")

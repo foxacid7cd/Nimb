@@ -34,7 +34,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   private var settingsWindowController: SettingsWindowController?
 
   private func setupStore() async {
-    instance = await Instance(
+    instance = Instance(
       nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
       initialOuterGridSize: UserDefaults.standard.outerGridSize
     )
@@ -84,7 +84,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               if stateUpdates.isDebugUpdated {
                 UserDefaults.standard.debug = store.state.debug
               }
+              CATransaction.begin()
+              CATransaction.setDisableActions(true)
               mainWindowController.render(stateUpdates)
+              CATransaction.commit()
             }
 
             continuation.resume(returning: ())

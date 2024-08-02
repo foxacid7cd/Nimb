@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import Algorithms
 import AsyncAlgorithms
 import CasePaths
 import Collections
@@ -8,9 +9,9 @@ import Foundation
 import Library
 
 public class RPC<Target: Channel> {
-  public init(_ target: Target, loopedRequestsCount: Int) {
+  public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
-    store = .init(loopedRequestsCount: loopedRequestsCount)
+    store = .init(maximumConcurrentRequests: maximumConcurrentRequests)
     messageBatches = .init(target.dataBatches)
   }
 
@@ -131,15 +132,16 @@ extension RPC: AsyncSequence {
 }
 
 private class Store {
-  init(loopedRequestsCount: Int) {
-    self.loopedRequestsCount = loopedRequestsCount
+  init(maximumConcurrentRequests: Int) {
+    self.maximumConcurrentRequests = maximumConcurrentRequests
+    currentRequests = .init(repeating: nil, count: maximumConcurrentRequests)
   }
 
   func announceRequest(_ handler: (@Sendable (Message.Response) -> Void)? = nil) -> Int {
     let id = announcedRequestsCount
 
     (announcedRequestsCount, _) = (announcedRequestsCount + 1)
-      .remainderReportingOverflow(dividingBy: loopedRequestsCount)
+      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
 
     if let handler {
       currentRequests[id] = handler
@@ -148,14 +150,15 @@ private class Store {
   }
 
   func responseReceived(_ response: Message.Response, forRequestWithID id: Int) {
-    guard let handler = currentRequests.removeValue(forKey: id) else {
+    guard let handler = currentRequests[id] else {
       return
     }
+    currentRequests[id] = nil
 
     handler(response)
   }
 
-  private let loopedRequestsCount: Int
+  private let maximumConcurrentRequests: Int
+  private var currentRequests: [(@Sendable (Message.Response) -> Void)?]
   private var announcedRequestsCount = 0
-  private var currentRequests = TreeDictionary<Int, @Sendable (Message.Response) -> Void>()
 }

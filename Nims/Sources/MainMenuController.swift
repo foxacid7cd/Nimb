@@ -211,7 +211,7 @@ final class MainMenuController: NSObject {
     actionTask = Task {
       defer { actionTask = nil }
 
-      await store.reportPaste(text: text)
+      store.reportPaste(text: text)
     }
   }
 

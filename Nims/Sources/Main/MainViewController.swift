@@ -120,9 +120,7 @@ public class MainViewController: NSViewController {
       columnsCount: Int(gridsContainerView.frame.width / store.font.cellWidth),
       rowsCount: Int(gridsContainerView.frame.height / store.font.cellHeight)
     )
-    Task {
-      await store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
-    }
+    store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
@@ -176,11 +174,9 @@ public class MainViewController: NSViewController {
     popupmenuFrame = view.convert(popupmenuFrame, to: nil)
     popupmenuFrame = gridsView.convert(popupmenuFrame, from: nil)
     popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
-    Task {
-      await store.reportPumBounds(rectangle: .init(
-        frame: popupmenuFrame,
-        cellSize: store.font.cellSize
-      ))
-    }
+    store.reportPumBounds(rectangle: .init(
+      frame: popupmenuFrame,
+      cellSize: store.font.cellSize
+    ))
   }
 }

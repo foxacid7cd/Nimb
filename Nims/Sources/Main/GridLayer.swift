@@ -175,7 +175,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return
     }
 
-    let scrollingSpeedMultiplier = 1.2
+    let scrollingSpeedMultiplier = 0.8
     let xThreshold = store.font.cellWidth * 6 * scrollingSpeedMultiplier
     let yThreshold = store.font.cellHeight * 3 * scrollingSpeedMultiplier
 
@@ -187,7 +187,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.8
+    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase.rawValue == 0 ? 1 : 0.6
     xScrollingAccumulator -= event.scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event.scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
@@ -229,18 +229,16 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
     if let direction, count > 0 {
       let point = point(for: event)
-      Task {
-        await store.reportScrollWheel(
-          with: direction,
-          modifier: event.modifierFlags
-            .makeModifiers(isSpecialKey: false)
-            .joined(),
-          gridID: gridID,
-          point: point,
-          count: count
-        )
-        await store.scheduleHideMsgShowsIfPossible()
-      }
+      store.reportScrollWheel(
+        with: direction,
+        modifier: event.modifierFlags
+          .makeModifiers(isSpecialKey: false)
+          .joined(),
+        gridID: gridID,
+        point: point,
+        count: count
+      )
+      store.scheduleHideMsgShowsIfPossible()
     }
   }
 
@@ -249,15 +247,13 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     guard store.state.isMouseUserInteractionEnabled, store.state.cmdlines.dictionary.isEmpty else {
       return
     }
-    Task {
-      await store.reportMouseMove(
-        modifier: event.modifierFlags
-          .makeModifiers(isSpecialKey: false)
-          .joined(),
-        gridID: gridID,
-        point: point(for: event)
-      )
-    }
+    store.reportMouseMove(
+      modifier: event.modifierFlags
+        .makeModifiers(isSpecialKey: false)
+        .joined(),
+      gridID: gridID,
+      point: point(for: event)
+    )
   }
 
   @MainActor
@@ -283,18 +279,16 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return
     }
     let point = point(for: event)
-    Task {
-      await store.report(
-        mouseButton: mouseButton,
-        action: action,
-        modifier: event.modifierFlags
-          .makeModifiers(isSpecialKey: false)
-          .joined(),
-        gridID: gridID,
-        point: point
-      )
-      await store.scheduleHideMsgShowsIfPossible()
-    }
+    store.report(
+      mouseButton: mouseButton,
+      action: action,
+      modifier: event.modifierFlags
+        .makeModifiers(isSpecialKey: false)
+        .joined(),
+      gridID: gridID,
+      point: point
+    )
+    store.scheduleHideMsgShowsIfPossible()
   }
 
   private let gridID: Grid.ID

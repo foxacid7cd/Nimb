@@ -235,9 +235,7 @@ final class TablineView: NSView {
       }
       itemView.isLast = false
       itemView.clicked = { [store] in
-        Task {
-          await store.reportTablineBufferSelected(withID: buffer.id)
-        }
+        store.reportTablineBufferSelected(withID: buffer.id)
       }
       itemView.render()
       buffersStackView.addArrangedSubview(itemView)
@@ -273,9 +271,7 @@ final class TablineView: NSView {
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
       itemView.clicked = { [store] in
-        Task {
-          await store.reportTablineTabpageSelected(withID: tabpage.id)
-        }
+        store.reportTablineTabpageSelected(withID: tabpage.id)
       }
       itemView.render()
       tabsStackView.addArrangedSubview(itemView)
