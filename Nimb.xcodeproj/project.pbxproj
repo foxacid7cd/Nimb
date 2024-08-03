@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
+		6814C12C2C5E166900FF3968 /* CollectMsgpackData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C12B2C5E166900FF3968 /* CollectMsgpackData.swift */; };
+		6814C12F2C5E171B00FF3968 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 6814C12E2C5E171B00FF3968 /* ArgumentParser */; };
+		6814C1332C5E180A00FF3968 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 6814C1322C5E180A00FF3968 /* MessagePack */; };
+		6814C1362C5E186F00FF3968 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 6814C1352C5E186F00FF3968 /* Library */; };
+		6814C1392C5E341F00FF3968 /* SpeedTuner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C1382C5E341F00FF3968 /* SpeedTuner.swift */; };
 		681F40302B40D6B30083A87B /* StateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681F402F2B40D6B30083A87B /* StateContainer.swift */; };
 		682272BB293DD63800A36AB9 /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BA293DD63800A36AB9 /* Library */; };
 		682272BD293DD63800A36AB9 /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 682272BC293DD63800A36AB9 /* MessagePack */; };
@@ -78,6 +83,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		6814C11E2C5E155E00FF3968 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		684385012934D180000C4A1D /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -114,6 +128,10 @@
 /* Begin PBXFileReference section */
 		68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuViewController.swift; sourceTree = "<group>"; };
 		68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuItemView.swift; sourceTree = "<group>"; };
+		6814C1202C5E155E00FF3968 /* speed-tuner */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "speed-tuner"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6814C12B2C5E166900FF3968 /* CollectMsgpackData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectMsgpackData.swift; sourceTree = "<group>"; };
+		6814C1342C5E185400FF3968 /* speed-tuner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "speed-tuner.entitlements"; sourceTree = "<group>"; };
+		6814C1382C5E341F00FF3968 /* SpeedTuner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedTuner.swift; sourceTree = "<group>"; };
 		681F402F2B40D6B30083A87B /* StateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateContainer.swift; sourceTree = "<group>"; };
 		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		682BFD0B2AE8913400EDA77E /* GlobalActors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalActors.swift; sourceTree = "<group>"; };
@@ -185,6 +203,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6814C11D2C5E155E00FF3968 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6814C1362C5E186F00FF3968 /* Library in Frameworks */,
+				6814C12F2C5E171B00FF3968 /* ArgumentParser in Frameworks */,
+				6814C1332C5E180A00FF3968 /* MessagePack in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		68BFEF3E2934CF6100564FE2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -207,6 +235,16 @@
 				68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */,
 			);
 			path = Popupmenu;
+			sourceTree = "<group>";
+		};
+		6814C1212C5E155E00FF3968 /* speed-tuner */ = {
+			isa = PBXGroup;
+			children = (
+				6814C1342C5E185400FF3968 /* speed-tuner.entitlements */,
+				6814C12B2C5E166900FF3968 /* CollectMsgpackData.swift */,
+				6814C1382C5E341F00FF3968 /* SpeedTuner.swift */,
+			);
+			path = "speed-tuner";
 			sourceTree = "<group>";
 		};
 		684384D02934D04A000C4A1D /* Sources */ = {
@@ -337,6 +375,7 @@
 			children = (
 				68BFEF432934CF6100564FE2 /* Nimb */,
 				682DF1D5293DC59500DACFE7 /* Modules */,
+				6814C1212C5E155E00FF3968 /* speed-tuner */,
 				68BFEF422934CF6100564FE2 /* Products */,
 				6843851A2934D3EE000C4A1D /* Frameworks */,
 				68A323CF293B93070028A87D /* Locations */,
@@ -349,6 +388,7 @@
 			isa = PBXGroup;
 			children = (
 				68BFEF412934CF6100564FE2 /* Nimb.app */,
+				6814C1202C5E155E00FF3968 /* speed-tuner */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -393,6 +433,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		6814C11F2C5E155E00FF3968 /* speed-tuner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6814C1262C5E155E00FF3968 /* Build configuration list for PBXNativeTarget "speed-tuner" */;
+			buildPhases = (
+				6814C11C2C5E155E00FF3968 /* Sources */,
+				6814C11D2C5E155E00FF3968 /* Frameworks */,
+				6814C11E2C5E155E00FF3968 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "speed-tuner";
+			packageProductDependencies = (
+				6814C12E2C5E171B00FF3968 /* ArgumentParser */,
+				6814C1322C5E180A00FF3968 /* MessagePack */,
+				6814C1352C5E186F00FF3968 /* Library */,
+			);
+			productName = "speed-tuner";
+			productReference = 6814C1202C5E155E00FF3968 /* speed-tuner */;
+			productType = "com.apple.product-type.tool";
+		};
 		68BFEF402934CF6100564FE2 /* Nimb */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nimb" */;
@@ -427,9 +489,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1410;
+				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1510;
 				TargetAttributes = {
+					6814C11F2C5E155E00FF3968 = {
+						CreatedOnToolsVersion = 15.4;
+					};
 					68BFEF402934CF6100564FE2 = {
 						CreatedOnToolsVersion = 14.1;
 					};
@@ -446,12 +511,15 @@
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
 				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
+				6814C12D2C5E171B00FF3968 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				6814C1372C5E21B300FF3968 /* XCRemoteSwiftPackageReference "swift-system" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				68BFEF402934CF6100564FE2 /* Nimb */,
+				6814C11F2C5E155E00FF3968 /* speed-tuner */,
 			);
 		};
 /* End PBXProject section */
@@ -509,6 +577,15 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6814C11C2C5E155E00FF3968 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6814C1392C5E341F00FF3968 /* SpeedTuner.swift in Sources */,
+				6814C12C2C5E166900FF3968 /* CollectMsgpackData.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		68BFEF3D2934CF6100564FE2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -580,6 +657,47 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		6814C1242C5E155E00FF3968 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = "speed-tuner/speed-tuner.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6814C1252C5E155E00FF3968 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = "speed-tuner/speed-tuner.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		68BFEF4C2934CF6200564FE2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -786,6 +904,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6814C1262C5E155E00FF3968 /* Build configuration list for PBXNativeTarget "speed-tuner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6814C1242C5E155E00FF3968 /* Debug */,
+				6814C1252C5E155E00FF3968 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		68BFEF3C2934CF6100564FE2 /* Build configuration list for PBXProject "Nimb" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -807,6 +934,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		6814C12D2C5E171B00FF3968 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
+		6814C1372C5E21B300FF3968 /* XCRemoteSwiftPackageReference "swift-system" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-system.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.2;
+			};
+		};
 		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/roberthein/TinyConstraints.git";
@@ -818,6 +961,19 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6814C12E2C5E171B00FF3968 /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6814C12D2C5E171B00FF3968 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+		6814C1322C5E180A00FF3968 /* MessagePack */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MessagePack;
+		};
+		6814C1352C5E186F00FF3968 /* Library */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Library;
+		};
 		682272BA293DD63800A36AB9 /* Library */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Library;
