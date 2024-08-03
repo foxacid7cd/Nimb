@@ -3,7 +3,7 @@
 import AppKit
 import Library
 
-public class GridsView: NSView, AnchorLayoutingLayer {
+public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
@@ -11,13 +11,7 @@ public class GridsView: NSView, AnchorLayoutingLayer {
     wantsLayer = true
     layer!.masksToBounds = true
     layer!.drawsAsynchronously = true
-    layer!.actions = [
-      "onOrderIn": NSNull(),
-      "onOrderOut": NSNull(),
-      "sublayers": NSNull(),
-      "contents": NSNull(),
-      "bounds": NSNull(),
-    ]
+    layer!.delegate = self
   }
 
   @available(*, unavailable)
@@ -43,6 +37,10 @@ public class GridsView: NSView, AnchorLayoutingLayer {
         x: 0,
         y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight
       )
+  }
+
+  public func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
+    NSNull()
   }
 
   override public func updateTrackingAreas() {

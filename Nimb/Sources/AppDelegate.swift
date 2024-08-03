@@ -20,8 +20,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       do {
         try await instance!.run()
       } catch {
-        customDump(error)
-        assertionFailure()
+        showAlert(error: error)
       }
     }
   }
@@ -87,60 +86,56 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 UserDefaults.standard.debug = store.state.debug
               }
 
-              CATransaction.begin()
-              CATransaction.setDisableActions(true)
               mainWindowController.render(stateUpdates)
-              CATransaction.commit()
             }
 
             continuation.resume(returning: ())
           } catch {
-            var errorLog = ""
-            customDump(error, to: &errorLog)
-            logger
-              .error("Store state updates loop resulted in error: \(errorLog))")
-
-            let alert = NSAlert()
-            alert.alertStyle = .critical
-            alert.messageText = "Something went wrong!"
-            alert
-              .informativeText =
-              "Store state updates loop ended with uncaught error"
-            alert.addButton(withTitle: "Show log")
-            alert.addButton(withTitle: "Close")
-            alert
-              .beginSheetModal(
-                for: self!.mainWindowController!
-                  .window!
-              ) { response in
-                switch response {
-                case .alertFirstButtonReturn:
-                  let temporaryDirectoryURL = URL(
-                    fileURLWithPath: NSTemporaryDirectory(),
-                    isDirectory: true
-                  )
-                  let logFileName =
-                    "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
-                  let temporaryFileURL = temporaryDirectoryURL
-                    .appending(component: logFileName)
-
-                  try! errorLog.data(using: .utf8)!.write(
-                    to: temporaryFileURL,
-                    options: .atomic
-                  )
-                  NSWorkspace.shared.open(temporaryFileURL)
-
-                default:
-                  break
-                }
-
-                continuation.resume(returning: ())
-              }
+            self?.showAlert(error: error)
           }
         }
       }
 
       NSApplication.shared.terminate(nil)
     }
+  }
+
+  private func showAlert(error: Error) {
+    let alert = NSAlert()
+    alert.alertStyle = .critical
+    alert.messageText = "Something went wrong!"
+    alert
+      .informativeText =
+      "Store state updates loop ended with uncaught error"
+    alert.addButton(withTitle: "Show log")
+    alert.addButton(withTitle: "Close")
+    alert
+      .beginSheetModal(
+        for: mainWindowController!.window!
+      ) { response in
+        switch response {
+        case .alertFirstButtonReturn:
+          let temporaryDirectoryURL = URL(
+            fileURLWithPath: NSTemporaryDirectory(),
+            isDirectory: true
+          )
+          let logFileName =
+            "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
+          let temporaryFileURL = temporaryDirectoryURL
+            .appending(component: logFileName)
+
+          var errorLog = ""
+          customDump(error, to: &errorLog)
+
+          try! errorLog.data(using: .utf8)!.write(
+            to: temporaryFileURL,
+            options: .atomic
+          )
+          NSWorkspace.shared.open(temporaryFileURL)
+
+        default:
+          break
+        }
+      }
   }
 }

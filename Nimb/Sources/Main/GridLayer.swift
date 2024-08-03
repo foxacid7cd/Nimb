@@ -18,13 +18,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     super.init()
 
     drawsAsynchronously = true
-    actions = [
-      "onOrderIn": NSNull(),
-      "onOrderOut": NSNull(),
-      "sublayers": NSNull(),
-      "contents": NSNull(),
-      "bounds": NSNull(),
-    ]
   }
 
   @available(*, unavailable)
@@ -60,6 +53,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
         )
       fatalError()
     }
+  }
+
+  override public func action(forKey event: String) -> (any CAAction)? {
+    NSNull()
   }
 
   public func removeAnchoring() {
