@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "Modules",
-  platforms: [.macOS(.v13)],
+  platforms: [.macOS(.v10_15)],
   products: [
     .executable(name: "generate", targets: ["generate"]),
     .library(name: "GenerateLibrary", targets: ["GenerateLibrary"]),
@@ -76,9 +76,10 @@ let package = Package(
       name: "MessagePack",
       dependencies: [
         .target(name: "Library"),
-        .target(name: "Cmsgpack"),
+        .target(name: "Cmsgpack")
       ]
     ),
+    .target(name: "Cmsgpack", linkerSettings: [.linkedLibrary("msgpack-c")] ),
     .target(
       name: "Library",
       dependencies: [
@@ -103,11 +104,6 @@ let package = Package(
         .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
         .product(name: "SwiftDiagnostics", package: "swift-syntax"),
       ]
-    ),
-    .systemLibrary(
-      name: "Cmsgpack",
-      pkgConfig: "msgpack-c",
-      providers: [.brewItem(["msgpack"])]
     ),
   ]
 )

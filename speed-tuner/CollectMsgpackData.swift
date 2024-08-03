@@ -10,23 +10,27 @@ import Foundation
 import Library
 import System
 import Darwin
+import CoreLocation
 
 var orig_termios = termios()
 
 struct CollectMsgpackData: AsyncParsableCommand {
   static let configuration = CommandConfiguration(commandName: "collect-msgpack-data", shouldDisplay: true, subcommands: [], groupedSubcommands: [])
   
-  @Option(name: .shortAndLong, completion: .file())
-  public var output: String
-  
   @Argument
   public var nvimExecutablePath: String
   
-  @Argument(parsing: .remaining)
-  public var nvimArguments: [String]
+  @Option(name: .shortAndLong, completion: .file())
+  public var output: String? = nil
+  
+  @Argument(parsing: .allUnrecognized)
+  public var nvimArguments: [String] = []
   
   func run() async throws {
-    let outputFileDescriptor = try FileDescriptor.open(.init(output), .writeOnly, options: [.closeOnExec, .create, .truncate])
+    var fd: FileDescriptor?
+    if let output {
+      fd = try FileDescriptor.open(.init(output), .readWrite, options: .closeOnExec)
+    }
     
     var fdMaster: Int32 = 0;
     var fdSlave: Int32 = 0;
@@ -36,7 +40,7 @@ struct CollectMsgpackData: AsyncParsableCommand {
     }
     _ = fcntl(fdMaster, F_SETFD, FD_CLOEXEC);
     _ = fcntl(fdSlave, F_SETFD, FD_CLOEXEC);
-    let masterHandle = FileHandle(fileDescriptor: fdMaster, closeOnDealloc: true)
+    _ = FileHandle(fileDescriptor: fdMaster, closeOnDealloc: true)
     let slaveHandle = FileHandle(fileDescriptor: fdSlave, closeOnDealloc: true)
     
     let process = Process()
@@ -60,25 +64,19 @@ struct CollectMsgpackData: AsyncParsableCommand {
       tcsetattr(0, TCSANOW, &new_termios)
     }
     
-    fflush(stdout)
-    set_conio_terminal_mode()
-    
-    Task.detached {
-      for try await data in masterHandle.dataBatches {
-        try FileHandle.standardOutput.write(contentsOf: data)
-        
-        try outputFileDescriptor.writeAll(data)
-      }
-    }
-    Task.detached {
-      for try await data in FileHandle.standardInput.dataBatches {
-        try masterHandle.write(contentsOf: data)
-      }
+//    fflush(stdout)
+//    set_conio_terminal_mode()
+//    
+//    Task.detached {
+//      for update in (Updates ... pdates.length) {
+//        
+//      }
+//    }
+
+    if let fd {
+      _ = try fd.duplicate();
     }
     
-    process.waitUntilExit()
-    
-    print("\r")
     reset_terminal_mode()
   }
 }

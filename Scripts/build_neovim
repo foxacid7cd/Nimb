@@ -1,8 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env zsh
+
 set -e
 
-cmake -S Third-Party/neovim -B .build -DCMAKE_BUILD_TYPE=Release
-cmake --build .build/ --target package
+cd "${0:a:h}/../"
 
-rm -rf .build/nvim-macos/
-tar -C .build/ -xvf .build/nvim-macos-arm64.tar.gz
+cmake -S Third-Party/neovim -B .build/neovim -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DCMAKE_OSX_ARCHITECTURES=arm64
+
+# cmake -S Third-Party/neovim/build/.deps -B .build/neovim -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
+# cmake --build ./Third-Party/.build --target nvim_bin
+
+
+# rm -rf .build/nvim-macos/
+# tar -C .build/ -xvf .build/nvim-macos-arm64.tar.gz

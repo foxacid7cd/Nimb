@@ -40,11 +40,12 @@ public final class Instance: Sendable {
         " -u '\(url.path())'"
       }
 
-    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+    var nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+
     process.arguments = [
       "-l",
       "-c",
-      "'\(nvimExecutablePath)' --embed --headless" + vimrcArgument,
+      "\(nvimExecutablePath) --embed --headless" + vimrcArgument,
     ]
 
     process.currentDirectoryURL = FileManager.default
