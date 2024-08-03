@@ -485,7 +485,7 @@ public class Store: Sendable {
         do {
           try await instance.report(errorMessage: errorMessage)
         } catch {
-          logger.error("reporting error message failed with error \(error)")
+          log.error("reporting error message failed with error \(error)")
         }
       }
     }

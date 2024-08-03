@@ -47,7 +47,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       return grid
     } else {
       let gridID = gridID
-      logger
+      log
         .fault(
           "grid view trying to access not created or destroyed grid with id \(gridID)"
         )

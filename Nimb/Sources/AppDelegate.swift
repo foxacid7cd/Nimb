@@ -3,6 +3,9 @@
 import AppKit
 import CustomDump
 import Library
+import Logging
+import CocoaLumberjackSwift
+import CocoaLumberjackSwiftLogBackend
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate {
@@ -16,6 +19,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       setupMainMenuController()
       showMainWindowController()
       runStateUpdatesTask()
+      
+      let fileLogger: DDFileLogger = DDFileLogger() // File Logger
+      fileLogger.rollingFrequency = 60 * 60 * 24 // 24 hours
+      fileLogger.logFileManager.maximumNumberOfLogFiles = 7
+      DDLog.add(fileLogger)
+      
+      fileLogger.
+      
+      // In your application's entry point (e.g. AppDelegate):
+      DDLog.add(DDOSLogger.sharedInstance) // Configure loggers
+      LoggingSystem.bootstrapWithCocoaLumberjack() // Use CocoaLumberjack as swift-log backend
+
 
       do {
         try await instance!.run()

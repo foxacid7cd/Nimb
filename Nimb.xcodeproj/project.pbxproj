@@ -25,6 +25,9 @@
 		68554AFC2AFAAC5B006488CD /* MsgShowTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		68554B002AFAAD10006488CD /* MsgShowsLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */; };
+		6857D9812C5EF3090012426A /* CocoaLumberjack in Frameworks */ = {isa = PBXBuildFile; productRef = 6857D9802C5EF3090012426A /* CocoaLumberjack */; };
+		6857D9832C5EF3090012426A /* CocoaLumberjackSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6857D9822C5EF3090012426A /* CocoaLumberjackSwift */; };
+		6857D9852C5EF3090012426A /* CocoaLumberjackSwiftLogBackend in Frameworks */ = {isa = PBXBuildFile; productRef = 6857D9842C5EF3090012426A /* CocoaLumberjackSwiftLogBackend */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
 		687644882C5373670022D916 /* NeovimNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687644872C5373670022D916 /* NeovimNotification.swift */; };
@@ -74,7 +77,7 @@
 		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
 		68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */; };
 		68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */; };
-		68F0D4F32AECFDFC000954FF /* logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* logger.swift */; };
+		68F0D4F32AECFDFC000954FF /* log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* log.swift */; };
 		68FAC3F32AF685AB00490F09 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F22AF685AB00490F09 /* Action.swift */; };
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
 		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
@@ -201,7 +204,7 @@
 		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsEnvironmentView.swift; sourceTree = "<group>"; };
-		68F0D4F22AECFDFC000954FF /* logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logger.swift; sourceTree = "<group>"; };
+		68F0D4F22AECFDFC000954FF /* log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = log.swift; sourceTree = "<group>"; };
 		68FAC3F22AF685AB00490F09 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyUIEvents.swift; sourceTree = "<group>"; };
 		68FAC3F62AF6932F00490F09 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
@@ -223,9 +226,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6857D9812C5EF3090012426A /* CocoaLumberjack in Frameworks */,
 				682272BB293DD63800A36AB9 /* Library in Frameworks */,
 				682272BD293DD63800A36AB9 /* MessagePack in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
+				6857D9852C5EF3090012426A /* CocoaLumberjackSwiftLogBackend in Frameworks */,
+				6857D9832C5EF3090012426A /* CocoaLumberjackSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,7 +276,7 @@
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
-				68F0D4F22AECFDFC000954FF /* logger.swift */,
+				68F0D4F22AECFDFC000954FF /* log.swift */,
 				68EFD2682B58834E0010DD54 /* main.swift */,
 			);
 			path = Sources;
@@ -487,6 +493,9 @@
 				682272BA293DD63800A36AB9 /* Library */,
 				682272BC293DD63800A36AB9 /* MessagePack */,
 				689738F22C480AF7002159BD /* TinyConstraints */,
+				6857D9802C5EF3090012426A /* CocoaLumberjack */,
+				6857D9822C5EF3090012426A /* CocoaLumberjackSwift */,
+				6857D9842C5EF3090012426A /* CocoaLumberjackSwiftLogBackend */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -521,6 +530,7 @@
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
 				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
+				6857D97F2C5EF3090012426A /* XCRemoteSwiftPackageReference "CocoaLumberjack" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -628,7 +638,7 @@
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
-				68F0D4F32AECFDFC000954FF /* logger.swift in Sources */,
+				68F0D4F32AECFDFC000954FF /* log.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				687644882C5373670022D916 /* NeovimNotification.swift in Sources */,
@@ -959,6 +969,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		6857D97F2C5EF3090012426A /* XCRemoteSwiftPackageReference "CocoaLumberjack" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CocoaLumberjack/CocoaLumberjack.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.8.5;
+			};
+		};
 		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/roberthein/TinyConstraints.git";
@@ -985,6 +1003,21 @@
 		682272BC293DD63800A36AB9 /* MessagePack */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MessagePack;
+		};
+		6857D9802C5EF3090012426A /* CocoaLumberjack */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6857D97F2C5EF3090012426A /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			productName = CocoaLumberjack;
+		};
+		6857D9822C5EF3090012426A /* CocoaLumberjackSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6857D97F2C5EF3090012426A /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			productName = CocoaLumberjackSwift;
+		};
+		6857D9842C5EF3090012426A /* CocoaLumberjackSwiftLogBackend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6857D97F2C5EF3090012426A /* XCRemoteSwiftPackageReference "CocoaLumberjack" */;
+			productName = CocoaLumberjackSwiftLogBackend;
 		};
 		689738F22C480AF7002159BD /* TinyConstraints */ = {
 			isa = XCSwiftPackageProductDependency;
