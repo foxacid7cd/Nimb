@@ -49,22 +49,10 @@ public class MsgShowsViewController: NSViewController {
     super.viewDidLoad()
 
     customView.toggle(on: false)
-    renderCustomView()
     renderContent()
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if 
-      stateUpdates.isAppearanceUpdated,
-      stateUpdates.updatedObservedHighlightNames
-        .contains(
-          where: MsgShowsViewController.observedHighlightName
-            .contains(_:)
-        )
-    {
-      renderCustomView()
-    }
-
     if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
       if !store.state.msgShows.isEmpty {
         renderContent()
@@ -90,15 +78,6 @@ public class MsgShowsViewController: NSViewController {
   private lazy var customView = FloatingWindowView(store: store)
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
-
-  private func renderCustomView() {
-    customView.colors = (
-      background: store.appearance.backgroundColor(for: .normalFloat),
-      border: store.appearance.foregroundColor(for: .normalFloat)
-        .with(alpha: 0.3)
-    )
-    customView.render()
-  }
 
   private func renderContent() {
     contentView.arrangedSubviews

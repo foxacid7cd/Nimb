@@ -219,8 +219,6 @@ public extension Actions {
         }
       }
 
-      await Task.yield()
-
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {
         case let .single(uiEvent):

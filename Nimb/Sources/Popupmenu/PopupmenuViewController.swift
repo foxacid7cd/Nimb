@@ -21,19 +21,12 @@ public class PopupmenuViewController: NSViewController {
   public var willShowPopupmenu: (() -> Void)?
 
   public func render(_ stateUpdates: State.Updates) {
-    if
-      stateUpdates.isAppearanceUpdated,
-      stateUpdates.updatedObservedHighlightNames.contains(.normalFloat)
-    {
-      renderCustomView()
-    }
-
     if let popupmenu = store.state.popupmenu {
       if stateUpdates.isPopupmenuUpdated {
         NSLayoutConstraint.deactivate(anchorConstraints)
 
         switch popupmenu.anchor {
-        case let .grid(id, origin):
+        case .grid:
           break
 //          let offset = origin * store.font.cellSize
 //          anchorConstraints = [
@@ -130,7 +123,6 @@ public class PopupmenuViewController: NSViewController {
     super.viewDidLoad()
 
     customView.toggle(on: false)
-    renderCustomView()
   }
 
   private let store: Store
@@ -139,15 +131,6 @@ public class PopupmenuViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
   private var previousSelectedItemIndex: Int?
-
-  private func renderCustomView() {
-    customView.colors = (
-      background: store.appearance.backgroundColor(for: .normalFloat),
-      border: store.appearance.foregroundColor(for: .normalFloat)
-        .with(alpha: 0.3)
-    )
-    customView.render()
-  }
 }
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {

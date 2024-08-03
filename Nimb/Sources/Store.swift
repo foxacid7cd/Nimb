@@ -357,7 +357,7 @@ public class Store: Sendable {
 
   private let instance: Instance
   @StateActor private var stateContainer: StateContainer
-  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 120)
+  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 90)
   @StateActor private var lastSetStateInstant = ContinuousClock.now
   @StateActor private var stateUpdatesAccumulator = State.Updates()
   @StateActor private var stateThrottlingTask: Task<Void, Never>?
@@ -374,7 +374,7 @@ public class Store: Sendable {
     gridID: Int,
     point: IntegerPoint
   )?
-  private let outerGridSizeThrottlingInterval = Duration.milliseconds(250)
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(100)
   private var outerGridSizeThrottlingTask: Task<Void, Never>?
   private var previousReportedOuterGridSizeInstant = ContinuousClock.now
   private var previousReportedOuterGridSize: IntegerSize?

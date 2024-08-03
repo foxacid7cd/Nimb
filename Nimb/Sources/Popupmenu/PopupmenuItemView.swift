@@ -18,8 +18,9 @@ public class PopupmenuItemView: NSView {
       for: .horizontal
     )
     addSubview(wordTextField)
-    wordTextField.leading(to: self, offset: 7)
-    wordTextField.centerYToSuperview()
+    wordTextField.leading(to: self, offset: 8)
+    wordTextField.topToSuperview(offset: 3)
+    wordTextField.bottomToSuperview(offset: 3)
 
     kindTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     kindTextField.setContentCompressionResistancePriority(
@@ -29,7 +30,7 @@ public class PopupmenuItemView: NSView {
     addSubview(kindTextField)
     kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
     kindTextField.centerYToSuperview()
-    kindTextField.trailing(to: self, offset: -7)
+    kindTextField.trailing(to: self, offset: -8)
   }
 
   @available(*, unavailable)
@@ -51,18 +52,15 @@ public class PopupmenuItemView: NSView {
     let font = store.font
     let appearance = store.appearance
 
-    layer!.backgroundColor = appearance
-      .backgroundColor(for: isSelected ? .pmenuSel : .pmenu)
-      .appKit
-      .cgColor
+    layer!.backgroundColor = isSelected ? NSColor.selectedContentBackgroundColor.cgColor : NSColor
+      .black.withAlphaComponent(0).cgColor
 
     let wordHighlightName: Appearance
       .ObservedHighlightName = isSelected ? .pmenuSel : .pmenu
     wordTextField.attributedStringValue = .init(
       string: item.word,
       attributes: [
-        .foregroundColor: appearance.foregroundColor(for: wordHighlightName)
-          .appKit,
+        .foregroundColor: NSColor.white,
         .font: font.appKit(
           isBold: appearance.isBold(for: wordHighlightName),
           isItalic: appearance.isItalic(for: wordHighlightName)

@@ -16,17 +16,6 @@ public class CmdlinesViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if
-      stateUpdates.isAppearanceUpdated,
-      stateUpdates.updatedObservedHighlightNames
-        .contains(
-          where: CmdlinesViewController.observedHighlightName
-            .contains(_:)
-        )
-    {
-      renderCustomView()
-    }
-
     if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
       if !store.state.cmdlines.dictionary.isEmpty {
         cmdlineViews = [:]
@@ -101,7 +90,6 @@ public class CmdlinesViewController: NSViewController {
     super.viewDidLoad()
 
     customView.toggle(on: false)
-    renderCustomView()
   }
 
   private static let observedHighlightName: Set<
@@ -117,13 +105,4 @@ public class CmdlinesViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
   private var cmdlineViews = IntKeyedDictionary<CmdlineView>()
-
-  private func renderCustomView() {
-    customView.colors = (
-      background: store.appearance.backgroundColor(for: .normalFloat),
-      border: store.appearance.foregroundColor(for: .normalFloat)
-        .with(alpha: 0.3)
-    )
-    customView.render()
-  }
 }
