@@ -51,7 +51,7 @@ public class CmdlineView: NSView {
       promptTextField.attributedStringValue = .init(
         string: cmdline.prompt,
         attributes: [
-          .foregroundColor: NSColor.controlTextColor,
+          .foregroundColor: NSColor.labelColor,
           .font: NSFont.systemFont(ofSize: NSFont.labelFontSize),
         ]
       )
@@ -139,8 +139,7 @@ private class CmdlineTextView: NSView {
             .replacingOccurrences(of: "\r", with: "↲"),
           attributes: .init([
             .font: store.font.appKit(),
-            .foregroundColor: store.appearance
-              .foregroundColor(for: contentPart.highlightID).appKit,
+            .foregroundColor: NSColor.labelColor,
           ])
         ))
       }
@@ -175,7 +174,7 @@ private class CmdlineTextView: NSView {
         string: text,
         attributes: [
           .font: store.font.appKit(isBold: true),
-          .foregroundColor: NSColor.controlAccentColor,
+          .foregroundColor: NSColor.labelColor,
         ]
       ))
       indent += text.count
@@ -187,7 +186,7 @@ private class CmdlineTextView: NSView {
     for contentPart in cmdline.contentParts {
       let attributes: [NSAttributedString.Key: Any] = [
         .font: store.font.appKit(),
-        .foregroundColor: NSColor.secondaryLabelColor,
+        .foregroundColor: NSColor.labelColor,
       ]
 
       cmdlineAttributedString.append(.init(
@@ -207,7 +206,7 @@ private class CmdlineTextView: NSView {
           string: cmdline.specialCharacter,
           attributes: [
             .font: store.font.appKit(),
-            .foregroundColor: NSColor.selectedControlColor,
+            .foregroundColor: NSColor.labelColor,
           ]
         ),
         at: cursorPosition

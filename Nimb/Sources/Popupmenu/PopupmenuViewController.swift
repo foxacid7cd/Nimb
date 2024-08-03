@@ -111,7 +111,7 @@ public class PopupmenuViewController: NSViewController {
     tableView.addTableColumn(
       .init(identifier: PopupmenuItemView.reuseIdentifier)
     )
-    tableView.rowHeight = 20
+    tableView.rowHeight = 28
     tableView.style = .fullWidth
     tableView.selectionHighlightStyle = .none
     scrollView.documentView = tableView

@@ -10,7 +10,7 @@ public class PopupmenuItemView: NSView {
 
     clipsToBounds = true
     wantsLayer = true
-    layer!.cornerRadius = 5
+    layer!.cornerRadius = 6
 
     wordTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
     wordTextField.setContentCompressionResistancePriority(
@@ -18,9 +18,9 @@ public class PopupmenuItemView: NSView {
       for: .horizontal
     )
     addSubview(wordTextField)
-    wordTextField.leading(to: self, offset: 8)
-    wordTextField.topToSuperview(offset: 3)
-    wordTextField.bottomToSuperview(offset: 3)
+    wordTextField.leading(to: self, offset: 11)
+    wordTextField.topToSuperview(offset: 5)
+    wordTextField.bottomToSuperview(offset: 4)
 
     kindTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     kindTextField.setContentCompressionResistancePriority(
@@ -30,7 +30,7 @@ public class PopupmenuItemView: NSView {
     addSubview(kindTextField)
     kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
     kindTextField.centerYToSuperview()
-    kindTextField.trailing(to: self, offset: -8)
+    kindTextField.trailing(to: self, offset: -11)
   }
 
   @available(*, unavailable)

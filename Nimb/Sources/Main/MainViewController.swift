@@ -93,7 +93,7 @@ public class MainViewController: NSViewController {
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black
-      .withAlphaComponent(0.4)
+      .withAlphaComponent(0.25)
       .cgColor
     modalOverlayView.isHidden = true
     view.addSubview(modalOverlayView)
