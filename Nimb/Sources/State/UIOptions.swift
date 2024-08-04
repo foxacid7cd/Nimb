@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import MessagePack
-
 public typealias UIOptions = Set<UIOption>
 
 public extension UIOptions {

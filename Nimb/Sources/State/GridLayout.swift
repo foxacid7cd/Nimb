@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
 import Overture
 
 @PublicInit

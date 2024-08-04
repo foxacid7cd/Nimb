@@ -2,7 +2,6 @@
 
 import AppKit
 import Carbon
-import Library
 
 @PublicInit
 public struct KeyPress: Sendable {

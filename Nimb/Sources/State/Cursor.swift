@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Library
-import MessagePack
 
 @PublicInit
 public struct Cursor: Sendable {

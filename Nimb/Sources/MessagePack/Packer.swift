@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import Cmsgpack
 import Foundation
-import Library
 
 public class Packer {
   public init() {

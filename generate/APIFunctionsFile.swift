@@ -2,7 +2,6 @@
 
 import CasePaths
 import Foundation
-import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
@@ -17,8 +16,8 @@ public struct APIFunctionsFile: GeneratableFile {
     get throws {
       try .init {
         "import CasePaths" as DeclSyntax
-        "import MessagePack" as DeclSyntax
-        "import Library" as DeclSyntax
+        "" as DeclSyntax
+        "" as DeclSyntax
 
         try EnumDeclSyntax("public enum APIFunctions") {
           for function in metadata.functions {

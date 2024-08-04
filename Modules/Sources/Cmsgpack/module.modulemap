@@ -1,4 +1,0 @@
-module Cmsgpack [system] {
-  link "msgpack.h"
-  export *
-}

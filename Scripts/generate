@@ -1,10 +1,11 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 set -e
 
 () {
-  local nvim_path=".build/nvim-macos-arm64/bin/nvim"
-  local generate_cmd="swift run --package-path Modules generate"
+  xcodebuild -workspace ./Nimb.xcworkspace -scheme generate -configuration Debug -destination platform=macos arch=arm64 name='My Mac' -derivedDataPath ./.build/derivedData
 
+  local nvim_path=".build/package/bin/nvim"
+  local generate_cmd="./.build/derivedData/Build/Products/Debug/generate"
   local generated_dir="Nimb/Sources/generated"
   $nvim_path --api-info | eval "$generate_cmd $generated_dir"
 

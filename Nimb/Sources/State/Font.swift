@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Library
 
 public struct Font: Sendable, Hashable {
   @MainActor

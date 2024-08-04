@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-import MessagePack
-
 @PublicInit
 public struct Popupmenu: Sendable, Hashable {
   public enum Anchor: Sendable, Hashable {

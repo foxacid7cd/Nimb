@@ -2,7 +2,6 @@
 
 import AppKit
 import CustomDump
-import Library
 
 public class MsgShowTextView: NSView {
   public init(store: Store) {

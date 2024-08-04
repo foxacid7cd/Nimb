@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Collections
-import Library
 
 @PublicInit
 public struct Appearance: Sendable {

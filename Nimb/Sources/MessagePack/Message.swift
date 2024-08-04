@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
-import Library
 
 public enum Message: Sendable, Hashable {
   case request(Request)

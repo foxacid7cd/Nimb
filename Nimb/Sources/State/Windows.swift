@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-
 @PublicInit
 public struct Window: Sendable, Identifiable {
   public var id: References.Window

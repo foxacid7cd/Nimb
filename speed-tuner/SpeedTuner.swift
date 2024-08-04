@@ -1,18 +1,16 @@
-//
-//  SpeedTuner1.swift
-//  speed-tuner
-//
-//  Created by Yevhenii Matviienko on 03.08.2024.
-//
+// SPDX-License-Identifier: MIT
 
-import Foundation
 import ArgumentParser
-
+import Foundation
 
 @main
 struct SpeedTuner: AsyncParsableCommand {
-  static let configuration = CommandConfiguration(commandName: "speed-tuner", shouldDisplay: true, subcommands: [CollectMsgpackData.self])
-  
+  static let configuration = CommandConfiguration(
+    commandName: "speed-tuner",
+    shouldDisplay: true,
+    subcommands: [CollectMsgpackData.self]
+  )
+
   func run() async throws {
     print("SpeedTuner!")
   }

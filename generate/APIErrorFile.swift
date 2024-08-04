@@ -2,7 +2,6 @@
 
 import CasePaths
 import Foundation
-import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

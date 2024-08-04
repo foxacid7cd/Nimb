@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-import MessagePack
-
 @PublicInit
 public struct NeovimErrorEvent: Sendable, Equatable {
   public init(parameters: [Value]) throws {

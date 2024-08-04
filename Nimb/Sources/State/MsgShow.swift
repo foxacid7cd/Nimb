@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-import MessagePack
-
 @PublicInit
 public struct MsgShow: Identifiable, Sendable, Hashable {
   public enum Kind: String, Sendable {

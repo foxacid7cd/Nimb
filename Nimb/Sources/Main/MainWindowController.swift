@@ -2,7 +2,6 @@
 
 import AppKit
 import AsyncAlgorithms
-import Library
 
 public class MainWindowController: NSWindowController {
   public init(store: Store, minOuterGridSize: IntegerSize) {

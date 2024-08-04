@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
-import Cmsgpack
 import Foundation
 
 @CasePathable

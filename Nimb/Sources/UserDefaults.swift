@@ -2,7 +2,6 @@
 
 import AppKit
 import CasePaths
-import Library
 
 public extension UserDefaults {
   var outerGridSize: IntegerSize {

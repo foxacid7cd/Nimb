@@ -6,7 +6,6 @@ import CasePaths
 import Collections
 import CustomDump
 import Foundation
-import Library
 
 public class RPC<Target: Channel> {
   public init(_ target: Target, maximumConcurrentRequests: Int) {
@@ -78,7 +77,7 @@ public class RPC<Target: Channel> {
   }
 
   private let target: Target
-  private let store: Store
+  private let store: Storage
   private let packer = Packer()
   private let messageBatches: AsyncMessageBatches<Target.S>
 }
@@ -95,7 +94,7 @@ extension RPC: AsyncSequence {
 
   public struct AsyncIterator: AsyncIteratorProtocol {
     fileprivate init(
-      store: Store,
+      store: Storage,
       messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
     ) {
       self.store = store
@@ -134,14 +133,14 @@ extension RPC: AsyncSequence {
       }
     }
 
-    private let store: Store
+    private let store: Storage
     private var messageBatchesIterator: AsyncMessageBatches<Target.S>
       .AsyncIterator
     private var accumulator = [Message.Notification]()
   }
 }
 
-private class Store {
+private class Storage {
   init(maximumConcurrentRequests: Int) {
     self.maximumConcurrentRequests = maximumConcurrentRequests
     currentRequests = .init(repeating: nil, count: maximumConcurrentRequests)

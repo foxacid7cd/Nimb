@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import MessagePack
 
 public struct ProcessChannel: Channel {
   public init(_ process: Foundation.Process) {

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import MessagePack
-
 public protocol APIFunction: Sendable {
   associatedtype Success
   static var method: String { get }

@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-import MessagePack
-
 public class API<Target: Channel> {
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc

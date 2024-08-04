@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Library
 
 public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
   init(store: Store) {

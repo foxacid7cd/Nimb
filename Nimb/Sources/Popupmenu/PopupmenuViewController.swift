@@ -2,7 +2,6 @@
 
 import AppKit
 import CasePaths
-import Library
 
 public class PopupmenuViewController: NSViewController {
   public init(store: Store, getCmdlinesView: @escaping () -> NSView) {

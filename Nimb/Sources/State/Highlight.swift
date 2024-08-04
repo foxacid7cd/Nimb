@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import Library
-
 @PublicInit
 public struct Highlight: Identifiable, Sendable {
   @PublicInit

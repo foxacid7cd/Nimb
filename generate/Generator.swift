@@ -2,7 +2,6 @@
 
 import CustomDump
 import Foundation
-import MessagePack
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

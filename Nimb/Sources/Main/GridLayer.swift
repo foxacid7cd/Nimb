@@ -2,7 +2,6 @@
 
 import AppKit
 import CustomDump
-import Library
 
 public class GridLayer: CALayer, AnchorLayoutingLayer {
   override public init(layer: Any) {

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import IdentifiedCollections
-import Library
 
 @PublicInit
 public struct Tabline: Sendable, Hashable {
