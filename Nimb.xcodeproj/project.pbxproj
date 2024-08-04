@@ -70,7 +70,6 @@
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */; };
 		686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC82A2C5FE91F00AC1E62 /* CasePaths */; };
-		686AC82D2C5FE92700AC1E62 /* Macros in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC82C2C5FE92700AC1E62 /* Macros */; };
 		686AC8312C60109800AC1E62 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8302C60109800AC1E62 /* MacrosLibrary */; };
 		686AC8332C60109D00AC1E62 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8322C60109D00AC1E62 /* MacrosLibrary */; };
 		686AC8352C6010A100AC1E62 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8342C6010A100AC1E62 /* MacrosLibrary */; };
@@ -124,7 +123,10 @@
 		68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB82C5F7F3F00844461 /* Overture */; };
 		68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCBB2C5F7F5A00844461 /* CustomDump */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
-		68E229042C601BA800D8D72B /* nvim in Resources */ = {isa = PBXBuildFile; fileRef = 68E229032C601BA800D8D72B /* nvim */; };
+		68E2290A2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E229092C602D1200D8D72B /* libmsgpack-c.a */; };
+		68E2290B2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E229092C602D1200D8D72B /* libmsgpack-c.a */; };
+		68E2290C2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 68E229092C602D1200D8D72B /* libmsgpack-c.a */; };
+		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
 		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
@@ -192,6 +194,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
+				68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -291,7 +294,8 @@
 		68C9BC812C5F7D6300844461 /* UIOptionFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOptionFile.swift; sourceTree = "<group>"; };
 		68C9BC822C5F7D6300844461 /* ValueType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ValueType.swift; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		68E229032C601BA800D8D72B /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = "Third-Party/neovim/build/bin/nvim"; sourceTree = "<group>"; };
+		68E229092C602D1200D8D72B /* libmsgpack-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libmsgpack-c.a"; path = "Third-Party/msgpack-c/libmsgpack-c.a"; sourceTree = "<group>"; };
+		68E2290D2C602D6700D8D72B /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/package/bin/nvim; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
 		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -311,6 +315,7 @@
 			files = (
 				68C9BCAF2C5F7E9900844461 /* SystemPackage in Frameworks */,
 				68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */,
+				68E2290B2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */,
 				686AC8332C60109D00AC1E62 /* MacrosLibrary in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -323,10 +328,10 @@
 				681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */,
 				681B53492C5FE54800AD6C68 /* Collections in Frameworks */,
 				681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */,
-				686AC82D2C5FE92700AC1E62 /* Macros in Frameworks */,
 				686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */,
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
 				681B53472C5FE53E00AD6C68 /* CustomDump in Frameworks */,
+				68E2290C2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */,
 				681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */,
 				686AC8352C6010A100AC1E62 /* MacrosLibrary in Frameworks */,
 			);
@@ -340,6 +345,7 @@
 				68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
+				68E2290A2C602D1200D8D72B /* libmsgpack-c.a in Frameworks */,
 				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
 				68C9BCA32C5F7E3700844461 /* Algorithms in Frameworks */,
@@ -489,7 +495,8 @@
 		68A323CF293B93070028A87D /* Locations */ = {
 			isa = PBXGroup;
 			children = (
-				68E229032C601BA800D8D72B /* nvim */,
+				68E2290D2C602D6700D8D72B /* nvim */,
+				68E229092C602D1200D8D72B /* libmsgpack-c.a */,
 				6875A5AC2C5ED42F00854B82 /* Third-Party */,
 				68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */,
 				682272C0293DE09C00A36AB9 /* Scripts */,
@@ -654,7 +661,6 @@
 				681B53522C5FE67B00AD6C68 /* SwiftSyntax */,
 				686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */,
 				686AC82A2C5FE91F00AC1E62 /* CasePaths */,
-				686AC82C2C5FE92700AC1E62 /* Macros */,
 				686AC8342C6010A100AC1E62 /* MacrosLibrary */,
 			);
 			productName = generate;
@@ -755,7 +761,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68E229042C601BA800D8D72B /* nvim in Resources */,
 				68D1803629AA4A9000732402 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -953,6 +958,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -982,6 +989,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -1011,6 +1020,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Third-Party",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -1036,6 +1047,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Third-Party",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
@@ -1098,7 +1111,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "${PROJECT_DIR}/Third-Party/msgpack-c/include";
 				INFOPLIST_KEY_CFBundleDisplayName = "";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -1158,7 +1171,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "${PROJECT_DIR}/Third-Party/msgpack-c/include";
 				INFOPLIST_KEY_CFBundleDisplayName = "";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -1200,6 +1213,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Third-Party",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
@@ -1245,6 +1260,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Third-Party",
+					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
+					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
@@ -1433,10 +1450,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */;
 			productName = CasePaths;
-		};
-		686AC82C2C5FE92700AC1E62 /* Macros */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Macros;
 		};
 		686AC8302C60109800AC1E62 /* MacrosLibrary */ = {
 			isa = XCSwiftPackageProductDependency;
