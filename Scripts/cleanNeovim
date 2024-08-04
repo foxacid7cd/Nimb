@@ -1,0 +1,14 @@
+#!/usr/bin/env zsh
+
+set -euxo pipefail
+
+() {
+  local project_dir="${0:a:h}"
+  local neovim_dir="$project_dir/Third-Party/neovim"
+
+  pushd "$neovim_dir"
+
+  export CMAKE_GENERATOR='Unix Makefiles'
+  make clean
+}
+

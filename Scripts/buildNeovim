@@ -1,0 +1,24 @@
+#!/usr/bin/env zsh
+
+set -euxo pipefail
+
+() {
+  local project_dir="${0:a:h}"
+  local neovim_dir="$project_dir/Third-Party/neovim"
+
+  pushd "$project_dir"
+  mkdir .build || true
+
+  pushd "$neovim_dir"
+  export CMAKE_GENERATOR='Unix Makefiles'
+  export CMAKE_BUILD_TYPE=RelWithDebInfo 
+  export CMAKE_EXTRA_FLAGS='-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0'
+  make deps
+  
+  pushd build
+  make package
+
+  tar -xvf nvim-macos-arm64.tar.gz
+  rm -rf "$project_dir/.build/package"
+  mv nvim-macos-arm64 "$project_dir/.build/package"
+}
