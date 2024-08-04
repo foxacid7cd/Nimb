@@ -2,6 +2,6 @@
 set -e
 
 () {
-  xcodebuild archive -workspace ./Nimb.xcworkspace -scheme Nimb -configuration Release -destination platform=macos arch=arm64 -archivePath .build/Nimb.xcarchive
+  xcodebuild archive -workspace ./Nimb.xcworkspace -scheme Nimb -configuration Release -archivePath .build/Nimb.xcarchive
   xcodebuild -exportArchive -archivePath .build/Nimb.xcarchive -exportOptionsPlist ./Scripts/exportOptions.plist -exportPath /Applications/
 }
