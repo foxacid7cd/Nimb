@@ -130,6 +130,7 @@
 		68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */; };
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
+		68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 688080022C603ADA00BD32FA /* msgpack-inspector */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
 		68C9BCA32C5F7E3700844461 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA22C5F7E3700844461 /* Algorithms */; };
 		68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA52C5F7E4900844461 /* ArgumentParser */; };
@@ -222,6 +223,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
+				68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */,
 				68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";

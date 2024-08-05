@@ -257,6 +257,12 @@ final class MainMenuController: NSObject {
     }
   }
 
+  @objc private func handleToggleMessagePackInspector() {
+    Task {
+      await store.toggleMessagePackInspector()
+    }
+  }
+
   @objc private func handleLogState() {
     Task { @StateActor in
       let dump = store.dumpState()
@@ -355,8 +361,8 @@ extension MainMenuController: NSMenuDelegate {
     case debugMenu:
       let toggleUIEventsLoggingMenuItem = NSMenuItem(
         title: store.state.debug
-          .isUIEventsLoggingEnabled ? "Disable UI Events Logging" :
-          "Enable UI Events Logging",
+          .isUIEventsLoggingEnabled ? "Disable UI events logging" :
+          "Enable UI events logging",
         action: #selector(handleToggleUIEventsLogging),
         keyEquivalent: ""
       )
@@ -369,7 +375,16 @@ extension MainMenuController: NSMenuDelegate {
       )
       logStateMenuItem.target = self
 
-      menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem]
+      let toggleMessagePackInspector = NSMenuItem(
+        title: store.state.debug
+          .isMessagePackInspectorEnabled ? "Disable msgpack data capturing" :
+          "Enable msgpack data capturing",
+        action: #selector(handleToggleMessagePackInspector),
+        keyEquivalent: ""
+      )
+      toggleMessagePackInspector.target = self
+
+      menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem, toggleMessagePackInspector]
 
     default:
       break

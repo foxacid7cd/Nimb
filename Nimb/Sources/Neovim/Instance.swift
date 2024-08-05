@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import AsyncAlgorithms
 import CasePaths
 import Collections
 import CustomDump
-import Foundation
 
 @MainActor
 public final class Instance: Sendable {
-  public init(nvimResourcesURL: URL, initialOuterGridSize: IntegerSize) {
+  public init(
+    nvimResourcesURL: URL,
+    initialOuterGridSize: IntegerSize,
+    isMessagePackInspectorEnabled: Bool
+  ) {
     self.nvimResourcesURL = nvimResourcesURL
     self.initialOuterGridSize = initialOuterGridSize
 
@@ -23,9 +27,6 @@ public final class Instance: Sendable {
       .replacing(/\/$/, with: "")
     process.environment = environment
 
-    let shell = environment["SHELL"] ?? "/bin/zsh"
-    process.executableURL = URL(filePath: shell)
-
     let vimrcArgument: String =
       switch UserDefaults.standard.vimrc {
       case .default:
@@ -38,13 +39,33 @@ public final class Instance: Sendable {
         " -u '\(url.path())'"
       }
 
-    var nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+    let shell = environment["SHELL"] ?? "/bin/zsh"
+    process.executableURL = URL(filePath: shell)
 
-    process.arguments = [
-      "-l",
-      "-c",
-      "\(nvimExecutablePath) --embed --headless" + vimrcArgument,
-    ]
+    let nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+
+    if isMessagePackInspectorEnabled {
+      let inspectorExecutablePath: String = Bundle.main
+        .path(forAuxiliaryExecutable: "msgpack-inspector")!
+
+      let temporaryFileURL = FileManager.default.temporaryDirectory
+        .appending(component: "captured_nvim_msgpack_output_\(UUID().uuidString).mpack")
+
+      log.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+
+      process.arguments = [
+        "-l",
+        "-c",
+        "\(inspectorExecutablePath) --output \(temporaryFileURL.path()) \(nvimExecutablePath) --embed --headless" +
+          vimrcArgument,
+      ]
+    } else {
+      process.arguments = [
+        "-l",
+        "-c",
+        "\(nvimExecutablePath) --embed --headless" + vimrcArgument,
+      ]
+    }
 
     process.currentDirectoryURL = FileManager.default
       .homeDirectoryForCurrentUser

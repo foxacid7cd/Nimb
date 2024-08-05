@@ -32,13 +32,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   private var settingsWindowController: SettingsWindowController?
 
   private func setupStore() async {
+    let debugState = UserDefaults.standard.debug
     instance = Instance(
       nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
-      initialOuterGridSize: UserDefaults.standard.outerGridSize
+      initialOuterGridSize: UserDefaults.standard.outerGridSize,
+      isMessagePackInspectorEnabled: debugState.isMessagePackInspectorEnabled
     )
     store = .init(
       instance: instance!,
-      debug: UserDefaults.standard.debug,
+      debug: debugState,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )
   }

@@ -296,6 +296,10 @@ public class Store: Sendable {
     try? await dispatch(Actions.ToggleDebugUIEventsLogging())
   }
 
+  public func toggleMessagePackInspector() async {
+    try? await dispatch(Actions.ToggleDebugMessagePackInspector())
+  }
+
   public func edit(url: URL) async {
     do {
       try await instance.edit(url: url)

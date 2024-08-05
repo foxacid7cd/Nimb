@@ -65,15 +65,16 @@ public extension UserDefaults {
   var debug: State.Debug {
     get {
       guard
-        let isUIEventsLoggingEnabled =
-        value(forKey: "isUIEventsLoggingEnabled") as? Bool
+        let data = value(forKey: "debug") as? Data,
+        let debug = try? JSONDecoder().decode(State.Debug.self, from: data)
       else {
-        return .init(isUIEventsLoggingEnabled: false)
+        return .init()
       }
-      return .init(isUIEventsLoggingEnabled: isUIEventsLoggingEnabled)
+      return debug
     }
     set(value) {
-      set(value.isUIEventsLoggingEnabled, forKey: "isUIEventsLoggingEnabled")
+      let data = try! JSONEncoder().encode(value)
+      set(data, forKey: "debug")
     }
   }
 

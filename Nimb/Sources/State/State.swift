@@ -10,6 +10,7 @@ public struct State: Sendable {
   @PublicInit
   public struct Debug: Sendable, Codable {
     public var isUIEventsLoggingEnabled: Bool = false
+    public var isMessagePackInspectorEnabled: Bool = false
   }
 
   @PublicInit

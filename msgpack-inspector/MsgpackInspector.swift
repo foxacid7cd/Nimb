@@ -14,14 +14,14 @@ struct MsgpackInspector: AsyncParsableCommand {
   
   @Argument
   public var executablePath: String
-
+  
   @Argument(parsing: .captureForPassthrough)
   public var passthroughArguments: [String] = []
-
+  
   func run() async throws {
     var fdMaster: Int32 = 0
     var fdSlave: Int32 = 0
-    let rc = openpty(&fdMaster, &fdSlave, nil, nil, nil)
+    let rc = openpty(&fdMaster, &fdSlave, nil, &orig_termios, nil)
     if rc != 0 {
       throw Errno(rawValue: rc)
     }
@@ -29,18 +29,17 @@ struct MsgpackInspector: AsyncParsableCommand {
     _ = fcntl(fdSlave, F_SETFD, FD_CLOEXEC)
     let masterHandle = FileHandle(fileDescriptor: fdMaster, closeOnDealloc: true)
     let slaveHandle = FileHandle(fileDescriptor: fdSlave, closeOnDealloc: true)
-
+    
     let process = Process()
     process.environment = ProcessInfo.processInfo.environment
     process.executableURL = URL(filePath: executablePath)
     process.arguments = passthroughArguments
     process.standardInput = slaveHandle
     process.standardOutput = slaveHandle
-
-    fflush(stdout)
+    
     set_conio_terminal_mode()
     defer { reset_terminal_mode() }
-
+    
     try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
         for await dataBatch in FileHandle.standardInput.dataBatches {

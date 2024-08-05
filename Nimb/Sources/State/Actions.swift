@@ -12,6 +12,15 @@ public enum Actions {
     }
   }
 
+  public struct ToggleDebugMessagePackInspector: Action {
+    public func apply(to container: StateContainer) async throws -> State
+      .Updates
+    {
+      container.state.debug.isMessagePackInspectorEnabled.toggle()
+      return .init(isDebugUpdated: true)
+    }
+  }
+
   @PublicInit
   public struct SetCursorBlinkingPhase: Action {
     public var value: Bool
