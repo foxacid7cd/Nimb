@@ -8,7 +8,7 @@ struct SpeedTuner: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "speed-tuner",
     shouldDisplay: true,
-    subcommands: [CollectMsgpackData.self]
+    subcommands: []
   )
 
   func run() async throws {
