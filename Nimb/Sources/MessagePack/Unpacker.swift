@@ -38,7 +38,7 @@ public class Unpacker {
       case MSGPACK_UNPACK_SUCCESS:
         let value = Value(unpacked.data)
         accumulator.append(value)
-
+        
       case MSGPACK_UNPACK_CONTINUE: isCancelled = true
 
       case MSGPACK_UNPACK_PARSE_ERROR:
@@ -53,7 +53,43 @@ public class Unpacker {
 
     return accumulator
   }
+  
+  public func _unpack(source: UnsafeRawPointer, bytesCount: Int) throws -> (value: Value?, bytesUsed: Int) {
+    let requiredCapacity = bufferedBytesCount + bytesCount
+    if msgpack_unpacker_buffer_capacity(&mpac) < requiredCapacity {
+      msgpack_unpacker_reserve_buffer(&mpac, requiredCapacity)
+    }
+    
+    UnsafeMutableRawPointer(msgpack_unpacker_buffer(&mpac))!
+      .copyMemory(from: source, byteCount: bytesCount)
+    
+    msgpack_unpacker_buffer_consumed(&mpac, bytesCount)
+    
+    var p_bytes = 0
+    let result = msgpack_unpacker_next_with_size(&mpac, &unpacked, &p_bytes)
+    
+    switch result {
+    case MSGPACK_UNPACK_SUCCESS, MSGPACK_UNPACK_EXTRA_BYTES:
+      bufferedBytesCount = 0
+      return (value: .init(unpacked.data), bytesUsed: p_bytes)
+      
+    case MSGPACK_UNPACK_CONTINUE:
+      bufferedBytesCount += p_bytes
+      return (value: nil, bytesUsed: p_bytes)
+      
+    case MSGPACK_UNPACK_PARSE_ERROR:
+      throw Failure("MSGPACK_UNPACK_PARSE_ERROR")
+      
+    case MSGPACK_UNPACK_NOMEM_ERROR:
+      throw Failure("MSGPACK_UNPACK_PARSE_ERROR")
+      
+    default:
+      throw Failure("Unexpected result from msgpack_unpacker_next_with_size")
+    }
+  }
 
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
+  private var bufferedBytesCount = 0
 }
+
