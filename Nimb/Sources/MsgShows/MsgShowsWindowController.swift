@@ -15,8 +15,6 @@ class MsgShowsWindowController: NSWindowController {
     super.init(window: window)
 
     self.viewController = viewController
-
-    window.setIsVisible(true)
   }
 
   @available(*, unavailable)
@@ -36,6 +34,9 @@ class MsgShowsWindowController: NSWindowController {
     if !stateUpdates.msgShowsUpdates.isEmpty {
       let show = !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
       if show {
+        if !isWindowInitiallyShown {
+          window!.setIsVisible(true)
+        }
         window!.orderFront(nil)
       }
     }
@@ -43,4 +44,5 @@ class MsgShowsWindowController: NSWindowController {
 
   private let store: Store
   private var viewController: MsgShowsViewController!
+  private var isWindowInitiallyShown = false
 }

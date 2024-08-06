@@ -16,8 +16,8 @@ public class MsgShowsViewController: NSViewController {
 
   override public func loadView() {
     let view = customView
-    view.width(min: 400, max: 720)
-    view.height(min: 240, max: 480)
+    view.width(min: 400, max: 800)
+    view.height(min: 240)
 
     scrollView.drawsBackground = true
     scrollView.contentInsets = .init(top: 10, left: 10, bottom: 10, right: 10)
@@ -38,7 +38,7 @@ public class MsgShowsViewController: NSViewController {
 
   public func render(_ stateUpdates: State.Updates) {
     if !stateUpdates.msgShowsUpdates.isEmpty || stateUpdates.isAppearanceUpdated {
-      if !stateUpdates.updatedObservedHighlightNames.isDisjoint(with: Self.observedHighlightName) {
+      if !stateUpdates.updatedObservedHighlightNames.isDisjoint(with: [.normal]) {
         renderBackgroundColor()
       }
 
@@ -68,7 +68,9 @@ public class MsgShowsViewController: NSViewController {
   }
 
   public func renderBackgroundColor() {
-    scrollView.backgroundColor = store.state.appearance.backgroundColor(for: .normalFloat).appKit
+    let backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+    scrollView.backgroundColor = backgroundColor
+    textView.backgroundColor = backgroundColor
   }
 
   private static let observedHighlightName: Set<
@@ -172,19 +174,27 @@ public class MsgShowsViewController: NSViewController {
 //  }
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
-    .init(string: msgShow.contentParts.map(\.text).joined(), attributes: [
-      .font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .medium),
-      .foregroundColor: NSColor.white,
-    ])
+    msgShow.contentParts
+      .map { part in
+        NSAttributedString(string: part.text, attributes: [
+          .font: store.state.font.appKit(
+            isBold: store.appearance.isBold(for: part.highlightID),
+            isItalic: store.appearance.isItalic(for: part.highlightID)
+          ),
+          .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
+          .backgroundColor: store.appearance.backgroundColor(for: part.highlightID).appKit,
+        ])
+      }
+      .joined()
   }
 }
 
 extension Sequence where Element: NSAttributedString {
-  func joined(separator: NSAttributedString) -> NSAttributedString {
+  func joined(separator: NSAttributedString? = nil) -> NSAttributedString {
     let accumulator = NSMutableAttributedString()
     var index = 0
     for attributedString in self {
-      if index != 0 {
+      if let separator, index != 0 {
         accumulator.append(separator)
       }
       accumulator.append(attributedString)
