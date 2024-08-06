@@ -41,6 +41,33 @@ public extension UserDefaults {
     }
   }
 
+  var lastMsgShowsWindowFrame: CGRect? {
+    get {
+      guard
+        let x = value(forKey: "msgShowsWindowX") as? Double,
+        let y = value(forKey: "msgShowsWindowY") as? Double,
+        let width = value(forKey: "msgShowsWindowWidth") as? Double,
+        let height = value(forKey: "msgShowsWindowHeight") as? Double
+      else {
+        return nil
+      }
+      return .init(x: x, y: y, width: width, height: height)
+    }
+    set(value) {
+      if let value {
+        set(value.origin.x, forKey: "msgShowsWindowX")
+        set(value.origin.y, forKey: "msgShowsWindowY")
+        set(value.width, forKey: "msgShowsWindowWidth")
+        set(value.height, forKey: "msgShowsWindowHeight")
+      } else {
+        removeObject(forKey: "msgShowsWindowX")
+        removeObject(forKey: "msgShowsWindowY")
+        removeObject(forKey: "msgShowsWindowWidth")
+        removeObject(forKey: "msgShowsWindowHeight")
+      }
+    }
+  }
+
   var appKitFont: NSFont? {
     get {
       guard

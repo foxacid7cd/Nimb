@@ -20,9 +20,12 @@ class MsgShowsWindowController: NSWindowController {
     window.setAnchorAttribute(.bottom, for: .vertical)
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
+    window.alphaValue = 0.9
     super.init(window: window)
 
+    window.delegate = self
     self.viewController = viewController
+    customWindow = window
   }
 
   @available(*, unavailable)
@@ -31,19 +34,18 @@ class MsgShowsWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if !stateUpdates.msgShowsUpdates.isEmpty || stateUpdates.isAppearanceUpdated {
-      if !store.state.msgShows.isEmpty {
-//        renderContent()
-      }
-
-      viewController.render(stateUpdates)
-    }
+    viewController.render(stateUpdates)
 
     if !stateUpdates.msgShowsUpdates.isEmpty {
       let show = !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
       if show {
+        if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
+          customWindow!.setFrame(frame, display: false, animate: false)
+          isWindowInitiallyShown = true
+        }
+
         window!.setIsVisible(true)
-        window!.orderFront(nil)
+        window!.orderFrontRegardless()
       } else {
         window!.setIsVisible(false)
       }
@@ -58,7 +60,7 @@ class MsgShowsWindowController: NSWindowController {
     }
 
     override var canBecomeKey: Bool {
-      true
+      false
     }
 
     override func keyDown(with event: NSEvent) {
@@ -68,5 +70,26 @@ class MsgShowsWindowController: NSWindowController {
 
   private let store: Store
   private var viewController: MsgShowsViewController!
+  private var customWindow: CustomWindow!
   private var isWindowInitiallyShown = false
+
+  private func saveWindowFrame() {
+    UserDefaults.standard.lastMsgShowsWindowFrame = customWindow.frame
+  }
+}
+
+extension MsgShowsWindowController: NSWindowDelegate {
+  func windowDidResize(_: Notification) {
+    if !customWindow.inLiveResize {
+      saveWindowFrame()
+    }
+  }
+
+  func windowDidMove(_: Notification) {
+    saveWindowFrame()
+  }
+
+  func windowDidEndLiveResize(_: Notification) {
+    saveWindowFrame()
+  }
 }

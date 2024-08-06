@@ -19,22 +19,21 @@ public class MsgShowsViewController: NSViewController {
     let view = NSView()
     view.translatesAutoresizingMaskIntoConstraints = false
     view.width(600)
-    view.height(min: 360)
+    view.height(min: 400)
 
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
+    scrollView.contentInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
     scrollView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
 
     textView.isEditable = false
-    textView.isSelectable = false
-    textView.usesRuler = true
+    textView.isSelectable = true
+    textView.usesRuler = false
     textView.usesFontPanel = false
     textView.widthTracksTextView = true
     textView.heightTracksTextView = true
     scrollView.documentView = textView
-    textView.textContainer.containerSize = .init(width: 600, height: 0)
 
     self.view = view
   }
@@ -71,7 +70,6 @@ public class MsgShowsViewController: NSViewController {
       }
 
       textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
-      textView.font = store.font.appKit()
     }
   }
 
@@ -98,6 +96,10 @@ public class MsgShowsViewController: NSViewController {
     msgShow.contentParts
       .map { part in
         var attributes: [NSAttributedString.Key: Any] = [
+          .font: store.font.appKit(
+            isBold: store.appearance.isBold(for: part.highlightID),
+            isItalic: store.appearance.isItalic(for: part.highlightID)
+          ),
           .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
         ]
         let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
