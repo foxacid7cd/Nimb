@@ -1,43 +1,71 @@
 NAME := Nimb
 BUILD_DIR := .build
 NEOVIM_DIR := Third-Party/neovim
-SWIFTFORMAT := /opt/homebrew/bin/swiftformat
+GENERATED_DIR := Nimb/Sources/generated
 DERIVED_DATA_DIR := $(BUILD_DIR)/DerivedData
+EXPORT_OPTIONS_PLIST := ExportOptions.plist
+INSTALL_DIR := /Applications
+SWIFTFORMAT := /opt/homebrew/bin/swiftformat
 
+# CMake Configuration
 export CMAKE_GENERATOR := Unix Makefiles
 export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
 
+# Targets
 .PHONY: all test clean export_xcarchive neovim install
 
+# Archive Build
 $(BUILD_DIR)/Nimb.xcarchive: generate
-	xcodebuild archive -workspace Nimb.xcworkspace -scheme Nimb -configuration Release -archivePath $(BUILD_DIR)/Nimb.xcarchive | xcbeautify
+	xcodebuild archive -workspace Nimb.xcworkspace \
+		-scheme Nimb -configuration Release \
+		-archivePath $@ | xcbeautify
 
+# Export Archive
 export_xcarchive: $(BUILD_DIR)/Nimb.xcarchive
-	xcodebuild -exportArchive -archivePath $(BUILD_DIR)/Nimb.xcarchive -exportOptionsPlist Scripts/exportOptions.plist -exportPath /Applications/ | xcbeautify
+	xcodebuild -exportArchive -archivePath $< \
+		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) \
+		-exportPath $(INSTALL_DIR) | xcbeautify
+
+# Neovim
+neovim: build_neovim_package
+	@echo "Extracting Neovim package..."
+	pushd $(NEOVIM_DIR)/build > /dev/null && tar -xvf nvim-macos-arm64.tar.gz && popd > /dev/null && \
+	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && \
+	mv $(NEOVIM_DIR)/build/nvim-macos-arm64 $(BUILD_DIR)/package
 
 build_neovim_package:
-	pushd $(NEOVIM_DIR) && make deps && \
-		pushd build && make package && \
-			popd && popd
+	@echo "Building Neovim package..."
+	pushd $(NEOVIM_DIR) > /dev/null && \
+		make deps && \
+		pushd build > /dev/null && \
+			make package && \
+		popd > /dev/null && \
+	popd > /dev/null
 
-extract_neovim_package:
-	pushd $(NEOVIM_DIR)/build && tar -xvf nvim-macos-arm64.tar.gz && \
-  	popd && mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && mv $(NEOVIM_DIR)/build/nvim-macos-arm64 $(BUILD_DIR)/package
-
-neovim: build_neovim_package extract_neovim_package
-
+# Clean Neovim
 clean_neovim:
-	pushd $(NEOVIM_DIR) && make clean && popd
+	@echo "Cleaning Neovim build..."
+	pushd $(NEOVIM_DIR) > /dev/null && \
+		make clean && \
+	popd > /dev/null
 
+# Clean Build
 clean: clean_neovim
+	@echo "Cleaning build directory..."
 	rm -rf $(BUILD_DIR)
 
+# Format
 format:
+	@echo "Formatting Swift files..."
 	$(SWIFTFORMAT) --config .swiftformat Nimb/ generate/ Macros/ msgpack-inspector/ speed-tuner/
 
+# Generate
 generate: neovim
-	xcodebuild -workspace Nimb.xcworkspace -scheme generate -configuration Debug -destination "platform=macos,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) | xcbeautify && \
-		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate Nimb/Sources/generated
+	@echo "Generating Swift Neovim API code..."
+	xcodebuild -workspace Nimb.xcworkspace -scheme generate -configuration Debug \
+		-destination "platform=macos,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) | xcbeautify && \
+		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate $(GENERATED_DIR)
 
+# Install
 install: export_xcarchive format
