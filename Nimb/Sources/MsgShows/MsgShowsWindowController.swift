@@ -11,7 +11,7 @@ class MsgShowsWindowController: NSWindowController {
     window.keyPressed = { keyPress in
       store.report(keyPress: keyPress)
     }
-    window.styleMask = [.titled, .resizable, .nonactivatingPanel]
+    window.styleMask = [.titled, .resizable]
     window.titlebarAppearsTransparent = false
     window.isOpaque = false
     window.isMovable = true
@@ -60,7 +60,7 @@ class MsgShowsWindowController: NSWindowController {
     }
 
     override var canBecomeKey: Bool {
-      false
+      true
     }
 
     override func keyDown(with event: NSEvent) {

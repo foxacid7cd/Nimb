@@ -21,8 +21,9 @@ public class MsgShowsViewController: NSViewController {
     view.width(600)
     view.height(min: 400)
 
+    scrollView.drawsBackground = true
     scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
+    scrollView.contentInsets = .init(top: 2, left: 0, bottom: 2, right: 0)
     scrollView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
@@ -33,6 +34,7 @@ public class MsgShowsViewController: NSViewController {
     textView.usesFontPanel = false
     textView.widthTracksTextView = true
     textView.heightTracksTextView = true
+    textView.isHorizontalContentSizeConstraintActive = true
     scrollView.documentView = textView
 
     self.view = view
@@ -70,13 +72,14 @@ public class MsgShowsViewController: NSViewController {
       }
 
       textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
+      textView.defaultParagraphStyle = defaultParagraphStyle
     }
   }
 
   public func renderBackgroundColor() {
     let backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
     scrollView.backgroundColor = backgroundColor
-      .withAlphaComponent(0.6)
+      .withAlphaComponent(0.8)
   }
 
   private static let observedHighlightName: Set<
@@ -91,24 +94,36 @@ public class MsgShowsViewController: NSViewController {
   private lazy var scrollView = NSScrollView()
   private lazy var textView = STTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
+  private lazy var defaultParagraphStyle: NSParagraphStyle = {
+    let style = NSMutableParagraphStyle()
+    style.lineBreakMode = .byWordWrapping
+    style.paragraphSpacing = 4
+    style.lineBreakStrategy = .pushOut
+    return style
+  }()
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
-    msgShow.contentParts
-      .map { part in
-        var attributes: [NSAttributedString.Key: Any] = [
-          .font: store.font.appKit(
-            isBold: store.appearance.isBold(for: part.highlightID),
-            isItalic: store.appearance.isItalic(for: part.highlightID)
-          ),
-          .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
-        ]
-        let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
-        if backgroundColor != store.appearance.defaultBackgroundColor {
-          attributes[.backgroundColor] = backgroundColor.appKit
-        }
-        return NSAttributedString(string: part.text, attributes: attributes)
+    zip(
+      0 ..< msgShow.contentParts.count,
+      msgShow.contentParts
+    )
+    .map { index, part in
+      var attributes: [NSAttributedString.Key: Any] = [
+        .font: store.font.appKit(
+          isBold: store.appearance.isBold(for: part.highlightID),
+          isItalic: store.appearance.isItalic(for: part.highlightID)
+        ),
+        .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
+      ]
+      let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
+      if backgroundColor != store.appearance.defaultBackgroundColor {
+        attributes[.backgroundColor] = backgroundColor.appKit
       }
-      .joined()
+      let text = index == 0 ?
+        String(part.text.trimmingPrefix(while: { $0 == "\n" || $0 == "\r" })) : part.text
+      return NSAttributedString(string: text, attributes: attributes)
+    }
+    .joined()
   }
 }
 

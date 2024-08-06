@@ -32,7 +32,9 @@ public class Store: Sendable {
             switch notification {
             case let .redraw(uiEvents):
               if stateContainer.state.debug.isUIEventsLoggingEnabled {
-                customDump(uiEvents, maxDepth: 1)
+                var string = ""
+                customDump(uiEvents, to: &string, maxDepth: 7)
+                logger.debug("UI events: \(string)")
               }
 
               latestUIEventsBatch = uiEvents

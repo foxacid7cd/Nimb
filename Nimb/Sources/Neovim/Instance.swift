@@ -113,6 +113,7 @@ public final class Instance: Sendable {
       .extCmdline,
       .extTabline,
       .extMessages,
+      .extWildmenu,
     ]
     try await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
