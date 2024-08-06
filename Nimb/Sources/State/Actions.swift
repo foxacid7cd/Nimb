@@ -45,13 +45,4 @@ public enum Actions {
       return .init(isFontUpdated: true)
     }
   }
-
-  public struct DismissMessages: Action {
-    public func apply(to container: StateContainer) async throws -> State
-      .Updates
-    {
-      container.state.isMsgShowsDismissed = true
-      return .init()
-    }
-  }
 }

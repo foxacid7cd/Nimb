@@ -245,7 +245,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
         gridID: gridID,
         point: point
       )
-      store.scheduleHideMsgShowsIfPossible()
     }
     if verticalScrollCount != 0 {
       let point = point(for: event)
@@ -257,7 +256,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
         gridID: gridID,
         point: point
       )
-      store.scheduleHideMsgShowsIfPossible()
     }
 
     if event.phase == .ended || event.phase == .cancelled {
@@ -319,7 +317,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       gridID: gridID,
       point: point
     )
-    store.scheduleHideMsgShowsIfPossible()
   }
 
   private let gridID: Grid.ID

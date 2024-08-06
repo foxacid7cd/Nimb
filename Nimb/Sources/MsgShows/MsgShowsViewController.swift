@@ -96,9 +96,7 @@ public class MsgShowsViewController: NSViewController {
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
   private lazy var defaultParagraphStyle: NSParagraphStyle = {
     let style = NSMutableParagraphStyle()
-    style.lineBreakMode = .byWordWrapping
     style.paragraphSpacing = 4
-    style.lineBreakStrategy = .pushOut
     return style
   }()
 

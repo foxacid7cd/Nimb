@@ -652,7 +652,6 @@ public extension Actions {
               } else {
                 updates.msgShowsUpdates.append(.added(count: 1))
               }
-              container.state.isMsgShowsDismissed = false
             } else if replaceLast {
               logger.fault("replaceLast with empty content inconsistency")
             }

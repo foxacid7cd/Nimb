@@ -72,7 +72,6 @@ public class Store: Sendable {
     stateThrottlingTask?.cancel()
     instanceTask?.cancel()
     cursorBlinkingTask?.cancel()
-    hideMsgShowsTask?.cancel()
     outerGridSizeThrottlingTask?.cancel()
   }
 
@@ -91,34 +90,8 @@ public class Store: Sendable {
     try? await dispatch(Actions.SetFont(value: font))
   }
 
-  public func scheduleHideMsgShowsIfPossible() {
-    Task { @StateActor in
-      if
-        !stateContainer.state.hasModalMsgShows,
-        !stateContainer.state.isMsgShowsDismissed
-      {
-        hideMsgShowsTask?.cancel()
-
-        hideMsgShowsTask = Task { [weak self] in
-          do {
-            try await Task.sleep(for: .milliseconds(50))
-
-            guard let self else {
-              return
-            }
-
-            hideMsgShowsTask = nil
-
-            try? await dispatch(Actions.DismissMessages())
-          } catch { }
-        }
-      }
-    }
-  }
-
   public func report(keyPress: KeyPress) {
     instance.report(keyPress: keyPress)
-    scheduleHideMsgShowsIfPossible()
   }
 
   public func reportMouseMove(
@@ -372,7 +345,6 @@ public class Store: Sendable {
   >()
   private var instanceTask: Task<Void, Never>?
   @StateActor private var cursorBlinkingTask: Task<Void, Never>?
-  @StateActor private var hideMsgShowsTask: Task<Void, Never>?
   private var previousPumBounds: IntegerRectangle?
   private var previousMouseMove: (
     modifier: String,
@@ -430,11 +402,6 @@ public class Store: Sendable {
         updates.isCursorBlinkingPhaseUpdated = true
       }
     }
-
-//    if updates.msgShowsUpdates, !stateContainer.state.isMsgShowsDismissed {
-//      hideMsgShowsTask?.cancel()
-//      hideMsgShowsTask = nil
-//    }
 
     stateUpdatesAccumulator.formUnion(updates)
 

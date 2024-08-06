@@ -37,17 +37,16 @@ class MsgShowsWindowController: NSWindowController {
     viewController.render(stateUpdates)
 
     if !stateUpdates.msgShowsUpdates.isEmpty {
-      let show = !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
-      if show {
+      if !store.state.msgShows.isEmpty {
         if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
           customWindow!.setFrame(frame, display: false, animate: false)
           isWindowInitiallyShown = true
         }
-
-        window!.setIsVisible(true)
-        window!.orderFrontRegardless()
+        customWindow!.isFloatingPanel = store.state.hasModalMsgShows
+        customWindow!.setIsVisible(true)
+        customWindow!.orderFrontRegardless()
       } else {
-        window!.setIsVisible(false)
+        customWindow!.setIsVisible(false)
       }
     }
   }

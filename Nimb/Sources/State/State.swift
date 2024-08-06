@@ -123,7 +123,6 @@ public struct State: Sendable {
   public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
-  public var isMsgShowsDismissed: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
