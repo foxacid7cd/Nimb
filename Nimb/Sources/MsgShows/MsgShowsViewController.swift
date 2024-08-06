@@ -15,12 +15,22 @@ public class MsgShowsViewController: NSViewController {
   }
 
   override public func loadView() {
-    let view = customView
-    view.width(min: 400, max: 800)
-    view.height(min: 240)
+    let view = NSView()
+    view.width(min: 400, max: 1024)
+    sizeConstraints = (
+      width: view.width(500, priority: .defaultHigh),
+      height: view.height(500, priority: .defaultHigh)
+    )
 
-    scrollView.drawsBackground = true
-    scrollView.contentInsets = .init(top: 10, left: 10, bottom: 10, right: 10)
+    bgView.layer!.cornerRadius = 0
+    bgView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(bgView)
+    bgView.edgesToSuperview()
+
+    scrollView.wantsLayer = true
+    scrollView.layer!.masksToBounds = true
+    scrollView.layer!.cornerRadius = 0
+    scrollView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
 
@@ -64,13 +74,16 @@ public class MsgShowsViewController: NSViewController {
       textView.setAttributedString(
         renderedMsgShows.map(\.1).joined(separator: .init(string: "\n"))
       )
+      textView.scrollToEndOfDocument(nil)
+//      textView.textLayoutManager.ensureLayout(for: textView.textLayoutManager.documentRange)
+//      sizeConstraints.width.constant = boundingSize.width
+//      sizeConstraints.height.constant = boundingSize.height
     }
   }
 
   public func renderBackgroundColor() {
     let backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
-    scrollView.backgroundColor = backgroundColor
-    textView.backgroundColor = backgroundColor
+    scrollView.backgroundColor = backgroundColor.withAlphaComponent(0.6)
   }
 
   private static let observedHighlightName: Set<
@@ -82,108 +95,27 @@ public class MsgShowsViewController: NSViewController {
   ]
 
   private let store: Store
-  private lazy var customView = FloatingWindowView()
+  private lazy var bgView = FloatingWindowView()
   private lazy var scrollView = STTextView.scrollableTextView()
   private lazy var textView = scrollView.documentView as! STTextView
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
-
-//  private func renderContent() {
-//    contentView.arrangedSubviews
-//      .forEach { $0.removeFromSuperview() }
-//
-//    let layout = MsgShowsLayout(store.state.msgShows)
-//
-//    for itemIndex in layout.items.indices {
-//      let item = layout.items[itemIndex]
-//      let isFirstItem = itemIndex == layout.items.startIndex
-//      let isLastItem = itemIndex == layout.items
-//        .index(before: layout.items.endIndex)
-//
-//      switch item {
-//      case let .texts(texts):
-//        for textIndex in texts.indices {
-//          let text = texts[textIndex]
-//          let isFirstText = textIndex == texts.startIndex
-//          let isLastText = textIndex == texts.index(before: texts.endIndex)
-//
-//          let textView = MsgShowTextView(store: store)
-//          textView.setContentHuggingPriority(
-//            .init(rawValue: 800),
-//            for: .horizontal
-//          )
-//          textView.setContentHuggingPriority(
-//            .init(rawValue: 800),
-//            for: .vertical
-//          )
-//          textView.setCompressionResistance(
-//            .init(rawValue: 900),
-//            for: .horizontal
-//          )
-//          textView.setCompressionResistance(
-//            .init(rawValue: 900),
-//            for: .vertical
-//          )
-//          textView.contentParts = text
-//          textView.preferredMaxWidth = 640
-//          let bigVerticalInset = max(12, store.font.cellWidth * 1.15)
-//          let verticalInset = bigVerticalInset * 0.7
-//          let smallVerticalInset = max(1, store.font.cellWidth * 0.15)
-//          let horizontalInset = max(14, store.font.cellHeight * 0.65)
-//          let topInset: Double =
-//            switch (isFirstItem, isFirstText) {
-//            case (true, true):
-//              bigVerticalInset
-//            case (false, true):
-//              verticalInset
-//            default:
-//              smallVerticalInset
-//            }
-//          let bottomInset: Double =
-//            switch (isLastItem, isLastText) {
-//            case (true, true):
-//              bigVerticalInset
-//            case (false, true):
-//              verticalInset
-//            default:
-//              smallVerticalInset
-//            }
-//          textView.insets = .init(
-//            top: topInset,
-//            left: horizontalInset,
-//            bottom: bottomInset,
-//            right: horizontalInset
-//          )
-//          textView.render()
-//          contentView.addArrangedSubview(textView)
-//          textView.width(to: view)
-//        }
-//
-//      case .separator:
-//        let separatorView = NSView()
-//        separatorView.wantsLayer = true
-//        separatorView.layer!.backgroundColor = store.state.appearance
-//          .foregroundColor(for: .normalFloat)
-//          .appKit
-//          .withAlphaComponent(0.3)
-//          .cgColor
-//        contentView.addArrangedSubview(separatorView)
-//        separatorView.height(1)
-//        separatorView.width(to: view)
-//      }
-//    }
-//  }
+  private var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)!
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
     msgShow.contentParts
       .map { part in
-        NSAttributedString(string: part.text, attributes: [
+        var attributes: [NSAttributedString.Key: Any] = [
           .font: store.state.font.appKit(
             isBold: store.appearance.isBold(for: part.highlightID),
             isItalic: store.appearance.isItalic(for: part.highlightID)
           ),
           .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
-          .backgroundColor: store.appearance.backgroundColor(for: part.highlightID).appKit,
-        ])
+        ]
+        let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
+        if backgroundColor != store.appearance.defaultBackgroundColor {
+          attributes[.backgroundColor] = backgroundColor.appKit
+        }
+        return NSAttributedString(string: part.text, attributes: attributes)
       }
       .joined()
   }

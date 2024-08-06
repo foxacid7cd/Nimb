@@ -138,7 +138,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
           try! errorLog.data(using: .utf8)!.write(
             to: temporaryFileURL,
-            options: .atomic
+            options: []
           )
           NSWorkspace.shared.open(temporaryFileURL)
 

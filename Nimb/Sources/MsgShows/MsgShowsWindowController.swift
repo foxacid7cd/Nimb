@@ -7,11 +7,16 @@ class MsgShowsWindowController: NSWindowController {
     self.store = store
 
     let viewController = MsgShowsViewController(store: store)
-    let window = NSWindow(contentViewController: viewController)
-    window.styleMask = [.resizable, .titled]
+    let window = NSPanel(contentViewController: viewController)
+    window.styleMask = [.resizable, .borderless]
+    window.isOpaque = false
     window.isMovable = true
-    window.animationBehavior = .utilityWindow
-    window.title = "Messages"
+    window.isFloatingPanel = true
+    window.allowsConcurrentViewDrawing = true
+    window.isMovableByWindowBackground = true
+    window.level = .floating
+    window.setAnchorAttribute(.bottom, for: .vertical)
+    window.setAnchorAttribute(.left, for: .horizontal)
     super.init(window: window)
 
     self.viewController = viewController
