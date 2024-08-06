@@ -75,7 +75,7 @@ extension API: AsyncSequence {
             accumulator.append(.nvimErrorEvent(nvimErrorEvent))
 
           default:
-            log
+            logger
               .info("Unknown neovim API notification: \(notification.method)")
           }
         }

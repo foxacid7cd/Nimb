@@ -14,57 +14,45 @@ public class MsgShowsViewController: NSViewController {
   }
 
   override public func loadView() {
-    let view = customView
-    view.width(max: 800)
-    view.height(max: 600)
-    view.layer!.cornerRadius = 14
-    view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
+//    let view = customView
+//    view.width(max: 800)
+//    view.height(max: 600)
+//    view.layer!.cornerRadius = 14
+//    view.layer!.maskedCorners = [.layerMaxXMaxYCorner]
+//
+//    scrollView.drawsBackground = false
+//    scrollView.scrollsDynamically = false
+//    scrollView.automaticallyAdjustsContentInsets = false
+//    view.addSubview(scrollView)
+//    scrollView.leading(to: view)
+//    scrollView.trailing(to: view)
+//    scrollView.topToSuperview()
+//    scrollView.bottomToSuperview(offset: 1)
+//
+//    contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
+//    contentView.setContentHuggingPriority(
+//      .init(rawValue: 900),
+//      for: .horizontal
+//    )
+//    contentView.orientation = .vertical
+//    contentView.edgeInsets = .init()
+//    contentView.spacing = 0
+//    contentView.distribution = .fill
+//    scrollView.documentView = contentView
+//
+//    scrollView.size(to: contentView, priority: .init(rawValue: 800))
 
-    scrollView.drawsBackground = false
-    scrollView.scrollsDynamically = false
-    scrollView.automaticallyAdjustsContentInsets = false
-    view.addSubview(scrollView)
-    scrollView.leading(to: view)
-    scrollView.trailing(to: view)
-    scrollView.topToSuperview()
-    scrollView.bottomToSuperview(offset: 1)
-
-    contentView.setContentHuggingPriority(.init(rawValue: 900), for: .vertical)
-    contentView.setContentHuggingPriority(
-      .init(rawValue: 900),
-      for: .horizontal
-    )
-    contentView.orientation = .vertical
-    contentView.edgeInsets = .init()
-    contentView.spacing = 0
-    contentView.distribution = .fill
-    scrollView.documentView = contentView
-
-    scrollView.size(to: contentView, priority: .init(rawValue: 800))
-
-    self.view = view
+    view = customView
   }
 
   override public func viewDidLoad() {
     super.viewDidLoad()
 
-    customView.toggle(on: false)
-    renderContent()
+//    customView.toggle(on: false)
+//    renderContent()
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
-      if !store.state.msgShows.isEmpty {
-        renderContent()
-      }
-    }
-
-    if stateUpdates.isMessagesUpdated {
-      customView.toggle(
-        on: !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
-      )
-    }
-  }
+  public func render(_: State.Updates) { }
 
   private static let observedHighlightName: Set<
     Appearance
@@ -75,7 +63,7 @@ public class MsgShowsViewController: NSViewController {
   ]
 
   private let store: Store
-  private lazy var customView = FloatingWindowView(store: store)
+  private lazy var customView = MsgShowsView.createFromNib()
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
 

@@ -541,7 +541,7 @@ public struct CursorDrawRun: Sendable {
             break drawRunsLoop
           }
         }
-        log.fault("inconsistency error")
+        logger.fault("inconsistency error")
         break
       }
     }
@@ -554,7 +554,7 @@ public struct CursorDrawRun: Sendable {
         font: font
       )
     else {
-      log.fault("inconsistency error")
+      logger.fault("inconsistency error")
       return nil
     }
     self = .init(

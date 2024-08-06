@@ -2,5 +2,5 @@
 
 import OSLog
 
-let log = Logger()
-let signposter = OSSignposter(logger: log)
+let logger = Logger()
+let signposter = OSSignposter(logger: logger)

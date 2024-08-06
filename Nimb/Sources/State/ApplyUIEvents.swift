@@ -3,6 +3,7 @@
 import CasePaths
 import CustomDump
 import IdentifiedCollections
+import OSLog
 import Overture
 
 public extension Actions {
@@ -148,6 +149,11 @@ public extension Actions {
         return contentParts
       }
 
+      let intervalState = signposter.beginInterval("Actions.ApplyUIEvents", id: .exclusive)
+      defer {
+        signposter.endInterval("Actions.ApplyUIEvents", intervalState)
+      }
+
       var uiEventsChunks = [UIEventsChunk]()
       for uiEvent in uiEvents {
         switch uiEvent {
@@ -216,6 +222,8 @@ public extension Actions {
           uiEventsChunks.append(.single(uiEvent))
         }
       }
+
+      signposter.emitEvent("Processed UI events into chunks")
 
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {

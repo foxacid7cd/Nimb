@@ -281,7 +281,7 @@ final class MainMenuController: NSObject {
 
         NSWorkspace.shared.open(temporaryFileURL)
       } catch {
-        log
+        logger
           .error(
             "could not create or write file handle to temporary file with error \(error)"
           )

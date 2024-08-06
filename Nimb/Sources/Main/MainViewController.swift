@@ -7,7 +7,6 @@ public class MainViewController: NSViewController {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
     gridsView = .init(store: store)
-    msgShowsViewController = .init(store: store)
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,
@@ -98,14 +97,6 @@ public class MainViewController: NSViewController {
     view.addSubview(modalOverlayView)
     modalOverlayView.edgesToSuperview()
 
-    view.addSubview(msgShowsViewController.view)
-    msgShowsViewController.view.leading(to: view, offset: -1)
-    msgShowsViewController.view.bottomToSuperview(
-      offset: 1,
-      priority: .defaultHigh
-    )
-    addChild(msgShowsViewController)
-
     view.addSubview(cmdlinesViewController.view)
     cmdlinesViewController.view.centerXToSuperview()
     cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
@@ -160,7 +151,6 @@ public class MainViewController: NSViewController {
         .isEmpty
     }
 
-    msgShowsViewController.render(stateUpdates)
     cmdlinesViewController.render(stateUpdates)
     popupmenuViewController.render(stateUpdates)
   }
@@ -184,7 +174,6 @@ public class MainViewController: NSViewController {
   let gridsView: GridsView
 
   private let store: Store
-  private let msgShowsViewController: MsgShowsViewController
   private let cmdlinesViewController: CmdlinesViewController
   private let popupmenuViewController: PopupmenuViewController
   private let minOuterGridSize: IntegerSize

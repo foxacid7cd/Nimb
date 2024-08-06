@@ -159,7 +159,7 @@ public struct Grid: Sendable, Identifiable {
 
     case let .scroll(rectangle, offset):
       if offset.columnsCount != 0 {
-        log.error("horizontal scroll not supported!!!")
+        logger.error("horizontal scroll not supported!!!")
       }
 
       var shouldUpdateCursorDrawRun = false

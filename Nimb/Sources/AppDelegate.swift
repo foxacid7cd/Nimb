@@ -13,6 +13,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     Task {
       await setupStore()
       setupMainMenuController()
+      setupMsgShowsWindowController()
       showMainWindowController()
       runStateUpdatesTask()
 
@@ -28,6 +29,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   private var store: Store?
   private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
+  private var msgShowsWindowController: MsgShowsWindowController?
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
@@ -63,12 +65,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     )
   }
 
+  private func setupMsgShowsWindowController() {
+    msgShowsWindowController = MsgShowsWindowController(store: store!)
+  }
+
   private func runStateUpdatesTask() {
     stateUpdatesTask = Task { [weak self] in
       await withUnsafeContinuation { continuation in
         Task {
           let store = self!.store!
           let mainWindowController = self!.mainWindowController!
+          let msgShowsWindowController = self!.msgShowsWindowController!
 
           do {
             for try await stateUpdates in store {
@@ -88,6 +95,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               }
 
               mainWindowController.render(stateUpdates)
+              msgShowsWindowController.render(stateUpdates)
             }
 
             continuation.resume(returning: ())

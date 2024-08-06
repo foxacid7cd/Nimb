@@ -100,7 +100,7 @@ public class CmdlinesViewController: NSViewController {
   ]
 
   private let store: Store
-  private lazy var customView = FloatingWindowView(store: store)
+  private lazy var customView = FloatingWindowView()
   private lazy var scrollView = NSScrollView()
   private lazy var contentView = NSStackView(views: [])
   private var cmdlineViews = IntKeyedDictionary<CmdlineView>()

@@ -51,7 +51,7 @@ public final class Instance: Sendable {
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(component: "captured_nvim_msgpack_output_\(UUID().uuidString).mpack")
 
-      log.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+      logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
 
       process.arguments = [
         "-l",
@@ -74,9 +74,7 @@ public final class Instance: Sendable {
 
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel, maximumConcurrentRequests: 500)
-    let api = API(rpc)
-    self.api = api
-    neovimNotificationsIterator = api.makeAsyncIterator()
+    api = API(rpc)
   }
 
   public enum MouseButton: String, Sendable {
@@ -113,9 +111,8 @@ public final class Instance: Sendable {
       .extMultigrid,
       .extHlstate,
       .extCmdline,
-      .extMessages,
-      .extPopupmenu,
       .extTabline,
+      .extMessages,
     ]
     try await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
@@ -284,8 +281,6 @@ public final class Instance: Sendable {
   private let initialOuterGridSize: IntegerSize
   private let process = Process()
   private let api: API<ProcessChannel>
-  private nonisolated let neovimNotificationsIterator: API<ProcessChannel>
-    .AsyncIterator
 }
 
 extension Instance: AsyncSequence {
@@ -294,6 +289,6 @@ extension Instance: AsyncSequence {
   public nonisolated func makeAsyncIterator() -> API<ProcessChannel>
     .AsyncIterator
   {
-    neovimNotificationsIterator
+    api.makeAsyncIterator()
   }
 }

@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		68007B5B2C619F5B001AD1D0 /* MsgShowsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 68007B5A2C619F5B001AD1D0 /* MsgShowsView.xib */; };
+		68007B5D2C61A199001AD1D0 /* MsgShowsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B5C2C61A199001AD1D0 /* MsgShowsView.swift */; };
+		68007B5F2C61A7AB001AD1D0 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */; };
+		68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
 		6814C1392C5E341F00FF3968 /* SpeedTuner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C1382C5E341F00FF3968 /* SpeedTuner.swift */; };
@@ -151,12 +155,22 @@
 		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
 		68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */; };
 		68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */; };
-		68F0D4F32AECFDFC000954FF /* log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* log.swift */; };
+		68F0D4F32AECFDFC000954FF /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* OSLog.swift */; };
 		68FAC3F32AF685AB00490F09 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F22AF685AB00490F09 /* Action.swift */; };
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
 		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		68007B552C6188AE001AD1D0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68BFEF392934CF6100564FE2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 688080012C603ADA00BD32FA;
+			remoteInfo = "msgpack-inspector";
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		6814C11E2C5E155E00FF3968 /* CopyFiles */ = {
@@ -232,6 +246,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		68007B5A2C619F5B001AD1D0 /* MsgShowsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MsgShowsView.xib; sourceTree = "<group>"; };
+		68007B5C2C61A199001AD1D0 /* MsgShowsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsView.swift; sourceTree = "<group>"; };
+		68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NibLoadable.swift; sourceTree = "<group>"; };
+		68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsWindowController.swift; sourceTree = "<group>"; };
 		68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuViewController.swift; sourceTree = "<group>"; };
 		68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuItemView.swift; sourceTree = "<group>"; };
 		6814C1202C5E155E00FF3968 /* speed-tuner */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "speed-tuner"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -335,7 +353,7 @@
 		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsEnvironmentView.swift; sourceTree = "<group>"; };
-		68F0D4F22AECFDFC000954FF /* log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = log.swift; sourceTree = "<group>"; };
+		68F0D4F22AECFDFC000954FF /* OSLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
 		68FAC3F22AF685AB00490F09 /* Action.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyUIEvents.swift; sourceTree = "<group>"; };
 		68FAC3F62AF6932F00490F09 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
@@ -469,12 +487,13 @@
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				686CAFE92B50F3B700AED2CC /* Settings */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
+				68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
-				68F0D4F22AECFDFC000954FF /* log.swift */,
+				68F0D4F22AECFDFC000954FF /* OSLog.swift */,
 				68EFD2682B58834E0010DD54 /* main.swift */,
 				681B52DC2C5F85DF00AD6C68 /* Nimb-Bridging-Header.h */,
 			);
@@ -491,9 +510,12 @@
 		68554AFA2AFAAB36006488CD /* MsgShows */ = {
 			isa = PBXGroup;
 			children = (
+				68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */,
 				68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */,
 				68554AFB2AFAAC5B006488CD /* MsgShowTextView.swift */,
 				68554AFF2AFAAD10006488CD /* MsgShowsLayout.swift */,
+				68007B5A2C619F5B001AD1D0 /* MsgShowsView.xib */,
+				68007B5C2C61A199001AD1D0 /* MsgShowsView.swift */,
 			);
 			path = MsgShows;
 			sourceTree = "<group>";
@@ -777,6 +799,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				68007B562C6188AE001AD1D0 /* PBXTargetDependency */,
 			);
 			name = Nimb;
 			packageProductDependencies = (
@@ -861,6 +884,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				68D1803629AA4A9000732402 /* Assets.xcassets in Resources */,
+				68007B5B2C619F5B001AD1D0 /* MsgShowsView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1008,8 +1032,9 @@
 				68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */,
 				68A8FF5C2AD29F660017C28D /* Cmdlines.swift in Sources */,
 				68A8FF6C2AD2ACCB0017C28D /* UIEvent.swift in Sources */,
+				68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
-				68F0D4F32AECFDFC000954FF /* log.swift in Sources */,
+				68F0D4F32AECFDFC000954FF /* OSLog.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				687644882C5373670022D916 /* NeovimNotification.swift in Sources */,
@@ -1034,6 +1059,7 @@
 				68A8FF5A2AD29F660017C28D /* Tabline.swift in Sources */,
 				68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */,
 				68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */,
+				68007B5F2C61A7AB001AD1D0 /* NibLoadable.swift in Sources */,
 				68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */,
 				68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */,
 				68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */,
@@ -1047,10 +1073,19 @@
 				6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */,
 				681B53192C5FE47600AD6C68 /* AsyncFileHandle.swift in Sources */,
 				68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */,
+				68007B5D2C61A199001AD1D0 /* MsgShowsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		68007B562C6188AE001AD1D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 688080012C603ADA00BD32FA /* msgpack-inspector */;
+			targetProxy = 68007B552C6188AE001AD1D0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6814C1242C5E155E00FF3968 /* Debug */ = {
@@ -1191,6 +1226,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -1210,6 +1246,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

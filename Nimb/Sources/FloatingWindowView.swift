@@ -3,25 +3,14 @@
 import AppKit
 
 public class FloatingWindowView: NSVisualEffectView {
-  public init(store: Store) {
-    self.store = store
-    super.init(frame: .zero)
-
-    material = .menu
-    blendingMode = .withinWindow
-
-    wantsLayer = true
-    layer!.cornerRadius = 6
-    layer!.borderColor = NSColor.separatorColor.cgColor
-    layer!.borderWidth = 1
-    layer!.shadowOpacity = 0.9
-    layer!.shadowRadius = 8
-    layer!.shadowOffset = .init(width: 0, height: 10)
+  override public init(frame: CGRect) {
+    super.init(frame: frame)
+    setup()
   }
 
-  @available(*, unavailable)
   required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
+    super.init(coder: coder)
+    setup()
   }
 
   @discardableResult
@@ -49,6 +38,19 @@ public class FloatingWindowView: NSVisualEffectView {
     return false
   }
 
-  private let store: Store
+  ///  private let store: Store
   private var isToggledOn: Bool?
+
+  private func setup() {
+    material = .menu
+    blendingMode = .withinWindow
+
+    wantsLayer = true
+    layer!.cornerRadius = 6
+    layer!.borderColor = NSColor.separatorColor.cgColor
+    layer!.borderWidth = 1
+    layer!.shadowOpacity = 0.9
+    layer!.shadowRadius = 8
+    layer!.shadowOffset = .init(width: 0, height: 10)
+  }
 }

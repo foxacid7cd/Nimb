@@ -126,7 +126,7 @@ public class PopupmenuViewController: NSViewController {
 
   private let store: Store
   private let getCmdlinesView: () -> NSView
-  private lazy var customView = FloatingWindowView(store: store)
+  private lazy var customView = FloatingWindowView()
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
   private var previousSelectedItemIndex: Int?
