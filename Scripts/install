@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
-set -e
+set -euxo pipefail
 
 () {
-  xcodebuild archive -workspace ./Nimb.xcworkspace -scheme Nimb -configuration Release -archivePath .build/Nimb.xcarchive
-  xcodebuild -exportArchive -archivePath .build/Nimb.xcarchive -exportOptionsPlist ./Scripts/exportOptions.plist -exportPath /Applications/
+  xcodebuild archive -workspace Nimb.xcworkspace -scheme Nimb -configuration Release -archivePath .build/Nimb.xcarchive | xcbeautify
+  xcodebuild -exportArchive -archivePath .build/Nimb.xcarchive -exportOptionsPlist Scripts/exportOptions.plist -exportPath /Applications/ | xcbeautify
 }
