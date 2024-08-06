@@ -21,6 +21,15 @@ public enum Actions {
     }
   }
 
+  public struct ToggleStoreActionsLogging: Action {
+    public func apply(to container: StateContainer) async throws -> State
+      .Updates
+    {
+      container.state.debug.isStoreActionsLoggingEnabled.toggle()
+      return .init(isDebugUpdated: true)
+    }
+  }
+
   @PublicInit
   public struct SetCursorBlinkingPhase: Action {
     public var value: Bool

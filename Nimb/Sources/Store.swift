@@ -268,14 +268,6 @@ public class Store: Sendable {
     return nil
   }
 
-  public func toggleUIEventsLogging() async {
-    try? await dispatch(Actions.ToggleDebugUIEventsLogging())
-  }
-
-  public func toggleMessagePackInspector() async {
-    try? await dispatch(Actions.ToggleDebugMessagePackInspector())
-  }
-
   public func edit(url: URL) async {
     do {
       try await instance.edit(url: url)
@@ -334,63 +326,14 @@ public class Store: Sendable {
     return string
   }
 
-  private let instance: Instance
-  @StateActor private var stateContainer: StateContainer
-  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 90)
-  @StateActor private var lastSetStateInstant = ContinuousClock.now
-  @StateActor private var stateUpdatesAccumulator = State.Updates()
-  @StateActor private var stateThrottlingTask: Task<Void, Never>?
-  private let stateUpdatesChannel = AsyncThrowingChannel<
-    State.Updates,
-    any Error
-  >()
-  private var instanceTask: Task<Void, Never>?
-  @StateActor private var cursorBlinkingTask: Task<Void, Never>?
-  private var previousPumBounds: IntegerRectangle?
-  private var previousMouseMove: (
-    modifier: String,
-    gridID: Int,
-    point: IntegerPoint
-  )?
-  private let outerGridSizeThrottlingInterval = Duration.milliseconds(100)
-  private var outerGridSizeThrottlingTask: Task<Void, Never>?
-  private var previousReportedOuterGridSizeInstant = ContinuousClock.now
-  private var previousReportedOuterGridSize: IntegerSize?
-  @StateActor private var latestUIEventsBatch: [UIEvent]?
-
   @StateActor
-  private func startCursorBlinkingTask() {
-    if
-      let cursorStyle = stateContainer.state.currentCursorStyle,
-      let blinkWait = cursorStyle.blinkWait,
-      blinkWait > 0,
-      let blinkOff = cursorStyle.blinkOff,
-      blinkOff > 0,
-      let blinkOn = cursorStyle.blinkOn,
-      blinkOn > 0
-    {
-      cursorBlinkingTask = Task { @StateActor [weak self] in
-        do {
-          try await Task.sleep(for: .milliseconds(blinkWait))
-
-          while true {
-            guard let self else {
-              return
-            }
-
-            try await dispatch(Actions.SetCursorBlinkingPhase(value: false))
-            try await Task.sleep(for: .milliseconds(blinkOff))
-
-            try await dispatch(Actions.SetCursorBlinkingPhase(value: true))
-            try await Task.sleep(for: .milliseconds(blinkOn))
-          }
-        } catch { }
-      }
+  public func dispatch(_ action: Action) async throws {
+    if stateContainer.state.debug.isStoreActionsLoggingEnabled {
+      var string = ""
+      customDump(action, to: &string, maxDepth: 2)
+      logger.debug("Store action dispatchd \(string)")
     }
-  }
 
-  @StateActor
-  private func dispatch(_ action: Action) async throws {
     var updates = try await action.apply(to: stateContainer)
 
     let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates
@@ -441,6 +384,63 @@ public class Store: Sendable {
 
     if shouldResetCursorBlinkingTask {
       startCursorBlinkingTask()
+    }
+  }
+
+  private let instance: Instance
+  @StateActor private var stateContainer: StateContainer
+  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 90)
+  @StateActor private var lastSetStateInstant = ContinuousClock.now
+  @StateActor private var stateUpdatesAccumulator = State.Updates()
+  @StateActor private var stateThrottlingTask: Task<Void, Never>?
+  private let stateUpdatesChannel = AsyncThrowingChannel<
+    State.Updates,
+    any Error
+  >()
+  private var instanceTask: Task<Void, Never>?
+  @StateActor private var cursorBlinkingTask: Task<Void, Never>?
+  private var previousPumBounds: IntegerRectangle?
+  private var previousMouseMove: (
+    modifier: String,
+    gridID: Int,
+    point: IntegerPoint
+  )?
+  private let outerGridSizeThrottlingInterval = Duration.milliseconds(100)
+  private var outerGridSizeThrottlingTask: Task<Void, Never>?
+  private var previousReportedOuterGridSizeInstant = ContinuousClock.now
+  private var previousReportedOuterGridSize: IntegerSize?
+  @StateActor private var latestUIEventsBatch: [UIEvent]?
+
+  @StateActor
+  private func startCursorBlinkingTask() {
+    guard let cursorStyle = stateContainer.state.currentCursorStyle else {
+      return
+    }
+    if
+      let blinkWait = cursorStyle.blinkWait,
+      blinkWait > 0,
+      let blinkOff = cursorStyle.blinkOff,
+      blinkOff > 0,
+      let blinkOn = cursorStyle.blinkOn,
+      blinkOn > 0
+    {
+      cursorBlinkingTask = Task { @StateActor [weak self] in
+        do {
+          try await Task.sleep(for: .milliseconds(blinkWait))
+
+          while true {
+            guard let self else {
+              return
+            }
+
+            try await dispatch(Actions.SetCursorBlinkingPhase(value: false))
+            try await Task.sleep(for: .milliseconds(blinkOff))
+
+            try await dispatch(Actions.SetCursorBlinkingPhase(value: true))
+            try await Task.sleep(for: .milliseconds(blinkOn))
+          }
+        } catch { }
+      }
     }
   }
 

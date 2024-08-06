@@ -253,13 +253,19 @@ final class MainMenuController: NSObject {
 
   @objc private func handleToggleUIEventsLogging() {
     Task {
-      await store.toggleUIEventsLogging()
+      try await store.dispatch(Actions.ToggleDebugUIEventsLogging())
     }
   }
 
   @objc private func handleToggleMessagePackInspector() {
     Task {
-      await store.toggleMessagePackInspector()
+      try await store.dispatch(Actions.ToggleDebugMessagePackInspector())
+    }
+  }
+
+  @objc private func handleToggleStoreActionsLogging() {
+    Task {
+      try await store.dispatch(Actions.ToggleStoreActionsLogging())
     }
   }
 
@@ -385,6 +391,23 @@ extension MainMenuController: NSMenuDelegate {
       toggleMessagePackInspector.target = self
 
       menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem, toggleMessagePackInspector]
+
+      let toggleStoreActionsLoggingMenuItem = NSMenuItem(
+        title: store.state.debug
+          .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
+          "Enable store actions logging",
+        action: #selector(handleToggleStoreActionsLogging),
+        keyEquivalent: ""
+      )
+      toggleStoreActionsLoggingMenuItem.target = self
+
+      menu.items = [
+        logStateMenuItem,
+        NSMenuItem.separator(),
+        toggleUIEventsLoggingMenuItem,
+        toggleMessagePackInspector,
+        toggleStoreActionsLoggingMenuItem,
+      ]
 
     default:
       break
