@@ -658,7 +658,6 @@ public extension Actions {
             }
 
           case .msgClear:
-            let indexes = Set(container.state.msgShows.indices)
             container.state.msgShows = []
             updates.msgShowsUpdates.append(.clear)
 

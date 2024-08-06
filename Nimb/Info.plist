@@ -3,26 +3,10 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict/>
-	</array>
+	<array/>
 	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>nimb</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>nimb</string>
-			</array>
-		</dict>
-		<dict/>
-	</array>
+	<array/>
 	<key>NSServices</key>
-	<array>
-		<dict/>
-	</array>
+	<array/>
 </dict>
 </plist>
