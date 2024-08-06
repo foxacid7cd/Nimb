@@ -67,13 +67,13 @@
 --selfrequired 
 --semicolons inline
 --shortoptionals always
---smarttabs enabled
+--smarttabs disabled
 --someany true
 --storedvarattrs preserve
 --stripunusedargs unnamed-only
 --structthreshold 0
 --swiftversion 5.10
---tabwidth unspecified
+--tabwidth 2
 --throwcapturing 
 --timezone system
 --trailingclosures 
@@ -92,6 +92,6 @@
 --wrapreturntype if-multiline
 --wrapternary default
 --wraptypealiases before-first
---xcodeindentation disabled
+--xcodeindentation enabled
 --yodaswap always
 --enable acronyms,blankLineAfterSwitchCase,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,redundantProperty,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapMultilineConditionalAssignment,wrapSwitchCases

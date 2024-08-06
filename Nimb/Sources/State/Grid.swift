@@ -225,17 +225,17 @@ public struct Grid: Sendable, Identifiable {
           position.row < layout.rowLayouts.count,
           let rowPart = layout.rowLayouts[position.row].parts
             .first(where: { $0.columnsRange.contains(position.column) }),
-          position.column < rowPart.columnsCount,
-          let rowPartCell = rowPart.cells
-            .first(where: {
-              (
+            position.column < rowPart.columnsCount,
+            let rowPartCell = rowPart.cells
+              .first(where: {
                 (
-                  $0.columnsRange.lowerBound + rowPart.columnsRange
-                    .lowerBound
-                ) ..<
-                  ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
-              ).contains(position.column)
-            })
+                  (
+                    $0.columnsRange.lowerBound + rowPart.columnsRange
+                      .lowerBound
+                  ) ..<
+                    ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
+                ).contains(position.column)
+              })
         {
           rowPartCell.columnsRange.count
         } else {

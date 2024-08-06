@@ -113,8 +113,8 @@ public struct UIEventFile: GeneratableFile {
                             [parametersCountCondition],
                             parameterTypeConditions,
                           ]
-                          .flatMap { $0 }
-                          .joined(separator: ", ")
+                            .flatMap { $0 }
+                            .joined(separator: ", ")
 
                           StmtSyntax(
                             """

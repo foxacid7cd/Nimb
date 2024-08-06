@@ -59,8 +59,8 @@ public struct Metadata: @unchecked Sendable {
           let returnType = dictionary["return_type"]
             .flatMap(\.string)
             .map({ ValueType(rawValue: $0) }),
-          let method = dictionary["method"].flatMap(\.boolean),
-          let since = dictionary["since"].flatMap(\.integer)
+            let method = dictionary["method"].flatMap(\.boolean),
+            let since = dictionary["since"].flatMap(\.integer)
         else {
           throw Failure("Could not parse function", dictionary)
         }

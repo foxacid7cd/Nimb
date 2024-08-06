@@ -469,8 +469,8 @@ public extension Actions {
                   case let .dictionary(rawTabpage) = rawTabpage,
                   let rawID = rawTabpage["tab"]
                     .flatMap({ $0[case: \.ext] }),
-                  let name = rawTabpage["name"]
-                    .flatMap({ $0[case: \.string] })
+                    let name = rawTabpage["name"]
+                      .flatMap({ $0[case: \.string] })
                 else {
                   throw Failure("invalid tabline raw value", rawTabpage)
                 }
@@ -501,8 +501,8 @@ public extension Actions {
                   case let .dictionary(rawBuffer) = rawBuffer,
                   let rawID = rawBuffer["buffer"]
                     .flatMap({ $0[case: \.ext] }),
-                  let name = rawBuffer["name"]
-                    .flatMap({ $0[case: \.string] })
+                    let name = rawBuffer["name"]
+                      .flatMap({ $0[case: \.string] })
                 else {
                   throw Failure("invalid raw buffer value", rawBuffer)
                 }

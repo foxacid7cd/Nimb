@@ -101,7 +101,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     if
       stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates
         .isMouseUserInteractionEnabledUpdated,
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
       dirtyRectangles.append(cursorDrawRun.rectangle)
     }

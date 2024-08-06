@@ -13,7 +13,7 @@ export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
 
 # Targets
-.PHONY: all test clean export_xcarchive neovim install
+.PHONY: all test clean $(BUILD_DIR)/Nimb.xcarchive export_xcarchive neovim install
 
 # Archive Build
 $(BUILD_DIR)/Nimb.xcarchive: generate
