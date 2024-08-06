@@ -7,10 +7,12 @@ final class TablineItemView: NSView {
     self.store = store
     super.init(frame: .zero)
 
+    backgroundImageView.wantsLayer = true
     backgroundImageView.imageScaling = .scaleNone
     addSubview(backgroundImageView)
     backgroundImageView.centerInSuperview()
 
+    accentBackgroundImageView.wantsLayer = true
     accentBackgroundImageView.imageScaling = .scaleNone
     addSubview(accentBackgroundImageView)
     accentBackgroundImageView.centerInSuperview()
@@ -19,14 +21,6 @@ final class TablineItemView: NSView {
     textField.leading(to: self, offset: 12)
     textField.trailing(to: self, offset: -12)
     textField.centerY(to: self)
-
-    trackingArea = .init(
-      rect: bounds,
-      options: [.inVisibleRect, .activeAlways, .mouseEnteredAndExited],
-      owner: self,
-      userInfo: nil
-    )
-    addTrackingArea(trackingArea!)
 
     let clickGestureRecognizer = NSClickGestureRecognizer(
       target: self,
@@ -54,6 +48,20 @@ final class TablineItemView: NSView {
     }
   }
 
+  override func updateTrackingAreas() {
+    super.updateTrackingAreas()
+    if let trackingArea {
+      removeTrackingArea(trackingArea)
+    }
+    trackingArea = .init(
+      rect: bounds,
+      options: [.inVisibleRect, .activeAlways, .mouseEnteredAndExited],
+      owner: self,
+      userInfo: nil
+    )
+    addTrackingArea(trackingArea!)
+  }
+
   override func layout() {
     super.layout()
 
@@ -73,16 +81,19 @@ final class TablineItemView: NSView {
 
   func render() {
     textField.attributedStringValue = makeAttributedString(for: text)
-
     if shouldRedrawImageViews {
       redrawImageViews()
       shouldRedrawImageViews = false
     }
+
     CATransaction.begin()
     CATransaction.setAnimationDuration(0.1)
+    CATransaction.setAnimationTimingFunction(.init(name: .linear))
     backgroundImageView.animator().alphaValue = isSelected ? 0 : 1
     accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
     CATransaction.commit()
+
+    textField.alphaValue = isSelected || isMouseInside ? 1 : 0.85
   }
 
   private let store: Store
