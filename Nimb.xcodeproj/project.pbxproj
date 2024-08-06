@@ -145,6 +145,8 @@
 		68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB82C5F7F3F00844461 /* Overture */; };
 		68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCBB2C5F7F5A00844461 /* CustomDump */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
+		68D4090F2C62D0F800B33091 /* Bundle+Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4090E2C62D0F800B33091 /* Bundle+Version.swift */; };
+		68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D409102C62D61A00B33091 /* NimbNotify.swift */; };
 		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
@@ -269,7 +271,6 @@
 		681B532D2C5FE4A100AD6C68 /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		681B533D2C5FE4FE00AD6C68 /* generate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "generate-Bridging-Header.h"; sourceTree = "<group>"; };
 		681F402F2B40D6B30083A87B /* StateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateContainer.swift; sourceTree = "<group>"; };
-		682272C0293DE09C00A36AB9 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		682BFD0B2AE8913400EDA77E /* GlobalActors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalActors.swift; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
@@ -279,7 +280,6 @@
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		6869ACA62C61FF8700830537 /* libmsgpack-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libmsgpack-c.a"; path = "Third-Party/msgpack-c/libmsgpack-c.a"; sourceTree = "<group>"; };
 		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
-		6875A5AC2C5ED42F00854B82 /* Third-Party */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Third-Party"; sourceTree = "<group>"; };
 		687644872C5373670022D916 /* NeovimNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimNotification.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
@@ -337,6 +337,8 @@
 		68C9BC812C5F7D6300844461 /* UIOptionFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOptionFile.swift; sourceTree = "<group>"; };
 		68C9BC822C5F7D6300844461 /* ValueType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ValueType.swift; sourceTree = "<group>"; };
 		68D1803529AA4A9000732402 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		68D4090E2C62D0F800B33091 /* Bundle+Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Version.swift"; sourceTree = "<group>"; };
+		68D409102C62D61A00B33091 /* NimbNotify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimbNotify.swift; sourceTree = "<group>"; };
 		68E2290D2C602D6700D8D72B /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/package/bin/nvim; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
@@ -478,6 +480,7 @@
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				686CAFE92B50F3B700AED2CC /* Settings */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
+				68D4090E2C62D0F800B33091 /* Bundle+Version.swift */,
 				68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
@@ -562,9 +565,7 @@
 			children = (
 				68E2290D2C602D6700D8D72B /* nvim */,
 				6869ACA62C61FF8700830537 /* libmsgpack-c.a */,
-				6875A5AC2C5ED42F00854B82 /* Third-Party */,
 				68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */,
-				682272C0293DE09C00A36AB9 /* Scripts */,
 			);
 			name = Locations;
 			sourceTree = "<group>";
@@ -581,6 +582,7 @@
 				687644872C5373670022D916 /* NeovimNotification.swift */,
 				689870A82AF80D1B00C4F2FD /* NeovimError.swift */,
 				6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */,
+				68D409102C62D61A00B33091 /* NimbNotify.swift */,
 			);
 			path = Neovim;
 			sourceTree = "<group>";
@@ -973,6 +975,7 @@
 			files = (
 				681B531B2C5FE47600AD6C68 /* Failure.swift in Sources */,
 				689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */,
+				68D4090F2C62D0F800B33091 /* Bundle+Version.swift in Sources */,
 				6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */,
 				6888D8A62AF83B6B0049562D /* APINimsExtensions.swift in Sources */,
 				681B53172C5FE47600AD6C68 /* ArrayExtensions.swift in Sources */,
@@ -1022,6 +1025,7 @@
 				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
+				68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
 				686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */,
 				6838B13D2C523BC100385655 /* APIError.swift in Sources */,
@@ -1376,7 +1380,7 @@
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NimbDebug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1421,7 +1425,7 @@
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nimb;
 				PRODUCT_NAME = "$(TARGET_NAME)";

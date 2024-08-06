@@ -74,6 +74,11 @@ extension API: AsyncSequence {
             )
             accumulator.append(.nvimErrorEvent(nvimErrorEvent))
 
+          case "nimb_notify":
+            let notifies = try notification.parameters
+              .map { try NimbNotify($0) }
+            accumulator.append(.nimbNotify(notifies))
+
           default:
             logger
               .info("Unknown neovim API notification: \(notification.method)")

@@ -3,4 +3,5 @@
 public enum NeovimNotification: Sendable, Equatable {
   case redraw([UIEvent])
   case nvimErrorEvent(NeovimErrorEvent)
+  case nimbNotify([NimbNotify])
 }

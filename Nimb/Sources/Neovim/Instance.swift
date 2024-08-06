@@ -99,6 +99,21 @@ public final class Instance: Sendable {
   public func run() async throws {
     try process.run()
 
+    let version = Bundle.main.version ?? (0, 0, 0)
+    try await api.nvimSetClientInfo(
+      name: "Nimb",
+      version: [
+        "major": .integer(version.major),
+        "minor": .integer(version.minor),
+        "patch": .integer(version.patch),
+        "prerelease": "dev",
+      ],
+      type: "ui",
+      methods: ["nimb_notify": .dictionary(["async": true,
+                                            "nargs": .integer(3)])],
+      attributes: [:]
+    )
+
     let initLua = try String(
       data: Data(contentsOf: nvimResourcesURL.appending(path: "init.lua")),
       encoding: .utf8

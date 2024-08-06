@@ -54,4 +54,16 @@ public enum Actions {
       return .init(isFontUpdated: true)
     }
   }
+
+  @PublicInit
+  public struct AddNimbNotifies: Action {
+    public var values: [NimbNotify]
+
+    public func apply(to container: StateContainer) async throws -> State
+      .Updates
+    {
+      container.state.nimbNotifies.append(contentsOf: values)
+      return .init(isNimbNotifiesUpdated: true)
+    }
+  }
 }

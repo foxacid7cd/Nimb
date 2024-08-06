@@ -37,9 +37,9 @@ neovim: build_neovim_package
 build_neovim_package:
 	@echo "Building Neovim package..."
 	pushd $(NEOVIM_DIR) > /dev/null && \
-		make deps && \
+		CMAKE_BUILD_TYPE=RelWithDebInfo make deps && \
 		pushd build > /dev/null && \
-			make package && \
+			CMAKE_BUILD_TYPE=RelWithDebInfo make package && \
 		popd > /dev/null && \
 	popd > /dev/null
 

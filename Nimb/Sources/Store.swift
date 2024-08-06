@@ -57,6 +57,9 @@ public class Store: Sendable {
 
             case let .nvimErrorEvent(event):
               throw Failure("Received nvimErrorEvent \(event)")
+
+            case let .nimbNotify(value):
+              try await dispatch(Actions.AddNimbNotifies(values: value))
             }
           }
         }
