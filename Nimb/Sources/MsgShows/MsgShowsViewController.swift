@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CustomDump
 import STTextView
 
 public class MsgShowsViewController: NSViewController {
@@ -16,26 +17,24 @@ public class MsgShowsViewController: NSViewController {
 
   override public func loadView() {
     let view = NSView()
-    view.width(min: 400, max: 1024)
-    sizeConstraints = (
-      width: view.width(500, priority: .defaultHigh),
-      height: view.height(500, priority: .defaultHigh)
-    )
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.width(600)
+    view.height(min: 360)
 
-    bgView.layer!.cornerRadius = 0
-    bgView.translatesAutoresizingMaskIntoConstraints = false
-    view.addSubview(bgView)
-    bgView.edgesToSuperview()
-
-    scrollView.wantsLayer = true
-    scrollView.layer!.masksToBounds = true
-    scrollView.layer!.cornerRadius = 0
+    scrollView.automaticallyAdjustsContentInsets = false
+    scrollView.contentInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
     scrollView.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
 
     textView.isEditable = false
     textView.isSelectable = false
+    textView.usesRuler = true
+    textView.usesFontPanel = false
+    textView.widthTracksTextView = true
+    textView.heightTracksTextView = true
+    scrollView.documentView = textView
+    textView.textContainer.containerSize = .init(width: 600, height: 0)
 
     self.view = view
   }
@@ -71,19 +70,15 @@ public class MsgShowsViewController: NSViewController {
         }
       }
 
-      textView.setAttributedString(
-        renderedMsgShows.map(\.1).joined(separator: .init(string: "\n"))
-      )
-      textView.scrollToEndOfDocument(nil)
-//      textView.textLayoutManager.ensureLayout(for: textView.textLayoutManager.documentRange)
-//      sizeConstraints.width.constant = boundingSize.width
-//      sizeConstraints.height.constant = boundingSize.height
+      textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
+      textView.font = store.font.appKit()
     }
   }
 
   public func renderBackgroundColor() {
     let backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
-    scrollView.backgroundColor = backgroundColor.withAlphaComponent(0.6)
+    scrollView.backgroundColor = backgroundColor
+      .withAlphaComponent(0.6)
   }
 
   private static let observedHighlightName: Set<
@@ -95,20 +90,14 @@ public class MsgShowsViewController: NSViewController {
   ]
 
   private let store: Store
-  private lazy var bgView = FloatingWindowView()
-  private lazy var scrollView = STTextView.scrollableTextView()
-  private lazy var textView = scrollView.documentView as! STTextView
+  private lazy var scrollView = NSScrollView()
+  private lazy var textView = STTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
-  private var sizeConstraints: (width: NSLayoutConstraint, height: NSLayoutConstraint)!
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
     msgShow.contentParts
       .map { part in
         var attributes: [NSAttributedString.Key: Any] = [
-          .font: store.state.font.appKit(
-            isBold: store.appearance.isBold(for: part.highlightID),
-            isItalic: store.appearance.isItalic(for: part.highlightID)
-          ),
           .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
         ]
         let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)

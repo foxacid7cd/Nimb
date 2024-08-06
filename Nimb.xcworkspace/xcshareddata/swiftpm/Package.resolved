@@ -1,5 +1,5 @@
 {
-  "originHash" : "ace0787e5c4cd92981ecc72cefbd1c094280eeaf798800027f79a6a29cc4ff5d",
+  "originHash" : "11199c915f5db623f7ff15a48178432b128e2194596d817e819580e9c93d5c46",
   "pins" : [
     {
       "identity" : "sttextkitplus",
@@ -106,7 +106,7 @@
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
         "branch" : "main",
-        "revision" : "8a2ffd53a9921b53a4b63a78a422c881edbc442e"
+        "revision" : "8740e1555d3202ec65bb6ccc2721a87ec450a7e3"
       }
     },
     {

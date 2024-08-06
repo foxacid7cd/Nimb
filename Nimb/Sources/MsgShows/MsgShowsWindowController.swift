@@ -7,16 +7,19 @@ class MsgShowsWindowController: NSWindowController {
     self.store = store
 
     let viewController = MsgShowsViewController(store: store)
-    let window = NSPanel(contentViewController: viewController)
-    window.styleMask = [.resizable, .borderless]
+    let window = CustomWindow(contentViewController: viewController)
+    window.keyPressed = { keyPress in
+      store.report(keyPress: keyPress)
+    }
+    window.styleMask = [.titled, .resizable, .nonactivatingPanel]
+    window.titlebarAppearsTransparent = false
     window.isOpaque = false
     window.isMovable = true
-    window.isFloatingPanel = true
-    window.allowsConcurrentViewDrawing = true
     window.isMovableByWindowBackground = true
-    window.level = .floating
+    window.title = "Messages"
     window.setAnchorAttribute(.bottom, for: .vertical)
     window.setAnchorAttribute(.left, for: .horizontal)
+    window.hasShadow = true
     super.init(window: window)
 
     self.viewController = viewController
@@ -39,11 +42,27 @@ class MsgShowsWindowController: NSWindowController {
     if !stateUpdates.msgShowsUpdates.isEmpty {
       let show = !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
       if show {
-        if !isWindowInitiallyShown {
-          window!.setIsVisible(true)
-        }
+        window!.setIsVisible(true)
         window!.orderFront(nil)
+      } else {
+        window!.setIsVisible(false)
       }
+    }
+  }
+
+  private class CustomWindow: NSPanel {
+    var keyPressed: ((KeyPress) -> Void)?
+
+    override var canBecomeMain: Bool {
+      false
+    }
+
+    override var canBecomeKey: Bool {
+      true
+    }
+
+    override func keyDown(with event: NSEvent) {
+      keyPressed?(.init(event: event))
     }
   }
 

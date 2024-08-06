@@ -40,7 +40,6 @@ public class MsgShowTextView: NSView {
       if backgroundColor != store.appearance.defaultBackgroundColor {
         attributes[.backgroundColor] = store.appearance
           .backgroundColor(for: contentPart.highlightID).appKit
-          .withAlphaComponent(0.6)
       }
 
       attributedString.append(.init(
