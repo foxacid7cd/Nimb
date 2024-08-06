@@ -429,10 +429,10 @@ public class Store: Sendable {
       }
     }
 
-    if updates.isMessagesUpdated, !stateContainer.state.isMsgShowsDismissed {
-      hideMsgShowsTask?.cancel()
-      hideMsgShowsTask = nil
-    }
+//    if updates.msgShowsUpdates, !stateContainer.state.isMsgShowsDismissed {
+//      hideMsgShowsTask?.cancel()
+//      hideMsgShowsTask = nil
+//    }
 
     stateUpdatesAccumulator.formUnion(updates)
 

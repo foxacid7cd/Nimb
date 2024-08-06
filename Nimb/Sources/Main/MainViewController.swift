@@ -145,8 +145,8 @@ public class MainViewController: NSViewController {
 
     gridsView.render(stateUpdates)
 
-    if stateUpdates.isMessagesUpdated || stateUpdates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = !store.state.hasModalMsgShows && store.state
+    if stateUpdates.isCmdlinesUpdated {
+      modalOverlayView.isHidden = store.state
         .cmdlines.dictionary
         .isEmpty
     }

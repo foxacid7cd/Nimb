@@ -51,7 +51,7 @@ public enum Actions {
       .Updates
     {
       container.state.isMsgShowsDismissed = true
-      return .init(isMessagesUpdated: true)
+      return .init()
     }
   }
 }

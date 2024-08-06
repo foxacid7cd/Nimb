@@ -27,7 +27,7 @@ public struct State: Sendable {
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
-    public var isMessagesUpdated: Bool = false
+    public var msgShowsUpdates: [MsgShowsUpdate] = []
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var isGridsOrderUpdated: Bool = false
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
@@ -57,7 +57,7 @@ public struct State: Sendable {
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
-      isMessagesUpdated = isMessagesUpdated || updates.isMessagesUpdated
+      msgShowsUpdates.append(contentsOf: updates.msgShowsUpdates)
       for gridID in updates.destroyedGridIDs {
         updatedLayoutGridIDs.remove(gridID)
         gridUpdates.removeValue(forKey: gridID)
@@ -104,6 +104,12 @@ public struct State: Sendable {
       isSelectedBufferUpdated = isSelectedBufferUpdated || update
         .isSelectedBufferUpdated
     }
+  }
+
+  public enum MsgShowsUpdate: Sendable {
+    case added(count: Int)
+    case reload(indexes: Set<Int>)
+    case clear
   }
 
   public var debug: Debug = .init()

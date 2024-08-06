@@ -56,10 +56,6 @@ public extension Actions {
         updates.isCmdlinesUpdated = true
       }
 
-      func messagesUpdated() {
-        updates.isMessagesUpdated = true
-      }
-
       func cursorUpdated(oldCursor: Cursor? = nil) {
         if let oldCursor {
           apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
@@ -633,7 +629,7 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .msgShow(rawKind, content, replaceLast):
-            if replaceLast, !container.state.msgShows.isEmpty {
+            if replaceLast {
               container.state.msgShows.removeLast()
             }
 
@@ -650,14 +646,21 @@ public extension Actions {
                 kind: kind,
                 contentParts: content.map(MsgShow.ContentPart.init(raw:))
               ))
+              if replaceLast {
+                updates.msgShowsUpdates
+                  .append(.reload(indexes: [container.state.msgShows.count - 1]))
+              } else {
+                updates.msgShowsUpdates.append(.added(count: 1))
+              }
+              container.state.isMsgShowsDismissed = false
+            } else if replaceLast {
+              logger.fault("replaceLast with empty content inconsistency")
             }
 
-            container.state.isMsgShowsDismissed = false
-            messagesUpdated()
-
           case .msgClear:
+            let indexes = Set(container.state.msgShows.indices)
             container.state.msgShows = []
-            messagesUpdated()
+            updates.msgShowsUpdates.append(.clear)
 
           case let .popupmenuShow(rawItems, selected, row, col, gridID):
             let items = try rawItems

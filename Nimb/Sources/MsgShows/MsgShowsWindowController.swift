@@ -25,20 +25,20 @@ class MsgShowsWindowController: NSWindowController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isMessagesUpdated || stateUpdates.isAppearanceUpdated {
+    if !stateUpdates.msgShowsUpdates.isEmpty || stateUpdates.isAppearanceUpdated {
       if !store.state.msgShows.isEmpty {
 //        renderContent()
       }
+
+      viewController.render(stateUpdates)
     }
 
-    if stateUpdates.isMessagesUpdated {
+    if !stateUpdates.msgShowsUpdates.isEmpty {
       let show = !store.state.msgShows.isEmpty && !store.state.isMsgShowsDismissed
       if show {
         window!.orderFront(nil)
       }
     }
-
-    viewController.render(stateUpdates)
   }
 
   private let store: Store
