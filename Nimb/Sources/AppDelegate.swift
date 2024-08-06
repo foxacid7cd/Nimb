@@ -78,6 +78,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           let msgShowsWindowController = self!.msgShowsWindowController!
 
           do {
+            var presentedNimbNotifiesCount = 0
+
             for try await stateUpdates in store {
               guard !Task.isCancelled else {
                 return
@@ -92,6 +94,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               }
               if stateUpdates.isDebugUpdated {
                 UserDefaults.standard.debug = store.state.debug
+              }
+              if stateUpdates.isNimbNotifiesUpdated {
+                for _ in presentedNimbNotifiesCount ..< store.state.nimbNotifies.count {
+                  let notification = store.state.nimbNotifies[presentedNimbNotifiesCount]
+
+                  let process = Process()
+                  process.executableURL = URL(filePath: "/usr/bin/osascript")
+                  process.arguments = [
+                    "-e",
+                    """
+                    display notification "\(notification.message)" with title "\(notification.title ?? "Nimb")"
+                    """,
+                  ]
+                  process.environment = ProcessInfo.processInfo.environment
+                  try process.run()
+                }
+                presentedNimbNotifiesCount = store.state.nimbNotifies.count
               }
 
               mainWindowController.render(stateUpdates)

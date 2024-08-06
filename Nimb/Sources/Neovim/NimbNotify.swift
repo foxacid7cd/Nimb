@@ -20,4 +20,8 @@ public struct NimbNotify: Hashable, Sendable {
   public var message: String
   public var level: Int
   public var options: Value
+
+  public var title: String? {
+    options[case: \.dictionary]?["title"]?[case: \.string]
+  }
 }

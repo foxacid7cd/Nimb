@@ -48,7 +48,7 @@
 --markcategories false
 --markextensions never
 --marktypes never
---maxwidth 100
+--maxwidth 200
 --modifierorder 
 --nevertrailing 
 --nilinit remove
