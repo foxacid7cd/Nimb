@@ -11,6 +11,10 @@ final class TablineItemView: NSView {
     addSubview(backgroundImageView)
     backgroundImageView.centerInSuperview()
 
+    accentBackgroundImageView.imageScaling = .scaleNone
+    addSubview(accentBackgroundImageView)
+    accentBackgroundImageView.centerInSuperview()
+
     addSubview(textField)
     textField.leading(to: self, offset: 12)
     textField.trailing(to: self, offset: -12)
@@ -37,15 +41,23 @@ final class TablineItemView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  var text = ""
   var isSelected = false
   var isLast = false
   var clicked: (() -> Void)?
   var filledColor: NSColor?
 
+  var text = "" {
+    didSet {
+      if text != oldValue {
+        shouldRedrawImageViews = true
+      }
+    }
+  }
+
   override func layout() {
     super.layout()
 
+    shouldRedrawImageViews = true
     render()
   }
 
@@ -60,36 +72,62 @@ final class TablineItemView: NSView {
   }
 
   func render() {
-    let color = filledColor ?? .white
-    let fill: SlantedBackgroundFill =
-      if isSelected {
-        .gradient(
-          from: color.withAlphaComponent(0.8),
-          to: color.withAlphaComponent(0.5)
-        )
-      } else {
-        .color(NSColor.black.withAlphaComponent(0.25))
-      }
+    textField.attributedStringValue = makeAttributedString(for: text)
+
+    if shouldRedrawImageViews {
+      redrawImageViews()
+      shouldRedrawImageViews = false
+    }
+    CATransaction.begin()
+    CATransaction.setAnimationDuration(0.1)
+    backgroundImageView.animator().alphaValue = isSelected ? 0 : 1
+    accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
+    CATransaction.commit()
+  }
+
+  private let store: Store
+  private let backgroundImageView = NSImageView()
+  private let accentBackgroundImageView = NSImageView()
+  private let textField = NSTextField(labelWithString: "")
+  private var trackingArea: NSTrackingArea?
+  private var isMouseInside = false
+  private var shouldRedrawImageViews = false
+
+  private func redrawImageViews() {
+    let color = NSColor.black
+    let fill = SlantedBackgroundFill.gradient(
+      from: color.withAlphaComponent(0.4),
+      to: color.withAlphaComponent(0.3)
+    )
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
       fill: fill
     )
-    textField.attributedStringValue = makeAttributedString(for: text)
-  }
+    backgroundImageView.image = .makeSlantedBackground(
+      isFlatRight: isLast,
+      size: bounds.size,
+      fill: fill
+    )
 
-  private let store: Store
-  private let backgroundImageView = NSImageView()
-  private let textField = NSTextField(labelWithString: "")
-  private var trackingArea: NSTrackingArea?
-  private var isMouseInside = false
+    let accentColor = filledColor ?? .white
+    let accentFill = SlantedBackgroundFill.gradient(
+      from: accentColor.withAlphaComponent(0.7),
+      to: accentColor.withAlphaComponent(0.4)
+    )
+    accentBackgroundImageView.image = .makeSlantedBackground(
+      isFlatRight: isLast,
+      size: bounds.size,
+      fill: accentFill
+    )
+  }
 
   private func makeAttributedString(for text: String) -> NSAttributedString {
     .init(
       string: text,
       attributes: [
         .font: NSFont.systemFont(
-          ofSize: NSFont.systemFontSize * 0.925,
+          ofSize: NSFont.systemFontSize * 0.92,
           weight: .medium
         ),
         .foregroundColor: isSelected ? NSColor.labelColor : NSColor.secondaryLabelColor,

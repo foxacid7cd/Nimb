@@ -271,16 +271,18 @@ final class TablineView: NSVisualEffectView {
     titleTextField.attributedStringValue = .init(
       string: store.state.title ?? "",
       attributes: [
-        .foregroundColor: window?.isKeyWindow == true ? NSColor.labelColor : NSColor
-          .secondaryLabelColor,
-        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+        .foregroundColor: window?.isKeyWindow == true ?
+          NSColor.labelColor :
+          NSColor.secondaryLabelColor,
+        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
         .paragraphStyle: paragraphStyle,
       ]
     )
+    titleTextField.alphaValue = window?.isKeyWindow == true ? 0.8 : 0.7
 
-    let sublayersOpacity: Float = window?.isKeyWindow == true ? 1 : 0.7
-    buffersScrollView.layer!.opacity = sublayersOpacity
-    tabsScrollView.layer!.opacity = sublayersOpacity
+    let sublayersOpacity: Double = window?.isKeyWindow == true ? 1 : 0.5
+    buffersScrollView.alphaValue = sublayersOpacity
+    tabsScrollView.alphaValue = sublayersOpacity
 
     if window?.isKeyWindow == true {
       buffersScrollView.layer!.filters = []

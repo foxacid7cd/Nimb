@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import Algorithms
 import AsyncAlgorithms
 import Collections
 import CustomDump
@@ -55,7 +56,7 @@ public class Store: Sendable {
               }
 
             case let .nvimErrorEvent(event):
-              customDump(event)
+              throw Failure("Received nvimErrorEvent \(event)")
             }
           }
         }
