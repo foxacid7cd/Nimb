@@ -5,14 +5,16 @@ import Foundation
 public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence,
   Sendable where DataBatches.Element == Data, DataBatches: Sendable
 {
-  init(_ dataBatches: DataBatches) {
+  init(_ dataBatches: DataBatches, unpacker: Unpacker) {
     self.dataBatches = dataBatches
+    self.unpacker = unpacker
   }
 
   public typealias Element = [Message]
 
   public struct AsyncIterator: AsyncIteratorProtocol {
-    init(_ dataBatchesIterator: DataBatches.AsyncIterator) {
+    init(_ dataBatchesIterator: DataBatches.AsyncIterator, unpacker: Unpacker) {
+      self.unpacker = unpacker
       self.dataBatchesIterator = dataBatchesIterator
     }
 
@@ -23,17 +25,18 @@ public struct AsyncMessageBatches<DataBatches: AsyncSequence>: AsyncSequence,
 
       try Task.checkCancellation()
 
-      return try unpacker.unpack(data)
+      return try await unpacker.unpack(data)
         .map(Message.init(value:))
     }
 
-    private let unpacker: Unpacker = .init()
+    private let unpacker: Unpacker
     private var dataBatchesIterator: DataBatches.AsyncIterator
   }
 
   public func makeAsyncIterator() -> AsyncIterator {
-    .init(dataBatches.makeAsyncIterator())
+    .init(dataBatches.makeAsyncIterator(), unpacker: unpacker)
   }
 
   private let dataBatches: DataBatches
+  private let unpacker: Unpacker
 }

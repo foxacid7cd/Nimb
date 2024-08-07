@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+@MainActor
 public class API<Target: Channel> {
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc

@@ -61,7 +61,6 @@
 		681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */; };
 		681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53522C5FE67B00AD6C68 /* SwiftSyntax */; };
 		681F40302B40D6B30083A87B /* StateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681F402F2B40D6B30083A87B /* StateContainer.swift */; };
-		682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682BFD0B2AE8913400EDA77E /* GlobalActors.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
@@ -271,7 +270,6 @@
 		681B532D2C5FE4A100AD6C68 /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		681B533D2C5FE4FE00AD6C68 /* generate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "generate-Bridging-Header.h"; sourceTree = "<group>"; };
 		681F402F2B40D6B30083A87B /* StateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateContainer.swift; sourceTree = "<group>"; };
-		682BFD0B2AE8913400EDA77E /* GlobalActors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalActors.swift; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
@@ -485,7 +483,6 @@
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
-				682BFD0B2AE8913400EDA77E /* GlobalActors.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				68F0D4F22AECFDFC000954FF /* OSLog.swift */,
 				68EFD2682B58834E0010DD54 /* main.swift */,
@@ -1021,7 +1018,6 @@
 				68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */,
 				68A8FF592AD29F660017C28D /* Color.swift in Sources */,
 				681B53232C5FE47600AD6C68 /* NSFontCellSize.swift in Sources */,
-				682BFD0C2AE8913400EDA77E /* GlobalActors.swift in Sources */,
 				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
 				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,

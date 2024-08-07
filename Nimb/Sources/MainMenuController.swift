@@ -270,7 +270,7 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleLogState() {
-    Task { @StateActor in
+    Task { @MainActor in
       let dump = store.dumpState()
 
       let temporaryFileURL = FileManager.default.temporaryDirectory

@@ -7,11 +7,12 @@ import Collections
 import CustomDump
 import Foundation
 
+@MainActor
 public class RPC<Target: Channel> {
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
     store = .init(maximumConcurrentRequests: maximumConcurrentRequests)
-    messageBatches = .init(target.dataBatches)
+    messageBatches = .init(target.dataBatches, unpacker: unpacker)
   }
 
   @discardableResult
@@ -79,6 +80,7 @@ public class RPC<Target: Channel> {
   private let target: Target
   private let store: Storage
   private let packer = Packer()
+  private let unpacker = Unpacker()
   private let messageBatches: AsyncMessageBatches<Target.S>
 }
 
@@ -117,7 +119,7 @@ extension RPC: AsyncSequence {
             throw Failure("Unexpected request message received \(request)")
 
           case let .response(response):
-            store.responseReceived(
+            await store.responseReceived(
               response,
               forRequestWithID: response.id
             )
@@ -140,6 +142,7 @@ extension RPC: AsyncSequence {
   }
 }
 
+@MainActor
 private class Storage {
   init(maximumConcurrentRequests: Int) {
     self.maximumConcurrentRequests = maximumConcurrentRequests

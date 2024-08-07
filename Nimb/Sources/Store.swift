@@ -13,13 +13,10 @@ public class Store: Sendable {
 
     let state = State(debug: debug, font: font)
     stateContainer = .init(state)
-    self.state = state
 
-    Task { @StateActor in
-      startCursorBlinkingTask()
-    }
+    startCursorBlinkingTask()
 
-    instanceTask = Task { @StateActor [weak self] in
+    instanceTask = Task { [weak self] in
       var bufferedUIEventsBatches = [[UIEvent]]()
 
       do {
@@ -51,8 +48,6 @@ public class Store: Sendable {
                   )
                 )
                 bufferedUIEventsBatches.removeAll(keepingCapacity: true)
-
-                await Task.yield()
               }
 
             case let .nvimErrorEvent(event):
@@ -73,13 +68,14 @@ public class Store: Sendable {
   }
 
   deinit {
-    stateThrottlingTask?.cancel()
     instanceTask?.cancel()
     cursorBlinkingTask?.cancel()
     outerGridSizeThrottlingTask?.cancel()
   }
 
-  public private(set) var state: State
+  public var state: State {
+    stateContainer.state
+  }
 
   public var font: Font {
     state.font
@@ -89,7 +85,6 @@ public class Store: Sendable {
     state.appearance
   }
 
-  @StateActor
   public func set(font: Font) async {
     try? await dispatch(Actions.SetFont(value: font))
   }
@@ -227,7 +222,6 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func requestTextForCopy() async -> String? {
     let backgroundState = stateContainer.state
 
@@ -250,7 +244,7 @@ public class Store: Sendable {
       do {
         return try await instance.bufTextForCopy()
       } catch {
-        await handleActionError(error)
+        handleActionError(error)
         return nil
       }
 
@@ -322,16 +316,14 @@ public class Store: Sendable {
     }
   }
 
-  @StateActor
   public func dumpState() -> String {
     var string = ""
     customDump(latestUIEventsBatch, to: &string)
     return string
   }
 
-  @StateActor
   public func dispatch(_ action: Action) async throws {
-    if stateContainer.state.debug.isStoreActionsLoggingEnabled {
+    if state.debug.isStoreActionsLoggingEnabled {
       var string = ""
       customDump(action, to: &string, maxDepth: 2)
       logger.debug("Store action dispatchd \(string)")
@@ -350,40 +342,7 @@ public class Store: Sendable {
       }
     }
 
-    stateUpdatesAccumulator.formUnion(updates)
-
-    if stateThrottlingTask == nil {
-      let sincePrevious = lastSetStateInstant.duration(to: .now)
-      defer { lastSetStateInstant = .now }
-
-      if sincePrevious > stateThrottlingInterval {
-        synchronizeState()
-      } else {
-        stateThrottlingTask = Task { [weak self] in
-          guard let self else {
-            return
-          }
-
-          do {
-            try await Task.sleep(for: stateThrottlingInterval - sincePrevious)
-            synchronizeState()
-          } catch { }
-
-          stateThrottlingTask = nil
-        }
-      }
-
-      func synchronizeState() {
-        Task { @MainActor [
-          state = stateContainer.state,
-          stateUpdatesAccumulator
-        ] in
-          self.state = state
-          await self.stateUpdatesChannel.send(stateUpdatesAccumulator)
-        }
-        stateUpdatesAccumulator = .init()
-      }
-    }
+    await stateUpdatesChannel.send(updates)
 
     if shouldResetCursorBlinkingTask {
       startCursorBlinkingTask()
@@ -391,17 +350,13 @@ public class Store: Sendable {
   }
 
   private let instance: Instance
-  @StateActor private var stateContainer: StateContainer
-  private let stateThrottlingInterval = Duration.microseconds(1_000_000 / 90)
-  @StateActor private var lastSetStateInstant = ContinuousClock.now
-  @StateActor private var stateUpdatesAccumulator = State.Updates()
-  @StateActor private var stateThrottlingTask: Task<Void, Never>?
+  private var stateContainer: StateContainer
   private let stateUpdatesChannel = AsyncThrowingChannel<
     State.Updates,
     any Error
   >()
   private var instanceTask: Task<Void, Never>?
-  @StateActor private var cursorBlinkingTask: Task<Void, Never>?
+  private var cursorBlinkingTask: Task<Void, Never>?
   private var previousPumBounds: IntegerRectangle?
   private var previousMouseMove: (
     modifier: String,
@@ -412,9 +367,8 @@ public class Store: Sendable {
   private var outerGridSizeThrottlingTask: Task<Void, Never>?
   private var previousReportedOuterGridSizeInstant = ContinuousClock.now
   private var previousReportedOuterGridSize: IntegerSize?
-  @StateActor private var latestUIEventsBatch: [UIEvent]?
+  private var latestUIEventsBatch: [UIEvent]?
 
-  @StateActor
   private func startCursorBlinkingTask() {
     guard let cursorStyle = stateContainer.state.currentCursorStyle else {
       return
@@ -427,7 +381,7 @@ public class Store: Sendable {
       let blinkOn = cursorStyle.blinkOn,
       blinkOn > 0
     {
-      cursorBlinkingTask = Task { @StateActor [weak self] in
+      cursorBlinkingTask = Task { @MainActor [weak self] in
         do {
           try await Task.sleep(for: .milliseconds(blinkWait))
 
@@ -471,10 +425,7 @@ public class Store: Sendable {
 extension Store: AsyncSequence {
   public typealias Element = State.Updates
 
-  public nonisolated func makeAsyncIterator()
-    -> AsyncThrowingChannel<State.Updates, any Error>
-    .AsyncIterator
-  {
+  public func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
     stateUpdatesChannel.makeAsyncIterator()
   }
 }

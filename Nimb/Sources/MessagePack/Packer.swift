@@ -2,6 +2,7 @@
 
 import Foundation
 
+@MainActor
 public class Packer {
   public init() {
     msgpack_sbuffer_init(&sbuf)

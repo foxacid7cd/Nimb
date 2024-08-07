@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-@StateActor
+@MainActor
 public class StateContainer: Sendable {
   public nonisolated init(_ state: State) {
     self.state = state

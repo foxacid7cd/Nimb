@@ -4,6 +4,7 @@ import AsyncAlgorithms
 import CustomDump
 import Foundation
 
+@MainActor
 public class Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
