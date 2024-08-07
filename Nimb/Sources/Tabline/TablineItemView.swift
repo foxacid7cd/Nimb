@@ -2,7 +2,7 @@
 
 import AppKit
 
-final class TablineItemView: NSView {
+class TablineItemView: NSView {
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -92,11 +92,11 @@ final class TablineItemView: NSView {
     }
 
     CATransaction.begin()
-    CATransaction.setAnimationDuration(isAnimated ? 0.08 : 0)
+    CATransaction.setAnimationDuration(isAnimated ? 0.07 : 0)
     CATransaction.setAnimationTimingFunction(.init(name: .linear))
-    backgroundImageView.animator().alphaValue = isSelected ? 0 : 1
+    backgroundImageView.animator().alphaValue = isSelected ? 0 : isMouseInside ? 0.75 : 1
     accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
-    textField.animator().alphaValue = isSelected || isMouseInside ? 0.9 : 0.75
+    textField.animator().alphaValue = isSelected ? 0.9 : 0.75
     CATransaction.commit()
 
     isAnimated = true

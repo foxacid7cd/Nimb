@@ -9,15 +9,13 @@
     "plugins": {
       "lua_ls": {
         "enabled": true
-      },
-      "selene": {
-        "enabled": false
       }
     }
   },
   "lspconfig": {
     "lua_ls": {
-      "Lua.format.enable": true
+      "Lua.format.enable": false,
+      "Lua.completion.callSnippet": "Replace"
     }
   }
 }

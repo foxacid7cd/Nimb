@@ -68,4 +68,4 @@ generate: neovim
 		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate $(GENERATED_DIR)
 
 # Install
-install: export_xcarchive format
+install: export_xcarchive

@@ -20,7 +20,7 @@ class MsgShowsWindowController: NSWindowController {
     window.setAnchorAttribute(.bottom, for: .vertical)
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
-    window.alphaValue = 0.85
+    window.alphaValue = 0.9
     super.init(window: window)
 
     window.delegate = self

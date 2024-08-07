@@ -87,24 +87,10 @@ public struct Grid: Sendable, Identifiable {
   }
 
   public var zIndex: Double {
-    if id == Grid.OuterID {
-      0
-
-    } else if let associatedWindow {
-      switch associatedWindow {
-      case let .plain(value):
-        100 + Double(value.zIndex) / 100
-
-      case let .floating(value):
-        10000 + Double(value.zIndex) / 100
-
-      case .external:
-        1_000_000
-      }
-
-    } else {
-      -1
+    if let associatedWindow, case let .floating(floating) = associatedWindow {
+      return Double(floating.zIndex) + 1000
     }
+    return Double(id)
   }
 
   public var isFocusable: Bool {
