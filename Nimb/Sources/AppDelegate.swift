@@ -52,8 +52,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )
     neovimAlertMessagesTask = Task {
-      for await message in store!.neovimAlertMessages {
-        showAlert(message: message)
+      for await message in store!.alertMessages {
+        showAlert(message)
       }
     }
   }
@@ -178,10 +178,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       }
   }
 
-  private func showAlert(message: String) {
+  private func showAlert(_ message: AlertMessage) {
     let alert = NSAlert()
     alert.alertStyle = .warning
-    alert.messageText = message
+    alert.messageText = message.content
     alert.addButton(withTitle: "Close")
     alert.beginSheetModal(for: mainWindowController!.window!)
   }

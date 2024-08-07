@@ -16,6 +16,7 @@ public struct State: Sendable {
 
   @PublicInit
   public struct Updates: Sendable {
+    public var needFlush: Bool = true
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
@@ -49,6 +50,7 @@ public struct State: Sendable {
     }
 
     public mutating func formUnion(_ updates: Updates) {
+      needFlush = needFlush || updates.needFlush
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated
       isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
@@ -96,6 +98,10 @@ public struct State: Sendable {
     public var isBuffersUpdated: Bool = false
     public var isSelectedTabpageUpdated: Bool = false
     public var isSelectedBufferUpdated: Bool = false
+
+    public var hasUpdates: Bool {
+      isTabpagesUpdated || isTabpagesContentUpdated || isBuffersUpdated || isSelectedTabpageUpdated || isSelectedBufferUpdated
+    }
 
     public mutating func formUnion(_ update: TablineUpdate) {
       isTabpagesUpdated = isTabpagesUpdated || update.isTabpagesUpdated
@@ -195,6 +201,56 @@ public struct State: Sendable {
   public mutating func flushDrawRuns() {
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
+    }
+  }
+
+  public mutating func apply(updates: Updates, from state: State) {
+    rawOptions = state.rawOptions
+    windowZIndexCounter = state.windowZIndexCounter
+    if updates.isDebugUpdated {
+      debug = state.debug
+    }
+    if updates.isModeUpdated {
+      mode = state.mode
+    }
+    if updates.isTitleUpdated {
+      title = state.title
+    }
+    if updates.isFontUpdated {
+      font = state.font
+    }
+    if updates.isAppearanceUpdated || !updates.updatedObservedHighlightNames.isEmpty {
+      appearance = state.appearance
+    }
+    if updates.isCursorUpdated {
+      cursor = state.cursor
+    }
+    if updates.tabline.hasUpdates {
+      tabline = state.tabline
+    }
+    if updates.isCmdlinesUpdated {
+      cmdlines = state.cmdlines
+    }
+    if !updates.msgShowsUpdates.isEmpty {
+      msgShows = state.msgShows
+    }
+    if !updates.updatedLayoutGridIDs.isEmpty || !updates.isGridsOrderUpdated || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
+      grids = state.grids
+    }
+    if updates.isPopupmenuUpdated || updates.isPopupmenuSelectionUpdated {
+      popupmenu = state.popupmenu
+    }
+    if updates.isCursorBlinkingPhaseUpdated {
+      cursorBlinkingPhase = state.cursorBlinkingPhase
+    }
+    if updates.isBusyUpdated {
+      isBusy = state.isBusy
+    }
+    if updates.isMouseOnUpdated {
+      isMouseOn = state.isMouseOn
+    }
+    if updates.isNimbNotifiesUpdated {
+      nimbNotifies = state.nimbNotifies
     }
   }
 }

@@ -11,14 +11,14 @@ public class Store: Sendable {
   public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
-    let state = State(debug: debug, font: font)
-    stateContainer = .init(state)
+    bufferingStateContainer = .init(.init(
+      debug: debug,
+      font: font
+    ))
 
     startCursorBlinkingTask()
 
     instanceTask = Task { [weak self] in
-      var bufferedUIEventsBatches = [[UIEvent]]()
-
       do {
         for try await neovimNotificationsBatch in instance {
           guard let self else {
@@ -29,7 +29,7 @@ public class Store: Sendable {
           for notification in neovimNotificationsBatch {
             switch notification {
             case let .redraw(uiEvents):
-              if stateContainer.state.debug.isUIEventsLoggingEnabled {
+              if state.debug.isUIEventsLoggingEnabled {
                 var string = ""
                 customDump(uiEvents, to: &string, maxDepth: 7)
                 logger.debug("UI events: \(string)")
@@ -37,32 +37,21 @@ public class Store: Sendable {
 
               latestUIEventsBatch = uiEvents
 
-              bufferedUIEventsBatches.append(uiEvents)
-
-              if case .flush = uiEvents.last {
-                try await dispatch(
-                  Actions.ApplyUIEvents(
-                    uiEvents: bufferedUIEventsBatches
-                      .lazy
-                      .flatMap { $0 }
-                  )
-                )
-                bufferedUIEventsBatches.removeAll(keepingCapacity: true)
-              }
+              try await dispatch(Actions.ApplyUIEvents(uiEvents: uiEvents))
 
             case let .nvimErrorEvent(event):
-              throw Failure("Received nvimErrorEvent \(event)")
+              await alertMessages.send(.init(
+                content: "\(event.error) \(event.message)"
+              ))
 
             case let .nimbNotify(value):
               try await dispatch(Actions.AddNimbNotifies(values: value))
             }
           }
         }
-
-        self?.stateUpdatesChannel.finish()
       } catch is CancellationError {
       } catch {
-        self?.stateUpdatesChannel.fail(error)
+        await self?.alertMessages.send(.init(error))
       }
     }
   }
@@ -73,14 +62,14 @@ public class Store: Sendable {
     outerGridSizeThrottlingTask?.cancel()
   }
 
-  public let neovimAlertMessages = AsyncChannel<String>()
+  public let alertMessages = AsyncChannel<AlertMessage>()
 
   public var api: API<some Channel> {
     instance.api
   }
 
   public var state: State {
-    stateContainer.state
+    bufferingStateContainer.state
   }
 
   public var font: Font {
@@ -154,7 +143,9 @@ public class Store: Sendable {
         isFinish: isFinish
       )
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -162,7 +153,9 @@ public class Store: Sendable {
     do {
       try instance.reportTablineBufferSelected(withID: id)
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -170,7 +163,9 @@ public class Store: Sendable {
     do {
       try instance.reportTablineTabpageSelected(withID: id)
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -216,7 +211,9 @@ public class Store: Sendable {
     do {
       try instance.reportPumBounds(rectangle: rectangle)
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -224,12 +221,14 @@ public class Store: Sendable {
     do {
       try instance.reportPaste(text: text)
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
   public func requestTextForCopy() async -> String? {
-    let backgroundState = stateContainer.state
+    let backgroundState = bufferingStateContainer.state
 
     guard
       let mode = backgroundState.mode,
@@ -250,7 +249,9 @@ public class Store: Sendable {
       do {
         return try await instance.bufTextForCopy()
       } catch {
-        handleActionError(error)
+        Task {
+          await alertMessages.send(.init(error))
+        }
         return nil
       }
 
@@ -271,35 +272,13 @@ public class Store: Sendable {
     return nil
   }
 
-  public func edit(url: URL) async {
-    do {
-      try await instance.edit(url: url)
-    } catch {
-      handleActionError(error)
-    }
-  }
-
-  public func write() async {
-    do {
-      try await instance.write()
-    } catch {
-      handleActionError(error)
-    }
-  }
-
-  public func saveAs(url: URL) async {
-    do {
-      try await instance.saveAs(url: url)
-    } catch {
-      handleActionError(error)
-    }
-  }
-
   public func close() async {
     do {
       try await instance.close()
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -307,7 +286,9 @@ public class Store: Sendable {
     do {
       try await instance.quitAll()
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
     }
   }
 
@@ -317,7 +298,9 @@ public class Store: Sendable {
     do {
       return try await instance.requestCurrentBufferInfo()
     } catch {
-      handleActionError(error)
+      Task {
+        await alertMessages.send(.init(error))
+      }
       return nil
     }
   }
@@ -332,45 +315,44 @@ public class Store: Sendable {
     if state.debug.isStoreActionsLoggingEnabled {
       var string = ""
       customDump(action, to: &string, maxDepth: 2)
-      logger.debug("Store action dispatchd \(string)")
+      logger.debug("Store action dispatched \(string)")
     }
 
-    var updates = try await action.apply(to: stateContainer)
+    let updates = try await action.apply(
+      to: bufferingStateContainer.bufferedView
+    )
 
-    let shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates
-      .isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
-    if shouldResetCursorBlinkingTask {
-      cursorBlinkingTask?.cancel()
+    bufferedStateUpdates.formUnion(updates)
+    let isFlushNeeded = bufferedStateUpdates.needFlush
 
-      if !stateContainer.state.cursorBlinkingPhase {
-        stateContainer.state.cursorBlinkingPhase = true
-        updates.isCursorBlinkingPhaseUpdated = true
-      }
+    if isFlushNeeded {
+      bufferingStateContainer.state.apply(
+        updates: bufferedStateUpdates,
+        from: bufferingStateContainer.bufferedState
+      )
+      await stateUpdatesChannel.send(bufferedStateUpdates)
+      bufferedStateUpdates = .init()
     }
 
-    await stateUpdatesChannel.send(updates)
+    //		} shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates
+//      .isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
+//    if shouldResetCursorBlinkingTask {
+//      cursorBlinkingTask?.cancel()
+//
+//      if !bufferingStateContainer.state.cursorBlinkingPhase {
+//        bufferingStateContainer.state.cursorBlinkingPhase = true
+//        updates.isCursorBlinkingPhaseUpdated = true
+//      }
+//    }
 
-    if shouldResetCursorBlinkingTask {
-      startCursorBlinkingTask()
-    }
-  }
-
-  fileprivate func handleActionError(_ error: any Error) {
-    let message: String =
-      if let error = error as? NimbNeovimError {
-        error.errorMessages.joined(separator: "\n")
-      } else if let error = error as? NeovimError {
-        String(customDumping: error.raw)
-      } else {
-        String(customDumping: error)
-      }
-    Task {
-      await neovimAlertMessages.send(message)
-    }
+//    if shouldResetCursorBlinkingTask {
+//      startCursorBlinkingTask()
+//    }
   }
 
   private let instance: Instance
-  private var stateContainer: StateContainer
+  private var bufferingStateContainer: BufferingStateContainer
+  private var bufferedStateUpdates = State.Updates()
   private let stateUpdatesChannel = AsyncThrowingChannel<
     State.Updates,
     any Error
@@ -390,7 +372,7 @@ public class Store: Sendable {
   private var latestUIEventsBatch: [UIEvent]?
 
   private func startCursorBlinkingTask() {
-    guard let cursorStyle = stateContainer.state.currentCursorStyle else {
+    guard let cursorStyle = bufferingStateContainer.state.currentCursorStyle else {
       return
     }
     if
@@ -435,7 +417,9 @@ public func withErrorHandler<T>(from store: Store, _ body: @MainActor () throws 
   do {
     return try body()
   } catch {
-    store.handleActionError(error)
+    Task {
+      await store.alertMessages.send(.init(error))
+    }
     return nil
   }
 }
@@ -445,7 +429,25 @@ public func withAsyncErrorHandler<T>(from store: Store, _ body: @MainActor () as
   do {
     return try await body()
   } catch {
-    store.handleActionError(error)
+    Task {
+      await store.alertMessages.send(.init(error))
+    }
     return nil
   }
+}
+
+@PublicInit
+public struct AlertMessage: Sendable {
+  public init(_ error: Error) {
+    content =
+      if let error = error as? NimbNeovimError {
+        error.errorMessages.joined(separator: "\n")
+      } else if let error = error as? NeovimError {
+        String(customDumping: error.raw)
+      } else {
+        String(customDumping: error)
+      }
+  }
+
+  public var content: String
 }

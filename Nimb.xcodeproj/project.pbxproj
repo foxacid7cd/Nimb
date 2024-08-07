@@ -60,7 +60,7 @@
 		681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534D2C5FE57E00AD6C68 /* Algorithms */; };
 		681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */; };
 		681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53522C5FE67B00AD6C68 /* SwiftSyntax */; };
-		681F40302B40D6B30083A87B /* StateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681F402F2B40D6B30083A87B /* StateContainer.swift */; };
+		681F40302B40D6B30083A87B /* BufferingStateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
@@ -80,6 +80,7 @@
 		687644882C5373670022D916 /* NeovimNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687644872C5373670022D916 /* NeovimNotification.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
+		687A1C0B2C6368C600D2A0EF /* StateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687A1C0A2C6368C600D2A0EF /* StateContainer.swift */; };
 		687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687ACD612C56E93500600058 /* AnchorLayouting.swift */; };
 		6880800A2C603AFC00BD32FA /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 688080092C603AFC00BD32FA /* MacrosLibrary */; };
 		6880800D2C603B3000BD32FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800C2C603B3000BD32FA /* ArgumentParser */; };
@@ -269,7 +270,7 @@
 		681B532C2C5FE4A100AD6C68 /* Unpacker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Unpacker.swift; sourceTree = "<group>"; };
 		681B532D2C5FE4A100AD6C68 /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		681B533D2C5FE4FE00AD6C68 /* generate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "generate-Bridging-Header.h"; sourceTree = "<group>"; };
-		681F402F2B40D6B30083A87B /* StateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateContainer.swift; sourceTree = "<group>"; };
+		681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BufferingStateContainer.swift; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
@@ -281,6 +282,7 @@
 		687644872C5373670022D916 /* NeovimNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimNotification.swift; sourceTree = "<group>"; };
 		6878932C2AF7F2B300005A8E /* APIFunction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIFunction.swift; sourceTree = "<group>"; };
 		687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVimrcView.swift; sourceTree = "<group>"; };
+		687A1C0A2C6368C600D2A0EF /* StateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateContainer.swift; sourceTree = "<group>"; };
 		687ACD612C56E93500600058 /* AnchorLayouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorLayouting.swift; sourceTree = "<group>"; };
 		688080022C603ADA00BD32FA /* msgpack-inspector */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "msgpack-inspector"; sourceTree = BUILT_PRODUCTS_DIR; };
 		688080142C6070E500BD32FA /* data.mpack */ = {isa = PBXFileReference; lastKnownFileType = text; path = data.mpack; sourceTree = "<group>"; };
@@ -293,7 +295,7 @@
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		689D9E2A29B4FBA700345713 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		689D9E2C29B50BF400345713 /* GridsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridsView.swift; sourceTree = "<group>"; };
-		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		689D9E2E29B5127F00345713 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; wrapsLines = 0; };
 		689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlinesViewController.swift; sourceTree = "<group>"; };
 		689ECE602AC4FF20008D6A02 /* CmdlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlineView.swift; sourceTree = "<group>"; };
 		68A4101C2C5D46F20092050B /* TablineView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TablineView.swift; sourceTree = "<group>"; };
@@ -655,7 +657,8 @@
 		68FAC3F12AF6724200490F09 /* State */ = {
 			isa = PBXGroup;
 			children = (
-				681F402F2B40D6B30083A87B /* StateContainer.swift */,
+				687A1C0A2C6368C600D2A0EF /* StateContainer.swift */,
+				681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */,
 				68A8FF422AD29F650017C28D /* State.swift */,
 				68FAC3F22AF685AB00490F09 /* Action.swift */,
 				68FAC3F62AF6932F00490F09 /* Actions.swift */,
@@ -993,13 +996,14 @@
 				681B53392C5FE4A100AD6C68 /* Unpacker.swift in Sources */,
 				681B53352C5FE4A100AD6C68 /* Packer.swift in Sources */,
 				6861FA6229B462B8002C3C0B /* Font.swift in Sources */,
+				687A1C0B2C6368C600D2A0EF /* StateContainer.swift in Sources */,
 				68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */,
 				68A8FF582AD29F660017C28D /* State.swift in Sources */,
 				681B53332C5FE4A100AD6C68 /* Message.swift in Sources */,
 				6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */,
 				68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
-				681F40302B40D6B30083A87B /* StateContainer.swift in Sources */,
+				681F40302B40D6B30083A87B /* BufferingStateContainer.swift in Sources */,
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,

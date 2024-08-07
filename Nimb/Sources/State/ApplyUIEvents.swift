@@ -152,6 +152,8 @@ public extension Actions {
         signposter.endInterval("Actions.ApplyUIEvents", intervalState)
       }
 
+      var isLastUIEventFlush = false
+
       var uiEventsChunks = [UIEventsChunk]()
       for uiEvent in uiEvents {
         switch uiEvent {
@@ -218,6 +220,12 @@ public extension Actions {
 
         default:
           uiEventsChunks.append(.single(uiEvent))
+        }
+
+        if case .flush = uiEvent {
+          isLastUIEventFlush = true
+        } else {
+          isLastUIEventFlush = false
         }
       }
 
@@ -991,6 +999,8 @@ public extension Actions {
           }
         }
       }
+
+      updates.needFlush = isLastUIEventFlush
 
       return updates
     }
