@@ -223,9 +223,7 @@ final class MainMenuController: NSObject {
       currentFont,
       toSize: newFontSize
     )
-    Task {
-      await store.set(font: .init(newFont))
-    }
+    store.set(font: .init(newFont))
   }
 
   @objc private func handleCopy() {

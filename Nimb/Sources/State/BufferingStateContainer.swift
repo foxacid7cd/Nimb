@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-@MainActor
 public class BufferingStateContainer: StateContainer {
   public init(_ state: State) {
     self.state = state
     bufferedState = state
   }
 
-  @MainActor
   public class BufferedView: StateContainer {
     init(_ wrapped: BufferingStateContainer) {
       self.wrapped = wrapped
