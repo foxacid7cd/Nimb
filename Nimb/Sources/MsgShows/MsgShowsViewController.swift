@@ -47,11 +47,15 @@ public class MsgShowsViewController: NSViewController {
   }
 
   public func render(_ stateUpdates: State.Updates) {
-    if !stateUpdates.msgShowsUpdates.isEmpty || stateUpdates.isAppearanceUpdated {
-      if !stateUpdates.updatedObservedHighlightNames.isDisjoint(with: [.normal]) {
-        renderBackgroundColor()
-      }
+    if stateUpdates.isAppearanceUpdated {
+      renderBackgroundColor()
 
+      renderedMsgShows.removeAll(keepingCapacity: true)
+      renderedMsgShows = store.state.msgShows
+        .map { ($0, makeAttributedString(for: $0)) }
+
+      renderText()
+    } else if !stateUpdates.msgShowsUpdates.isEmpty {
       for update in stateUpdates.msgShowsUpdates {
         switch update {
         case let .added(count):
@@ -67,12 +71,11 @@ public class MsgShowsViewController: NSViewController {
           }
 
         case .clear:
-          renderedMsgShows = []
+          renderedMsgShows.removeAll(keepingCapacity: true)
         }
       }
 
-      textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
-      textView.defaultParagraphStyle = defaultParagraphStyle
+      renderText()
     }
   }
 
@@ -82,23 +85,14 @@ public class MsgShowsViewController: NSViewController {
       .withAlphaComponent(0.8)
   }
 
-  private static let observedHighlightName: Set<
-    Appearance
-      .ObservedHighlightName
-  > = [
-    .normalFloat,
-    .special,
-  ]
+  public func renderText() {
+    textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
+  }
 
   private let store: Store
   private lazy var scrollView = NSScrollView()
   private lazy var textView = STTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
-  private lazy var defaultParagraphStyle: NSParagraphStyle = {
-    let style = NSMutableParagraphStyle()
-    style.paragraphSpacing = 4
-    return style
-  }()
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
     zip(

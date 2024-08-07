@@ -152,7 +152,7 @@ public extension Actions {
         signposter.endInterval("Actions.ApplyUIEvents", intervalState)
       }
 
-      var isLastUIEventFlush = false
+      var hasAnyFlush = false
 
       var uiEventsChunks = [UIEventsChunk]()
       for uiEvent in uiEvents {
@@ -223,9 +223,7 @@ public extension Actions {
         }
 
         if case .flush = uiEvent {
-          isLastUIEventFlush = true
-        } else {
-          isLastUIEventFlush = false
+          hasAnyFlush = true
         }
       }
 
@@ -401,12 +399,11 @@ public extension Actions {
 
             let previousOrderedGridIDs = container.state.orderedGridIDs()
 
-            let zIndex = container.state.nextWindowZIndex()
             container.state.grids[gridID]!.associatedWindow = .plain(
               .init(
                 id: windowID,
                 origin: origin,
-                zIndex: zIndex
+                zIndex: gridID
               )
             )
             container.state.grids[gridID]!.isHidden = false
@@ -428,13 +425,12 @@ public extension Actions {
             anchorRow,
             anchorColumn,
             isFocusable,
-            _
+            zIndex
           ):
             let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
 
             let previousOrderedGridIDs = container.state.orderedGridIDs()
 
-            let zIndex = container.state.nextWindowZIndex()
             if container.state.grids[gridID] == nil {
               container.state.grids[gridID] = .init(
                 id: gridID,
@@ -985,7 +981,7 @@ public extension Actions {
           container.state.appearance.highlights[hlAttrDefine.id] = highlight
 
           for infoItem in hlAttrDefine.info {
-            guard 
+            guard
               let rawHiName = infoItem.hiName,
               let hiName = Appearance.ObservedHighlightName(rawValue: rawHiName)
             else {
@@ -1000,7 +996,7 @@ public extension Actions {
         }
       }
 
-      updates.needFlush = isLastUIEventFlush
+      updates.needFlush = hasAnyFlush
 
       return updates
     }

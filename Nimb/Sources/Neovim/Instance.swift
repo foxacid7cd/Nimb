@@ -59,14 +59,14 @@ public final class Instance: Sendable {
       process.arguments = [
         "-l",
         "-c",
-        "\(inspectorExecutablePath) --output \(temporaryFileURL.path()) \(nvimExecutablePath) --embed --headless" +
+        "\(inspectorExecutablePath) --output \(temporaryFileURL.path()) \(nvimExecutablePath) --embed" +
           vimrcArgument,
       ]
     } else {
       process.arguments = [
         "-l",
         "-c",
-        "\(nvimExecutablePath) --embed --headless" + vimrcArgument,
+        "\(nvimExecutablePath) --embed" + vimrcArgument,
       ]
     }
 
@@ -134,6 +134,7 @@ public final class Instance: Sendable {
       .extTabline,
       .extMessages,
       .extWildmenu,
+      .extPopupmenu,
     ]
     try await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,

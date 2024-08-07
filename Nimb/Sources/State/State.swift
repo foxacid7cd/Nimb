@@ -133,7 +133,6 @@ public struct State: Sendable {
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
   public var grids: IntKeyedDictionary<Grid> = [:]
-  public var windowZIndexCounter: Int = 0
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
@@ -180,11 +179,6 @@ public struct State: Sendable {
     return false
   }
 
-  public mutating func nextWindowZIndex() -> Int {
-    windowZIndexCounter += 1
-    return windowZIndexCounter
-  }
-
   public func orderedGridIDs() -> [Grid.ID] {
     grids
       .map { $1 }
@@ -206,7 +200,7 @@ public struct State: Sendable {
 
   public mutating func apply(updates: Updates, from state: State) {
     rawOptions = state.rawOptions
-    windowZIndexCounter = state.windowZIndexCounter
+
     if updates.isDebugUpdated {
       debug = state.debug
     }
