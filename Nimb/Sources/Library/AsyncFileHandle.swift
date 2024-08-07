@@ -3,7 +3,6 @@
 import Foundation
 
 public extension FileHandle {
-  @inlinable
   var dataBatches: AsyncStream<Data> {
     .init { continuation in
       readabilityHandler = { fileHandle in

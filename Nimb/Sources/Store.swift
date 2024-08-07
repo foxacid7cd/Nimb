@@ -18,7 +18,7 @@ public class Store: Sendable {
 
     actionsTask = Task {
       do {
-        for await action in actionsChannel.buffer(policy: .unbounded) {
+        for await action in actionsChannel {
           try Task.checkCancellation()
           do {
             if state.debug.isStoreActionsLoggingEnabled {
@@ -466,9 +466,4 @@ public struct AlertMessage: Sendable {
   }
 
   public var content: String
-}
-
-@globalActor
-public actor StateActor {
-  public static let shared = StateActor()
 }

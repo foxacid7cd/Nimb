@@ -135,6 +135,10 @@
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
 		68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 688080022C603ADA00BD32FA /* msgpack-inspector */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
+		68C129272C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
+		68C129282C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
+		68C129292C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
+		68C1292A2C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C9BCA32C5F7E3700844461 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA22C5F7E3700844461 /* Algorithms */; };
 		68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA52C5F7E4900844461 /* ArgumentParser */; };
 		68C9BCA92C5F7E5C00844461 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA82C5F7E5C00844461 /* AsyncAlgorithms */; };
@@ -150,7 +154,7 @@
 		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
-		68EFD2692B58834E0010DD54 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* main.swift */; };
+		68EFD2692B58834E0010DD54 /* entryPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* entryPoint.swift */; };
 		68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */; };
 		68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */; };
 		68F0D4F32AECFDFC000954FF /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F0D4F22AECFDFC000954FF /* OSLog.swift */; };
@@ -324,6 +328,7 @@
 		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nimb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nimb.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nimb.entitlements; sourceTree = "<group>"; };
+		68C129262C64078200E5A513 /* StateActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateActor.swift; sourceTree = "<group>"; };
 		68C378202C5E88E20052B1BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		68C9BC772C5F7D6300844461 /* Generate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Generate.swift; sourceTree = "<group>"; };
 		68C9BC792C5F7D6300844461 /* APIErrorFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIErrorFile.swift; sourceTree = "<group>"; };
@@ -342,7 +347,7 @@
 		68E2290D2C602D6700D8D72B /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/package/bin/nvim; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
-		68EFD2682B58834E0010DD54 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		68EFD2682B58834E0010DD54 /* entryPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = entryPoint.swift; sourceTree = "<group>"; };
 		68EFD26A2B588CD90010DD54 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		68EFD26C2B588DE90010DD54 /* SettingsEnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsEnvironmentView.swift; sourceTree = "<group>"; };
 		68F0D4F22AECFDFC000954FF /* OSLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSLog.swift; sourceTree = "<group>"; };
@@ -486,8 +491,9 @@
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
+				68C129262C64078200E5A513 /* StateActor.swift */,
 				68F0D4F22AECFDFC000954FF /* OSLog.swift */,
-				68EFD2682B58834E0010DD54 /* main.swift */,
+				68EFD2682B58834E0010DD54 /* entryPoint.swift */,
 				681B52DC2C5F85DF00AD6C68 /* Nimb-Bridging-Header.h */,
 			);
 			path = Sources;
@@ -924,6 +930,7 @@
 				6880801A2C60D6F000BD32FA /* Message.swift in Sources */,
 				6814C1392C5E341F00FF3968 /* SpeedTuner.swift in Sources */,
 				688080172C60D69000BD32FA /* Value.swift in Sources */,
+				68C129282C64078200E5A513 /* StateActor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -935,6 +942,7 @@
 				681B53182C5FE47600AD6C68 /* ArrayExtensions.swift in Sources */,
 				681B52FB2C5FE33A00AD6C68 /* StringHelpers.swift in Sources */,
 				681B52FC2C5FE33A00AD6C68 /* Generator.swift in Sources */,
+				68C129292C64078200E5A513 /* StateActor.swift in Sources */,
 				681B52FD2C5FE33A00AD6C68 /* APIErrorFile.swift in Sources */,
 				681B53302C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */,
 				681B52FE2C5FE33A00AD6C68 /* UIOptionFile.swift in Sources */,
@@ -965,6 +973,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				688080112C60407600BD32FA /* AsyncFileHandle.swift in Sources */,
+				68C1292A2C64078200E5A513 /* StateActor.swift in Sources */,
 				6880800E2C603B6800BD32FA /* MsgpackInspector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1042,9 +1051,10 @@
 				68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */,
 				68A8FF542AD29F660017C28D /* ProcessChannel.swift in Sources */,
 				68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */,
+				68C129272C64078200E5A513 /* StateActor.swift in Sources */,
 				68FAC3F32AF685AB00490F09 /* Action.swift in Sources */,
 				684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */,
-				68EFD2692B58834E0010DD54 /* main.swift in Sources */,
+				68EFD2692B58834E0010DD54 /* entryPoint.swift in Sources */,
 				681B531D2C5FE47600AD6C68 /* IntegerGeometry.swift in Sources */,
 				681B532F2C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */,
 				689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */,

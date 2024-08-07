@@ -5,7 +5,7 @@ import CustomDump
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate {
-  override public nonisolated init() {
+  override public init() {
     super.init()
   }
 

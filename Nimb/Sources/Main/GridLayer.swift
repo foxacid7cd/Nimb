@@ -81,7 +81,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     anchoredLayers
       .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin, index: index * 10) }
 
-		zPosition = grid.zIndex + Double(index)
+    zPosition = grid.zIndex + Double(index)
 
     needsAnchorLayout = false
   }

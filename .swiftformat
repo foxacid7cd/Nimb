@@ -67,7 +67,7 @@
 --selfrequired 
 --semicolons inline
 --shortoptionals always
---smarttabs disabled
+--smarttabs enabled
 --someany true
 --storedvarattrs preserve
 --stripunusedargs unnamed-only

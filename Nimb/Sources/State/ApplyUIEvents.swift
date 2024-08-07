@@ -13,7 +13,7 @@ public extension Actions {
   {
     public var uiEvents: S
     public var preferredChunkSize = 8
-    public var minimumElementsForTaskGroup = 12
+    public var minimumElementsForTaskGroup = Int.max
 
     public func apply(to container: StateContainer) async throws -> State
       .Updates
