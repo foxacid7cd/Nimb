@@ -72,16 +72,16 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   }
 
   @MainActor
-  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint) {
+  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 
     frame = .init(origin: origin, size: grid.size * store.font.cellSize)
       .applying(outerGridUpsideDownTransform)
 
     anchoredLayers
-      .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin) }
+      .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin, index: index * 10) }
 
-    zPosition = grid.zIndex
+		zPosition = grid.zIndex + Double(index)
 
     needsAnchorLayout = false
   }
@@ -137,7 +137,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     )
 
     ctx.setShouldAntialias(false)
-    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
     grid.drawRuns.drawBackground(
       to: ctx,
       boundingRect: boundingRect,
@@ -145,10 +144,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       appearance: store.appearance,
       upsideDownTransform: upsideDownTransform
     )
-    ctx.endTransparencyLayer()
 
     ctx.setShouldAntialias(true)
-    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
     grid.drawRuns.drawForeground(
       to: ctx,
       boundingRect: boundingRect,
@@ -156,7 +153,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
       appearance: store.appearance,
       upsideDownTransform: upsideDownTransform
     )
-    ctx.endTransparencyLayer()
 
     if
       store.state.cursorBlinkingPhase,
@@ -186,7 +182,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     let xThreshold = store.font.cellWidth * 4 * scrollingSpeedMultiplier
     let yThreshold = store.font.cellHeight * scrollingSpeedMultiplier
 
-    if 
+    if
       event.phase == .began
     {
       isScrollingHorizontal = nil

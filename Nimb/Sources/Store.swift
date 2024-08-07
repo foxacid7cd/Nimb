@@ -27,11 +27,11 @@ public class Store: Sendable {
               logger.debug("Store action dispatched \(string)")
             }
 
-            let updates = try await Task { @StateActor in
-              try await action.apply(
-                to: self.bufferingStateContainer.bufferedView
-              )
-            }.value
+            let updates = try await action.apply(
+              to: self.bufferingStateContainer.bufferedView
+            )
+
+            MainActor.assertIsolated()
 
             bufferedStateUpdates.formUnion(updates)
             let isFlushNeeded = bufferedStateUpdates.needFlush

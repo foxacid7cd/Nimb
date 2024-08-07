@@ -3,5 +3,7 @@
 import AppKit
 
 let appDelegate = AppDelegate()
-NSApplication.shared.delegate = appDelegate
-NSApplication.shared.run()
+withExtendedLifetime(appDelegate) {
+  NSApplication.shared.delegate = appDelegate
+  NSApplication.shared.run()
+}

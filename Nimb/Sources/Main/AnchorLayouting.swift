@@ -8,5 +8,5 @@ public protocol AnchorLayoutingLayer: AnyObject {
   var positionInAnchoringLayer: CGPoint { get set }
   var needsAnchorLayout: Bool { get set }
 
-  func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint)
+  func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int)
 }

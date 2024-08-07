@@ -35,14 +35,15 @@ public class MainViewController: NSViewController {
     let view = NSView()
     view.wantsLayer = true
 
-//    let visualEffectView = NSVisualEffectView()
-//    visualEffectView.blendingMode = .withinWindow
-//    visualEffectView.material = .titlebar
-//    visualEffectView.translatesAutoresizingMaskIntoConstraints = false
-//    view.addSubview(visualEffectView)
-//    visualEffectView.topToSuperview()
-//    visualEffectView.leading(to: view)
-//    visualEffectView.trailing(to: view)
+    //    let visualEffectView = NSVisualEffectView()
+    //    visualEffectView.blendingMode = .withinWindow
+    //    visualEffectView.material = .titlebar
+
+    //    visualEffectView.translatesAutoresizingMaskIntoConstraints = false
+    //    view.addSubview(visualEffectView)
+    //    visualEffectView.topToSuperview()
+    //    visualEffectView.leading(to: view)
+    //    visualEffectView.trailing(to: view)
 
     tablineView.setContentCompressionResistancePriority(
       .init(rawValue: 900),
@@ -52,7 +53,7 @@ public class MainViewController: NSViewController {
     tablineView.topToSuperview()
     tablineView.leading(to: view)
     tablineView.trailing(to: view)
-//    tablineView.bottom(to: visualEffectView)
+    //    tablineView.bottom(to: visualEffectView)
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(
       target: self,

@@ -260,21 +260,15 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleToggleUIEventsLogging() {
-    Task {
-      try await store.dispatch(Actions.ToggleDebugUIEventsLogging())
-    }
+    store.dispatch(Actions.ToggleDebugUIEventsLogging())
   }
 
   @objc private func handleToggleMessagePackInspector() {
-    Task {
-      try await store.dispatch(Actions.ToggleDebugMessagePackInspector())
-    }
+    store.dispatch(Actions.ToggleDebugMessagePackInspector())
   }
 
   @objc private func handleToggleStoreActionsLogging() {
-    Task {
-      try await store.dispatch(Actions.ToggleStoreActionsLogging())
-    }
+    store.dispatch(Actions.ToggleStoreActionsLogging())
   }
 
   @objc private func handleLogState() {
@@ -320,9 +314,7 @@ extension MainMenuController: NSFontChanging {
       return
     }
     let newFont = sender.convert(store.font.appKit())
-    Task {
-      await store.set(font: .init(newFont))
-    }
+    store.set(font: .init(newFont))
   }
 }
 

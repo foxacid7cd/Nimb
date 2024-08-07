@@ -996,6 +996,8 @@ public extension Actions {
         }
       }
 
+      StateActor.assertIsolated()
+
       updates.needFlush = hasAnyFlush
 
       return updates

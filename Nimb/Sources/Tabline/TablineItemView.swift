@@ -28,6 +28,8 @@ final class TablineItemView: NSView {
     )
     clickGestureRecognizer.delaysPrimaryMouseButtonEvents = true
     addGestureRecognizer(clickGestureRecognizer)
+
+    render()
   }
 
   @available(*, unavailable)
@@ -44,6 +46,16 @@ final class TablineItemView: NSView {
     didSet {
       if text != oldValue {
         shouldRedrawImageViews = true
+        render()
+      }
+    }
+  }
+
+  override var frame: NSRect {
+    didSet {
+      if frame != oldValue {
+        shouldRedrawImageViews = true
+        render()
       }
     }
   }
@@ -60,13 +72,6 @@ final class TablineItemView: NSView {
       userInfo: nil
     )
     addTrackingArea(trackingArea!)
-  }
-
-  override func layout() {
-    super.layout()
-
-    shouldRedrawImageViews = true
-    render()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -87,13 +92,14 @@ final class TablineItemView: NSView {
     }
 
     CATransaction.begin()
-    CATransaction.setAnimationDuration(0.1)
+    CATransaction.setAnimationDuration(isAnimated ? 0.08 : 0)
     CATransaction.setAnimationTimingFunction(.init(name: .linear))
     backgroundImageView.animator().alphaValue = isSelected ? 0 : 1
     accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
+    textField.animator().alphaValue = isSelected || isMouseInside ? 0.9 : 0.75
     CATransaction.commit()
 
-    textField.alphaValue = isSelected || isMouseInside ? 1 : 0.85
+    isAnimated = true
   }
 
   private let store: Store
@@ -103,12 +109,13 @@ final class TablineItemView: NSView {
   private var trackingArea: NSTrackingArea?
   private var isMouseInside = false
   private var shouldRedrawImageViews = false
+  private var isAnimated = false
 
   private func redrawImageViews() {
     let color = NSColor.black
     let fill = SlantedBackgroundFill.gradient(
-      from: color.withAlphaComponent(0.4),
-      to: color.withAlphaComponent(0.3)
+      from: color.withAlphaComponent(0.3),
+      to: color.withAlphaComponent(0.5)
     )
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
@@ -123,8 +130,8 @@ final class TablineItemView: NSView {
 
     let accentColor = filledColor ?? .white
     let accentFill = SlantedBackgroundFill.gradient(
-      from: accentColor.withAlphaComponent(0.7),
-      to: accentColor.withAlphaComponent(0.4)
+      from: accentColor.withAlphaComponent(0.6),
+      to: accentColor.withAlphaComponent(0.2)
     )
     accentBackgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,

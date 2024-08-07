@@ -280,7 +280,7 @@ final class TablineView: NSVisualEffectView {
     )
     titleTextField.alphaValue = window?.isKeyWindow == true ? 0.8 : 0.7
 
-    let sublayersOpacity: Double = window?.isKeyWindow == true ? 1 : 0.5
+    let sublayersOpacity: Double = window?.isKeyWindow == true ? 1 : 0.7
     buffersScrollView.alphaValue = sublayersOpacity
     tabsScrollView.alphaValue = sublayersOpacity
 
