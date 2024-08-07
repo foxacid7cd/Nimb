@@ -12,6 +12,8 @@ public extension Actions {
     S: Sendable
   {
     public var uiEvents: S
+    public var preferredChunkSize = 8
+    public var minimumElementsForTaskGroup = 12
 
     public func apply(to container: StateContainer) async throws -> State
       .Updates
@@ -219,7 +221,12 @@ public extension Actions {
         }
       }
 
-      signposter.emitEvent("Processed UI events into chunks")
+      await Task.yield()
+
+      signposter.emitEvent(
+        "Processed UI events into chunks",
+        "prefferedChunkSize: \(preferredChunkSize) minimumElementsForTaskGroup: \(minimumElementsForTaskGroup)"
+      )
 
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {
@@ -717,7 +724,7 @@ public extension Actions {
 
         case let .gridLines(gridID, hlAttrDefines, gridLines):
           for hlAttrDefine in hlAttrDefines {
-            try applyHlAttrDefine(hlAttrDefine)
+            applyHlAttrDefine(hlAttrDefine)
           }
 
           let grids = container.state.grids
@@ -725,7 +732,7 @@ public extension Actions {
           let appearance = container.state.appearance
 
           let results: [Grid.LineUpdatesResult] =
-            if gridLines.count < 9 {
+            if gridLines.count < minimumElementsForTaskGroup {
               try applyLineUpdates(
                 for: gridLines,
                 grids: grids,
@@ -739,7 +746,7 @@ public extension Actions {
               ) { taskGroup in
                 let gridLines = Array(gridLines)
                 let chunkSize = gridLines
-                  .optimalChunkSize(preferredChunkSize: 6)
+                  .optimalChunkSize(preferredChunkSize: preferredChunkSize)
                 for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
                   taskGroup.addTask {
                     try applyLineUpdates(
@@ -875,7 +882,7 @@ public extension Actions {
         func applyHlAttrDefine(
           _ hlAttrDefine: UIEventsChunk
             .HlAttrDefine
-        ) throws {
+        ) {
           let noCombine = hlAttrDefine.rgbAttrs["noCombine"]
             .flatMap { $0[case: \.boolean] } ?? false
 
@@ -963,7 +970,7 @@ public extension Actions {
               continue
 
             default:
-              throw Failure("unknown hl attr define rgb attr key", key)
+              logger.warning("Unknown hl attr define rgb attr key: \(key)")
             }
           }
 

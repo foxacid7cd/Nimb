@@ -18,6 +18,9 @@ final class MainMenuController: NSObject {
     openMenuItem.target = self
     fileMenu.addItem(openMenuItem)
     fileMenu.addItem(.separator())
+    saveMenuItem.target = self
+    saveMenuItem.keyEquivalentModifierMask = [.command]
+    fileMenu.addItem(saveMenuItem)
     saveAsMenuItem.target = self
     saveAsMenuItem.keyEquivalentModifierMask = [.shift, .command]
     fileMenu.addItem(saveAsMenuItem)
@@ -75,6 +78,11 @@ final class MainMenuController: NSObject {
     action: #selector(handleOpen),
     keyEquivalent: "o"
   )
+  private let saveMenuItem = NSMenuItem(
+    title: "Save",
+    action: #selector(handleSave),
+    keyEquivalent: "s"
+  )
   private let saveAsMenuItem = NSMenuItem(
     title: "Save As",
     action: #selector(handleSaveAs),
@@ -124,6 +132,27 @@ final class MainMenuController: NSObject {
     }
   }
 
+  @objc private func handleSave() {
+    guard actionTask == nil else {
+      return
+    }
+
+    actionTask = Task {
+      defer { actionTask = nil }
+
+      let validBuftypes: Set<String> = ["", "help"]
+
+      guard
+        let (_, buftype) = await store.requestCurrentBufferInfo(),
+        validBuftypes.contains(buftype)
+      else {
+        return
+      }
+
+      try? store.api.nimbFast(method: "write")
+    }
+  }
+
   @objc private func handleSaveAs() {
     guard actionTask == nil else {
       return
@@ -156,7 +185,7 @@ final class MainMenuController: NSObject {
       guard !Task.isCancelled, response == .OK, let url = panel.url else {
         return
       }
-      await store.saveAs(url: url)
+      try? store.api.nimbFast(method: "saveAs", parameters: [.string(url.path())])
     }
   }
 

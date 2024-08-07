@@ -99,6 +99,8 @@ public final class Instance: Sendable {
     case right
   }
 
+  public let api: API<ProcessChannel>
+
   public func run() async throws {
     try process.run()
 
@@ -299,7 +301,6 @@ public final class Instance: Sendable {
   private let nvimResourcesURL: URL
   private let initialOuterGridSize: IntegerSize
   private let process = Process()
-  private let api: API<ProcessChannel>
 }
 
 extension Instance: AsyncSequence {

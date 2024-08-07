@@ -73,6 +73,10 @@ public class Store: Sendable {
     outerGridSizeThrottlingTask?.cancel()
   }
 
+  public var api: API<some Channel> {
+    instance.api
+  }
+
   public var state: State {
     stateContainer.state
   }
