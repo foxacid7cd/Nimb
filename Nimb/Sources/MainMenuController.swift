@@ -113,57 +113,36 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handleOpen() {
-    guard actionTask == nil else {
-      return
-    }
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.showsHiddenFiles = true
 
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      let panel = NSOpenPanel()
-      panel.canChooseDirectories = true
-      panel.showsHiddenFiles = true
-
-      let response = await panel.begin()
-      guard !Task.isCancelled, response == .OK, let url = panel.url else {
-        return
+    switch panel.runModal() {
+    case .OK:
+      Task {
+        await withAsyncErrorHandler(from: store) {
+          try await store.api.nimb(method: "edit", parameters: [.string(panel.url!.path(percentEncoded: false))])
+        }
       }
-      await store.edit(url: url)
+
+    default:
+      break
     }
   }
 
   @objc private func handleSave() {
-    guard actionTask == nil else {
-      return
-    }
-
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      let validBuftypes: Set<String> = ["", "help"]
-
-      guard
-        let (_, buftype) = await store.requestCurrentBufferInfo(),
-        validBuftypes.contains(buftype)
-      else {
-        return
+    Task {
+      await withAsyncErrorHandler(from: store) {
+        try await store.api.nimb(method: "write")
       }
-
-      try? store.api.nimbFast(method: "write")
     }
   }
 
   @objc private func handleSaveAs() {
-    guard actionTask == nil else {
-      return
-    }
+    let validBuftypes: Set<String> = ["", "help"]
 
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      let validBuftypes: Set<String> = ["", "help"]
-
-      guard 
+    Task {
+      guard
         let (name, buftype) = await store.requestCurrentBufferInfo(),
         validBuftypes.contains(buftype)
       else {
@@ -185,7 +164,9 @@ final class MainMenuController: NSObject {
       guard !Task.isCancelled, response == .OK, let url = panel.url else {
         return
       }
-      try? store.api.nimbFast(method: "saveAs", parameters: [.string(url.path())])
+      await withAsyncErrorHandler(from: store) {
+        _ = try await store.api.nimb(method: "save_as", parameters: [.string(url.path())])
+      }
     }
   }
 
@@ -266,7 +247,7 @@ final class MainMenuController: NSObject {
   }
 
   @objc private func handlePaste() {
-    guard 
+    guard
       let text = NSPasteboard.general.string(forType: .string),
       actionTask == nil
     else {
@@ -449,8 +430,7 @@ extension MainMenuController: NSMenuDelegate {
     keyEquivalent: String = "",
     keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command]
   )
-    -> NSMenuItem
-  {
+  -> NSMenuItem {
     let item = NSMenuItem(
       title: title,
       action: action,

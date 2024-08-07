@@ -25,8 +25,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
+  public func applicationWillTerminate(_: Notification) {
+    stateUpdatesTask?.cancel()
+    neovimAlertMessagesTask?.cancel()
+  }
+
   private var instance: Instance?
   private var store: Store?
+  private var neovimAlertMessagesTask: Task<Void, Never>?
   private var stateUpdatesTask: Task<Void, Never>?
   private var mainMenuController: MainMenuController?
   private var msgShowsWindowController: MsgShowsWindowController?
@@ -45,6 +51,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       debug: debugState,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )
+    neovimAlertMessagesTask = Task {
+      for await message in store!.neovimAlertMessages {
+        showAlert(message: message)
+      }
+    }
   }
 
   private func setupMainMenuController() {
@@ -165,5 +176,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           break
         }
       }
+  }
+
+  private func showAlert(message: String) {
+    let alert = NSAlert()
+    alert.alertStyle = .warning
+    alert.messageText = message
+    alert.addButton(withTitle: "Close")
+    alert.beginSheetModal(for: mainWindowController!.window!)
   }
 }

@@ -73,6 +73,8 @@ public class Store: Sendable {
     outerGridSizeThrottlingTask?.cancel()
   }
 
+  public let neovimAlertMessages = AsyncChannel<String>()
+
   public var api: API<some Channel> {
     instance.api
   }
@@ -353,6 +355,20 @@ public class Store: Sendable {
     }
   }
 
+  fileprivate func handleActionError(_ error: any Error) {
+    let message: String =
+      if let error = error as? NimbNeovimError {
+        error.errorMessages.joined(separator: "\n")
+      } else if let error = error as? NeovimError {
+        String(customDumping: error.raw)
+      } else {
+        String(customDumping: error)
+      }
+    Task {
+      await neovimAlertMessages.send(message)
+    }
+  }
+
   private let instance: Instance
   private var stateContainer: StateContainer
   private let stateUpdatesChannel = AsyncThrowingChannel<
@@ -404,26 +420,6 @@ public class Store: Sendable {
       }
     }
   }
-
-  private func handleActionError(_ error: any Error) {
-    let errorMessage: String =
-      if let error = error as? NimbNeovimError {
-        error.errorMessages.joined(separator: "\n")
-      } else if let error = error as? NeovimError {
-        String(customDumping: error.raw)
-      } else {
-        String(customDumping: error)
-      }
-    if !errorMessage.isEmpty {
-      Task {
-        do {
-          try await instance.report(errorMessage: errorMessage)
-        } catch {
-          logger.error("reporting error message failed with error \(error)")
-        }
-      }
-    }
-  }
 }
 
 extension Store: AsyncSequence {
@@ -431,5 +427,25 @@ extension Store: AsyncSequence {
 
   public func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
     stateUpdatesChannel.makeAsyncIterator()
+  }
+}
+
+@MainActor
+public func withErrorHandler<T>(from store: Store, _ body: @MainActor () throws -> T) -> T? {
+  do {
+    return try body()
+  } catch {
+    store.handleActionError(error)
+    return nil
+  }
+}
+
+@MainActor
+public func withAsyncErrorHandler<T>(from store: Store, _ body: @MainActor () async throws -> T) async -> T? {
+  do {
+    return try await body()
+  } catch {
+    store.handleActionError(error)
+    return nil
   }
 }
