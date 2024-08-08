@@ -15,13 +15,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       setupMainMenuController()
       setupMsgShowsWindowController()
       showMainWindowController()
-      runStateUpdatesTask()
 
       do {
         try await instance!.run()
       } catch {
         showAlert(error: error)
       }
+
+      runStateUpdatesTask()
     }
   }
 
@@ -81,58 +82,49 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func runStateUpdatesTask() {
-    stateUpdatesTask = Task { [weak self] in
-      await withUnsafeContinuation { continuation in
-        Task {
-          let store = self!.store!
-          let mainWindowController = self!.mainWindowController!
-          let msgShowsWindowController = self!.msgShowsWindowController!
+    stateUpdatesTask = Task { @MainActor in
+      let store = self.store!
+      let mainWindowController = self.mainWindowController!
+      let msgShowsWindowController = self.msgShowsWindowController!
 
-          do {
-            var presentedNimbNotifiesCount = 0
+      var presentedNimbNotifiesCount = 0
 
-            for try await stateUpdates in store.stateUpdates {
-              guard !Task.isCancelled else {
-                return
-              }
-
-              if stateUpdates.isOuterGridLayoutUpdated {
-                UserDefaults.standard.outerGridSize = store.state.outerGrid!
-                  .size
-              }
-              if stateUpdates.isFontUpdated {
-                UserDefaults.standard.appKitFont = store.state.font.appKit()
-              }
-              if stateUpdates.isDebugUpdated {
-                UserDefaults.standard.debug = store.state.debug
-              }
-              if stateUpdates.isNimbNotifiesUpdated {
-                for _ in presentedNimbNotifiesCount ..< store.state.nimbNotifies.count {
-                  let notification = store.state.nimbNotifies[presentedNimbNotifiesCount]
-
-                  let process = Process()
-                  process.executableURL = URL(filePath: "/usr/bin/osascript")
-                  process.arguments = [
-                    "-e",
-                    """
-                    display notification "\(notification.message)" with title "\(notification.title ?? "Nimb")"
-                    """,
-                  ]
-                  process.environment = ProcessInfo.processInfo.environment
-                  try process.run()
-                }
-                presentedNimbNotifiesCount = store.state.nimbNotifies.count
-              }
-
-              mainWindowController.render(stateUpdates)
-              msgShowsWindowController.render(stateUpdates)
-            }
-
-            continuation.resume(returning: ())
-          } catch {
-            self?.showAlert(error: error)
+      do {
+        for try await stateUpdates in store.stateUpdates {
+          if stateUpdates.isOuterGridLayoutUpdated {
+            UserDefaults.standard.outerGridSize = store.state.outerGrid!
+              .size
           }
+          if stateUpdates.isFontUpdated {
+            UserDefaults.standard.appKitFont = store.state.font.appKit()
+          }
+          if stateUpdates.isDebugUpdated {
+            UserDefaults.standard.debug = store.state.debug
+          }
+          if stateUpdates.isNimbNotifiesUpdated {
+            for _ in presentedNimbNotifiesCount ..< store.state.nimbNotifies.count {
+              let notification = store.state.nimbNotifies[presentedNimbNotifiesCount]
+
+              let process = Process()
+              process.executableURL = URL(filePath: "/usr/bin/osascript")
+              process.arguments = [
+                "-e",
+                """
+                display notification "\(notification.message)" with title "\(notification.title ?? "Nimb")"
+                """,
+              ]
+              process.environment = ProcessInfo.processInfo.environment
+              try process.run()
+            }
+            presentedNimbNotifiesCount = store.state.nimbNotifies.count
+          }
+
+          mainWindowController.render(stateUpdates)
+          msgShowsWindowController.render(stateUpdates)
         }
+
+      } catch {
+        self.showAlert(error: error)
       }
 
       NSApplication.shared.terminate(nil)
