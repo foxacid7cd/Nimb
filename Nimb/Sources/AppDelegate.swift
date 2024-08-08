@@ -82,7 +82,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func runStateUpdatesTask() {
-    stateUpdatesTask = Task { @MainActor in
+    stateUpdatesTask = Task.detached(priority: .userInitiated) { @MainActor in
       let store = self.store!
       let mainWindowController = self.mainWindowController!
       let msgShowsWindowController = self.msgShowsWindowController!

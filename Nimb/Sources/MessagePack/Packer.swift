@@ -9,12 +9,6 @@ public class Packer {
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)
   }
 
-  deinit {
-    Task {
-      await destroy()
-    }
-  }
-
   public func pack(_ value: Value) -> Data {
     process(value)
 
@@ -22,12 +16,12 @@ public class Packer {
     return .init(bytes: sbuf.data, count: sbuf.size)
   }
 
-  private var sbuf = msgpack_sbuffer()
-  private var pk = msgpack_packer()
-
-  private func destroy() {
+  public func destroy() {
     msgpack_sbuffer_destroy(&sbuf)
   }
+
+  private var sbuf = msgpack_sbuffer()
+  private var pk = msgpack_packer()
 
   private func process(_ value: Value) {
     switch value {

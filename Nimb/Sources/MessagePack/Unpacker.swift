@@ -11,12 +11,6 @@ public class Unpacker {
     msgpack_unpacked_init(&unpacked)
   }
 
-  deinit {
-    Task {
-      await destroy()
-    }
-  }
-
   public func unpack(_ data: Data) throws -> [Value] {
     if msgpack_unpacker_buffer_capacity(&mpac) < data.count {
       msgpack_unpacker_reserve_buffer(&mpac, data.count)
@@ -55,11 +49,11 @@ public class Unpacker {
     }
   }
 
-  private var mpac = msgpack_unpacker()
-  private var unpacked = msgpack_unpacked()
-
-  private func destroy() {
+  public func destroy() {
     msgpack_unpacked_destroy(&unpacked)
     msgpack_unpacker_destroy(&mpac)
   }
+
+  private var mpac = msgpack_unpacker()
+  private var unpacked = msgpack_unpacked()
 }
