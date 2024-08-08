@@ -135,8 +135,8 @@ public final class Instance: Sendable {
       .extCmdline,
       .extTabline,
       .extMessages,
-      .extWildmenu,
-      .extPopupmenu,
+//      .extWildmenu,
+//      .extPopupmenu,
     ]
     try await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
@@ -304,14 +304,4 @@ public final class Instance: Sendable {
   private let nvimResourcesURL: URL
   private let initialOuterGridSize: IntegerSize
   private let process = Process()
-}
-
-extension Instance: AsyncSequence {
-  public typealias Element = [NeovimNotification]
-
-  public nonisolated func makeAsyncIterator() -> API<ProcessChannel>
-    .AsyncIterator
-  {
-    api.makeAsyncIterator()
-  }
 }

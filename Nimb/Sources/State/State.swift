@@ -32,7 +32,6 @@ public struct State: Sendable {
     public var isCmdlinesUpdated: Bool = false
     public var msgShowsUpdates: [MsgShowsUpdate] = []
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var isGridsOrderUpdated: Bool = false
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isPopupmenuUpdated: Bool = false
@@ -72,7 +71,6 @@ public struct State: Sendable {
       for gridID in updates.updatedLayoutGridIDs {
         updatedLayoutGridIDs.insert(gridID)
       }
-      isGridsOrderUpdated = isGridsOrderUpdated || updates.isGridsOrderUpdated
       for (gridID, gridUpdate) in updates.gridUpdates {
         update(&gridUpdates[gridID]) { accumulator in
           if accumulator == nil {
@@ -140,6 +138,7 @@ public struct State: Sendable {
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
   public var nimbNotifies: [NimbNotify] = []
+  public var gridZIndexCounter: Double = 0
 
   public var outerGrid: Grid? {
     get {
@@ -200,7 +199,30 @@ public struct State: Sendable {
     }
   }
 
+  public mutating func updateGridZIndex(id: Grid.ID) {
+    gridZIndexCounter += 1
+
+    update(&grids[id]) { [gridZIndexCounter] grid in
+      guard grid != nil else {
+        return
+      }
+      grid!.zIndex =
+        if id == Grid.OuterID {
+          0
+        } else if grid!.associatedWindow != nil {
+          if case .floating = grid!.associatedWindow {
+            gridZIndexCounter + 10000
+          } else {
+            gridZIndexCounter
+          }
+        } else {
+          -1
+        }
+    }
+  }
+
   public mutating func apply(updates: Updates, from state: State) {
+    gridZIndexCounter = state.gridZIndexCounter
     if updates.isRawOptionsUpdated {
       rawOptions = state.rawOptions
     }
@@ -231,7 +253,7 @@ public struct State: Sendable {
     if !updates.msgShowsUpdates.isEmpty {
       msgShows = state.msgShows
     }
-    if !updates.updatedLayoutGridIDs.isEmpty || !updates.isGridsOrderUpdated || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
+    if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
       grids = state.grids
     }
     if updates.isPopupmenuUpdated || updates.isPopupmenuSelectionUpdated {

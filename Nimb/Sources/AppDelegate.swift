@@ -9,38 +9,41 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     super.init()
   }
 
+  public func applicationWillFinishLaunching(_: Notification) {
+    setupStore()
+    setupMainMenuController()
+    setupMsgShowsWindowController()
+    setupMainWindowController()
+  }
+
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      await setupStore()
-      setupMainMenuController()
-      setupMsgShowsWindowController()
-      showMainWindowController()
-
       do {
         try await instance!.run()
       } catch {
-        showAlert(error: error)
+        await showCriticalAlert(error: error)
+        NSApplication.shared.terminate(nil)
       }
-
-      runStateUpdatesTask()
     }
   }
 
   public func applicationWillTerminate(_: Notification) {
     stateUpdatesTask?.cancel()
-    neovimAlertMessagesTask?.cancel()
+    alertMessagesTask?.cancel()
   }
 
   private var instance: Instance?
   private var store: Store?
-  private var neovimAlertMessagesTask: Task<Void, Never>?
-  private var stateUpdatesTask: Task<Void, Never>?
+
   private var mainMenuController: MainMenuController?
   private var msgShowsWindowController: MsgShowsWindowController?
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
-  private func setupStore() async {
+  private var alertMessagesTask: Task<Void, Never>?
+  private var stateUpdatesTask: Task<Void, Never>?
+
+  private func setupStore() {
     let debugState = UserDefaults.standard.debug
     instance = Instance(
       nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
@@ -52,10 +55,44 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       debug: debugState,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )
-    neovimAlertMessagesTask = Task {
-      for await message in store!.alertMessages {
-        showAlert(message)
+    alertMessagesTask = Task {
+      do {
+        for await message in store!.alertMessages {
+          try Task.checkCancellation()
+          showAlert(message)
+        }
+      } catch { }
+    }
+    stateUpdatesTask = Task {
+      do {
+        var presentedNimbNotifiesCount = 0
+        for try await stateUpdates in store!.stateUpdates {
+          if stateUpdates.isOuterGridLayoutUpdated {
+            UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
+          }
+          if stateUpdates.isFontUpdated {
+            UserDefaults.standard.appKitFont = store!.state.font.appKit()
+          }
+          if stateUpdates.isDebugUpdated {
+            UserDefaults.standard.debug = store!.state.debug
+          }
+          if stateUpdates.isNimbNotifiesUpdated {
+            for _ in presentedNimbNotifiesCount ..< store!.state.nimbNotifies.count {
+              let notification = store!.state.nimbNotifies[presentedNimbNotifiesCount]
+              showNimbNotify(notification)
+            }
+            presentedNimbNotifiesCount = store!.state.nimbNotifies.count
+          }
+          mainWindowController!.render(stateUpdates)
+          msgShowsWindowController!.render(stateUpdates)
+        }
+        logger.debug("Store state updates loop ended")
+      } catch {
+        logger.error("Store state updates loop error: \(error)")
+        await self.showCriticalAlert(error: error)
       }
+
+      NSApplication.shared.terminate(nil)
     }
   }
 
@@ -70,7 +107,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     NSApplication.shared.mainMenu = mainMenuController!.menu
   }
 
-  private func showMainWindowController() {
+  private func setupMainWindowController() {
     mainWindowController = MainWindowController(
       store: store!,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
@@ -81,93 +118,42 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     msgShowsWindowController = MsgShowsWindowController(store: store!)
   }
 
-  private func runStateUpdatesTask() {
-    stateUpdatesTask = Task.detached(priority: .userInitiated) { @MainActor in
-      let store = self.store!
-      let mainWindowController = self.mainWindowController!
-      let msgShowsWindowController = self.msgShowsWindowController!
-
-      var presentedNimbNotifiesCount = 0
-
-      do {
-        for try await stateUpdates in store.stateUpdates {
-          if stateUpdates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = store.state.outerGrid!
-              .size
-          }
-          if stateUpdates.isFontUpdated {
-            UserDefaults.standard.appKitFont = store.state.font.appKit()
-          }
-          if stateUpdates.isDebugUpdated {
-            UserDefaults.standard.debug = store.state.debug
-          }
-          if stateUpdates.isNimbNotifiesUpdated {
-            for _ in presentedNimbNotifiesCount ..< store.state.nimbNotifies.count {
-              let notification = store.state.nimbNotifies[presentedNimbNotifiesCount]
-
-              let process = Process()
-              process.executableURL = URL(filePath: "/usr/bin/osascript")
-              process.arguments = [
-                "-e",
-                """
-                display notification "\(notification.message)" with title "\(notification.title ?? "Nimb")"
-                """,
-              ]
-              process.environment = ProcessInfo.processInfo.environment
-              try process.run()
-            }
-            presentedNimbNotifiesCount = store.state.nimbNotifies.count
-          }
-
-          mainWindowController.render(stateUpdates)
-          msgShowsWindowController.render(stateUpdates)
-        }
-
-      } catch {
-        self.showAlert(error: error)
-      }
-
-      NSApplication.shared.terminate(nil)
-    }
-  }
-
-  private func showAlert(error: Error) {
+  private func showCriticalAlert(error: Error) async {
     let alert = NSAlert()
     alert.alertStyle = .critical
     alert.messageText = "Something went wrong!"
-    alert
-      .informativeText =
-      "Store state updates loop ended with uncaught error"
-    alert.addButton(withTitle: "Show log")
+    alert.informativeText = "Store state updates loop ended with uncaught error"
+    alert.addButton(withTitle: "Details")
     alert.addButton(withTitle: "Close")
-    alert
-      .beginSheetModal(
-        for: mainWindowController!.window!
-      ) { response in
-        switch response {
-        case .alertFirstButtonReturn:
-          let temporaryDirectoryURL = URL(
-            fileURLWithPath: NSTemporaryDirectory(),
-            isDirectory: true
-          )
-          let logFileName =
-            "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
-          let temporaryFileURL = temporaryDirectoryURL
-            .appending(component: logFileName)
+    await withUnsafeContinuation { continuation in
+      alert
+        .beginSheetModal(
+          for: mainWindowController!.window!
+        ) { response in
+          switch response {
+          case .alertFirstButtonReturn:
+            let temporaryDirectoryURL = URL(
+              fileURLWithPath: NSTemporaryDirectory(),
+              isDirectory: true
+            )
+            let logFileName =
+              "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
+            let temporaryFileURL = temporaryDirectoryURL
+              .appending(component: logFileName)
 
-          var errorLog = ""
-          customDump(error, to: &errorLog)
+            try! String(customDumping: error).data(using: .utf8)!.write(
+              to: temporaryFileURL,
+              options: []
+            )
+            NSWorkspace.shared.open(temporaryFileURL)
 
-          try! errorLog.data(using: .utf8)!.write(
-            to: temporaryFileURL,
-            options: []
-          )
-          NSWorkspace.shared.open(temporaryFileURL)
+          default:
+            break
+          }
 
-        default:
-          break
+          continuation.resume(returning: ())
         }
-      }
+    }
   }
 
   private func showAlert(_ message: AlertMessage) {
@@ -176,5 +162,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     alert.messageText = message.content
     alert.addButton(withTitle: "Close")
     alert.beginSheetModal(for: mainWindowController!.window!)
+  }
+
+  private func showNimbNotify(_ notify: NimbNotify) {
+    let process = Process()
+    process.executableURL = URL(filePath: "/usr/bin/osascript")
+    process.arguments = [
+      "-e",
+      "display notification \"\(notify.message)\" with title \"\(notify.title ?? "Nimb")\"",
+    ]
+    process.environment = ProcessInfo.processInfo.environment
+    do {
+      try process.run()
+    } catch {
+      logger.error("Failed to run /usr/bin/osascript: \(error)")
+    }
   }
 }

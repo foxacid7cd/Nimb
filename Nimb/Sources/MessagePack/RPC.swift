@@ -11,28 +11,63 @@ import Foundation
 public class RPC<Target: Channel> {
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
-    store = .init(maximumConcurrentRequests: maximumConcurrentRequests)
-    messageBatches = .init(target.dataBatches, unpacker: unpacker)
+    storage = .init(maximumConcurrentRequests: maximumConcurrentRequests)
+
+    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [storage, target, unpacker] continuation in
+      let task = Task {
+        var notifications = [Message.Notification]()
+        for try await data in target.dataBatches {
+          let values = try unpacker.unpack(data)
+          let messages = try values.map { try Message(value: $0) }
+
+          for message in messages {
+            switch message {
+            case .request:
+              continue
+            case let .response(response):
+              storage.responseReceived(response, forRequestWithID: response.id)
+            case let .notification(notification):
+              notifications.append(notification)
+            }
+          }
+          if !notifications.isEmpty {
+            continuation.yield(notifications)
+            notifications.removeAll(keepingCapacity: true)
+          }
+        }
+      }
+
+      continuation.onTermination = {
+        switch $0 {
+        case .cancelled:
+          task.cancel()
+        default:
+          break
+        }
+      }
+    }
   }
+
+  public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   @discardableResult
   public func call(
     method: String,
     withParameters parameters: [Value]
   ) async throws
-    -> Message.Response.Result
-  {
-    await withUnsafeContinuation { continuation in
+  -> Message.Response.Result {
+    try await withUnsafeThrowingContinuation { continuation in
       Task {
-        try send(
-          request: .init(
-            id: store.announceRequest {
-              continuation.resume(returning: $0.result)
-            },
-            method: method,
-            parameters: parameters
-          )
+        let request = Message.Request(
+          id: storage.announceRequest {
+            continuation.resume(returning: $0.result)
+          },
+          method: method,
+          parameters: parameters
         )
+        do {
+          try send(request: request)
+        } catch { }
       }
     }
   }
@@ -43,7 +78,7 @@ public class RPC<Target: Channel> {
   ) throws {
     try send(
       request: .init(
-        id: store.announceRequest(),
+        id: storage.announceRequest(),
         method: method,
         parameters: parameters
       )
@@ -60,7 +95,7 @@ public class RPC<Target: Channel> {
       data.append(
         packer.pack(
           Message.Request(
-            id: store.announceRequest(),
+            id: storage.announceRequest(),
             method: call.method,
             parameters: call.parameters
           )
@@ -78,68 +113,9 @@ public class RPC<Target: Channel> {
   }
 
   private let target: Target
-  private let store: Storage
+  private let storage: Storage
   private let packer = Packer()
   private let unpacker = Unpacker()
-  private let messageBatches: AsyncMessageBatches<Target.S>
-}
-
-extension RPC: AsyncSequence {
-  public typealias Element = [Message.Notification]
-
-  public nonisolated func makeAsyncIterator() -> AsyncIterator {
-    .init(
-      store: store,
-      messageBatchesIterator: messageBatches.makeAsyncIterator()
-    )
-  }
-
-  public struct AsyncIterator: AsyncIteratorProtocol {
-    fileprivate init(
-      store: Storage,
-      messageBatchesIterator: AsyncMessageBatches<Target.S>.AsyncIterator
-    ) {
-      self.store = store
-      self.messageBatchesIterator = messageBatchesIterator
-    }
-
-    public mutating func next() async throws -> [Message.Notification]? {
-      while true {
-        guard let messages = try await messageBatchesIterator.next() else {
-          return nil
-        }
-
-        try Task.checkCancellation()
-
-        accumulator.removeAll(keepingCapacity: true)
-
-        for message in messages {
-          switch message {
-          case let .request(request):
-            throw Failure("Unexpected request message received \(request)")
-
-          case let .response(response):
-            await store.responseReceived(
-              response,
-              forRequestWithID: response.id
-            )
-
-          case let .notification(notification):
-            accumulator.append(notification)
-          }
-        }
-
-        if !accumulator.isEmpty {
-          return accumulator
-        }
-      }
-    }
-
-    private let store: Storage
-    private var messageBatchesIterator: AsyncMessageBatches<Target.S>
-      .AsyncIterator
-    private var accumulator = [Message.Notification]()
-  }
 }
 
 @MainActor

@@ -75,10 +75,6 @@ public extension Actions {
         updates.updatedLayoutGridIDs.insert(gridID)
       }
 
-      func updatedGridsOrder() {
-        updates.isGridsOrderUpdated = true
-      }
-
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
         let font = state.font
         let appearance = state.appearance
@@ -143,7 +139,7 @@ public extension Actions {
         return contentParts
       }
 
-      var hasAnyFlush = false
+      var isLastFlush = false
 
       var uiEventsChunks = [UIEventsChunk]()
       for uiEvent in uiEvents {
@@ -218,7 +214,9 @@ public extension Actions {
         }
 
         if case .flush = uiEvent {
-          hasAnyFlush = true
+          isLastFlush = true
+        } else {
+          isLastFlush = false
         }
       }
 
@@ -330,6 +328,7 @@ public extension Actions {
               }
 
               updatedLayout(forGridWithID: gridID)
+              state.updateGridZIndex(id: gridID)
               apply(update: .resize(size), toGridWithID: gridID)
             }
 
@@ -404,12 +403,9 @@ public extension Actions {
             state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
+            state.updateGridZIndex(id: gridID)
             if size != state.grids[gridID]!.size {
               apply(update: .resize(size), toGridWithID: gridID)
-            }
-
-            if previousOrderedGridIDs != state.orderedGridIDs() {
-              updatedGridsOrder()
             }
 
           case let .winFloatPos(
@@ -448,10 +444,7 @@ public extension Actions {
             state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
-
-            if previousOrderedGridIDs != state.orderedGridIDs() {
-              updatedGridsOrder()
-            }
+            state.updateGridZIndex(id: gridID)
 
           case let .winHide(gridID):
             state.grids[gridID]?.isHidden = true
@@ -985,7 +978,7 @@ public extension Actions {
         }
       }
 
-      updates.needFlush = hasAnyFlush
+      updates.needFlush = isLastFlush
 
       return updates
     }

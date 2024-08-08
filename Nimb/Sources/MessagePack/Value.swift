@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
+@preconcurrency import CasePaths
 import Foundation
 
 @CasePathable

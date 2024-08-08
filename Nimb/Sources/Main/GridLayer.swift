@@ -58,6 +58,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     NSNull()
   }
 
+  @MainActor
   public func removeAnchoring() {
     for (_, anchoredLayer) in anchoredLayers {
       anchoredLayer.anchoringLayer = nil
@@ -71,6 +72,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     positionInAnchoringLayer = .init()
   }
 
+  @MainActor
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 
@@ -79,8 +81,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
     anchoredLayers
       .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin, index: index * 10) }
-
-    zPosition = grid.zIndex + Double(index)
 
     needsAnchorLayout = false
   }
@@ -126,6 +126,9 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
           .applying(upsideDownTransform)
       )
     }
+
+    zPosition = grid.zIndex
+    print(zPosition)
   }
 
   @MainActor

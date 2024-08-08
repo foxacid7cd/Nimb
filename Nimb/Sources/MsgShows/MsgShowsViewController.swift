@@ -50,28 +50,33 @@ public class MsgShowsViewController: NSViewController {
     if stateUpdates.isAppearanceUpdated {
       renderBackgroundColor()
 
-      renderedMsgShows.removeAll(keepingCapacity: true)
       renderedMsgShows = store.state.msgShows
         .map { ($0, makeAttributedString(for: $0)) }
 
       renderText()
     } else if !stateUpdates.msgShowsUpdates.isEmpty {
-      for update in stateUpdates.msgShowsUpdates {
-        switch update {
-        case let .added(count):
-          for index in renderedMsgShows.count ..< renderedMsgShows.count + count {
-            let msgShow = store.state.msgShows[index]
-            renderedMsgShows.append((msgShow, makeAttributedString(for: msgShow)))
-          }
+      if stateUpdates.msgShowsUpdates.count > 1 {
+        renderedMsgShows = store.state.msgShows
+          .map { ($0, makeAttributedString(for: $0)) }
+      } else {
+        for update in stateUpdates.msgShowsUpdates {
+          switch update {
+          case let .added(count):
+            for index in renderedMsgShows.count ..< renderedMsgShows.count + count {
+              let msgShow = store.state.msgShows[index]
 
-        case let .reload(indexes):
-          for index in indexes {
-            let msgShow = store.state.msgShows[index]
-            renderedMsgShows[index] = (msgShow, makeAttributedString(for: msgShow))
-          }
+              renderedMsgShows.append((msgShow, makeAttributedString(for: msgShow)))
+            }
 
-        case .clear:
-          renderedMsgShows.removeAll(keepingCapacity: true)
+          case let .reload(indexes):
+            for index in indexes {
+              let msgShow = store.state.msgShows[index]
+              renderedMsgShows[index] = (msgShow, makeAttributedString(for: msgShow))
+            }
+
+          case .clear:
+            renderedMsgShows.removeAll(keepingCapacity: true)
+          }
         }
       }
 

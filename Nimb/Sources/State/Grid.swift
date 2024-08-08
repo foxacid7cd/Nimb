@@ -74,6 +74,8 @@ public struct Grid: Sendable, Identifiable {
   public var isHidden: Bool
   public var isDestroyed: Bool
 
+  public var zIndex: Double = 0
+
   public var size: IntegerSize {
     layout.size
   }
@@ -84,13 +86,6 @@ public struct Grid: Sendable, Identifiable {
 
   public var columnsCount: Int {
     size.rowsCount
-  }
-
-  public var zIndex: Double {
-    if let associatedWindow, case let .floating(floating) = associatedWindow {
-      return Double(floating.zIndex) + 1000
-    }
-    return Double(id)
   }
 
   public var isFocusable: Bool {
@@ -276,7 +271,7 @@ public struct Grid: Sendable, Identifiable {
         size: .init(columnsCount: cells.count, rowsCount: 1)
       ))
 
-      if 
+      if
         let cursorDrawRun = drawRuns.cursorDrawRun,
         cursorDrawRun.origin.row == row,
         (originColumn ..< originColumn + cells.count)

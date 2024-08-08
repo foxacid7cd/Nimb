@@ -10,5 +10,6 @@ public class StateContainer: Sendable {
 
   public func apply(updates: State.Updates, from state: State) {
     self.state.apply(updates: updates, from: state)
+//    self.state = state
   }
 }

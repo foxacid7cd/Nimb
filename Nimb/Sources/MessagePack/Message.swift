@@ -7,7 +7,7 @@ public enum Message: Sendable, Hashable {
   case response(Response)
   case notification(Notification)
 
-  init(value: Value) throws {
+  public init(value: Value) throws {
     guard case let .array(arrayValue) = value, !arrayValue.isEmpty else {
       throw Failure("Invalid message raw value \(value)")
     }

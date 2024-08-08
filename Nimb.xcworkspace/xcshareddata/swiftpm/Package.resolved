@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextKitPlus",
       "state" : {
-        "revision" : "87d700502fe9b64a7b29a553505ce94adc2be7da",
-        "version" : "0.1.4"
+        "revision" : "60e1e790c4a77ffd10176849719eb3c52bbfb2c3",
+        "version" : "0.1.5"
       }
     },
     {
@@ -106,7 +106,7 @@
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
         "branch" : "main",
-        "revision" : "2f0b28ded686a8a3de5efc85960f287f78ed2378"
+        "revision" : "28794d2dc574b4d97aed235c43d852be2957d36e"
       }
     },
     {

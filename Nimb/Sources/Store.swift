@@ -3,7 +3,7 @@
 import Algorithms
 import AsyncAlgorithms
 import Collections
-import CustomDump
+@preconcurrency import CustomDump
 import Foundation
 
 @MainActor
@@ -23,9 +23,9 @@ public class Store: Sendable {
     typealias StateAndUpdates = (state: State, updates: State.Updates)
 
     let applyUIEventsActions = AsyncThrowingStream(Action.self, bufferingPolicy: .unbounded) { [alertMessages, stateContainer] continuation in
-      let task = Task {
+      let task = Task.detached { @MainActor in
         do {
-          for try await neovimNotificationsBatch in instance {
+          for try await neovimNotificationsBatch in instance.api.neovimNotifications {
             try Task.checkCancellation()
 
             for notification in neovimNotificationsBatch {
@@ -37,7 +37,7 @@ public class Store: Sendable {
                   logger.debug("UI events: \(string)")
                 }
 
-//               latestUIEventsBatch = uiEvents
+//                latestUIEventsBatch = uiEvents
 
                 continuation.yield(Actions.ApplyUIEvents(uiEvents: uiEvents))
 
@@ -49,7 +49,7 @@ public class Store: Sendable {
                 }
 
               case let .nimbNotify(value):
-                continuation.yield(Actions.AddNimbNotifies(values: value))
+                customDump(continuation.yield(Actions.AddNimbNotifies(values: value)))
               }
             }
           }
@@ -71,22 +71,24 @@ public class Store: Sendable {
     }
 
     stateUpdates = AsyncThrowingStream(State.Updates.self, bufferingPolicy: .unbounded) { [stateContainer, actionsChannel, handleError] continuation in
-      let task = Task {
+      let task = Task.detached { @MainActor in
         let sequence = merge(actionsChannel, applyUIEventsActions)
           .buffer(policy: .unbounded)
           .reductions(into: (state: initialState, updates: State.Updates())) { result, action in
             if result.updates.needFlush {
-              result.updates = State.Updates()
+              result.updates = State.Updates(needFlush: false)
             }
             let updates = await action.apply(to: &result.state, handleError: handleError)
             result.updates.formUnion(updates)
           }
           .filter(\.updates.needFlush)
-          ._throttle(for: .milliseconds(1000 / 160), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
+          ._throttle(for: .milliseconds(1000 / 60), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
             if let accum {
               var updates = accum.updates
               updates.formUnion(new.updates)
-              return (new.state, updates)
+              var state = accum.state
+              state.apply(updates: new.updates, from: new.state)
+              return (state, updates)
             } else {
               return new
             }
@@ -349,8 +351,9 @@ public class Store: Sendable {
   }
 
   public func dumpState() -> String {
-    ""
-//    customDump(latestUIEventsBatch, to: &string)
+    var string = ""
+    customDump(latestUIEventsBatch, to: &string)
+    return string
   }
 
   public func dispatch(_ action: Action) {
@@ -370,6 +373,7 @@ public class Store: Sendable {
   private var outerGridSizeThrottlingTask: Task<Void, Never>?
   private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
   private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
+  private var latestUIEventsBatch = [UIEvent]()
 
   private func startCursorBlinkingTask() {
     guard let cursorStyle = state.currentCursorStyle else {
