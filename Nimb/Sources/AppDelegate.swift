@@ -91,7 +91,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
           do {
             var presentedNimbNotifiesCount = 0
 
-            for try await stateUpdates in store {
+            for try await stateUpdates in store.stateUpdates {
               guard !Task.isCancelled else {
                 return
               }

@@ -60,7 +60,6 @@
 		681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534D2C5FE57E00AD6C68 /* Algorithms */; };
 		681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */; };
 		681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53522C5FE67B00AD6C68 /* SwiftSyntax */; };
-		681F40302B40D6B30083A87B /* BufferingStateContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
@@ -274,7 +273,6 @@
 		681B532C2C5FE4A100AD6C68 /* Unpacker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Unpacker.swift; sourceTree = "<group>"; };
 		681B532D2C5FE4A100AD6C68 /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		681B533D2C5FE4FE00AD6C68 /* generate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "generate-Bridging-Header.h"; sourceTree = "<group>"; };
-		681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BufferingStateContainer.swift; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
@@ -664,7 +662,6 @@
 			isa = PBXGroup;
 			children = (
 				687A1C0A2C6368C600D2A0EF /* StateContainer.swift */,
-				681F402F2B40D6B30083A87B /* BufferingStateContainer.swift */,
 				68A8FF422AD29F650017C28D /* State.swift */,
 				68FAC3F22AF685AB00490F09 /* Action.swift */,
 				68FAC3F62AF6932F00490F09 /* Actions.swift */,
@@ -1012,7 +1009,6 @@
 				6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */,
 				68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
-				681F40302B40D6B30083A87B /* BufferingStateContainer.swift in Sources */,
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,

@@ -11,51 +11,34 @@ public class Store: Sendable {
   public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
-    bufferingStateContainer = .init(.init(
-      debug: debug,
-      font: font
-    ))
+    let initialState = State(debug: debug, font: font)
+    stateContainer = StateContainer(state: initialState)
 
-    actionsTask = Task {
+    let stateUpdatesChannel = AsyncChannel<State.Updates>()
+    stateUpdates = stateUpdatesChannel
+
+    actionsTask = Task { [stateContainer, handleError] in
+      let sequence = actionsChannel
+        .buffer(policy: .unbounded)
+        .reductions(into: (state: initialState, updates: State.Updates())) { result, action in
+          if result.updates.needFlush {
+            result.updates = State.Updates()
+          }
+          let updates = await action.apply(to: &result.state, handleError: handleError)
+          result.updates.formUnion(updates)
+        }
+
       do {
-        for await action in actionsChannel {
+        for await (state, updates) in sequence {
           try Task.checkCancellation()
-          do {
-            if state.debug.isStoreActionsLoggingEnabled {
-              var string = ""
-              customDump(action, to: &string, maxDepth: 2)
-              logger.debug("Store action dispatched \(string)")
-            }
 
-            let updates = try await action.apply(
-              to: self.bufferingStateContainer.bufferedView
-            )
-
-            MainActor.assertIsolated()
-
-            bufferedStateUpdates.formUnion(updates)
-            let isFlushNeeded = bufferedStateUpdates.needFlush
-
-            if isFlushNeeded {
-              let bufferingStateContainer = bufferingStateContainer
-              bufferingStateContainer.state.apply(
-                updates: bufferedStateUpdates,
-                from: bufferingStateContainer.bufferedState
-              )
-              let bufferedStateUpdates = bufferedStateUpdates
-              await stateUpdatesChannel.send(bufferedStateUpdates)
-              self.bufferedStateUpdates = .init()
-            }
-          } catch {
-            Task {
-              await alertMessages.send(.init(error))
-            }
+          if updates.needFlush {
+            stateContainer.apply(updates: updates, from: state)
+            await stateUpdatesChannel.send(updates)
           }
         }
       } catch { }
     }
-
-    startCursorBlinkingTask()
 
     instanceTask = Task {
       do {
@@ -73,12 +56,14 @@ public class Store: Sendable {
 
               latestUIEventsBatch = uiEvents
 
-              dispatch(Actions.ApplyUIEvents(uiEvents: uiEvents))
+              await actionsChannel.send(Actions.ApplyUIEvents(uiEvents: uiEvents))
 
             case let .nvimErrorEvent(event):
-              await alertMessages.send(.init(
-                content: "\(event.error) \(event.message)"
-              ))
+              Task {
+                await alertMessages.send(.init(
+                  content: "\(event.error) \(event.message)"
+                ))
+              }
 
             case let .nimbNotify(value):
               dispatch(Actions.AddNimbNotifies(values: value))
@@ -87,9 +72,11 @@ public class Store: Sendable {
         }
       } catch is CancellationError {
       } catch {
-        await self.alertMessages.send(.init(error))
+        handleError(error)
       }
     }
+
+    startCursorBlinkingTask()
   }
 
   deinit {
@@ -106,7 +93,7 @@ public class Store: Sendable {
   }
 
   public var state: State {
-    bufferingStateContainer.state
+    stateContainer.state
   }
 
   public var font: Font {
@@ -180,9 +167,7 @@ public class Store: Sendable {
         isFinish: isFinish
       )
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
@@ -190,9 +175,7 @@ public class Store: Sendable {
     do {
       try instance.reportTablineBufferSelected(withID: id)
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
@@ -200,9 +183,7 @@ public class Store: Sendable {
     do {
       try instance.reportTablineTabpageSelected(withID: id)
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
@@ -248,9 +229,7 @@ public class Store: Sendable {
     do {
       try instance.reportPumBounds(rectangle: rectangle)
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
@@ -258,18 +237,14 @@ public class Store: Sendable {
     do {
       try instance.reportPaste(text: text)
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
   public func requestTextForCopy() async -> String? {
-    let backgroundState = bufferingStateContainer.state
-
     guard
-      let mode = backgroundState.mode,
-      let modeInfo = backgroundState.modeInfo
+      let mode = state.mode,
+      let modeInfo = state.modeInfo
     else {
       return nil
     }
@@ -294,8 +269,8 @@ public class Store: Sendable {
 
     case "c":
       if
-        let lastCmdlineLevel = backgroundState.cmdlines.lastCmdlineLevel,
-        let cmdline = backgroundState.cmdlines.dictionary[lastCmdlineLevel]
+        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
+        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
       {
         return cmdline.contentParts
           .map(\.text)
@@ -313,9 +288,7 @@ public class Store: Sendable {
     do {
       try await instance.close()
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
@@ -323,21 +296,16 @@ public class Store: Sendable {
     do {
       try await instance.quitAll()
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
     }
   }
 
   public func requestCurrentBufferInfo() async
-    -> (name: String, buftype: String)?
-  {
+  -> (name: String, buftype: String)? {
     do {
       return try await instance.requestCurrentBufferInfo()
     } catch {
-      Task {
-        await alertMessages.send(.init(error))
-      }
+      handleError(error)
       return nil
     }
   }
@@ -352,29 +320,12 @@ public class Store: Sendable {
     Task {
       await actionsChannel.send(action)
     }
-    //		} shouldResetCursorBlinkingTask = updates.isCursorUpdated || updates
-    //      .isMouseUserInteractionEnabledUpdated || updates.isCmdlinesUpdated
-    //    if shouldResetCursorBlinkingTask {
-    //      cursorBlinkingTask?.cancel()
-//
-    //      if !bufferingStateContainer.state.cursorBlinkingPhase {
-    //        bufferingStateContainer.state.cursorBlinkingPhase = true
-    //        updates.isCursorBlinkingPhaseUpdated = true
-    //      }
-    //    }
-
-    //    if shouldResetCursorBlinkingTask {
-    //      startCursorBlinkingTask()
-    //    }
   }
 
+  let stateUpdates: AsyncChannel<State.Updates>
+
   private let instance: Instance
-  private var bufferingStateContainer: BufferingStateContainer
-  private var bufferedStateUpdates = State.Updates()
-  private let stateUpdatesChannel = AsyncThrowingChannel<
-    State.Updates,
-    any Error
-  >()
+  private let stateContainer: StateContainer
   private let actionsChannel = AsyncChannel<Action>()
   private var actionsTask: Task<Void, Never>?
   private var instanceTask: Task<Void, Never>?
@@ -391,8 +342,14 @@ public class Store: Sendable {
   private var previousReportedOuterGridSize: IntegerSize?
   private var latestUIEventsBatch: [UIEvent]?
 
+  private lazy var handleError = { @Sendable [alertMessages] (error: any Error) in
+    _ = Task {
+      await alertMessages.send(.init(error))
+    }
+  }
+
   private func startCursorBlinkingTask() {
-    guard let cursorStyle = bufferingStateContainer.state.currentCursorStyle else {
+    guard let cursorStyle = state.currentCursorStyle else {
       return
     }
     if
@@ -417,14 +374,6 @@ public class Store: Sendable {
         } catch { }
       }
     }
-  }
-}
-
-extension Store: AsyncSequence {
-  public typealias Element = State.Updates
-
-  public func makeAsyncIterator() -> AsyncThrowingChannel<State.Updates, any Error>.AsyncIterator {
-    stateUpdatesChannel.makeAsyncIterator()
   }
 }
 

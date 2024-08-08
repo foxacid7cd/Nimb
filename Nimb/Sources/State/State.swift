@@ -17,6 +17,7 @@ public struct State: Sendable {
   @PublicInit
   public struct Updates: Sendable {
     public var needFlush: Bool = true
+    public var isRawOptionsUpdated: Bool = false
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
     public var isTitleUpdated: Bool = false
@@ -51,6 +52,7 @@ public struct State: Sendable {
 
     public mutating func formUnion(_ updates: Updates) {
       needFlush = needFlush || updates.needFlush
+      isRawOptionsUpdated = isRawOptionsUpdated || updates.isRawOptionsUpdated
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated
       isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
@@ -199,8 +201,9 @@ public struct State: Sendable {
   }
 
   public mutating func apply(updates: Updates, from state: State) {
-    rawOptions = state.rawOptions
-
+    if updates.isRawOptionsUpdated {
+      rawOptions = state.rawOptions
+    }
     if updates.isDebugUpdated {
       debug = state.debug
     }

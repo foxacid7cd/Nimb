@@ -12,12 +12,8 @@ public extension Actions {
     S: Sendable
   {
     public var uiEvents: S
-    public var preferredChunkSize = 8
-    public var minimumElementsForTaskGroup = Int.max
 
-    public func apply(to container: StateContainer) async throws -> State
-      .Updates
-    {
+    public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       var updates = State.Updates()
 
       func modeUpdated() {
@@ -63,9 +59,9 @@ public extension Actions {
           apply(update: .clearCursor, toGridWithID: oldCursor.gridID)
         }
         if
-          container.state.cmdlines.dictionary.isEmpty,
-          let cursor = container.state.cursor,
-          let style = container.state.currentCursorStyle
+          state.cmdlines.dictionary.isEmpty,
+          let cursor = state.cursor,
+          let style = state.currentCursorStyle
         {
           apply(
             update: .cursor(style: style, position: cursor.position),
@@ -84,10 +80,10 @@ public extension Actions {
       }
 
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
-        let font = container.state.font
-        let appearance = container.state.appearance
+        let font = state.font
+        let appearance = state.appearance
 
-        let result = container.state.grids[gridID]!.apply(
+        let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
           appearance: appearance
@@ -193,29 +189,33 @@ public extension Actions {
           }
 
         case let .hlAttrDefine(id, rgbAttrs, ctermAttrs, rawInfo):
-          let hlAttrDefine = try UIEventsChunk.HlAttrDefine(
-            id: id,
-            rgbAttrs: rgbAttrs,
-            ctermAttrs: ctermAttrs,
-            rawInfo: rawInfo
-          )
-
-          if
-            let previousChunk = uiEventsChunks.last,
-            case .gridLines(
-              let chunkGridID,
-              var hlAttrDefines,
-              let chunkGridLines
-            ) = previousChunk
-          {
-            hlAttrDefines.append(hlAttrDefine)
-            uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
-              gridID: chunkGridID,
-              hlAttrDefines: hlAttrDefines,
-              gridLines: chunkGridLines
+          do {
+            let hlAttrDefine = try UIEventsChunk.HlAttrDefine(
+              id: id,
+              rgbAttrs: rgbAttrs,
+              ctermAttrs: ctermAttrs,
+              rawInfo: rawInfo
             )
-          } else {
-            uiEventsChunks.append(.single(uiEvent))
+
+            if
+              let previousChunk = uiEventsChunks.last,
+              case .gridLines(
+                let chunkGridID,
+                var hlAttrDefines,
+                let chunkGridLines
+              ) = previousChunk
+            {
+              hlAttrDefines.append(hlAttrDefine)
+              uiEventsChunks[uiEventsChunks.count - 1] = .gridLines(
+                gridID: chunkGridID,
+                hlAttrDefines: hlAttrDefines,
+                gridLines: chunkGridLines
+              )
+            } else {
+              uiEventsChunks.append(.single(uiEvent))
+            }
+          } catch {
+            handleError(error)
           }
 
         default:
@@ -227,67 +227,69 @@ public extension Actions {
         }
       }
 
-      await Task.yield()
-
-      signposter.emitEvent(
-        "Processed UI events into chunks",
-        "prefferedChunkSize: \(preferredChunkSize) minimumElementsForTaskGroup: \(minimumElementsForTaskGroup)"
-      )
+      signposter.emitEvent("Processed UI events into chunks")
 
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {
         case let .single(uiEvent):
           switch uiEvent {
           case let .setTitle(title):
-            container.state.title = title
-
+            state.title = title
             titleUpdated()
 
           case let .modeInfoSet(enabled, cursorStyles):
-            container.state.modeInfo = try ModeInfo(
-              enabled: enabled,
-              cursorStyles: cursorStyles
-                .map(CursorStyle.init(raw:))
-            )
-
-            cursorUpdated()
+            do {
+              state.modeInfo = try ModeInfo(
+                enabled: enabled,
+                cursorStyles: cursorStyles
+                  .map(CursorStyle.init(raw:))
+              )
+              cursorUpdated()
+            } catch {
+              handleError(error)
+            }
 
           case let .optionSet(name, value):
-            container.state.rawOptions.updateValue(
+            state.rawOptions.updateValue(
               value,
               forKey: name,
-              insertingAt: container.state.rawOptions.count
+              insertingAt: state.rawOptions.count
             )
+            updates.isRawOptionsUpdated = true
 
           case let .modeChange(name, cursorStyleIndex):
-            container.state.mode = .init(
+            state.mode = .init(
               name: name,
               cursorStyleIndex: cursorStyleIndex
             )
 
             modeUpdated()
 
-            if container.state.cursor != nil {
+            if state.cursor != nil {
               cursorUpdated()
             }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
-            container.state.appearance
+            state.appearance
               .defaultForegroundColor = .init(rgb: rgbFg)
-            container.state.appearance
+            state.appearance
               .defaultBackgroundColor = .init(rgb: rgbBg)
-            container.state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
-            container.state.flushDrawRuns()
+            state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
+            state.flushDrawRuns()
 
             appearanceUpdated()
 
           case let .hlAttrDefine(id, rgbAttrs, ctermAttrs, rawInfo):
-            try applyHlAttrDefine(.init(
-              id: id,
-              rgbAttrs: rgbAttrs,
-              ctermAttrs: ctermAttrs,
-              rawInfo: rawInfo
-            ))
+            do {
+              try applyHlAttrDefine(.init(
+                id: id,
+                rgbAttrs: rgbAttrs,
+                ctermAttrs: ctermAttrs,
+                rawInfo: rawInfo
+              ))
+            } catch {
+              handleError(error)
+            }
 
           case let .gridResize(gridID, width, height):
             let size = IntegerSize(
@@ -295,13 +297,13 @@ public extension Actions {
               rowsCount: height
             )
             if
-              container.state.grids[gridID]?.size != size || container.state
+              state.grids[gridID]?.size != size || state
                 .grids[gridID]?
                 .isDestroyed == true
             {
-              let font = container.state.font
-              let appearance = container.state.appearance
-              update(&container.state.grids[gridID]) { grid in
+              let font = state.font
+              let appearance = state.appearance
+              update(&state.grids[gridID]) { grid in
                 if grid == nil || grid?.isDestroyed == true {
                   let cells = TwoDimensionalArray(
                     size: size,
@@ -324,12 +326,12 @@ public extension Actions {
               }
 
               if
-                let cursor = container.state.cursor,
+                let cursor = state.cursor,
                 cursor.gridID == gridID,
                 cursor.position.column >= size.columnsCount,
                 cursor.position.row >= size.rowsCount
               {
-                container.state.cursor = nil
+                state.cursor = nil
 
                 cursorUpdated(oldCursor: cursor)
               }
@@ -364,19 +366,19 @@ public extension Actions {
             apply(update: .clear, toGridWithID: gridID)
 
           case let .gridDestroy(gridID):
-            if container.state.grids[gridID] != nil {
-              container.state.grids[gridID]!.isDestroyed = true
+            if state.grids[gridID] != nil {
+              state.grids[gridID]!.isDestroyed = true
               updates.destroyedGridIDs.insert(gridID)
             }
 
           case let .gridCursorGoto(gridID, row, column):
-            let oldCursor = container.state.cursor
+            let oldCursor = state.cursor
 
             let cursorPosition = IntegerPoint(
               column: column,
               row: row
             )
-            container.state.cursor = .init(
+            state.cursor = .init(
               gridID: gridID,
               position: cursorPosition
             )
@@ -397,23 +399,23 @@ public extension Actions {
               rowsCount: rowsCount
             )
 
-            let previousOrderedGridIDs = container.state.orderedGridIDs()
+            let previousOrderedGridIDs = state.orderedGridIDs()
 
-            container.state.grids[gridID]!.associatedWindow = .plain(
+            state.grids[gridID]!.associatedWindow = .plain(
               .init(
                 id: windowID,
                 origin: origin,
                 zIndex: gridID
               )
             )
-            container.state.grids[gridID]!.isHidden = false
+            state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
-            if size != container.state.grids[gridID]!.size {
+            if size != state.grids[gridID]!.size {
               apply(update: .resize(size), toGridWithID: gridID)
             }
 
-            if previousOrderedGridIDs != container.state.orderedGridIDs() {
+            if previousOrderedGridIDs != state.orderedGridIDs() {
               updatedGridsOrder()
             }
 
@@ -429,17 +431,17 @@ public extension Actions {
           ):
             let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
 
-            let previousOrderedGridIDs = container.state.orderedGridIDs()
+            let previousOrderedGridIDs = state.orderedGridIDs()
 
-            if container.state.grids[gridID] == nil {
-              container.state.grids[gridID] = .init(
+            if state.grids[gridID] == nil {
+              state.grids[gridID] = .init(
                 id: gridID,
-                size: container.state.outerGrid!.size,
-                font: container.state.font,
-                appearance: container.state.appearance
+                size: state.outerGrid!.size,
+                font: state.font,
+                appearance: state.appearance
               )
             }
-            container.state.grids[gridID]!.associatedWindow = .floating(
+            state.grids[gridID]!.associatedWindow = .floating(
               .init(
                 id: windowID,
                 anchor: anchor,
@@ -450,21 +452,21 @@ public extension Actions {
                 zIndex: zIndex
               )
             )
-            container.state.grids[gridID]!.isHidden = false
+            state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
 
-            if previousOrderedGridIDs != container.state.orderedGridIDs() {
+            if previousOrderedGridIDs != state.orderedGridIDs() {
               updatedGridsOrder()
             }
 
           case let .winHide(gridID):
-            container.state.grids[gridID]?.isHidden = true
+            state.grids[gridID]?.isHidden = true
 
             updatedLayout(forGridWithID: gridID)
 
           case let .winClose(gridID):
-            container.state.grids[gridID]?.associatedWindow = nil
+            state.grids[gridID]?.associatedWindow = nil
 
             updatedLayout(forGridWithID: gridID)
 
@@ -474,131 +476,135 @@ public extension Actions {
             currentBufferID,
             rawBuffers
           ):
-            let tabpages = try rawTabpages
-              .map { rawTabpage -> Tabpage in
-                guard
-                  case let .dictionary(rawTabpage) = rawTabpage,
-                  let rawID = rawTabpage["tab"]
-                    .flatMap({ $0[case: \.ext] }),
-                    let name = rawTabpage["name"]
-                      .flatMap({ $0[case: \.string] })
-                else {
-                  throw Failure("invalid tabline raw value", rawTabpage)
-                }
-
-                return .init(
-                  id: .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!,
-                  name: name
-                )
-              }
-            let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
-            if identifiedTabpages != container.state.tabline?.tabpages {
-              if
-                identifiedTabpages.count == container.state.tabline?.tabpages
-                  .count
-              {
-                tablineTabpagesContentUpdated()
-              } else {
-                tablineTabpagesUpdated()
-              }
-            }
-
-            let buffers = try rawBuffers
-              .map { rawBuffer -> Buffer in
-                guard
-                  case let .dictionary(rawBuffer) = rawBuffer,
-                  let rawID = rawBuffer["buffer"]
-                    .flatMap({ $0[case: \.ext] }),
-                    let name = rawBuffer["name"]
-                      .flatMap({ $0[case: \.string] })
-                else {
-                  throw Failure("invalid raw buffer value", rawBuffer)
-                }
-
-                return .init(
-                  id: .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!,
-                  name: name
-                )
-              }
-            let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
-            if identifiedBuffers != container.state.tabline?.buffers {
-              tablineBuffersUpdated()
-            }
-
-            if
-              updates.tabline.isTabpagesUpdated || currentTabpageID != container
-                .state.tabline?
-                .currentTabpageID
-            {
-              tablineSelectedTabpageUpdated()
-            }
-
-            if
-              updates.tabline.isBuffersUpdated || currentBufferID != container
-                .state.tabline?
-                .currentBufferID
-            {
-              tablineSelectedBufferUpdated()
-            }
-
-            container.state.tabline = .init(
-              currentTabpageID: currentTabpageID,
-              tabpages: identifiedTabpages,
-              currentBufferID: currentBufferID,
-              buffers: identifiedBuffers
-            )
-
-          case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-            let oldCursor = container.state.cursor
-
-            let cmdline = try Cmdline(
-              contentParts: content
-                .map { rawContentPart in
+            do {
+              let tabpages = try rawTabpages
+                .map { rawTabpage -> Tabpage in
                   guard
-                    case let .array(rawContentPart) = rawContentPart,
-                    rawContentPart.count == 2,
-                    case let .integer(rawHighlightID) = rawContentPart[0],
-                    case let .string(text) = rawContentPart[1]
+                    case let .dictionary(rawTabpage) = rawTabpage,
+                    let rawID = rawTabpage["tab"]
+                      .flatMap({ $0[case: \.ext] }),
+                      let name = rawTabpage["name"]
+                        .flatMap({ $0[case: \.string] })
                   else {
-                    throw Failure(
-                      "invalid cmdline raw content part",
-                      rawContentPart
-                    )
+                    throw Failure("invalid tabline raw value", rawTabpage)
                   }
 
                   return .init(
-                    highlightID: .init(rawHighlightID),
-                    text: text
+                    id: .init(
+                      type: rawID.0,
+                      data: rawID.1
+                    )!,
+                    name: name
                   )
-                },
-              cursorPosition: pos,
-              firstCharacter: firstc,
-              prompt: prompt,
-              indent: indent,
-              level: level,
-              specialCharacter: "",
-              shiftAfterSpecialCharacter: false
-            )
-            let oldCmdline = container.state.cmdlines.dictionary[level]
+                }
+              let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
+              if identifiedTabpages != state.tabline?.tabpages {
+                if
+                  identifiedTabpages.count == state.tabline?.tabpages
+                    .count
+                {
+                  tablineTabpagesContentUpdated()
+                } else {
+                  tablineTabpagesUpdated()
+                }
+              }
 
-            container.state.cmdlines.lastCmdlineLevel = level
+              let buffers = try rawBuffers
+                .map { rawBuffer -> Buffer in
+                  guard
+                    case let .dictionary(rawBuffer) = rawBuffer,
+                    let rawID = rawBuffer["buffer"]
+                      .flatMap({ $0[case: \.ext] }),
+                      let name = rawBuffer["name"]
+                        .flatMap({ $0[case: \.string] })
+                  else {
+                    throw Failure("invalid raw buffer value", rawBuffer)
+                  }
 
-            if cmdline != oldCmdline {
-              container.state.cmdlines.dictionary[level] = cmdline
-              cursorUpdated(oldCursor: oldCursor)
-              cmdlinesUpdated()
+                  return .init(
+                    id: .init(
+                      type: rawID.0,
+                      data: rawID.1
+                    )!,
+                    name: name
+                  )
+                }
+              let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
+              if identifiedBuffers != state.tabline?.buffers {
+                tablineBuffersUpdated()
+              }
+
+              if
+                updates.tabline.isTabpagesUpdated || currentTabpageID != state.tabline?.currentTabpageID
+              {
+                tablineSelectedTabpageUpdated()
+              }
+
+              if
+                updates.tabline.isBuffersUpdated || currentBufferID != state.tabline?.currentBufferID
+              {
+                tablineSelectedBufferUpdated()
+              }
+
+              state.tabline = .init(
+                currentTabpageID: currentTabpageID,
+                tabpages: identifiedTabpages,
+                currentBufferID: currentBufferID,
+                buffers: identifiedBuffers
+              )
+            } catch {
+              handleError(error)
+            }
+
+          case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
+            do {
+              let oldCursor = state.cursor
+
+              let cmdline = try Cmdline(
+                contentParts: content
+                  .map { rawContentPart in
+                    guard
+                      case let .array(rawContentPart) = rawContentPart,
+                      rawContentPart.count == 2,
+                      case let .integer(rawHighlightID) = rawContentPart[0],
+                      case let .string(text) = rawContentPart[1]
+                    else {
+                      throw Failure(
+                        "invalid cmdline raw content part",
+                        rawContentPart
+                      )
+                    }
+
+                    return .init(
+                      highlightID: .init(rawHighlightID),
+                      text: text
+                    )
+                  },
+                cursorPosition: pos,
+                firstCharacter: firstc,
+                prompt: prompt,
+                indent: indent,
+                level: level,
+                specialCharacter: "",
+                shiftAfterSpecialCharacter: false
+              )
+              let oldCmdline = state.cmdlines.dictionary[level]
+
+              state.cmdlines.lastCmdlineLevel = level
+
+              if cmdline != oldCmdline {
+                state.cmdlines.dictionary[level] = cmdline
+                cursorUpdated(oldCursor: oldCursor)
+                cmdlinesUpdated()
+              }
+            } catch {
+              handleError(error)
             }
 
           case let .cmdlinePos(pos, level):
-            let oldCursor = container.state.cursor
+            let oldCursor = state.cursor
 
-            update(&container.state.cmdlines.dictionary[level]) {
+            update(&state.cmdlines.dictionary[level]) {
               $0?.cursorPosition = pos
             }
 
@@ -606,7 +612,7 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .cmdlineSpecialChar(c, shift, level):
-            update(&container.state.cmdlines.dictionary[level]) {
+            update(&state.cmdlines.dictionary[level]) {
               $0?.specialCharacter = c
               $0?.shiftAfterSpecialCharacter = shift
             }
@@ -614,112 +620,128 @@ public extension Actions {
             cmdlinesUpdated()
 
           case let .cmdlineHide(level):
-            container.state.cmdlines.dictionary.removeValue(forKey: level)
+            state.cmdlines.dictionary.removeValue(forKey: level)
 
             cursorUpdated()
             cmdlinesUpdated()
 
           case let .cmdlineBlockShow(rawLines):
-            try container.state.cmdlines
-              .blockLines[container.state.cmdlines.lastCmdlineLevel!] = rawLines
-              .map(blockLine(fromRawLine:))
+            do {
+              try state.cmdlines
+                .blockLines[state.cmdlines.lastCmdlineLevel!] = rawLines
+                .map(blockLine(fromRawLine:))
 
-            cmdlinesUpdated()
+              cmdlinesUpdated()
+            } catch {
+              handleError(error)
+            }
 
           case let .cmdlineBlockAppend(rawLine):
-            try container.state.cmdlines
-              .blockLines[container.state.cmdlines.lastCmdlineLevel!]!
-              .append(blockLine(fromRawLine: .array(rawLine)))
+            do {
+              try state.cmdlines
+                .blockLines[state.cmdlines.lastCmdlineLevel!]!
+                .append(blockLine(fromRawLine: .array(rawLine)))
 
-            cmdlinesUpdated()
+              cmdlinesUpdated()
+            } catch {
+              handleError(error)
+            }
 
           case .cmdlineBlockHide:
-            container.state.cmdlines.blockLines
-              .removeValue(forKey: container.state.cmdlines.lastCmdlineLevel!)
+            state.cmdlines.blockLines
+              .removeValue(forKey: state.cmdlines.lastCmdlineLevel!)
 
             cmdlinesUpdated()
 
           case let .msgShow(rawKind, content, replaceLast):
-            if replaceLast {
-              container.state.msgShows.removeLast()
-            }
-
-            let kind: MsgShow.Kind
-            if let decoded = MsgShow.Kind(rawValue: rawKind) {
-              kind = decoded
-            } else {
-              throw Failure("invalid raw msg_show kind", rawKind)
-            }
-
-            if !content.isEmpty {
-              try container.state.msgShows.append(.init(
-                index: container.state.msgShows.count,
-                kind: kind,
-                contentParts: content.map(MsgShow.ContentPart.init(raw:))
-              ))
+            do {
               if replaceLast {
-                updates.msgShowsUpdates
-                  .append(.reload(indexes: [container.state.msgShows.count - 1]))
-              } else {
-                updates.msgShowsUpdates.append(.added(count: 1))
+                state.msgShows.removeLast()
               }
-            } else if replaceLast {
-              logger.fault("replaceLast with empty content inconsistency")
+
+              let kind: MsgShow.Kind
+              if let decoded = MsgShow.Kind(rawValue: rawKind) {
+                kind = decoded
+              } else {
+                throw Failure("invalid raw msg_show kind", rawKind)
+              }
+
+              if !content.isEmpty {
+                try state.msgShows.append(.init(
+                  index: state.msgShows.count,
+                  kind: kind,
+                  contentParts: content.map(MsgShow.ContentPart.init(raw:))
+                ))
+                if replaceLast {
+                  updates.msgShowsUpdates
+                    .append(.reload(indexes: [state.msgShows.count - 1]))
+                } else {
+                  updates.msgShowsUpdates.append(.added(count: 1))
+                }
+              } else if replaceLast {
+                throw Failure("replaceLast with empty content inconsistency")
+              }
+            } catch {
+              handleError(error)
             }
 
           case .msgClear:
-            container.state.msgShows = []
+            state.msgShows = []
             updates.msgShowsUpdates.append(.clear)
 
           case let .popupmenuShow(rawItems, selected, row, col, gridID):
-            let items = try rawItems
-              .map(PopupmenuItem.init(raw:))
+            do {
+              let items = try rawItems
+                .map(PopupmenuItem.init(raw:))
 
-            let selectedItemIndex: Int? = selected >= 0 ? selected : nil
+              let selectedItemIndex: Int? = selected >= 0 ? selected : nil
 
-            let anchor: Popupmenu.Anchor =
-              switch gridID {
-              case -1:
-                .cmdline(location: col)
+              let anchor: Popupmenu.Anchor =
+                switch gridID {
+                case -1:
+                  .cmdline(location: col)
 
-              default:
-                .grid(id: gridID, origin: .init(column: col, row: row))
-              }
+                default:
+                  .grid(id: gridID, origin: .init(column: col, row: row))
+                }
 
-            container.state.popupmenu = .init(
-              items: items,
-              selectedItemIndex: selectedItemIndex,
-              anchor: anchor
-            )
-            popupmenuUpdated()
+              state.popupmenu = .init(
+                items: items,
+                selectedItemIndex: selectedItemIndex,
+                anchor: anchor
+              )
+              popupmenuUpdated()
+            } catch {
+              handleError(error)
+            }
 
           case let .popupmenuSelect(selected):
-            if container.state.popupmenu != nil {
-              container.state.popupmenu!
+            if state.popupmenu != nil {
+              state.popupmenu!
                 .selectedItemIndex = selected >= 0 ? selected : nil
               popupmenuSelectionUpdated()
             }
 
           case .popupmenuHide:
-            if container.state.popupmenu != nil {
-              container.state.popupmenu = nil
+            if state.popupmenu != nil {
+              state.popupmenu = nil
               popupmenuUpdated()
             }
 
           case .busyStart:
-            container.state.isBusy = true
+            state.isBusy = true
             isBusyUpdated()
 
           case .busyStop:
-            container.state.isBusy = false
+            state.isBusy = false
             isBusyUpdated()
 
           case .mouseOn:
-            container.state.isMouseOn = true
+            state.isMouseOn = true
             updates.isMouseOnUpdated = true
 
           case .mouseOff:
-            container.state.isMouseOn = false
+            state.isMouseOn = false
             updates.isMouseOnUpdated = true
 
           default:
@@ -731,76 +753,50 @@ public extension Actions {
             applyHlAttrDefine(hlAttrDefine)
           }
 
-          let grids = container.state.grids
-          let font = container.state.font
-          let appearance = container.state.appearance
+          let grids = state.grids
+          let font = state.font
+          let appearance = state.appearance
 
-          let results: [Grid.LineUpdatesResult] =
-            if gridLines.count < minimumElementsForTaskGroup {
-              try applyLineUpdates(
-                for: gridLines,
-                grids: grids,
-                font: font,
-                appearance: appearance
-              )
-            } else {
-              try await withThrowingTaskGroup(
-                of: [Grid.LineUpdatesResult]
-                  .self
-              ) { taskGroup in
-                let gridLines = Array(gridLines)
-                let chunkSize = gridLines
-                  .optimalChunkSize(preferredChunkSize: preferredChunkSize)
-                for gridLinesChunk in gridLines.chunks(ofCount: chunkSize) {
-                  taskGroup.addTask {
-                    try applyLineUpdates(
-                      for: gridLinesChunk,
-                      grids: grids,
-                      font: font,
-                      appearance: appearance
-                    )
-                  }
+          do {
+            let results: [Grid.LineUpdatesResult] = try applyLineUpdates(
+              for: gridLines,
+              grids: grids,
+              font: font,
+              appearance: appearance
+            )
+
+            update(&state.grids[gridID]!) { grid in
+              for result in results {
+                grid.layout.cells.rows[result.row] = result.rowCells
+                grid.layout.rowLayouts[result.row] = result.rowLayout
+                grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
+
+                if result.shouldUpdateCursorDrawRun {
+                  grid.drawRuns.cursorDrawRun!.updateParent(
+                    with: grid.layout,
+                    rowDrawRuns: grid.drawRuns.rowDrawRuns
+                  )
                 }
-
-                var accumulator = [Grid.LineUpdatesResult]()
-                accumulator.reserveCapacity(gridLines.count)
-                for try await results in taskGroup {
-                  accumulator += results
-                }
-
-                return accumulator
               }
             }
 
-          update(&container.state.grids[gridID]!) { grid in
-            for result in results {
-              grid.layout.cells.rows[result.row] = result.rowCells
-              grid.layout.rowLayouts[result.row] = result.rowLayout
-              grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
+            update(&updates.gridUpdates[gridID]) { updates in
+              let dirtyRectangles = results.flatMap(\.dirtyRectangles)
 
-              if result.shouldUpdateCursorDrawRun {
-                grid.drawRuns.cursorDrawRun!.updateParent(
-                  with: grid.layout,
-                  rowDrawRuns: grid.drawRuns.rowDrawRuns
-                )
+              switch updates {
+              case var .dirtyRectangles(accumulator):
+                accumulator += dirtyRectangles
+                updates = .dirtyRectangles(accumulator)
+
+              case .none:
+                updates = .dirtyRectangles(dirtyRectangles)
+
+              default:
+                break
               }
             }
-          }
-
-          update(&updates.gridUpdates[gridID]) { updates in
-            let dirtyRectangles = results.flatMap(\.dirtyRectangles)
-
-            switch updates {
-            case var .dirtyRectangles(accumulator):
-              accumulator += dirtyRectangles
-              updates = .dirtyRectangles(accumulator)
-
-            case .none:
-              updates = .dirtyRectangles(dirtyRectangles)
-
-            default:
-              break
-            }
+          } catch {
+            handleError(error)
           }
 
           @Sendable func applyLineUpdates(
@@ -891,7 +887,7 @@ public extension Actions {
             .flatMap { $0[case: \.boolean] } ?? false
 
           var highlight = (
-            noCombine ? container.state.appearance
+            noCombine ? state.appearance
               .highlights[hlAttrDefine.id] : nil
           ) ?? .init(id: hlAttrDefine.id)
 
@@ -974,11 +970,11 @@ public extension Actions {
               continue
 
             default:
-              logger.warning("Unknown hl attr define rgb attr key: \(key)")
+              handleError(Failure("Unknown hl attr define rgb attr key", key))
             }
           }
 
-          container.state.appearance.highlights[hlAttrDefine.id] = highlight
+          state.appearance.highlights[hlAttrDefine.id] = highlight
 
           for infoItem in hlAttrDefine.info {
             guard
@@ -987,7 +983,7 @@ public extension Actions {
             else {
               continue
             }
-            container.state.appearance.observedHighlights[hiName] = (
+            state.appearance.observedHighlights[hiName] = (
               infoItem.id,
               infoItem.kind
             )
@@ -995,8 +991,6 @@ public extension Actions {
           }
         }
       }
-
-      StateActor.assertIsolated()
 
       updates.needFlush = hasAnyFlush
 
