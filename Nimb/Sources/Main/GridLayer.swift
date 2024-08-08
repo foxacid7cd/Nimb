@@ -128,7 +128,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     }
 
     zPosition = grid.zIndex
-    print(zPosition)
   }
 
   @MainActor

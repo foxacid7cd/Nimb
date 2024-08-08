@@ -3,7 +3,7 @@
 import Algorithms
 import AsyncAlgorithms
 import Collections
-@preconcurrency import CustomDump
+import CustomDump
 import Foundation
 
 @MainActor
@@ -11,8 +11,13 @@ public class Store: Sendable {
   public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
-    handleError = { @Sendable [alertMessages] (error: any Error) in
-      _ = Task {
+    handleErrorMessage = { [alertMessages] message in
+      Task {
+        await alertMessages.send(.init(content: message))
+      }
+    }
+    handleError = { [alertMessages] error in
+      Task {
         await alertMessages.send(.init(error))
       }
     }
@@ -22,8 +27,8 @@ public class Store: Sendable {
 
     typealias StateAndUpdates = (state: State, updates: State.Updates)
 
-    let applyUIEventsActions = AsyncThrowingStream(Action.self, bufferingPolicy: .unbounded) { [alertMessages, stateContainer] continuation in
-      let task = Task.detached { @MainActor in
+    let applyUIEventsActions = AsyncThrowingStream(Action.self, bufferingPolicy: .unbounded) { [stateContainer, handleErrorMessage] continuation in
+      let task = Task {
         do {
           for try await neovimNotificationsBatch in instance.api.neovimNotifications {
             try Task.checkCancellation()
@@ -32,24 +37,16 @@ public class Store: Sendable {
               switch notification {
               case let .redraw(uiEvents):
                 if stateContainer.state.debug.isUIEventsLoggingEnabled {
-                  var string = ""
-                  customDump(uiEvents, to: &string, maxDepth: 7)
-                  logger.debug("UI events: \(string)")
+                  logger.debug("UI events: \(String(customDumping: uiEvents))")
                 }
-
-//                latestUIEventsBatch = uiEvents
 
                 continuation.yield(Actions.ApplyUIEvents(uiEvents: uiEvents))
 
               case let .nvimErrorEvent(event):
-                Task {
-                  await alertMessages.send(.init(
-                    content: "\(event.error) \(event.message)"
-                  ))
-                }
+                handleErrorMessage("nvimErrorEvent received \(event)")
 
               case let .nimbNotify(value):
-                customDump(continuation.yield(Actions.AddNimbNotifies(values: value)))
+                handleErrorMessage("nimbNotify received \(value)")
               }
             }
           }
@@ -60,6 +57,7 @@ public class Store: Sendable {
           continuation.finish(throwing: error)
         }
       }
+
       continuation.onTermination = {
         switch $0 {
         case .cancelled:
@@ -71,7 +69,7 @@ public class Store: Sendable {
     }
 
     stateUpdates = AsyncThrowingStream(State.Updates.self, bufferingPolicy: .unbounded) { [stateContainer, actionsChannel, handleError] continuation in
-      let task = Task.detached { @MainActor in
+      let task = Task {
         let sequence = merge(actionsChannel, applyUIEventsActions)
           .buffer(policy: .unbounded)
           .reductions(into: (state: initialState, updates: State.Updates())) { result, action in
@@ -101,6 +99,7 @@ public class Store: Sendable {
             stateContainer.apply(updates: updates, from: state)
             continuation.yield(updates)
           }
+          continuation.finish()
         } catch is CancellationError {
         } catch {
           continuation.finish(throwing: error)
@@ -117,7 +116,7 @@ public class Store: Sendable {
       }
     }
 
-//    startCursorBlinkingTask()
+    startCursorBlinkingTask()
   }
 
   deinit {
@@ -362,6 +361,7 @@ public class Store: Sendable {
     }
   }
 
+  fileprivate let handleErrorMessage: @Sendable (String) -> Void
   fileprivate let handleError: @Sendable (any Error) -> Void
 
   private let instance: Instance

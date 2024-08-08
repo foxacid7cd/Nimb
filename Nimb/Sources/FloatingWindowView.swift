@@ -46,11 +46,11 @@ public class FloatingWindowView: NSVisualEffectView {
     blendingMode = .withinWindow
 
     wantsLayer = true
-    layer!.cornerRadius = 6
+    layer!.cornerRadius = 8
     layer!.borderColor = NSColor.separatorColor.cgColor
     layer!.borderWidth = 1
     layer!.shadowOpacity = 0.9
-    layer!.shadowRadius = 8
+    layer!.shadowRadius = 10
     layer!.shadowOffset = .init(width: 0, height: 10)
   }
 }

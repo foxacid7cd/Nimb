@@ -9,25 +9,24 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     super.init()
   }
 
-  public func applicationWillFinishLaunching(_: Notification) {
-    setupStore()
-    setupMainMenuController()
-    setupMsgShowsWindowController()
-    setupMainWindowController()
-  }
-
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
+      setupStore()
+      setupMainMenuController()
+      setupMsgShowsWindowController()
+      setupMainWindowController()
       do {
         try await instance!.run()
       } catch {
         await showCriticalAlert(error: error)
         NSApplication.shared.terminate(nil)
       }
+      logger.debug("NSApplication did finish launching")
     }
   }
 
   public func applicationWillTerminate(_: Notification) {
+    logger.debug("NSApplication will terminate")
     stateUpdatesTask?.cancel()
     alertMessagesTask?.cancel()
   }
@@ -67,6 +66,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
       do {
         var presentedNimbNotifiesCount = 0
         for try await stateUpdates in store!.stateUpdates {
+          try Task.checkCancellation()
+
           if stateUpdates.isOuterGridLayoutUpdated {
             UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
           }
@@ -83,10 +84,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
             presentedNimbNotifiesCount = store!.state.nimbNotifies.count
           }
+
           mainWindowController!.render(stateUpdates)
           msgShowsWindowController!.render(stateUpdates)
         }
         logger.debug("Store state updates loop ended")
+      } catch is CancellationError {
+        logger.debug("Store state updates loop cancelled")
       } catch {
         logger.error("Store state updates loop error: \(error)")
         await self.showCriticalAlert(error: error)

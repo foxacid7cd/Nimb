@@ -5,6 +5,7 @@ import AsyncAlgorithms
 import CasePaths
 import Collections
 import CustomDump
+import SystemPackage
 
 @MainActor
 public final class Instance: Sendable {
@@ -41,11 +42,13 @@ public final class Instance: Sendable {
 
     let shell = environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
-    process.terminationHandler = { process in
-      Task { @MainActor in
-        logger.debug("Neovim process terminated with status \(process.terminationStatus) and reason \(process.terminationReason.rawValue)")
-      }
-    }
+//    process.terminationHandler = {  (process: Process) in
+//      let exitStatus = process.terminationStatus
+//      let exitReason = process.terminationReason
+//      Task { @MainActor in
+//        logger.debug("Neovim process terminated with status \(exitStatus) and reason \(exitReason)")
+//      }
+//    }
 
     let nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
 
@@ -135,7 +138,7 @@ public final class Instance: Sendable {
       .extCmdline,
       .extTabline,
       .extMessages,
-//      .extWildmenu,
+      .extWildmenu,
 //      .extPopupmenu,
     ]
     try await api.nvimUIAttach(
