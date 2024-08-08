@@ -71,7 +71,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     positionInAnchoringLayer = .init()
   }
 
-  @MainActor
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 

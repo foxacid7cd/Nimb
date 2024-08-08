@@ -2,6 +2,7 @@
 
 import Foundation
 
+@MainActor
 public protocol AnchorLayoutingLayer: AnyObject {
   var anchoringLayer: AnchorLayoutingLayer? { get set }
   var anchoredLayers: [ObjectIdentifier: AnchorLayoutingLayer] { get set }

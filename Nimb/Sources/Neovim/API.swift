@@ -39,7 +39,7 @@ public class API<Target: Channel> {
 extension API: AsyncSequence {
   public typealias Element = [NeovimNotification]
 
-  public func makeAsyncIterator() -> AsyncIterator {
+  public nonisolated func makeAsyncIterator() -> AsyncIterator {
     .init(rpc.makeAsyncIterator())
   }
 
@@ -81,8 +81,10 @@ extension API: AsyncSequence {
             accumulator.append(.nimbNotify(notifies))
 
           default:
-            logger
-              .info("Unknown neovim API notification: \(notification.method)")
+            Task { @MainActor in
+              logger
+                .info("Unknown neovim API notification: \(notification.method)")
+            }
           }
         }
 

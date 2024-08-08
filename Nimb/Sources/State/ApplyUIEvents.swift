@@ -143,11 +143,6 @@ public extension Actions {
         return contentParts
       }
 
-      let intervalState = signposter.beginInterval("Actions.ApplyUIEvents", id: .exclusive)
-      defer {
-        signposter.endInterval("Actions.ApplyUIEvents", intervalState)
-      }
-
       var hasAnyFlush = false
 
       var uiEventsChunks = [UIEventsChunk]()
@@ -226,8 +221,6 @@ public extension Actions {
           hasAnyFlush = true
         }
       }
-
-      signposter.emitEvent("Processed UI events into chunks")
 
       for uiEventsChunk in uiEventsChunks {
         switch uiEventsChunk {

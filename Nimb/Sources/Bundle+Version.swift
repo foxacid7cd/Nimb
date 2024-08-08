@@ -3,7 +3,7 @@
 import Foundation
 
 public extension Bundle {
-  var version: (major: Int, minor: Int, patch: Int)? {
+  @MainActor var version: (major: Int, minor: Int, patch: Int)? {
     guard let version = infoDictionary?["CFBundleShortVersionString"] as? String else {
       return nil
     }

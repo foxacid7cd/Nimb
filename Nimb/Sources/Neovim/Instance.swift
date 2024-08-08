@@ -42,7 +42,9 @@ public final class Instance: Sendable {
     let shell = environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
     process.terminationHandler = { process in
-      logger.debug("Neovim process terminated with status \(process.terminationStatus) and reason \(process.terminationReason.rawValue)")
+      Task { @MainActor in
+        logger.debug("Neovim process terminated with status \(process.terminationStatus) and reason \(process.terminationReason.rawValue)")
+      }
     }
 
     let nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
@@ -307,7 +309,7 @@ public final class Instance: Sendable {
 extension Instance: AsyncSequence {
   public typealias Element = [NeovimNotification]
 
-  public func makeAsyncIterator() -> API<ProcessChannel>
+  public nonisolated func makeAsyncIterator() -> API<ProcessChannel>
     .AsyncIterator
   {
     api.makeAsyncIterator()

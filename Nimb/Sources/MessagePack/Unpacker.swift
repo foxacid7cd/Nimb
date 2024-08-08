@@ -12,8 +12,9 @@ public class Unpacker {
   }
 
   deinit {
-    msgpack_unpacked_destroy(&unpacked)
-    msgpack_unpacker_destroy(&mpac)
+    Task {
+      await destroy()
+    }
   }
 
   public func unpack(_ data: Data) throws -> [Value] {
@@ -56,4 +57,9 @@ public class Unpacker {
 
   private var mpac = msgpack_unpacker()
   private var unpacked = msgpack_unpacked()
+
+  private func destroy() {
+    msgpack_unpacked_destroy(&unpacked)
+    msgpack_unpacker_destroy(&mpac)
+  }
 }

@@ -38,7 +38,7 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
       )
   }
 
-  public func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
+  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
     NSNull()
   }
 
