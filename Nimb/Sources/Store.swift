@@ -27,6 +27,11 @@ public class Store: Sendable {
 
   let instance: Instance
 
+  let apiTask: (
+    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
+  )
+    -> Void
+
 //  private func startCursorBlinkingTask() {
 //    guard let cursorStyle = _state.currentCursorStyle else {
 //      return
@@ -65,6 +70,7 @@ public class Store: Sendable {
   private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
   private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
   private var latestUIEventsBatch = [UIEvent]()
+  private let apiLoopTask: Task<Void, Never>
 
   public var api: API<ProcessChannel> {
     instance.api
@@ -81,6 +87,24 @@ public class Store: Sendable {
     handleError = { [alertMessages] error in
       Task {
         await alertMessages.send(.init(error))
+      }
+    }
+
+    let apiTasksChannel = AsyncChannel<@Sendable (API<ProcessChannel>) async -> Void>()
+    apiTask = { [handleError] body in
+      Task {
+        await apiTasksChannel.send { api in
+          do {
+            return try await body(api)
+          } catch {
+            handleError(error)
+          }
+        }
+      }
+    }
+    apiLoopTask = Task.detached(priority: .userInitiated) { [instance] in
+      for await body in apiTasksChannel.buffer(policy: .unbounded) {
+        await body(instance.api)
       }
     }
 

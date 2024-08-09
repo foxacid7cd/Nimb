@@ -66,15 +66,11 @@ public final class Instance: Sendable {
 
     let shell = environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
-//    process.terminationHandler = {  (process: Process) in
-//      let exitStatus = process.terminationStatus
-//      let exitReason = process.terminationReason
-//      Task { @MainActor in
-//        logger.debug("Neovim process terminated with status \(exitStatus) and reason \(exitReason)")
-//      }
-//    }
+    process.terminationHandler = { process in
+      print("Neovim process terminated with status \(process.terminationStatus) and reason \(process.terminationReason)")
+    }
 
-    let nvimExecutablePath: String = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
+    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
 
     if isMessagePackInspectorEnabled {
       let inspectorExecutablePath: String = Bundle.main
@@ -155,7 +151,7 @@ public final class Instance: Sendable {
 
   public func report(keyPress: KeyPress) async throws {
     let keys = keyPress.makeNvimKeyCode()
-    try await api.call(APIFunctions.NvimInput(keys: keys))
+    try await api.nvimInput(keys: keys)
   }
 
   public func reportMouseMove(
@@ -163,14 +159,16 @@ public final class Instance: Sendable {
     gridID: Grid.ID,
     point: IntegerPoint
   ) {
-    try? api.fastCall(APIFunctions.NvimInputMouse(
-      button: "move",
-      action: "",
-      modifier: modifier,
-      grid: gridID,
-      row: point.row,
-      col: point.column
-    ))
+    Task {
+      try? await api.nvimInputMouse(
+        button: "move",
+        action: "",
+        modifier: modifier,
+        grid: gridID,
+        row: point.row,
+        col: point.column
+      )
+    }
   }
 
   public func reportScrollWheel(

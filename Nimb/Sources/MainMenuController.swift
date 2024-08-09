@@ -130,13 +130,13 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleSave() {
-    withAPI(from: store) { api in
-      try await api.nimb(method: "write")
+    store.apiTask {
+      try await $0.nimb(method: "write")
     }
   }
 
   @objc private func handleSaveAs() {
-//    let validBuftypes: Set<String> = ["", "help"]
+    //    let validBuftypes: Set<String> = ["", "help"]
 
     let panel = NSSavePanel()
     panel.showsHiddenFiles = true
@@ -149,21 +149,21 @@ final class MainMenuController: NSObject, Rendering {
       let url = URL(filePath: "panel")
       panel.directoryURL = url.deletingLastPathComponent()
       panel.nameFieldStringValue = url.lastPathComponent
-      withAPI(from: store) { api in
-        try await api.nimb(method: "save_as", parameters: [.string(url.path())])
+      store.apiTask {
+        try await $0.nimb(method: "save_as", parameters: [.string(url.path())])
       }
     }
   }
 
   @objc private func handleCloseWindow() {
-    withAPI(from: store) { api in
-      try await api.nimb(method: "close")
+    store.apiTask {
+      try await $0.nimb(method: "close")
     }
   }
 
   @objc private func handleQuit() {
-    withAPI(from: store) { api in
-      try await api.nimb(method: "quit")
+    store.apiTask {
+      try await $0.nimb(method: "quit")
     }
   }
 
@@ -295,7 +295,7 @@ extension MainMenuController: NSMenuDelegate {
   func menuNeedsUpdate(_ menu: NSMenu) {
     switch menu {
     case viewMenu:
-      menu.items = FontMenuLayout.map { item in
+      menu.items = fontMenuLayout.map { item in
         switch item {
         case .currentFontDescription:
           let currentFont = state.font.appKit()
@@ -363,8 +363,6 @@ extension MainMenuController: NSMenuDelegate {
       )
       toggleMessagePackInspector.target = self
 
-      menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem, toggleMessagePackInspector]
-
       let toggleStoreActionsLoggingMenuItem = NSMenuItem(
         title: state.debug
           .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
@@ -414,7 +412,7 @@ private enum FontMenuItem {
   case resetSize
 }
 
-private let FontMenuLayout: [FontMenuItem] = [
+private let fontMenuLayout: [FontMenuItem] = [
   .currentFontDescription,
   .select,
   .separator,

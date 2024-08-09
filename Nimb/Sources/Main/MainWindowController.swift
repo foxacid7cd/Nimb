@@ -30,7 +30,11 @@ public class MainWindowController: NSWindowController, Rendering {
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
 
-  public init(store: Store, minOuterGridSize: IntegerSize) {
+  public init(
+    store: Store,
+    minOuterGridSize: IntegerSize,
+    keyPressed: ((KeyPress) -> Void)?
+  ) {
     self.store = store
     viewController = .init(
       store: store,
@@ -42,9 +46,7 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.isMovable = false
     customWindow.isOpaque = true
     customWindow.allowsConcurrentViewDrawing = true
-    customWindow.keyPressed = { keyPress in
-      store.report(keyPress: keyPress)
-    }
+    customWindow.keyPressed = keyPressed
     super.init(window: customWindow)
 
     customWindow.delegate = self

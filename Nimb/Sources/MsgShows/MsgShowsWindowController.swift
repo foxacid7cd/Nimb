@@ -24,21 +24,11 @@ class MsgShowsWindowController: NSWindowController, Rendering {
   private var customWindow: CustomWindow!
   private var isWindowInitiallyShown = false
 
-  init(store: Store) {
+  init(store: Store, keyPressed: ((KeyPress) -> Void)?) {
     self.store = store
 
     let viewController = MsgShowsViewController(store: store)
     let window = CustomWindow(contentViewController: viewController)
-//    window.keyPressed = { keyPress in
-//      Task {
-//        await store.keyPress(keyPress: keyPress)
-//      }
-//    }
-//    window.keyPressed = { keyPress in
-//      Task {
-//        await store.keyPress2(keyPress: keyPress)
-//      }
-//    }
     window.styleMask = [.titled, .resizable]
     window.titlebarAppearsTransparent = false
     window.isOpaque = false
@@ -49,6 +39,7 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
     window.alphaValue = 0.9
+    window.keyPressed = keyPressed
     super.init(window: window)
 
     window.delegate = self

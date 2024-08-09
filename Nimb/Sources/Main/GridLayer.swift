@@ -46,6 +46,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   @MainActor
   private var dirtyRectangles = [IntegerRectangle]()
   private var critical = LockIsolated<Critical?>(nil)
+  private var previousMouseMove: (modifier: String, point: IntegerPoint)?
 
   public var needsAnchorLayout = false {
     didSet {
@@ -289,27 +290,32 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       yScrollingReported += yScrollingToBeReported
     }
 
-    //      if horizontalScrollCount != 0, let point = point(for: event) {
-    //        let scrollWheel = ReportScrollWheel(
-    //          with: horizontalScrollCount < 0 ? Instance.ScrollDirection.left : Instance.ScrollDirection.right,
-    //          modifier: event.modifierFlags
-    //            .makeModifiers(isSpecialKey: false)
-    //            .joined(),
-    //          gridID: gridID,
-    //          point: point
-    //        ))
-    //      }
-    //      if verticalScrollCount != 0 {
-    //        let point = point(for: event)
-    //        await store.reportScrollWheel(
-    //          with: verticalScrollCount < 0 ? .up : .down,
-    //          modifier: event.modifierFlags
-    //            .makeModifiers(isSpecialKey: false)
-    //            .joined(),
-    //          gridID: gridID,
-    //          point: point
-    //        )
-//          }
+    let point = point(for: event)
+    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
+    if horizontalScrollCount != 0 {
+      store.apiTask { [horizontalScrollCount, gridID] in
+        try await $0.nvimInputMouse(
+          button: "wheel",
+          action: horizontalScrollCount > 0 ? "right" : "left",
+          modifier: modifier,
+          grid: gridID,
+          row: point.row,
+          col: point.column
+        )
+      }
+    }
+    if verticalScrollCount != 0 {
+      store.apiTask { [verticalScrollCount, gridID] in
+        try await $0.nvimInputMouse(
+          button: "wheel",
+          action: verticalScrollCount < 0 ? "up" : "down",
+          modifier: modifier,
+          grid: gridID,
+          row: point.row,
+          col: point.column
+        )
+      }
+    }
 
     if event.phase == .ended || event.phase == .cancelled {
       hasScrollingSlippedHorizontally = false
@@ -325,13 +331,25 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     else {
       return
     }
-    store.reportMouseMove(
-      modifier: event.modifierFlags
-        .makeModifiers(isSpecialKey: false)
-        .joined(),
-      gridID: gridID,
+    let mouseMove = (
+      modifier: event.modifierFlags.makeModifiers(isSpecialKey: false).joined(),
       point: point(for: event)
     )
+    if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
+      return
+    }
+    store.apiTask { [gridID] in
+      try await $0
+        .nvimInputMouse(
+          button: "move",
+          action: "",
+          modifier: mouseMove.modifier,
+          grid: gridID,
+          row: mouseMove.point.row,
+          col: mouseMove.point.column
+        )
+    }
+    previousMouseMove = mouseMove
   }
 
   @MainActor
@@ -353,22 +371,25 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
 
   @MainActor
   public func report(
-    mouseButton: Instance.MouseButton,
-    action: Instance.MouseAction,
+    mouseButton: String,
+    action: String,
     with event: NSEvent
   ) {
     guard state.isMouseUserInteractionEnabled else {
       return
     }
     let point = point(for: event)
-    store.report(
-      mouseButton: mouseButton,
-      action: action,
-      modifier: event.modifierFlags
-        .makeModifiers(isSpecialKey: false)
-        .joined(),
-      gridID: gridID,
-      point: point
-    )
+    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
+    store.apiTask { [gridID] in
+      try await $0
+        .nvimInputMouse(
+          button: mouseButton,
+          action: action,
+          modifier: modifier,
+          grid: gridID,
+          row: point.row,
+          col: point.column
+        )
+    }
   }
 }

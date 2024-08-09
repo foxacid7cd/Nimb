@@ -3,6 +3,18 @@
 import AppKit
 
 public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering {
+  private enum MouseButton: String, Sendable {
+    case left
+    case right
+    case middle
+  }
+
+  private enum MouseAction: String, Sendable {
+    case press
+    case drag
+    case release
+  }
+
   override public var intrinsicContentSize: NSSize {
     guard isRendered else {
       return .zero
@@ -260,23 +272,15 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
     action: Instance.MouseAction,
     with event: NSEvent
   ) {
+    var gridLayer: GridLayer?
+
     switch action {
     case .press:
       let location = layer!.convert(event.locationInWindow, from: nil)
-      if let gridLayer = layer!.hitTest(location) as? GridLayer {
-        switch mouseButton {
-        case .left:
-          leftMouseInteractionTarget = gridLayer
-        case .right:
-          rightMouseInteractionTarget = gridLayer
-        case .middle:
-          otherMouseInteractionTarget = gridLayer
-        }
-        gridLayer.report(mouseButton: mouseButton, action: action, with: event)
-      }
+      gridLayer = layer!.hitTest(location) as? GridLayer
 
     case .drag:
-      let gridLayer =
+      gridLayer =
         switch mouseButton {
         case .left:
           leftMouseInteractionTarget
@@ -285,10 +289,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
         case .middle:
           otherMouseInteractionTarget
         }
-      gridLayer?.report(mouseButton: mouseButton, action: action, with: event)
 
     case .release:
-      let gridLayer: GridLayer?
       switch mouseButton {
       case .left:
         gridLayer = leftMouseInteractionTarget
@@ -302,7 +304,14 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
         gridLayer = otherMouseInteractionTarget
         otherMouseInteractionTarget = nil
       }
-      gridLayer?.report(mouseButton: mouseButton, action: action, with: event)
+    }
+
+    if let gridLayer {
+      gridLayer.report(
+        mouseButton: mouseButton.rawValue,
+        action: action.rawValue,
+        with: event
+      )
     }
   }
 
