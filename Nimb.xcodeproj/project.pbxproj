@@ -59,6 +59,9 @@
 		681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534D2C5FE57E00AD6C68 /* Algorithms */; };
 		681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */; };
 		681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53522C5FE67B00AD6C68 /* SwiftSyntax */; };
+		68220E732C668F92004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
+		68220E742C668FA0004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
+		68220E752C668FA5004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
@@ -66,22 +69,15 @@
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		6867D7FF2C658BA200585FE4 /* RenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6867D7FE2C658BA200585FE4 /* RenderContext.swift */; };
-		68698B222C66240A0084BB74 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 68698B212C66240A0084BB74 /* MacrosLibrary */; };
 		68698B242C6651260084BB74 /* CmdlineTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68698B232C6651260084BB74 /* CmdlineTextView.swift */; };
 		6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
-		6869ACA82C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
-		6869ACA92C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
-		6869ACAA2C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */; };
 		686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC82A2C5FE91F00AC1E62 /* CasePaths */; };
-		686AC8332C60109D00AC1E62 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8322C60109D00AC1E62 /* MacrosLibrary */; };
-		686AC8352C6010A100AC1E62 /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 686AC8342C6010A100AC1E62 /* MacrosLibrary */; };
 		686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */; };
 		687644882C5373670022D916 /* NeovimNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687644872C5373670022D916 /* NeovimNotification.swift */; };
 		6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6878932C2AF7F2B300005A8E /* APIFunction.swift */; };
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
 		687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687ACD612C56E93500600058 /* AnchorLayouting.swift */; };
-		6880800A2C603AFC00BD32FA /* MacrosLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 688080092C603AFC00BD32FA /* MacrosLibrary */; };
 		6880800D2C603B3000BD32FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800C2C603B3000BD32FA /* ArgumentParser */; };
 		6880800E2C603B6800BD32FA /* MsgpackInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C12B2C5E166900FF3968 /* MsgpackInspector.swift */; };
 		688080102C603BDC00BD32FA /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800F2C603BDC00BD32FA /* SystemPackage */; };
@@ -132,7 +128,6 @@
 		68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */; };
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
-		68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 688080022C603ADA00BD32FA /* msgpack-inspector */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68B643C22C65677B00C4D8A2 /* LockIsolated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C02C65677B00C4D8A2 /* LockIsolated.swift */; };
 		68B643C32C65677B00C4D8A2 /* UncheckedSendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */; };
 		68B643C42C656F2F00C4D8A2 /* UncheckedSendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */; };
@@ -154,6 +149,7 @@
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4090F2C62D0F800B33091 /* Bundle+Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4090E2C62D0F800B33091 /* Bundle+Version.swift */; };
 		68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D409102C62D61A00B33091 /* NimbNotify.swift */; };
+		68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 68DC65B12C6681A3009FBEDE /* SystemPackage */; };
 		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
@@ -165,17 +161,11 @@
 		68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */; };
 		68FAC3F72AF6932F00490F09 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAC3F62AF6932F00490F09 /* Actions.swift */; };
 		68FAD38C2AD102E20042A103 /* SlantedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FAD38B2AD102E20042A103 /* SlantedBackground.swift */; };
+		68FB33182C669ECA008A68CB /* MyMacro in Frameworks */ = {isa = PBXBuildFile; productRef = 68FB33172C669ECA008A68CB /* MyMacro */; };
+		68FB331A2C669ED0008A68CB /* MyMacro in Frameworks */ = {isa = PBXBuildFile; productRef = 68FB33192C669ED0008A68CB /* MyMacro */; };
+		68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */ = {isa = PBXBuildFile; productRef = 68FB331B2C669ED3008A68CB /* MyMacro */; };
+		68FB331E2C669ED7008A68CB /* MyMacro in Frameworks */ = {isa = PBXBuildFile; productRef = 68FB331D2C669ED7008A68CB /* MyMacro */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		68007B552C6188AE001AD1D0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 68BFEF392934CF6100564FE2 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 688080012C603ADA00BD32FA;
-			remoteInfo = "msgpack-inspector";
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		6814C11E2C5E155E00FF3968 /* CopyFiles */ = {
@@ -242,7 +232,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */,
 				68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */,
 			);
 			name = "Copy nvim Executable";
@@ -277,6 +266,7 @@
 		681B532C2C5FE4A100AD6C68 /* Unpacker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Unpacker.swift; sourceTree = "<group>"; };
 		681B532D2C5FE4A100AD6C68 /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		681B533D2C5FE4FE00AD6C68 /* generate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "generate-Bridging-Header.h"; sourceTree = "<group>"; };
+		68220E772C669EAA004529E3 /* MyMacro */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MyMacro; path = Modules/MyMacro; sourceTree = "<group>"; };
 		6837091729B41C6400E02348 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 2; };
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
@@ -371,9 +361,9 @@
 				688080232C60D7F500BD32FA /* CasePaths in Frameworks */,
 				688080252C60D81900BD32FA /* CustomDump in Frameworks */,
 				68C9BCAF2C5F7E9900844461 /* SystemPackage in Frameworks */,
+				68FB331A2C669ED0008A68CB /* MyMacro in Frameworks */,
+				68220E752C668FA5004529E3 /* libmsgpack-c.a in Frameworks */,
 				68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */,
-				6869ACA82C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
-				686AC8332C60109D00AC1E62 /* MacrosLibrary in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -384,13 +374,13 @@
 				681B53062C5FE36200AD6C68 /* ArgumentParser in Frameworks */,
 				681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */,
 				681B53492C5FE54800AD6C68 /* Collections in Frameworks */,
+				68220E732C668F92004529E3 /* libmsgpack-c.a in Frameworks */,
 				681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */,
-				6869ACA92C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
 				686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */,
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
+				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
 				681B53472C5FE53E00AD6C68 /* CustomDump in Frameworks */,
 				681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */,
-				686AC8352C6010A100AC1E62 /* MacrosLibrary in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -400,9 +390,9 @@
 			files = (
 				6880800D2C603B3000BD32FA /* ArgumentParser in Frameworks */,
 				688080102C603BDC00BD32FA /* SystemPackage in Frameworks */,
-				6880800A2C603AFC00BD32FA /* MacrosLibrary in Frameworks */,
+				68FB331E2C669ED7008A68CB /* MyMacro in Frameworks */,
+				68220E742C668FA0004529E3 /* libmsgpack-c.a in Frameworks */,
 				688080132C605FC300BD32FA /* AsyncAlgorithms in Frameworks */,
-				6869ACAA2C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +403,7 @@
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
+				68FB33182C669ECA008A68CB /* MyMacro in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
@@ -420,7 +411,7 @@
 				68007B642C61C88B001AD1D0 /* STTextView in Frameworks */,
 				6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
 				68C9BCA92C5F7E5C00844461 /* AsyncAlgorithms in Frameworks */,
-				68698B222C66240A0084BB74 /* MacrosLibrary in Frameworks */,
+				68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -619,6 +610,7 @@
 			isa = PBXGroup;
 			children = (
 				68BFEF432934CF6100564FE2 /* Nimb */,
+				68220E772C669EAA004529E3 /* MyMacro */,
 				68C9BC782C5F7D6300844461 /* generate */,
 				6814C1212C5E155E00FF3968 /* speed-tuner */,
 				688080032C603ADB00BD32FA /* msgpack-inspector */,
@@ -716,9 +708,9 @@
 			packageProductDependencies = (
 				68C9BCA52C5F7E4900844461 /* ArgumentParser */,
 				68C9BCAE2C5F7E9900844461 /* SystemPackage */,
-				686AC8322C60109D00AC1E62 /* MacrosLibrary */,
 				688080222C60D7F500BD32FA /* CasePaths */,
 				688080242C60D81900BD32FA /* CustomDump */,
+				68FB33192C669ED0008A68CB /* MyMacro */,
 			);
 			productName = "speed-tuner";
 			productReference = 6814C1202C5E155E00FF3968 /* speed-tuner */;
@@ -747,7 +739,7 @@
 				681B53522C5FE67B00AD6C68 /* SwiftSyntax */,
 				686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */,
 				686AC82A2C5FE91F00AC1E62 /* CasePaths */,
-				686AC8342C6010A100AC1E62 /* MacrosLibrary */,
+				68FB331B2C669ED3008A68CB /* MyMacro */,
 			);
 			productName = generate;
 			productReference = 681B52F32C5FE31A00AD6C68 /* generate */;
@@ -767,10 +759,10 @@
 			);
 			name = "msgpack-inspector";
 			packageProductDependencies = (
-				688080092C603AFC00BD32FA /* MacrosLibrary */,
 				6880800C2C603B3000BD32FA /* ArgumentParser */,
 				6880800F2C603BDC00BD32FA /* SystemPackage */,
 				688080122C605FC300BD32FA /* AsyncAlgorithms */,
+				68FB331D2C669ED7008A68CB /* MyMacro */,
 			);
 			productName = "msgpack-inspector";
 			productReference = 688080022C603ADA00BD32FA /* msgpack-inspector */;
@@ -792,7 +784,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				68007B562C6188AE001AD1D0 /* PBXTargetDependency */,
 			);
 			name = Nimb;
 			packageProductDependencies = (
@@ -805,7 +796,8 @@
 				68C9BCB82C5F7F3F00844461 /* Overture */,
 				68C9BCBB2C5F7F5A00844461 /* CustomDump */,
 				68007B632C61C88B001AD1D0 /* STTextView */,
-				68698B212C66240A0084BB74 /* MacrosLibrary */,
+				68DC65B12C6681A3009FBEDE /* SystemPackage */,
+				68FB33172C669ECA008A68CB /* MyMacro */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -921,7 +913,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nimb\" \"${PROJECT_DIR}/generate\" \"${PROJECT_DIR}/Macros\" \"${PROJECT_DIR}/speed-tuner\"\n\nunset EXECUTABLE_FILE\n";
+			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nimb\" \"${PROJECT_DIR}/generate\" \"${PROJECT_DIR}/speed-tuner\"\n\nunset EXECUTABLE_FILE\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1078,14 +1070,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		68007B562C6188AE001AD1D0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 688080012C603ADA00BD32FA /* msgpack-inspector */;
-			targetProxy = 68007B552C6188AE001AD1D0 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
 		6814C1242C5E155E00FF3968 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1106,8 +1090,6 @@
 				INFOPLIST_FILE = "$(SRCROOT)/speed-tuner/Info-speed-tuner.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SDKROOT)/usr/lib/swift",
-					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -1138,8 +1120,6 @@
 				INFOPLIST_FILE = "$(SRCROOT)/speed-tuner/Info-speed-tuner.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SDKROOT)/usr/lib/swift",
-					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -1160,17 +1140,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Third-Party",
-					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -1179,7 +1156,6 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OBJC_BRIDGING_HEADER = "generate/generate-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1190,20 +1166,16 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Third-Party",
-					"$(PROJECT_DIR)/Third-Party/neovim/.deps/usr/lib",
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "generate/generate-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1650,10 +1622,6 @@
 			package = 681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */;
 			productName = SwiftSyntax;
 		};
-		68698B212C66240A0084BB74 /* MacrosLibrary */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MacrosLibrary;
-		};
 		686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */;
@@ -1663,18 +1631,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */;
 			productName = CasePaths;
-		};
-		686AC8322C60109D00AC1E62 /* MacrosLibrary */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MacrosLibrary;
-		};
-		686AC8342C6010A100AC1E62 /* MacrosLibrary */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MacrosLibrary;
-		};
-		688080092C603AFC00BD32FA /* MacrosLibrary */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MacrosLibrary;
 		};
 		6880800C2C603B3000BD32FA /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1750,6 +1706,27 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
 			productName = CustomDump;
+		};
+		68DC65B12C6681A3009FBEDE /* SystemPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */;
+			productName = SystemPackage;
+		};
+		68FB33172C669ECA008A68CB /* MyMacro */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MyMacro;
+		};
+		68FB33192C669ED0008A68CB /* MyMacro */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MyMacro;
+		};
+		68FB331B2C669ED3008A68CB /* MyMacro */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MyMacro;
+		};
+		68FB331D2C669ED7008A68CB /* MyMacro */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MyMacro;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

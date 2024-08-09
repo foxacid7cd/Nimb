@@ -4,7 +4,4 @@
    <FileRef
       location = "container:Nimb.xcodeproj">
    </FileRef>
-   <FileRef
-      location = "group:Macros">
-   </FileRef>
 </Workspace>

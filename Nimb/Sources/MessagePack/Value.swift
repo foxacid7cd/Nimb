@@ -9,7 +9,6 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral
 {
-  case unsignedInteger(UInt)
   case integer(Int)
   case float(Double)
   case boolean(Bool)
@@ -30,9 +29,8 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
     _ object: msgpack_object
   ) {
     switch object.type {
-    case MSGPACK_OBJECT_POSITIVE_INTEGER: self = .unsignedInteger(UInt(object.via.u64))
-
-    case MSGPACK_OBJECT_NEGATIVE_INTEGER: self = .integer(Int(object.via.i64))
+    case MSGPACK_OBJECT_NEGATIVE_INTEGER,
+         MSGPACK_OBJECT_POSITIVE_INTEGER: self = .integer(Int(object.via.i64))
 
     case MSGPACK_OBJECT_FLOAT,
          MSGPACK_OBJECT_FLOAT32: self = .float(object.via.f64)

@@ -3,6 +3,7 @@
 import CasePaths
 import Collections
 import CustomDump
+import MyMacro
 import Overture
 
 @PublicInit

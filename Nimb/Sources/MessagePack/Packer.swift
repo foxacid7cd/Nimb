@@ -32,9 +32,6 @@ public class Packer {
         msgpack_pack_false(&pk)
       }
 
-    case let .unsignedInteger(unsignedInteger):
-      msgpack_pack_uint64(&pk, UInt64(unsignedInteger))
-
     case let .integer(integer):
       msgpack_pack_int64(&pk, Int64(integer))
 

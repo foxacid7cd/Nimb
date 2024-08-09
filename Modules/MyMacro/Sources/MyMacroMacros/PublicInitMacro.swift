@@ -1,34 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-public struct PublicInitMacro: MemberMacro {
-//  public static func expansion(
-//    of node: AttributeSyntax,
-//    providingMembersOf declaration: some DeclGroupSyntax,
-//    in context: some MacroExpansionContext
-//  ) throws
-//    -> [DeclSyntax]
-//  {
-//    guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-//      throw Error.notAStruct
-//    }
-//
-//    let included = structDecl.storedProperties
-//      .filter { $0.bindings.first!.typeAnnotation != nil }
-//
-//    let publicInit: DeclSyntax = """
-//    public init(
-//    \(raw: included.map { "\($0.bindings)" }.joined(separator: ",\n"))
-//    ) {
-//    \(
-//      raw: included.map { "self.\($0.identifier) = \($0.identifier)" }
-//        .joined(separator: "\n")
-//    )
-//    }
-//    """
-//
-//    return [publicInit]
-//  }
+import SwiftCompilerPlugin
+import SwiftSyntax
+import SwiftSyntaxBuilder
+import SwiftSyntaxMacros
+import SwiftDiagnostics
 
+public struct PublicInitMacro: MemberMacro {
   enum Error: String, Swift.Error, DiagnosticMessage {
     case notAStruct
 

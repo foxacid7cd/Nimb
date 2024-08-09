@@ -13,24 +13,20 @@ export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
 
 # Targets
-.PHONY: all test clean $(BUILD_DIR)/Nimb.xcarchive export_xcarchive neovim install
+.PHONY: all test clean neovim generate format app install
 
-# Archive Build
-$(BUILD_DIR)/Nimb.xcarchive: generate
+# macOS App
+app:
 	xcodebuild archive -workspace Nimb.xcworkspace \
-		-scheme Nimb -configuration Release \
-		-archivePath $@ | xcbeautify
-
-# Export Archive
-export_xcarchive: $(BUILD_DIR)/Nimb.xcarchive
-	xcodebuild -exportArchive -archivePath $< \
-		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) \
-		-exportPath $(INSTALL_DIR) | xcbeautify
+		-scheme Nimb -configuration Release -archivePath $(BUILD_DIR)/Nimb.xcarchive | xcbeautify; \
+	xcodebuild -exportArchive -archivePath $(BUILD_DIR)/Nimb.xcarchive \
+		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) -exportPath $(INSTALL_DIR) | xcbeautify
 
 # Neovim
 neovim: build_neovim_package
 	@echo "Extracting Neovim package..."
-	pushd $(NEOVIM_DIR)/build > /dev/null && tar -xvf nvim-macos-arm64.tar.gz && popd > /dev/null && \
+	pushd $(NEOVIM_DIR)/build > /dev/null && tar -xvf nvim-macos-arm64.tar.gz && \
+	popd > /dev/null && rm -rf $(NEOVIM_DIR)/.deps && \
 	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && \
 	mv $(NEOVIM_DIR)/build/nvim-macos-arm64 $(BUILD_DIR)/package
 
@@ -58,14 +54,14 @@ clean: clean_neovim
 # Format
 format:
 	@echo "Formatting Swift files..."
-	$(SWIFTFORMAT) --config .swiftformat Nimb/ generate/ Macros/ msgpack-inspector/ speed-tuner/
+	$(SWIFTFORMAT) --config .swiftformat Nimb/ generate/ msgpack-inspector/ speed-tuner/
 
 # Generate
-generate: neovim
+generate:
 	@echo "Generating Swift Neovim API code..."
 	xcodebuild -workspace Nimb.xcworkspace -scheme generate -configuration Debug \
-		-destination "platform=macos,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) | xcbeautify && \
+		-destination "platform=macOS,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) | xcbeautify && \
 		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate $(GENERATED_DIR)
 
 # Install
-install: export_xcarchive
+install: neovim generate format app

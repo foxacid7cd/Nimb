@@ -12,6 +12,7 @@ public struct ValueType: Sendable {
 
   @CasePathable
   public enum SwiftType {
+    case unsignedInteger
     case integer
     case float
     case string
@@ -24,6 +25,9 @@ public struct ValueType: Sendable {
 
     public var signature: String {
       switch self {
+      case .unsignedInteger:
+        "UInt"
+
       case .integer:
         "Int"
 
@@ -86,6 +90,9 @@ public struct ValueType: Sendable {
 
   public func wrapWithValueEncoder(_ expr: String) -> String {
     switch swift {
+    case .unsignedInteger:
+      ".unsignedInteger(\(expr))"
+
     case .integer:
       ".integer(\(expr))"
 
@@ -117,6 +124,9 @@ public struct ValueType: Sendable {
 
   public func wrapWithValueDecoder(_ expr: String, name: String) -> String {
     switch swift {
+    case .unsignedInteger:
+      "case let .unsignedInteger(\(name)) = \(expr)"
+
     case .integer:
       "case let .integer(\(name)) = \(expr)"
 

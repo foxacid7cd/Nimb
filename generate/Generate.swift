@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import ArgumentParser
+import CustomDump
 import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder

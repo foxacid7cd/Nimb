@@ -23,9 +23,9 @@ public actor Generator {
       var accumulator = [Value]()
 
       do {
-        let unpacker = await Unpacker()
+        let unpacker = Unpacker()
         for try await data in dataBatches {
-          let values = try await unpacker.unpack(data)
+          let values = try unpacker.unpack(data)
 
           accumulator += values
         }
@@ -34,7 +34,10 @@ public actor Generator {
         }
         customDump(value)
 
-        return try Metadata(value)
+        let metadata = try Metadata(value)
+        customDump(metadata)
+
+        return metadata
 
       } catch {
         throw GeneratorError.invalidData(details: "\(error)")

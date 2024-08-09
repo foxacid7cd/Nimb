@@ -125,7 +125,7 @@ public struct Metadata: @unchecked Sendable {
         else {
           throw Failure("Could not parse type", name, rawType)
         }
-        return .init(id: .init(rawID), name: name, prefix: prefix)
+        return .init(id: rawID, name: name, prefix: prefix)
       }
       .sorted(by: { $0.id < $1.id })
 
