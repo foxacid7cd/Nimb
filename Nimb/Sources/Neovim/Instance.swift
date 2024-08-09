@@ -149,9 +149,9 @@ public final class Instance: Sendable {
     )
   }
 
-  public func report(keyPress: KeyPress) {
+  public func report(keyPress: KeyPress) async throws {
     let keys = keyPress.makeNvimKeyCode()
-    try? api.fastCall(APIFunctions.NvimInput(keys: keys))
+    try await api.call(APIFunctions.NvimInput(keys: keys))
   }
 
   public func reportMouseMove(
@@ -174,8 +174,8 @@ public final class Instance: Sendable {
     modifier: String,
     gridID: Grid.ID,
     point: IntegerPoint
-  ) {
-    try? api.fastCall(APIFunctions.NvimInputMouse(
+  ) async throws {
+    try await api.call(APIFunctions.NvimInputMouse(
       button: "wheel",
       action: direction.rawValue,
       modifier: modifier,

@@ -1,5 +1,5 @@
 {
-  "originHash" : "11199c915f5db623f7ff15a48178432b128e2194596d817e819580e9c93d5c46",
+  "originHash" : "5ac84e677165536e873288e34d9f9ba244502644abc36e0fd9f712baa0035604",
   "pins" : [
     {
       "identity" : "sttextkitplus",
@@ -16,7 +16,7 @@
       "location" : "https://github.com/krzyzanowskim/STTextView",
       "state" : {
         "revision" : "8c4b880259f122c5ff4283adc698ac0d5d4b9027",
-        "version" : "0.9.6"
+        "version" : "1.0.0"
       }
     },
     {
@@ -106,7 +106,7 @@
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
         "branch" : "main",
-        "revision" : "28794d2dc574b4d97aed235c43d852be2957d36e"
+        "revision" : "f8075dac5bc64ab9495c8f8f23d5fe764b3bedc8"
       }
     },
     {

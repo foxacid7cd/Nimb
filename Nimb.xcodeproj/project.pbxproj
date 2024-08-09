@@ -12,6 +12,7 @@
 		68007B642C61C88B001AD1D0 /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 68007B632C61C88B001AD1D0 /* STTextView */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
+		680BF3472C65A8E900C15CB6 /* CasePaths+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */; };
 		6814C1392C5E341F00FF3968 /* SpeedTuner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C1382C5E341F00FF3968 /* SpeedTuner.swift */; };
 		681B52FA2C5FE33A00AD6C68 /* Generate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C9BC772C5F7D6300844461 /* Generate.swift */; };
 		681B52FB2C5FE33A00AD6C68 /* StringHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C9BC7F2C5F7D6300844461 /* StringHelpers.swift */; };
@@ -101,6 +102,7 @@
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
 		689738F32C480AF8002159BD /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 689738F22C480AF7002159BD /* TinyConstraints */; };
+		6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6897398A2C65F14B00891467 /* Store+withAPI.swift */; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
 		689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2A29B4FBA700345713 /* MainViewController.swift */; };
@@ -253,6 +255,7 @@
 		68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsWindowController.swift; sourceTree = "<group>"; };
 		68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuViewController.swift; sourceTree = "<group>"; };
 		68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuItemView.swift; sourceTree = "<group>"; };
+		680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CasePaths+Sendable.swift"; sourceTree = "<group>"; };
 		6814C1202C5E155E00FF3968 /* speed-tuner */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "speed-tuner"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6814C12B2C5E166900FF3968 /* MsgpackInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgpackInspector.swift; sourceTree = "<group>"; };
 		6814C1342C5E185400FF3968 /* speed-tuner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "speed-tuner.entitlements"; sourceTree = "<group>"; };
@@ -295,6 +298,7 @@
 		6888D8A52AF83B6B0049562D /* APINimsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APINimsExtensions.swift; sourceTree = "<group>"; };
 		688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayout.swift; sourceTree = "<group>"; };
 		689081352B3F321000252558 /* FloatingWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowView.swift; sourceTree = "<group>"; };
+		6897398A2C65F14B00891467 /* Store+withAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Store+withAPI.swift"; sourceTree = "<group>"; };
 		689870A82AF80D1B00C4F2FD /* NeovimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimError.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		689D9E2A29B4FBA700345713 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -456,6 +460,7 @@
 				681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */,
 				68B643C02C65677B00C4D8A2 /* LockIsolated.swift */,
 				68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */,
+				680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -492,6 +497,7 @@
 				68D4090E2C62D0F800B33091 /* Bundle+Version.swift */,
 				68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */,
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
+				6897398A2C65F14B00891467 /* Store+withAPI.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
@@ -997,6 +1003,7 @@
 				68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,
 				687ACD622C56E93500600058 /* AnchorLayouting.swift in Sources */,
+				680BF3472C65A8E900C15CB6 /* CasePaths+Sendable.swift in Sources */,
 				68A4101D2C5D46F20092050B /* TablineView.swift in Sources */,
 				68A8FF552AD29F660017C28D /* API.swift in Sources */,
 				68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */,
@@ -1008,6 +1015,7 @@
 				681B53392C5FE4A100AD6C68 /* Unpacker.swift in Sources */,
 				681B53352C5FE4A100AD6C68 /* Packer.swift in Sources */,
 				6861FA6229B462B8002C3C0B /* Font.swift in Sources */,
+				6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */,
 				687A1C0B2C6368C600D2A0EF /* StateContainer.swift in Sources */,
 				68EFD26B2B588CD90010DD54 /* SettingsViewController.swift in Sources */,
 				68A8FF582AD29F660017C28D /* State.swift in Sources */,
@@ -1509,7 +1517,7 @@
 			repositoryURL = "https://github.com/krzyzanowskim/STTextView";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.6;
+				minimumVersion = 1.0.0;
 			};
 		};
 		681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */ = {

@@ -118,13 +118,11 @@ final class MainMenuController: NSObject, Rendering {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = true
     panel.showsHiddenFiles = true
-
     switch panel.runModal() {
     case .OK:
-      Task {
-        await withAsyncErrorHandler(from: store) {
-          try await store.api.nimb(method: "edit", parameters: [.string(panel.url!.path(percentEncoded: false))])
-        }
+      break
+      withAPI(from: store) { api in
+        try await api.nimb(method: "edit", parameters: ["path"])
       }
 
     default:
@@ -133,66 +131,40 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleSave() {
-    Task {
-      await withAsyncErrorHandler(from: store) {
-        try await store.api.nimb(method: "write")
-      }
+    withAPI(from: store) { api in
+      try await api.nimb(method: "write")
     }
   }
 
   @objc private func handleSaveAs() {
     let validBuftypes: Set<String> = ["", "help"]
 
-    Task {
-      guard
-        let (name, buftype) = await store.requestCurrentBufferInfo(),
-        validBuftypes.contains(buftype)
-      else {
-        return
-      }
-
-      let panel = NSSavePanel()
-      panel.showsHiddenFiles = true
-      if name.isEmpty {
-        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-        panel.nameFieldStringValue = "Untitled"
-      } else {
-        let url = URL(filePath: name)
-        panel.directoryURL = url.deletingLastPathComponent()
-        panel.nameFieldStringValue = url.lastPathComponent
-      }
-
-      let response = await panel.begin()
-      guard !Task.isCancelled, response == .OK, let url = panel.url else {
-        return
-      }
-      await withAsyncErrorHandler(from: store) {
-        _ = try await store.api.nimb(method: "save_as", parameters: [.string(url.path())])
+    let panel = NSSavePanel()
+    panel.showsHiddenFiles = true
+    panel.runModal()
+    let name2 = panel.nameFieldStringValue
+    if name2.isEmpty {
+      panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+      panel.nameFieldStringValue = "Untitled"
+    } else {
+      let url = URL(filePath: "panel")
+      panel.directoryURL = url.deletingLastPathComponent()
+      panel.nameFieldStringValue = url.lastPathComponent
+      withAPI(from: store) { api in
+        try await api.nimb(method: "save_as", parameters: [.string(url.path())])
       }
     }
   }
 
   @objc private func handleCloseWindow() {
-    guard actionTask == nil else {
-      return
-    }
-
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      await store.close()
+    withAPI(from: store) { api in
+      try await api.nimb(method: "close")
     }
   }
 
   @objc private func handleQuit() {
-    guard actionTask == nil else {
-      return
-    }
-
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      await store.quitAll()
+    withAPI(from: store) { api in
+      try await api.nimb(method: "quit")
     }
   }
 
@@ -225,7 +197,7 @@ final class MainMenuController: NSObject, Rendering {
       currentFont,
       toSize: newFontSize
     )
-    store.set(font: .init(newFont))
+    store.dispatch(Actions.SetFont(value: Font(newFont)))
   }
 
   @objc private func handleCopy() {

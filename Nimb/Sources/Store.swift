@@ -92,7 +92,7 @@ public class Store: Sendable {
 
   public let alertMessages = AsyncChannel<AlertMessage>()
 
-  public var api: API<some Channel> {
+  public var api: API<ProcessChannel> {
     instance.api
   }
 
@@ -101,7 +101,9 @@ public class Store: Sendable {
   }
 
   public func report(keyPress: KeyPress) {
-    instance.report(keyPress: keyPress)
+    Task {
+      try? await instance.report(keyPress: keyPress)
+    }
   }
 
   public func reportMouseMove(
@@ -128,12 +130,14 @@ public class Store: Sendable {
     gridID: Grid.ID,
     point: IntegerPoint
   ) {
-    instance.reportScrollWheel(
-      with: direction,
-      modifier: modifier,
-      gridID: gridID,
-      point: point
-    )
+    Task {
+      try? await instance.reportScrollWheel(
+        with: direction,
+        modifier: modifier,
+        gridID: gridID,
+        point: point
+      )
+    }
   }
 
   public func report(
@@ -317,6 +321,8 @@ public class Store: Sendable {
   var _state: State
   var _updates: State.Updates
 
+  let instance: Instance
+
 //  private func startCursorBlinkingTask() {
 //    guard let cursorStyle = _state.currentCursorStyle else {
 //      return
@@ -347,7 +353,6 @@ public class Store: Sendable {
   fileprivate let handleErrorMessage: @Sendable (String) -> Void
   fileprivate let handleError: @Sendable (any Error) -> Void
 
-  private let instance: Instance
   private let actionsChannel = AsyncChannel<Action>()
   private var cursorBlinkingTask: Task<Void, Never>?
   private var previousReportedOuterGridSize: IntegerSize?

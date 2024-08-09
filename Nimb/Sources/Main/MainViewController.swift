@@ -73,7 +73,6 @@ public class MainViewController: NSViewController, Rendering {
     tablineView.topToSuperview()
     tablineView.leading(to: view)
     tablineView.trailing(to: view)
-    //    tablineView.bottom(to: visualEffectView)
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(
       target: self,

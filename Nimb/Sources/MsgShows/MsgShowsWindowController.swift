@@ -8,9 +8,16 @@ class MsgShowsWindowController: NSWindowController, Rendering {
 
     let viewController = MsgShowsViewController(store: store)
     let window = CustomWindow(contentViewController: viewController)
-    window.keyPressed = { keyPress in
-      store.report(keyPress: keyPress)
-    }
+//    window.keyPressed = { keyPress in
+//      Task {
+//        await store.keyPress(keyPress: keyPress)
+//      }
+//    }
+//    window.keyPressed = { keyPress in
+//      Task {
+//        await store.keyPress2(keyPress: keyPress)
+//      }
+//    }
     window.styleMask = [.titled, .resizable]
     window.titlebarAppearsTransparent = false
     window.isOpaque = false

@@ -2,6 +2,7 @@
 
 import CasePaths
 
+@CasePathable
 public enum Message: Sendable, Hashable {
   case request(Request)
   case response(Response)

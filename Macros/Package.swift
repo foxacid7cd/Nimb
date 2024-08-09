@@ -4,7 +4,7 @@ import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
-  name: "Macros",
+  name: "MacrosPackage",
   platforms: [.macOS(.v13)],
   products: [
     .library(

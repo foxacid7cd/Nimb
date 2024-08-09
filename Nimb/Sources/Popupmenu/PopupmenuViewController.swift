@@ -169,8 +169,8 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   )
     -> Bool
   {
-    store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
-    return false
+//    store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
+    false
   }
 }
 

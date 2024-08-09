@@ -54,7 +54,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     }
   }
 
-  public func render() { }
   override public func action(forKey event: String) -> (any CAAction)? {
     NSNull()
   }
@@ -87,10 +86,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   }
 
   @MainActor
-  public func render(
-    updates: State.Updates,
-    gridUpdate: Grid.UpdateResult?
-  ) {
+  public func render() {
+    zPosition = grid.zIndex
     dirtyRectangles.removeAll(keepingCapacity: true)
 
     if updates.isFontUpdated || updates.isAppearanceUpdated {
@@ -106,7 +103,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       dirtyRectangles.append(cursorDrawRun.rectangle)
     }
 
-    if let gridUpdate {
+    if let gridUpdate = updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         dirtyRectangles.append(contentsOf: value)
@@ -127,8 +124,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
           .applying(upsideDownTransform)
       )
     }
-
-    zPosition = grid.zIndex
   }
 
   @MainActor
@@ -233,28 +228,29 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       yScrollingReported += yScrollingToBeReported
     }
 
-    if horizontalScrollCount != 0 {
-      let point = point(for: event)
-      store.reportScrollWheel(
-        with: horizontalScrollCount < 0 ? .left : .right,
-        modifier: event.modifierFlags
-          .makeModifiers(isSpecialKey: false)
-          .joined(),
-        gridID: gridID,
-        point: point
-      )
-    }
-    if verticalScrollCount != 0 {
-      let point = point(for: event)
-      store.reportScrollWheel(
-        with: verticalScrollCount < 0 ? .up : .down,
-        modifier: event.modifierFlags
-          .makeModifiers(isSpecialKey: false)
-          .joined(),
-        gridID: gridID,
-        point: point
-      )
-    }
+//    Task {
+//      if horizontalScrollCount != 0, let point = point(for: event) {
+//        let scrollWheel = ReportScrollWheel(
+//          with: horizontalScrollCount < 0 ? Instance.ScrollDirection.left : Instance.ScrollDirection.right,
+//          modifier: event.modifierFlags
+//            .makeModifiers(isSpecialKey: false)
+//            .joined(),
+//          gridID: gridID,
+//          point: point
+//        ))
+//      }
+//      if verticalScrollCount != 0 {
+//        let point = point(for: event)
+//        await store.reportScrollWheel(
+//          with: verticalScrollCount < 0 ? .up : .down,
+//          modifier: event.modifierFlags
+//            .makeModifiers(isSpecialKey: false)
+//            .joined(),
+//          gridID: gridID,
+//          point: point
+//        )
+//      }
+//    }
 
     if event.phase == .ended || event.phase == .cancelled {
       hasScrollingSlippedHorizontally = false
@@ -270,13 +266,13 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     else {
       return
     }
-    store.reportMouseMove(
-      modifier: event.modifierFlags
-        .makeModifiers(isSpecialKey: false)
-        .joined(),
-      gridID: gridID,
-      point: point(for: event)
-    )
+//    store.reportMouseMove(
+//      modifier: event.modifierFlags
+//        .makeModifiers(isSpecialKey: false)
+//        .joined(),
+//      gridID: gridID,
+//      point: point(for: event)
+//    )
   }
 
   @MainActor
@@ -306,15 +302,15 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       return
     }
     let point = point(for: event)
-    store.report(
-      mouseButton: mouseButton,
-      action: action,
-      modifier: event.modifierFlags
-        .makeModifiers(isSpecialKey: false)
-        .joined(),
-      gridID: gridID,
-      point: point
-    )
+//    store.report(
+//      mouseButton: mouseButton,
+//      action: action,
+//      modifier: event.modifierFlags
+//        .makeModifiers(isSpecialKey: false)
+//        .joined(),
+//      gridID: gridID,
+//      point: point
+//    )
   }
 
   private let gridID: Grid.ID
