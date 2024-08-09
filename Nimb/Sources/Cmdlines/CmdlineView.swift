@@ -3,13 +3,11 @@
 import AppKit
 import CustomDump
 
-public class CmdlineView: NSView {
+public class CmdlineView: NSView, Rendering {
   public init(store: Store, level: Int) {
     self.level = level
     self.store = store
     contentTextView = .init(store: store, level: level)
-    cmdline = store.state.cmdlines.dictionary[level]!
-    blockLines = store.state.cmdlines.blockLines[level] ?? []
     super.init(frame: .init())
 
     promptTextField.translatesAutoresizingMaskIntoConstraints = false
@@ -34,8 +32,6 @@ public class CmdlineView: NSView {
       contentTextView.top(to: self, priority: .defaultHigh),
       contentTextView.bottom(to: self, priority: .defaultHigh)
     )
-
-    render()
   }
 
   @available(*, unavailable)
@@ -44,8 +40,8 @@ public class CmdlineView: NSView {
   }
 
   public func render() {
-    cmdline = store.state.cmdlines.dictionary[level]!
-    blockLines = store.state.cmdlines.blockLines[level] ?? []
+    let cmdline = state.cmdlines.dictionary[level]!
+    let blockLines = state.cmdlines.blockLines[level] ?? []
 
     if !cmdline.prompt.isEmpty {
       promptTextField.attributedStringValue = .init(
@@ -105,11 +101,9 @@ public class CmdlineView: NSView {
     top: NSLayoutConstraint,
     bottom: NSLayoutConstraint
   )?
-  private var cmdline: Cmdline
-  private var blockLines: [[Cmdline.ContentPart]]
 }
 
-private class CmdlineTextView: NSView {
+private class CmdlineTextView: NSView, Rendering {
   init(store: Store, level: Int) {
     self.store = store
     self.level = level
@@ -138,7 +132,7 @@ private class CmdlineTextView: NSView {
           string: contentPart.text
             .replacingOccurrences(of: "\r", with: "↲"),
           attributes: .init([
-            .font: store.font.appKit(),
+            .font: state.font.appKit(),
             .foregroundColor: NSColor.labelColor,
           ])
         ))
@@ -149,7 +143,7 @@ private class CmdlineTextView: NSView {
       if blockLineIndex < blockLines.count - 1 {
         blockLinesAttributedString.append(.init(
           string: "\n",
-          attributes: [.font: store.font.appKit()]
+          attributes: [.font: state.font.appKit()]
         ))
       }
     }
@@ -164,7 +158,7 @@ private class CmdlineTextView: NSView {
     )
     cmdlineAttributedString.append(.init(
       string: prefix,
-      attributes: [.font: store.font.appKit()]
+      attributes: [.font: state.font.appKit()]
     ))
     indent += prefix.count
 
@@ -173,7 +167,7 @@ private class CmdlineTextView: NSView {
       cmdlineAttributedString.append(.init(
         string: text,
         attributes: [
-          .font: store.font.appKit(isBold: true),
+          .font: state.font.appKit(isBold: true),
           .foregroundColor: NSColor.labelColor,
         ]
       ))
@@ -185,7 +179,7 @@ private class CmdlineTextView: NSView {
     var location = 0
     for contentPart in cmdline.contentParts {
       let attributes: [NSAttributedString.Key: Any] = [
-        .font: store.font.appKit(),
+        .font: state.font.appKit(),
         .foregroundColor: NSColor.labelColor,
       ]
 
@@ -198,14 +192,14 @@ private class CmdlineTextView: NSView {
     }
     cmdlineAttributedString.append(.init(
       string: " ",
-      attributes: [.font: store.font.appKit()]
+      attributes: [.font: state.font.appKit()]
     ))
     if !cmdline.specialCharacter.isEmpty {
       cmdlineAttributedString.insert(
         .init(
           string: cmdline.specialCharacter,
           attributes: [
-            .font: store.font.appKit(),
+            .font: state.font.appKit(),
             .foregroundColor: NSColor.labelColor,
           ]
         ),
@@ -285,10 +279,13 @@ private class CmdlineTextView: NSView {
   }
 
   override var intrinsicContentSize: NSSize {
+    guard isRendered else {
+      return .zero
+    }
     let linesCount = max(1, blockLineCTLines.count + cmdlineCTLines.count)
     return .init(
       width: frame.width,
-      height: store.font.cellHeight * Double(linesCount)
+      height: state.font.cellHeight * Double(linesCount)
     )
   }
 
@@ -304,7 +301,7 @@ private class CmdlineTextView: NSView {
     guard let cmdline else {
       return
     }
-    let appKitFont = store.font.appKit()
+    let appKitFont = state.font.appKit()
     let cursorPosition = indent + cmdline.cursorPosition
     let context = NSGraphicsContext.current!.cgContext
 
@@ -313,20 +310,20 @@ private class CmdlineTextView: NSView {
     for cmdlineCTLine in cmdlineCTLines.reversed() {
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
+        y: Double(ctLineIndex) * state.font.cellHeight - appKitFont.descender
       )
       CTLineDraw(cmdlineCTLine, context)
 
       let range = CTLineGetStringRange(cmdlineCTLine)
       if
-        store.state.cursorBlinkingPhase,
-        !store.state.isBusy,
+        state.cursorBlinkingPhase,
+        !state.isBusy,
         cmdline.specialCharacter.isEmpty,
-        let currentCursorStyle = store.state.currentCursorStyle,
+        let currentCursorStyle = state.currentCursorStyle,
         let highlightID = currentCursorStyle.attrID,
         let cellFrame = currentCursorStyle.cellFrame(
           columnsCount: 1,
-          font: store.font
+          font: state.font
         ),
         cursorPosition >= range.location,
         cursorPosition < range.location + range.length
@@ -339,18 +336,18 @@ private class CmdlineTextView: NSView {
         let rect = cellFrame
           .offsetBy(
             dx: offset,
-            dy: Double(ctLineIndex) * store.font.cellHeight
+            dy: Double(ctLineIndex) * state.font.cellHeight
           )
 
         let cursorForegroundColor: Color
         let cursorBackgroundColor: Color
         if highlightID == Highlight.defaultID {
-          cursorForegroundColor = store.appearance.defaultBackgroundColor
-          cursorBackgroundColor = store.appearance.defaultForegroundColor
+          cursorForegroundColor = state.appearance.defaultBackgroundColor
+          cursorBackgroundColor = state.appearance.defaultForegroundColor
         } else {
-          cursorForegroundColor = store.appearance
+          cursorForegroundColor = state.appearance
             .foregroundColor(for: highlightID)
-          cursorBackgroundColor = store.appearance
+          cursorBackgroundColor = state.appearance
             .backgroundColor(for: highlightID)
         }
 
@@ -369,7 +366,7 @@ private class CmdlineTextView: NSView {
             context.textMatrix = CTRunGetTextMatrix(glyphRun)
             context.textPosition = .init(
               x: 0,
-              y: Double(ctLineIndex) * store.font.cellHeight - appKitFont
+              y: Double(ctLineIndex) * state.font.cellHeight - appKitFont
                 .descender
             )
             let attributes =
@@ -394,7 +391,7 @@ private class CmdlineTextView: NSView {
     for blockLineCTLine in blockLineCTLines.reversed() {
       context.textMatrix = .init(
         translationX: 0,
-        y: Double(ctLineIndex) * store.font.cellHeight - appKitFont.descender
+        y: Double(ctLineIndex) * state.font.cellHeight - appKitFont.descender
       )
       CTLineDraw(blockLineCTLine, context)
 

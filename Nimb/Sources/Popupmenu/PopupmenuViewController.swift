@@ -3,7 +3,7 @@
 import AppKit
 import CasePaths
 
-public class PopupmenuViewController: NSViewController {
+public class PopupmenuViewController: NSViewController, Rendering {
   public init(store: Store, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
     self.getCmdlinesView = getCmdlinesView
@@ -19,18 +19,22 @@ public class PopupmenuViewController: NSViewController {
 
   public var willShowPopupmenu: (() -> Void)?
 
-  public func render(_ stateUpdates: State.Updates) {
-    if let popupmenu = store.state.popupmenu {
-      if stateUpdates.isPopupmenuUpdated {
+  public func render() {
+    if tableView.dataSource == nil {
+      tableView.dataSource = self
+    }
+
+    if let popupmenu = state.popupmenu {
+      if updates.isPopupmenuUpdated {
         NSLayoutConstraint.deactivate(anchorConstraints)
 
         switch popupmenu.anchor {
         case .grid:
           break
-//          let offset = origin * store.font.cellSize
+//          let offset = origin * state.font.cellSize
 //          anchorConstraints = [
 //            view.leading(to: gridView, offset: offset.x - 13),
-//            view.top(to: gridView, offset: offset.y + store.font.cellHeight + 2),
+//            view.top(to: gridView, offset: offset.y + state.font.cellHeight + 2),
 //            view.width(290),
 //          ]
 
@@ -43,11 +47,11 @@ public class PopupmenuViewController: NSViewController {
           ]
         }
       }
-      if stateUpdates.isPopupmenuUpdated || stateUpdates.isAppearanceUpdated {
+      if updates.isPopupmenuUpdated || updates.isAppearanceUpdated {
         tableView.reloadData()
         storePreviousSelectedItemIndex(for: popupmenu)
         scrollToSelectedRow(for: popupmenu)
-      } else if stateUpdates.isPopupmenuSelectionUpdated {
+      } else if updates.isPopupmenuSelectionUpdated {
         scrollToSelectedRow(for: popupmenu)
         if 
           let previousSelectedItemIndex,
@@ -66,8 +70,8 @@ public class PopupmenuViewController: NSViewController {
       }
     }
 
-    if stateUpdates.isPopupmenuUpdated {
-      let on = store.state.popupmenu != nil
+    if updates.isPopupmenuUpdated {
+      let on = state.popupmenu != nil
       if on {
         willShowPopupmenu?()
       }
@@ -105,7 +109,6 @@ public class PopupmenuViewController: NSViewController {
 
     tableView.headerView = nil
     tableView.delegate = self
-    tableView.dataSource = self
     tableView.backgroundColor = .clear
     tableView.addTableColumn(
       .init(identifier: PopupmenuItemView.reuseIdentifier)
@@ -134,7 +137,7 @@ public class PopupmenuViewController: NSViewController {
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   public func numberOfRows(in tableView: NSTableView) -> Int {
-    store.state.popupmenu?.items.count ?? 0
+    state.popupmenu?.items.count ?? 0
   }
 
   public func tableView(
@@ -152,7 +155,7 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
       itemView = .init(store: store)
       itemView!.identifier = PopupmenuItemView.reuseIdentifier
     }
-    if let popupmenu = store.state.popupmenu, row < popupmenu.items.count {
+    if let popupmenu = state.popupmenu, row < popupmenu.items.count {
       itemView!.item = popupmenu.items[row]
       itemView!.isSelected = popupmenu.selectedItemIndex == row
       itemView!.render()

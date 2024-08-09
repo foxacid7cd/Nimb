@@ -27,7 +27,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
   public func applicationWillTerminate(_: Notification) {
     logger.debug("NSApplication will terminate")
-    stateUpdatesTask?.cancel()
+    updatesTask?.cancel()
     alertMessagesTask?.cancel()
   }
 
@@ -40,7 +40,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
   private var settingsWindowController: SettingsWindowController?
 
   private var alertMessagesTask: Task<Void, Never>?
-  private var stateUpdatesTask: Task<Void, Never>?
+  private var updatesTask: Task<Void, Never>?
 
   private func setupStore() {
     let debugState = UserDefaults.standard.debug
@@ -62,31 +62,34 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         }
       } catch { }
     }
-    stateUpdatesTask = Task {
+    updatesTask = Task {
       do {
         var presentedNimbNotifiesCount = 0
-        for try await stateUpdates in store!.stateUpdates {
+        for try await (state, updates) in store!.updates {
           try Task.checkCancellation()
 
-          if stateUpdates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = store!.state.outerGrid!.size
+          if updates.isOuterGridLayoutUpdated {
+            UserDefaults.standard.outerGridSize = state.outerGrid!.size
           }
-          if stateUpdates.isFontUpdated {
-            UserDefaults.standard.appKitFont = store!.state.font.appKit()
+          if updates.isFontUpdated {
+            UserDefaults.standard.appKitFont = state.font.appKit()
           }
-          if stateUpdates.isDebugUpdated {
-            UserDefaults.standard.debug = store!.state.debug
+          if updates.isDebugUpdated {
+            UserDefaults.standard.debug = state.debug
           }
-          if stateUpdates.isNimbNotifiesUpdated {
-            for _ in presentedNimbNotifiesCount ..< store!.state.nimbNotifies.count {
-              let notification = store!.state.nimbNotifies[presentedNimbNotifiesCount]
+          if updates.isNimbNotifiesUpdated {
+            for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
+              let notification = state.nimbNotifies[presentedNimbNotifiesCount]
               showNimbNotify(notification)
             }
-            presentedNimbNotifiesCount = store!.state.nimbNotifies.count
+            presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          mainWindowController!.render(stateUpdates)
-          msgShowsWindowController!.render(stateUpdates)
+          store!._state = state
+          store!._updates = updates
+
+          self.update(renderContext: .init(state: state, updates: updates))
+          self.render()
         }
         logger.debug("Store state updates loop ended")
       } catch is CancellationError {
@@ -181,5 +184,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     } catch {
       logger.error("Failed to run /usr/bin/osascript: \(error)")
     }
+  }
+}
+
+extension AppDelegate: Rendering {
+  public func render() {
+    renderChildren(mainWindowController!, msgShowsWindowController!, mainMenuController!)
   }
 }

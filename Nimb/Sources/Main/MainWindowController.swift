@@ -3,7 +3,7 @@
 import AppKit
 import AsyncAlgorithms
 
-public class MainWindowController: NSWindowController {
+public class MainWindowController: NSWindowController, Rendering {
   public init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     viewController = .init(
@@ -21,8 +21,6 @@ public class MainWindowController: NSWindowController {
     super.init(window: customWindow)
 
     customWindow.delegate = self
-
-    renderIsMouseUserInteractionEnabled()
   }
 
   @available(*, unavailable)
@@ -30,14 +28,14 @@ public class MainWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isMouseUserInteractionEnabledUpdated {
+  public func render() {
+    if updates.isMouseUserInteractionEnabledUpdated {
       renderIsMouseUserInteractionEnabled()
     }
 
-    viewController.render(stateUpdates)
+    renderChildren(viewController)
 
-    if !isWindowInitiallyShown, let outerGrid = store.state.outerGrid {
+    if !isWindowInitiallyShown, let outerGrid = state.outerGrid {
       isWindowInitiallyShown = true
 
       let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
@@ -78,7 +76,7 @@ public class MainWindowController: NSWindowController {
   }
 
   private func renderIsMouseUserInteractionEnabled() {
-    if store.state.isMouseUserInteractionEnabled {
+    if state.isMouseUserInteractionEnabled {
       customWindow.styleMask.insert(.resizable)
     } else {
       customWindow.styleMask.remove(.resizable)

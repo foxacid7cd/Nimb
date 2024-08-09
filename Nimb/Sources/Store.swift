@@ -23,124 +23,77 @@ public class Store: Sendable {
     }
 
     let initialState = State(debug: debug, font: font)
-    stateContainer = StateContainer(state: initialState)
+    _state = initialState
+    _updates = State.Updates()
+//    _stateContainer = StateContainer(state: initialState)
 
     typealias StateAndUpdates = (state: State, updates: State.Updates)
 
-    let applyUIEventsActions = AsyncThrowingStream(Action.self, bufferingPolicy: .unbounded) { [stateContainer, handleErrorMessage] continuation in
-      let task = Task {
-        do {
-          for try await neovimNotificationsBatch in instance.api.neovimNotifications {
-            try Task.checkCancellation()
+    let applyUIEventsActions = instance.api.neovimNotifications
+      .compactMap { [handleErrorMessage] neovimNotificationsBatch in
+        var actions = [Action]()
 
-            for notification in neovimNotificationsBatch {
-              switch notification {
-              case let .redraw(uiEvents):
-                if stateContainer.state.debug.isUIEventsLoggingEnabled {
-                  logger.debug("UI events: \(String(customDumping: uiEvents))")
-                }
-
-                continuation.yield(Actions.ApplyUIEvents(uiEvents: uiEvents))
-
-              case let .nvimErrorEvent(event):
-                handleErrorMessage("nvimErrorEvent received \(event)")
-
-              case let .nimbNotify(value):
-                handleErrorMessage("nimbNotify received \(value)")
-              }
-            }
+        for notification in neovimNotificationsBatch {
+          switch notification {
+          case let .redraw(uiEvents):
+            actions.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
+          case let .nvimErrorEvent(event):
+            handleErrorMessage("nvimErrorEvent received \(event)")
+          case let .nimbNotify(value):
+            handleErrorMessage("nimbNotify received \(value)")
           }
+        }
 
-          continuation.finish()
-        } catch is CancellationError {
-        } catch {
-          continuation.finish(throwing: error)
+        return actions.isEmpty ? nil : actions
+      }
+      .flatMap(\.async)
+
+    updates = merge(actionsChannel, applyUIEventsActions)
+      .buffer(policy: .unbounded)
+      .reductions(into: (state: initialState, updates: State.Updates())) { [handleError] result, action in
+        if result.updates.needFlush {
+          result.updates = State.Updates(needFlush: false)
+        }
+        let updates = await action.apply(to: &result.state, handleError: handleError)
+        result.updates.formUnion(updates)
+      }
+      .filter(\.updates.needFlush)
+      ._throttle(for: .milliseconds(1000 / 60), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
+        if let accum {
+          var updates = accum.updates
+          updates.formUnion(new.updates)
+          var _state = accum.state
+          _state.apply(updates: new.updates, from: new.state)
+          return (_state, updates)
+        } else {
+          return new
         }
       }
-
-      continuation.onTermination = {
-        switch $0 {
-        case .cancelled:
-          task.cancel()
-        default:
-          break
-        }
-      }
-    }
-
-    stateUpdates = AsyncThrowingStream(State.Updates.self, bufferingPolicy: .unbounded) { [stateContainer, actionsChannel, handleError] continuation in
-      let task = Task {
-        let sequence = merge(actionsChannel, applyUIEventsActions)
-          .buffer(policy: .unbounded)
-          .reductions(into: (state: initialState, updates: State.Updates())) { result, action in
-            if result.updates.needFlush {
-              result.updates = State.Updates(needFlush: false)
-            }
-            let updates = await action.apply(to: &result.state, handleError: handleError)
-            result.updates.formUnion(updates)
-          }
-          .filter(\.updates.needFlush)
-          ._throttle(for: .milliseconds(1000 / 60), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
-            if let accum {
-              var updates = accum.updates
-              updates.formUnion(new.updates)
-              var state = accum.state
-              state.apply(updates: new.updates, from: new.state)
-              return (state, updates)
-            } else {
-              return new
-            }
-          }
-
-        do {
-          for try await (state, updates) in sequence {
-            try Task.checkCancellation()
-
-            stateContainer.apply(updates: updates, from: state)
-            continuation.yield(updates)
-          }
-          continuation.finish()
-        } catch is CancellationError {
-        } catch {
-          continuation.finish(throwing: error)
-        }
-      }
-
-      continuation.onTermination = {
-        switch $0 {
-        case .cancelled:
-          task.cancel()
-        default:
-          break
-        }
-      }
-    }
-
-    startCursorBlinkingTask()
   }
 
   deinit {
     cursorBlinkingTask?.cancel()
   }
 
-  public let stateUpdates: AsyncThrowingStream<State.Updates, any Error>
+  public let updates: _AsyncThrottleSequence<
+    AsyncFilterSequence<AsyncExclusiveReductionsSequence<
+      AsyncBufferSequence<AsyncMerge2Sequence<
+        AsyncChannel<any Action>,
+        AsyncFlatMapSequence<
+          AsyncCompactMapSequence<AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]>, [any Action]>,
+          AsyncSyncSequence<[any Action]>
+        >
+      >>,
+      (state: State, updates: State.Updates)
+    >>,
+    ContinuousClock,
+    (state: State, updates: State.Updates)
+  >
 
   public let alertMessages = AsyncChannel<AlertMessage>()
 
   public var api: API<some Channel> {
     instance.api
-  }
-
-  public var state: State {
-    stateContainer.state
-  }
-
-  public var font: Font {
-    state.font
-  }
-
-  public var appearance: Appearance {
-    state.appearance
   }
 
   public func set(font: Font) {
@@ -282,8 +235,8 @@ public class Store: Sendable {
 
   public func requestTextForCopy() async -> String? {
     guard
-      let mode = state.mode,
-      let modeInfo = state.modeInfo
+      let mode = _state.mode,
+      let modeInfo = _state.modeInfo
     else {
       return nil
     }
@@ -308,8 +261,8 @@ public class Store: Sendable {
 
     case "c":
       if
-        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
-        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
+        let lastCmdlineLevel = _state.cmdlines.lastCmdlineLevel,
+        let cmdline = _state.cmdlines.dictionary[lastCmdlineLevel]
       {
         return cmdline.contentParts
           .map(\.text)
@@ -361,11 +314,40 @@ public class Store: Sendable {
     }
   }
 
+  var _state: State
+  var _updates: State.Updates
+
+//  private func startCursorBlinkingTask() {
+//    guard let cursorStyle = _state.currentCursorStyle else {
+//      return
+//    }
+//    if
+//      let blinkWait = cursorStyle.blinkWait,
+//      blinkWait > 0,
+//      let blinkOff = cursorStyle.blinkOff,
+//      blinkOff > 0,
+//      let blinkOn = cursorStyle.blinkOn,
+//      blinkOn > 0
+//    {
+//      cursorBlinkingTask = Task {
+//        do {
+//          try await Task.sleep(for: .milliseconds(blinkWait))
+//
+//          while true {
+//            dispatch(Actions.SetCursorBlinkingPhase(value: false))
+//            try await Task.sleep(for: .milliseconds(blinkOff))
+//
+//            dispatch(Actions.SetCursorBlinkingPhase(value: true))
+//            try await Task.sleep(for: .milliseconds(blinkOn))
+//          }
+//        } catch { }
+//      }
+//    }
+//  }
   fileprivate let handleErrorMessage: @Sendable (String) -> Void
   fileprivate let handleError: @Sendable (any Error) -> Void
 
   private let instance: Instance
-  private let stateContainer: StateContainer
   private let actionsChannel = AsyncChannel<Action>()
   private var cursorBlinkingTask: Task<Void, Never>?
   private var previousReportedOuterGridSize: IntegerSize?
@@ -374,34 +356,6 @@ public class Store: Sendable {
   private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
   private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
   private var latestUIEventsBatch = [UIEvent]()
-
-  private func startCursorBlinkingTask() {
-    guard let cursorStyle = state.currentCursorStyle else {
-      return
-    }
-    if
-      let blinkWait = cursorStyle.blinkWait,
-      blinkWait > 0,
-      let blinkOff = cursorStyle.blinkOff,
-      blinkOff > 0,
-      let blinkOn = cursorStyle.blinkOn,
-      blinkOn > 0
-    {
-      cursorBlinkingTask = Task {
-        do {
-          try await Task.sleep(for: .milliseconds(blinkWait))
-
-          while true {
-            dispatch(Actions.SetCursorBlinkingPhase(value: false))
-            try await Task.sleep(for: .milliseconds(blinkOff))
-
-            dispatch(Actions.SetCursorBlinkingPhase(value: true))
-            try await Task.sleep(for: .milliseconds(blinkOn))
-          }
-        } catch { }
-      }
-    }
-  }
 }
 
 @MainActor

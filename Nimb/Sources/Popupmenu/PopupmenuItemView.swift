@@ -3,7 +3,7 @@
 import AppKit
 import TinyConstraints
 
-public class PopupmenuItemView: NSView {
+public class PopupmenuItemView: NSView, Rendering {
   public init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -49,8 +49,8 @@ public class PopupmenuItemView: NSView {
     guard let item else {
       return
     }
-    let font = store.font
-    let appearance = store.appearance
+    let font = state.font
+    let appearance = state.appearance
 
     layer!.backgroundColor = isSelected ? NSColor.selectedContentBackgroundColor.cgColor : NSColor
       .black.withAlphaComponent(0).cgColor

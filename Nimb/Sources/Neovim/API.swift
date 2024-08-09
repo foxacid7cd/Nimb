@@ -1,40 +1,41 @@
 // SPDX-License-Identifier: MIT
 
-@MainActor
-public class API<Target: Channel> {
+public final class API<Target: Channel>: Sendable {
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
   }
 
-  public lazy var neovimNotifications = rpc.notifications
-    .map { notifications -> [NeovimNotification] in
-      try notifications.compactMap { notification in
-        switch notification.method {
-        case "redraw":
-          let uiEvents =
-            try [UIEvent](
-              rawRedrawNotificationParameters: notification
+  public var neovimNotifications: AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]> {
+    rpc.notifications
+      .map { notifications -> [NeovimNotification] in
+        try notifications.compactMap { notification in
+          switch notification.method {
+          case "redraw":
+            let uiEvents =
+              try [UIEvent](
+                rawRedrawNotificationParameters: notification
+                  .parameters
+              )
+            return .redraw(uiEvents)
+
+          case "nvim_error_event":
+            let nvimErrorEvent = try NeovimErrorEvent(
+              parameters: notification
                 .parameters
             )
-          return .redraw(uiEvents)
+            return .nvimErrorEvent(nvimErrorEvent)
 
-        case "nvim_error_event":
-          let nvimErrorEvent = try NeovimErrorEvent(
-            parameters: notification
-              .parameters
-          )
-          return .nvimErrorEvent(nvimErrorEvent)
+          case "nimb_notify":
+            let notifies = try notification.parameters
+              .map { try NimbNotify($0) }
+            return .nimbNotify(notifies)
 
-        case "nimb_notify":
-          let notifies = try notification.parameters
-            .map { try NimbNotify($0) }
-          return .nimbNotify(notifies)
-
-        default:
-          return nil
+          default:
+            return nil
+          }
         }
       }
-    }
+  }
 
   @discardableResult
   public func call<T: APIFunction>(_ apiFunction: T) async throws -> T.Success {

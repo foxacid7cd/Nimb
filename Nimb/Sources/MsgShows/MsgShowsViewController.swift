@@ -4,7 +4,7 @@ import AppKit
 import CustomDump
 import STTextView
 
-public class MsgShowsViewController: NSViewController {
+public class MsgShowsViewController: NSViewController, Rendering {
   public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -40,37 +40,31 @@ public class MsgShowsViewController: NSViewController {
     self.view = view
   }
 
-  override public func viewDidLoad() {
-    super.viewDidLoad()
-
-    renderBackgroundColor()
-  }
-
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isAppearanceUpdated {
+  public func render() {
+    if updates.isAppearanceUpdated {
       renderBackgroundColor()
 
-      renderedMsgShows = store.state.msgShows
+      renderedMsgShows = state.msgShows
         .map { ($0, makeAttributedString(for: $0)) }
 
       renderText()
-    } else if !stateUpdates.msgShowsUpdates.isEmpty {
-      if stateUpdates.msgShowsUpdates.count > 1 {
-        renderedMsgShows = store.state.msgShows
+    } else if !updates.msgShowsUpdates.isEmpty {
+      if updates.msgShowsUpdates.count > 1 {
+        renderedMsgShows = state.msgShows
           .map { ($0, makeAttributedString(for: $0)) }
       } else {
-        for update in stateUpdates.msgShowsUpdates {
+        for update in updates.msgShowsUpdates {
           switch update {
           case let .added(count):
             for index in renderedMsgShows.count ..< renderedMsgShows.count + count {
-              let msgShow = store.state.msgShows[index]
+              let msgShow = state.msgShows[index]
 
               renderedMsgShows.append((msgShow, makeAttributedString(for: msgShow)))
             }
 
           case let .reload(indexes):
             for index in indexes {
-              let msgShow = store.state.msgShows[index]
+              let msgShow = state.msgShows[index]
               renderedMsgShows[index] = (msgShow, makeAttributedString(for: msgShow))
             }
 
@@ -85,7 +79,7 @@ public class MsgShowsViewController: NSViewController {
   }
 
   public func renderBackgroundColor() {
-    let backgroundColor = store.state.appearance.defaultBackgroundColor.appKit
+    let backgroundColor = state.appearance.defaultBackgroundColor.appKit
     scrollView.backgroundColor = backgroundColor
       .withAlphaComponent(0.8)
   }
@@ -106,14 +100,14 @@ public class MsgShowsViewController: NSViewController {
     )
     .map { index, part in
       var attributes: [NSAttributedString.Key: Any] = [
-        .font: store.font.appKit(
-          isBold: store.appearance.isBold(for: part.highlightID),
-          isItalic: store.appearance.isItalic(for: part.highlightID)
+        .font: state.font.appKit(
+          isBold: state.appearance.isBold(for: part.highlightID),
+          isItalic: state.appearance.isItalic(for: part.highlightID)
         ),
-        .foregroundColor: store.appearance.foregroundColor(for: part.highlightID).appKit,
+        .foregroundColor: state.appearance.foregroundColor(for: part.highlightID).appKit,
       ]
-      let backgroundColor = store.appearance.backgroundColor(for: part.highlightID)
-      if backgroundColor != store.appearance.defaultBackgroundColor {
+      let backgroundColor = state.appearance.backgroundColor(for: part.highlightID)
+      if backgroundColor != state.appearance.defaultBackgroundColor {
         attributes[.backgroundColor] = backgroundColor.appKit
       }
       let text = index == 0 ?

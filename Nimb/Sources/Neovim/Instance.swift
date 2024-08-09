@@ -7,7 +7,6 @@ import Collections
 import CustomDump
 import SystemPackage
 
-@MainActor
 public final class Instance: Sendable {
   public init(
     nvimResourcesURL: URL,
@@ -59,7 +58,9 @@ public final class Instance: Sendable {
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(component: "captured_nvim_msgpack_output_\(UUID().uuidString).mpack")
 
-      logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+      Task { @MainActor in
+        logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+      }
 
       process.arguments = [
         "-l",
@@ -138,7 +139,7 @@ public final class Instance: Sendable {
       .extCmdline,
       .extTabline,
       .extMessages,
-      .extWildmenu,
+//      .extWildmenu,
 //      .extPopupmenu,
     ]
     try await api.nvimUIAttach(

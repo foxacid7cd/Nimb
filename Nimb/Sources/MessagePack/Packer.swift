@@ -2,11 +2,14 @@
 
 import Foundation
 
-@MainActor
 public class Packer {
   public init() {
     msgpack_sbuffer_init(&sbuf)
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)
+  }
+
+  deinit {
+    msgpack_sbuffer_destroy(&sbuf)
   }
 
   public func pack(_ value: Value) -> Data {
@@ -14,10 +17,6 @@ public class Packer {
 
     defer { msgpack_sbuffer_clear(&sbuf) }
     return .init(bytes: sbuf.data, count: sbuf.size)
-  }
-
-  public func destroy() {
-    msgpack_sbuffer_destroy(&sbuf)
   }
 
   private var sbuf = msgpack_sbuffer()

@@ -3,7 +3,7 @@
 import AppKit
 
 @MainActor
-final class MainMenuController: NSObject {
+final class MainMenuController: NSObject, Rendering {
   init(store: Store) {
     self.store = store
     super.init()
@@ -61,6 +61,8 @@ final class MainMenuController: NSObject {
   let menu = NSMenu()
 
   var settingsClicked: (@MainActor () -> Void)?
+
+  func render() { }
 
   private let store: Store
   private let settingsMenuItem = NSMenuItem(
@@ -197,7 +199,7 @@ final class MainMenuController: NSObject {
   @objc private func handleFont() {
     let fontManager = NSFontManager.shared
     fontManager.target = self
-    fontManager.setSelectedFont(store.state.font.appKit(), isMultiple: false)
+    fontManager.setSelectedFont(state.font.appKit(), isMultiple: false)
     fontManager.fontPanel(true)!.makeKeyAndOrderFront(nil)
   }
 
@@ -214,7 +216,7 @@ final class MainMenuController: NSObject {
   }
 
   private func changeFontSize(_ modifier: (_ fontSize: Double) -> Double) {
-    let currentFont = store.font.appKit()
+    let currentFont = state.font.appKit()
     let newFontSize = modifier(currentFont.pointSize)
     guard newFontSize != currentFont.pointSize else {
       return
@@ -313,7 +315,7 @@ extension MainMenuController: NSFontChanging {
     guard let sender else {
       return
     }
-    let newFont = sender.convert(store.font.appKit())
+    let newFont = sender.convert(state.font.appKit())
     store.set(font: .init(newFont))
   }
 }
@@ -325,7 +327,7 @@ extension MainMenuController: NSMenuDelegate {
       menu.items = FontMenuLayout.map { item in
         switch item {
         case .currentFontDescription:
-          let currentFont = store.font.appKit()
+          let currentFont = state.font.appKit()
           let name = (currentFont.displayName ?? currentFont.fontName)
             .trimmingCharacters(in: .whitespacesAndNewlines)
           return makeItem("\(name), \(currentFont.pointSize)")
@@ -366,7 +368,7 @@ extension MainMenuController: NSMenuDelegate {
 
     case debugMenu:
       let toggleUIEventsLoggingMenuItem = NSMenuItem(
-        title: store.state.debug
+        title: state.debug
           .isUIEventsLoggingEnabled ? "Disable UI events logging" :
           "Enable UI events logging",
         action: #selector(handleToggleUIEventsLogging),
@@ -382,7 +384,7 @@ extension MainMenuController: NSMenuDelegate {
       logStateMenuItem.target = self
 
       let toggleMessagePackInspector = NSMenuItem(
-        title: store.state.debug
+        title: state.debug
           .isMessagePackInspectorEnabled ? "Disable msgpack data capturing" :
           "Enable msgpack data capturing",
         action: #selector(handleToggleMessagePackInspector),
@@ -393,7 +395,7 @@ extension MainMenuController: NSMenuDelegate {
       menu.items = [toggleUIEventsLoggingMenuItem, logStateMenuItem, toggleMessagePackInspector]
 
       let toggleStoreActionsLoggingMenuItem = NSMenuItem(
-        title: store.state.debug
+        title: state.debug
           .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
           "Enable store actions logging",
         action: #selector(handleToggleStoreActionsLogging),

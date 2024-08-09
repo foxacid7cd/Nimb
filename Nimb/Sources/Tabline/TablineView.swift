@@ -6,7 +6,7 @@ import TinyConstraints
 
 extension Notification: @unchecked Sendable { }
 
-final class TablineView: NSVisualEffectView {
+final class TablineView: NSVisualEffectView, Rendering {
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -195,81 +195,16 @@ final class TablineView: NSVisualEffectView {
     }
   }
 
-  func render(_ stateUpdates: Nimb.State.Updates) {
-    guard let tabline = store.state.tabline else {
+  func render() {
+    guard isRendered else {
       return
     }
-
-    if
-      stateUpdates.tabline.isBuffersUpdated || stateUpdates
-        .isAppearanceUpdated
-    {
-      reloadBuffers()
-    } else if stateUpdates.tabline.isSelectedBufferUpdated {
-      for (bufferIndex, buffer) in tabline.buffers.enumerated() {
-        let itemView = buffersStackView
-          .arrangedSubviews[bufferIndex] as! TablineItemView
-        let isSelected = buffer.id == tabline.currentBufferID
-        if isSelected != itemView.isSelected {
-          itemView.isSelected = isSelected
-
-          if itemView.isSelected {
-            buffersScrollView.contentView.scrollToVisible(itemView.frame)
-          }
-        }
-
-        itemView.render()
-      }
-    }
-
-    if
-      stateUpdates.tabline.isTabpagesUpdated || stateUpdates
-        .isAppearanceUpdated
-    {
-      reloadTabpages()
-    } else if stateUpdates.tabline.isTabpagesContentUpdated {
-      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView
-          .arrangedSubviews[tabpageIndex] as! TablineItemView
-        itemView.text = "\(tabpageIndex + 1)"
-
-        itemView.isSelected = tabpage.id == tabline.currentTabpageID
-        if itemView.isSelected {
-          tabsScrollView.contentView.scrollToVisible(itemView.frame)
-        }
-
-        itemView.render()
-      }
-
-    } else if stateUpdates.tabline.isSelectedTabpageUpdated {
-      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView
-          .arrangedSubviews[tabpageIndex] as! TablineItemView
-
-        let isSelected = tabpage.id == tabline.currentTabpageID
-        if isSelected != itemView.isSelected {
-          itemView.isSelected = isSelected
-          itemView.render()
-
-          if itemView.isSelected {
-            tabsScrollView.contentView.scrollToVisible(itemView.frame)
-          }
-        }
-      }
-    }
-
-    if stateUpdates.isTitleUpdated || stateUpdates.isAppearanceUpdated {
-      render()
-    }
-  }
-
-  func render() {
     let paragraphStyle = NSMutableParagraphStyle()
     paragraphStyle.alignment = .right
     paragraphStyle.lineBreakMode = .byTruncatingTail
 
     titleTextField.attributedStringValue = .init(
-      string: store.state.title ?? "",
+      string: state.title ?? "",
       attributes: [
         .foregroundColor: window?.isKeyWindow == true ?
           NSColor.labelColor :
@@ -295,6 +230,68 @@ final class TablineView: NSVisualEffectView {
       buffersScrollView.layer!.filters = [monochromeFilter]
       tabsScrollView.layer!.filters = [monochromeFilter]
     }
+
+    guard let tabline = state.tabline else {
+      return
+    }
+
+    if
+      updates.tabline.isBuffersUpdated || updates
+        .isAppearanceUpdated
+    {
+      reloadBuffers()
+    } else if updates.tabline.isSelectedBufferUpdated {
+      for (bufferIndex, buffer) in tabline.buffers.enumerated() {
+        let itemView = buffersStackView
+          .arrangedSubviews[bufferIndex] as! TablineItemView
+        let isSelected = buffer.id == tabline.currentBufferID
+        if isSelected != itemView.isSelected {
+          itemView.isSelected = isSelected
+
+          if itemView.isSelected {
+            buffersScrollView.contentView.scrollToVisible(itemView.frame)
+          }
+        }
+
+        itemView.render()
+      }
+    }
+
+    if
+      updates.tabline.isTabpagesUpdated || updates
+        .isAppearanceUpdated
+    {
+      reloadTabpages()
+    } else if updates.tabline.isTabpagesContentUpdated {
+      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+        let itemView = tabsStackView
+          .arrangedSubviews[tabpageIndex] as! TablineItemView
+        itemView.text = "\(tabpageIndex + 1)"
+
+        itemView.isSelected = tabpage.id == tabline.currentTabpageID
+        if itemView.isSelected {
+          tabsScrollView.contentView.scrollToVisible(itemView.frame)
+        }
+
+        itemView.render()
+      }
+
+    } else if updates.tabline.isSelectedTabpageUpdated {
+      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+        let itemView = tabsStackView
+          .arrangedSubviews[tabpageIndex] as! TablineItemView
+
+        let isSelected = tabpage.id == tabline.currentTabpageID
+        if isSelected != itemView.isSelected {
+          itemView.isSelected = isSelected
+          itemView.render()
+
+          if itemView.isSelected {
+            tabsScrollView.contentView.scrollToVisible(itemView.frame)
+          }
+        }
+      }
+    }
   }
 
   private let store: Store
@@ -313,7 +310,7 @@ final class TablineView: NSVisualEffectView {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    guard let tabline = store.state.tabline else {
+    guard let tabline = state.tabline else {
       return
     }
 
@@ -361,7 +358,7 @@ final class TablineView: NSVisualEffectView {
     tabsStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    guard let tabline = store.state.tabline else {
+    guard let tabline = state.tabline else {
       return
     }
 

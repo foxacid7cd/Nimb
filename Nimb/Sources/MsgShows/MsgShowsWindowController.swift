@@ -2,7 +2,7 @@
 
 import AppKit
 
-class MsgShowsWindowController: NSWindowController {
+class MsgShowsWindowController: NSWindowController, Rendering {
   init(store: Store) {
     self.store = store
 
@@ -33,16 +33,16 @@ class MsgShowsWindowController: NSWindowController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    viewController.render(stateUpdates)
+  public func render() {
+    renderChildren(viewController)
 
-    if !stateUpdates.msgShowsUpdates.isEmpty {
-      if !store.state.msgShows.isEmpty {
+    if !updates.msgShowsUpdates.isEmpty {
+      if !state.msgShows.isEmpty {
         if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
           customWindow!.setFrame(frame, display: false, animate: false)
           isWindowInitiallyShown = true
         }
-        customWindow!.isFloatingPanel = store.state.hasModalMsgShows
+        customWindow!.isFloatingPanel = state.hasModalMsgShows
         customWindow!.setIsVisible(true)
         customWindow!.orderFrontRegardless()
       } else {

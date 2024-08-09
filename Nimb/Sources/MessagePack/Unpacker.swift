@@ -4,11 +4,15 @@ import AsyncAlgorithms
 import CustomDump
 import Foundation
 
-@MainActor
 public class Unpacker {
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
     msgpack_unpacked_init(&unpacked)
+  }
+
+  deinit {
+    msgpack_unpacked_destroy(&unpacked)
+    msgpack_unpacker_destroy(&mpac)
   }
 
   public func unpack(_ data: Data) throws -> [Value] {
@@ -47,11 +51,6 @@ public class Unpacker {
         throw Failure("Invalid msgpack unpacking result \(result)")
       }
     }
-  }
-
-  public func destroy() {
-    msgpack_unpacked_destroy(&unpacked)
-    msgpack_unpacker_destroy(&mpac)
   }
 
   private var mpac = msgpack_unpacker()

@@ -41,8 +41,6 @@
 		681B53242C5FE47600AD6C68 /* NSFontCellSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */; };
 		681B53252C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */; };
 		681B53262C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */; };
-		681B532F2C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53272C5FE4A100AD6C68 /* AsyncMessageBatches.swift */; };
-		681B53302C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53272C5FE4A100AD6C68 /* AsyncMessageBatches.swift */; };
 		681B53312C5FE4A100AD6C68 /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53282C5FE4A100AD6C68 /* Channel.swift */; };
 		681B53322C5FE4A100AD6C68 /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53282C5FE4A100AD6C68 /* Channel.swift */; };
 		681B53332C5FE4A100AD6C68 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53292C5FE4A100AD6C68 /* Message.swift */; };
@@ -66,6 +64,7 @@
 		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
+		6867D7FF2C658BA200585FE4 /* RenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6867D7FE2C658BA200585FE4 /* RenderContext.swift */; };
 		6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		6869ACA82C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		6869ACA92C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
@@ -91,7 +90,6 @@
 		688080162C60D68D00BD32FA /* Unpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532C2C5FE4A100AD6C68 /* Unpacker.swift */; };
 		688080172C60D69000BD32FA /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532D2C5FE4A100AD6C68 /* Value.swift */; };
 		688080182C60D69A00BD32FA /* Packer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532A2C5FE4A100AD6C68 /* Packer.swift */; };
-		688080192C60D6AA00BD32FA /* AsyncMessageBatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53272C5FE4A100AD6C68 /* AsyncMessageBatches.swift */; };
 		6880801A2C60D6F000BD32FA /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53292C5FE4A100AD6C68 /* Message.swift */; };
 		6880801B2C60D6FB00BD32FA /* Failure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53102C5FE47600AD6C68 /* Failure.swift */; };
 		6880801C2C60D6FD00BD32FA /* AsyncFileHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B530F2C5FE47600AD6C68 /* AsyncFileHandle.swift */; };
@@ -133,6 +131,10 @@
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
 		68B0CE3A2C613402007F80CE /* msgpack-inspector in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 688080022C603ADA00BD32FA /* msgpack-inspector */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		68B643C22C65677B00C4D8A2 /* LockIsolated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C02C65677B00C4D8A2 /* LockIsolated.swift */; };
+		68B643C32C65677B00C4D8A2 /* UncheckedSendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */; };
+		68B643C42C656F2F00C4D8A2 /* UncheckedSendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */; };
+		68B643C52C656F2F00C4D8A2 /* LockIsolated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68B643C02C65677B00C4D8A2 /* LockIsolated.swift */; };
 		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
 		68C129272C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129282C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
@@ -265,7 +267,6 @@
 		681B53132C5FE47600AD6C68 /* Macros.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Macros.swift; sourceTree = "<group>"; };
 		681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSFontCellSize.swift; sourceTree = "<group>"; };
 		681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwoDimensionalArray.swift; sourceTree = "<group>"; };
-		681B53272C5FE4A100AD6C68 /* AsyncMessageBatches.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AsyncMessageBatches.swift; sourceTree = "<group>"; };
 		681B53282C5FE4A100AD6C68 /* Channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Channel.swift; sourceTree = "<group>"; };
 		681B53292C5FE4A100AD6C68 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		681B532A2C5FE4A100AD6C68 /* Packer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Packer.swift; sourceTree = "<group>"; };
@@ -279,6 +280,7 @@
 		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
+		6867D7FE2C658BA200585FE4 /* RenderContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderContext.swift; sourceTree = "<group>"; };
 		6869ACA62C61FF8700830537 /* libmsgpack-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libmsgpack-c.a"; path = "Third-Party/msgpack-c/libmsgpack-c.a"; sourceTree = "<group>"; };
 		686CAFEA2B50F45500AED2CC /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		687644872C5373670022D916 /* NeovimNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimNotification.swift; sourceTree = "<group>"; };
@@ -323,6 +325,8 @@
 		68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOption.swift; sourceTree = "<group>"; };
 		68A8FF6B2AD2ACCB0017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
+		68B643C02C65677B00C4D8A2 /* LockIsolated.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LockIsolated.swift; sourceTree = "<group>"; };
+		68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UncheckedSendable.swift; sourceTree = "<group>"; };
 		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nimb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nimb.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nimb.entitlements; sourceTree = "<group>"; };
@@ -450,6 +454,8 @@
 				681B53132C5FE47600AD6C68 /* Macros.swift */,
 				681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */,
 				681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */,
+				68B643C02C65677B00C4D8A2 /* LockIsolated.swift */,
+				68B643C12C65677B00C4D8A2 /* UncheckedSendable.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -457,7 +463,6 @@
 		681B532E2C5FE4A100AD6C68 /* MessagePack */ = {
 			isa = PBXGroup;
 			children = (
-				681B53272C5FE4A100AD6C68 /* AsyncMessageBatches.swift */,
 				681B53282C5FE4A100AD6C68 /* Channel.swift */,
 				681B53292C5FE4A100AD6C68 /* Message.swift */,
 				681B532A2C5FE4A100AD6C68 /* Packer.swift */,
@@ -482,6 +487,7 @@
 				689ECE5D2AC4FE9F008D6A02 /* Cmdlines */,
 				68008C0A2AEB4F6C00BE596A /* Popupmenu */,
 				686CAFE92B50F3B700AED2CC /* Settings */,
+				6867D7FE2C658BA200585FE4 /* RenderContext.swift */,
 				689D9E2E29B5127F00345713 /* Store.swift */,
 				68D4090E2C62D0F800B33091 /* Bundle+Version.swift */,
 				68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */,
@@ -919,7 +925,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6880801D2C60D70F00BD32FA /* Macros.swift in Sources */,
-				688080192C60D6AA00BD32FA /* AsyncMessageBatches.swift in Sources */,
 				688080162C60D68D00BD32FA /* Unpacker.swift in Sources */,
 				6880801C2C60D6FD00BD32FA /* AsyncFileHandle.swift in Sources */,
 				6880801B2C60D6FB00BD32FA /* Failure.swift in Sources */,
@@ -941,7 +946,6 @@
 				681B52FC2C5FE33A00AD6C68 /* Generator.swift in Sources */,
 				68C129292C64078200E5A513 /* StateActor.swift in Sources */,
 				681B52FD2C5FE33A00AD6C68 /* APIErrorFile.swift in Sources */,
-				681B53302C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */,
 				681B52FE2C5FE33A00AD6C68 /* UIOptionFile.swift in Sources */,
 				681B53322C5FE4A100AD6C68 /* Channel.swift in Sources */,
 				681B53262C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */,
@@ -952,6 +956,8 @@
 				681B53202C5FE47600AD6C68 /* IntKeyedDictionary.swift in Sources */,
 				681B53002C5FE33A00AD6C68 /* ReferencesFile.swift in Sources */,
 				681B53012C5FE33A00AD6C68 /* APIFunctionsFile.swift in Sources */,
+				68B643C42C656F2F00C4D8A2 /* UncheckedSendable.swift in Sources */,
+				68B643C52C656F2F00C4D8A2 /* LockIsolated.swift in Sources */,
 				681B53022C5FE33A00AD6C68 /* GeneratableFile.swift in Sources */,
 				681B53382C5FE4A100AD6C68 /* RPC.swift in Sources */,
 				681B531C2C5FE47600AD6C68 /* Failure.swift in Sources */,
@@ -1007,6 +1013,7 @@
 				68A8FF582AD29F660017C28D /* State.swift in Sources */,
 				681B53332C5FE4A100AD6C68 /* Message.swift in Sources */,
 				6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */,
+				6867D7FF2C658BA200585FE4 /* RenderContext.swift in Sources */,
 				68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
@@ -1037,6 +1044,7 @@
 				681B53212C5FE47600AD6C68 /* Macros.swift in Sources */,
 				681B53312C5FE4A100AD6C68 /* Channel.swift in Sources */,
 				681B53252C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */,
+				68B643C32C65677B00C4D8A2 /* UncheckedSendable.swift in Sources */,
 				68A8FF5D2AD29F660017C28D /* KeyPress.swift in Sources */,
 				689D9E2B29B4FBA700345713 /* MainViewController.swift in Sources */,
 				68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */,
@@ -1051,8 +1059,8 @@
 				68FAC3F32AF685AB00490F09 /* Action.swift in Sources */,
 				684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */,
 				68EFD2692B58834E0010DD54 /* entryPoint.swift in Sources */,
+				68B643C22C65677B00C4D8A2 /* LockIsolated.swift in Sources */,
 				681B531D2C5FE47600AD6C68 /* IntegerGeometry.swift in Sources */,
-				681B532F2C5FE4A100AD6C68 /* AsyncMessageBatches.swift in Sources */,
 				689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */,
 				6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */,
 				681B53192C5FE47600AD6C68 /* AsyncFileHandle.swift in Sources */,
@@ -1207,6 +1215,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -1226,6 +1235,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

@@ -3,7 +3,7 @@
 import AppKit
 import TinyConstraints
 
-public class CmdlinesViewController: NSViewController {
+public class CmdlinesViewController: NSViewController, Rendering {
   public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -14,14 +14,14 @@ public class CmdlinesViewController: NSViewController {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isCmdlinesUpdated || stateUpdates.isAppearanceUpdated {
-      if !store.state.cmdlines.dictionary.isEmpty {
+  public func render() {
+    if updates.isCmdlinesUpdated || updates.isAppearanceUpdated {
+      if !state.cmdlines.dictionary.isEmpty {
         cmdlineViews = [:]
         contentView.arrangedSubviews
           .forEach { $0.removeFromSuperview() }
 
-        let cmdlines = store.state.cmdlines.dictionary.values
+        let cmdlines = state.cmdlines.dictionary.values
           .sorted(by: { $0.level < $1.level })
 
         for (index, cmdline) in cmdlines.enumerated() {
@@ -33,7 +33,7 @@ public class CmdlinesViewController: NSViewController {
           if index < cmdlines.count - 1 {
             let separatorView = NSView()
             separatorView.wantsLayer = true
-            separatorView.layer!.backgroundColor = store.state.appearance
+            separatorView.layer!.backgroundColor = state.appearance
               .foregroundColor(for: .normalFloat)
               .with(alpha: 0.3)
               .appKit
@@ -47,7 +47,7 @@ public class CmdlinesViewController: NSViewController {
     }
 
     if
-      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates
+      updates.isCursorBlinkingPhaseUpdated || updates
         .isMouseUserInteractionEnabledUpdated
     {
       for (_, cmdlineView) in cmdlineViews {
@@ -55,8 +55,8 @@ public class CmdlinesViewController: NSViewController {
       }
     }
 
-    if stateUpdates.isCmdlinesUpdated {
-      let on = !store.state.cmdlines.dictionary.isEmpty
+    if updates.isCmdlinesUpdated {
+      let on = !state.cmdlines.dictionary.isEmpty
       customView.toggle(on: on)
     }
   }

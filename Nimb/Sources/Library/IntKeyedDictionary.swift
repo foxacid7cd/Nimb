@@ -11,7 +11,7 @@ public struct IntKeyedDictionary<Value> {
   public typealias Key = Int
   public typealias Element = (key: Key, value: Value)
 
-  public struct Values: RandomAccessCollection {
+  public struct Values: RandomAccessCollection, Sequence {
     init(_ dictionary: IntKeyedDictionary<Value>) {
       self.dictionary = dictionary
     }

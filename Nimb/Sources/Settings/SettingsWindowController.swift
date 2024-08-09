@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class SettingsWindowController: NSWindowController {
+public class SettingsWindowController: NSWindowController, Rendering {
   init(store: Store) {
     self.store = store
     viewController = .init()
@@ -14,6 +14,8 @@ public class SettingsWindowController: NSWindowController {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  public func render() { }
 
   private class CustomWindow: NSPanel { }
 

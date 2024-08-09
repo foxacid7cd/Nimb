@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
+public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering {
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
@@ -24,17 +24,20 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
   public var needsAnchorLayout = false
 
   override public var intrinsicContentSize: NSSize {
-    guard let outerGrid = store.state.outerGrid else {
+    guard isRendered else {
       return .zero
     }
-    return outerGrid.size * store.font.cellSize
+    guard let outerGrid = state.outerGrid else {
+      return .zero
+    }
+    return outerGrid.size * state.font.cellSize
   }
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(
         x: 0,
-        y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
       )
   }
 
@@ -75,8 +78,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
     }
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    for gridID in stateUpdates.destroyedGridIDs {
+  public func render() {
+    for gridID in updates.destroyedGridIDs {
       if let layer = arrangedGridLayers.removeValue(forKey: gridID) {
         layer.removeAnchoring()
         layer.removeFromSuperlayer()
@@ -84,11 +87,11 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
     }
 
     let updatedLayoutGridIDs =
-      if stateUpdates.isFontUpdated {
-        Set(store.state.grids.keys)
+      if updates.isFontUpdated {
+        Set(state.grids.keys)
 
       } else {
-        stateUpdates.updatedLayoutGridIDs
+        updates.updatedLayoutGridIDs
       }
 
     for gridID in updatedLayoutGridIDs {
@@ -96,7 +99,7 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
         invalidateIntrinsicContentSize()
       }
 
-      guard let grid = store.state.grids[gridID] else {
+      guard let grid = state.grids[gridID] else {
         continue
       }
 
@@ -113,7 +116,7 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
           gridLayer.anchoringLayer = self
           anchoredLayers[.init(gridLayer)] = gridLayer
 
-          gridLayer.positionInAnchoringLayer = window.origin * store.font
+          gridLayer.positionInAnchoringLayer = window.origin * state.font
             .cellSize
 
         case let .floating(floatingWindow):
@@ -141,8 +144,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
           }
 
           gridLayer.positionInAnchoringLayer = CGPoint(
-            x: gridColumn * store.font.cellWidth,
-            y: gridRow * store.font.cellHeight
+            x: gridColumn * state.font.cellWidth,
+            y: gridRow * state.font.cellHeight
           )
 
         case .external:
@@ -159,11 +162,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
       layoutAnchoredLayers(anchoringLayerOrigin: .init(), index: 0)
     }
 
-    for (gridID, layer) in arrangedGridLayers {
-      layer.render(
-        stateUpdates: stateUpdates,
-        gridUpdate: stateUpdates.gridUpdates[gridID]
-      )
+    for layer in arrangedGridLayers.values {
+      renderChildren(layer)
     }
   }
 
@@ -182,6 +182,7 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
 
     } else {
       let layer = GridLayer(store: store, gridID: id)
+      renderChildren(layer)
       layer.contentsScale = self.layer!.contentsScale
       self.layer!.addSublayer(layer)
       arrangedGridLayers[id] = layer
@@ -194,7 +195,7 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
 
     frame = .init(
       origin: origin,
-      size: store.state.outerGrid!.size * store.font.cellSize
+      size: state.outerGrid!.size * state.font.cellSize
     )
 
     for anchoredLayer in anchoredLayers {
@@ -308,8 +309,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate {
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(
-      column: Int(upsideDownLocation.x / store.font.cellWidth),
-      row: Int(upsideDownLocation.y / store.font.cellHeight)
+      column: Int(upsideDownLocation.x / state.font.cellWidth),
+      row: Int(upsideDownLocation.y / state.font.cellHeight)
     )
   }
 }

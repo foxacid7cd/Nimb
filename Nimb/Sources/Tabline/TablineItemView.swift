@@ -2,7 +2,7 @@
 
 import AppKit
 
-class TablineItemView: NSView {
+class TablineItemView: NSView, Rendering {
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -85,7 +85,7 @@ class TablineItemView: NSView {
   }
 
   func render() {
-    textField.attributedStringValue = makeAttributedString(for: text)
+    textField.attributedStringValue = .init(string: "123124")
     if shouldRedrawImageViews {
       redrawImageViews()
       shouldRedrawImageViews = false
@@ -161,9 +161,9 @@ class TablineItemView: NSView {
   {
     var font = NSFont.systemFont(
       ofSize: NSFont.systemFontSize,
-      weight: store.appearance.isBold(for: highlightName) ? .heavy : .semibold
+      weight: state.appearance.isBold(for: highlightName) ? .heavy : .semibold
     )
-    if store.appearance.isItalic(for: highlightName) {
+    if state.appearance.isItalic(for: highlightName) {
       font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
     }
     return font

@@ -7,8 +7,7 @@ import Collections
 import CustomDump
 import Foundation
 
-@MainActor
-public class RPC<Target: Channel> {
+public final class RPC<Target: Channel>: Sendable {
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
     storage = .init(maximumConcurrentRequests: maximumConcurrentRequests)
@@ -17,7 +16,7 @@ public class RPC<Target: Channel> {
       let task = Task {
         var notifications = [Message.Notification]()
         for try await data in target.dataBatches {
-          let values = try unpacker.unpack(data)
+          let values = try unpacker.withLock { try $0.unpack(data) }
           let messages = try values.map { try Message(value: $0) }
 
           for message in messages {
@@ -88,41 +87,44 @@ public class RPC<Target: Channel> {
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value]
-  )>) throws {
-    var data = Data()
+  )> & Sendable) throws {
+    try packer.withLock { packer in
+      var data = Data()
 
-    for call in calls {
-      data.append(
-        packer.pack(
-          Message.Request(
-            id: storage.announceRequest(),
-            method: call.method,
-            parameters: call.parameters
+      for call in calls {
+        data.append(
+          packer.pack(
+            Message.Request(
+              id: storage.announceRequest(),
+              method: call.method,
+              parameters: call.parameters
+            )
+            .makeValue()
           )
-          .makeValue()
         )
-      )
-    }
+      }
 
-    try target.write(data)
+      try target.write(data)
+    }
   }
 
   public func send(request: Message.Request) throws {
-    let data = packer.pack(request.makeValue())
-    try target.write(data)
+    try packer.withLock { packer in
+      let data = packer.pack(request.makeValue())
+      try target.write(data)
+    }
   }
 
   private let target: Target
   private let storage: Storage
-  private let packer = Packer()
-  private let unpacker = Unpacker()
+  private let packer = LockIsolated(Packer())
+  private let unpacker = LockIsolated(Unpacker())
 }
 
-@MainActor
-private class Storage {
+private final class Storage: Sendable {
   init(maximumConcurrentRequests: Int) {
     self.maximumConcurrentRequests = maximumConcurrentRequests
-    currentRequests = .init(repeating: nil, count: maximumConcurrentRequests)
+    critical = .init(.init(currentRequests: .init(repeating: nil, count: maximumConcurrentRequests)))
   }
 
   func announceRequest(
@@ -131,30 +133,44 @@ private class Storage {
   )
     -> Int
   {
-    let id = announcedRequestsCount
+    critical.withLock { [maximumConcurrentRequests] critical in
+      let id = critical.announcedRequestsCount
 
-    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
-      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
+      (critical.announcedRequestsCount, _) = (critical.announcedRequestsCount + 1)
+        .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
 
-    if let handler {
-      currentRequests[id] = handler
+      if let handler {
+        critical.currentRequests[id] = handler
+      }
+
+      return id
     }
-    return id
   }
 
   func responseReceived(
     _ response: Message.Response,
     forRequestWithID id: Int
   ) {
-    guard let handler = currentRequests[id] else {
-      return
+    let handler: (@Sendable (Message.Response) -> Void)? = critical.withLock { critical in
+      guard let handler = critical.currentRequests[id] else {
+        return nil
+      }
+      critical.currentRequests[id] = nil
+      return handler
     }
-    currentRequests[id] = nil
+    handler?(response)
+  }
 
-    handler(response)
+  private class Critical {
+    init(currentRequests: [(@Sendable (Message.Response) -> Void)?], announcedRequestsCount: Int = 0) {
+      self.currentRequests = currentRequests
+      self.announcedRequestsCount = announcedRequestsCount
+    }
+
+    var currentRequests: [(@Sendable (Message.Response) -> Void)?]
+    var announcedRequestsCount = 0
   }
 
   private let maximumConcurrentRequests: Int
-  private var currentRequests: [(@Sendable (Message.Response) -> Void)?]
-  private var announcedRequestsCount = 0
+  private let critical: LockIsolated<Critical>
 }

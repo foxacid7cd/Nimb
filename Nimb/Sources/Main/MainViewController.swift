@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class MainViewController: NSViewController {
+public class MainViewController: NSViewController, Rendering {
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
@@ -20,6 +20,26 @@ public class MainViewController: NSViewController {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  public func render() {
+    if updates.isFontUpdated {
+      reportOuterGridSizeChanged()
+    }
+
+    if updates.isAppearanceUpdated {
+      renderBackground()
+    }
+
+    renderChildren(gridsView, tablineView)
+
+    if updates.isCmdlinesUpdated {
+      modalOverlayView.isHidden = state
+        .cmdlines.dictionary
+        .isEmpty
+    }
+
+    renderChildren(cmdlinesViewController, popupmenuViewController)
   }
 
   public func windowFrame(
@@ -117,12 +137,6 @@ public class MainViewController: NSViewController {
     self.view = view
   }
 
-  override public func viewDidLoad() {
-    super.viewDidLoad()
-
-    renderBackground()
-  }
-
   override public func viewDidLayout() {
     super.viewDidLayout()
 
@@ -133,39 +147,16 @@ public class MainViewController: NSViewController {
     }
   }
 
-  public func render(_ stateUpdates: State.Updates) {
-    if stateUpdates.isFontUpdated {
-      reportOuterGridSizeChanged()
-    }
-
-    if stateUpdates.isAppearanceUpdated {
-      renderBackground()
-    }
-
-    tablineView.render(stateUpdates)
-
-    gridsView.render(stateUpdates)
-
-    if stateUpdates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = store.state
-        .cmdlines.dictionary
-        .isEmpty
-    }
-
-    cmdlinesViewController.render(stateUpdates)
-    popupmenuViewController.render(stateUpdates)
-  }
-
   public func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
-      columnsCount: Int(gridsContainerView.frame.width / store.font.cellWidth),
-      rowsCount: Int(gridsContainerView.frame.height / store.font.cellHeight)
+      columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
+      rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
     )
     store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
-    let mainFrameSize = outerGridSize * store.font.cellSize
+    let mainFrameSize = outerGridSize * state.font.cellSize
     return .init(
       width: mainFrameSize.width,
       height: mainFrameSize.height + tablineView.intrinsicContentSize.height
@@ -216,11 +207,11 @@ public class MainViewController: NSViewController {
     popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
     store.reportPumBounds(rectangle: .init(
       frame: popupmenuFrame,
-      cellSize: store.font.cellSize
+      cellSize: state.font.cellSize
     ))
   }
 
   private func renderBackground() {
-    view.layer!.backgroundColor = store.appearance.defaultBackgroundColor.appKit.cgColor
+    view.layer!.backgroundColor = state.appearance.defaultBackgroundColor.appKit.cgColor
   }
 }

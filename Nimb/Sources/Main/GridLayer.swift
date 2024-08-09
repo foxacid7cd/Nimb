@@ -3,7 +3,7 @@
 import AppKit
 import CustomDump
 
-public class GridLayer: CALayer, AnchorLayoutingLayer {
+public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
     store = gridLayer.store
@@ -42,7 +42,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
   @MainActor
   public var grid: Grid {
-    if let grid = store.state.grids[gridID] {
+    if let grid = state.grids[gridID] {
       return grid
     } else {
       let gridID = gridID
@@ -54,6 +54,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     }
   }
 
+  public func render() { }
   override public func action(forKey event: String) -> (any CAAction)? {
     NSNull()
   }
@@ -76,7 +77,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 
-    frame = .init(origin: origin, size: grid.size * store.font.cellSize)
+    frame = .init(origin: origin, size: grid.size * state.font.cellSize)
       .applying(outerGridUpsideDownTransform)
 
     anchoredLayers
@@ -87,18 +88,18 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
   @MainActor
   public func render(
-    stateUpdates: State.Updates,
+    updates: State.Updates,
     gridUpdate: Grid.UpdateResult?
   ) {
     dirtyRectangles.removeAll(keepingCapacity: true)
 
-    if stateUpdates.isFontUpdated || stateUpdates.isAppearanceUpdated {
+    if updates.isFontUpdated || updates.isAppearanceUpdated {
       setNeedsDisplay()
       return
     }
 
     if
-      stateUpdates.isCursorBlinkingPhaseUpdated || stateUpdates
+      updates.isCursorBlinkingPhaseUpdated || updates
         .isMouseUserInteractionEnabledUpdated,
         let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
@@ -118,10 +119,10 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
 
     for dirtyRectangle in dirtyRectangles {
       setNeedsDisplay(
-        (dirtyRectangle * store.font.cellSize)
+        (dirtyRectangle * state.font.cellSize)
           .insetBy(
-            dx: -store.font.cellSize.width * 2,
-            dy: -store.font.cellSize.height
+            dx: -state.font.cellSize.width * 2,
+            dy: -state.font.cellSize.height
           )
           .applying(upsideDownTransform)
       )
@@ -134,15 +135,15 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   override public func draw(in ctx: CGContext) {
     let boundingRect = IntegerRectangle(
       frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
-      cellSize: store.font.cellSize
+      cellSize: state.font.cellSize
     )
 
     ctx.setShouldAntialias(false)
     grid.drawRuns.drawBackground(
       to: ctx,
       boundingRect: boundingRect,
-      font: store.font,
-      appearance: store.appearance,
+      font: state.font,
+      appearance: state.appearance,
       upsideDownTransform: upsideDownTransform
     )
 
@@ -150,21 +151,21 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     grid.drawRuns.drawForeground(
       to: ctx,
       boundingRect: boundingRect,
-      font: store.font,
-      appearance: store.appearance,
+      font: state.font,
+      appearance: state.appearance,
       upsideDownTransform: upsideDownTransform
     )
 
     if
-      store.state.cursorBlinkingPhase,
-      store.state.isMouseUserInteractionEnabled,
+      state.cursorBlinkingPhase,
+      state.isMouseUserInteractionEnabled,
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
       boundingRect.contains(cursorDrawRun.origin)
     {
       cursorDrawRun.draw(
         to: ctx,
-        font: store.font,
-        appearance: store.appearance,
+        font: state.font,
+        appearance: state.appearance,
         upsideDownTransform: upsideDownTransform
       )
     }
@@ -173,15 +174,15 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   @MainActor
   public func scrollWheel(with event: NSEvent) {
     guard
-      store.state.isMouseUserInteractionEnabled,
-      store.state.cmdlines.dictionary.isEmpty
+      state.isMouseUserInteractionEnabled,
+      state.cmdlines.dictionary.isEmpty
     else {
       return
     }
 
     let scrollingSpeedMultiplier = 1.0
-    let xThreshold = store.font.cellWidth * 4 * scrollingSpeedMultiplier
-    let yThreshold = store.font.cellHeight * scrollingSpeedMultiplier
+    let xThreshold = state.font.cellWidth * 4 * scrollingSpeedMultiplier
+    let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
     if
       event.phase == .began
@@ -264,8 +265,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   @MainActor
   public func reportMouseMove(for event: NSEvent) {
     guard
-      store.state.isMouseUserInteractionEnabled,
-      store.state.cmdlines.dictionary.isEmpty
+      state.isMouseUserInteractionEnabled,
+      state.cmdlines.dictionary.isEmpty
     else {
       return
     }
@@ -283,14 +284,14 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(
-      column: Int(upsideDownLocation.x / store.font.cellWidth),
-      row: Int(upsideDownLocation.y / store.font.cellHeight)
+      column: Int(upsideDownLocation.x / state.font.cellWidth),
+      row: Int(upsideDownLocation.y / state.font.cellHeight)
     )
   }
 
   @MainActor
   public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
-    let viewFrame = (gridFrame * store.font.cellSize)
+    let viewFrame = (gridFrame * state.font.cellSize)
       .applying(upsideDownTransform)
     return convert(viewFrame, to: nil)
   }
@@ -301,7 +302,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     action: Instance.MouseAction,
     with event: NSEvent
   ) {
-    guard store.state.isMouseUserInteractionEnabled else {
+    guard state.isMouseUserInteractionEnabled else {
       return
     }
     let point = point(for: event)
@@ -330,7 +331,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
   @MainActor
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * store.font.cellHeight)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
   }
 
   @MainActor
@@ -338,7 +339,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer {
     .init(scaleX: 1, y: -1)
       .translatedBy(
         x: 0,
-        y: -Double(store.state.outerGrid!.rowsCount) * store.font.cellHeight
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
       )
   }
 }

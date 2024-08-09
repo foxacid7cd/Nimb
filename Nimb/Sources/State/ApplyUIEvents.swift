@@ -391,8 +391,6 @@ public extension Actions {
               rowsCount: rowsCount
             )
 
-            let previousOrderedGridIDs = state.orderedGridIDs()
-
             state.grids[gridID]!.associatedWindow = .plain(
               .init(
                 id: windowID,
@@ -419,8 +417,6 @@ public extension Actions {
             zIndex
           ):
             let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
-
-            let previousOrderedGridIDs = state.orderedGridIDs()
 
             if state.grids[gridID] == nil {
               state.grids[gridID] = .init(
