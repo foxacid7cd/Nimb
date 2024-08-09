@@ -4,39 +4,52 @@ import AppKit
 import CustomDump
 
 public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
-  override public init(layer: Any) {
-    let gridLayer = layer as! GridLayer
-    store = gridLayer.store
-    gridID = gridLayer.gridID
-    super.init(layer: layer)
-  }
+  private struct Critical {
+    var grid: Grid
+    var font: Font
+    var appearance: Appearance
+    var cursorBlinkingPhase: Bool
+    var isMouseUserInteractionEnabled: Bool
 
-  init(store: Store, gridID: Grid.ID) {
-    self.store = store
-    self.gridID = gridID
-    super.init()
-
-    drawsAsynchronously = true
-  }
-
-  @available(*, unavailable)
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
-  public var anchoringLayer: AnchorLayoutingLayer?
-  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
-  public var positionInAnchoringLayer = CGPoint()
-
-  public var needsAnchorLayout = false {
-    didSet {
-      anchoringLayer?.needsAnchorLayout = true
+    var upsideDownTransform: CGAffineTransform {
+      .init(scaleX: 1, y: -1)
+        .translatedBy(x: 0, y: -Double(grid.rowsCount) * font.cellHeight)
     }
   }
 
   override public var frame: CGRect {
     didSet {
       setNeedsDisplay()
+    }
+  }
+
+  public var anchoringLayer: AnchorLayoutingLayer?
+  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
+  public var positionInAnchoringLayer = CGPoint()
+
+  private let gridID: Grid.ID
+  private let store: Store
+  @MainActor
+  private var hasScrollingSlippedHorizontally = false
+  @MainActor
+  private var hasScrollingSlippedVertically = false
+  @MainActor
+  private var isScrollingHorizontal: Bool?
+  @MainActor
+  private var xScrollingAccumulator: Double = 0
+  @MainActor
+  private var xScrollingReported: Double = 0
+  @MainActor
+  private var yScrollingAccumulator: Double = 0
+  @MainActor
+  private var yScrollingReported: Double = 0
+  @MainActor
+  private var dirtyRectangles = [IntegerRectangle]()
+  private var critical = LockIsolated<Critical?>(nil)
+
+  public var needsAnchorLayout = false {
+    didSet {
+      anchoringLayer?.needsAnchorLayout = true
     }
   }
 
@@ -54,8 +67,86 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     }
   }
 
+  @MainActor
+  private var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
+  }
+
+  @MainActor
+  private var outerGridUpsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(
+        x: 0,
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
+      )
+  }
+
+  override public init(layer: Any) {
+    let gridLayer = layer as! GridLayer
+    gridID = gridLayer.gridID
+    store = gridLayer.store
+    super.init(layer: layer)
+  }
+
+  init(store: Store, gridID: Grid.ID) {
+    self.store = store
+    self.gridID = gridID
+    super.init()
+
+    drawsAsynchronously = true
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   override public func action(forKey event: String) -> (any CAAction)? {
     NSNull()
+  }
+
+  override public func draw(in ctx: CGContext) {
+    guard let critical = critical.withLock({ $0 }) else {
+      return
+    }
+
+    let boundingRect = IntegerRectangle(
+      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
+      cellSize: critical.font.cellSize
+    )
+
+    ctx.setShouldAntialias(false)
+    critical.grid.drawRuns.drawBackground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: critical.font,
+      appearance: critical.appearance,
+      upsideDownTransform: critical.upsideDownTransform
+    )
+
+    ctx.setShouldAntialias(true)
+    critical.grid.drawRuns.drawForeground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: critical.font,
+      appearance: critical.appearance,
+      upsideDownTransform: critical.upsideDownTransform
+    )
+
+    if
+      critical.cursorBlinkingPhase,
+      critical.isMouseUserInteractionEnabled,
+      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
+      boundingRect.contains(cursorDrawRun.origin)
+    {
+      cursorDrawRun.draw(
+        to: ctx,
+        font: critical.font,
+        appearance: critical.appearance,
+        upsideDownTransform: critical.upsideDownTransform
+      )
+    }
   }
 
   @MainActor
@@ -88,6 +179,16 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   @MainActor
   public func render() {
     zPosition = grid.zIndex
+
+    let critical = Critical(
+      grid: grid,
+      font: state.font,
+      appearance: state.appearance,
+      cursorBlinkingPhase: state.cursorBlinkingPhase,
+      isMouseUserInteractionEnabled: state.isMouseUserInteractionEnabled
+    )
+    self.critical.withLock { $0 = critical }
+
     dirtyRectangles.removeAll(keepingCapacity: true)
 
     if updates.isFontUpdated || updates.isAppearanceUpdated {
@@ -122,46 +223,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
             dy: -state.font.cellSize.height
           )
           .applying(upsideDownTransform)
-      )
-    }
-  }
-
-  @MainActor
-  override public func draw(in ctx: CGContext) {
-    let boundingRect = IntegerRectangle(
-      frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
-      cellSize: state.font.cellSize
-    )
-
-    ctx.setShouldAntialias(false)
-    grid.drawRuns.drawBackground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: state.font,
-      appearance: state.appearance,
-      upsideDownTransform: upsideDownTransform
-    )
-
-    ctx.setShouldAntialias(true)
-    grid.drawRuns.drawForeground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: state.font,
-      appearance: state.appearance,
-      upsideDownTransform: upsideDownTransform
-    )
-
-    if
-      state.cursorBlinkingPhase,
-      state.isMouseUserInteractionEnabled,
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      boundingRect.contains(cursorDrawRun.origin)
-    {
-      cursorDrawRun.draw(
-        to: ctx,
-        font: state.font,
-        appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform
       )
     }
   }
@@ -228,29 +289,27 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       yScrollingReported += yScrollingToBeReported
     }
 
-//    Task {
-//      if horizontalScrollCount != 0, let point = point(for: event) {
-//        let scrollWheel = ReportScrollWheel(
-//          with: horizontalScrollCount < 0 ? Instance.ScrollDirection.left : Instance.ScrollDirection.right,
-//          modifier: event.modifierFlags
-//            .makeModifiers(isSpecialKey: false)
-//            .joined(),
-//          gridID: gridID,
-//          point: point
-//        ))
-//      }
-//      if verticalScrollCount != 0 {
-//        let point = point(for: event)
-//        await store.reportScrollWheel(
-//          with: verticalScrollCount < 0 ? .up : .down,
-//          modifier: event.modifierFlags
-//            .makeModifiers(isSpecialKey: false)
-//            .joined(),
-//          gridID: gridID,
-//          point: point
-//        )
-//      }
-//    }
+    //      if horizontalScrollCount != 0, let point = point(for: event) {
+    //        let scrollWheel = ReportScrollWheel(
+    //          with: horizontalScrollCount < 0 ? Instance.ScrollDirection.left : Instance.ScrollDirection.right,
+    //          modifier: event.modifierFlags
+    //            .makeModifiers(isSpecialKey: false)
+    //            .joined(),
+    //          gridID: gridID,
+    //          point: point
+    //        ))
+    //      }
+    //      if verticalScrollCount != 0 {
+    //        let point = point(for: event)
+    //        await store.reportScrollWheel(
+    //          with: verticalScrollCount < 0 ? .up : .down,
+    //          modifier: event.modifierFlags
+    //            .makeModifiers(isSpecialKey: false)
+    //            .joined(),
+    //          gridID: gridID,
+    //          point: point
+    //        )
+//          }
 
     if event.phase == .ended || event.phase == .cancelled {
       hasScrollingSlippedHorizontally = false
@@ -266,13 +325,13 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     else {
       return
     }
-//    store.reportMouseMove(
-//      modifier: event.modifierFlags
-//        .makeModifiers(isSpecialKey: false)
-//        .joined(),
-//      gridID: gridID,
-//      point: point(for: event)
-//    )
+    store.reportMouseMove(
+      modifier: event.modifierFlags
+        .makeModifiers(isSpecialKey: false)
+        .joined(),
+      gridID: gridID,
+      point: point(for: event)
+    )
   }
 
   @MainActor
@@ -302,40 +361,14 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       return
     }
     let point = point(for: event)
-//    store.report(
-//      mouseButton: mouseButton,
-//      action: action,
-//      modifier: event.modifierFlags
-//        .makeModifiers(isSpecialKey: false)
-//        .joined(),
-//      gridID: gridID,
-//      point: point
-//    )
-  }
-
-  private let gridID: Grid.ID
-  private let store: Store
-  private var hasScrollingSlippedHorizontally = false
-  private var hasScrollingSlippedVertically = false
-  private var isScrollingHorizontal: Bool?
-  private var xScrollingAccumulator: Double = 0
-  private var xScrollingReported: Double = 0
-  private var yScrollingAccumulator: Double = 0
-  private var yScrollingReported: Double = 0
-  private var dirtyRectangles = [IntegerRectangle]()
-
-  @MainActor
-  private var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
-  }
-
-  @MainActor
-  private var outerGridUpsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(
-        x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
-      )
+    store.report(
+      mouseButton: mouseButton,
+      action: action,
+      modifier: event.modifierFlags
+        .makeModifiers(isSpecialKey: false)
+        .joined(),
+      gridID: gridID,
+      point: point
+    )
   }
 }

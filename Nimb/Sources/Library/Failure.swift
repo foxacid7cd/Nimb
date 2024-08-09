@@ -4,6 +4,20 @@ import CustomDump
 import Foundation
 
 public struct Failure: LocalizedError, Sendable {
+  public var fileID: StaticString
+  public var line: Int
+  public var function: StaticString
+  public var message: String
+
+  public var errorDescription: String? {
+    """
+    fileID: \(fileID)
+    line: \(line)
+    function: \(function)
+    message: \(message)
+    """
+  }
+
   public init(
     fileID: StaticString = #fileID,
     function: StaticString = #function,
@@ -20,19 +34,5 @@ public struct Failure: LocalizedError, Sendable {
     self.fileID = fileID
     self.function = function
     self.line = line
-  }
-
-  public var fileID: StaticString
-  public var line: Int
-  public var function: StaticString
-  public var message: String
-
-  public var errorDescription: String? {
-    """
-    fileID: \(fileID)
-    line: \(line)
-    function: \(function)
-    message: \(message)
-    """
   }
 }

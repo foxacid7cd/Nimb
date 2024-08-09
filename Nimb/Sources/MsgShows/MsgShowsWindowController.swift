@@ -3,6 +3,27 @@
 import AppKit
 
 class MsgShowsWindowController: NSWindowController, Rendering {
+  private class CustomWindow: NSPanel {
+    override var canBecomeMain: Bool {
+      false
+    }
+
+    override var canBecomeKey: Bool {
+      true
+    }
+
+    var keyPressed: ((KeyPress) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+      keyPressed?(.init(event: event))
+    }
+  }
+
+  private let store: Store
+  private var viewController: MsgShowsViewController!
+  private var customWindow: CustomWindow!
+  private var isWindowInitiallyShown = false
+
   init(store: Store) {
     self.store = store
 
@@ -57,27 +78,6 @@ class MsgShowsWindowController: NSWindowController, Rendering {
       }
     }
   }
-
-  private class CustomWindow: NSPanel {
-    var keyPressed: ((KeyPress) -> Void)?
-
-    override var canBecomeMain: Bool {
-      false
-    }
-
-    override var canBecomeKey: Bool {
-      true
-    }
-
-    override func keyDown(with event: NSEvent) {
-      keyPressed?(.init(event: event))
-    }
-  }
-
-  private let store: Store
-  private var viewController: MsgShowsViewController!
-  private var customWindow: CustomWindow!
-  private var isWindowInitiallyShown = false
 
   private func saveWindowFrame() {
     UserDefaults.standard.lastMsgShowsWindowFrame = customWindow.frame

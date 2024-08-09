@@ -3,24 +3,15 @@
 import AppKit
 
 public class SettingsEnvironmentView: NSView {
-  override public init(frame frameRect: NSRect) {
-    super.init(frame: frameRect)
-
-    setup()
-  }
-
-  public required init?(coder: NSCoder) {
-    super.init(coder: coder)
-
-    setup()
-  }
-
   private struct Item: Sendable, Hashable {
     var name: String
     var value: String
   }
 
   private class ItemView: NSView, NSTextFieldDelegate {
+    let textField = NSTextField()
+    var textChanged: ((String) -> Void)?
+
     override init(frame frameRect: NSRect) {
       super.init(frame: frameRect)
 
@@ -32,9 +23,6 @@ public class SettingsEnvironmentView: NSView {
 
       setup()
     }
-
-    let textField = NSTextField()
-    var textChanged: ((String) -> Void)?
 
     func controlTextDidChange(_: Notification) {
       textChanged?(textField.stringValue)
@@ -56,6 +44,13 @@ public class SettingsEnvironmentView: NSView {
   }
 
   private class ButtonView: NSView {
+    lazy var button = NSButton(
+      title: "Button",
+      target: self,
+      action: #selector(handleButtonAction)
+    )
+    var handleAction: (() -> Void)?
+
     override init(frame frameRect: NSRect) {
       super.init(frame: frameRect)
 
@@ -67,13 +62,6 @@ public class SettingsEnvironmentView: NSView {
 
       setup()
     }
-
-    lazy var button = NSButton(
-      title: "Button",
-      target: self,
-      action: #selector(handleButtonAction)
-    )
-    var handleAction: (() -> Void)?
 
     private func setup() {
       button.target = self
@@ -104,6 +92,18 @@ public class SettingsEnvironmentView: NSView {
     action: #selector(handleAddButtonAction)
   )
   private let statusTextField = NSTextField(labelWithString: "")
+
+  override public init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+
+    setup()
+  }
+
+  public required init?(coder: NSCoder) {
+    super.init(coder: coder)
+
+    setup()
+  }
 
   private func setup() {
     loadEnvironmentOverlay()

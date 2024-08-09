@@ -4,6 +4,56 @@ import AppKit
 
 @MainActor
 final class MainMenuController: NSObject, Rendering {
+  let menu = NSMenu()
+
+  var settingsClicked: (@MainActor () -> Void)?
+
+  private let store: Store
+  private let settingsMenuItem = NSMenuItem(
+    title: "Settings...",
+    action: #selector(handleSettings),
+    keyEquivalent: ""
+  )
+  private let quitMenuItem = NSMenuItem(
+    title: "Quit Nimb",
+    action: #selector(handleQuit),
+    keyEquivalent: "q"
+  )
+  private let openMenuItem = NSMenuItem(
+    title: "Open",
+    action: #selector(handleOpen),
+    keyEquivalent: "o"
+  )
+  private let saveMenuItem = NSMenuItem(
+    title: "Save",
+    action: #selector(handleSave),
+    keyEquivalent: "s"
+  )
+  private let saveAsMenuItem = NSMenuItem(
+    title: "Save As",
+    action: #selector(handleSaveAs),
+    keyEquivalent: "s"
+  )
+  private let closeWindowMenuItem = NSMenuItem(
+    title: "Close Window",
+    action: #selector(handleCloseWindow),
+    keyEquivalent: "w"
+  )
+  private let editMenu = NSMenu(title: "Edit")
+  private let copyItem = NSMenuItem(
+    title: "Copy",
+    action: #selector(handleCopy),
+    keyEquivalent: "c"
+  )
+  private let pasteItem = NSMenuItem(
+    title: "Paste",
+    action: #selector(handlePaste),
+    keyEquivalent: "v"
+  )
+  private let viewMenu = NSMenu(title: "View")
+  private let debugMenu = NSMenu(title: "Debug")
+  private var actionTask: Task<Void, Never>?
+
   init(store: Store) {
     self.store = store
     super.init()
@@ -58,57 +108,7 @@ final class MainMenuController: NSObject, Rendering {
     }
   }
 
-  let menu = NSMenu()
-
-  var settingsClicked: (@MainActor () -> Void)?
-
   func render() { }
-
-  private let store: Store
-  private let settingsMenuItem = NSMenuItem(
-    title: "Settings...",
-    action: #selector(handleSettings),
-    keyEquivalent: ""
-  )
-  private let quitMenuItem = NSMenuItem(
-    title: "Quit Nimb",
-    action: #selector(handleQuit),
-    keyEquivalent: "q"
-  )
-  private let openMenuItem = NSMenuItem(
-    title: "Open",
-    action: #selector(handleOpen),
-    keyEquivalent: "o"
-  )
-  private let saveMenuItem = NSMenuItem(
-    title: "Save",
-    action: #selector(handleSave),
-    keyEquivalent: "s"
-  )
-  private let saveAsMenuItem = NSMenuItem(
-    title: "Save As",
-    action: #selector(handleSaveAs),
-    keyEquivalent: "s"
-  )
-  private let closeWindowMenuItem = NSMenuItem(
-    title: "Close Window",
-    action: #selector(handleCloseWindow),
-    keyEquivalent: "w"
-  )
-  private let editMenu = NSMenu(title: "Edit")
-  private let copyItem = NSMenuItem(
-    title: "Copy",
-    action: #selector(handleCopy),
-    keyEquivalent: "c"
-  )
-  private let pasteItem = NSMenuItem(
-    title: "Paste",
-    action: #selector(handlePaste),
-    keyEquivalent: "v"
-  )
-  private let viewMenu = NSMenu(title: "View")
-  private let debugMenu = NSMenu(title: "Debug")
-  private var actionTask: Task<Void, Never>?
 
   @objc private func handleSettings() {
     settingsClicked?()
@@ -120,7 +120,6 @@ final class MainMenuController: NSObject, Rendering {
     panel.showsHiddenFiles = true
     switch panel.runModal() {
     case .OK:
-      break
       withAPI(from: store) { api in
         try await api.nimb(method: "edit", parameters: ["path"])
       }
@@ -137,7 +136,7 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleSaveAs() {
-    let validBuftypes: Set<String> = ["", "help"]
+//    let validBuftypes: Set<String> = ["", "help"]
 
     let panel = NSSavePanel()
     panel.showsHiddenFiles = true
@@ -272,7 +271,7 @@ final class MainMenuController: NSObject, Rendering {
   }
 }
 
-extension OutputStream: TextOutputStream {
+extension OutputStream: @retroactive TextOutputStream {
   public func write(_ string: String) {
     var string = string
 

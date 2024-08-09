@@ -37,7 +37,7 @@
 --hexgrouping 4,8
 --hexliteralcase uppercase
 --ifdef indent
---importgrouping alpha
+--importgrouping testable-first
 --indent 2
 --indentcase false
 --indentstrings false
@@ -58,7 +58,7 @@
 --octalgrouping 4,8
 --onelineforeach ignore
 --operatorfunc spaced
---organizationmode visibility
+--organizationmode type
 --organizetypes actor,class,enum,struct
 --patternlet hoist
 --ranges spaced

@@ -3,20 +3,13 @@
 import Collections
 
 public struct IntKeyedDictionary<Value> {
-  public init(minimumCapacity: Int = 0) {
-    keysBackingStore = .init(minimumCapacity: minimumCapacity)
-    valuesBackingStore = .init(repeating: nil, count: minimumCapacity)
-  }
-
   public typealias Key = Int
   public typealias Element = (key: Key, value: Value)
 
   public struct Values: RandomAccessCollection, Sequence {
-    init(_ dictionary: IntKeyedDictionary<Value>) {
-      self.dictionary = dictionary
-    }
-
     public typealias Element = Value
+
+    private let dictionary: IntKeyedDictionary
 
     public var count: Int {
       keysBackingStore.count
@@ -36,6 +29,18 @@ public struct IntKeyedDictionary<Value> {
 
     public var endIndex: Key {
       keysBackingStore.endIndex
+    }
+
+    private var keysBackingStore: OrderedSet<Key> {
+      dictionary.keysBackingStore
+    }
+
+    private var valuesBackingStore: [Value?] {
+      dictionary.valuesBackingStore
+    }
+
+    init(_ dictionary: IntKeyedDictionary<Value>) {
+      self.dictionary = dictionary
     }
 
     public subscript(position: Int) -> Value {
@@ -96,17 +101,10 @@ public struct IntKeyedDictionary<Value> {
     public func index(before i: Key) -> Key {
       keysBackingStore.index(before: i)
     }
-
-    private let dictionary: IntKeyedDictionary
-
-    private var keysBackingStore: OrderedSet<Key> {
-      dictionary.keysBackingStore
-    }
-
-    private var valuesBackingStore: [Value?] {
-      dictionary.valuesBackingStore
-    }
   }
+
+  private var keysBackingStore: OrderedSet<Key>
+  private var valuesBackingStore: [Value?]
 
   public var count: Int {
     keysBackingStore.count
@@ -122,6 +120,11 @@ public struct IntKeyedDictionary<Value> {
 
   public var values: Values {
     .init(self)
+  }
+
+  public init(minimumCapacity: Int = 0) {
+    keysBackingStore = .init(minimumCapacity: minimumCapacity)
+    valuesBackingStore = .init(repeating: nil, count: minimumCapacity)
   }
 
   public subscript(key: Key) -> Value? {
@@ -153,9 +156,6 @@ public struct IntKeyedDictionary<Value> {
     self[key] = nil
     return value
   }
-
-  private var keysBackingStore: OrderedSet<Key>
-  private var valuesBackingStore: [Value?]
 }
 
 extension IntKeyedDictionary: ExpressibleByDictionaryLiteral {
@@ -202,6 +202,9 @@ extension IntKeyedDictionary: Sequence {
   }
 
   public struct Iterator: IteratorProtocol {
+    private let dictionary: IntKeyedDictionary<Value>
+    private var currentKeyIndex: OrderedSet<Int>.Index
+
     fileprivate init(_ dictionary: IntKeyedDictionary<Value>) {
       self.dictionary = dictionary
       currentKeyIndex = dictionary.keysBackingStore.startIndex
@@ -219,8 +222,5 @@ extension IntKeyedDictionary: Sequence {
       let value = dictionary.valuesBackingStore[key]!
       return (key, value)
     }
-
-    private let dictionary: IntKeyedDictionary<Value>
-    private var currentKeyIndex: OrderedSet<Int>.Index
   }
 }

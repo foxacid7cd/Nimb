@@ -4,6 +4,17 @@ import AppKit
 import CasePaths
 
 public class PopupmenuViewController: NSViewController, Rendering {
+  public var anchorConstraints = [NSLayoutConstraint]()
+
+  public var willShowPopupmenu: (() -> Void)?
+
+  private let store: Store
+  private let getCmdlinesView: () -> NSView
+  private lazy var customView = FloatingWindowView()
+  private lazy var scrollView = NSScrollView()
+  private lazy var tableView = TableView()
+  private var previousSelectedItemIndex: Int?
+
   public init(store: Store, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
     self.getCmdlinesView = getCmdlinesView
@@ -15,9 +26,35 @@ public class PopupmenuViewController: NSViewController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public var anchorConstraints = [NSLayoutConstraint]()
+  override public func loadView() {
+    let view = customView
+    view.height(156)
 
-  public var willShowPopupmenu: (() -> Void)?
+    scrollView.automaticallyAdjustsContentInsets = false
+    scrollView.contentInsets = .init(top: 8, left: 0, bottom: 8, right: 0)
+    scrollView.drawsBackground = false
+    view.addSubview(scrollView)
+    scrollView.edgesToSuperview()
+
+    tableView.headerView = nil
+    tableView.delegate = self
+    tableView.backgroundColor = .clear
+    tableView.addTableColumn(
+      .init(identifier: PopupmenuItemView.reuseIdentifier)
+    )
+    tableView.rowHeight = 28
+    tableView.style = .fullWidth
+    tableView.selectionHighlightStyle = .none
+    scrollView.documentView = tableView
+
+    self.view = view
+  }
+
+  override public func viewDidLoad() {
+    super.viewDidLoad()
+
+    customView.toggle(on: false)
+  }
 
   public func render() {
     if tableView.dataSource == nil {
@@ -96,43 +133,6 @@ public class PopupmenuViewController: NSViewController, Rendering {
       }
     }
   }
-
-  override public func loadView() {
-    let view = customView
-    view.height(156)
-
-    scrollView.automaticallyAdjustsContentInsets = false
-    scrollView.contentInsets = .init(top: 8, left: 0, bottom: 8, right: 0)
-    scrollView.drawsBackground = false
-    view.addSubview(scrollView)
-    scrollView.edgesToSuperview()
-
-    tableView.headerView = nil
-    tableView.delegate = self
-    tableView.backgroundColor = .clear
-    tableView.addTableColumn(
-      .init(identifier: PopupmenuItemView.reuseIdentifier)
-    )
-    tableView.rowHeight = 28
-    tableView.style = .fullWidth
-    tableView.selectionHighlightStyle = .none
-    scrollView.documentView = tableView
-
-    self.view = view
-  }
-
-  override public func viewDidLoad() {
-    super.viewDidLoad()
-
-    customView.toggle(on: false)
-  }
-
-  private let store: Store
-  private let getCmdlinesView: () -> NSView
-  private lazy var customView = FloatingWindowView()
-  private lazy var scrollView = NSScrollView()
-  private lazy var tableView = TableView()
-  private var previousSelectedItemIndex: Int?
 }
 
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {

@@ -2,6 +2,6 @@
 
 @attached(member, names: named(init))
 public macro PublicInit() = #externalMacro(
-  module: "Macros",
+  module: "MacrosTarget",
   type: "PublicInitMacro"
 )

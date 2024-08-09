@@ -7,6 +7,102 @@ import SwiftSyntaxBuilder
 
 @PublicInit
 public struct Metadata: @unchecked Sendable {
+  @PublicInit
+  public struct Function: Sendable {
+    public var name: String
+    public var parameters: [Parameter]
+    public var returnType: ValueType
+    public var method: Bool
+    public var since: Int
+    public var deprecatedSince: Int?
+
+    public var deprecationAttributeIfNeeded: String {
+      if let deprecatedSince {
+        "@available(*, deprecated, message: \"since version \(deprecatedSince)\")"
+      } else {
+        ""
+      }
+    }
+  }
+
+  @PublicInit
+  public struct Parameter: Sendable {
+    public var name: String
+    public var type: ValueType
+
+    public init?(_ value: Value, types: [Metadata.`Type`]) {
+      guard
+        case let .array(arrayValue) = value,
+        arrayValue.count == 2,
+        case let .string(rawType) = arrayValue[0],
+        case var .string(name) = arrayValue[1]
+      else {
+        return nil
+      }
+
+      var custom: ValueType.Custom?
+      if let type = types.first(where: { $0.name == rawType }) {
+        name = type.name.prefix(1).lowercased() + type.name.dropFirst(1) + "ID"
+
+        custom = .init(
+          signature: "\(type.name).ID",
+          valueEncoder: (
+            ".ext(type: References.\(type.name).type, data: ",
+            ".data)"
+          ),
+          valueDecoder: { expr, name in
+            var capitalizedName = name.first?.uppercased() ?? ""
+            capitalizedName += name.dropFirst()
+            let rawTypeIdentifier = "raw\(capitalizedName)Type"
+            let rawDataIdentifier = "raw\(capitalizedName)Data"
+            return """
+            case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(
+              expr
+            ),
+            let \(name) = References.\(
+              type
+                .name
+            )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
+            """
+          }
+        )
+      }
+
+      self.init(
+        name: name,
+        type: .init(
+          rawValue: rawType,
+          custom: custom
+        )
+      )
+    }
+  }
+
+  @PublicInit
+  public struct UIEvent: Sendable {
+    public var name: String
+    public var parameters: [Parameter]
+  }
+
+  @PublicInit
+  public struct `Type`: Sendable {
+    public var id: Int
+    public var name: String
+    public var prefix: String
+  }
+
+  @PublicInit
+  public struct ErrorType: Sendable {
+    public var id: Int
+    public var name: String
+  }
+
+  public var types: [Type]
+  public var errorTypes: [ErrorType]
+  public var functions: [Function]
+  public var uiEvents: [UIEvent]
+  public var uiOptions: [String]
+
   public init(_ value: Value) throws {
     guard
       let dictionary = value.dictionary,
@@ -101,100 +197,4 @@ public struct Metadata: @unchecked Sendable {
         }
     )
   }
-
-  @PublicInit
-  public struct Function: Sendable {
-    public var name: String
-    public var parameters: [Parameter]
-    public var returnType: ValueType
-    public var method: Bool
-    public var since: Int
-    public var deprecatedSince: Int?
-
-    public var deprecationAttributeIfNeeded: String {
-      if let deprecatedSince {
-        "@available(*, deprecated, message: \"since version \(deprecatedSince)\")"
-      } else {
-        ""
-      }
-    }
-  }
-
-  @PublicInit
-  public struct Parameter: Sendable {
-    public init?(_ value: Value, types: [Metadata.`Type`]) {
-      guard
-        case let .array(arrayValue) = value,
-        arrayValue.count == 2,
-        case let .string(rawType) = arrayValue[0],
-        case var .string(name) = arrayValue[1]
-      else {
-        return nil
-      }
-
-      var custom: ValueType.Custom?
-      if let type = types.first(where: { $0.name == rawType }) {
-        name = type.name.prefix(1).lowercased() + type.name.dropFirst(1) + "ID"
-
-        custom = .init(
-          signature: "\(type.name).ID",
-          valueEncoder: (
-            ".ext(type: References.\(type.name).type, data: ",
-            ".data)"
-          ),
-          valueDecoder: { expr, name in
-            var capitalizedName = name.first?.uppercased() ?? ""
-            capitalizedName += name.dropFirst()
-            let rawTypeIdentifier = "raw\(capitalizedName)Type"
-            let rawDataIdentifier = "raw\(capitalizedName)Data"
-            return """
-            case let .ext(\(rawTypeIdentifier), \(rawDataIdentifier)) = \(
-              expr
-            ),
-            let \(name) = References.\(
-              type
-                .name
-            )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
-            """
-          }
-        )
-      }
-
-      self.init(
-        name: name,
-        type: .init(
-          rawValue: rawType,
-          custom: custom
-        )
-      )
-    }
-
-    public var name: String
-    public var type: ValueType
-  }
-
-  @PublicInit
-  public struct UIEvent: Sendable {
-    public var name: String
-    public var parameters: [Parameter]
-  }
-
-  @PublicInit
-  public struct `Type`: Sendable {
-    public var id: Int
-    public var name: String
-    public var prefix: String
-  }
-
-  @PublicInit
-  public struct ErrorType: Sendable {
-    public var id: Int
-    public var name: String
-  }
-
-  public var types: [Type]
-  public var errorTypes: [ErrorType]
-  public var functions: [Function]
-  public var uiEvents: [UIEvent]
-  public var uiOptions: [String]
 }

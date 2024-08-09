@@ -4,12 +4,6 @@ import Overture
 
 @PublicInit
 public struct GridLayout: Sendable {
-  init(cells: TwoDimensionalArray<Cell>) {
-    self.cells = cells
-    rowLayouts = cells.rows
-      .map(RowLayout.init(rowCells:))
-  }
-
   public var cells: TwoDimensionalArray<Cell>
   public var rowLayouts: [RowLayout]
 
@@ -23,6 +17,12 @@ public struct GridLayout: Sendable {
 
   public var size: IntegerSize {
     cells.size
+  }
+
+  init(cells: TwoDimensionalArray<Cell>) {
+    self.cells = cells
+    rowLayouts = cells.rows
+      .map(RowLayout.init(rowCells:))
   }
 }
 
@@ -39,6 +39,8 @@ public struct Cell: Sendable {
 
 @PublicInit
 public struct RowLayout: Sendable {
+  public var parts: [RowPart]
+
   public init(rowCells: [Cell]) {
     let chunks = rowCells.chunked {
       !$0.text.isEmpty && $0.highlightID == $1.highlightID
@@ -98,8 +100,6 @@ public struct RowLayout: Sendable {
       parts: parts
     )
   }
-
-  public var parts: [RowPart]
 }
 
 @PublicInit

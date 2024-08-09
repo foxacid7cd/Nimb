@@ -8,6 +8,31 @@ import CustomDump
 import SystemPackage
 
 public final class Instance: Sendable {
+  public enum MouseButton: String, Sendable {
+    case left
+    case right
+    case middle
+  }
+
+  public enum MouseAction: String, Sendable {
+    case press
+    case drag
+    case release
+  }
+
+  public enum ScrollDirection: String, Sendable {
+    case up
+    case down
+    case left
+    case right
+  }
+
+  public let api: API<ProcessChannel>
+
+  private let nvimResourcesURL: URL
+  private let initialOuterGridSize: IntegerSize
+  private let process = Process()
+
   public init(
     nvimResourcesURL: URL,
     initialOuterGridSize: IntegerSize,
@@ -85,27 +110,6 @@ public final class Instance: Sendable {
     let rpc = RPC(processChannel, maximumConcurrentRequests: 500)
     api = API(rpc)
   }
-
-  public enum MouseButton: String, Sendable {
-    case left
-    case right
-    case middle
-  }
-
-  public enum MouseAction: String, Sendable {
-    case press
-    case drag
-    case release
-  }
-
-  public enum ScrollDirection: String, Sendable {
-    case up
-    case down
-    case left
-    case right
-  }
-
-  public let api: API<ProcessChannel>
 
   public func run() async throws {
     try process.run()
@@ -304,8 +308,4 @@ public final class Instance: Sendable {
       opts: [:]
     ))
   }
-
-  private let nvimResourcesURL: URL
-  private let initialOuterGridSize: IntegerSize
-  private let process = Process()
 }

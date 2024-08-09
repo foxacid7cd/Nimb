@@ -3,6 +3,8 @@
 import AppKit
 
 public class FloatingWindowView: NSVisualEffectView {
+  private var isToggledOn: Bool?
+
   override public init(frame: CGRect) {
     super.init(frame: frame)
     setup()
@@ -38,17 +40,14 @@ public class FloatingWindowView: NSVisualEffectView {
     return false
   }
 
-  ///  private let store: Store
-  private var isToggledOn: Bool?
-
   private func setup() {
     material = .menu
     blendingMode = .withinWindow
 
     wantsLayer = true
     layer!.cornerRadius = 8
-    layer!.borderColor = NSColor.separatorColor.cgColor
-    layer!.borderWidth = 1
+    layer!.borderColor = NSColor.secondaryLabelColor.cgColor
+    layer!.borderWidth = 0.5
     layer!.shadowOpacity = 0.9
     layer!.shadowRadius = 10
     layer!.shadowOffset = .init(width: 0, height: 10)

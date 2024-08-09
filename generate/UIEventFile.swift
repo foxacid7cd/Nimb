@@ -7,8 +7,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct UIEventFile: GeneratableFile {
-  public init(metadata: Metadata) { self.metadata = metadata }
-
   public var metadata: Metadata
 
   public var name: String { "UIEvent" }
@@ -178,4 +176,6 @@ public struct UIEventFile: GeneratableFile {
       }
     }
   }
+
+  public init(metadata: Metadata) { self.metadata = metadata }
 }

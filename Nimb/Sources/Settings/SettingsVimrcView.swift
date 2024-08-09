@@ -4,18 +4,6 @@ import AppKit
 import CasePaths
 
 public class SettingsVimrcView: NSView {
-  override public init(frame frameRect: NSRect) {
-    super.init(frame: frameRect)
-
-    setup()
-  }
-
-  public required init?(coder: NSCoder) {
-    super.init(coder: coder)
-
-    setup()
-  }
-
   private enum Item: String, CaseIterable {
     case `default` = "Default"
     case norc = "NORC"
@@ -35,6 +23,18 @@ public class SettingsVimrcView: NSView {
     action: #selector(handleFolderButtonAction)
   )
   private var vimrc = Vimrc.default
+
+  override public init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+
+    setup()
+  }
+
+  public required init?(coder: NSCoder) {
+    super.init(coder: coder)
+
+    setup()
+  }
 
   private func setup() {
     wantsLayer = true

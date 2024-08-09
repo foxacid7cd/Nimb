@@ -5,6 +5,9 @@ import CustomDump
 import Foundation
 
 public class Unpacker {
+  private var mpac = msgpack_unpacker()
+  private var unpacked = msgpack_unpacked()
+
   public init() {
     msgpack_unpacker_init(&mpac, Int(MSGPACK_UNPACKER_INIT_BUFFER_SIZE))
     msgpack_unpacked_init(&unpacked)
@@ -52,7 +55,4 @@ public class Unpacker {
       }
     }
   }
-
-  private var mpac = msgpack_unpacker()
-  private var unpacked = msgpack_unpacked()
 }

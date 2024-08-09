@@ -14,6 +14,11 @@ public struct Popupmenu: Sendable, Hashable {
 
 @PublicInit
 public struct PopupmenuItem: Sendable, Hashable {
+  public var word: String
+  public var kind: String
+  public var menu: String
+  public var info: String
+
   public init(raw: Value) throws {
     guard
       case let .array(raw) = raw,
@@ -28,9 +33,4 @@ public struct PopupmenuItem: Sendable, Hashable {
 
     self.init(word: word, kind: kind, menu: menu, info: info)
   }
-
-  public var word: String
-  public var kind: String
-  public var menu: String
-  public var info: String
 }

@@ -2,6 +2,9 @@
 
 @PublicInit
 public struct NeovimErrorEvent: Sendable, Equatable {
+  public var error: APIError
+  public var message: String
+
   public init(parameters: [Value]) throws {
     guard
       parameters.count >= 2, let error = parameters[0].integer.flatMap(
@@ -16,7 +19,4 @@ public struct NeovimErrorEvent: Sendable, Equatable {
     }
     self.init(error: error, message: message)
   }
-
-  public var error: APIError
-  public var message: String
 }

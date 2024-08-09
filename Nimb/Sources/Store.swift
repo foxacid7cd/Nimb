@@ -8,6 +8,68 @@ import Foundation
 
 @MainActor
 public class Store: Sendable {
+  public let updates: _AsyncThrottleSequence<
+    AsyncFilterSequence<AsyncExclusiveReductionsSequence<
+      AsyncBufferSequence<AsyncMerge2Sequence<
+        AsyncChannel<any Action>,
+        AsyncFlatMapSequence<
+          AsyncCompactMapSequence<AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]>, [any Action]>,
+          AsyncSyncSequence<[any Action]>
+        >
+      >>,
+      (state: State, updates: State.Updates)
+    >>,
+    ContinuousClock,
+    (state: State, updates: State.Updates)
+  >
+
+  public let alertMessages = AsyncChannel<AlertMessage>()
+
+  let instance: Instance
+
+//  private func startCursorBlinkingTask() {
+//    guard let cursorStyle = _state.currentCursorStyle else {
+//      return
+//    }
+//    if
+//      let blinkWait = cursorStyle.blinkWait,
+//      blinkWait > 0,
+//      let blinkOff = cursorStyle.blinkOff,
+//      blinkOff > 0,
+//      let blinkOn = cursorStyle.blinkOn,
+//      blinkOn > 0
+//    {
+//      cursorBlinkingTask = Task {
+//        do {
+//          try await Task.sleep(for: .milliseconds(blinkWait))
+//
+//          while true {
+//            dispatch(Actions.SetCursorBlinkingPhase(value: false))
+//            try await Task.sleep(for: .milliseconds(blinkOff))
+//
+//            dispatch(Actions.SetCursorBlinkingPhase(value: true))
+//            try await Task.sleep(for: .milliseconds(blinkOn))
+//          }
+//        } catch { }
+//      }
+//    }
+//  }
+  fileprivate let handleErrorMessage: @Sendable (String) -> Void
+  fileprivate let handleError: @Sendable (any Error) -> Void
+
+  private let actionsChannel = AsyncChannel<Action>()
+  private var cursorBlinkingTask: Task<Void, Never>?
+  private var previousReportedOuterGridSize: IntegerSize?
+  private var previousReportedOuterGridSizeInstant = ContinuousClock().now
+  private var outerGridSizeThrottlingTask: Task<Void, Never>?
+  private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
+  private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
+  private var latestUIEventsBatch = [UIEvent]()
+
+  public var api: API<ProcessChannel> {
+    instance.api
+  }
+
   public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
@@ -23,9 +85,6 @@ public class Store: Sendable {
     }
 
     let initialState = State(debug: debug, font: font)
-    _state = initialState
-    _updates = State.Updates()
-//    _stateContainer = StateContainer(state: initialState)
 
     typealias StateAndUpdates = (state: State, updates: State.Updates)
 
@@ -54,7 +113,7 @@ public class Store: Sendable {
         if result.updates.needFlush {
           result.updates = State.Updates(needFlush: false)
         }
-        let updates = await action.apply(to: &result.state, handleError: handleError)
+        let updates = action.apply(to: &result.state, handleError: handleError)
         result.updates.formUnion(updates)
       }
       .filter(\.updates.needFlush)
@@ -73,27 +132,6 @@ public class Store: Sendable {
 
   deinit {
     cursorBlinkingTask?.cancel()
-  }
-
-  public let updates: _AsyncThrottleSequence<
-    AsyncFilterSequence<AsyncExclusiveReductionsSequence<
-      AsyncBufferSequence<AsyncMerge2Sequence<
-        AsyncChannel<any Action>,
-        AsyncFlatMapSequence<
-          AsyncCompactMapSequence<AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]>, [any Action]>,
-          AsyncSyncSequence<[any Action]>
-        >
-      >>,
-      (state: State, updates: State.Updates)
-    >>,
-    ContinuousClock,
-    (state: State, updates: State.Updates)
-  >
-
-  public let alertMessages = AsyncChannel<AlertMessage>()
-
-  public var api: API<ProcessChannel> {
-    instance.api
   }
 
   public func set(font: Font) {
@@ -238,46 +276,47 @@ public class Store: Sendable {
   }
 
   public func requestTextForCopy() async -> String? {
-    guard
-      let mode = _state.mode,
-      let modeInfo = _state.modeInfo
-    else {
-      return nil
-    }
+//    guard
+//      let mode = _state.mode,
+//      let modeInfo = _state.modeInfo
+//    else {
+//      return nil
+//    }
+//
+//    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+//
+//    switch shortName?.lowercased().first {
+//    case "i",
+//         "n",
+//         "o",
+//         "r",
+//         "s",
+//         "v":
+//      do {
+//        return try await instance.bufTextForCopy()
+//      } catch {
+//        Task {
+//          await alertMessages.send(.init(error))
+//        }
+//        return nil
+//      }
 
-    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+//    case "c":
+//      if
+//        let lastCmdlineLevel = _state.cmdlines.lastCmdlineLevel,
+//        let cmdline = _state.cmdlines.dictionary[lastCmdlineLevel]
+//      {
+//        return cmdline.contentParts
+//          .map { _ in "" }
+//          .joined()
+//      }
 
-    switch shortName?.lowercased().first {
-    case "i",
-         "n",
-         "o",
-         "r",
-         "s",
-         "v":
-      do {
-        return try await instance.bufTextForCopy()
-      } catch {
-        Task {
-          await alertMessages.send(.init(error))
-        }
-        return nil
-      }
+//
+//    default:
+//      break
+//    }
 
-    case "c":
-      if
-        let lastCmdlineLevel = _state.cmdlines.lastCmdlineLevel,
-        let cmdline = _state.cmdlines.dictionary[lastCmdlineLevel]
-      {
-        return cmdline.contentParts
-          .map(\.text)
-          .joined()
-      }
-
-    default:
-      break
-    }
-
-    return nil
+    nil
   }
 
   public func close() async {
@@ -317,50 +356,6 @@ public class Store: Sendable {
       await actionsChannel.send(action)
     }
   }
-
-  var _state: State
-  var _updates: State.Updates
-
-  let instance: Instance
-
-//  private func startCursorBlinkingTask() {
-//    guard let cursorStyle = _state.currentCursorStyle else {
-//      return
-//    }
-//    if
-//      let blinkWait = cursorStyle.blinkWait,
-//      blinkWait > 0,
-//      let blinkOff = cursorStyle.blinkOff,
-//      blinkOff > 0,
-//      let blinkOn = cursorStyle.blinkOn,
-//      blinkOn > 0
-//    {
-//      cursorBlinkingTask = Task {
-//        do {
-//          try await Task.sleep(for: .milliseconds(blinkWait))
-//
-//          while true {
-//            dispatch(Actions.SetCursorBlinkingPhase(value: false))
-//            try await Task.sleep(for: .milliseconds(blinkOff))
-//
-//            dispatch(Actions.SetCursorBlinkingPhase(value: true))
-//            try await Task.sleep(for: .milliseconds(blinkOn))
-//          }
-//        } catch { }
-//      }
-//    }
-//  }
-  fileprivate let handleErrorMessage: @Sendable (String) -> Void
-  fileprivate let handleError: @Sendable (any Error) -> Void
-
-  private let actionsChannel = AsyncChannel<Action>()
-  private var cursorBlinkingTask: Task<Void, Never>?
-  private var previousReportedOuterGridSize: IntegerSize?
-  private var previousReportedOuterGridSizeInstant = ContinuousClock().now
-  private var outerGridSizeThrottlingTask: Task<Void, Never>?
-  private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
-  private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
-  private var latestUIEventsBatch = [UIEvent]()
 }
 
 @MainActor
@@ -385,6 +380,8 @@ public func withAsyncErrorHandler<T>(from store: Store, _ body: @MainActor () as
 
 @PublicInit
 public struct AlertMessage: Sendable {
+  public var content: String
+
   public init(_ error: Error) {
     content =
       if let error = error as? NimbNeovimError {
@@ -395,6 +392,4 @@ public struct AlertMessage: Sendable {
         String(customDumping: error)
       }
   }
-
-  public var content: String
 }

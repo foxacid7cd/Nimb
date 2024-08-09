@@ -2,4 +2,4 @@
 
 import CasePaths
 
-extension CaseKeyPath: @unchecked Sendable { }
+extension CaseKeyPath: @unchecked @retroactive Sendable { }

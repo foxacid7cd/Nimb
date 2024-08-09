@@ -5,6 +5,11 @@ import CustomDump
 import STTextView
 
 public class MsgShowsViewController: NSViewController, Rendering {
+  private let store: Store
+  private lazy var scrollView = NSScrollView()
+  private lazy var textView = STTextView()
+  private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
+
   public init(store: Store) {
     self.store = store
     super.init(nibName: nil, bundle: nil)
@@ -87,11 +92,6 @@ public class MsgShowsViewController: NSViewController, Rendering {
   public func renderText() {
     textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
   }
-
-  private let store: Store
-  private lazy var scrollView = NSScrollView()
-  private lazy var textView = STTextView()
-  private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
     zip(

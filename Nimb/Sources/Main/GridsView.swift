@@ -3,6 +3,35 @@
 import AppKit
 
 public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering {
+  override public var intrinsicContentSize: NSSize {
+    guard isRendered else {
+      return .zero
+    }
+    guard let outerGrid = state.outerGrid else {
+      return .zero
+    }
+    return outerGrid.size * state.font.cellSize
+  }
+
+  public var anchoringLayer: AnchorLayoutingLayer?
+  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
+  public var positionInAnchoringLayer = CGPoint()
+  public var needsAnchorLayout = false
+
+  private var store: Store
+  private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
+  private var leftMouseInteractionTarget: GridLayer?
+  private var rightMouseInteractionTarget: GridLayer?
+  private var otherMouseInteractionTarget: GridLayer?
+
+  public var upsideDownTransform: CGAffineTransform {
+    .init(scaleX: 1, y: -1)
+      .translatedBy(
+        x: 0,
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
+      )
+  }
+
   init(store: Store) {
     self.store = store
     super.init(frame: .init())
@@ -16,33 +45,6 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  public var anchoringLayer: AnchorLayoutingLayer?
-  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
-  public var positionInAnchoringLayer = CGPoint()
-  public var needsAnchorLayout = false
-
-  override public var intrinsicContentSize: NSSize {
-    guard isRendered else {
-      return .zero
-    }
-    guard let outerGrid = state.outerGrid else {
-      return .zero
-    }
-    return outerGrid.size * state.font.cellSize
-  }
-
-  public var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(
-        x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
-      )
-  }
-
-  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
-    NSNull()
   }
 
   override public func updateTrackingAreas() {
@@ -76,6 +78,53 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
     if let gridLayer = layer!.hitTest(location) as? GridLayer {
       gridLayer.reportMouseMove(for: event)
     }
+  }
+
+  override public func mouseDown(with event: NSEvent) {
+    report(mouseButton: .left, action: .press, with: event)
+  }
+
+  override public func mouseDragged(with event: NSEvent) {
+    report(mouseButton: .left, action: .drag, with: event)
+  }
+
+  override public func mouseUp(with event: NSEvent) {
+    report(mouseButton: .left, action: .release, with: event)
+  }
+
+  override public func rightMouseDown(with event: NSEvent) {
+    report(mouseButton: .right, action: .press, with: event)
+  }
+
+  override public func rightMouseDragged(with event: NSEvent) {
+    report(mouseButton: .right, action: .drag, with: event)
+  }
+
+  override public func rightMouseUp(with event: NSEvent) {
+    report(mouseButton: .right, action: .release, with: event)
+  }
+
+  override public func otherMouseDown(with event: NSEvent) {
+    report(mouseButton: .middle, action: .press, with: event)
+  }
+
+  override public func otherMouseDragged(with event: NSEvent) {
+    report(mouseButton: .middle, action: .drag, with: event)
+  }
+
+  override public func otherMouseUp(with event: NSEvent) {
+    report(mouseButton: .middle, action: .release, with: event)
+  }
+
+  override public func scrollWheel(with event: NSEvent) {
+    let location = layer!.convert(event.locationInWindow, from: nil)
+    if let gridLayer = layer!.hitTest(location) as? GridLayer {
+      gridLayer.scrollWheel(with: event)
+    }
+  }
+
+  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
+    NSNull()
   }
 
   public func render() {
@@ -191,68 +240,20 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
   }
 
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
-    let origin = anchoringLayerOrigin + positionInAnchoringLayer
-
-    frame = .init(
-      origin: origin,
-      size: state.outerGrid!.size * state.font.cellSize
-    )
+//    let origin = anchoringLayerOrigin + positionInAnchoringLayer
+//
+//    frame = .init(
+//      origin: origin,
+//      size: state.outerGrid!.size * state.font.cellSize
+//    )
+    invalidateIntrinsicContentSize()
 
     for anchoredLayer in anchoredLayers {
-      anchoredLayer.value.layoutAnchoredLayers(anchoringLayerOrigin: origin, index: index * 100)
+      anchoredLayer.value.layoutAnchoredLayers(anchoringLayerOrigin: .zero, index: index * 100)
     }
 
     needsAnchorLayout = false
   }
-
-  override public func mouseDown(with event: NSEvent) {
-    report(mouseButton: .left, action: .press, with: event)
-  }
-
-  override public func mouseDragged(with event: NSEvent) {
-    report(mouseButton: .left, action: .drag, with: event)
-  }
-
-  override public func mouseUp(with event: NSEvent) {
-    report(mouseButton: .left, action: .release, with: event)
-  }
-
-  override public func rightMouseDown(with event: NSEvent) {
-    report(mouseButton: .right, action: .press, with: event)
-  }
-
-  override public func rightMouseDragged(with event: NSEvent) {
-    report(mouseButton: .right, action: .drag, with: event)
-  }
-
-  override public func rightMouseUp(with event: NSEvent) {
-    report(mouseButton: .right, action: .release, with: event)
-  }
-
-  override public func otherMouseDown(with event: NSEvent) {
-    report(mouseButton: .middle, action: .press, with: event)
-  }
-
-  override public func otherMouseDragged(with event: NSEvent) {
-    report(mouseButton: .middle, action: .drag, with: event)
-  }
-
-  override public func otherMouseUp(with event: NSEvent) {
-    report(mouseButton: .middle, action: .release, with: event)
-  }
-
-  override public func scrollWheel(with event: NSEvent) {
-    let location = layer!.convert(event.locationInWindow, from: nil)
-    if let gridLayer = layer!.hitTest(location) as? GridLayer {
-      gridLayer.scrollWheel(with: event)
-    }
-  }
-
-  private var store: Store
-  private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
-  private var leftMouseInteractionTarget: GridLayer?
-  private var rightMouseInteractionTarget: GridLayer?
-  private var otherMouseInteractionTarget: GridLayer?
 
   private func report(
     mouseButton: Instance.MouseButton,

@@ -27,6 +27,9 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
 
   @PublicInit
   public struct ContentPart: Sendable, Hashable {
+    public var highlightID: Highlight.ID
+    public var text: String
+
     public init(raw: Value) throws {
       guard
         case let .array(raw) = raw,
@@ -42,9 +45,6 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
         text: text
       )
     }
-
-    public var highlightID: Highlight.ID
-    public var text: String
   }
 
   public var index: Int

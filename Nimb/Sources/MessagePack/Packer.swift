@@ -3,6 +3,9 @@
 import Foundation
 
 public class Packer {
+  private var sbuf = msgpack_sbuffer()
+  private var pk = msgpack_packer()
+
   public init() {
     msgpack_sbuffer_init(&sbuf)
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write)
@@ -19,9 +22,6 @@ public class Packer {
     return .init(bytes: sbuf.data, count: sbuf.size)
   }
 
-  private var sbuf = msgpack_sbuffer()
-  private var pk = msgpack_packer()
-
   private func process(_ value: Value) {
     switch value {
     case let .boolean(boolean):
@@ -32,7 +32,11 @@ public class Packer {
         msgpack_pack_false(&pk)
       }
 
-    case let .integer(integer): msgpack_pack_int64(&pk, Int64(integer))
+    case let .unsignedInteger(unsignedInteger):
+      msgpack_pack_uint64(&pk, UInt64(unsignedInteger))
+
+    case let .integer(integer):
+      msgpack_pack_int64(&pk, Int64(integer))
 
     case let .string(string):
       string.data(using: .utf8)!

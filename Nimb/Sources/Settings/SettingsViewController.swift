@@ -3,6 +3,9 @@
 import AppKit
 
 public class SettingsViewController: NSViewController {
+  private lazy var environmentView = SettingsEnvironmentView()
+  private lazy var vimrcView = SettingsVimrcView()
+
   override public func loadView() {
     let view = NSView()
 
@@ -28,9 +31,6 @@ public class SettingsViewController: NSViewController {
 
     self.view = view
   }
-
-  private lazy var environmentView = SettingsEnvironmentView()
-  private lazy var vimrcView = SettingsVimrcView()
 
   private func sectionHeaderView(title: String) -> NSView {
     let headerView = NSView()

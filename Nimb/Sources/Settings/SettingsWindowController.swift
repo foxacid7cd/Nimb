@@ -3,6 +3,17 @@
 import AppKit
 
 public class SettingsWindowController: NSWindowController, Rendering {
+  private class CustomWindow: NSPanel { }
+
+  private let store: Store
+  private let customWindow = CustomWindow(
+    contentRect: .init(x: 0, y: 0, width: 400, height: 250),
+    styleMask: [.closable, .titled],
+    backing: .buffered,
+    defer: true
+  )
+  private let viewController: SettingsViewController
+
   init(store: Store) {
     self.store = store
     viewController = .init()
@@ -16,15 +27,4 @@ public class SettingsWindowController: NSWindowController, Rendering {
   }
 
   public func render() { }
-
-  private class CustomWindow: NSPanel { }
-
-  private let store: Store
-  private let customWindow = CustomWindow(
-    contentRect: .init(x: 0, y: 0, width: 400, height: 250),
-    styleMask: [.closable, .titled],
-    backing: .buffered,
-    defer: true
-  )
-  private let viewController: SettingsViewController
 }

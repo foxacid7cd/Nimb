@@ -5,6 +5,17 @@ import CustomDump
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
+  private var instance: Instance?
+  private var store: Store?
+
+  private var mainMenuController: MainMenuController?
+  private var msgShowsWindowController: MsgShowsWindowController?
+  private var mainWindowController: MainWindowController?
+  private var settingsWindowController: SettingsWindowController?
+
+  private var alertMessagesTask: Task<Void, Never>?
+  private var updatesTask: Task<Void, Never>?
+
   override public init() {
     super.init()
   }
@@ -15,7 +26,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      await setupStore()
+      setupStore()
       setupMainMenuController()
       setupMsgShowsWindowController()
       setupMainWindowController()
@@ -35,25 +46,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     alertMessagesTask?.cancel()
   }
 
-  private var instance: Instance?
-  private var store: Store?
-
-  private var mainMenuController: MainMenuController?
-  private var msgShowsWindowController: MsgShowsWindowController?
-  private var mainWindowController: MainWindowController?
-  private var settingsWindowController: SettingsWindowController?
-
-  private var alertMessagesTask: Task<Void, Never>?
-  private var updatesTask: Task<Void, Never>?
-
-  private func setupStore() async {
+  private func setupStore() {
     let debugState = UserDefaults.standard.debug
     instance = Instance(
       nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
       initialOuterGridSize: UserDefaults.standard.outerGridSize,
       isMessagePackInspectorEnabled: debugState.isMessagePackInspectorEnabled
     )
-    store = await .init(
+    store = .init(
       instance: instance!,
       debug: debugState,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
@@ -62,6 +62,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       do {
         for await message in store!.alertMessages {
           try Task.checkCancellation()
+
           showAlert(message)
         }
       } catch { }
@@ -70,8 +71,38 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       do {
         var presentedNimbNotifiesCount = 0
 
-        NSApplication.shared.terminate(nil)
+        for await (state, updates) in store!.updates {
+          try Task.checkCancellation()
+
+          if updates.isOuterGridLayoutUpdated {
+            UserDefaults.standard.outerGridSize = state.outerGrid!.size
+          }
+          if updates.isFontUpdated {
+            UserDefaults.standard.appKitFont = state.font.appKit()
+          }
+          if updates.isDebugUpdated {
+            UserDefaults.standard.debug = state.debug
+          }
+          if updates.isNimbNotifiesUpdated {
+            for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
+              let notification = state.nimbNotifies[presentedNimbNotifiesCount]
+              showNimbNotify(notification)
+            }
+            presentedNimbNotifiesCount = state.nimbNotifies.count
+          }
+
+          update(renderContext: .init(state: state, updates: updates))
+          render()
+        }
+        logger.debug("Store state updates loop ended")
+      } catch is CancellationError {
+        logger.debug("Store state updates loop cancelled")
+      } catch {
+        logger.error("Store state updates loop error: \(error)")
+        await showCriticalAlert(error: error)
       }
+
+      NSApplication.shared.terminate(nil)
     }
   }
 
@@ -80,6 +111,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     mainMenuController!.settingsClicked = { [unowned self] in
       if settingsWindowController == nil {
         settingsWindowController = .init(store: store!)
+        renderChildren(settingsWindowController!)
       }
       settingsWindowController!.showWindow(nil)
     }

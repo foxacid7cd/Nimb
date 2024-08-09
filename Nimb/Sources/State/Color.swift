@@ -33,12 +33,6 @@ public struct Color: Sendable, Hashable {
     appKit.cgColor
   }
 
-  public func with(alpha: Double) -> Color {
-    var copy = self
-    copy.alpha = alpha
-    return copy
-  }
-
   private var red: Double {
     Double((rgb >> 16) & 0xFF) / 255
   }
@@ -49,5 +43,11 @@ public struct Color: Sendable, Hashable {
 
   private var blue: Double {
     Double(rgb & 0xFF) / 255
+  }
+
+  public func with(alpha: Double) -> Color {
+    var copy = self
+    copy.alpha = alpha
+    return copy
   }
 }

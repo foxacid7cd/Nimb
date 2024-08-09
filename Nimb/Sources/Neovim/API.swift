@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 public final class API<Target: Channel>: Sendable {
-  public init(_ rpc: RPC<Target>) {
-    self.rpc = rpc
-  }
+  let rpc: RPC<Target>
 
   public var neovimNotifications: AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]> {
     rpc.notifications
@@ -37,6 +35,10 @@ public final class API<Target: Channel>: Sendable {
       }
   }
 
+  public init(_ rpc: RPC<Target>) {
+    self.rpc = rpc
+  }
+
   @discardableResult
   public func call<T: APIFunction>(_ apiFunction: T) async throws -> T.Success {
     try await rpc.call(
@@ -63,6 +65,4 @@ public final class API<Target: Channel>: Sendable {
       )
     })
   }
-
-  let rpc: RPC<Target>
 }

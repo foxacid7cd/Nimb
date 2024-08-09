@@ -3,6 +3,17 @@
 import AppKit
 
 public class MainViewController: NSViewController, Rendering {
+  let gridsView: GridsView
+
+  private let store: Store
+  private let cmdlinesViewController: CmdlinesViewController
+  private let popupmenuViewController: PopupmenuViewController
+  private let minOuterGridSize: IntegerSize
+  private lazy var tablineView = TablineView(store: store)
+  private lazy var gridsContainerView = NSView()
+  private var preMaximizeWindowFrame: CGRect?
+  private lazy var modalOverlayView = NSView()
+
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
@@ -20,35 +31,6 @@ public class MainViewController: NSViewController, Rendering {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  public func render() {
-    if updates.isFontUpdated {
-      reportOuterGridSizeChanged()
-    }
-
-    if updates.isAppearanceUpdated {
-      renderBackground()
-    }
-
-    renderChildren(gridsView, tablineView)
-
-    if updates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = state
-        .cmdlines.dictionary
-        .isEmpty
-    }
-
-    renderChildren(cmdlinesViewController, popupmenuViewController)
-  }
-
-  public func windowFrame(
-    forGridID gridID: Grid.ID,
-    gridFrame: IntegerRectangle
-  )
-    -> CGRect?
-  {
-    gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
   override public func loadView() {
@@ -146,6 +128,35 @@ public class MainViewController: NSViewController, Rendering {
     }
   }
 
+  public func render() {
+    if updates.isFontUpdated {
+      reportOuterGridSizeChanged()
+    }
+
+    if updates.isAppearanceUpdated {
+      renderBackground()
+    }
+
+    renderChildren(gridsView, tablineView)
+
+    if updates.isCmdlinesUpdated {
+      modalOverlayView.isHidden = state
+        .cmdlines.dictionary
+        .isEmpty
+    }
+
+    renderChildren(cmdlinesViewController, popupmenuViewController)
+  }
+
+  public func windowFrame(
+    forGridID gridID: Grid.ID,
+    gridFrame: IntegerRectangle
+  )
+    -> CGRect?
+  {
+    gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
+  }
+
   public func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
       columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
@@ -161,17 +172,6 @@ public class MainViewController: NSViewController, Rendering {
       height: mainFrameSize.height + tablineView.intrinsicContentSize.height
     )
   }
-
-  let gridsView: GridsView
-
-  private let store: Store
-  private let cmdlinesViewController: CmdlinesViewController
-  private let popupmenuViewController: PopupmenuViewController
-  private let minOuterGridSize: IntegerSize
-  private lazy var tablineView = TablineView(store: store)
-  private lazy var gridsContainerView = NSView()
-  private var preMaximizeWindowFrame: CGRect?
-  private lazy var modalOverlayView = NSView()
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
     guard let window = view.window, let screen = window.screen ?? .main else {

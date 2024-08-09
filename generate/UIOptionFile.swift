@@ -7,10 +7,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct UIOptionFile: GeneratableFile {
-  public init(metadata: Metadata) {
-    self.metadata = metadata
-  }
-
   public var metadata: Metadata
 
   public var name: String {
@@ -31,5 +27,9 @@ public struct UIOptionFile: GeneratableFile {
         }
       }
     }
+  }
+
+  public init(metadata: Metadata) {
+    self.metadata = metadata
   }
 }

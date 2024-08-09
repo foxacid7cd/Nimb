@@ -4,6 +4,32 @@ import AppKit
 import AsyncAlgorithms
 
 public class MainWindowController: NSWindowController, Rendering {
+  private class CustomWindow: NSWindow {
+    override var canBecomeMain: Bool {
+      true
+    }
+
+    override var canBecomeKey: Bool {
+      true
+    }
+
+    var keyPressed: ((KeyPress) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+      keyPressed?(.init(event: event))
+    }
+  }
+
+  private let store: Store
+  private let customWindow = CustomWindow(
+    contentRect: .init(),
+    styleMask: [.titled, .miniaturizable, .fullSizeContentView],
+    backing: .buffered,
+    defer: true
+  )
+  private let viewController: MainViewController
+  private var isWindowInitiallyShown = false
+
   public init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
     viewController = .init(
@@ -15,10 +41,9 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
-    customWindow.keyPressed = { _ in
-      Task {
-//        await store.report(keyPress: keyPress)
-      }
+    customWindow.allowsConcurrentViewDrawing = true
+    customWindow.keyPressed = { keyPress in
+      store.report(keyPress: keyPress)
     }
     super.init(window: customWindow)
 
@@ -46,32 +71,6 @@ public class MainWindowController: NSWindowController, Rendering {
       customWindow.makeKeyAndOrderFront(nil)
     }
   }
-
-  private class CustomWindow: NSWindow {
-    var keyPressed: ((KeyPress) -> Void)?
-
-    override var canBecomeMain: Bool {
-      true
-    }
-
-    override var canBecomeKey: Bool {
-      true
-    }
-
-    override func keyDown(with event: NSEvent) {
-      keyPressed?(.init(event: event))
-    }
-  }
-
-  private let store: Store
-  private let customWindow = CustomWindow(
-    contentRect: .init(),
-    styleMask: [.titled, .miniaturizable, .fullSizeContentView],
-    backing: .buffered,
-    defer: true
-  )
-  private let viewController: MainViewController
-  private var isWindowInitiallyShown = false
 
   private func saveWindowFrame() {
     UserDefaults.standard.lastWindowSize = customWindow.frame.size

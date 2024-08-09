@@ -14,6 +14,8 @@ private let generatableFileTypes: [GeneratableFile.Type] = [
 ]
 
 public actor Generator {
+  private let metadataTask: Task<Metadata, Error>
+
   public init<S: AsyncSequence & Sendable>(
     _ dataBatches: S
   ) where S.Element == Data {
@@ -62,8 +64,6 @@ public actor Generator {
       } catch { throw GeneratorError.invalidData(details: "\(error)") }
     }
   }
-
-  private let metadataTask: Task<Metadata, Error>
 }
 
 public enum GeneratorError: Error { case invalidData(details: String) }

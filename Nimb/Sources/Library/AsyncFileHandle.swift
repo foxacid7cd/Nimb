@@ -2,7 +2,7 @@
 
 import Foundation
 
-public extension FileHandle {
+extension FileHandle {
   var dataBatches: AsyncStream<Data> {
     .init { continuation in
       readabilityHandler = { fileHandle in

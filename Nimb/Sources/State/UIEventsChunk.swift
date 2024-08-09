@@ -12,6 +12,11 @@ public enum UIEventsChunk: Sendable {
 
   @PublicInit
   public struct HlAttrDefine: Sendable {
+    public var id: Int
+    public var rgbAttrs: [Value: Value]
+    public var ctermAttrs: [Value: Value]
+    public var info: [HlAttrDefineInfoItem]
+
     public init(
       id: Int,
       rgbAttrs: [Value: Value],
@@ -23,15 +28,15 @@ public enum UIEventsChunk: Sendable {
       self.ctermAttrs = ctermAttrs
       info = try rawInfo.map(HlAttrDefineInfoItem.init(raw:))
     }
-
-    public var id: Int
-    public var rgbAttrs: [Value: Value]
-    public var ctermAttrs: [Value: Value]
-    public var info: [HlAttrDefineInfoItem]
   }
 
   @PublicInit
   public struct HlAttrDefineInfoItem: Sendable {
+    public var kind: String
+    public var hiName: String?
+    public var uiName: String?
+    public var id: Int
+
     public init(raw: Value) throws {
       guard 
         case let .dictionary(raw) = raw,
@@ -47,11 +52,6 @@ public enum UIEventsChunk: Sendable {
         id: id
       )
     }
-
-    public var kind: String
-    public var hiName: String?
-    public var uiName: String?
-    public var id: Int
   }
 
   @PublicInit

@@ -3,6 +3,22 @@
 import Foundation
 
 public struct TwoDimensionalArray<Element> {
+  public var rows: [[Element]]
+  public internal(set) var columnsCount: Int
+
+  @inlinable
+  public var size: IntegerSize {
+    .init(
+      columnsCount: columnsCount,
+      rowsCount: rows.count
+    )
+  }
+
+  @inlinable
+  public var rowsCount: Int {
+    rows.count
+  }
+
   @inlinable
   public init(
     size: IntegerSize,
@@ -41,22 +57,6 @@ public struct TwoDimensionalArray<Element> {
 
     self.rows = rows
     columnsCount = size.columnsCount
-  }
-
-  public var rows: [[Element]]
-  public internal(set) var columnsCount: Int
-
-  @inlinable
-  public var size: IntegerSize {
-    .init(
-      columnsCount: columnsCount,
-      rowsCount: rows.count
-    )
-  }
-
-  @inlinable
-  public var rowsCount: Int {
-    rows.count
   }
 
   @inlinable

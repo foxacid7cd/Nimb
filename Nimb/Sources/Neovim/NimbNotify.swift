@@ -4,6 +4,14 @@ import Foundation
 
 @PublicInit
 public struct NimbNotify: Hashable, Sendable {
+  public var message: String
+  public var level: Int
+  public var options: Value
+
+  public var title: String? {
+    options[case: \.dictionary]?["title"]?[case: \.string]
+  }
+
   public init(_ value: Value) throws {
     guard
       case let .array(params) = value,
@@ -15,13 +23,5 @@ public struct NimbNotify: Hashable, Sendable {
     self.message = message
     self.level = level
     options = params[2]
-  }
-
-  public var message: String
-  public var level: Int
-  public var options: Value
-
-  public var title: String? {
-    options[case: \.dictionary]?["title"]?[case: \.string]
   }
 }

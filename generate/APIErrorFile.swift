@@ -6,8 +6,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct APIErrorFile: GeneratableFile {
-  public init(metadata: Metadata) { self.metadata = metadata }
-
   public var metadata: Metadata
 
   public var name: String { "APIError" }
@@ -37,4 +35,6 @@ public struct APIErrorFile: GeneratableFile {
       }
     }
   }
+
+  public init(metadata: Metadata) { self.metadata = metadata }
 }

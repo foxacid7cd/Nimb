@@ -4,10 +4,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct ReferencesFile: GeneratableFile {
-  public init(metadata: Metadata) {
-    self.metadata = metadata
-  }
-
   public var metadata: Metadata
 
   public var name: String {
@@ -49,5 +45,9 @@ public struct ReferencesFile: GeneratableFile {
         }
       }
     }
+  }
+
+  public init(metadata: Metadata) {
+    self.metadata = metadata
   }
 }

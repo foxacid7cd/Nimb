@@ -9,7 +9,7 @@ let package = Package(
   products: [
     .library(
       name: "MacrosLibrary",
-      targets: ["Macros"]
+      targets: ["MacrosTarget"]
     ),
   ],
   dependencies: [
@@ -17,7 +17,7 @@ let package = Package(
   ],
   targets: [
     .macro(
-      name: "Macros",
+      name: "MacrosTarget",
       dependencies: [
         .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
         .product(name: "SwiftSyntax", package: "swift-syntax"),

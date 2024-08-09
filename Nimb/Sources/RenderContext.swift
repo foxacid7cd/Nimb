@@ -3,13 +3,13 @@
 import ObjectiveC
 
 public final class RenderContext: Sendable {
+  public let state: State
+  public let updates: State.Updates
+
   public init(state: State, updates: State.Updates) {
     self.state = state
     self.updates = updates
   }
-
-  public let state: State
-  public let updates: State.Updates
 }
 
 public protocol Rendering {

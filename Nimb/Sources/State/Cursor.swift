@@ -28,6 +28,35 @@ public enum CursorShape: String, Sendable {
 
 @PublicInit
 public struct CursorStyle: Sendable {
+  public var name: String?
+  public var shortName: String?
+  public var mouseShape: Int?
+  public var blinkOn: Int?
+  public var blinkOff: Int?
+  public var blinkWait: Int?
+  public var cellPercentage: Int?
+  public var cursorShape: CursorShape?
+  public var idLm: Int?
+  public var attrID: Highlight.ID?
+  public var attrIDLm: Int?
+
+  public var shouldDrawParentText: Bool {
+    guard let cursorShape else {
+      return false
+    }
+    switch cursorShape {
+    case .block:
+      return true
+    case .horizontal,
+         .vertical:
+      if let cellPercentage {
+        return cellPercentage > 25
+      } else {
+        return false
+      }
+    }
+  }
+
   public init(raw: Value) throws {
     guard case let .dictionary(raw) = raw else {
       throw Failure("invalid raw cursor style", raw)
@@ -58,35 +87,6 @@ public struct CursorStyle: Sendable {
       attrIDLm: raw["attr_id_lm"]
         .flatMap { $0[case: \.integer] }
     )
-  }
-
-  public var name: String?
-  public var shortName: String?
-  public var mouseShape: Int?
-  public var blinkOn: Int?
-  public var blinkOff: Int?
-  public var blinkWait: Int?
-  public var cellPercentage: Int?
-  public var cursorShape: CursorShape?
-  public var idLm: Int?
-  public var attrID: Highlight.ID?
-  public var attrIDLm: Int?
-
-  public var shouldDrawParentText: Bool {
-    guard let cursorShape else {
-      return false
-    }
-    switch cursorShape {
-    case .block:
-      return true
-    case .horizontal,
-         .vertical:
-      if let cellPercentage {
-        return cellPercentage > 25
-      } else {
-        return false
-      }
-    }
   }
 
   public func cellFrame(columnsCount: Int, font: Font) -> CGRect? {

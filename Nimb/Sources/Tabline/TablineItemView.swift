@@ -3,6 +3,38 @@
 import AppKit
 
 class TablineItemView: NSView, Rendering {
+  override var frame: NSRect {
+    didSet {
+      if frame != oldValue {
+        shouldRedrawImageViews = true
+        render()
+      }
+    }
+  }
+
+  var isSelected = false
+  var isLast = false
+  var clicked: (() -> Void)?
+  var filledColor: NSColor?
+
+  private let store: Store
+  private let backgroundImageView = NSImageView()
+  private let accentBackgroundImageView = NSImageView()
+  private let textField = NSTextField(labelWithString: "")
+  private var trackingArea: NSTrackingArea?
+  private var isMouseInside = false
+  private var shouldRedrawImageViews = false
+  private var isAnimated = false
+
+  var text = "" {
+    didSet {
+      if text != oldValue {
+        shouldRedrawImageViews = true
+        render()
+      }
+    }
+  }
+
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -35,29 +67,6 @@ class TablineItemView: NSView, Rendering {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  var isSelected = false
-  var isLast = false
-  var clicked: (() -> Void)?
-  var filledColor: NSColor?
-
-  var text = "" {
-    didSet {
-      if text != oldValue {
-        shouldRedrawImageViews = true
-        render()
-      }
-    }
-  }
-
-  override var frame: NSRect {
-    didSet {
-      if frame != oldValue {
-        shouldRedrawImageViews = true
-        render()
-      }
-    }
   }
 
   override func updateTrackingAreas() {
@@ -101,15 +110,6 @@ class TablineItemView: NSView, Rendering {
 
     isAnimated = true
   }
-
-  private let store: Store
-  private let backgroundImageView = NSImageView()
-  private let accentBackgroundImageView = NSImageView()
-  private let textField = NSTextField(labelWithString: "")
-  private var trackingArea: NSTrackingArea?
-  private var isMouseInside = false
-  private var shouldRedrawImageViews = false
-  private var isAnimated = false
 
   private func redrawImageViews() {
     let color = NSColor.black

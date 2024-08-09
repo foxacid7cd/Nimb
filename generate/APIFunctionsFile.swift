@@ -6,8 +6,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct APIFunctionsFile: GeneratableFile {
-  public init(metadata: Metadata) { self.metadata = metadata }
-
   public var metadata: Metadata
 
   public var name: String { "APIFunctions" }
@@ -123,4 +121,6 @@ public struct APIFunctionsFile: GeneratableFile {
       }
     }
   }
+
+  public init(metadata: Metadata) { self.metadata = metadata }
 }

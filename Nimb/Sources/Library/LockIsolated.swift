@@ -3,6 +3,9 @@
 import Foundation
 
 final class LockIsolated<Value>: @unchecked Sendable {
+  private var _value: Value
+  private let lock = NSRecursiveLock()
+
   init(_ value: @autoclosure @Sendable () throws -> Value) rethrows {
     _value = try value()
   }
@@ -17,7 +20,4 @@ final class LockIsolated<Value>: @unchecked Sendable {
     defer { _value = value }
     return try operation(&value)
   }
-
-  private var _value: Value
-  private let lock = NSRecursiveLock()
 }

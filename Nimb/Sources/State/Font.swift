@@ -3,15 +3,7 @@
 import AppKit
 
 public struct Font: Sendable, Hashable {
-  @MainActor
-  public init(_ appKit: NSFont) {
-    wrapped = FontBridge.shared.wrap(appKit)
-  }
-
-  @MainActor
-  public init() {
-    wrapped = FontBridge.shared.defaultWrappedFont
-  }
+  private var wrapped: FontBridge.WrappedFont
 
   public var id: Int {
     wrapped.index
@@ -27,6 +19,16 @@ public struct Font: Sendable, Hashable {
 
   public var cellHeight: Double {
     wrapped.cellHeight
+  }
+
+  @MainActor
+  public init(_ appKit: NSFont) {
+    wrapped = FontBridge.shared.wrap(appKit)
+  }
+
+  @MainActor
+  public init() {
+    wrapped = FontBridge.shared.defaultWrappedFont
   }
 
   public static func == (lhs: Font, rhs: Font) -> Bool {
@@ -48,23 +50,19 @@ public struct Font: Sendable, Hashable {
       wrapped.regular
     }
   }
-
-  private var wrapped: FontBridge.WrappedFont
 }
 
 @MainActor
 final class FontBridge {
-  init() {
-    let systemFont = NSFont.monospacedSystemFont(
-      ofSize: NSFont.systemFontSize,
-      weight: .regular
-    )
-    let wrapped = WrappedFont(index: 0, appKit: systemFont)
-    array = [wrapped]
-    indexes = [Key(systemFont): wrapped.index]
-  }
-
   struct WrappedFont: @unchecked Sendable {
+    var index: Int
+    var regular: NSFont
+    var bold: NSFont
+    var italic: NSFont
+    var boldItalic: NSFont
+    var cellWidth: Double
+    var cellHeight: Double
+
     init(index: Int, appKit: NSFont) {
       self.index = index
 
@@ -85,30 +83,35 @@ final class FontBridge {
       cellWidth = appKit.makeCellWidth()
       cellHeight = appKit.makeCellHeight()
     }
-
-    var index: Int
-    var regular: NSFont
-    var bold: NSFont
-    var italic: NSFont
-    var boldItalic: NSFont
-    var cellWidth: Double
-    var cellHeight: Double
   }
 
   struct Key: Hashable {
+    var familyName: String
+    var size: Double
+
     init(_ appKit: NSFont) {
       familyName = appKit.familyName ?? appKit.fontName
       size = appKit.pointSize
     }
-
-    var familyName: String
-    var size: Double
   }
 
   static let shared = FontBridge()
 
+  private var array: [WrappedFont]
+  private var indexes: [Key: Int]
+
   var defaultWrappedFont: WrappedFont {
     array[0]
+  }
+
+  init() {
+    let systemFont = NSFont.monospacedSystemFont(
+      ofSize: NSFont.systemFontSize,
+      weight: .regular
+    )
+    let wrapped = WrappedFont(index: 0, appKit: systemFont)
+    array = [wrapped]
+    indexes = [Key(systemFont): wrapped.index]
   }
 
   func wrap(_ appKit: NSFont) -> WrappedFont {
@@ -121,7 +124,4 @@ final class FontBridge {
     indexes[key] = wrapped.index
     return wrapped
   }
-
-  private var array: [WrappedFont]
-  private var indexes: [Key: Int]
 }

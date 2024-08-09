@@ -4,24 +4,6 @@ import Foundation
 
 @PublicInit
 public struct IntegerRectangle: Sendable, Hashable {
-  public init(frame: CGRect, cellSize: CGSize) {
-    let origin = IntegerPoint(
-      column: Int(frame.minX / cellSize.width),
-      row: Int(frame.minY / cellSize.height)
-    )
-    let farthestPoint = IntegerPoint(
-      column: Int((frame.maxX / cellSize.width).rounded(.up)),
-      row: Int((frame.maxY / cellSize.height).rounded(.up))
-    )
-    self.init(
-      origin: origin,
-      size: .init(
-        columnsCount: farthestPoint.column - origin.column,
-        rowsCount: farthestPoint.row - origin.row
-      )
-    )
-  }
-
   public var origin: IntegerPoint = .init()
   public var size: IntegerSize = .init()
 
@@ -53,6 +35,24 @@ public struct IntegerRectangle: Sendable, Hashable {
   @inlinable
   public var rows: Range<Int> {
     minRow ..< maxRow
+  }
+
+  public init(frame: CGRect, cellSize: CGSize) {
+    let origin = IntegerPoint(
+      column: Int(frame.minX / cellSize.width),
+      row: Int(frame.minY / cellSize.height)
+    )
+    let farthestPoint = IntegerPoint(
+      column: Int((frame.maxX / cellSize.width).rounded(.up)),
+      row: Int((frame.maxY / cellSize.height).rounded(.up))
+    )
+    self.init(
+      origin: origin,
+      size: .init(
+        columnsCount: farthestPoint.column - origin.column,
+        rowsCount: farthestPoint.row - origin.row
+      )
+    )
   }
 
   @inlinable

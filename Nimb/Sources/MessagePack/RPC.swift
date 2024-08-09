@@ -8,6 +8,13 @@ import CustomDump
 import Foundation
 
 public final class RPC<Target: Channel>: Sendable {
+  public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
+
+  private let target: Target
+  private let storage: Storage
+  private let packer = LockIsolated(Packer())
+  private let unpacker = LockIsolated(Unpacker())
+
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
     storage = .init(maximumConcurrentRequests: maximumConcurrentRequests)
@@ -46,8 +53,6 @@ public final class RPC<Target: Channel>: Sendable {
       }
     }
   }
-
-  public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   @discardableResult
   public func call(
@@ -114,17 +119,19 @@ public final class RPC<Target: Channel>: Sendable {
       try target.write(data)
     }
   }
-
-  private let target: Target
-  private let storage: Storage
-  private let packer = LockIsolated(Packer())
-  private let unpacker = LockIsolated(Unpacker())
 }
 
 private final class Storage: Sendable {
+  private class Critical {
+    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+    var announcedRequestsCount = 0
+  }
+
+  private let maximumConcurrentRequests: Int
+  private let critical = LockIsolated<Critical>(.init())
+
   init(maximumConcurrentRequests: Int) {
     self.maximumConcurrentRequests = maximumConcurrentRequests
-    critical = .init(.init(currentRequests: .init(repeating: nil, count: maximumConcurrentRequests)))
   }
 
   func announceRequest(
@@ -160,17 +167,4 @@ private final class Storage: Sendable {
     }
     handler?(response)
   }
-
-  private class Critical {
-    init(currentRequests: [(@Sendable (Message.Response) -> Void)?], announcedRequestsCount: Int = 0) {
-      self.currentRequests = currentRequests
-      self.announcedRequestsCount = announcedRequestsCount
-    }
-
-    var currentRequests: [(@Sendable (Message.Response) -> Void)?]
-    var announcedRequestsCount = 0
-  }
-
-  private let maximumConcurrentRequests: Int
-  private let critical: LockIsolated<Critical>
 }

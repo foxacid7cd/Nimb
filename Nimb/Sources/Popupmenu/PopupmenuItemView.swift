@@ -4,6 +4,17 @@ import AppKit
 import TinyConstraints
 
 public class PopupmenuItemView: NSView, Rendering {
+  public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
+    String(describing: PopupmenuItemView.self)
+  )
+
+  public var item: PopupmenuItem?
+  public var isSelected = false
+
+  private let store: Store
+  private let wordTextField = NSTextField(labelWithString: "")
+  private let kindTextField = NSTextField(labelWithString: "")
+
   public init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -37,13 +48,6 @@ public class PopupmenuItemView: NSView, Rendering {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
-
-  public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
-    String(describing: PopupmenuItemView.self)
-  )
-
-  public var item: PopupmenuItem?
-  public var isSelected = false
 
   public func render() {
     guard let item else {
@@ -99,8 +103,4 @@ public class PopupmenuItemView: NSView, Rendering {
     }
     kindTextField.attributedStringValue = kindAttributedString
   }
-
-  private let store: Store
-  private let wordTextField = NSTextField(labelWithString: "")
-  private let kindTextField = NSTextField(labelWithString: "")
 }

@@ -7,13 +7,13 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
+  public var rowDrawRuns: [RowDrawRun]
+  public var cursorDrawRun: CursorDrawRun?
+
   public init(layout: GridLayout, font: Font, appearance: Appearance) {
     rowDrawRuns = []
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
-
-  public var rowDrawRuns: [RowDrawRun]
-  public var cursorDrawRun: CursorDrawRun?
 
   public mutating func renderDrawRuns(
     for layout: GridLayout,
@@ -33,7 +33,6 @@ public struct GridDrawRuns: Sendable {
       }
   }
 
-  @MainActor
   public func drawBackground(
     to context: CGContext,
     boundingRect: IntegerRectangle,
@@ -57,7 +56,6 @@ public struct GridDrawRuns: Sendable {
     }
   }
 
-  @MainActor
   public func drawForeground(
     to context: CGContext,
     boundingRect: IntegerRectangle,
@@ -84,6 +82,28 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
+  @PublicInit
+  public struct DrawRunsCachingKey: Sendable, Hashable {
+    public var text: String
+    public var highlightID: Highlight.ID
+    public var columnsCount: Int
+
+    public init(_ drawRun: DrawRun) {
+      text = drawRun.text
+      highlightID = drawRun.highlightID
+      columnsCount = drawRun.columnsRange.count
+    }
+
+    public init(_ rowPart: RowPart) {
+      text = rowPart.text
+      highlightID = rowPart.highlightID
+      columnsCount = rowPart.columnsCount
+    }
+  }
+
+  public var drawRuns: [DrawRun]
+  public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
+
   public init(
     row: Int,
     layout: RowLayout,
@@ -145,29 +165,6 @@ public struct RowDrawRun: Sendable {
     self.drawRunsCache = drawRunsCache
   }
 
-  @PublicInit
-  public struct DrawRunsCachingKey: Sendable, Hashable {
-    public init(_ drawRun: DrawRun) {
-      text = drawRun.text
-      highlightID = drawRun.highlightID
-      columnsCount = drawRun.columnsRange.count
-    }
-
-    public init(_ rowPart: RowPart) {
-      text = rowPart.text
-      highlightID = rowPart.highlightID
-      columnsCount = rowPart.columnsCount
-    }
-
-    public var text: String
-    public var highlightID: Highlight.ID
-    public var columnsCount: Int
-  }
-
-  public var drawRuns: [DrawRun]
-  public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
-
-  @MainActor
   public func drawBackground(
     at origin: CGPoint,
     to context: CGContext,
@@ -193,7 +190,6 @@ public struct RowDrawRun: Sendable {
     }
   }
 
-  @MainActor
   public func drawForeground(
     at origin: CGPoint,
     to context: CGContext,
@@ -222,6 +218,15 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
+  public var text: String
+  public var rowPartCells: [RowPart.Cell]
+  public var highlightID: Highlight.ID
+  public var columnsRange: Range<Int>
+  public var glyphRuns: [GlyphRun]
+  public var strikethroughPath: Path?
+  public var underlinePath: Path?
+  public var underlineLineDashLengths: [CGFloat]
+
   public init(
     text: String,
     rowPartCells: [RowPart.Cell],
@@ -397,16 +402,6 @@ public struct DrawRun: Sendable {
     )
   }
 
-  public var text: String
-  public var rowPartCells: [RowPart.Cell]
-  public var highlightID: Highlight.ID
-  public var columnsRange: Range<Int>
-  public var glyphRuns: [GlyphRun]
-  public var strikethroughPath: Path?
-  public var underlinePath: Path?
-  public var underlineLineDashLengths: [CGFloat]
-
-  @MainActor
   public func drawBackground(
     to context: CGContext,
     at origin: CGPoint,
@@ -425,7 +420,6 @@ public struct DrawRun: Sendable {
     context.fill([rect])
   }
 
-  @MainActor
   public func drawForeground(
     to context: CGContext,
     at origin: CGPoint,
@@ -509,6 +503,25 @@ public struct GlyphRun: @unchecked Sendable {
 
 @PublicInit
 public struct CursorDrawRun: Sendable {
+  public var origin: IntegerPoint
+  public var columnsCount: Int
+  public var style: CursorStyle
+  public var cellFrame: CGRect
+  public var highlightID: Highlight.ID
+  public var parentOrigin: IntegerPoint
+  public var parentDrawRun: DrawRun
+  public var shouldDrawParentText: Bool
+
+  public var rectangle: IntegerRectangle {
+    .init(
+      origin: origin,
+      size: .init(
+        columnsCount: columnsCount,
+        rowsCount: 1
+      )
+    )
+  }
+
   public init?(
     layout: GridLayout,
     rowDrawRuns: [RowDrawRun],
@@ -573,25 +586,6 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
-  public var origin: IntegerPoint
-  public var columnsCount: Int
-  public var style: CursorStyle
-  public var cellFrame: CGRect
-  public var highlightID: Highlight.ID
-  public var parentOrigin: IntegerPoint
-  public var parentDrawRun: DrawRun
-  public var shouldDrawParentText: Bool
-
-  public var rectangle: IntegerRectangle {
-    .init(
-      origin: origin,
-      size: .init(
-        columnsCount: columnsCount,
-        rowsCount: 1
-      )
-    )
-  }
-
   public mutating func updateParent(
     with layout: GridLayout,
     rowDrawRuns: [RowDrawRun]
@@ -608,7 +602,6 @@ public struct CursorDrawRun: Sendable {
     }
   }
 
-  @MainActor
   public func draw(
     to context: CGContext,
     font: Font,

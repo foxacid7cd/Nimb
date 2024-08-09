@@ -5,6 +5,14 @@ import Carbon
 
 @PublicInit
 public struct KeyPress: Sendable {
+  public var keyCode: Int
+  public var characters: String
+  public var modifierFlags: NSEvent.ModifierFlags
+
+  public var isEscape: Bool {
+    keyCode == kVK_Escape
+  }
+
   public init(
     event: NSEvent
   ) {
@@ -13,14 +21,6 @@ public struct KeyPress: Sendable {
       characters: event.charactersIgnoringModifiers?.lowercased() ?? "",
       modifierFlags: event.modifierFlags
     )
-  }
-
-  public var keyCode: Int
-  public var characters: String
-  public var modifierFlags: NSEvent.ModifierFlags
-
-  public var isEscape: Bool {
-    keyCode == kVK_Escape
   }
 
   public func makeNvimKeyCode() -> String {

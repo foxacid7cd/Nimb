@@ -4,9 +4,37 @@ import AppKit
 import AsyncAlgorithms
 import TinyConstraints
 
-extension Notification: @unchecked Sendable { }
+extension Notification: @unchecked @retroactive Sendable { }
 
 final class TablineView: NSVisualEffectView, Rendering {
+  override public var isOpaque: Bool {
+    true
+  }
+
+  override var intrinsicContentSize: NSSize {
+    .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
+  }
+
+  private let store: Store
+  private let buffersScrollView = NSScrollView()
+  private let buffersStackView = NSStackView(views: [])
+  private let buffersMaskLayer = CALayer()
+  private var buffersScrollViewFrameObservation: NSKeyValueObservation?
+  private let tabsScrollView = NSScrollView()
+  private let tabsStackView = NSStackView(views: [])
+  private let tabsMaskLayer = CALayer()
+  private var tabsScrollViewFrameObservation: NSKeyValueObservation?
+  private let titleTextField = NSTextField(labelWithString: "")
+  private var notificationsTask: Task<Void, Never>?
+
+  var preferredViewHeight: CGFloat = 0 {
+    didSet {
+      if preferredViewHeight != oldValue {
+        invalidateIntrinsicContentSize()
+      }
+    }
+  }
+
   init(store: Store) {
     self.store = store
     super.init(frame: .zero)
@@ -144,22 +172,6 @@ final class TablineView: NSVisualEffectView, Rendering {
     notificationsTask?.cancel()
   }
 
-  override public var isOpaque: Bool {
-    true
-  }
-
-  override var intrinsicContentSize: NSSize {
-    .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
-  }
-
-  var preferredViewHeight: CGFloat = 0 {
-    didSet {
-      if preferredViewHeight != oldValue {
-        invalidateIntrinsicContentSize()
-      }
-    }
-  }
-
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
 
@@ -293,18 +305,6 @@ final class TablineView: NSVisualEffectView, Rendering {
       }
     }
   }
-
-  private let store: Store
-  private let buffersScrollView = NSScrollView()
-  private let buffersStackView = NSStackView(views: [])
-  private let buffersMaskLayer = CALayer()
-  private var buffersScrollViewFrameObservation: NSKeyValueObservation?
-  private let tabsScrollView = NSScrollView()
-  private let tabsStackView = NSStackView(views: [])
-  private let tabsMaskLayer = CALayer()
-  private var tabsScrollViewFrameObservation: NSKeyValueObservation?
-  private let titleTextField = NSTextField(labelWithString: "")
-  private var notificationsTask: Task<Void, Never>?
 
   private func reloadBuffers() {
     buffersStackView.arrangedSubviews
