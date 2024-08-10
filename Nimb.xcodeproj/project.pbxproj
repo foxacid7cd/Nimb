@@ -97,6 +97,7 @@
 		6888D8A62AF83B6B0049562D /* API+Nimb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* API+Nimb.swift */; };
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
+		6896CE402C68249E001F3C85 /* ConcurrencyExtras in Frameworks */ = {isa = PBXBuildFile; productRef = 6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */; };
 		689738F32C480AF8002159BD /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 689738F22C480AF7002159BD /* TinyConstraints */; };
 		6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6897398A2C65F14B00891467 /* Store+withAPI.swift */; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
@@ -404,6 +405,7 @@
 				68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
 				68FB33182C669ECA008A68CB /* MyMacro in Frameworks */,
+				6896CE402C68249E001F3C85 /* ConcurrencyExtras in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
@@ -798,6 +800,7 @@
 				68007B632C61C88B001AD1D0 /* STTextView */,
 				68DC65B12C6681A3009FBEDE /* SystemPackage */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
+				6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -852,6 +855,7 @@
 				68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */,
 				681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				68007B622C61C88B001AD1D0 /* XCRemoteSwiftPackageReference "STTextView" */,
+				6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -1504,6 +1508,14 @@
 				kind = branch;
 			};
 		};
+		6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-concurrency-extras.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
 		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/roberthein/TinyConstraints.git";
@@ -1656,6 +1668,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
 			productName = CustomDump;
+		};
+		6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */;
+			productName = ConcurrencyExtras;
 		};
 		689738F22C480AF7002159BD /* TinyConstraints */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -7,13 +7,14 @@ import Collections
 import CustomDump
 import Foundation
 
+@MainActor
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   private let target: Target
   private let storage: Storage
-  private let packer = LockIsolated(Packer())
-  private let unpacker = LockIsolated(Unpacker())
+  private let packer = Packer()
+  private let unpacker = Unpacker()
 
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
@@ -23,7 +24,7 @@ public final class RPC<Target: Channel>: Sendable {
       let task = Task {
         var notifications = [Message.Notification]()
         for try await data in target.dataBatches {
-          let values = try unpacker.withLock { try $0.unpack(data) }
+          let values = try unpacker.unpack(data)
           let messages = try values.map { try Message(value: $0) }
 
           for message in messages {
@@ -93,42 +94,35 @@ public final class RPC<Target: Channel>: Sendable {
     method: String,
     parameters: [Value]
   )> & Sendable) throws {
-    try packer.withLock { packer in
-      var data = Data()
+    var data = Data()
 
-      for call in calls {
-        data.append(
-          packer.pack(
-            Message.Request(
-              id: storage.announceRequest(),
-              method: call.method,
-              parameters: call.parameters
-            )
-            .makeValue()
+    for call in calls {
+      data.append(
+        packer.pack(
+          Message.Request(
+            id: storage.announceRequest(),
+            method: call.method,
+            parameters: call.parameters
           )
+          .makeValue()
         )
-      }
-
-      try target.write(data)
+      )
     }
+
+    try target.write(data)
   }
 
   public func send(request: Message.Request) throws {
-    try packer.withLock { packer in
-      let data = packer.pack(request.makeValue())
-      try target.write(data)
-    }
+    let data = packer.pack(request.makeValue())
+    try target.write(data)
   }
 }
 
+@MainActor
 private final class Storage: Sendable {
-  private class Critical {
-    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
-    var announcedRequestsCount = 0
-  }
-
   private let maximumConcurrentRequests: Int
-  private let critical = LockIsolated<Critical>(.init())
+  private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+  private var announcedRequestsCount = 0
 
   init(maximumConcurrentRequests: Int) {
     self.maximumConcurrentRequests = maximumConcurrentRequests
@@ -140,31 +134,26 @@ private final class Storage: Sendable {
   )
     -> Int
   {
-    critical.withLock { [maximumConcurrentRequests] critical in
-      let id = critical.announcedRequestsCount
+    let id = announcedRequestsCount
 
-      (critical.announcedRequestsCount, _) = (critical.announcedRequestsCount + 1)
-        .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
+    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
+      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
 
-      if let handler {
-        critical.currentRequests[id] = handler
-      }
-
-      return id
+    if let handler {
+      currentRequests[id] = handler
     }
+
+    return id
   }
 
   func responseReceived(
     _ response: Message.Response,
     forRequestWithID id: Int
   ) {
-    let handler: (@Sendable (Message.Response) -> Void)? = critical.withLock { critical in
-      guard let handler = critical.currentRequests[id] else {
-        return nil
-      }
-      critical.currentRequests[id] = nil
-      return handler
+    guard let handler = currentRequests[id] else {
+      return
     }
-    handler?(response)
+    currentRequests[id] = nil
+    handler(response)
   }
 }

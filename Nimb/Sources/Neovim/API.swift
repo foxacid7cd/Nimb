@@ -48,6 +48,7 @@ public final class API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
+  @MainActor
   public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
     try rpc.fastCall(
       method: T.method,
@@ -55,6 +56,7 @@ public final class API<Target: Channel>: Sendable {
     )
   }
 
+  @MainActor
   public func fastCallsTransaction(
     with apiFunctions: some Sequence<any APIFunction>
   ) throws {

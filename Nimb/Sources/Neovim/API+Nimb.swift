@@ -28,6 +28,7 @@ public extension API {
     return nil
   }
 
+  @MainActor
   func nimbFast(method: String, parameters: [Value] = []) throws {
     try fastCall(APIFunctions.NvimExecLua(
       code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",

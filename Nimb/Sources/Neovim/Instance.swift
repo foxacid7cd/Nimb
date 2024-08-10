@@ -7,6 +7,7 @@ import Collections
 import CustomDump
 import SystemPackage
 
+@MainActor
 public final class Instance: Sendable {
   public enum MouseButton: String, Sendable {
     case left

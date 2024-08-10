@@ -32,8 +32,7 @@ public class MainWindowController: NSWindowController, Rendering {
 
   public init(
     store: Store,
-    minOuterGridSize: IntegerSize,
-    keyPressed: ((KeyPress) -> Void)?
+    minOuterGridSize: IntegerSize
   ) {
     self.store = store
     viewController = .init(
@@ -45,8 +44,11 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
-    customWindow.allowsConcurrentViewDrawing = true
-    customWindow.keyPressed = keyPressed
+    customWindow.keyPressed = { keyPress in
+      Task {
+        try await store.api.nvimInput(keys: keyPress.makeNvimKeyCode())
+      }
+    }
     super.init(window: customWindow)
 
     customWindow.delegate = self

@@ -28,15 +28,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     Task {
       setupStore()
       setupMainMenuController()
-
-      let keyPressed = { [store] (keyPress: KeyPress) in
-        store!.apiTask {
-          try await $0.nvimInput(keys: keyPress.makeNvimKeyCode())
-        }
-      }
-      setupMsgShowsWindowController(keyPressed: keyPressed)
-      setupMainWindowController(keyPressed: keyPressed)
-
+      setupMsgShowsWindowController()
+      setupMainWindowController()
       do {
         try await instance!.run()
       } catch {
@@ -52,6 +45,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     updatesTask?.cancel()
     alertMessagesTask?.cancel()
   }
+
+  private func reportKeyPressed() { }
 
   private func handle(keyPress: KeyPress) { }
 
@@ -127,16 +122,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     NSApplication.shared.mainMenu = mainMenuController!.menu
   }
 
-  private func setupMainWindowController(keyPressed: ((KeyPress) -> Void)?) {
+  private func setupMainWindowController() {
     mainWindowController = MainWindowController(
       store: store!,
-      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
-      keyPressed: keyPressed
+      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
     )
   }
 
-  private func setupMsgShowsWindowController(keyPressed: ((KeyPress) -> Void)?) {
-    msgShowsWindowController = MsgShowsWindowController(store: store!, keyPressed: keyPressed)
+  private func setupMsgShowsWindowController() {
+    msgShowsWindowController = MsgShowsWindowController(store: store!)
   }
 
   private func showCriticalAlert(error: Error) async {

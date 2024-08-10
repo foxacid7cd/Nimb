@@ -131,26 +131,48 @@ final class MainMenuController: NSObject, Rendering {
 
   @objc private func handleSave() {
     store.apiTask {
-      try await $0.nimb(method: "write")
+      _ = try await $0.nimb(method: "write")
     }
   }
 
   @objc private func handleSaveAs() {
-    //    let validBuftypes: Set<String> = ["", "help"]
+    Task {
+      let validBuftypes: Set<String> = ["", "help"]
 
-    let panel = NSSavePanel()
-    panel.showsHiddenFiles = true
-    panel.runModal()
-    let name2 = panel.nameFieldStringValue
-    if name2.isEmpty {
-      panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-      panel.nameFieldStringValue = "Untitled"
-    } else {
-      let url = URL(filePath: "panel")
-      panel.directoryURL = url.deletingLastPathComponent()
-      panel.nameFieldStringValue = url.lastPathComponent
-      store.apiTask {
-        try await $0.nimb(method: "save_as", parameters: [.string(url.path())])
+      guard let buf = await getCurrentBufferInfo(), validBuftypes.contains(buf.type) else {
+        return
+      }
+
+      let panel = NSSavePanel()
+      panel.showsHiddenFiles = true
+      panel.runModal()
+      let name2 = panel.nameFieldStringValue
+      if name2.isEmpty {
+        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+        panel.nameFieldStringValue = "Untitled"
+      } else {
+        let url = URL(filePath: "panel")
+        panel.directoryURL = url.deletingLastPathComponent()
+        panel.nameFieldStringValue = url.lastPathComponent
+        store.apiTask {
+          _ = try await $0.nimb(method: "save_as", parameters: [.string(url.path())])
+        }
+      }
+    }
+  }
+
+  private func getCurrentBufferInfo() async -> (name: String, type: String)? {
+    await store.apiAsyncTask { api in
+      async let name = api.nvimBufGetName(bufferID: .current)
+      async let rawBuftype = api.nvimGetOptionValue(
+        name: "buftype",
+        opts: ["buf": .integer(0)]
+      )
+      do {
+        return try await (
+          name: name,
+          type: rawBuftype[case: \.string] ?? ""
+        )
       }
     }
   }
@@ -207,7 +229,7 @@ final class MainMenuController: NSObject, Rendering {
     actionTask = Task {
       defer { actionTask = nil }
 
-      guard let text = await store.requestTextForCopy() else {
+      guard let text = await requestTextForCopy() else {
         return
       }
 
@@ -269,6 +291,38 @@ final class MainMenuController: NSObject, Rendering {
       }
     }
   }
+
+  private func requestTextForCopy() async -> String? {
+    guard
+      let mode = state.mode,
+      let modeInfo = state.modeInfo
+    else {
+      return nil
+    }
+
+    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+    let firstCharacter = shortName?.lowercased().first
+    if ["i", "n", "o", "r", "s", "v"].contains(firstCharacter) {
+      return await store.apiAsyncTask { api in
+        let rawSuccess = try await api.nimb(method: "buf_text_for_copy")
+        guard let text = rawSuccess.flatMap(\.string) else {
+          throw Failure("success result is not a string", rawSuccess as Any)
+        }
+        return text
+      }
+    } else if firstCharacter == "c" {
+      if
+        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
+        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
+      {
+        return cmdline.contentParts
+          .map { _ in "" }
+          .joined()
+      }
+    }
+
+    return nil
+  }
 }
 
 extension OutputStream: @retroactive TextOutputStream {
@@ -287,7 +341,7 @@ extension MainMenuController: NSFontChanging {
       return
     }
     let newFont = sender.convert(state.font.appKit())
-    store.set(font: .init(newFont))
+    store.dispatch(Actions.SetFont(value: .init(newFont)))
   }
 }
 

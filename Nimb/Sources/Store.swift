@@ -3,64 +3,49 @@
 import Algorithms
 import AsyncAlgorithms
 import Collections
+import ConcurrencyExtras
 import CustomDump
 import Foundation
 
 @MainActor
 public class Store: Sendable {
-  public let updates: _AsyncThrottleSequence<
-    AsyncFilterSequence<AsyncExclusiveReductionsSequence<
-      AsyncBufferSequence<AsyncMerge2Sequence<
-        AsyncChannel<any Action>,
-        AsyncFlatMapSequence<
-          AsyncCompactMapSequence<AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]>, [any Action]>,
-          AsyncSyncSequence<[any Action]>
-        >
-      >>,
-      (state: State, updates: State.Updates)
-    >>,
-    ContinuousClock,
-    (state: State, updates: State.Updates)
-  >
+  public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
   public let alertMessages = AsyncChannel<AlertMessage>()
 
   let instance: Instance
 
-  let apiTask: (
-    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
-  )
-    -> Void
-
-//  private func startCursorBlinkingTask() {
-//    guard let cursorStyle = _state.currentCursorStyle else {
-//      return
-//    }
-//    if
-//      let blinkWait = cursorStyle.blinkWait,
-//      blinkWait > 0,
-//      let blinkOff = cursorStyle.blinkOff,
-//      blinkOff > 0,
-//      let blinkOn = cursorStyle.blinkOn,
-//      blinkOn > 0
-//    {
-//      cursorBlinkingTask = Task {
-//        do {
-//          try await Task.sleep(for: .milliseconds(blinkWait))
-//
-//          while true {
-//            dispatch(Actions.SetCursorBlinkingPhase(value: false))
-//            try await Task.sleep(for: .milliseconds(blinkOff))
-//
-//            dispatch(Actions.SetCursorBlinkingPhase(value: true))
-//            try await Task.sleep(for: .milliseconds(blinkOn))
-//          }
-//        } catch { }
-//      }
-//    }
-//  }
+  //  private func startCursorBlinkingTask() {
+  //    guard let cursorStyle = _state.currentCursorStyle else {
+  //      return
+  //    }
+  //    if
+  //      let blinkWait = cursorStyle.blinkWait,
+  //      blinkWait > 0,
+  //      let blinkOff = cursorStyle.blinkOff,
+  //      blinkOff > 0,
+  //      let blinkOn = cursorStyle.blinkOn,
+  //      blinkOn > 0
+  //    {
+  //      cursorBlinkingTask = Task {
+  //        do {
+  //          try await Task.sleep(for: .milliseconds(blinkWait))
+  //
+  //          while true {
+  //            dispatch(Actions.SetCursorBlinkingPhase(value: false))
+  //            try await Task.sleep(for: .milliseconds(blinkOff))
+  //
+  //            dispatch(Actions.SetCursorBlinkingPhase(value: true))
+  //            try await Task.sleep(for: .milliseconds(blinkOn))
+  //          }
+  //        } catch { }
+  //      }
+  //    }
+  //  }
   fileprivate let handleErrorMessage: @Sendable (String) -> Void
   fileprivate let handleError: @Sendable (any Error) -> Void
+
+  private let apiTasksChannel = AsyncChannel< @Sendable (API<ProcessChannel>) async throws -> Any? > ()
 
   private let actionsChannel = AsyncChannel<Action>()
   private var cursorBlinkingTask: Task<Void, Never>?
@@ -70,7 +55,6 @@ public class Store: Sendable {
   private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
   private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
   private var latestUIEventsBatch = [UIEvent]()
-  private let apiLoopTask: Task<Void, Never>
 
   public var api: API<ProcessChannel> {
     instance.api
@@ -87,24 +71,6 @@ public class Store: Sendable {
     handleError = { [alertMessages] error in
       Task {
         await alertMessages.send(.init(error))
-      }
-    }
-
-    let apiTasksChannel = AsyncChannel<@Sendable (API<ProcessChannel>) async -> Void>()
-    apiTask = { [handleError] body in
-      Task {
-        await apiTasksChannel.send { api in
-          do {
-            return try await body(api)
-          } catch {
-            handleError(error)
-          }
-        }
-      }
-    }
-    apiLoopTask = Task.detached(priority: .userInitiated) { [instance] in
-      for await body in apiTasksChannel.buffer(policy: .unbounded) {
-        await body(instance.api)
       }
     }
 
@@ -131,91 +97,57 @@ public class Store: Sendable {
       }
       .flatMap(\.async)
 
-    updates = merge(actionsChannel, applyUIEventsActions)
-      .buffer(policy: .unbounded)
-      .reductions(into: (state: initialState, updates: State.Updates())) { [handleError] result, action in
-        if result.updates.needFlush {
-          result.updates = State.Updates(needFlush: false)
+    updates = AsyncStream(
+      merge(actionsChannel, applyUIEventsActions)
+        .buffer(policy: .unbounded)
+        .reductions(into: (state: initialState, updates: State.Updates())) { [handleError] result, action in
+          if result.updates.needFlush {
+            result.updates = State.Updates(needFlush: false)
+          }
+          let updates = await action.apply(to: &result.state, handleError: handleError)
+          result.updates.formUnion(updates)
         }
-        let updates = action.apply(to: &result.state, handleError: handleError)
-        result.updates.formUnion(updates)
-      }
-      .filter(\.updates.needFlush)
-      ._throttle(for: .milliseconds(1000 / 60), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
-        if let accum {
-          var updates = accum.updates
-          updates.formUnion(new.updates)
-          var _state = accum.state
-          _state.apply(updates: new.updates, from: new.state)
-          return (_state, updates)
-        } else {
-          return new
-        }
-      }
+        .filter(\.updates.needFlush)
+//        ._throttle(for: .milliseconds(1000 / 120), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
+//          if let accum {
+//            var updates = accum.updates
+//            updates.formUnion(new.updates)
+//            var _state = accum.state
+//            _state.apply(updates: new.updates, from: new.state)
+//            return (new.state, updates)
+//          } else {
+//            return new
+//          }
+//        }
+    )
   }
 
   deinit {
     cursorBlinkingTask?.cancel()
   }
 
-  public func set(font: Font) {
-    dispatch(Actions.SetFont(value: font))
+  @discardableResult
+  public func apiAsyncTask<T: Sendable>(_ body: @escaping @Sendable (API<ProcessChannel>) async throws -> T) async -> T? {
+    await Task {
+      do {
+        return try await body(api)
+      } catch {
+        handleError(error)
+        return nil
+      }
+    }.value
   }
 
-  public func report(keyPress: KeyPress) {
-    Task {
-      try? await instance.report(keyPress: keyPress)
-    }
-  }
-
-  public func reportMouseMove(
-    modifier: String,
-    gridID: Grid.ID,
-    point: IntegerPoint
-  ) {
-    if
-      let previousMouseMove,
-      previousMouseMove.modifier == modifier,
-      previousMouseMove.gridID == gridID,
-      previousMouseMove.point == point
-    {
-      return
-    }
-    previousMouseMove = (modifier, gridID, point)
-
-    instance.reportMouseMove(modifier: modifier, gridID: gridID, point: point)
-  }
-
-  public func reportScrollWheel(
-    with direction: Instance.ScrollDirection,
-    modifier: String,
-    gridID: Grid.ID,
-    point: IntegerPoint
+  public func apiTask(
+    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> (some Sendable)?
   ) {
     Task {
-      try? await instance.reportScrollWheel(
-        with: direction,
-        modifier: modifier,
-        gridID: gridID,
-        point: point
-      )
+      do {
+        _ = try await body(api)
+      } catch {
+        handleError(error)
+      }
     }
-  }
-
-  public func report(
-    mouseButton: Instance.MouseButton,
-    action: Instance.MouseAction,
-    modifier: String,
-    gridID: Grid.ID,
-    point: IntegerPoint
-  ) {
-    instance.report(
-      mouseButton: mouseButton,
-      action: action,
-      modifier: modifier,
-      gridID: gridID,
-      point: point
-    )
   }
 
   public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
@@ -279,16 +211,16 @@ public class Store: Sendable {
   }
 
   public func reportPumBounds(rectangle: IntegerRectangle) {
-//    guard rectangle != previousPumBounds else {
-//      return
-//    }
-//    previousPumBounds = rectangle
-//
-//    do {
-//      try instance.reportPumBounds(rectangle: rectangle)
-//    } catch {
-//      handleError(error)
-//    }
+    //    guard rectangle != previousPumBounds else {
+    //      return
+    //    }
+    //    previousPumBounds = rectangle
+    //
+    //    do {
+    //      try instance.reportPumBounds(rectangle: rectangle)
+    //    } catch {
+    //      handleError(error)
+    //    }
   }
 
   public func reportPaste(text: String) {
@@ -297,50 +229,6 @@ public class Store: Sendable {
     } catch {
       handleError(error)
     }
-  }
-
-  public func requestTextForCopy() async -> String? {
-//    guard
-//      let mode = _state.mode,
-//      let modeInfo = _state.modeInfo
-//    else {
-//      return nil
-//    }
-//
-//    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
-//
-//    switch shortName?.lowercased().first {
-//    case "i",
-//         "n",
-//         "o",
-//         "r",
-//         "s",
-//         "v":
-//      do {
-//        return try await instance.bufTextForCopy()
-//      } catch {
-//        Task {
-//          await alertMessages.send(.init(error))
-//        }
-//        return nil
-//      }
-
-//    case "c":
-//      if
-//        let lastCmdlineLevel = _state.cmdlines.lastCmdlineLevel,
-//        let cmdline = _state.cmdlines.dictionary[lastCmdlineLevel]
-//      {
-//        return cmdline.contentParts
-//          .map { _ in "" }
-//          .joined()
-//      }
-
-//
-//    default:
-//      break
-//    }
-
-    nil
   }
 
   public func close() async {
@@ -359,16 +247,6 @@ public class Store: Sendable {
     }
   }
 
-  public func requestCurrentBufferInfo() async
-  -> (name: String, buftype: String)? {
-    do {
-      return try await instance.requestCurrentBufferInfo()
-    } catch {
-      handleError(error)
-      return nil
-    }
-  }
-
   public func dumpState() -> String {
     var string = ""
     customDump(latestUIEventsBatch, to: &string)
@@ -379,26 +257,6 @@ public class Store: Sendable {
     Task {
       await actionsChannel.send(action)
     }
-  }
-}
-
-@MainActor
-public func withErrorHandler<T>(from store: Store, _ body: @MainActor () throws -> T) -> T? {
-  do {
-    return try body()
-  } catch {
-    store.handleError(error)
-    return nil
-  }
-}
-
-@MainActor
-public func withAsyncErrorHandler<T>(from store: Store, _ body: @MainActor () async throws -> T) async -> T? {
-  do {
-    return try await body()
-  } catch {
-    store.handleError(error)
-    return nil
   }
 }
 
