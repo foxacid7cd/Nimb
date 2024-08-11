@@ -239,7 +239,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
     }
 
     let scrollingSpeedMultiplier = 1.0
-    let xThreshold = state.font.cellWidth * 4 * scrollingSpeedMultiplier
+    let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
     let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
     if
@@ -273,6 +273,8 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
         xScrollingDelta = xScrollingAccumulator - xScrollingReported
       }
       hasScrollingSlippedHorizontally = true
+      hasScrollingSlippedVertically = false
+      yScrollingDelta = 0
 
       horizontalScrollCount = Int(xScrollingDelta / xThreshold)
       let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
