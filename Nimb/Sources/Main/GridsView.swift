@@ -228,6 +228,16 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     case .press:
       let location = layer!.convert(event.locationInWindow, from: nil)
       gridLayer = layer!.hitTest(location) as? GridLayer
+      if let gridLayer {
+        switch mouseButton {
+        case .left:
+          leftMouseInteractionTarget = gridLayer
+        case .right:
+          rightMouseInteractionTarget = gridLayer
+        case .middle:
+          otherMouseInteractionTarget = gridLayer
+        }
+      }
 
     case .drag:
       gridLayer =
