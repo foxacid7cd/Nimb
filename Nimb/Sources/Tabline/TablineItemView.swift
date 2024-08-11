@@ -30,6 +30,7 @@ class TablineItemView: NSView, Rendering {
     didSet {
       if text != oldValue {
         shouldRedrawImageViews = true
+        isAnimated = false
         render()
       }
     }

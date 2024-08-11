@@ -27,6 +27,13 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let titleTextField = NSTextField(labelWithString: "")
   private var notificationsTask: Task<Void, Never>?
 
+  private lazy var titleParagraphStyle: NSParagraphStyle = {
+    let paragraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.alignment = .right
+    paragraphStyle.lineBreakMode = .byTruncatingTail
+    return paragraphStyle
+  }()
+
   var preferredViewHeight: CGFloat = 0 {
     didSet {
       if preferredViewHeight != oldValue {
@@ -211,9 +218,6 @@ final class TablineView: NSVisualEffectView, Rendering {
     guard isRendered else {
       return
     }
-    let paragraphStyle = NSMutableParagraphStyle()
-    paragraphStyle.alignment = .right
-    paragraphStyle.lineBreakMode = .byTruncatingTail
 
     titleTextField.attributedStringValue = .init(
       string: state.title ?? "",
@@ -222,7 +226,7 @@ final class TablineView: NSVisualEffectView, Rendering {
           NSColor.labelColor :
           NSColor.secondaryLabelColor,
         .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
-        .paragraphStyle: paragraphStyle,
+        .paragraphStyle: titleParagraphStyle,
       ]
     )
     titleTextField.alphaValue = window?.isKeyWindow == true ? 0.8 : 0.7
@@ -243,63 +247,61 @@ final class TablineView: NSVisualEffectView, Rendering {
       tabsScrollView.layer!.filters = [monochromeFilter]
     }
 
-    guard let tabline = state.tabline else {
-      return
-    }
+    if let tabline = state.tabline {
+      if
+        updates.tabline.isBuffersUpdated || updates
+          .isAppearanceUpdated
+      {
+        reloadBuffers()
+      } else if updates.tabline.isSelectedBufferUpdated {
+        for (bufferIndex, buffer) in tabline.buffers.enumerated() {
+          let itemView = buffersStackView
+            .arrangedSubviews[bufferIndex] as! TablineItemView
+          let isSelected = buffer.id == tabline.currentBufferID
+          if isSelected != itemView.isSelected {
+            itemView.isSelected = isSelected
 
-    if
-      updates.tabline.isBuffersUpdated || updates
-        .isAppearanceUpdated
-    {
-      reloadBuffers()
-    } else if updates.tabline.isSelectedBufferUpdated {
-      for (bufferIndex, buffer) in tabline.buffers.enumerated() {
-        let itemView = buffersStackView
-          .arrangedSubviews[bufferIndex] as! TablineItemView
-        let isSelected = buffer.id == tabline.currentBufferID
-        if isSelected != itemView.isSelected {
-          itemView.isSelected = isSelected
-
-          if itemView.isSelected {
-            buffersScrollView.contentView.scrollToVisible(itemView.frame)
+            if itemView.isSelected {
+              buffersScrollView.contentView.scrollToVisible(itemView.frame)
+            }
           }
-        }
 
-        itemView.render()
-      }
-    }
-
-    if
-      updates.tabline.isTabpagesUpdated || updates
-        .isAppearanceUpdated
-    {
-      reloadTabpages()
-    } else if updates.tabline.isTabpagesContentUpdated {
-      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView
-          .arrangedSubviews[tabpageIndex] as! TablineItemView
-        itemView.text = "\(tabpageIndex + 1)"
-
-        itemView.isSelected = tabpage.id == tabline.currentTabpageID
-        if itemView.isSelected {
-          tabsScrollView.contentView.scrollToVisible(itemView.frame)
-        }
-
-        itemView.render()
-      }
-
-    } else if updates.tabline.isSelectedTabpageUpdated {
-      for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-        let itemView = tabsStackView
-          .arrangedSubviews[tabpageIndex] as! TablineItemView
-
-        let isSelected = tabpage.id == tabline.currentTabpageID
-        if isSelected != itemView.isSelected {
-          itemView.isSelected = isSelected
           itemView.render()
+        }
+      }
 
+      if
+        updates.tabline.isTabpagesUpdated || updates
+          .isAppearanceUpdated
+      {
+        reloadTabpages()
+      } else if updates.tabline.isTabpagesContentUpdated {
+        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+          let itemView = tabsStackView
+            .arrangedSubviews[tabpageIndex] as! TablineItemView
+          itemView.text = "\(tabpageIndex + 1)"
+
+          itemView.isSelected = tabpage.id == tabline.currentTabpageID
           if itemView.isSelected {
             tabsScrollView.contentView.scrollToVisible(itemView.frame)
+          }
+
+          itemView.render()
+        }
+
+      } else if updates.tabline.isSelectedTabpageUpdated {
+        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+          let itemView = tabsStackView
+            .arrangedSubviews[tabpageIndex] as! TablineItemView
+
+          let isSelected = tabpage.id == tabline.currentTabpageID
+          if isSelected != itemView.isSelected {
+            itemView.isSelected = isSelected
+            itemView.render()
+
+            if itemView.isSelected {
+              tabsScrollView.contentView.scrollToVisible(itemView.frame)
+            }
           }
         }
       }

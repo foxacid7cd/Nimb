@@ -9,61 +9,40 @@ import Foundation
 
 @MainActor
 public class Store: Sendable {
-  @dynamicMemberLookup
-  public struct APIProxy: Sendable {
-    private var api: API<ProcessChannel>
-
-    fileprivate init(api: API<ProcessChannel>) {
-      self.api = api
-    }
-
-    public subscript<T>(dynamicMember keyPath: KeyPath<API<ProcessChannel>, T>) -> T {
-      api[keyPath: keyPath]
-    }
-  }
-
   public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
   let instance: Instance
 
-  //  private func startCursorBlinkingTask() {
-  //    guard let cursorStyle = _state.currentCursorStyle else {
-  //      return
-  //    }
-  //    if
-  //      let blinkWait = cursorStyle.blinkWait,
-  //      blinkWait > 0,
-  //      let blinkOff = cursorStyle.blinkOff,
-  //      blinkOff > 0,
-  //      let blinkOn = cursorStyle.blinkOn,
-  //      blinkOn > 0
-  //    {
-  //      cursorBlinkingTask = Task {
-  //        do {
-  //          try await Task.sleep(for: .milliseconds(blinkWait))
-  //
-  //          while true {
-  //            dispatch(Actions.SetCursorBlinkingPhase(value: false))
-  //            try await Task.sleep(for: .milliseconds(blinkOff))
-  //
-  //            dispatch(Actions.SetCursorBlinkingPhase(value: true))
-  //            try await Task.sleep(for: .milliseconds(blinkOn))
-  //          }
-  //        } catch { }
-  //      }
-  //    }
-  //  }
+//    private func startCursorBlinkingTask() {
+//      guard let cursorStyle = _state.currentCursorStyle else {
+//        return
+//      }
+//      if
+//        let blinkWait = cursorStyle.blinkWait,
+//        blinkWait > 0,
+//        let blinkOff = cursorStyle.blinkOff,
+//        blinkOff > 0,
+//        let blinkOn = cursorStyle.blinkOn,
+//        blinkOn > 0
+//      {
+//        cursorBlinkingTask = Task {
+//          do {
+//            try await Task.sleep(for: .milliseconds(blinkWait))
+//  
+//            while true {
+//              dispatch(Actions.SetCursorBlinkingPhase(value: false))
+//              try await Task.sleep(for: .milliseconds(blinkOff))
+//  
+//              dispatch(Actions.SetCursorBlinkingPhase(value: true))
+//              try await Task.sleep(for: .milliseconds(blinkOn))
+//            }
+//          } catch { }
+//        }
+//      }
+//    }
 
   private let apiTasksChannel = AsyncChannel< @Sendable (API<ProcessChannel>) async throws -> Any? > ()
-
   private let actionsChannel = AsyncChannel<Action>()
-  private var cursorBlinkingTask: Task<Void, Never>?
-  private var previousReportedOuterGridSize: IntegerSize?
-  private var previousReportedOuterGridSizeInstant = ContinuousClock().now
-  private var outerGridSizeThrottlingTask: Task<Void, Never>?
-  private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
-  private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
-  private var latestUIEventsBatch = [UIEvent]()
   private let alertsChannel = AsyncChannel<Alert>()
 
   public var alerts: AsyncStream<Alert> {
@@ -114,15 +93,13 @@ public class Store: Sendable {
         result.updates.formUnion(updates)
       }
       .filter(\.updates.needFlush)
-      .throttle(for: .milliseconds(1000 / 60), clock: .continuous) { previousStateUpdates, stateUpdates in
-        var updates = previousStateUpdates.updates
-        updates.formUnion(stateUpdates.updates)
-        return (stateUpdates.state, updates)
+      .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
+        var state = previous.state
+        state.apply(updates: latest.updates, from: latest.state)
+        var updates = previous.updates
+        updates.formUnion(latest.updates)
+        return (state, updates)
       }
-  }
-
-  deinit {
-    cursorBlinkingTask?.cancel()
   }
 
   @discardableResult
@@ -138,7 +115,7 @@ public class Store: Sendable {
   }
 
   public func apiTask(
-    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> (some Sendable)?
+    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
   ) {
     Task {
       do {
@@ -147,58 +124,6 @@ public class Store: Sendable {
         await alertsChannel.send(.init(error))
       }
     }
-  }
-
-  public func reportOuterGrid(changedSizeTo size: IntegerSize) {
-    guard size != previousReportedOuterGridSize else {
-      return
-    }
-    previousReportedOuterGridSize = size
-
-    guard outerGridSizeThrottlingTask == nil else {
-      return
-    }
-    defer { previousReportedOuterGridSizeInstant = .now }
-
-    let sincePrevious = previousReportedOuterGridSizeInstant.duration(to: .now)
-    if sincePrevious > outerGridSizeThrottlingInterval {
-      instance.reportOuterGrid(changedSizeTo: size)
-    } else {
-      outerGridSizeThrottlingTask = Task { [weak self] in
-        guard let self else {
-          return
-        }
-
-        do {
-          try await Task
-            .sleep(for: outerGridSizeThrottlingInterval - sincePrevious)
-
-          instance
-            .reportOuterGrid(changedSizeTo: previousReportedOuterGridSize!)
-        } catch { }
-
-        outerGridSizeThrottlingTask = nil
-      }
-    }
-  }
-
-  public func reportPumBounds(rectangle: IntegerRectangle) {
-    //    guard rectangle != previousPumBounds else {
-    //      return
-    //    }
-    //    previousPumBounds = rectangle
-    //
-    //    do {
-    //      try instance.reportPumBounds(rectangle: rectangle)
-    //    } catch {
-    //      handleError(error)
-    //    }
-  }
-
-  public func dumpState() -> String {
-    var string = ""
-    customDump(latestUIEventsBatch, to: &string)
-    return string
   }
 
   public func dispatch(_ action: Action) {

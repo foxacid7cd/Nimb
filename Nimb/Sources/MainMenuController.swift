@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CustomDump
 
 @MainActor
 final class MainMenuController: NSObject, Rendering {
@@ -259,10 +260,11 @@ final class MainMenuController: NSObject, Rendering {
 
   @objc private func handleLogState() {
     Task { @MainActor in
-      let dump = store.dumpState()
+      var dump = ""
+      customDump(self.state, to: &dump, maxDepth: 3)
 
       let temporaryFileURL = FileManager.default.temporaryDirectory
-        .appending(path: "\(UUID().uuidString).txt")
+        .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")
       FileManager.default.createFile(
         atPath: temporaryFileURL.path(),
         contents: nil
@@ -393,7 +395,7 @@ extension MainMenuController: NSMenuDelegate {
       toggleUIEventsLoggingMenuItem.target = self
 
       let logStateMenuItem = NSMenuItem(
-        title: "Log current application state",
+        title: "Dump current application state",
         action: #selector(handleLogState),
         keyEquivalent: ""
       )

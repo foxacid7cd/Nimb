@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import AsyncAlgorithms
 
 public class MainViewController: NSViewController, Rendering {
   let gridsView: GridsView
@@ -13,6 +14,8 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var gridsContainerView = NSView()
   private var preMaximizeWindowFrame: CGRect?
   private lazy var modalOverlayView = NSView()
+  private let reportOuterGridSizeChangedChannel = AsyncChannel<IntegerSize>()
+  private var reportOuterGridSizeChangedTask: Task<Void, Never>?
 
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
@@ -26,11 +29,31 @@ public class MainViewController: NSViewController, Rendering {
       }
     )
     super.init(nibName: nil, bundle: nil)
+
+    reportOuterGridSizeChangedTask = Task {
+      let outerGridSizes = reportOuterGridSizeChangedChannel
+        .throttle(for: .milliseconds(100), clock: .continuous) { _, latest in latest }
+
+      for await outerGridSize in outerGridSizes {
+        store.apiTask {
+          try await $0
+            .nvimUITryResizeGrid(
+              grid: Grid.OuterID,
+              width: outerGridSize.columnsCount,
+              height: outerGridSize.rowsCount
+            )
+        }
+      }
+    }
   }
 
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  deinit {
+    reportOuterGridSizeChangedTask?.cancel()
   }
 
   override public func loadView() {
@@ -162,7 +185,9 @@ public class MainViewController: NSViewController, Rendering {
       columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
       rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
     )
-    store.reportOuterGrid(changedSizeTo: outerGridSizeNeeded)
+    Task {
+      await reportOuterGridSizeChangedChannel.send(outerGridSizeNeeded)
+    }
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
@@ -200,14 +225,14 @@ public class MainViewController: NSViewController, Rendering {
   private func reportPopupmenuPumBounds() {
     view.layoutSubtreeIfNeeded()
 
-    var popupmenuFrame = popupmenuViewController.view.frame
-    popupmenuFrame = view.convert(popupmenuFrame, to: nil)
-    popupmenuFrame = gridsView.convert(popupmenuFrame, from: nil)
-    popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
-    store.reportPumBounds(rectangle: .init(
-      frame: popupmenuFrame,
-      cellSize: state.font.cellSize
-    ))
+//    var popupmenuFrame = popupmenuViewController.view.frame
+//    popupmenuFrame = view.convert(popupmenuFrame, to: nil)
+//    popupmenuFrame = gridsView.convert(popupmenuFrame, from: nil)
+//    popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
+//    store.reportPumBounds(rectangle: .init(
+//      frame: popupmenuFrame,
+//      cellSize: state.font.cellSize
+//    ))
   }
 
   private func renderBackground() {
