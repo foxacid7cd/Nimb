@@ -252,12 +252,6 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
   }
 
   public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
-//    let origin = anchoringLayerOrigin + positionInAnchoringLayer
-//
-//    frame = .init(
-//      origin: origin,
-//      size: state.outerGrid!.size * state.font.cellSize
-//    )
     invalidateIntrinsicContentSize()
 
     for anchoredLayer in anchoredLayers {
@@ -268,8 +262,8 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
   }
 
   private func report(
-    mouseButton: Instance.MouseButton,
-    action: Instance.MouseAction,
+    mouseButton: MouseButton,
+    action: MouseAction,
     with event: NSEvent
   ) {
     var gridLayer: GridLayer?

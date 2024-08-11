@@ -29,8 +29,8 @@ public final class RPC<Target: Channel>: Sendable {
 
           for message in messages {
             switch message {
-            case .request:
-              continue
+            case let .request(request):
+              logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
             case let .response(response):
               storage.responseReceived(response, forRequestWithID: response.id)
             case let .notification(notification):

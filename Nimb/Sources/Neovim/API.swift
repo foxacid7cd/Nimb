@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 public final class API<Target: Channel>: Sendable {
+  public let neovimNotifications: AsyncThrowingStream<[NeovimNotification], any Error>
+
   let rpc: RPC<Target>
 
-  public var neovimNotifications: AsyncThrowingMapSequence<AsyncThrowingStream<[Message.Notification], any Error>, [NeovimNotification]> {
-    rpc.notifications
+  public init(_ rpc: RPC<Target>) {
+    self.rpc = rpc
+    neovimNotifications = rpc.notifications
       .map { notifications -> [NeovimNotification] in
         try notifications.compactMap { notification in
           switch notification.method {
@@ -33,10 +36,8 @@ public final class API<Target: Channel>: Sendable {
           }
         }
       }
-  }
-
-  public init(_ rpc: RPC<Target>) {
-    self.rpc = rpc
+      .buffer(policy: .unbounded)
+      .eraseToThrowingStream()
   }
 
   @discardableResult

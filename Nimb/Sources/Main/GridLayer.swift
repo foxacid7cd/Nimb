@@ -273,8 +273,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
         xScrollingDelta = xScrollingAccumulator - xScrollingReported
       }
       hasScrollingSlippedHorizontally = true
-      hasScrollingSlippedVertically = false
-      yScrollingDelta = 0
 
       horizontalScrollCount = Int(xScrollingDelta / xThreshold)
       let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)

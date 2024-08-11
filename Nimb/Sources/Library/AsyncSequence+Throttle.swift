@@ -30,7 +30,7 @@ public extension AsyncSequence where Element: Sendable, Self: Sendable {
             let emit = { @Sendable in
               lastEmit.setValue(clock.now)
               accumulator.withValue { accumulator in
-                let yieldResult = continuation.yield(accumulator!)
+                let yieldResult = continuation.yield(accumulator ?? element)
                 switch yieldResult {
                 case .dropped:
                   Task { @MainActor in

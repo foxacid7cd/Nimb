@@ -103,6 +103,7 @@
 		6896CE452C68401A001F3C85 /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE442C684018001F3C85 /* Alert.swift */; };
 		6896CE472C68410D001F3C85 /* AsyncSequence+Throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE462C6840F2001F3C85 /* AsyncSequence+Throttle.swift */; };
 		6896CE482C68410D001F3C85 /* AsyncSequence+Throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE462C6840F2001F3C85 /* AsyncSequence+Throttle.swift */; };
+		6896CE4A2C6860E8001F3C85 /* Neovim.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE492C686096001F3C85 /* Neovim.swift */; };
 		689738F32C480AF8002159BD /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 689738F22C480AF7002159BD /* TinyConstraints */; };
 		6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6897398A2C65F14B00891467 /* Store+withAPI.swift */; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
@@ -113,7 +114,6 @@
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
 		68A4101D2C5D46F20092050B /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4101C2C5D46F20092050B /* TablineView.swift */; };
-		68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF382AD29F650017C28D /* Instance.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
 		68A8FF532AD29F660017C28D /* Popupmenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3D2AD29F650017C28D /* Popupmenu.swift */; };
@@ -293,6 +293,7 @@
 		6896CE412C683ADB001F3C85 /* DefaultStringInterpolation+CustomDump.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DefaultStringInterpolation+CustomDump.swift"; sourceTree = "<group>"; };
 		6896CE442C684018001F3C85 /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		6896CE462C6840F2001F3C85 /* AsyncSequence+Throttle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncSequence+Throttle.swift"; sourceTree = "<group>"; };
+		6896CE492C686096001F3C85 /* Neovim.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Neovim.swift; sourceTree = "<group>"; };
 		6897398A2C65F14B00891467 /* Store+withAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Store+withAPI.swift"; sourceTree = "<group>"; };
 		689870A82AF80D1B00C4F2FD /* NeovimError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimError.swift; sourceTree = "<group>"; };
 		689D9E2829B4FAF900345713 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
@@ -303,7 +304,6 @@
 		689ECE602AC4FF20008D6A02 /* CmdlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlineView.swift; sourceTree = "<group>"; };
 		68A4101C2C5D46F20092050B /* TablineView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TablineView.swift; sourceTree = "<group>"; };
 		68A6C5502AFC9C7F00FEB611 /* NeovimRuntime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NeovimRuntime; sourceTree = "<group>"; };
-		68A8FF382AD29F650017C28D /* Instance.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Instance.swift; sourceTree = "<group>"; };
 		68A8FF392AD29F650017C28D /* Windows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Windows.swift; sourceTree = "<group>"; };
 		68A8FF3A2AD29F650017C28D /* MsgShow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MsgShow.swift; sourceTree = "<group>"; };
 		68A8FF3D2AD29F650017C28D /* Popupmenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Popupmenu.swift; sourceTree = "<group>"; };
@@ -585,10 +585,10 @@
 		68A8FF362AD29F110017C28D /* Neovim */ = {
 			isa = PBXGroup;
 			children = (
+				6896CE492C686096001F3C85 /* Neovim.swift */,
 				68A8FF3F2AD29F650017C28D /* API.swift */,
 				6888D8A52AF83B6B0049562D /* API+Nimb.swift */,
 				6878932C2AF7F2B300005A8E /* APIFunction.swift */,
-				68A8FF382AD29F650017C28D /* Instance.swift */,
 				68A8FF472AD29F650017C28D /* KeyPress.swift */,
 				68A8FF3E2AD29F650017C28D /* ProcessChannel.swift */,
 				687644872C5373670022D916 /* NeovimNotification.swift */,
@@ -1035,6 +1035,7 @@
 				68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */,
 				68A8FF5F2AD29F660017C28D /* Highlight.swift in Sources */,
 				68F0D4F32AECFDFC000954FF /* OSLog.swift in Sources */,
+				6896CE4A2C6860E8001F3C85 /* Neovim.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
 				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				687644882C5373670022D916 /* NeovimNotification.swift in Sources */,
@@ -1045,7 +1046,6 @@
 				681B53232C5FE47600AD6C68 /* NSFontCellSize.swift in Sources */,
 				68A8FF6D2AD2ACCB0017C28D /* APIFunctions.swift in Sources */,
 				689D9E2F29B5127F00345713 /* Store.swift in Sources */,
-				68A8FF4E2AD29F660017C28D /* Instance.swift in Sources */,
 				68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */,
 				68A8FF612AD29F660017C28D /* Appearance.swift in Sources */,
 				686CAFEB2B50F45500AED2CC /* SettingsWindowController.swift in Sources */,

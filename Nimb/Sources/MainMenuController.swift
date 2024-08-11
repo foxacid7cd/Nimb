@@ -186,7 +186,7 @@ final class MainMenuController: NSObject, Rendering {
 
   @objc private func handleQuit() {
     store.apiTask {
-      try await $0.nimb(method: "quit")
+      try await $0.nimb(method: "quit_all")
     }
   }
 

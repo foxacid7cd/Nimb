@@ -5,7 +5,7 @@ import CustomDump
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
-  private var instance: Instance?
+  private var neovim: Neovim?
   private var store: Store?
 
   private var mainMenuController: MainMenuController?
@@ -26,42 +26,42 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      setupStore()
-      setupMainMenuController()
-      setupMsgShowsWindowController()
-      setupMainWindowController()
+      neovim = .init()
+      store = .init(api: neovim!.api)
+      setupInitialControllers()
+      setupBindings()
+
       do {
-        try await instance!.run()
+        try await neovim!.bootstrap()
+
+        _ = await NotificationCenter.default
+          .notifications(
+            named: Process.didTerminateNotification,
+            object: neovim!.process
+          )
+          .makeAsyncIterator()
+          .next()
+        let status = neovim!.process.terminationStatus
+        let reason = neovim!.process.terminationReason.rawValue
+        logger.debug("Neovim process terminated with status \(status) and reason \(reason)")
       } catch {
+        logger.error("Neovim process boostrap error: \(String(customDumping: error))")
         await showCriticalAlert(error: error)
-        NSApplication.shared.terminate(nil)
       }
-      logger.debug("NSApplication did finish launching")
+
+      NSApplication.shared.terminate(nil)
     }
+
+    logger.debug("Application did finish launching")
   }
 
   public func applicationWillTerminate(_: Notification) {
-    logger.debug("NSApplication will terminate")
     updatesTask?.cancel()
     alertsTask?.cancel()
+    logger.debug("Application will terminate")
   }
 
-  private func reportKeyPressed() { }
-
-  private func handle(keyPress: KeyPress) { }
-
-  private func setupStore() {
-    let debugState = UserDefaults.standard.debug
-    instance = Instance(
-      nvimResourcesURL: Bundle.main.resourceURL!.appending(path: "nvim"),
-      initialOuterGridSize: UserDefaults.standard.outerGridSize,
-      isMessagePackInspectorEnabled: debugState.isMessagePackInspectorEnabled
-    )
-    store = .init(
-      instance: instance!,
-      debug: debugState,
-      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
-    )
+  private func setupBindings() {
     alertsTask = Task {
       do {
         for await alert in store!.alerts {
@@ -105,12 +105,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         logger.error("Store state updates loop error: \(error)")
         await showCriticalAlert(error: error)
       }
-
-      NSApplication.shared.terminate(nil)
     }
   }
 
-  private func setupMainMenuController() {
+  private func setupInitialControllers() {
     mainMenuController = MainMenuController(store: store!)
     mainMenuController!.settingsClicked = { [unowned self] in
       if settingsWindowController == nil {
@@ -120,16 +118,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       settingsWindowController!.showWindow(nil)
     }
     NSApplication.shared.mainMenu = mainMenuController!.menu
-  }
 
-  private func setupMainWindowController() {
     mainWindowController = MainWindowController(
       store: store!,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
     )
-  }
 
-  private func setupMsgShowsWindowController() {
     msgShowsWindowController = MsgShowsWindowController(store: store!)
   }
 
@@ -180,6 +174,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   private func showNimbNotify(_ notify: NimbNotify) {
+    logger.debug("AppDelegate.showNimbNotify: \(String(customDumping: notify))")
+
     let process = Process()
     process.executableURL = URL(filePath: "/usr/bin/osascript")
     process.arguments = [

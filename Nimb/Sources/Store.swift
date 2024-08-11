@@ -11,7 +11,7 @@ import Foundation
 public class Store: Sendable {
   public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
-  let instance: Instance
+  public let api: API<ProcessChannel>
 
 //    private func startCursorBlinkingTask() {
 //      guard let cursorStyle = _state.currentCursorStyle else {
@@ -28,11 +28,11 @@ public class Store: Sendable {
 //        cursorBlinkingTask = Task {
 //          do {
 //            try await Task.sleep(for: .milliseconds(blinkWait))
-//  
+//
 //            while true {
 //              dispatch(Actions.SetCursorBlinkingPhase(value: false))
 //              try await Task.sleep(for: .milliseconds(blinkOff))
-//  
+//
 //              dispatch(Actions.SetCursorBlinkingPhase(value: true))
 //              try await Task.sleep(for: .milliseconds(blinkOn))
 //            }
@@ -41,7 +41,6 @@ public class Store: Sendable {
 //      }
 //    }
 
-  private let apiTasksChannel = AsyncChannel< @Sendable (API<ProcessChannel>) async throws -> Any? > ()
   private let actionsChannel = AsyncChannel<Action>()
   private let alertsChannel = AsyncChannel<Alert>()
 
@@ -49,16 +48,12 @@ public class Store: Sendable {
     alertsChannel.buffer(policy: .unbounded).eraseToStream()
   }
 
-  public var api: API<ProcessChannel> {
-    instance.api
-  }
+  public init(api: API<ProcessChannel>) {
+    self.api = api
 
-  public init(instance: Instance, debug: State.Debug, font: Font) {
-    self.instance = instance
+    let initialState = State(debug: UserDefaults.standard.debug, font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init())
 
-    let initialState = State(debug: debug, font: font)
-
-    let applyUIEventsActions = instance.api.neovimNotifications
+    let applyUIEventsActions = api.neovimNotifications
       .compactMap { [alertsChannel] neovimNotificationsBatch in
         var actions = [Action]()
 
