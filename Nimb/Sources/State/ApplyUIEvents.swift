@@ -327,6 +327,8 @@ public extension Actions {
                 cursorUpdated(oldCursor: cursor)
               }
 
+              state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
+
               updatedLayout(forGridWithID: gridID)
               apply(update: .resize(size), toGridWithID: gridID)
             }
@@ -390,6 +392,15 @@ public extension Actions {
               rowsCount: rowsCount
             )
 
+            guard
+              state
+                .grids[gridID] != nil || state
+                .grids[gridID]!.isDestroyed
+            else {
+              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              break
+            }
+
             state.grids[gridID]!.associatedWindow = .plain(
               .init(
                 id: windowID,
@@ -397,6 +408,8 @@ public extension Actions {
               )
             )
             state.grids[gridID]!.isHidden = false
+
+            state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
 
             updatedLayout(forGridWithID: gridID)
             if size != state.grids[gridID]!.size {
@@ -414,14 +427,16 @@ public extension Actions {
             zIndex
           ):
             let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
-            if state.grids[gridID] == nil {
-              state.grids[gridID] = .init(
-                id: gridID,
-                size: state.outerGrid!.size,
-                font: state.font,
-                appearance: state.appearance
-              )
+
+            guard
+              state
+                .grids[gridID] != nil || state
+                .grids[gridID]!.isDestroyed
+            else {
+              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              break
             }
+
             state.grids[gridID]!.associatedWindow = .floating(
               .init(
                 id: windowID,
@@ -435,15 +450,38 @@ public extension Actions {
             )
             state.grids[gridID]!.isHidden = false
 
+            state.gridsHierarchy.addNode(id: gridID, parent: anchorGridID)
+
             updatedLayout(forGridWithID: gridID)
 
           case let .winHide(gridID):
-            state.grids[gridID]?.isHidden = true
+            guard
+              state
+                .grids[gridID] != nil || state
+                .grids[gridID]!.isDestroyed
+            else {
+              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              break
+            }
+
+            state.grids[gridID]!.isHidden = true
+
+            state.gridsHierarchy.removeNode(id: gridID)
 
             updatedLayout(forGridWithID: gridID)
 
           case let .winClose(gridID):
-            state.grids[gridID]?.associatedWindow = nil
+            guard
+              state
+                .grids[gridID] != nil || state
+                .grids[gridID]!.isDestroyed
+            else {
+              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              break
+            }
+            state.grids[gridID]!.associatedWindow = nil
+
+            state.gridsHierarchy.removeNode(id: gridID)
 
             updatedLayout(forGridWithID: gridID)
 
@@ -741,6 +779,15 @@ public extension Actions {
               font: font,
               appearance: appearance
             )
+
+            guard
+              state
+                .grids[gridID] != nil || state
+                .grids[gridID]!.isDestroyed
+            else {
+              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              break
+            }
 
             update(&state.grids[gridID]!) { grid in
               for result in results {

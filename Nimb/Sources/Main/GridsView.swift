@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Collections
+import CustomDump
 
-public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering {
+public class GridsView: NSView, CALayerDelegate, Rendering {
   private enum MouseButton: String, Sendable {
     case left
     case right
@@ -24,11 +26,6 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
     }
     return outerGrid.size * state.font.cellSize
   }
-
-  public var anchoringLayer: AnchorLayoutingLayer?
-  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
-  public var positionInAnchoringLayer = CGPoint()
-  public var needsAnchorLayout = false
 
   private var store: Store
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
@@ -142,7 +139,6 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
   public func render() {
     for gridID in updates.destroyedGridIDs {
       if let layer = arrangedGridLayers.removeValue(forKey: gridID) {
-        layer.removeAnchoring()
         layer.removeFromSuperlayer()
       }
     }
@@ -156,76 +152,40 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
       }
 
     for gridID in updatedLayoutGridIDs {
-      if gridID == Grid.OuterID {
-        invalidateIntrinsicContentSize()
-      }
-
       guard let grid = state.grids[gridID] else {
         continue
       }
 
       let gridLayer = arrangedGridLayer(forGridWithID: gridID)
       gridLayer.isHidden = grid.isHidden
-      gridLayer.removeAnchoring()
 
       if gridID == Grid.OuterID {
-        gridLayer.anchoringLayer = self
-        anchoredLayers[.init(gridLayer)] = gridLayer
+        invalidateIntrinsicContentSize()
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
-        case let .plain(window):
-          gridLayer.anchoringLayer = self
-          anchoredLayers[.init(gridLayer)] = gridLayer
-
-          gridLayer.positionInAnchoringLayer = window.origin * state.font
-            .cellSize
-
-        case let .floating(floatingWindow):
-          let anchoringLayer = arrangedGridLayer(
-            forGridWithID: floatingWindow
-              .anchorGridID
-          )
-
-          gridLayer.anchoringLayer = anchoringLayer
-          anchoringLayer.anchoredLayers[.init(gridLayer)] = gridLayer
-
-          var gridColumn: Double = floatingWindow.anchorColumn
-          var gridRow: Double = floatingWindow.anchorRow
-
-          switch floatingWindow.anchor {
-          case .northWest:
-            break
-          case .northEast:
-            gridColumn += Double(anchoringLayer.grid.columnsCount)
-          case .southWest:
-            gridRow -= Double(anchoringLayer.grid.rowsCount)
-          case .southEast:
-            gridColumn += Double(anchoringLayer.grid.columnsCount)
-            gridRow -= Double(anchoringLayer.grid.rowsCount)
-          }
-
-          gridLayer.positionInAnchoringLayer = CGPoint(
-            x: gridColumn * state.font.cellWidth,
-            y: gridRow * state.font.cellHeight
-          )
-
         case .external:
           gridLayer.isHidden = true
+
+        default:
+          break
         }
       } else {
         gridLayer.isHidden = true
       }
-
-      gridLayer.needsAnchorLayout = true
     }
 
-    if needsAnchorLayout {
-      layoutAnchoredLayers(
-        anchoringLayerOrigin: .init(),
-        zIndexCounter: 1
-      )
-      for (gridID, layer) in arrangedGridLayers {
-        print("grid: \(gridID)\tzPosition: \(layer.zPosition)")
+    if !updatedLayoutGridIDs.isEmpty {
+      let upsideDownTransform = upsideDownTransform
+
+      state.walkingGridFrames { id, frame, zPosition in
+        guard let gridLayer = arrangedGridLayers[id] else {
+          logger.warning("walkingGridFrames: gridLayer with id \(id) not found")
+          return
+        }
+        if updatedLayoutGridIDs.contains(id) {
+          gridLayer.frame = frame.applying(upsideDownTransform)
+        }
+        gridLayer.zPosition = zPosition
       }
     }
 
@@ -255,20 +215,6 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
       arrangedGridLayers[id] = layer
       return layer
     }
-  }
-
-  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, zIndexCounter: Double) {
-    invalidateIntrinsicContentSize()
-
-    for anchoredLayer in anchoredLayers {
-      anchoredLayer.value
-        .layoutAnchoredLayers(
-          anchoringLayerOrigin: .zero,
-          zIndexCounter: zIndexCounter
-        )
-    }
-
-    needsAnchorLayout = false
   }
 
   private func report(

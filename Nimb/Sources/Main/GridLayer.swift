@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import Collections
 import ConcurrencyExtras
 import CustomDump
 
-public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
+public class GridLayer: CALayer, Rendering {
   private struct Critical {
     var grid: Grid
     var font: Font
@@ -23,10 +24,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       setNeedsDisplay()
     }
   }
-
-  public var anchoringLayer: AnchorLayoutingLayer?
-  public var anchoredLayers = [ObjectIdentifier: AnchorLayoutingLayer]()
-  public var positionInAnchoringLayer = CGPoint()
 
   private let gridID: Grid.ID
   private let store: Store
@@ -49,14 +46,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   private var critical = LockIsolated<Critical?>(nil)
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
 
-  public var needsAnchorLayout = false {
-    didSet {
-      if needsAnchorLayout {
-        anchoringLayer?.needsAnchorLayout = true
-      }
-    }
-  }
-
   @MainActor
   public var grid: Grid {
     if let grid = state.grids[gridID] {
@@ -75,15 +64,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   private var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
-  }
-
-  @MainActor
-  private var outerGridUpsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
-      .translatedBy(
-        x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
-      )
   }
 
   override public init(layer: Any) {
@@ -151,51 +131,6 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
         upsideDownTransform: critical.upsideDownTransform
       )
     }
-  }
-
-  @MainActor
-  public func removeAnchoring() {
-    for (_, anchoredLayer) in anchoredLayers {
-      anchoredLayer.anchoringLayer = nil
-    }
-    anchoredLayers.removeAll(keepingCapacity: true)
-
-    if let anchoringLayer {
-      anchoringLayer.anchoredLayers.removeValue(forKey: .init(self))
-    }
-
-    positionInAnchoringLayer = .init()
-  }
-
-  @MainActor
-  public func layoutAnchoredLayers(
-    anchoringLayerOrigin: CGPoint,
-    zIndexCounter: Double
-  ) {
-    let origin = anchoringLayerOrigin + positionInAnchoringLayer
-
-    frame = .init(origin: origin, size: grid.size * state.font.cellSize)
-      .applying(outerGridUpsideDownTransform)
-
-    let zIndexModifier =
-      switch grid.associatedWindow {
-      case let .floating(floating):
-        floating.zIndex
-      default:
-        0
-      }
-    zPosition = zIndexCounter + Double(zIndexModifier) / 1000
-
-    let nextZIndexCounter = zIndexCounter + 100_000
-    for anchoredLayer in anchoredLayers {
-      anchoredLayer.value
-        .layoutAnchoredLayers(
-          anchoringLayerOrigin: origin,
-          zIndexCounter: nextZIndexCounter
-        )
-    }
-
-    needsAnchorLayout = false
   }
 
   @MainActor

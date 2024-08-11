@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import Foundation
 import ObjectiveC
 
 public final class RenderContext: Sendable {
@@ -30,15 +31,32 @@ public extension Rendering {
 
 public extension Rendering where Self: AnyObject {
   @MainActor var isRendered: Bool {
-    objc_getAssociatedObject(self, &renderingContextKey) != nil
+    withUnsafePointer(
+      to: &renderingContextAssociatedObjectKey
+    ) { keyPointer in
+      objc_getAssociatedObject(self, keyPointer) != nil
+    }
   }
 
   @MainActor var renderContext: RenderContext {
-    objc_getAssociatedObject(self, &renderingContextKey) as! RenderContext
+    withUnsafePointer(
+      to: &renderingContextAssociatedObjectKey
+    ) { keyPointer in
+      objc_getAssociatedObject(self, keyPointer) as! RenderContext
+    }
   }
 
   @MainActor func update(renderContext: RenderContext) {
-    objc_setAssociatedObject(self, &renderingContextKey, renderContext, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    withUnsafePointer(
+      to: &renderingContextAssociatedObjectKey
+    ) { keyPointer in
+      objc_setAssociatedObject(
+        self,
+        keyPointer,
+        renderContext,
+        .OBJC_ASSOCIATION_RETAIN
+      )
+    }
   }
 
   @MainActor func renderChildren(_ children: [Rendering]) {
@@ -53,4 +71,4 @@ public extension Rendering where Self: AnyObject {
   }
 }
 
-@MainActor private var renderingContextKey: Void = ()
+@MainActor private var renderingContextAssociatedObjectKey: String = "renderingContextAssociatedObjectKey"

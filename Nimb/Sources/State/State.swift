@@ -3,6 +3,7 @@
 import CasePaths
 import Collections
 import CustomDump
+import Foundation
 import MyMacro
 import Overture
 
@@ -134,6 +135,7 @@ public struct State: Sendable {
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
   public var grids: IntKeyedDictionary<Grid> = [:]
+  public var gridsHierarchy: GridsHierarchy = .init()
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
@@ -219,6 +221,7 @@ public struct State: Sendable {
     }
     if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
       grids = state.grids
+      gridsHierarchy = state.gridsHierarchy
     }
     if updates.isPopupmenuUpdated || updates.isPopupmenuSelectionUpdated {
       popupmenu = state.popupmenu
@@ -234,6 +237,82 @@ public struct State: Sendable {
     }
     if updates.isNimbNotifiesUpdated {
       nimbNotifies = state.nimbNotifies
+    }
+  }
+
+  public func walkingGridFrames(_ body: (_ id: Grid.ID, _ frame: CGRect, _ zPosition: Double) throws -> Void) rethrows {
+    var queue: Deque<(id: Int, depth: Int)> = [
+      (id: Grid.OuterID, depth: 0),
+    ]
+    var positionsInParent = IntKeyedDictionary<CGPoint>()
+    var nodesCount = 0
+    while let (id, depth) = queue.popFirst() {
+      guard let grid = grids[id] else {
+        Task { @MainActor in
+          logger.fault("State.walkingGrids: grid \(id) not found")
+        }
+        continue
+      }
+
+      if id == Grid.OuterID {
+        positionsInParent[id] = .init()
+
+      } else if let associatedWindow = grid.associatedWindow {
+        switch associatedWindow {
+        case let .plain(window):
+          positionsInParent[id] = window.origin * font.cellSize
+
+        case let .floating(floatingWindow):
+          guard let anchorGrid = grids[floatingWindow.anchorGridID] else {
+            Task { @MainActor in
+              logger
+                .fault(
+                  "State.walkingGrids: floating window anchor grid \(floatingWindow.anchorGridID) not found"
+                )
+            }
+            break
+          }
+
+          var gridColumn: Double = floatingWindow.anchorColumn
+          var gridRow: Double = floatingWindow.anchorRow
+          switch floatingWindow.anchor {
+          case .northWest:
+            break
+          case .northEast:
+            gridColumn += Double(anchorGrid.columnsCount)
+          case .southWest:
+            gridRow -= Double(anchorGrid.rowsCount)
+          case .southEast:
+            gridColumn += Double(anchorGrid.columnsCount)
+            gridRow -= Double(anchorGrid.rowsCount)
+          }
+          positionsInParent[id] = .init(
+            x: gridColumn * font.cellWidth,
+            y: gridRow * font.cellHeight
+          ) + positionsInParent[anchorGrid.id]!
+
+        case .external:
+          positionsInParent[id] = .init()
+        }
+
+      } else {
+        positionsInParent[id] = .init()
+      }
+
+      let frame = CGRect(
+        origin: positionsInParent[id]!,
+        size: grid.size * font.cellSize
+      )
+
+      try body(id, frame, Double(1_000_000 * depth + nodesCount))
+      let nextDepth = depth + 1
+      queue
+        .append(
+          contentsOf: gridsHierarchy.allNodes[id]!
+            .children
+            .map { (id: $0, depth: nextDepth) }
+        )
+      nodesCount += 1
     }
   }
 }
