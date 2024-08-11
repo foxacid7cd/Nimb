@@ -328,7 +328,6 @@ public extension Actions {
               }
 
               updatedLayout(forGridWithID: gridID)
-              state.updateGridZIndex(id: gridID)
               apply(update: .resize(size), toGridWithID: gridID)
             }
 
@@ -394,14 +393,12 @@ public extension Actions {
             state.grids[gridID]!.associatedWindow = .plain(
               .init(
                 id: windowID,
-                origin: origin,
-                zIndex: gridID
+                origin: origin
               )
             )
             state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
-            state.updateGridZIndex(id: gridID)
             if size != state.grids[gridID]!.size {
               apply(update: .resize(size), toGridWithID: gridID)
             }
@@ -417,7 +414,6 @@ public extension Actions {
             zIndex
           ):
             let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
-
             if state.grids[gridID] == nil {
               state.grids[gridID] = .init(
                 id: gridID,
@@ -440,7 +436,6 @@ public extension Actions {
             state.grids[gridID]!.isHidden = false
 
             updatedLayout(forGridWithID: gridID)
-            state.updateGridZIndex(id: gridID)
 
           case let .winHide(gridID):
             state.grids[gridID]?.isHidden = true

@@ -13,5 +13,5 @@ public protocol AnchorLayoutingLayer: AnyObject {
   var needsAnchorLayout: Bool { get set }
 
   @MainActor
-  func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int)
+  func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, zIndexCounter: Double)
 }

@@ -139,7 +139,6 @@ public struct State: Sendable {
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
   public var nimbNotifies: [NimbNotify] = []
-  public var gridZIndexCounter: Double = 0
 
   public var outerGrid: Grid? {
     get {
@@ -181,49 +180,13 @@ public struct State: Sendable {
     return false
   }
 
-  public func orderedGridIDs() -> [Grid.ID] {
-    grids
-      .map { $1 }
-      .sorted(by: { first, second in
-        if first.zIndex != second.zIndex {
-          first.zIndex < second.zIndex
-        } else {
-          first.id < second.id
-        }
-      })
-      .map(\.id)
-  }
-
   public mutating func flushDrawRuns() {
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }
   }
 
-  public mutating func updateGridZIndex(id: Grid.ID) {
-    gridZIndexCounter += 1
-
-    update(&grids[id]) { [gridZIndexCounter] grid in
-      guard grid != nil else {
-        return
-      }
-      grid!.zIndex =
-        if id == Grid.OuterID {
-          0
-        } else if grid!.associatedWindow != nil {
-          if case .floating = grid!.associatedWindow {
-            gridZIndexCounter + 10000
-          } else {
-            gridZIndexCounter
-          }
-        } else {
-          -1
-        }
-    }
-  }
-
   public mutating func apply(updates: Updates, from state: State) {
-    gridZIndexCounter = state.gridZIndexCounter
     if updates.isRawOptionsUpdated {
       rawOptions = state.rawOptions
     }

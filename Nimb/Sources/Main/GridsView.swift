@@ -220,7 +220,13 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
     }
 
     if needsAnchorLayout {
-      layoutAnchoredLayers(anchoringLayerOrigin: .init(), index: 0)
+      layoutAnchoredLayers(
+        anchoringLayerOrigin: .init(),
+        zIndexCounter: 1
+      )
+      for (gridID, layer) in arrangedGridLayers {
+        print("grid: \(gridID)\tzPosition: \(layer.zPosition)")
+      }
     }
 
     for layer in arrangedGridLayers.values {
@@ -251,11 +257,15 @@ public class GridsView: NSView, AnchorLayoutingLayer, CALayerDelegate, Rendering
     }
   }
 
-  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
+  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, zIndexCounter: Double) {
     invalidateIntrinsicContentSize()
 
     for anchoredLayer in anchoredLayers {
-      anchoredLayer.value.layoutAnchoredLayers(anchoringLayerOrigin: .zero, index: index * 100)
+      anchoredLayer.value
+        .layoutAnchoredLayers(
+          anchoringLayerOrigin: .zero,
+          zIndexCounter: zIndexCounter
+        )
     }
 
     needsAnchorLayout = false

@@ -51,7 +51,9 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
 
   public var needsAnchorLayout = false {
     didSet {
-      anchoringLayer?.needsAnchorLayout = true
+      if needsAnchorLayout {
+        anchoringLayer?.needsAnchorLayout = true
+      }
     }
   }
 
@@ -166,22 +168,38 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   }
 
   @MainActor
-  public func layoutAnchoredLayers(anchoringLayerOrigin: CGPoint, index: Int) {
+  public func layoutAnchoredLayers(
+    anchoringLayerOrigin: CGPoint,
+    zIndexCounter: Double
+  ) {
     let origin = anchoringLayerOrigin + positionInAnchoringLayer
 
     frame = .init(origin: origin, size: grid.size * state.font.cellSize)
       .applying(outerGridUpsideDownTransform)
 
-    anchoredLayers
-      .forEach { $0.value.layoutAnchoredLayers(anchoringLayerOrigin: origin, index: index * 10) }
+    let zIndexModifier =
+      switch grid.associatedWindow {
+      case let .floating(floating):
+        floating.zIndex
+      default:
+        0
+      }
+    zPosition = zIndexCounter + Double(zIndexModifier) / 1000
+
+    let nextZIndexCounter = zIndexCounter + 100_000
+    for anchoredLayer in anchoredLayers {
+      anchoredLayer.value
+        .layoutAnchoredLayers(
+          anchoringLayerOrigin: origin,
+          zIndexCounter: nextZIndexCounter
+        )
+    }
 
     needsAnchorLayout = false
   }
 
   @MainActor
   public func render() {
-    zPosition = grid.zIndex
-
     let critical = Critical(
       grid: grid,
       font: state.font,

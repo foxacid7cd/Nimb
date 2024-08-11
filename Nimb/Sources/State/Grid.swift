@@ -61,8 +61,6 @@ public struct Grid: Sendable, Identifiable {
   public var isHidden: Bool
   public var isDestroyed: Bool
 
-  public var zIndex: Double = 0
-
   public var size: IntegerSize {
     layout.size
   }
@@ -88,7 +86,12 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  public init(id: Int, size: IntegerSize, font: Font, appearance: Appearance) {
+  public init(
+    id: Int,
+    size: IntegerSize,
+    font: Font,
+    appearance: Appearance
+  ) {
     let layout = GridLayout(cells: .init(
       size: size,
       repeatingElement: Cell.default
