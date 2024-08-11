@@ -9,9 +9,20 @@ import Foundation
 
 @MainActor
 public class Store: Sendable {
-  public let updates: AsyncStream<(state: State, updates: State.Updates)>
+  @dynamicMemberLookup
+  public struct APIProxy: Sendable {
+    private var api: API<ProcessChannel>
 
-  public let alertMessages = AsyncChannel<AlertMessage>()
+    fileprivate init(api: API<ProcessChannel>) {
+      self.api = api
+    }
+
+    public subscript<T>(dynamicMember keyPath: KeyPath<API<ProcessChannel>, T>) -> T {
+      api[keyPath: keyPath]
+    }
+  }
+
+  public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
   let instance: Instance
 
@@ -42,8 +53,6 @@ public class Store: Sendable {
   //      }
   //    }
   //  }
-  fileprivate let handleErrorMessage: @Sendable (String) -> Void
-  fileprivate let handleError: @Sendable (any Error) -> Void
 
   private let apiTasksChannel = AsyncChannel< @Sendable (API<ProcessChannel>) async throws -> Any? > ()
 
@@ -55,6 +64,11 @@ public class Store: Sendable {
   private let outerGridSizeThrottlingInterval: Duration = .milliseconds(1000 / 120)
   private var previousMouseMove: (modifier: String, gridID: Grid.ID, point: IntegerPoint)?
   private var latestUIEventsBatch = [UIEvent]()
+  private let alertsChannel = AsyncChannel<Alert>()
+
+  public var alerts: AsyncStream<Alert> {
+    alertsChannel.buffer(policy: .unbounded).eraseToStream()
+  }
 
   public var api: API<ProcessChannel> {
     instance.api
@@ -63,23 +77,10 @@ public class Store: Sendable {
   public init(instance: Instance, debug: State.Debug, font: Font) {
     self.instance = instance
 
-    handleErrorMessage = { [alertMessages] message in
-      Task {
-        await alertMessages.send(.init(content: message))
-      }
-    }
-    handleError = { [alertMessages] error in
-      Task {
-        await alertMessages.send(.init(error))
-      }
-    }
-
     let initialState = State(debug: debug, font: font)
 
-    typealias StateAndUpdates = (state: State, updates: State.Updates)
-
     let applyUIEventsActions = instance.api.neovimNotifications
-      .compactMap { [handleErrorMessage] neovimNotificationsBatch in
+      .compactMap { [alertsChannel] neovimNotificationsBatch in
         var actions = [Action]()
 
         for notification in neovimNotificationsBatch {
@@ -87,9 +88,9 @@ public class Store: Sendable {
           case let .redraw(uiEvents):
             actions.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
           case let .nvimErrorEvent(event):
-            handleErrorMessage("nvimErrorEvent received \(event)")
+            await alertsChannel.send("nvimErrorEvent received \(dump: event)")
           case let .nimbNotify(value):
-            handleErrorMessage("nimbNotify received \(value)")
+            await alertsChannel.send("nimbNotify received \(dump: value)")
           }
         }
 
@@ -100,11 +101,17 @@ public class Store: Sendable {
     updates = AsyncStream(
       merge(actionsChannel, applyUIEventsActions)
         .buffer(policy: .unbounded)
-        .reductions(into: (state: initialState, updates: State.Updates())) { [handleError] result, action in
+        .reductions(into: (state: initialState, updates: State.Updates())) {
+          [alertsChannel] result,
+            action in
           if result.updates.needFlush {
             result.updates = State.Updates(needFlush: false)
           }
-          let updates = await action.apply(to: &result.state, handleError: handleError)
+          let updates = await action.apply(to: &result.state, handleError: { error in
+            Task {
+              await alertsChannel.send(.init(error))
+            }
+          })
           result.updates.formUnion(updates)
         }
         .filter(\.updates.needFlush)
@@ -132,7 +139,7 @@ public class Store: Sendable {
       do {
         return try await body(api)
       } catch {
-        handleError(error)
+        await alertsChannel.send(.init(error))
         return nil
       }
     }.value
@@ -145,35 +152,8 @@ public class Store: Sendable {
       do {
         _ = try await body(api)
       } catch {
-        handleError(error)
+        await alertsChannel.send(.init(error))
       }
-    }
-  }
-
-  public func reportPopupmenuItemSelected(atIndex index: Int, isFinish: Bool) {
-    do {
-      try instance.reportPopupmenuItemSelected(
-        atIndex: index,
-        isFinish: isFinish
-      )
-    } catch {
-      handleError(error)
-    }
-  }
-
-  public func reportTablineBufferSelected(withID id: Buffer.ID) {
-    do {
-      try instance.reportTablineBufferSelected(withID: id)
-    } catch {
-      handleError(error)
-    }
-  }
-
-  public func reportTablineTabpageSelected(withID id: Tabpage.ID) {
-    do {
-      try instance.reportTablineTabpageSelected(withID: id)
-    } catch {
-      handleError(error)
     }
   }
 
@@ -223,30 +203,6 @@ public class Store: Sendable {
     //    }
   }
 
-  public func reportPaste(text: String) {
-    do {
-      try instance.reportPaste(text: text)
-    } catch {
-      handleError(error)
-    }
-  }
-
-  public func close() async {
-    do {
-      try await instance.close()
-    } catch {
-      handleError(error)
-    }
-  }
-
-  public func quitAll() async {
-    do {
-      try await instance.quitAll()
-    } catch {
-      handleError(error)
-    }
-  }
-
   public func dumpState() -> String {
     var string = ""
     customDump(latestUIEventsBatch, to: &string)
@@ -257,21 +213,5 @@ public class Store: Sendable {
     Task {
       await actionsChannel.send(action)
     }
-  }
-}
-
-@PublicInit
-public struct AlertMessage: Sendable {
-  public var content: String
-
-  public init(_ error: Error) {
-    content =
-      if let error = error as? NimbNeovimError {
-        error.errorMessages.joined(separator: "\n")
-      } else if let error = error as? NeovimError {
-        String(customDumping: error.raw)
-      } else {
-        String(customDumping: error)
-      }
   }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import ConcurrencyExtras
 import CustomDump
 
 public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
@@ -108,7 +109,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
   }
 
   override public func draw(in ctx: CGContext) {
-    guard let critical = critical.withLock({ $0 }) else {
+    guard let critical = critical.withValue({ $0 }) else {
       return
     }
 
@@ -188,7 +189,7 @@ public class GridLayer: CALayer, AnchorLayoutingLayer, Rendering {
       cursorBlinkingPhase: state.cursorBlinkingPhase,
       isMouseUserInteractionEnabled: state.isMouseUserInteractionEnabled
     )
-    self.critical.withLock { $0 = critical }
+    self.critical.withValue { $0 = critical }
 
     dirtyRectangles.removeAll(keepingCapacity: true)
 

@@ -13,7 +13,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
-  private var alertMessagesTask: Task<Void, Never>?
+  private var alertsTask: Task<Void, Never>?
   private var updatesTask: Task<Void, Never>?
 
   override public init() {
@@ -43,7 +43,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   public func applicationWillTerminate(_: Notification) {
     logger.debug("NSApplication will terminate")
     updatesTask?.cancel()
-    alertMessagesTask?.cancel()
+    alertsTask?.cancel()
   }
 
   private func reportKeyPressed() { }
@@ -62,16 +62,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       debug: debugState,
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
     )
-    alertMessagesTask = Task {
+    alertsTask = Task {
       do {
-        for await message in store!.alertMessages {
+        for await alert in store!.alerts {
           try Task.checkCancellation()
 
-          showAlert(message)
+          show(alert: alert)
         }
       } catch { }
     }
-    updatesTask = .init(priority: .userInitiated) {
+    updatesTask = Task {
       do {
         var presentedNimbNotifiesCount = 0
 
@@ -171,12 +171,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  private func showAlert(_ message: AlertMessage) {
-    let alert = NSAlert()
-    alert.alertStyle = .warning
-    alert.messageText = message.content
-    alert.addButton(withTitle: "Close")
-    alert.beginSheetModal(for: mainWindowController!.window!)
+  private func show(alert: Alert) {
+    let appKitAlert = NSAlert()
+    appKitAlert.alertStyle = .warning
+    appKitAlert.messageText = alert.message
+    appKitAlert.addButton(withTitle: "Close")
+    appKitAlert.beginSheetModal(for: mainWindowController!.window!)
   }
 
   private func showNimbNotify(_ notify: NimbNotify) {

@@ -222,13 +222,7 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleCopy() {
-    guard actionTask == nil else {
-      return
-    }
-
-    actionTask = Task {
-      defer { actionTask = nil }
-
+    Task {
       guard let text = await requestTextForCopy() else {
         return
       }
@@ -241,16 +235,13 @@ final class MainMenuController: NSObject, Rendering {
 
   @objc private func handlePaste() {
     guard
-      let text = NSPasteboard.general.string(forType: .string),
-      actionTask == nil
+      let text = NSPasteboard.general.string(forType: .string)
     else {
       return
     }
 
-    actionTask = Task {
-      defer { actionTask = nil }
-
-      store.reportPaste(text: text)
+    store.apiTask {
+      try await $0.nvimPaste(data: text, crlf: false, phase: -1)
     }
   }
 
