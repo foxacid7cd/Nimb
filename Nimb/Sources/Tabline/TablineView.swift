@@ -340,9 +340,11 @@ final class TablineView: NSVisualEffectView, Rendering {
           }
       }
       itemView.isLast = false
-//      itemView.clicked = { [store] in
-//        store.reportTablineBufferSelected(withID: buffer.id)
-//      }
+      itemView.clicked = { [store] in
+        store.apiTask {
+          try await $0.nvimSetCurrentBuf(bufferID: buffer.id)
+        }
+      }
       itemView.render()
       buffersStackView.addArrangedSubview(itemView)
 
@@ -381,9 +383,11 @@ final class TablineView: NSVisualEffectView, Rendering {
           }
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
-//      itemView.clicked = { [store] in
-//        store.reportTablineTabpageSelected(withID: tabpage.id)
-//      }
+      itemView.clicked = { [store] in
+        store.apiTask {
+          try await $0.nvimSetCurrentTabpage(tabpageID: tabpage.id)
+        }
+      }
       itemView.render()
       tabsStackView.addArrangedSubview(itemView)
 

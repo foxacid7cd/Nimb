@@ -94,7 +94,8 @@ class TablineItemView: NSView, Rendering {
   }
 
   func render() {
-    textField.attributedStringValue = .init(string: "123124")
+    textField.attributedStringValue = .init(string: text)
+
     if shouldRedrawImageViews {
       redrawImageViews()
       shouldRedrawImageViews = false
@@ -105,7 +106,7 @@ class TablineItemView: NSView, Rendering {
     CATransaction.setAnimationTimingFunction(.init(name: .linear))
     backgroundImageView.animator().alphaValue = isSelected ? 0 : isMouseInside ? 0.75 : 1
     accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
-    textField.animator().alphaValue = isSelected ? 0.9 : 0.75
+    textField.animator().alphaValue = isSelected ? 0.95 : 0.8
     CATransaction.commit()
 
     isAnimated = true
@@ -114,7 +115,7 @@ class TablineItemView: NSView, Rendering {
   private func redrawImageViews() {
     let color = NSColor.black
     let fill = SlantedBackgroundFill.gradient(
-      from: color.withAlphaComponent(0.3),
+      from: color.withAlphaComponent(0.35),
       to: color.withAlphaComponent(0.5)
     )
     backgroundImageView.image = .makeSlantedBackground(
@@ -130,8 +131,8 @@ class TablineItemView: NSView, Rendering {
 
     let accentColor = filledColor ?? .white
     let accentFill = SlantedBackgroundFill.gradient(
-      from: accentColor.withAlphaComponent(0.6),
-      to: accentColor.withAlphaComponent(0.2)
+      from: accentColor.withAlphaComponent(0.5),
+      to: accentColor.withAlphaComponent(0.35)
     )
     accentBackgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
