@@ -98,35 +98,27 @@ public class Store: Sendable {
       }
       .flatMap(\.async)
 
-    updates = AsyncStream(
-      merge(actionsChannel, applyUIEventsActions)
-        .buffer(policy: .unbounded)
-        .reductions(into: (state: initialState, updates: State.Updates())) {
-          [alertsChannel] result,
-            action in
-          if result.updates.needFlush {
-            result.updates = State.Updates(needFlush: false)
-          }
-          let updates = await action.apply(to: &result.state, handleError: { error in
-            Task {
-              await alertsChannel.send(.init(error))
-            }
-          })
-          result.updates.formUnion(updates)
+    updates = merge(actionsChannel, applyUIEventsActions)
+      .buffer(policy: .unbounded)
+      .reductions(into: (state: initialState, updates: State.Updates())) {
+        [alertsChannel] result,
+          action in
+        if result.updates.needFlush {
+          result.updates = State.Updates(needFlush: false)
         }
-        .filter(\.updates.needFlush)
-//        ._throttle(for: .milliseconds(1000 / 120), clock: .continuous) { (accum: StateAndUpdates?, new: StateAndUpdates) in
-//          if let accum {
-//            var updates = accum.updates
-//            updates.formUnion(new.updates)
-//            var _state = accum.state
-//            _state.apply(updates: new.updates, from: new.state)
-//            return (new.state, updates)
-//          } else {
-//            return new
-//          }
-//        }
-    )
+        let updates = await action.apply(to: &result.state, handleError: { error in
+          Task {
+            await alertsChannel.send(.init(error))
+          }
+        })
+        result.updates.formUnion(updates)
+      }
+      .filter(\.updates.needFlush)
+      .throttle(for: .milliseconds(1000 / 60), clock: .continuous) { previousStateUpdates, stateUpdates in
+        var updates = previousStateUpdates.updates
+        updates.formUnion(stateUpdates.updates)
+        return (stateUpdates.state, updates)
+      }
   }
 
   deinit {
