@@ -121,8 +121,10 @@ final class MainMenuController: NSObject, Rendering {
     panel.showsHiddenFiles = true
     switch panel.runModal() {
     case .OK:
-      withAPI(from: store) { api in
-        try await api.nimb(method: "edit", parameters: ["path"])
+      if let url = panel.url {
+        store.apiTask {
+          try await $0.nimb(method: "edit", parameters: [.string(url.path())])
+        }
       }
 
     default:
