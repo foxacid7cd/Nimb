@@ -78,7 +78,10 @@ public extension Actions {
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
         let font = state.font
         let appearance = state.appearance
-
+        guard state.grids[gridID] != nil else {
+          handleError(Failure("Grid \(gridID) doesn't exist"))
+          return
+        }
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
@@ -356,11 +359,15 @@ public extension Actions {
             )
 
           case let .gridClear(gridID):
+            state.gridsHierarchy.bringToFront(id: gridID)
             apply(update: .clear, toGridWithID: gridID)
 
           case let .gridDestroy(gridID):
-            if state.grids[gridID] != nil {
-              state.grids[gridID]!.isDestroyed = true
+            update(&state.grids[gridID]) { grid in
+              guard grid != nil else {
+                return
+              }
+              grid!.isDestroyed = true
               updates.destroyedGridIDs.insert(gridID)
             }
 
@@ -764,6 +771,8 @@ public extension Actions {
           }
 
         case let .gridLines(gridID, hlAttrDefines, gridLines):
+//          state.gridsHierarchy.bringToFront(id: gridID)
+
           for hlAttrDefine in hlAttrDefines {
             applyHlAttrDefine(hlAttrDefine)
           }

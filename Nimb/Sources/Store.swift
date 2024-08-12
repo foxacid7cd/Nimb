@@ -62,9 +62,9 @@ public class Store: Sendable {
           case let .redraw(uiEvents):
             actions.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
           case let .nvimErrorEvent(event):
-            await alertsChannel.send("nvimErrorEvent received \(dump: event)")
+            await alertsChannel.send("nvimErrorEvent received \(cd: event)")
           case let .nimbNotify(value):
-            await alertsChannel.send("nimbNotify received \(dump: value)")
+            await alertsChannel.send("nimbNotify received \(cd: value)")
           }
         }
 

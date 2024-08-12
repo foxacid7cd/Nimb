@@ -278,12 +278,15 @@ public struct State: Sendable {
           switch floatingWindow.anchor {
           case .northWest:
             break
+
           case .northEast:
-            gridColumn += Double(anchorGrid.columnsCount)
+            gridColumn -= Double(anchorGrid.columnsCount)
+
           case .southWest:
             gridRow -= Double(anchorGrid.rowsCount)
+
           case .southEast:
-            gridColumn += Double(anchorGrid.columnsCount)
+            gridColumn -= Double(anchorGrid.columnsCount)
             gridRow -= Double(anchorGrid.rowsCount)
           }
           positionsInParent[id] = .init(
@@ -304,7 +307,7 @@ public struct State: Sendable {
         size: grid.size * font.cellSize
       )
 
-      try body(id, frame, Double(1_000_000 * depth + nodesCount))
+      try body(id, frame, Double(1_000_000 * depth + nodesCount * 1000))
       let nextDepth = depth + 1
       queue
         .append(

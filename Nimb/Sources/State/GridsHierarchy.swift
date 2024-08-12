@@ -46,4 +46,17 @@ public struct GridsHierarchy: Sendable {
       }
     }
   }
+
+  public mutating func bringToFront(id: Grid.ID) {
+    guard id != Grid.OuterID, let node = allNodes[id] else {
+      return
+    }
+    update(&allNodes[node.parent]) { parentNode in
+      guard parentNode != nil else {
+        return
+      }
+      parentNode!.children.remove(id)
+      parentNode!.children.append(id)
+    }
+  }
 }
