@@ -54,4 +54,14 @@ public enum Actions {
       return .init(isNimbNotifiesUpdated: true)
     }
   }
+
+  @PublicInit
+  public struct SetApplicationActive: Action {
+    public var value: Bool
+
+    public func apply(to state: inout State, handleError: (any Error) -> Void) -> State.Updates {
+      state.isApplicationActive = value
+      return .init(isApplicationActiveUpdated: true)
+    }
+  }
 }

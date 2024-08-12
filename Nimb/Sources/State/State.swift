@@ -42,6 +42,7 @@ public struct State: Sendable {
     public var isBusyUpdated: Bool = false
     public var isMouseOnUpdated: Bool = false
     public var isNimbNotifiesUpdated: Bool = false
+    public var isApplicationActiveUpdated: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
@@ -90,6 +91,7 @@ public struct State: Sendable {
       isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
       isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
       isNimbNotifiesUpdated = isNimbNotifiesUpdated || updates.isNimbNotifiesUpdated
+      isApplicationActiveUpdated = isApplicationActiveUpdated || updates.isApplicationActiveUpdated
     }
   }
 
@@ -141,6 +143,7 @@ public struct State: Sendable {
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
   public var nimbNotifies: [NimbNotify] = []
+  public var isApplicationActive: Bool = false
 
   public var outerGrid: Grid? {
     get {
@@ -237,6 +240,9 @@ public struct State: Sendable {
     }
     if updates.isNimbNotifiesUpdated {
       nimbNotifies = state.nimbNotifies
+    }
+    if updates.isApplicationActiveUpdated {
+      isApplicationActive = state.isApplicationActive
     }
   }
 

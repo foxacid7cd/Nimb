@@ -25,7 +25,6 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let tabsMaskLayer = CALayer()
   private var tabsScrollViewFrameObservation: NSKeyValueObservation?
   private let titleTextField = NSTextField(labelWithString: "")
-  private var notificationsTask: Task<Void, Never>?
 
   private lazy var titleParagraphStyle: NSParagraphStyle = {
     let paragraphStyle = NSMutableParagraphStyle()
@@ -175,33 +174,6 @@ final class TablineView: NSVisualEffectView, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    notificationsTask?.cancel()
-  }
-
-  override func viewDidMoveToWindow() {
-    super.viewDidMoveToWindow()
-
-    notificationsTask?.cancel()
-
-    if let window {
-      let didBecomeKeyNotifications = NotificationCenter.default.notifications(
-        named: NSWindow.didBecomeKeyNotification,
-        object: window
-      )
-      let didResignKeyNotifications = NotificationCenter.default.notifications(
-        named: NSWindow.didResignKeyNotification,
-        object: window
-      )
-
-      notificationsTask = Task { [weak self] in
-        for await _ in merge(didBecomeKeyNotifications, didResignKeyNotifications) {
-          self?.render()
-        }
-      }
-    }
-  }
-
   override func mouseDown(with event: NSEvent) {
     let location = convert(event.locationInWindow, from: nil)
     if
@@ -219,39 +191,41 @@ final class TablineView: NSVisualEffectView, Rendering {
       return
     }
 
-    titleTextField.attributedStringValue = .init(
-      string: state.title ?? "",
-      attributes: [
-        .foregroundColor: window?.isKeyWindow == true ?
-          NSColor.labelColor :
-          NSColor.secondaryLabelColor,
-        .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
-        .paragraphStyle: titleParagraphStyle,
-      ]
-    )
-    titleTextField.alphaValue = window?.isKeyWindow == true ? 0.8 : 0.7
+    if updates.isTitleUpdated || updates.isApplicationActiveUpdated {
+      titleTextField.attributedStringValue = .init(
+        string: state.title ?? "",
+        attributes: [
+          .foregroundColor: state.isApplicationActive ?
+            NSColor.labelColor :
+            NSColor.secondaryLabelColor,
+          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
+          .paragraphStyle: titleParagraphStyle,
+        ]
+      )
+    }
 
-    let sublayersOpacity: Double = window?.isKeyWindow == true ? 1 : 0.7
-    buffersScrollView.alphaValue = sublayersOpacity
-    tabsScrollView.alphaValue = sublayersOpacity
+    if updates.isApplicationActiveUpdated {
+      titleTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
 
-    if window?.isKeyWindow == true {
-      buffersScrollView.layer!.filters = []
-      tabsScrollView.layer!.filters = []
-    } else {
-      let monochromeFilter = CIFilter(
-        name: "CIColorControls",
-        parameters: [kCIInputSaturationKey: 0]
-      )!
-      buffersScrollView.layer!.filters = [monochromeFilter]
-      tabsScrollView.layer!.filters = [monochromeFilter]
+      let sublayersOpacity: Double = state.isApplicationActive ? 1 : 0.7
+      buffersScrollView.alphaValue = sublayersOpacity
+      tabsScrollView.alphaValue = sublayersOpacity
+
+      if state.isApplicationActive {
+        buffersScrollView.layer!.filters = []
+        tabsScrollView.layer!.filters = []
+      } else {
+        let monochromeFilter = CIFilter(
+          name: "CIColorControls",
+          parameters: [kCIInputSaturationKey: 0]
+        )!
+        buffersScrollView.layer!.filters = [monochromeFilter]
+        tabsScrollView.layer!.filters = [monochromeFilter]
+      }
     }
 
     if let tabline = state.tabline {
-      if
-        updates.tabline.isBuffersUpdated || updates
-          .isAppearanceUpdated
-      {
+      if updates.tabline.isBuffersUpdated {
         reloadBuffers()
       } else if updates.tabline.isSelectedBufferUpdated {
         for (bufferIndex, buffer) in tabline.buffers.enumerated() {
@@ -270,10 +244,7 @@ final class TablineView: NSVisualEffectView, Rendering {
         }
       }
 
-      if
-        updates.tabline.isTabpagesUpdated || updates
-          .isAppearanceUpdated
-      {
+      if updates.tabline.isTabpagesUpdated {
         reloadTabpages()
       } else if updates.tabline.isTabpagesContentUpdated {
         for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {

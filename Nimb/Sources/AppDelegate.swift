@@ -24,13 +24,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     renderChildren(mainMenuController!, msgShowsWindowController!, mainWindowController!)
   }
 
+  public func applicationWillFinishLaunching(_: Notification) {
+    neovim = .init()
+    store = .init(api: neovim!.api)
+    setupInitialControllers()
+    setupBindings()
+  }
+
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      neovim = .init()
-      store = .init(api: neovim!.api)
-      setupInitialControllers()
-      setupBindings()
-
       do {
         try await neovim!.bootstrap()
 
@@ -59,6 +61,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     updatesTask?.cancel()
     alertsTask?.cancel()
     logger.debug("Application will terminate")
+  }
+
+  public func applicationDidBecomeActive(_: Notification) {
+    store!.dispatch(Actions.SetApplicationActive(value: true))
+  }
+
+  public func applicationWillResignActive(_: Notification) {
+    store!.dispatch(Actions.SetApplicationActive(value: false))
   }
 
   private func setupBindings() {
