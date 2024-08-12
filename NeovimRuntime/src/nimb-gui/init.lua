@@ -8,20 +8,17 @@ local M = {}
 ---@param count number
 function M.scroll(direction, count)
   local directions = {
-    up = [[\<c-y>]],
-    down = [[\<c-e>]],
-    left = [[zhzh]],
-    right = [[zlzl]],
+    up = [[<ScrollWheelUp>]],
+    down = [[<ScrollWheelDown>]],
+    left = [[<ScrollWheelLeft>]],
+    right = [[<ScrollWheelRight>]],
   }
-  local suffix = directions[direction]
-
-  local cmd = [[exe "normal! ]]
-  for _=1,count do
-    cmd = cmd .. suffix
+  local keys = vim.api.nvim_replace_termcodes(directions[direction], true, false, true)
+  local multipleKeys = ""
+  for _ = 1, count, 1 do
+    multipleKeys = multipleKeys .. keys
   end
-  cmd = cmd .. [["]]
-
-  vim.cmd(cmd)
+  vim.api.nvim_feedkeys(multipleKeys, "n", false)
 end
 
 function M.buf_text_for_copy()

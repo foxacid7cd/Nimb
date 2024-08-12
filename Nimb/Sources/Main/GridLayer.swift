@@ -191,7 +191,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
 
-    let scrollingSpeedMultiplier = 1.0
+    let scrollingSpeedMultiplier = 1.25
     let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
     let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
@@ -244,30 +244,28 @@ public class GridLayer: CALayer, Rendering {
       yScrollingReported += yScrollingToBeReported
     }
 
-    let point = point(for: event)
-    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
     if horizontalScrollCount != 0 {
-      store.apiTask { [horizontalScrollCount, gridID] in
-        try await $0.nvimInputMouse(
-          button: "wheel",
-          action: horizontalScrollCount > 0 ? "right" : "left",
-          modifier: modifier,
-          grid: gridID,
-          row: point.row,
-          col: point.column
-        )
+      store.apiTask { [horizontalScrollCount] in
+        try await $0
+          .nimb(
+            method: "scroll",
+            parameters: [
+              .string(horizontalScrollCount < 0 ? "left" : "right"),
+              .integer(abs(horizontalScrollCount)),
+            ]
+          )
       }
     }
     if verticalScrollCount != 0 {
-      store.apiTask { [verticalScrollCount, gridID] in
-        try await $0.nvimInputMouse(
-          button: "wheel",
-          action: verticalScrollCount < 0 ? "up" : "down",
-          modifier: modifier,
-          grid: gridID,
-          row: point.row,
-          col: point.column
-        )
+      store.apiTask { [verticalScrollCount] in
+        try await $0
+          .nimb(
+            method: "scroll",
+            parameters: [
+              .string(verticalScrollCount < 0 ? "up" : "down"),
+              .integer(abs(verticalScrollCount)),
+            ]
+          )
       }
     }
 
