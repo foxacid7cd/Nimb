@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import Algorithms
 import AppKit
 import Collections
 import ConcurrencyExtras
@@ -27,10 +28,6 @@ public class GridLayer: CALayer, Rendering {
 
   private let gridID: Grid.ID
   private let store: Store
-  @MainActor
-  private var hasScrollingSlippedHorizontally = false
-  @MainActor
-  private var hasScrollingSlippedVertically = false
   @MainActor
   private var isScrollingHorizontal: Bool?
   @MainActor
@@ -191,7 +188,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
 
-    let scrollingSpeedMultiplier = 1.25
+    let scrollingSpeedMultiplier = 1.15
     let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
     let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
@@ -206,72 +203,73 @@ public class GridLayer: CALayer, Rendering {
     }
 
     let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase
-      .rawValue == 0 ? 1 : 0.6
+      .rawValue == 0 ? 1 : 0.85
     xScrollingAccumulator -= event
       .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event
       .scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
-    var xScrollingDelta = xScrollingAccumulator - xScrollingReported
-    var yScrollingDelta = yScrollingAccumulator - yScrollingReported
+    let xScrollingDelta = xScrollingAccumulator - xScrollingReported
+    let yScrollingDelta = yScrollingAccumulator - yScrollingReported
 
     var horizontalScrollCount = 0
     var verticalScrollCount = 0
 
     if
-      hasScrollingSlippedHorizontally || abs(xScrollingDelta) > xThreshold *
-      4
+      abs(xScrollingDelta) > xThreshold
     {
-      if !hasScrollingSlippedHorizontally {
-        xScrollingDelta = xScrollingAccumulator - xScrollingReported
-      }
-      hasScrollingSlippedHorizontally = true
-
       horizontalScrollCount = Int(xScrollingDelta / xThreshold)
       let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
 
       xScrollingReported += xScrollingToBeReported
     }
-    if hasScrollingSlippedVertically || abs(yScrollingDelta) > yThreshold * 2 {
-      if !hasScrollingSlippedVertically {
-        yScrollingDelta = yScrollingAccumulator - yScrollingReported
-      }
-      hasScrollingSlippedVertically = true
-
-      verticalScrollCount = Int(yScrollingDelta / yThreshold)
+    if abs(yScrollingDelta) > yThreshold {
+      verticalScrollCount = Int(
+        yScrollingDelta / yThreshold
+      )
       let yScrollingToBeReported = yThreshold * Double(verticalScrollCount)
 
       yScrollingReported += yScrollingToBeReported
     }
 
-    if horizontalScrollCount != 0 {
-      store.apiTask { [horizontalScrollCount] in
-        try await $0
-          .nimb(
-            method: "scroll",
-            parameters: [
-              .string(horizontalScrollCount < 0 ? "left" : "right"),
-              .integer(abs(horizontalScrollCount)),
-            ]
-          )
-      }
-    }
-    if verticalScrollCount != 0 {
-      store.apiTask { [verticalScrollCount] in
-        try await $0
-          .nimb(
-            method: "scroll",
-            parameters: [
-              .string(verticalScrollCount < 0 ? "up" : "down"),
-              .integer(abs(verticalScrollCount)),
-            ]
-          )
-      }
-    }
+    if horizontalScrollCount != 0 || verticalScrollCount != 0 {
+      let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
+      let point = point(for: event)
 
-    if event.phase == .ended || event.phase == .cancelled {
-      hasScrollingSlippedHorizontally = false
-      hasScrollingSlippedVertically = false
+      var horizontalScrollFunctions = [any APIFunction]().cycled(times: 0)
+      if horizontalScrollCount != 0 {
+        horizontalScrollFunctions = [
+          APIFunctions.NvimInputMouse(
+            button: "wheel",
+            action: horizontalScrollCount < 0 ? "left" : "right",
+            modifier: modifier,
+            grid: gridID,
+            row: point.row,
+            col: point.column
+          ),
+        ].cycled(times: abs(horizontalScrollCount))
+      }
+
+      var verticalScrollFunctions = [any APIFunction]().cycled(times: 0)
+      if verticalScrollCount != 0 {
+        verticalScrollFunctions = [
+          APIFunctions.NvimInputMouse(
+            button: "wheel",
+            action: verticalScrollCount < 0 ? "up" : "down",
+            modifier: modifier,
+            grid: gridID,
+            row: point.row,
+            col: point.column
+          ),
+        ].cycled(times: abs(verticalScrollCount))
+      }
+
+      store.apiTask { [horizontalScrollFunctions, verticalScrollFunctions] in
+        try await $0
+          .fastCallsTransaction(
+            with: chain(horizontalScrollFunctions, verticalScrollFunctions)
+          )
+      }
     }
   }
 
@@ -291,15 +289,14 @@ public class GridLayer: CALayer, Rendering {
       return
     }
     store.apiTask { [gridID] in
-      try await $0
-        .nvimInputMouse(
-          button: "move",
-          action: "",
-          modifier: mouseMove.modifier,
-          grid: gridID,
-          row: mouseMove.point.row,
-          col: mouseMove.point.column
-        )
+      try await $0.fastCall(APIFunctions.NvimInputMouse(
+        button: "move",
+        action: "",
+        modifier: mouseMove.modifier,
+        grid: gridID,
+        row: mouseMove.point.row,
+        col: mouseMove.point.column
+      ))
     }
     previousMouseMove = mouseMove
   }
@@ -345,3 +342,5 @@ public class GridLayer: CALayer, Rendering {
     }
   }
 }
+
+extension CycledTimesCollection: @unchecked @retroactive Sendable where Base: Sendable { }

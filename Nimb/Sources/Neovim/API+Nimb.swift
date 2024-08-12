@@ -35,6 +35,11 @@ public extension API {
       args: parameters
     ))
   }
+
+  @MainActor
+  func keyPressed(_ keyPress: KeyPress) throws {
+    try fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
+  }
 }
 
 @PublicInit

@@ -12,7 +12,7 @@ class MsgShowsWindowController: NSWindowController, Rendering {
       true
     }
 
-    var keyPressed: (@Sendable (KeyPress) -> Void)?
+    var keyPressed: ((KeyPress) -> Void)?
 
     override func keyDown(with event: NSEvent) {
       keyPressed?(.init(event: event))
@@ -39,10 +39,8 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
     window.alphaValue = 0.9
-    window.keyPressed = { keyPress in
-      Task {
-        try await store.api.nvimInput(keys: keyPress.makeNvimKeyCode())
-      }
+    window.keyPressed = {
+      try? store.api.keyPressed($0)
     }
     super.init(window: window)
 

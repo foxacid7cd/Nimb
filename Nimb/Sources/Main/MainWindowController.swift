@@ -44,10 +44,8 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
-    customWindow.keyPressed = { keyPress in
-      Task {
-        try await store.api.nvimInput(keys: keyPress.makeNvimKeyCode())
-      }
+    customWindow.keyPressed = {
+      try? store.api.keyPressed($0)
     }
     super.init(window: customWindow)
 

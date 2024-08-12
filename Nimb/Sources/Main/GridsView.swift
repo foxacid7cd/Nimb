@@ -185,9 +185,15 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         if updatedLayoutGridIDs.contains(id) {
           gridLayer.frame = frame.applying(upsideDownTransform)
         }
-        gridLayer.zPosition = zPosition
+        if gridLayer.zPosition != zPosition {
+          gridLayer.zPosition = zPosition
+        }
       }
     }
+
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
 
     for layer in arrangedGridLayers.values {
       renderChildren(layer)

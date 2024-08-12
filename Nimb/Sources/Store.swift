@@ -73,9 +73,8 @@ public class Store: Sendable {
       .flatMap(\.async)
 
     updates = merge(actionsChannel, applyUIEventsActions)
-      .buffer(policy: .unbounded)
       .reductions(into: (state: initialState, updates: State.Updates())) {
-        [alertsChannel] result,
+        @MainActor [alertsChannel] result,
           action in
         if result.updates.needFlush {
           result.updates = State.Updates(needFlush: false)
