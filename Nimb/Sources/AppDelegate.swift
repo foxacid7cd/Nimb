@@ -81,11 +81,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         }
       } catch { }
     }
-    updatesTask = Task {
+    updatesTask = Task { @StateActor in
       do {
         var presentedNimbNotifiesCount = 0
 
-        for await (state, updates) in store!.updates {
+        for await (state, updates) in await store!.updates {
           try Task.checkCancellation()
 
           if updates.isOuterGridLayoutUpdated {
@@ -100,19 +100,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           if updates.isNimbNotifiesUpdated {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              showNimbNotify(notification)
+              Task { @MainActor in
+                showNimbNotify(notification)
+              }
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          update(renderContext: .init(state: state, updates: updates))
-          render()
+          Task { @MainActor in
+            update(renderContext: .init(state: state, updates: updates))
+            render()
+          }
         }
-        logger.debug("Store state updates loop ended")
+        await logger.debug("Store state updates loop ended")
       } catch is CancellationError {
-        logger.debug("Store state updates loop cancelled")
+        await logger.debug("Store state updates loop cancelled")
       } catch {
-        logger.error("Store state updates loop error: \(error)")
+        await logger.error("Store state updates loop error: \(error)")
         await showCriticalAlert(error: error)
       }
     }

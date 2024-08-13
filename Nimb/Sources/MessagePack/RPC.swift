@@ -4,35 +4,50 @@ import Algorithms
 import AsyncAlgorithms
 import CasePaths
 import Collections
+import ConcurrencyExtras
 import CustomDump
 import Foundation
+
+@globalActor
+public actor RPCActor {
+  public static let shared = RPCActor()
+}
 
 @MainActor
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   private let target: Target
-  private let storage: Storage
-  private let packer = Packer()
-  private let unpacker = Unpacker()
+  private let storage = LockIsolated<Storage>(.init())
+  private let packer = LockIsolated<Packer>(.init())
+  private let unpacker = LockIsolated<Unpacker>(.init())
 
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
-    storage = .init(maximumConcurrentRequests: maximumConcurrentRequests)
 
-    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [storage, target, unpacker] continuation in
-      let task = Task {
+    let dataBatches = target.dataBatches
+
+    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [dataBatches, storage, unpacker] continuation in
+      let task = Task { @RPCActor in
         var notifications = [Message.Notification]()
-        for try await data in target.dataBatches {
-          let values = try unpacker.unpack(data)
-          let messages = try values.map { try Message(value: $0) }
+        for try await data in dataBatches {
+          let messages = try unpacker.withValue {
+            try $0.unpack(data)
+              .map { try Message(value: $0) }
+          }
 
           for message in messages {
             switch message {
             case let .request(request):
-              logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
+              Task { @MainActor in
+                logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
+              }
+
             case let .response(response):
-              storage.responseReceived(response, forRequestWithID: response.id)
+              storage.withValue {
+                $0.responseReceived(response, forRequestWithID: response.id)
+              }
+
             case let .notification(notification):
               notifications.append(notification)
             }
@@ -55,6 +70,7 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
+  @RPCActor
   @discardableResult
   public func call(
     method: String,
@@ -64,8 +80,10 @@ public final class RPC<Target: Channel>: Sendable {
     try await withUnsafeThrowingContinuation { continuation in
       Task {
         let request = Message.Request(
-          id: storage.announceRequest {
-            continuation.resume(returning: $0.result)
+          id: storage.withValue {
+            $0.announceRequest {
+              continuation.resume(returning: $0.result)
+            }
           },
           method: method,
           parameters: parameters
@@ -77,19 +95,21 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
+  @RPCActor
   public func fastCall(
     method: String,
     withParameters parameters: [Value]
   ) throws {
     try send(
       request: .init(
-        id: storage.announceRequest(),
+        id: storage.withValue { $0.announceRequest() },
         method: method,
         parameters: parameters
       )
     )
   }
 
+  @RPCActor
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value]
@@ -98,35 +118,36 @@ public final class RPC<Target: Channel>: Sendable {
 
     for call in calls {
       data.append(
-        packer.pack(
-          Message.Request(
-            id: storage.announceRequest(),
-            method: call.method,
-            parameters: call.parameters
-          )
-          .makeValue()
-        )
+        packer.withValue {
+          $0
+            .pack(
+              Message.Request(
+                id: storage.withValue { $0.announceRequest() },
+                method: call.method,
+                parameters: call.parameters
+              )
+              .makeValue()
+            )
+        }
       )
     }
 
     try target.write(data)
   }
 
+  @RPCActor
   public func send(request: Message.Request) throws {
-    let data = packer.pack(request.makeValue())
+    let data = packer.withValue {
+      $0.pack(request.makeValue())
+    }
     try target.write(data)
   }
 }
 
-@MainActor
-private final class Storage: Sendable {
-  private let maximumConcurrentRequests: Int
+private final class Storage {
+  private let maximumConcurrentRequests = Int.max
   private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
   private var announcedRequestsCount = 0
-
-  init(maximumConcurrentRequests: Int) {
-    self.maximumConcurrentRequests = maximumConcurrentRequests
-  }
 
   func announceRequest(
     _ handler: (@Sendable (Message.Response) -> Void)? =

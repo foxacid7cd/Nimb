@@ -55,12 +55,12 @@ public class Store: Sendable {
 
     let applyUIEventsActions = api.neovimNotifications
       .compactMap { [alertsChannel] neovimNotificationsBatch in
-        var actions = [Action]()
+        var actionsAccumulator = [Action]()
 
         for notification in neovimNotificationsBatch {
           switch notification {
           case let .redraw(uiEvents):
-            actions.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
+            actionsAccumulator.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
           case let .nvimErrorEvent(event):
             await alertsChannel.send("nvimErrorEvent received \(cd: event)")
           case let .nimbNotify(value):
@@ -68,14 +68,13 @@ public class Store: Sendable {
           }
         }
 
-        return actions.isEmpty ? nil : actions
+        return actionsAccumulator.isEmpty ? nil : actionsAccumulator
       }
       .flatMap(\.async)
 
     updates = merge(actionsChannel, applyUIEventsActions)
-      .reductions(into: (state: initialState, updates: State.Updates())) {
-        @MainActor [alertsChannel] result,
-          action in
+      .reductions(into: (state: initialState, updates: State.Updates())) { [alertsChannel] result,
+        action in
         if result.updates.needFlush {
           result.updates = State.Updates(needFlush: false)
         }
@@ -121,7 +120,7 @@ public class Store: Sendable {
   }
 
   public func dispatch(_ action: Action) {
-    Task {
+    Task { @StateActor in
       await actionsChannel.send(action)
     }
   }

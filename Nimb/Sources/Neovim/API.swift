@@ -7,6 +7,7 @@ public final class API<Target: Channel>: Sendable {
 
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
+
     neovimNotifications = rpc.notifications
       .map { notifications -> [NeovimNotification] in
         try notifications.compactMap { notification in
@@ -49,23 +50,23 @@ public final class API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
-  @MainActor
   public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
-    try rpc.fastCall(
-      method: T.method,
-      withParameters: apiFunction.parameters
-    )
+    Task { @RPCActor in
+      try rpc.fastCall(
+        method: T.method,
+        withParameters: apiFunction.parameters
+      )
+    }
   }
 
-  @MainActor
-  public func fastCallsTransaction(
+  @RPCActor public func fastCallsTransaction(
     with apiFunctions: some Sequence<any APIFunction>
   ) throws {
-    try rpc.fastCallsTransaction(with: apiFunctions.map {
-      (
-        method: type(of: $0).method,
-        parameters: $0.parameters
+    for apiFunction in apiFunctions {
+      try rpc.fastCall(
+        method: type(of: apiFunction).method,
+        withParameters: apiFunction.parameters
       )
-    })
+    }
   }
 }
