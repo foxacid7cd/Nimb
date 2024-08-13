@@ -37,7 +37,6 @@ public final class API<Target: Channel>: Sendable {
           }
         }
       }
-      .buffer(policy: .unbounded)
       .eraseToThrowingStream()
   }
 

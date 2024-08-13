@@ -188,7 +188,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
 
-    let scrollingSpeedMultiplier = 1.15
+    let scrollingSpeedMultiplier = 1.1
     let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
     let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
@@ -203,7 +203,7 @@ public class GridLayer: CALayer, Rendering {
     }
 
     let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase
-      .rawValue == 0 ? 1 : 0.85
+      .rawValue == 0 ? 1 : 0.9
     xScrollingAccumulator -= event
       .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event

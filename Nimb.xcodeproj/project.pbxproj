@@ -56,8 +56,6 @@
 		681B533C2C5FE4A100AD6C68 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532D2C5FE4A100AD6C68 /* Value.swift */; };
 		681B53472C5FE53E00AD6C68 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53462C5FE53E00AD6C68 /* CustomDump */; };
 		681B53492C5FE54800AD6C68 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53482C5FE54800AD6C68 /* Collections */; };
-		681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534D2C5FE57E00AD6C68 /* Algorithms */; };
-		681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */; };
 		681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 681B53522C5FE67B00AD6C68 /* SwiftSyntax */; };
 		68220E732C668F92004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		68220E742C668FA0004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
@@ -87,7 +85,6 @@
 		6880800E2C603B6800BD32FA /* MsgpackInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C12B2C5E166900FF3968 /* MsgpackInspector.swift */; };
 		688080102C603BDC00BD32FA /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800F2C603BDC00BD32FA /* SystemPackage */; };
 		688080112C60407600BD32FA /* AsyncFileHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B530F2C5FE47600AD6C68 /* AsyncFileHandle.swift */; };
-		688080132C605FC300BD32FA /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 688080122C605FC300BD32FA /* AsyncAlgorithms */; };
 		688080152C60713600BD32FA /* data.mpack in CopyFiles */ = {isa = PBXBuildFile; fileRef = 688080142C6070E500BD32FA /* data.mpack */; };
 		688080162C60D68D00BD32FA /* Unpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532C2C5FE4A100AD6C68 /* Unpacker.swift */; };
 		688080172C60D69000BD32FA /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532D2C5FE4A100AD6C68 /* Value.swift */; };
@@ -100,6 +97,8 @@
 		688080252C60D81900BD32FA /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 688080242C60D81900BD32FA /* CustomDump */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6888D8A62AF83B6B0049562D /* API+Nimb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* API+Nimb.swift */; };
+		688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 688A764F2C6B1E4F00B6B9C0 /* Algorithms */; };
+		688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 688A76512C6B23F300B6B9C0 /* Algorithms */; };
 		688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
 		689081362B3F321000252558 /* FloatingWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689081352B3F321000252558 /* FloatingWindowView.swift */; };
 		6896CE402C68249E001F3C85 /* ConcurrencyExtras in Frameworks */ = {isa = PBXBuildFile; productRef = 6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */; };
@@ -144,9 +143,7 @@
 		68C129282C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129292C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C1292A2C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
-		68C9BCA32C5F7E3700844461 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA22C5F7E3700844461 /* Algorithms */; };
 		68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA52C5F7E4900844461 /* ArgumentParser */; };
-		68C9BCA92C5F7E5C00844461 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA82C5F7E5C00844461 /* AsyncAlgorithms */; };
 		68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCAB2C5F7E7600844461 /* Collections */; };
 		68C9BCAF2C5F7E9900844461 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCAE2C5F7E9900844461 /* SystemPackage */; };
 		68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB22C5F7EFE00844461 /* IdentifiedCollections */; };
@@ -384,7 +381,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				681B53062C5FE36200AD6C68 /* ArgumentParser in Frameworks */,
-				681B534E2C5FE57E00AD6C68 /* Algorithms in Frameworks */,
 				681B53492C5FE54800AD6C68 /* Collections in Frameworks */,
 				68220E732C668F92004529E3 /* libmsgpack-c.a in Frameworks */,
 				681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */,
@@ -392,8 +388,8 @@
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
 				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
 				68740B032C688D360080A967 /* ConcurrencyExtras in Frameworks */,
+				688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */,
 				681B53472C5FE53E00AD6C68 /* CustomDump in Frameworks */,
-				681B53502C5FE58200AD6C68 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -406,7 +402,6 @@
 				688080102C603BDC00BD32FA /* SystemPackage in Frameworks */,
 				68FB331E2C669ED7008A68CB /* MyMacro in Frameworks */,
 				68220E742C668FA0004529E3 /* libmsgpack-c.a in Frameworks */,
-				688080132C605FC300BD32FA /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -417,16 +412,15 @@
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				68C9BCBC2C5F7F5A00844461 /* CustomDump in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
+				688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */,
 				68FB33182C669ECA008A68CB /* MyMacro in Frameworks */,
 				6896CE402C68249E001F3C85 /* ConcurrencyExtras in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
-				68C9BCA32C5F7E3700844461 /* Algorithms in Frameworks */,
 				68007B642C61C88B001AD1D0 /* STTextView in Frameworks */,
 				68FE5D882C68D1AD00FA9D01 /* libswiftObjectiveC.tbd in Frameworks */,
 				6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
-				68C9BCA92C5F7E5C00844461 /* AsyncAlgorithms in Frameworks */,
 				68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -753,13 +747,12 @@
 				681B53052C5FE36200AD6C68 /* ArgumentParser */,
 				681B53462C5FE53E00AD6C68 /* CustomDump */,
 				681B53482C5FE54800AD6C68 /* Collections */,
-				681B534D2C5FE57E00AD6C68 /* Algorithms */,
-				681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */,
 				681B53522C5FE67B00AD6C68 /* SwiftSyntax */,
 				686AC8282C5FE88C00AC1E62 /* SwiftSyntaxBuilder */,
 				686AC82A2C5FE91F00AC1E62 /* CasePaths */,
 				68FB331B2C669ED3008A68CB /* MyMacro */,
 				68740B022C688D360080A967 /* ConcurrencyExtras */,
+				688A76512C6B23F300B6B9C0 /* Algorithms */,
 			);
 			productName = generate;
 			productReference = 681B52F32C5FE31A00AD6C68 /* generate */;
@@ -781,7 +774,6 @@
 			packageProductDependencies = (
 				6880800C2C603B3000BD32FA /* ArgumentParser */,
 				6880800F2C603BDC00BD32FA /* SystemPackage */,
-				688080122C605FC300BD32FA /* AsyncAlgorithms */,
 				68FB331D2C669ED7008A68CB /* MyMacro */,
 				68740B062C688D480080A967 /* ConcurrencyExtras */,
 			);
@@ -809,8 +801,6 @@
 			name = Nimb;
 			packageProductDependencies = (
 				689738F22C480AF7002159BD /* TinyConstraints */,
-				68C9BCA22C5F7E3700844461 /* Algorithms */,
-				68C9BCA82C5F7E5C00844461 /* AsyncAlgorithms */,
 				68C9BCAB2C5F7E7600844461 /* Collections */,
 				68C9BCB22C5F7EFE00844461 /* IdentifiedCollections */,
 				68C9BCB52C5F7F0F00844461 /* CasePaths */,
@@ -820,6 +810,7 @@
 				68DC65B12C6681A3009FBEDE /* SystemPackage */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
 				6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */,
+				688A764F2C6B1E4F00B6B9C0 /* Algorithms */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -833,7 +824,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					6814C11F2C5E155E00FF3968 = {
 						CreatedOnToolsVersion = 15.4;
@@ -863,9 +854,7 @@
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
 				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
-				68C9BCA12C5F7E3700844461 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 				68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				68C9BCA72C5F7E5C00844461 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */,
 				68C9BCB12C5F7EFE00844461 /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
@@ -875,6 +864,7 @@
 				681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				68007B622C61C88B001AD1D0 /* XCRemoteSwiftPackageReference "STTextView" */,
 				6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */,
+				688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -1107,6 +1097,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1140,6 +1131,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -1164,6 +1156,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1190,6 +1183,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = WXA9R8SW25;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1209,6 +1203,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				LIBRARY_SEARCH_PATHS = (
@@ -1229,6 +1224,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				LIBRARY_SEARCH_PATHS = (
@@ -1276,9 +1272,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = c99;
+				ENABLE_TESTABILITY = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -1301,9 +1298,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = NO;
-				SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -1318,6 +1313,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_USE_OPTIMIZATION_PROFILE = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -1340,10 +1336,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -1356,12 +1352,10 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
-				SWIFT_COMPILATION_MODE = singlefile;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = NO;
-				SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -1377,6 +1371,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(inherited)";
@@ -1416,6 +1411,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1511,6 +1507,14 @@
 				kind = branch;
 			};
 		};
+		688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
 		6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-concurrency-extras.git";
@@ -1527,28 +1531,12 @@
 				minimumVersion = 4.0.2;
 			};
 		};
-		68C9BCA12C5F7E3700844461 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-algorithms.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
-			};
-		};
 		68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.5.0;
-			};
-		};
-		68C9BCA72C5F7E5C00844461 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.1;
 			};
 		};
 		68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
@@ -1622,16 +1610,6 @@
 			package = 68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */;
 			productName = Collections;
 		};
-		681B534D2C5FE57E00AD6C68 /* Algorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCA12C5F7E3700844461 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
-			productName = Algorithms;
-		};
-		681B534F2C5FE58200AD6C68 /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCA72C5F7E5C00844461 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
-		};
 		681B53522C5FE67B00AD6C68 /* SwiftSyntax */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */;
@@ -1672,11 +1650,6 @@
 			package = 68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */;
 			productName = SystemPackage;
 		};
-		688080122C605FC300BD32FA /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCA72C5F7E5C00844461 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
-		};
 		688080222C60D7F500BD32FA /* CasePaths */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */;
@@ -1686,6 +1659,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
 			productName = CustomDump;
+		};
+		688A764F2C6B1E4F00B6B9C0 /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
+		};
+		688A76512C6B23F300B6B9C0 /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
 		};
 		6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1697,20 +1680,10 @@
 			package = 689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */;
 			productName = TinyConstraints;
 		};
-		68C9BCA22C5F7E3700844461 /* Algorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCA12C5F7E3700844461 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
-			productName = Algorithms;
-		};
 		68C9BCA52C5F7E4900844461 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		68C9BCA82C5F7E5C00844461 /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCA72C5F7E5C00844461 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
 		};
 		68C9BCAB2C5F7E7600844461 /* Collections */ = {
 			isa = XCSwiftPackageProductDependency;

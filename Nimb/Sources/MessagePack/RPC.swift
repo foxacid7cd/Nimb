@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import AsyncAlgorithms
 import CasePaths
 import Collections
+import Combine
 import ConcurrencyExtras
 import CustomDump
 import Foundation
-
-@globalActor
-public actor RPCActor {
-  public static let shared = RPCActor()
-}
 
 @MainActor
 public final class RPC<Target: Channel>: Sendable {
@@ -28,7 +23,7 @@ public final class RPC<Target: Channel>: Sendable {
     let dataBatches = target.dataBatches
 
     notifications = AsyncThrowingStream<[Message.Notification], any Error> { [dataBatches, storage, unpacker] continuation in
-      let task = Task { @RPCActor in
+      let task = Task {
         var notifications = [Message.Notification]()
         for try await data in dataBatches {
           let messages = try unpacker.withValue {

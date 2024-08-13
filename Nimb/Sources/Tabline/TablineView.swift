@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import AsyncAlgorithms
 import TinyConstraints
 
 extension Notification: @unchecked @retroactive Sendable { }

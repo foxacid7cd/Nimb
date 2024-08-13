@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import AsyncAlgorithms
 import ConcurrencyExtras
 
 public extension AsyncSequence where Element: Sendable, Self: Sendable {
@@ -66,7 +65,6 @@ public extension AsyncSequence where Element: Sendable, Self: Sendable {
         continuation.finish()
       }
     }
-    .buffer(policy: .unbounded)
     .eraseToStream()
   }
 }

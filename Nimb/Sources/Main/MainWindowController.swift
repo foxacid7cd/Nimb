@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import AsyncAlgorithms
 
 public class MainWindowController: NSWindowController, Rendering {
   private class CustomWindow: NSWindow {

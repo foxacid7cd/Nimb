@@ -14,7 +14,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var settingsWindowController: SettingsWindowController?
 
   private var alertsTask: Task<Void, Never>?
-  private var updatesTask: Task<Void, Never>?
+  @StateActor private var updatesTask: Task<Void, Never>?
 
   override public init() {
     super.init()
@@ -24,15 +24,22 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     renderChildren(mainMenuController!, msgShowsWindowController!, mainWindowController!)
   }
 
-  public func applicationWillFinishLaunching(_: Notification) {
-    neovim = .init()
-    store = .init(api: neovim!.api)
-    setupInitialControllers()
-    setupBindings()
-  }
-
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
+      neovim = .init()
+      store = .init(api: neovim!.api)
+      setupInitialControllers()
+      alertsTask = Task {
+        do {
+          for await alert in store!.alerts {
+            try Task.checkCancellation()
+
+            show(alert: alert)
+          }
+        } catch { }
+      }
+      await setupUpdatesBinding()
+
       do {
         try await neovim!.bootstrap()
 
@@ -58,8 +65,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   public func applicationWillTerminate(_: Notification) {
-    updatesTask?.cancel()
-    alertsTask?.cancel()
     logger.debug("Application will terminate")
   }
 
@@ -71,21 +76,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store!.dispatch(Actions.SetApplicationActive(value: false))
   }
 
-  private func setupBindings() {
-    alertsTask = Task {
-      do {
-        for await alert in store!.alerts {
-          try Task.checkCancellation()
-
-          show(alert: alert)
-        }
-      } catch { }
-    }
-    updatesTask = Task { @RPCActor in
+  @StateActor
+  private func setupUpdatesBinding() {
+    updatesTask = Task {
       do {
         var presentedNimbNotifiesCount = 0
 
-        for await (state, updates) in await store!.updates {
+        for await (state, updates) in await self.store!.updates {
           try Task.checkCancellation()
 
           if updates.isOuterGridLayoutUpdated {
@@ -101,15 +98,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
               Task { @MainActor in
-                showNimbNotify(notification)
+                self.showNimbNotify(notification)
               }
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
           Task { @MainActor in
-            update(renderContext: .init(state: state, updates: updates))
-            render()
+            self.update(renderContext: .init(state: state, updates: updates))
+            self.render()
           }
         }
         await logger.debug("Store state updates loop ended")
@@ -117,11 +114,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         await logger.debug("Store state updates loop cancelled")
       } catch {
         await logger.error("Store state updates loop error: \(error)")
-        await showCriticalAlert(error: error)
+//        await self.showCriticalAlert(error: error)
       }
     }
   }
 
+  @MainActor
   private func setupInitialControllers() {
     mainMenuController = MainMenuController(store: store!)
     mainMenuController!.settingsClicked = { [unowned self] in
@@ -141,6 +139,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     msgShowsWindowController = MsgShowsWindowController(store: store!)
   }
 
+  @MainActor
   private func showCriticalAlert(error: Error) async {
     let alert = NSAlert()
     alert.alertStyle = .critical
@@ -179,6 +178,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
+  @MainActor
   private func show(alert: Alert) {
     let appKitAlert = NSAlert()
     appKitAlert.alertStyle = .warning
@@ -187,6 +187,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     appKitAlert.beginSheetModal(for: mainWindowController!.window!)
   }
 
+  @MainActor
   private func showNimbNotify(_ notify: NimbNotify) {
     logger.debug("AppDelegate.showNimbNotify: \(String(customDumping: notify))")
 

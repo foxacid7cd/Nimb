@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import AsyncAlgorithms
 
 public class MainViewController: NSViewController, Rendering {
   let gridsView: GridsView
@@ -14,7 +13,7 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var gridsContainerView = NSView()
   private var preMaximizeWindowFrame: CGRect?
   private lazy var modalOverlayView = NSView()
-  private let reportOuterGridSizeChangedChannel = AsyncChannel<IntegerSize>()
+  private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
 
   init(store: Store, minOuterGridSize: IntegerSize) {
@@ -28,10 +27,15 @@ public class MainViewController: NSViewController, Rendering {
         cmdlinesViewController.view
       }
     )
+    let reportOuterGridSizeChanged: AsyncStream<IntegerSize>
+    (
+      reportOuterGridSizeChanged,
+      reportOuterGridSizeChangedContinuation
+    ) = AsyncStream.makeStream()
     super.init(nibName: nil, bundle: nil)
 
     reportOuterGridSizeChangedTask = Task {
-      let outerGridSizes = reportOuterGridSizeChangedChannel
+      let outerGridSizes = reportOuterGridSizeChanged
         .throttle(for: .milliseconds(100), clock: .continuous) { _, latest in latest }
 
       for await outerGridSize in outerGridSizes {
@@ -185,9 +189,8 @@ public class MainViewController: NSViewController, Rendering {
       columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
       rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
     )
-    Task {
-      await reportOuterGridSizeChangedChannel.send(outerGridSizeNeeded)
-    }
+    reportOuterGridSizeChangedContinuation
+      .yield(outerGridSizeNeeded)
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
