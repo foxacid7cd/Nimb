@@ -81,7 +81,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         }
       } catch { }
     }
-    updatesTask = Task { @StateActor in
+    updatesTask = Task { @RPCActor in
       do {
         var presentedNimbNotifiesCount = 0
 

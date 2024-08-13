@@ -70,7 +70,6 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
-  @RPCActor
   @discardableResult
   public func call(
     method: String,
@@ -95,7 +94,6 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
-  @RPCActor
   public func fastCall(
     method: String,
     withParameters parameters: [Value]
@@ -109,7 +107,6 @@ public final class RPC<Target: Channel>: Sendable {
     )
   }
 
-  @RPCActor
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value]
@@ -135,7 +132,6 @@ public final class RPC<Target: Channel>: Sendable {
     try target.write(data)
   }
 
-  @RPCActor
   public func send(request: Message.Request) throws {
     let data = packer.withValue {
       $0.pack(request.makeValue())

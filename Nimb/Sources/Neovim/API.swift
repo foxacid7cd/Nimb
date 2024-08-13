@@ -50,16 +50,16 @@ public final class API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
+  @MainActor
   public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
-    Task { @RPCActor in
-      try rpc.fastCall(
-        method: T.method,
-        withParameters: apiFunction.parameters
-      )
-    }
+    try rpc.fastCall(
+      method: T.method,
+      withParameters: apiFunction.parameters
+    )
   }
 
-  @RPCActor public func fastCallsTransaction(
+  @MainActor
+  public func fastCallsTransaction(
     with apiFunctions: some Sequence<any APIFunction>
   ) throws {
     for apiFunction in apiFunctions {

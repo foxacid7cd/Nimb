@@ -289,7 +289,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
     store.apiTask { [gridID] in
-      try $0.fastCall(APIFunctions.NvimInputMouse(
+      try await $0.fastCall(APIFunctions.NvimInputMouse(
         button: "move",
         action: "",
         modifier: mouseMove.modifier,
