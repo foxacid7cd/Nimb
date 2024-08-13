@@ -138,9 +138,8 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
 
   public func render() {
     for gridID in updates.destroyedGridIDs {
-      if let layer = arrangedGridLayers.removeValue(forKey: gridID) {
-        layer.removeFromSuperlayer()
-      }
+      let layer = arrangedGridLayer(forGridWithID: gridID)
+      layer.isHidden = true
     }
 
     let updatedLayoutGridIDs =
@@ -180,6 +179,9 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
           logger.warning("walkingGridFrames: gridLayer with id \(id) not found")
           return
         }
+        guard !gridLayer.isHidden else {
+          return
+        }
         if updatedLayoutGridIDs.contains(id) {
           gridLayer.frame = frame.applying(upsideDownTransform)
         }
@@ -193,9 +195,11 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     CATransaction.setDisableActions(true)
     defer { CATransaction.commit() }
 
-    for layer in arrangedGridLayers.values {
-      renderChildren(layer)
-    }
+    renderChildren(
+      arrangedGridLayers.values
+        .lazy
+        .filter { !$0.isHidden }
+    )
   }
 
   public func windowFrame(

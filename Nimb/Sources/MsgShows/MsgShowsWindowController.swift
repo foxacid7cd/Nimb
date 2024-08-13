@@ -40,7 +40,9 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     window.hasShadow = true
     window.alphaValue = 0.9
     window.keyPressed = { keyPress in
-      try? store.api.keyPressed(keyPress)
+      Task {
+        try? await store.api.keyPressed(keyPress)
+      }
     }
     super.init(window: window)
 

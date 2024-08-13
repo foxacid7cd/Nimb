@@ -28,6 +28,7 @@ public extension API {
     return nil
   }
 
+  @StateActor
   func nimbFast(method: String, parameters: [Value] = []) throws {
     try fastCall(APIFunctions.NvimExecLua(
       code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
@@ -35,6 +36,7 @@ public extension API {
     ))
   }
 
+  @StateActor
   func keyPressed(_ keyPress: KeyPress) throws {
     try fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
   }

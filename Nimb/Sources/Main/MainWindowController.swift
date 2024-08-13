@@ -44,7 +44,9 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.isMovable = false
     customWindow.isOpaque = true
     customWindow.keyPressed = { keyPress in
-      try? store.api.keyPressed(keyPress)
+      Task {
+        try? await store.api.keyPressed(keyPress)
+      }
     }
     super.init(window: customWindow)
 

@@ -59,7 +59,9 @@ public extension Rendering where Self: AnyObject {
     }
   }
 
-  @MainActor func renderChildren(_ children: [Rendering]) {
+  @MainActor func renderChildren<S: Sequence>(
+    _ children: S
+  ) where S.Element == Rendering {
     for child in children {
       child.update(renderContext: renderContext)
       child.render()

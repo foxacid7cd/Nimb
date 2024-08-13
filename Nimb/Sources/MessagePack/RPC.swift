@@ -23,7 +23,7 @@ public final class RPC<Target: Channel>: Sendable {
     let dataBatches = target.dataBatches
 
     notifications = AsyncThrowingStream<[Message.Notification], any Error> { [dataBatches, storage, unpacker] continuation in
-      let task = Task { @StateActor in
+      let task = Task {
         var notifications = [Message.Notification]()
         for try await data in dataBatches {
           let messages = try unpacker.withValue {
@@ -61,7 +61,7 @@ public final class RPC<Target: Channel>: Sendable {
   }
 
   @discardableResult
-  public nonisolated func call(
+  public func call(
     method: String,
     withParameters parameters: [Value]
   ) async throws
@@ -84,7 +84,7 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
-  public nonisolated func fastCall(
+  public func fastCall(
     method: String,
     withParameters parameters: [Value]
   ) throws {
@@ -97,7 +97,7 @@ public final class RPC<Target: Channel>: Sendable {
     )
   }
 
-  public nonisolated func fastCallsTransaction(with calls: some Sequence<(
+  public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value]
   )> & Sendable) throws {
@@ -122,7 +122,7 @@ public final class RPC<Target: Channel>: Sendable {
     try target.write(data)
   }
 
-  public nonisolated func send(request: Message.Request) throws {
+  public func send(request: Message.Request) throws {
     let data = packer.withValue {
       $0.pack(request.makeValue())
     }

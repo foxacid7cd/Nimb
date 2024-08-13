@@ -94,4 +94,5 @@
 --wraptypealiases before-first
 --xcodeindentation enabled
 --yodaswap always
+--disable opaqueGenericParameters
 --enable acronyms,blankLineAfterSwitchCase,blankLinesBetweenImports,docComments,isEmpty,organizeDeclarations,redundantProperty,sortSwitchCases,wrapConditionalBodies,wrapEnumCases,wrapMultilineConditionalAssignment,wrapSwitchCases

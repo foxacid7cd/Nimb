@@ -239,7 +239,6 @@ public class GridLayer: CALayer, Rendering {
     if horizontalScrollCount != 0 || verticalScrollCount != 0 {
       let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
       let point = point(for: event)
-
       var horizontalScrollFunctions = [any APIFunction]().cycled(times: 0)
       if horizontalScrollCount != 0 {
         horizontalScrollFunctions = [
@@ -269,7 +268,7 @@ public class GridLayer: CALayer, Rendering {
       }
 
       store.apiTask { [horizontalScrollFunctions, verticalScrollFunctions] in
-        try $0.fastCallsTransaction(
+        try await $0.fastCallsTransaction(
           with: chain(horizontalScrollFunctions, verticalScrollFunctions)
         )
       }
@@ -292,7 +291,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
     store.apiTask { [gridID] in
-      try $0.fastCall(APIFunctions.NvimInputMouse(
+      try await $0.fastCall(APIFunctions.NvimInputMouse(
         button: "move",
         action: "",
         modifier: mouseMove.modifier,
