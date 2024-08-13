@@ -342,6 +342,9 @@ extension MainMenuController: NSFontChanging {
 
 extension MainMenuController: NSMenuDelegate {
   func menuNeedsUpdate(_ menu: NSMenu) {
+    guard isRendered else {
+      return
+    }
     switch menu {
     case viewMenu:
       menu.items = fontMenuLayout.map { item in

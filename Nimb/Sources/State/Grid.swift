@@ -59,7 +59,6 @@ public struct Grid: Sendable, Identifiable {
   public var drawRuns: GridDrawRuns
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
-  public var isDestroyed: Bool
 
   public var size: IntegerSize {
     layout.size
@@ -108,7 +107,6 @@ public struct Grid: Sendable, Identifiable {
     )
     associatedWindow = nil
     isHidden = false
-    isDestroyed = false
   }
 
   public mutating func apply(

@@ -28,7 +28,11 @@ public struct GridsHierarchy: Sendable {
   }
 
   public mutating func addNode(id: Grid.ID, parent: Grid.ID) {
-    removeNode(id: id)
+    if let existing = allNodes[id] {
+      if existing.parent != parent {
+        removeNode(id: id)
+      }
+    }
     allNodes[id] = .init(id: id, parent: parent, children: .init())
 
     if id != Grid.OuterID {

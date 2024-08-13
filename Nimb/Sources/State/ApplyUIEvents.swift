@@ -108,13 +108,6 @@ public extension Actions {
         }
       }
 
-      func bringToFront(gridID: Grid.ID) {
-        let changed = state.gridsHierarchy.bringToFront(id: gridID)
-        if changed {
-          updates.isGridsHierarchyUpdated = true
-        }
-      }
-
       func popupmenuUpdated() {
         updates.isPopupmenuUpdated = true
       }
@@ -309,14 +302,12 @@ public extension Actions {
               rowsCount: height
             )
             if
-              state.grids[gridID]?.size != size || state
-                .grids[gridID]?
-                .isDestroyed == true
+              state.grids[gridID]?.size != size
             {
               let font = state.font
               let appearance = state.appearance
               update(&state.grids[gridID]) { grid in
-                if grid == nil || grid?.isDestroyed == true {
+                if grid == nil {
                   let cells = TwoDimensionalArray(
                     size: size,
                     repeatingElement: Cell.default
@@ -332,8 +323,7 @@ public extension Actions {
                       sharedCache: sharedDrawRunsCache
                     ),
                     associatedWindow: nil,
-                    isHidden: false,
-                    isDestroyed: false
+                    isHidden: false
                   )
                 }
               }
@@ -374,17 +364,12 @@ public extension Actions {
               rowsCount: rowsCount
             )
 
-            bringToFront(gridID: gridID)
-
             apply(
               update: .scroll(rectangle: rectangle, offset: offset),
               toGridWithID: gridID
             )
 
           case let .gridClear(gridID):
-            bringToFront(gridID: gridID)
-            updates.isGridsHierarchyUpdated = true
-
             apply(update: .clear, toGridWithID: gridID)
 
           case let .gridDestroy(gridID):
@@ -408,9 +393,6 @@ public extension Actions {
               position: cursorPosition
             )
 
-            bringToFront(gridID: gridID)
-            updates.isGridsHierarchyUpdated = true
-
             cursorUpdated(oldCursor: oldCursor)
 
           case let .winPos(
@@ -429,8 +411,7 @@ public extension Actions {
 
             guard
               state
-                .grids[gridID] != nil || state
-                .grids[gridID]!.isDestroyed
+                .grids[gridID] != nil
             else {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
@@ -466,8 +447,7 @@ public extension Actions {
 
             guard
               state
-                .grids[gridID] != nil || state
-                .grids[gridID]!.isDestroyed
+                .grids[gridID] != nil
             else {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
@@ -494,8 +474,7 @@ public extension Actions {
           case let .winHide(gridID):
             guard
               state
-                .grids[gridID] != nil || state
-                .grids[gridID]!.isDestroyed
+                .grids[gridID] != nil
             else {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
@@ -508,8 +487,7 @@ public extension Actions {
           case let .winClose(gridID):
             guard
               state
-                .grids[gridID] != nil || state
-                .grids[gridID]!.isDestroyed
+                .grids[gridID] != nil
             else {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
@@ -800,8 +778,6 @@ public extension Actions {
           }
 
         case let .gridLines(gridID, hlAttrDefines, gridLines):
-//          state.gridsHierarchy.bringToFront(id: gridID)
-
           for hlAttrDefine in hlAttrDefines {
             applyHlAttrDefine(hlAttrDefine)
           }
@@ -820,14 +796,11 @@ public extension Actions {
 
             guard
               state
-                .grids[gridID] != nil || state
-                .grids[gridID]!.isDestroyed
+                .grids[gridID] != nil
             else {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
             }
-
-            bringToFront(gridID: gridID)
 
             update(&state.grids[gridID]!) { grid in
               for result in results {
