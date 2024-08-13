@@ -169,12 +169,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         default:
           break
         }
-      } else {
-        gridLayer.isHidden = true
       }
     }
 
-    if !updatedLayoutGridIDs.isEmpty {
+    if !updatedLayoutGridIDs.isEmpty || updates.isGridsHierarchyUpdated {
       let upsideDownTransform = upsideDownTransform
 
       state.walkingGridFrames { id, frame, zPosition in
@@ -185,7 +183,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         if updatedLayoutGridIDs.contains(id) {
           gridLayer.frame = frame.applying(upsideDownTransform)
         }
-        if gridLayer.zPosition != zPosition {
+        if updates.isGridsHierarchyUpdated, gridLayer.zPosition != zPosition {
           gridLayer.zPosition = zPosition
         }
       }
@@ -214,7 +212,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       return layer
 
     } else {
-      let layer = GridLayer(store: store, gridID: id)
+      let layer = GridLayer(
+        store: store,
+        gridID: id
+      )
       renderChildren(layer)
       layer.contentsScale = self.layer!.contentsScale
       self.layer!.addSublayer(layer)

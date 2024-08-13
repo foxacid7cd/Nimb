@@ -9,9 +9,16 @@ import SwiftUI
 public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
+  public var sharedCache: SharedDrawRunsCache
 
-  public init(layout: GridLayout, font: Font, appearance: Appearance) {
+  public init(
+    layout: GridLayout,
+    font: Font,
+    appearance: Appearance,
+    sharedCache: SharedDrawRunsCache
+  ) {
     rowDrawRuns = []
+    self.sharedCache = sharedCache
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
 
@@ -28,7 +35,8 @@ public struct GridDrawRuns: Sendable {
           layout: layout,
           font: font,
           appearance: appearance,
-          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
+          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
+          sharedCache: sharedCache
         )
       }
   }
@@ -81,35 +89,37 @@ public struct GridDrawRuns: Sendable {
 }
 
 @PublicInit
-public struct RowDrawRun: Sendable {
-  @PublicInit
-  public struct DrawRunsCachingKey: Sendable, Hashable {
-    public var text: String
-    public var highlightID: Highlight.ID
-    public var columnsCount: Int
+public struct DrawRunsCachingKey: Sendable, Hashable {
+  public var text: String
+  public var highlightID: Highlight.ID
+  public var columnsCount: Int
 
-    public init(_ drawRun: DrawRun) {
-      text = drawRun.text
-      highlightID = drawRun.highlightID
-      columnsCount = drawRun.columnsRange.count
-    }
-
-    public init(_ rowPart: RowPart) {
-      text = rowPart.text
-      highlightID = rowPart.highlightID
-      columnsCount = rowPart.columnsCount
-    }
+  public init(_ drawRun: DrawRun) {
+    text = drawRun.text
+    highlightID = drawRun.highlightID
+    columnsCount = drawRun.columnsRange.count
   }
 
+  public init(_ rowPart: RowPart) {
+    text = rowPart.text
+    highlightID = rowPart.highlightID
+    columnsCount = rowPart.columnsCount
+  }
+}
+
+@PublicInit
+public struct RowDrawRun: Sendable {
   public var drawRuns: [DrawRun]
   public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
+  public var sharedCache: SharedDrawRunsCache
 
   public init(
     row: Int,
     layout: RowLayout,
     font: Font,
     appearance: Appearance,
-    old: RowDrawRun?
+    old: RowDrawRun?,
+    sharedCache: SharedDrawRunsCache
   ) {
     var drawRuns = [DrawRun]()
     var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
@@ -145,6 +155,10 @@ public struct RowDrawRun: Sendable {
         }
       }
 
+      if reusedDrawRun == nil, SharedDrawRunsCache.shouldCacheDrawRun(forKey: .init(part)), let drawRun = sharedCache.drawRun(forKey: .init(part)) {
+        reusedDrawRun = drawRun
+      }
+
       var drawRun = reusedDrawRun ?? .init(
         text: part.text,
         rowPartCells: part.cells,
@@ -158,11 +172,15 @@ public struct RowDrawRun: Sendable {
         index: drawRuns.count,
         drawRun: drawRun
       )
+      if SharedDrawRunsCache.shouldCacheDrawRun(forKey: .init(drawRun)) {
+        sharedCache.set(drawRun: drawRun, forKey: .init(drawRun))
+      }
       drawRuns.append(drawRun)
     }
 
     self.drawRuns = drawRuns
     self.drawRunsCache = drawRunsCache
+    self.sharedCache = sharedCache
   }
 
   public func drawBackground(
@@ -415,7 +433,6 @@ public struct DrawRun: Sendable {
         height: font.cellHeight
       )
     )
-
     context.setFillColor(appearance.backgroundColor(for: highlightID).cg)
     context.fill([rect])
   }

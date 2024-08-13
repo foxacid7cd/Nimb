@@ -70,12 +70,16 @@ public class GridLayer: CALayer, Rendering {
     super.init(layer: layer)
   }
 
-  init(store: Store, gridID: Grid.ID) {
+  init(
+    store: Store,
+    gridID: Grid.ID
+  ) {
     self.store = store
     self.gridID = gridID
     super.init()
 
     drawsAsynchronously = true
+    isOpaque = false
   }
 
   @available(*, unavailable)
@@ -265,10 +269,9 @@ public class GridLayer: CALayer, Rendering {
       }
 
       store.apiTask { [horizontalScrollFunctions, verticalScrollFunctions] in
-        try await $0
-          .fastCallsTransaction(
-            with: chain(horizontalScrollFunctions, verticalScrollFunctions)
-          )
+        try $0.fastCallsTransaction(
+          with: chain(horizontalScrollFunctions, verticalScrollFunctions)
+        )
       }
     }
   }
@@ -289,7 +292,7 @@ public class GridLayer: CALayer, Rendering {
       return
     }
     store.apiTask { [gridID] in
-      try await $0.fastCall(APIFunctions.NvimInputMouse(
+      try $0.fastCall(APIFunctions.NvimInputMouse(
         button: "move",
         action: "",
         modifier: mouseMove.modifier,

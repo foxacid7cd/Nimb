@@ -114,10 +114,10 @@ class TablineItemView: NSView, Rendering {
   }
 
   private func redrawImageViews() {
-    let color = NSColor.black
+    let color = NSColor(white: 0.1, alpha: 1)
     let fill = SlantedBackgroundFill.gradient(
-      from: color.withAlphaComponent(0.35),
-      to: color.withAlphaComponent(0.5)
+      from: color.withAlphaComponent(0.65),
+      to: color.withAlphaComponent(0.4)
     )
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
@@ -132,8 +132,8 @@ class TablineItemView: NSView, Rendering {
 
     let accentColor = filledColor ?? .white
     let accentFill = SlantedBackgroundFill.gradient(
-      from: accentColor.withAlphaComponent(0.5),
-      to: accentColor.withAlphaComponent(0.35)
+      from: accentColor.withAlphaComponent(0.35),
+      to: accentColor.withAlphaComponent(0.6)
     )
     accentBackgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,

@@ -263,7 +263,7 @@ final class MainMenuController: NSObject, Rendering {
   @objc private func handleLogState() {
     Task { @MainActor in
       var dump = ""
-      customDump(self.state, to: &dump, maxDepth: 3)
+      customDump(self.state, to: &dump, maxDepth: 10)
 
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")

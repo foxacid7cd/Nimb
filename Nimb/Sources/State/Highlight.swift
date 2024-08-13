@@ -23,4 +23,8 @@ public struct Highlight: Identifiable, Sendable {
   public var isBold: Bool = false
   public var decorations: Decorations = .init()
   public var blend: Int = 0
+
+  public var backgroundColorAlpha: Double {
+    max(0, min(1, 1 - Double(blend) / 100))
+  }
 }

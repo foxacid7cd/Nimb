@@ -39,8 +39,8 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
     window.alphaValue = 0.9
-    window.keyPressed = {
-      try? store.api.keyPressed($0)
+    window.keyPressed = { keyPress in
+      try? store.api.keyPressed(keyPress)
     }
     super.init(window: window)
 

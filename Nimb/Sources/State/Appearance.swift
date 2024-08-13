@@ -72,12 +72,12 @@ public struct Appearance: Sendable {
   public func backgroundColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
-      let highlight = highlights[id],
-      let backgroundColor = highlight.backgroundColor
+      let highlight = highlights[id]
     else {
       return defaultBackgroundColor
     }
-    return backgroundColor
+    return (highlight.backgroundColor ?? defaultBackgroundColor)
+      .with(alpha: highlight.backgroundColorAlpha)
   }
 
   public func specialColor(for name: ObservedHighlightName) -> Color {
@@ -144,8 +144,7 @@ public struct Appearance: Sendable {
       highlight.foregroundColor ?? defaultForegroundColor :
       highlight.backgroundColor ?? defaultBackgroundColor
 
-    let alpha = max(0, min(1, 1 - Double(highlight.blend) / 100))
-    return color.with(alpha: alpha)
+    return color.with(alpha: highlight.backgroundColorAlpha)
   }
 
   public func specialColor(for highlightID: Highlight.ID) -> Color {

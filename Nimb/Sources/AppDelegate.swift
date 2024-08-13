@@ -26,7 +26,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      neovim = .init()
+      neovim = await Neovim()
       store = .init(api: neovim!.api)
       setupInitialControllers()
       alertsTask = Task {
@@ -38,7 +38,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           }
         } catch { }
       }
-      await setupUpdatesBinding()
+      await setupUpdatesBinding(store: store!)
 
       do {
         try await neovim!.bootstrap()
@@ -69,20 +69,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   public func applicationDidBecomeActive(_: Notification) {
-    store!.dispatch(Actions.SetApplicationActive(value: true))
+    store?.dispatch(Actions.SetApplicationActive(value: true))
   }
 
   public func applicationWillResignActive(_: Notification) {
-    store!.dispatch(Actions.SetApplicationActive(value: false))
+    store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
   @StateActor
-  private func setupUpdatesBinding() {
+  private func setupUpdatesBinding(store: Store) {
     updatesTask = Task {
       do {
         var presentedNimbNotifiesCount = 0
 
-        for await (state, updates) in await self.store!.updates {
+        for await (state, updates) in store.updates {
           try Task.checkCancellation()
 
           if updates.isOuterGridLayoutUpdated {

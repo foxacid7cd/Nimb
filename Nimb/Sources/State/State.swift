@@ -36,6 +36,7 @@ public struct State: Sendable {
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
+    public var isGridsHierarchyUpdated: Bool = false
     public var isPopupmenuUpdated: Bool = false
     public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
@@ -83,6 +84,7 @@ public struct State: Sendable {
           }
         }
       }
+      isGridsHierarchyUpdated = isGridsHierarchyUpdated || updates.isGridsHierarchyUpdated
       isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
       isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates
         .isPopupmenuSelectionUpdated
@@ -224,6 +226,8 @@ public struct State: Sendable {
     }
     if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
       grids = state.grids
+    }
+    if updates.isGridsHierarchyUpdated {
       gridsHierarchy = state.gridsHierarchy
     }
     if updates.isPopupmenuUpdated || updates.isPopupmenuSelectionUpdated {

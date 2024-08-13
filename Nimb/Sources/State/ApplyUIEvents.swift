@@ -12,6 +12,7 @@ public extension Actions {
     S: Sendable
   {
     public var uiEvents: S
+    public var sharedDrawRunsCache: SharedDrawRunsCache
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       var updates = State.Updates()
@@ -78,14 +79,24 @@ public extension Actions {
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
         let font = state.font
         let appearance = state.appearance
-        guard state.grids[gridID] != nil else {
-          handleError(Failure("Grid \(gridID) doesn't exist"))
-          return
+        let outerGrid = state.outerGrid
+        Overture.update(&state.grids[gridID]) { grid in
+          if grid == nil {
+            grid = Grid(
+              id: gridID,
+              size: outerGrid!.size,
+              font: font,
+              appearance: appearance,
+              sharedCache: sharedDrawRunsCache
+            )
+            grid!.isHidden = true
+          }
         }
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
-          appearance: appearance
+          appearance: appearance,
+          sharedCache: sharedDrawRunsCache
         )
         if let result {
           Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -94,6 +105,13 @@ public extension Actions {
             }
             gridUpdate!.formUnion(result)
           }
+        }
+      }
+
+      func bringToFront(gridID: Grid.ID) {
+        let changed = state.gridsHierarchy.bringToFront(id: gridID)
+        if changed {
+          updates.isGridsHierarchyUpdated = true
         }
       }
 
@@ -310,7 +328,8 @@ public extension Actions {
                     drawRuns: .init(
                       layout: layout,
                       font: font,
-                      appearance: appearance
+                      appearance: appearance,
+                      sharedCache: sharedDrawRunsCache
                     ),
                     associatedWindow: nil,
                     isHidden: false,
@@ -331,6 +350,7 @@ public extension Actions {
               }
 
               state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
+              updates.isGridsHierarchyUpdated = true
 
               updatedLayout(forGridWithID: gridID)
               apply(update: .resize(size), toGridWithID: gridID)
@@ -353,13 +373,18 @@ public extension Actions {
               columnsCount: columnsCount,
               rowsCount: rowsCount
             )
+
+            bringToFront(gridID: gridID)
+
             apply(
               update: .scroll(rectangle: rectangle, offset: offset),
               toGridWithID: gridID
             )
 
           case let .gridClear(gridID):
-            state.gridsHierarchy.bringToFront(id: gridID)
+            bringToFront(gridID: gridID)
+            updates.isGridsHierarchyUpdated = true
+
             apply(update: .clear, toGridWithID: gridID)
 
           case let .gridDestroy(gridID):
@@ -367,7 +392,7 @@ public extension Actions {
               guard grid != nil else {
                 return
               }
-              grid!.isDestroyed = true
+              grid = nil
               updates.destroyedGridIDs.insert(gridID)
             }
 
@@ -382,6 +407,9 @@ public extension Actions {
               gridID: gridID,
               position: cursorPosition
             )
+
+            bringToFront(gridID: gridID)
+            updates.isGridsHierarchyUpdated = true
 
             cursorUpdated(oldCursor: oldCursor)
 
@@ -417,6 +445,7 @@ public extension Actions {
             state.grids[gridID]!.isHidden = false
 
             state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
+            updates.isGridsHierarchyUpdated = true
 
             updatedLayout(forGridWithID: gridID)
             if size != state.grids[gridID]!.size {
@@ -458,6 +487,7 @@ public extension Actions {
             state.grids[gridID]!.isHidden = false
 
             state.gridsHierarchy.addNode(id: gridID, parent: anchorGridID)
+            updates.isGridsHierarchyUpdated = true
 
             updatedLayout(forGridWithID: gridID)
 
@@ -473,8 +503,6 @@ public extension Actions {
 
             state.grids[gridID]!.isHidden = true
 
-            state.gridsHierarchy.removeNode(id: gridID)
-
             updatedLayout(forGridWithID: gridID)
 
           case let .winClose(gridID):
@@ -489,6 +517,7 @@ public extension Actions {
             state.grids[gridID]!.associatedWindow = nil
 
             state.gridsHierarchy.removeNode(id: gridID)
+            updates.isGridsHierarchyUpdated = false
 
             updatedLayout(forGridWithID: gridID)
 
@@ -798,6 +827,8 @@ public extension Actions {
               break
             }
 
+            bringToFront(gridID: gridID)
+
             update(&state.grids[gridID]!) { grid in
               for result in results {
                 grid.layout.cells.rows[result.row] = result.rowCells
@@ -903,7 +934,8 @@ public extension Actions {
                   lineUpdates: lineUpdates,
                   forRow: row,
                   font: font,
-                  appearance: appearance
+                  appearance: appearance,
+                  sharedCache: sharedDrawRunsCache
                 )
               )
             }

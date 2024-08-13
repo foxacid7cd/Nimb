@@ -45,6 +45,7 @@ public class Store: Sendable {
 
   private let actionsContinuation: AsyncStream<Action>.Continuation
   private let alertsContinuation: AsyncStream<Alert>.Continuation
+  private let sharedDrawRunsCache = SharedDrawRunsCache()
 
   public init(api: API<ProcessChannel>) {
     self.api = api
@@ -57,15 +58,27 @@ public class Store: Sendable {
     let initialState = State(debug: UserDefaults.standard.debug, font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init())
 
     let applyUIEventsActions = api.neovimNotifications
-      .compactMap { [alertsContinuation] neovimNotificationsBatch in
+      .compactMap { [
+        alertsContinuation,
+        sharedDrawRunsCache
+      ] neovimNotificationsBatch in
         var actionsAccumulator = [Action]()
 
         for notification in neovimNotificationsBatch {
           switch notification {
           case let .redraw(uiEvents):
-            actionsAccumulator.append(Actions.ApplyUIEvents(uiEvents: uiEvents))
+            actionsAccumulator
+              .append(
+                Actions
+                  .ApplyUIEvents(
+                    uiEvents: uiEvents,
+                    sharedDrawRunsCache: sharedDrawRunsCache
+                  )
+              )
+
           case let .nvimErrorEvent(event):
             alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
+
           case let .nimbNotify(value):
             alertsContinuation.yield("nimbNotify received \(cd: value)")
           }
@@ -73,14 +86,8 @@ public class Store: Sendable {
 
         return actionsAccumulator.isEmpty ? nil : actionsAccumulator
       }
-      .flatMap { actions in
-        let iterator = LockIsolated(actions.makeIterator())
-        return AsyncStream {
-          iterator.withValue { $0.next() }
-        }
-      }
 
-    let allActions = AsyncThrowingStream<Action, any Error> { continuation in
+    let allActions = AsyncThrowingStream<[Action], any Error> { continuation in
       let task = Task {
         await withTaskGroup(of: (any Error)?.self) { group in
           group.addTask {
@@ -88,7 +95,7 @@ public class Store: Sendable {
               guard !Task.isCancelled else {
                 return nil
               }
-              continuation.yield(action)
+              continuation.yield([action])
             }
             return nil
           }
@@ -120,22 +127,24 @@ public class Store: Sendable {
     }
 
     updates = AsyncThrowingStream<(state: State, updates: State.Updates), any Error> { [alertsContinuation] continuation in
-      var (state, updates) = (initialState, State.Updates())
-      continuation.yield((state, updates))
+      let task = Task { @StateActor in
+        var (state, updates) = (initialState, State.Updates())
+        continuation.yield((state, updates))
 
-      let task = Task {
         do {
-          for try await action in allActions {
+          for try await actions in allActions {
             try Task.checkCancellation()
 
             if updates.needFlush {
               updates = .init(needFlush: false)
             }
 
-            let newUpdates = action.apply(to: &state) { error in
-              alertsContinuation.yield(.init(error))
+            for action in actions {
+              let newUpdates = action.apply(to: &state) { error in
+                alertsContinuation.yield(.init(error))
+              }
+              updates.formUnion(newUpdates)
             }
-            updates.formUnion(newUpdates)
             if updates.needFlush {
               continuation.yield((state, updates))
             }
@@ -151,7 +160,7 @@ public class Store: Sendable {
         task.cancel()
       }
     }
-    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
+    .throttle(for: .milliseconds(1000 / 140), clock: .continuous) { previous, latest in
       var state = previous.state
       state.apply(updates: latest.updates, from: latest.state)
       var updates = previous.updates

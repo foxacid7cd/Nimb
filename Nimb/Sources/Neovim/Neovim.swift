@@ -2,7 +2,7 @@
 
 import Foundation
 
-@MainActor
+@StateActor
 public final class Neovim {
   public let process: Process
   public let api: API<ProcessChannel>
@@ -46,7 +46,9 @@ public final class Neovim {
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(component: "captured_nvim_msgpack_output_\(UUID().uuidString).mpack")
 
-      logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+      Task { @MainActor in
+        logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
+      }
 
       process.arguments = [
         "-l",
@@ -65,7 +67,7 @@ public final class Neovim {
     process.currentDirectoryURL = FileManager.default
       .homeDirectoryForCurrentUser
 
-    process.qualityOfService = .default
+    process.qualityOfService = .userInitiated
 
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel, maximumConcurrentRequests: 1000)
