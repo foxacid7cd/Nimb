@@ -7,8 +7,7 @@ import ConcurrencyExtras
 import CustomDump
 import Foundation
 
-@MainActor
-public class Store: Sendable {
+public final class Store: Sendable {
   public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
   public let api: API<ProcessChannel>
@@ -47,15 +46,13 @@ public class Store: Sendable {
   private let alertsContinuation: AsyncStream<Alert>.Continuation
   private let sharedDrawRunsCache = SharedDrawRunsCache()
 
-  public init(api: API<ProcessChannel>) {
+  public init(api: API<ProcessChannel>, initialState: State) {
     self.api = api
 
     let actions: AsyncStream<Action>
     (actions, actionsContinuation) = AsyncStream.makeStream()
 
     (alerts, alertsContinuation) = AsyncStream.makeStream()
-
-    let initialState = State(debug: UserDefaults.standard.debug, font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init())
 
     let applyUIEventsActions = api.neovimNotifications
       .compactMap { [
@@ -127,7 +124,7 @@ public class Store: Sendable {
     }
 
     updates = AsyncThrowingStream<(state: State, updates: State.Updates), any Error> { [alertsContinuation] continuation in
-      let task = Task { @StateActor in
+      let task = Task {
         var (state, updates) = (initialState, State.Updates())
         continuation.yield((state, updates))
 
@@ -148,6 +145,8 @@ public class Store: Sendable {
             if updates.needFlush {
               continuation.yield((state, updates))
             }
+
+            await Task.yield()
           }
           continuation.finish()
         } catch is CancellationError {
@@ -160,7 +159,7 @@ public class Store: Sendable {
         task.cancel()
       }
     }
-    .throttle(for: .milliseconds(1000 / 140), clock: .continuous) { previous, latest in
+    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
       var state = previous.state
       state.apply(updates: latest.updates, from: latest.state)
       var updates = previous.updates
@@ -181,10 +180,10 @@ public class Store: Sendable {
     }.value
   }
 
-  public func apiTask(
+  public nonisolated func apiTask(
     _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
   ) {
-    Task {
+    Task { @StateActor in
       do {
         _ = try await body(api)
       } catch {
@@ -193,7 +192,11 @@ public class Store: Sendable {
     }
   }
 
-  public func dispatch(_ action: Action) {
+  public nonisolated func dispatch(_ action: Action) {
     actionsContinuation.yield(action)
+  }
+
+  public nonisolated func show(alert: Alert) {
+    alertsContinuation.yield(alert)
   }
 }

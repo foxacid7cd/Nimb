@@ -2,8 +2,7 @@
 
 import Foundation
 
-@StateActor
-public final class Neovim {
+public final class Neovim: Sendable {
   public let process: Process
   public let api: API<ProcessChannel>
 
@@ -74,6 +73,7 @@ public final class Neovim {
     api = .init(rpc)
   }
 
+  @StateActor
   public func bootstrap() async throws {
     try process.run()
 

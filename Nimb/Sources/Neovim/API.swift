@@ -5,7 +5,6 @@ public final class API<Target: Channel>: Sendable {
 
   let rpc: RPC<Target>
 
-  @StateActor
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
 
@@ -50,7 +49,6 @@ public final class API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
-  @StateActor
   public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
     try rpc.fastCall(
       method: T.method,
@@ -58,7 +56,6 @@ public final class API<Target: Channel>: Sendable {
     )
   }
 
-  @StateActor
   public func fastCallsTransaction<S: Sequence>(
     with apiFunctions: S
   ) throws where S.Element == any APIFunction {

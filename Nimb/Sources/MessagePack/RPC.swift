@@ -8,7 +8,6 @@ import ConcurrencyExtras
 import CustomDump
 import Foundation
 
-@StateActor
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 

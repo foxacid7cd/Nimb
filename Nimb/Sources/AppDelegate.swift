@@ -13,7 +13,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
-  private var alertsTask: Task<Void, Never>?
+  @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
 
   override public init() {
@@ -26,19 +26,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
-      neovim = await Neovim()
-      store = .init(api: neovim!.api)
-      setupInitialControllers()
-      alertsTask = Task {
-        do {
-          for await alert in store!.alerts {
-            try Task.checkCancellation()
+      let initialState = State(
+        debug: UserDefaults.standard.debug,
+        font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
+      )
 
-            show(alert: alert)
-          }
-        } catch { }
-      }
-      await setupUpdatesBinding(store: store!)
+      neovim = Neovim()
+      store = Store(api: neovim!.api, initialState: initialState)
+      setupInitialControllers()
+
+      await setupBindings(store: store!)
 
       do {
         try await neovim!.bootstrap()
@@ -76,8 +73,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
+  @MainActor
+  public func render(state: State, updates: State.Updates) {
+    update(renderContext: .init(state: state, updates: updates))
+    render()
+  }
+
   @StateActor
-  private func setupUpdatesBinding(store: Store) {
+  private func setupBindings(store: Store) {
+    alertsTask = Task {
+      do {
+        for await alert in store.alerts {
+          try Task.checkCancellation()
+
+          await show(alert: alert)
+        }
+      } catch { }
+    }
     updatesTask = Task {
       do {
         var presentedNimbNotifiesCount = 0
@@ -97,29 +109,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           if updates.isNimbNotifiesUpdated {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              Task { @MainActor in
-                self.showNimbNotify(notification)
-              }
+              await self.showNimbNotify(notification)
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          Task { @MainActor in
-            self.update(renderContext: .init(state: state, updates: updates))
-            self.render()
-          }
+          await render(state: state, updates: updates)
         }
         await logger.debug("Store state updates loop ended")
       } catch is CancellationError {
         await logger.debug("Store state updates loop cancelled")
       } catch {
         await logger.error("Store state updates loop error: \(error)")
-//        await self.showCriticalAlert(error: error)
+        await self.showCriticalAlert(error: error)
       }
     }
   }
 
-  @MainActor
   private func setupInitialControllers() {
     mainMenuController = MainMenuController(store: store!)
     mainMenuController!.settingsClicked = { [unowned self] in
@@ -139,7 +145,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     msgShowsWindowController = MsgShowsWindowController(store: store!)
   }
 
-  @MainActor
   private func showCriticalAlert(error: Error) async {
     let alert = NSAlert()
     alert.alertStyle = .critical
@@ -178,7 +183,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  @MainActor
   private func show(alert: Alert) {
     let appKitAlert = NSAlert()
     appKitAlert.alertStyle = .warning
@@ -187,7 +191,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     appKitAlert.beginSheetModal(for: mainWindowController!.window!)
   }
 
-  @MainActor
   private func showNimbNotify(_ notify: NimbNotify) {
     logger.debug("AppDelegate.showNimbNotify: \(String(customDumping: notify))")
 
