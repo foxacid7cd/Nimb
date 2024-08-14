@@ -417,13 +417,13 @@ public extension Actions {
               break
             }
 
-            state.grids[gridID]!.associatedWindow = .plain(
+            state.grids[gridID]?.associatedWindow = .plain(
               .init(
                 id: windowID,
                 origin: origin
               )
             )
-            state.grids[gridID]!.isHidden = false
+            state.grids[gridID]?.isHidden = false
 
             state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
             updates.isGridsHierarchyUpdated = true
@@ -453,7 +453,7 @@ public extension Actions {
               break
             }
 
-            state.grids[gridID]!.associatedWindow = .floating(
+            state.grids[gridID]?.associatedWindow = .floating(
               .init(
                 id: windowID,
                 anchor: anchor,
@@ -464,7 +464,7 @@ public extension Actions {
                 zIndex: zIndex
               )
             )
-            state.grids[gridID]!.isHidden = false
+            state.grids[gridID]?.isHidden = false
 
             state.gridsHierarchy.addNode(id: gridID, parent: anchorGridID)
             updates.isGridsHierarchyUpdated = true
@@ -480,7 +480,7 @@ public extension Actions {
               break
             }
 
-            state.grids[gridID]!.isHidden = true
+            state.grids[gridID]?.isHidden = true
 
             updatedLayout(forGridWithID: gridID)
 
@@ -492,7 +492,7 @@ public extension Actions {
               handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
               break
             }
-            state.grids[gridID]!.associatedWindow = nil
+            state.grids[gridID]?.associatedWindow = nil
 
             state.gridsHierarchy.removeNode(id: gridID)
             updates.isGridsHierarchyUpdated = false
@@ -668,7 +668,7 @@ public extension Actions {
           case let .cmdlineBlockAppend(rawLine):
             do {
               try state.cmdlines
-                .blockLines[state.cmdlines.lastCmdlineLevel!]!
+                .blockLines[state.cmdlines.lastCmdlineLevel!]?
                 .append(blockLine(fromRawLine: .array(rawLine)))
 
               cmdlinesUpdated()
@@ -802,16 +802,16 @@ public extension Actions {
               break
             }
 
-            update(&state.grids[gridID]!) { grid in
+            update(&state.grids[gridID]) { grid in
               for result in results {
-                grid.layout.cells.rows[result.row] = result.rowCells
-                grid.layout.rowLayouts[result.row] = result.rowLayout
-                grid.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
+                grid?.layout.cells.rows[result.row] = result.rowCells
+                grid?.layout.rowLayouts[result.row] = result.rowLayout
+                grid?.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
 
                 if result.shouldUpdateCursorDrawRun {
-                  grid.drawRuns.cursorDrawRun!.updateParent(
-                    with: grid.layout,
-                    rowDrawRuns: grid.drawRuns.rowDrawRuns
+                  grid!.drawRuns.cursorDrawRun!.updateParent(
+                    with: grid!.layout,
+                    rowDrawRuns: grid!.drawRuns.rowDrawRuns
                   )
                 }
               }
