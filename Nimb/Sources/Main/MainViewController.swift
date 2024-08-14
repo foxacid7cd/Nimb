@@ -16,11 +16,17 @@ public class MainViewController: NSViewController, Rendering {
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
   private let hostingView = MainHostingView()
+  private let remoteRenderer: RemoteRenderer
 
-  init(store: Store, minOuterGridSize: IntegerSize) {
+  init(
+    store: Store,
+    remoteRenderer: RemoteRenderer,
+    minOuterGridSize: IntegerSize
+  ) {
     self.store = store
+    self.remoteRenderer = remoteRenderer
     self.minOuterGridSize = minOuterGridSize
-    gridsView = .init(store: store)
+    gridsView = .init(store: store, remoteRenderer: remoteRenderer)
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,

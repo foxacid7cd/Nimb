@@ -8,33 +8,39 @@ import QuartzCore
 /// This object implements the protocol which we have defined. It provides the actual behavior for the service. It is 'exported' by the service to make it available to the process hosting the service
 /// over an NSXPCConnection.
 class Renderer: NSObject, RendererProtocol {
-  @objc func setup(ioSurface: IOSurface, scale: Double, reply: @escaping (String) -> Void) {
-    ioSurface.lock(options: [], seed: nil)
-    defer { ioSurface.unlock(options: [], seed: nil) }
+  @objc func register(
+    surface: IOSurface,
+    scale: CGFloat,
+    forGridWithID gridID: Int,
+    cb: @escaping @Sendable (Bool) -> Void
+  ) {
+    surface.lock(options: [], seed: nil)
+    defer { surface.unlock(options: [], seed: nil) }
 
     let cgContext = CGContext(
-      data: ioSurface.baseAddress,
-      width: ioSurface.width,
-      height: ioSurface.height,
+      data: surface.baseAddress,
+      width: surface.width,
+      height: surface.height,
       bitsPerComponent: 8,
-      bytesPerRow: ioSurface.bytesPerRow,
+      bytesPerRow: surface.bytesPerRow,
       space: CGColorSpaceCreateDeviceRGB(),
       bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
     )!
     cgContext.scaleBy(x: scale, y: scale)
-    let graphicsContext = NSGraphicsContext(cgContext: cgContext, flipped: false)
-    NSGraphicsContext.current = graphicsContext
-
-    graphicsContext.shouldAntialias = true
-    NSAttributedString(
-      string: "Hello world!",
-      attributes: [
-        .foregroundColor: NSColor.green,
-        .font: NSFont.systemFont(ofSize: 40, weight: .medium),
-      ]
+    NSGraphicsContext.current = .init(
+      cgContext: cgContext,
+      flipped: false
     )
-    .draw(at: .init(x: 100, y: 100))
 
-    graphicsContext.flushGraphics()
+    let graphicsContext = NSGraphicsContext.current!
+    defer { graphicsContext.flushGraphics() }
+
+    NSColor.red.withAlphaComponent(0.8).setFill()
+    NSRect(
+      origin: .zero,
+      size: .init(width: 200, height: 200)
+    ).fill()
+
+    cb(true)
   }
 }

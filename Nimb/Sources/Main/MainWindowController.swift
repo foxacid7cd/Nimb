@@ -28,14 +28,18 @@ public class MainWindowController: NSWindowController, Rendering {
   )
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
+  private let remoteRenderer: RemoteRenderer
 
   public init(
     store: Store,
+    remoteRenderer: RemoteRenderer,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store
+    self.remoteRenderer = remoteRenderer
     viewController = .init(
       store: store,
+      remoteRenderer: remoteRenderer,
       minOuterGridSize: minOuterGridSize
     )
     customWindow.contentViewController = viewController

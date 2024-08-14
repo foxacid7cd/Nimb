@@ -69,6 +69,7 @@
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
 		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
+		684D4AC72C6C8BA1005A9AEC /* RemoteRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684D4AC62C6C8B9B005A9AEC /* RemoteRenderer.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		6867D7FF2C658BA200585FE4 /* RenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6867D7FE2C658BA200585FE4 /* RenderContext.swift */; };
@@ -297,6 +298,7 @@
 		6838B13C2C523BC100385655 /* APIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeovimErrorEvent.swift; sourceTree = "<group>"; };
 		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
+		684D4AC62C6C8B9B005A9AEC /* RemoteRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRenderer.swift; sourceTree = "<group>"; };
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
 		6867D7FE2C658BA200585FE4 /* RenderContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderContext.swift; sourceTree = "<group>"; };
@@ -552,6 +554,7 @@
 				68AB57592ACF4C7000FD34CA /* MainMenuController.swift */,
 				689081352B3F321000252558 /* FloatingWindowView.swift */,
 				6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */,
+				684D4AC62C6C8B9B005A9AEC /* RemoteRenderer.swift */,
 				6837091729B41C6400E02348 /* AppDelegate.swift */,
 				68C129262C64078200E5A513 /* StateActor.swift */,
 				68F0D4F22AECFDFC000954FF /* OSLog.swift */,
@@ -1110,6 +1113,7 @@
 				680BF3472C65A8E900C15CB6 /* CasePaths+Sendable.swift in Sources */,
 				68A4101D2C5D46F20092050B /* TablineView.swift in Sources */,
 				68A8FF552AD29F660017C28D /* API.swift in Sources */,
+				684D4AC72C6C8BA1005A9AEC /* RemoteRenderer.swift in Sources */,
 				68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */,
 				681B533B2C5FE4A100AD6C68 /* Value.swift in Sources */,
 				68EFD26D2B588DE90010DD54 /* SettingsEnvironmentView.swift in Sources */,

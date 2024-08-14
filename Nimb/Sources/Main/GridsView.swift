@@ -27,7 +27,8 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     return outerGrid.size * state.font.cellSize
   }
 
-  private var store: Store
+  private let store: Store
+  private let remoteRenderer: RemoteRenderer
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
   private var leftMouseInteractionTarget: GridLayer?
   private var rightMouseInteractionTarget: GridLayer?
@@ -41,8 +42,9 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       )
   }
 
-  init(store: Store) {
+  init(store: Store, remoteRenderer: RemoteRenderer) {
     self.store = store
+    self.remoteRenderer = remoteRenderer
     super.init(frame: .init())
 
     wantsLayer = true
@@ -218,6 +220,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     } else {
       let layer = GridLayer(
         store: store,
+        remoteRenderer: remoteRenderer,
         gridID: id
       )
       renderChildren(layer)

@@ -16,6 +16,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
 
+  private var remoteRenderer: RemoteRenderer?
+
   override public init() {
     super.init()
   }
@@ -33,6 +35,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
       neovim = Neovim()
       store = Store(api: neovim!.api, initialState: initialState)
+      remoteRenderer = RemoteRenderer()
       setupInitialControllers()
 
       await setupBindings(store: store!)
@@ -63,6 +66,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationWillTerminate(_: Notification) {
     logger.debug("Application will terminate")
+    remoteRenderer?.invalidate()
   }
 
   public func applicationDidBecomeActive(_: Notification) {
@@ -139,6 +143,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
     mainWindowController = MainWindowController(
       store: store!,
+      remoteRenderer: remoteRenderer!,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
     )
 

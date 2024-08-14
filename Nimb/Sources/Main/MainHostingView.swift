@@ -9,7 +9,6 @@ public class MainHostingView: NSView {
     true
   }
 
-  private var connectionToService: NSXPCConnection?
   private var ioSurface: IOSurface?
 
   override public init(frame frameRect: NSRect) {
@@ -21,12 +20,6 @@ public class MainHostingView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    Task { @MainActor in
-      connectionToService?.invalidate()
-    }
-  }
-
   override public func updateLayer() {
     if ioSurface == nil {
       ioSurface = IOSurface(properties: [
@@ -35,25 +28,7 @@ public class MainHostingView: NSView {
         .pixelFormat: kCMPixelFormat_32BGRA,
         .bytesPerElement: 4,
       ])
-
-      startRenderer(with: ioSurface!)
     }
     layer!.contents = ioSurface
-  }
-
-  private func startRenderer(with ioSurface: IOSurface) {
-    connectionToService = NSXPCConnection(serviceName: "foxacid7cd.Renderer")
-    connectionToService!.remoteObjectInterface = NSXPCInterface(with: RendererProtocol.self)
-    connectionToService!.resume()
-
-    if let proxy = connectionToService!.remoteObjectProxy as? RendererProtocol {
-      proxy
-        .setup(
-          ioSurface: ioSurface,
-          scale: layer!.contentsScale
-        ) { @Sendable string in
-          logger.info("Reply: \(string)")
-        }
-    }
   }
 }

@@ -4,7 +4,9 @@ import Algorithms
 import AppKit
 import Collections
 import ConcurrencyExtras
+import CoreMedia
 import CustomDump
+import IOSurface
 
 public class GridLayer: CALayer, Rendering {
   private struct Critical {
@@ -26,8 +28,10 @@ public class GridLayer: CALayer, Rendering {
     }
   }
 
-  private let gridID: Grid.ID
   private let store: Store
+  private let remoteRenderer: RemoteRenderer
+  private let gridID: Grid.ID
+  private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
   @MainActor
@@ -67,14 +71,20 @@ public class GridLayer: CALayer, Rendering {
     let gridLayer = layer as! GridLayer
     gridID = gridLayer.gridID
     store = gridLayer.store
+    remoteRenderer = gridLayer.remoteRenderer
     super.init(layer: layer)
+
+    drawsAsynchronously = true
+    isOpaque = false
   }
 
   init(
     store: Store,
+    remoteRenderer: RemoteRenderer,
     gridID: Grid.ID
   ) {
     self.store = store
+    self.remoteRenderer = remoteRenderer
     self.gridID = gridID
     super.init()
 
@@ -91,47 +101,69 @@ public class GridLayer: CALayer, Rendering {
     NSNull()
   }
 
-  override public func draw(in ctx: CGContext) {
-    guard let critical = critical.withValue({ $0 }) else {
-      return
-    }
+//  override public func draw(in ctx: CGContext) {
+//    guard let critical = critical.withValue({ $0 }) else {
+//      return
+//    }
+//
+//    let boundingRect = IntegerRectangle(
+//      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
+//      cellSize: critical.font.cellSize
+//    )
+//
+//    ctx.setShouldAntialias(false)
+//    critical.grid.drawRuns.drawBackground(
+//      to: ctx,
+//      boundingRect: boundingRect,
+//      font: critical.font,
+//      appearance: critical.appearance,
+//      upsideDownTransform: critical.upsideDownTransform
+//    )
+//
+//    ctx.setShouldAntialias(true)
+//    critical.grid.drawRuns.drawForeground(
+//      to: ctx,
+//      boundingRect: boundingRect,
+//      font: critical.font,
+//      appearance: critical.appearance,
+//      upsideDownTransform: critical.upsideDownTransform
+//    )
+//
+//    if
+//      critical.cursorBlinkingPhase,
+//      critical.isMouseUserInteractionEnabled,
+//      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
+//      boundingRect.contains(cursorDrawRun.origin)
+//    {
+//      cursorDrawRun.draw(
+//        to: ctx,
+//        font: critical.font,
+//        appearance: critical.appearance,
+//        upsideDownTransform: critical.upsideDownTransform
+//      )
+//    }
+//  }
 
-    let boundingRect = IntegerRectangle(
-      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
-      cellSize: critical.font.cellSize
-    )
+  @MainActor
+  public func createIOSurface() {
+    let newIOSurface = IOSurface(properties: [
+      .width: bounds.width * contentsScale,
+      .height: bounds.height * contentsScale,
+      .pixelFormat: kCMPixelFormat_32BGRA,
+      .bytesPerElement: 4,
+    ])!
+    ioSurface = newIOSurface
+    contents = newIOSurface
 
-    ctx.setShouldAntialias(false)
-    critical.grid.drawRuns.drawBackground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: critical.font,
-      appearance: critical.appearance,
-      upsideDownTransform: critical.upsideDownTransform
-    )
-
-    ctx.setShouldAntialias(true)
-    critical.grid.drawRuns.drawForeground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: critical.font,
-      appearance: critical.appearance,
-      upsideDownTransform: critical.upsideDownTransform
-    )
-
-    if
-      critical.cursorBlinkingPhase,
-      critical.isMouseUserInteractionEnabled,
-      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
-      boundingRect.contains(cursorDrawRun.origin)
-    {
-      cursorDrawRun.draw(
-        to: ctx,
-        font: critical.font,
-        appearance: critical.appearance,
-        upsideDownTransform: critical.upsideDownTransform
+    remoteRenderer.proxy
+      .register(
+        surface: newIOSurface,
+        scale: contentsScale,
+        forGridWithID: gridID,
+        cb: {
+          print($0)
+        }
       )
-    }
   }
 
   @MainActor
@@ -180,6 +212,10 @@ public class GridLayer: CALayer, Rendering {
           )
           .applying(upsideDownTransform)
       )
+    }
+
+    if ioSurface == nil {
+      createIOSurface()
     }
   }
 
