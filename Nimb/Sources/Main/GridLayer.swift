@@ -267,10 +267,13 @@ public class GridLayer: CALayer, Rendering {
         ].cycled(times: abs(verticalScrollCount))
       }
 
-      store.apiTask { [horizontalScrollFunctions, verticalScrollFunctions] in
-        try await $0.fastCallsTransaction(
-          with: chain(horizontalScrollFunctions, verticalScrollFunctions)
-        )
+      do {
+        try store.api
+          .fastCallsTransaction(
+            with: chain(horizontalScrollFunctions, verticalScrollFunctions)
+          )
+      } catch {
+        store.show(alert: .init(error))
       }
     }
   }
@@ -290,8 +293,8 @@ public class GridLayer: CALayer, Rendering {
     if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
       return
     }
-    store.apiTask { [gridID] in
-      try await $0.fastCall(APIFunctions.NvimInputMouse(
+    do {
+      try store.api.fastCall(APIFunctions.NvimInputMouse(
         button: "move",
         action: "",
         modifier: mouseMove.modifier,
@@ -299,6 +302,8 @@ public class GridLayer: CALayer, Rendering {
         row: mouseMove.point.row,
         col: mouseMove.point.column
       ))
+    } catch {
+      store.show(alert: .init(error))
     }
     previousMouseMove = mouseMove
   }

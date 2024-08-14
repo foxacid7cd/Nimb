@@ -2,4 +2,4 @@
 
 import OSLog
 
-@MainActor let logger = Logger(subsystem: "foxacid7cd.Nimb", category: "General")
+let logger = Logger(subsystem: "foxacid7cd.Nimb", category: "General")

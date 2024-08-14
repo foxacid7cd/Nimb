@@ -116,11 +116,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
           await render(state: state, updates: updates)
         }
-        await logger.debug("Store state updates loop ended")
+        logger.debug("Store state updates loop ended")
       } catch is CancellationError {
-        await logger.debug("Store state updates loop cancelled")
+        logger.debug("Store state updates loop cancelled")
       } catch {
-        await logger.error("Store state updates loop error: \(error)")
+        logger.error("Store state updates loop error: \(error)")
         await self.showCriticalAlert(error: error)
       }
     }
