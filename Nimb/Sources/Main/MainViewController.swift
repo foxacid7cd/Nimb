@@ -15,6 +15,7 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var modalOverlayView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
+  private let hostingView = MainHostingView()
 
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
@@ -117,6 +118,9 @@ public class MainViewController: NSViewController, Rendering {
     gridsContainerView.addSubview(gridsView)
     gridsView.centerXToSuperview()
     gridsView.topToSuperview()
+
+    view.addSubview(hostingView)
+    hostingView.edgesToSuperview()
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black
