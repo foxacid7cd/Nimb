@@ -12,8 +12,16 @@ final class Renderer: NSObject, RendererProtocol {
   private var sharedMemorySize = 0
 
   private var gridRenderers = IntKeyedDictionary<GridRenderer>()
-  private var state = State()
+  private var state: State
   private let unpacker = Unpacker()
+  private let sharedDrawRunsCache = SharedDrawRunsCache()
+  private let handleError = { (error: any Error) in
+    _ = dump(error)
+  }
+
+  init(initialState: State) {
+    state = initialState
+  }
 
   @objc func set(
     sharedMemoryXPC: xpc_object_t,
@@ -44,7 +52,11 @@ final class Renderer: NSObject, RendererProtocol {
             let uiEvents = try [UIEvent](
               rawRedrawNotificationParameters: notification.parameters
             )
-            let updates = state.apply(uiEvents)
+            let updates = state.apply(
+              uiEvents,
+              sharedDrawRunsCache: sharedDrawRunsCache,
+              handleError: handleError
+            )
             dump(updates)
           }
 

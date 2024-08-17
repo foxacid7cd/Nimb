@@ -25,7 +25,6 @@
 		6814B2FB2C7035E300ACD872 /* UIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF682AD2ACCB0017C28D /* UIEvent.swift */; };
 		6814B2FC2C7035F400ACD872 /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		6814B2FD2C70360E00ACD872 /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
-		6814B2FE2C70362400ACD872 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF412AD29F650017C28D /* Grid.swift */; };
 		6814B2FF2C70362C00ACD872 /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
 		6814B3002C70363700ACD872 /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		6814B3012C70364200ACD872 /* NSFontCellSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */; };
@@ -1088,7 +1087,6 @@
 			files = (
 				6814B3032C70365E00ACD872 /* Failure.swift in Sources */,
 				6814B2FA2C70359B00ACD872 /* Unpacker.swift in Sources */,
-				6814B2FE2C70362400ACD872 /* Grid.swift in Sources */,
 				6814B2F92C70358F00ACD872 /* Value.swift in Sources */,
 				6814B3212C703ECC00ACD872 /* Message.swift in Sources */,
 				6814B3022C70365400ACD872 /* Cursor.swift in Sources */,
