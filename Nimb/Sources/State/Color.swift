@@ -4,7 +4,7 @@ import AppKit
 import SwiftUI
 
 @PublicInit
-public struct Color: Sendable, Hashable {
+public struct Color: Sendable, Hashable, Codable {
   public static let black = Color(rgb: 0)
 
   public var rgb: Int

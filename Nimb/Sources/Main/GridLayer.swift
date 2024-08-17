@@ -101,69 +101,69 @@ public class GridLayer: CALayer, Rendering {
     NSNull()
   }
 
-//  override public func draw(in ctx: CGContext) {
-//    guard let critical = critical.withValue({ $0 }) else {
-//      return
-//    }
-//
-//    let boundingRect = IntegerRectangle(
-//      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
-//      cellSize: critical.font.cellSize
-//    )
-//
-//    ctx.setShouldAntialias(false)
-//    critical.grid.drawRuns.drawBackground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    ctx.setShouldAntialias(true)
-//    critical.grid.drawRuns.drawForeground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    if
-//      critical.cursorBlinkingPhase,
-//      critical.isMouseUserInteractionEnabled,
-//      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
-//      boundingRect.contains(cursorDrawRun.origin)
-//    {
-//      cursorDrawRun.draw(
-//        to: ctx,
-//        font: critical.font,
-//        appearance: critical.appearance,
-//        upsideDownTransform: critical.upsideDownTransform
-//      )
-//    }
-//  }
+  override public func draw(in ctx: CGContext) {
+    guard let critical = critical.withValue({ $0 }) else {
+      return
+    }
+
+    let boundingRect = IntegerRectangle(
+      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
+      cellSize: critical.font.cellSize
+    )
+
+    ctx.setShouldAntialias(false)
+    critical.grid.drawRuns.drawBackground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: critical.font,
+      appearance: critical.appearance,
+      upsideDownTransform: critical.upsideDownTransform
+    )
+
+    ctx.setShouldAntialias(true)
+    critical.grid.drawRuns.drawForeground(
+      to: ctx,
+      boundingRect: boundingRect,
+      font: critical.font,
+      appearance: critical.appearance,
+      upsideDownTransform: critical.upsideDownTransform
+    )
+
+    if
+      critical.cursorBlinkingPhase,
+      critical.isMouseUserInteractionEnabled,
+      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
+      boundingRect.contains(cursorDrawRun.origin)
+    {
+      cursorDrawRun.draw(
+        to: ctx,
+        font: critical.font,
+        appearance: critical.appearance,
+        upsideDownTransform: critical.upsideDownTransform
+      )
+    }
+  }
 
   @MainActor
   public func createIOSurface() {
-    let newIOSurface = IOSurface(properties: [
-      .width: bounds.width * contentsScale,
-      .height: bounds.height * contentsScale,
-      .pixelFormat: kCMPixelFormat_32BGRA,
-      .bytesPerElement: 4,
-    ])!
-    ioSurface = newIOSurface
-    contents = newIOSurface
-
-    remoteRenderer.proxy
-      .register(
-        surface: newIOSurface,
-        scale: contentsScale,
-        forGridWithID: gridID,
-        cb: {
-          print($0)
-        }
-      )
+//    let newIOSurface = IOSurface(properties: [
+//      .width: bounds.width * contentsScale,
+//      .height: bounds.height * contentsScale,
+//      .pixelFormat: kCMPixelFormat_32BGRA,
+//      .bytesPerElement: 4,
+//    ])!
+//    ioSurface = newIOSurface
+//    contents = newIOSurface
+//
+//    remoteRenderer.proxy
+//      .register(
+//        surface: newIOSurface,
+//        scale: contentsScale,
+//        forGridWithID: gridID,
+//        cb: {
+//          print($0)
+//        }
+//      )
   }
 
   @MainActor

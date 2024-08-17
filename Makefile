@@ -60,7 +60,7 @@ format:
 generate:
 	@echo "Generating Swift Neovim API code..."
 	xcodebuild -workspace Nimb.xcworkspace -scheme generate -configuration Debug \
-		-destination "platform=macOS,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) | xcbeautify && \
+		-destination "platform=macOS,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) && \
 		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate $(GENERATED_DIR)
 
 # Install

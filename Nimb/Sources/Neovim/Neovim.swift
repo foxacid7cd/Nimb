@@ -5,6 +5,7 @@ import Foundation
 public final class Neovim: Sendable {
   public let process: Process
   public let api: API<ProcessChannel>
+  public let processOutputSidechannel: AsyncStream<Data>
 
   public init() {
     process = Process()
@@ -71,6 +72,7 @@ public final class Neovim: Sendable {
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel, maximumConcurrentRequests: 1000)
     api = .init(rpc)
+    processOutputSidechannel = processChannel.outputSidechannel
   }
 
   @StateActor

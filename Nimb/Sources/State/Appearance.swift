@@ -3,8 +3,8 @@
 import Collections
 
 @PublicInit
-public struct Appearance: Sendable {
-  public enum ObservedHighlightName: String, CaseIterable, Sendable {
+public struct Appearance: Sendable, Codable {
+  public enum ObservedHighlightName: String, CaseIterable, Sendable, Codable {
     case normal = "Normal"
     case normalNC = "NormalNC"
     case normalFloat = "NormalFloat"
@@ -21,10 +21,16 @@ public struct Appearance: Sendable {
     case tabLineSel = "TabLineSel"
   }
 
+  @PublicInit
+  public struct ObservedHighlightValue: Sendable, Codable {
+    public var id: Int
+    public var kind: String
+  }
+
   public var highlights: IntKeyedDictionary<Highlight> = [:]
   public var observedHighlights: TreeDictionary<
     ObservedHighlightName,
-    (id: Int, kind: String)
+    ObservedHighlightValue
   > =
     [:]
   public var defaultForegroundColor: Color = .black
@@ -32,16 +38,16 @@ public struct Appearance: Sendable {
   public var defaultSpecialColor: Color = .black
 
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
-    guard let (id, _) = observedHighlights[name] else {
+    guard let value = observedHighlights[name] else {
       return nil
     }
-    return highlights[id]
+    return highlights[value.id]
   }
 
   public func isItalic(for name: ObservedHighlightName) -> Bool {
     guard
-      let (id, _) = observedHighlights[name],
-      let highlight = highlights[id]
+      let value = observedHighlights[name],
+      let highlight = highlights[value.id]
     else {
       return false
     }
@@ -50,8 +56,8 @@ public struct Appearance: Sendable {
 
   public func isBold(for name: ObservedHighlightName) -> Bool {
     guard
-      let (id, _) = observedHighlights[name],
-      let highlight = highlights[id]
+      let value = observedHighlights[name],
+      let highlight = highlights[value.id]
     else {
       return false
     }
@@ -60,8 +66,8 @@ public struct Appearance: Sendable {
 
   public func foregroundColor(for name: ObservedHighlightName) -> Color {
     guard 
-      let (id, _) = observedHighlights[name],
-      let highlight = highlights[id],
+      let value = observedHighlights[name],
+      let highlight = highlights[value.id],
       let foregroundColor = highlight.foregroundColor
     else {
       return defaultForegroundColor
@@ -71,8 +77,8 @@ public struct Appearance: Sendable {
 
   public func backgroundColor(for name: ObservedHighlightName) -> Color {
     guard
-      let (id, _) = observedHighlights[name],
-      let highlight = highlights[id]
+      let value = observedHighlights[name],
+      let highlight = highlights[value.id]
     else {
       return defaultBackgroundColor
     }
@@ -82,8 +88,8 @@ public struct Appearance: Sendable {
 
   public func specialColor(for name: ObservedHighlightName) -> Color {
     guard
-      let (id, _) = observedHighlights[name],
-      let highlight = highlights[id],
+      let value = observedHighlights[name],
+      let highlight = highlights[value.id],
       let specialColor = highlight.specialColor
     else {
       return defaultSpecialColor

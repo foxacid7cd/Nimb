@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 @PublicInit
-public struct Highlight: Identifiable, Sendable {
+public struct Highlight: Identifiable, Sendable, Codable {
   @PublicInit
-  public struct Decorations: Hashable, Sendable {
+  public struct Decorations: Hashable, Sendable, Codable {
     public var isStrikethrough: Bool = false
     public var isUnderline: Bool = false
     public var isUndercurl: Bool = false

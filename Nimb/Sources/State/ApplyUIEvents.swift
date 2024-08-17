@@ -275,11 +275,14 @@ public extension Actions {
             }
 
           case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
+            let foreground = Color(rgb: rgbFg)
+            let background = Color(rgb: rgbBg)
+            let special = Color(rgb: rgbSp)
             state.appearance
-              .defaultForegroundColor = .init(rgb: rgbFg)
+              .defaultForegroundColor = foreground
             state.appearance
-              .defaultBackgroundColor = .init(rgb: rgbBg)
-            state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
+              .defaultBackgroundColor = background
+            state.appearance.defaultSpecialColor = special
             state.flushDrawRuns()
 
             appearanceUpdated()
@@ -787,7 +790,7 @@ public extension Actions {
           let appearance = state.appearance
 
           do {
-            let results: [Grid.LineUpdatesResult] = try applyLineUpdates(
+            let results = try applyLineUpdates(
               for: gridLines,
               grids: grids,
               font: font,
@@ -845,8 +848,7 @@ public extension Actions {
             font: Font,
             appearance: Appearance
           ) throws
-            -> [Grid.LineUpdatesResult]
-          {
+          -> [Grid.LineUpdatesResult] {
             var accumulator = [Grid.LineUpdatesResult]()
 
             for (row, rowGridLines) in gridLines {
@@ -1021,10 +1023,12 @@ public extension Actions {
             else {
               continue
             }
-            state.appearance.observedHighlights[hiName] = (
-              infoItem.id,
-              infoItem.kind
-            )
+            state.appearance
+              .observedHighlights[hiName] = .init(
+                id: infoItem.id,
+                kind: infoItem
+                  .kind
+              )
             updates.updatedObservedHighlightNames.insert(hiName)
           }
         }

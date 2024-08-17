@@ -3,7 +3,7 @@
 import Foundation
 
 @PublicInit
-public struct IntegerRectangle: Sendable, Hashable {
+public struct IntegerRectangle: Sendable, Hashable, Codable {
   public var origin: IntegerPoint = .init()
   public var size: IntegerSize = .init()
 
@@ -108,7 +108,7 @@ public func + (
 }
 
 @PublicInit
-public struct IntegerPoint: Sendable, Hashable {
+public struct IntegerPoint: Sendable, Hashable, Codable {
   public var column: Int = 0
   public var row: Int = 0
 }
@@ -157,7 +157,7 @@ public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
 }
 
 @PublicInit
-public struct IntegerSize: Sendable, Hashable {
+public struct IntegerSize: Sendable, Hashable, Codable {
   public var columnsCount: Int = 0
   public var rowsCount: Int = 0
 }

@@ -224,3 +224,5 @@ extension IntKeyedDictionary: Sequence {
     }
   }
 }
+
+extension IntKeyedDictionary: Codable where Value: Codable { }

@@ -5,6 +5,11 @@ import IOSurface
 
 /// The protocol that this service will vend as its API. This protocol will also need to be visible to the process hosting the service.
 @objc public protocol RendererProtocol {
+  @objc func set(
+    sharedMemoryXPC: xpc_object_t,
+    reply: @Sendable @escaping () -> Void
+  )
+  @objc func processNvimOutputData(count: Int, offset: Int, reply: @Sendable @escaping () -> Void)
   @objc func register(
     surface: IOSurface,
     scale: CGFloat,

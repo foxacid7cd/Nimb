@@ -7,7 +7,17 @@ class ServiceDelegate: NSObject, NSXPCListenerDelegate {
   func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
     // Configure the connection.
     // First, set the interface that the exported object implements.
-    newConnection.exportedInterface = NSXPCInterface(with: RendererProtocol.self)
+    let exportedInterface = NSXPCInterface(with: RendererProtocol.self)
+    exportedInterface
+      .setXPCType(
+        XPC_TYPE_SHMEM,
+        for: #selector(
+          RendererProtocol.set(sharedMemoryXPC:reply:)
+        ),
+        argumentIndex: 0,
+        ofReply: false
+      )
+    newConnection.exportedInterface = exportedInterface
 
     // Next, set the object that the connection exports. All messages sent on the connection to this service will be sent to the exported object to handle. The connection retains the exported object.
     let exportedObject = Renderer()

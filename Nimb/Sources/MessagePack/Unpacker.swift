@@ -17,18 +17,16 @@ public class Unpacker {
     msgpack_unpacker_destroy(&mpac)
   }
 
-  public func unpack(_ data: Data) throws -> [Value] {
+  public func unpack(_ data: UnsafeRawBufferPointer) throws -> [Value] {
     if msgpack_unpacker_buffer_capacity(&mpac) < data.count {
       msgpack_unpacker_reserve_buffer(&mpac, data.count)
     }
 
-    data.withUnsafeBytes { pointer in
-      msgpack_unpacker_buffer(&mpac)!
-        .initialize(
-          from: pointer.baseAddress!.assumingMemoryBound(to: CChar.self),
-          count: pointer.count
-        )
-    }
+    msgpack_unpacker_buffer(&mpac)!
+      .initialize(
+        from: data.baseAddress!.assumingMemoryBound(to: CChar.self),
+        count: data.count
+      )
     msgpack_unpacker_buffer_consumed(&mpac, data.count)
 
     var accumulator = [Value]()

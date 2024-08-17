@@ -15,6 +15,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
+  @StateActor private var rendererDataTask: Task<Void, Never>?
 
   private var remoteRenderer: RemoteRenderer?
 
@@ -32,13 +33,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         debug: UserDefaults.standard.debug,
         font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
       )
-
       neovim = Neovim()
       store = Store(api: neovim!.api, initialState: initialState)
-      remoteRenderer = RemoteRenderer()
+      remoteRenderer = await RemoteRenderer()
       setupInitialControllers()
 
-      await setupBindings(store: store!)
+      await setupBindings(
+        neovim: neovim!,
+        store: store!,
+        remoteRenderer: remoteRenderer!
+      )
 
       do {
         try await neovim!.bootstrap()
@@ -84,7 +88,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   @StateActor
-  private func setupBindings(store: Store) {
+  private func setupBindings(
+    neovim: Neovim,
+    store: Store,
+    remoteRenderer: RemoteRenderer
+  ) {
     alertsTask = Task {
       do {
         for await alert in store.alerts {
@@ -126,6 +134,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       } catch {
         logger.error("Store state updates loop error: \(error)")
         await self.showCriticalAlert(error: error)
+      }
+    }
+    rendererDataTask = Task {
+      for await data in neovim.processOutputSidechannel {
+        await remoteRenderer.processNvimOutput(data: data)
       }
     }
   }

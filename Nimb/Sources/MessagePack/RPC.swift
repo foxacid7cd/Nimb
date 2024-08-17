@@ -25,10 +25,12 @@ public final class RPC<Target: Channel>: Sendable {
       let task = Task {
         var notifications = [Message.Notification]()
         for try await data in dataBatches {
-          let messages = try unpacker.withValue {
-            try $0.unpack(data)
-              .map { try Message(value: $0) }
-          }
+          let messages: [Message] = try unpacker.withValue { unpacker in
+            try data.withContiguousStorageIfAvailable { buffer in
+              try unpacker.unpack(.init(buffer))
+                .map { try Message(value: $0) }
+            }
+          } ?? []
 
           for message in messages {
             switch message {

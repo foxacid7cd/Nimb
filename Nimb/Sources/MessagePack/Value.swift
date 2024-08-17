@@ -7,7 +7,8 @@ import Foundation
 @dynamicMemberLookup
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   ExpressibleByBooleanLiteral,
-  ExpressibleByNilLiteral
+  ExpressibleByNilLiteral,
+  Codable
 {
   case integer(Int)
   case float(Double)

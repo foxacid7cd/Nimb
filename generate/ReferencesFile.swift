@@ -18,7 +18,7 @@ public struct ReferencesFile: GeneratableFile {
         try EnumDeclSyntax("public enum References") {
           for type in metadata.types {
             try StructDeclSyntax(
-              "public struct \(raw: type.name): Sendable, Hashable"
+              "public struct \(raw: type.name): Sendable, Hashable, Codable"
             ) {
               DeclSyntax(
                 "public var data: Data"
