@@ -293,23 +293,26 @@ public struct DrawRun: Sendable {
         let glyphCount = CTRunGetGlyphCount(ctRun)
 
         let glyphs =
-          [CGGlyph](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-            CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
-          }
+          [CGGlyph](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
 
         let positions =
-          [CGPoint](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-            CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
-          }
-          .map { $0 + offset }
+          [CGPoint](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
+        .map { $0 + offset }
 
         let advances =
-          [CGSize](unsafeUninitializedCapacity: glyphCount) { buffer, initializedCount in
-            CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
-          }
+          [CGSize](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
 
         let attributes =
           CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
