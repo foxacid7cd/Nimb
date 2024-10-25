@@ -23,6 +23,8 @@ final class Renderer: NSObject, RendererProtocol {
     state = initialState
   }
 
+  func render() { }
+
   @objc func set(
     sharedMemoryXPC: xpc_object_t,
     reply: @escaping @Sendable () -> Void
@@ -57,7 +59,7 @@ final class Renderer: NSObject, RendererProtocol {
               sharedDrawRunsCache: sharedDrawRunsCache,
               handleError: handleError
             )
-            dump(updates)
+            render(state: state, updates: updates)
           }
 
         default:
@@ -82,34 +84,12 @@ final class Renderer: NSObject, RendererProtocol {
       scale: scale,
       gridID: gridID
     )
-
-    surface.lock(options: [], seed: nil)
-    defer { surface.unlock(options: [], seed: nil) }
-
-    let cgContext = CGContext(
-      data: surface.baseAddress,
-      width: surface.width,
-      height: surface.height,
-      bitsPerComponent: 8,
-      bytesPerRow: surface.bytesPerRow,
-      space: CGColorSpaceCreateDeviceRGB(),
-      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-    )!
-    cgContext.scaleBy(x: scale, y: scale)
-    NSGraphicsContext.current = .init(
-      cgContext: cgContext,
-      flipped: false
-    )
-
-    let graphicsContext = NSGraphicsContext.current!
-    defer { graphicsContext.flushGraphics() }
-
-    NSColor.red.withAlphaComponent(0.8).setFill()
-    NSRect(
-      origin: .zero,
-      size: .init(width: 200, height: 200)
-    ).fill()
-
     cb(true)
+  }
+
+  private func render(state: State, updates: State.Updates) {
+    for (_, gridRenderer) in gridRenderers {
+      gridRenderer.render(state: state, updates: updates)
+    }
   }
 }

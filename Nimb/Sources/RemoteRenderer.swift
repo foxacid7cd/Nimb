@@ -30,6 +30,23 @@ public final class RemoteRenderer {
     connectionToService.invalidate()
   }
 
+  public func register(
+    surface: IOSurface,
+    scale: CGFloat,
+    forGridWithID gridID: Int
+  ) {
+    proxy
+      .register(
+        surface: surface,
+        scale: scale,
+        forGridWithID: gridID
+      ) { isSuccess in
+        if !isSuccess {
+          logger.error("Failed to register surface")
+        }
+      }
+  }
+
   public func processNvimOutput(data: Data) {
     data.withContiguousStorageIfAvailable { buffer in
       sharedMemory
