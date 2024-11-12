@@ -8,7 +8,7 @@ INSTALL_DIR := /Applications
 SWIFTFORMAT := /opt/homebrew/bin/swiftformat
 
 # CMake Configuration
-export CMAKE_GENERATOR := Unix Makefiles
+export CMAKE_GENERATOR := Ninja
 export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
 
@@ -23,27 +23,18 @@ app:
 		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) -exportPath $(INSTALL_DIR) | xcbeautify
 
 # Neovim
-neovim: build_neovim_package
-	@echo "Extracting Neovim package..."
-	pushd $(NEOVIM_DIR)/build > /dev/null && tar -xvf nvim-macos-arm64.tar.gz && \
-	popd > /dev/null && rm -rf $(NEOVIM_DIR)/.deps && \
-	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && \
-	mv $(NEOVIM_DIR)/build/nvim-macos-arm64 $(BUILD_DIR)/package
-
-build_neovim_package:
-	@echo "Building Neovim package..."
+neovim: 
+	@echo "Building Neovim..."
+	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && mkdir -p $(BUILD_DIR)/package && \
 	pushd $(NEOVIM_DIR) > /dev/null && \
-		CMAKE_BUILD_TYPE=RelWithDebInfo make deps && \
-		pushd build > /dev/null && \
-			CMAKE_BUILD_TYPE=RelWithDebInfo make package && \
-		popd > /dev/null && \
+		make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=$PWD/../../../.build/package install && \
 	popd > /dev/null
 
 # Clean Neovim
 clean_neovim:
 	@echo "Cleaning Neovim build..."
 	pushd $(NEOVIM_DIR) > /dev/null && \
-		make clean && \
+		make distclean && \
 	popd > /dev/null
 
 # Clean Build

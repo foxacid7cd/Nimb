@@ -1499,8 +1499,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/krzyzanowskim/STTextView";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				kind = exactVersion;
+				version = "2.0.0-beta1";
 			};
 		};
 		681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */ = {
@@ -1524,7 +1524,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-concurrency-extras.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.0;
+				minimumVersion = 1.2.0;
 			};
 		};
 		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
@@ -1548,7 +1548,7 @@
 			repositoryURL = "https://github.com/apple/swift-collections.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.2;
+				minimumVersion = 1.1.4;
 			};
 		};
 		68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */ = {
@@ -1556,7 +1556,7 @@
 			repositoryURL = "https://github.com/apple/swift-system.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.3.2;
+				minimumVersion = 1.4.0;
 			};
 		};
 		68C9BCB12C5F7EFE00844461 /* XCRemoteSwiftPackageReference "swift-identified-collections" */ = {
@@ -1572,7 +1572,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-case-paths";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.4;
+				minimumVersion = 1.5.6;
 			};
 		};
 		68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */ = {
