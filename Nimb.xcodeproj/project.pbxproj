@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		68007B5F2C61A7AB001AD1D0 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B5E2C61A7AB001AD1D0 /* NibLoadable.swift */; };
 		68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */; };
-		68007B642C61C88B001AD1D0 /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 68007B632C61C88B001AD1D0 /* STTextView */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
 		680BF3472C65A8E900C15CB6 /* CasePaths+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */; };
@@ -420,7 +419,6 @@
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
-				68007B642C61C88B001AD1D0 /* STTextView in Frameworks */,
 				68FE5D882C68D1AD00FA9D01 /* libswiftObjectiveC.tbd in Frameworks */,
 				6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
 				68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */,
@@ -809,7 +807,6 @@
 				68C9BCB52C5F7F0F00844461 /* CasePaths */,
 				68C9BCB82C5F7F3F00844461 /* Overture */,
 				68C9BCBB2C5F7F5A00844461 /* CustomDump */,
-				68007B632C61C88B001AD1D0 /* STTextView */,
 				68DC65B12C6681A3009FBEDE /* SystemPackage */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
 				6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */,
@@ -865,7 +862,6 @@
 				68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */,
 				68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */,
 				681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */,
-				68007B622C61C88B001AD1D0 /* XCRemoteSwiftPackageReference "STTextView" */,
 				6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */,
 				688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 			);
@@ -1302,6 +1298,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
@@ -1359,6 +1356,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
@@ -1392,6 +1390,7 @@
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 					"$(SDKROOT)/usr/lib/swift",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.NimbDebug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1433,6 +1432,7 @@
 					"$(PROJECT_DIR)/Third-Party/msgpack-c",
 					"$(SDKROOT)/usr/lib/swift",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = foxacid7cd.Nimb;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1495,20 +1495,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		68007B622C61C88B001AD1D0 /* XCRemoteSwiftPackageReference "STTextView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/krzyzanowskim/STTextView";
-			requirement = {
-				kind = exactVersion;
-				version = "2.0.0-beta1";
-			};
-		};
 		681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-syntax.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = exactVersion;
+				version = "601.0.0-prerelease-2024-11-04";
 			};
 		};
 		688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
@@ -1594,11 +1586,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		68007B632C61C88B001AD1D0 /* STTextView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68007B622C61C88B001AD1D0 /* XCRemoteSwiftPackageReference "STTextView" */;
-			productName = STTextView;
-		};
 		681B53052C5FE36200AD6C68 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;

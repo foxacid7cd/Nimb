@@ -2,12 +2,11 @@
 
 import AppKit
 import CustomDump
-import STTextView
 
 public class MsgShowsViewController: NSViewController, Rendering {
   private let store: Store
-  private lazy var scrollView = NSScrollView()
-  private lazy var textView = STTextView()
+//  private lazy var scrollView = NSScrollView()
+//  private lazy var textView = STTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
 
   public init(store: Store) {
