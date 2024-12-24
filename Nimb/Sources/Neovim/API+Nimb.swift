@@ -11,7 +11,7 @@ public extension API {
     )
     switch rawResult {
     case let .dictionary(dictionary):
-      if 
+      if
         let rawFailure = dictionary["failure"],
         case let .array(rawErrorMessages) = rawFailure
       {

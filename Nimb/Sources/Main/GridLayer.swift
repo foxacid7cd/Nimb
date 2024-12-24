@@ -147,20 +147,31 @@ public class GridLayer: CALayer, Rendering {
   @MainActor
   public func createIOSurface() {
     let newIOSurface = IOSurface(properties: [
-      .width: bounds.width * contentsScale,
-      .height: bounds.height * contentsScale,
-      .pixelFormat: kCMPixelFormat_32BGRA,
+      .width: bounds.width,
+      .height: bounds.height,
       .bytesPerElement: 4,
+      .pixelFormat: kCVPixelFormatType_32BGRA,
     ])!
     ioSurface = newIOSurface
     contents = newIOSurface
 
+    let surfaceLayer = CALayer()
+    surfaceLayer.frame = bounds
+    surfaceLayer.contentsGravity = .center
+    surfaceLayer.contents = newIOSurface
+
+    addSublayer(surfaceLayer)
+
     remoteRenderer
       .register(
-        surface: newIOSurface,
+        ioSurface: newIOSurface,
         scale: contentsScale,
         forGridWithID: gridID
       )
+
+    Task {
+      await loop(gridID: gridID)
+    }
   }
 
   @MainActor
@@ -379,6 +390,22 @@ public class GridLayer: CALayer, Rendering {
           row: point.row,
           col: point.column
         )
+    }
+  }
+
+  func loop(gridID: Int) async {
+    do {
+      await remoteRenderer
+        .render(
+          color: .green,
+          in: .init(x: 0, y: 0, width: 100, height: 100),
+          forGridWithID: gridID
+        )
+
+      try await Task.sleep(for: .seconds(3), clock: .continuous)
+      await loop(gridID: gridID)
+    } catch {
+      logger.error("\(error)")
     }
   }
 }

@@ -90,7 +90,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
         scrollToSelectedRow(for: popupmenu)
       } else if updates.isPopupmenuSelectionUpdated {
         scrollToSelectedRow(for: popupmenu)
-        if 
+        if
           let previousSelectedItemIndex,
           previousSelectedItemIndex < popupmenu.items.count,
           let selectedItemIndex = popupmenu.selectedItemIndex,

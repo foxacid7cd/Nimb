@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
+import AppKit
 import IOSurface
 
 /// The protocol that this service will vend as its API. This protocol will also need to be visible to the process hosting the service.
 @objc public protocol RendererProtocol {
-  @objc func set(
-    sharedMemoryXPC: xpc_object_t,
-    reply: @Sendable @escaping () -> Void
-  )
-  @objc func processNvimOutputData(count: Int, offset: Int, reply: @Sendable @escaping () -> Void)
   @objc func register(
-    surface: IOSurface,
+    ioSurface: IOSurface,
     scale: CGFloat,
+    forGridWithID gridID: Int,
+    cb: @Sendable @escaping (
+      _ isSuccess: Bool
+    ) -> Void
+  )
+  @objc func render(
+    color: NSColor,
+    in rect: CGRect,
     forGridWithID gridID: Int,
     cb: @Sendable @escaping (
       _ isSuccess: Bool

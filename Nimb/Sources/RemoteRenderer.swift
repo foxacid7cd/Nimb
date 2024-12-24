@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import Darwin
 import Foundation
 import IOSurface
 
 @MainActor
 public final class RemoteRenderer {
-  private static let sharedMemorySize = 1024 * 1024 * 1024 * 32
-
-  private let sharedMemory = nimb_allocate_shared_memory(sharedMemorySize)!
-  private let connectionToService = NSXPCConnection(serviceName: "foxacid7cd.Renderer")
+  private let connectionToService = NSXPCConnection(
+    serviceName: "foxacid7cd.Renderer"
+  )
   private let proxy: RendererProtocol
   private var currentOffset = 0
 
   public init() async {
-    connectionToService.remoteObjectInterface = NSXPCInterface(with: RendererProtocol.self)
+    connectionToService.remoteObjectInterface = NSXPCInterface(
+      with: RendererProtocol.self
+    )
     connectionToService.resume()
 
     proxy = connectionToService.remoteObjectProxy as! RendererProtocol
-
-    await withCheckedContinuation { continuation in
-      proxy.set(sharedMemoryXPC: xpc_shmem_create(sharedMemory, Self.sharedMemorySize)) {
-        continuation.resume()
-      }
-    }
   }
 
   public func invalidate() {
@@ -31,13 +27,13 @@ public final class RemoteRenderer {
   }
 
   public func register(
-    surface: IOSurface,
+    ioSurface: IOSurface,
     scale: CGFloat,
     forGridWithID gridID: Int
   ) {
     proxy
       .register(
-        surface: surface,
+        ioSurface: ioSurface,
         scale: scale,
         forGridWithID: gridID
       ) { isSuccess in
@@ -47,20 +43,28 @@ public final class RemoteRenderer {
       }
   }
 
-  public func processNvimOutput(data: Data) {
-    data.withContiguousStorageIfAvailable { buffer in
-      sharedMemory
-        .advanced(by: currentOffset)
-        .copyMemory(
-          from: buffer.baseAddress!,
-          byteCount: buffer.count
-        )
-    }
+  public func render(
+    color: NSColor,
+    in rect: CGRect,
+    forGridWithID gridID: Int
+  ) {
     proxy
-      .processNvimOutputData(
-        count: data.count,
-        offset: currentOffset
-      ) { }
-    currentOffset += data.count
+      .render(
+        color: color,
+        in: rect,
+        forGridWithID: gridID
+      ) { isSuccess in
+        if !isSuccess {
+          logger.error("Failed to render color")
+        }
+      }
+  }
+
+  public func processNvimOutput(data: Data) {
+    //    proxy
+    //      .processNvimOutputData(
+    //        count: data.count,
+    //        offset: currentOffset
+    //      ) { }
   }
 }

@@ -25,7 +25,9 @@ public actor Generator {
       do {
         let unpacker = Unpacker()
         for try await data in dataBatches {
-          let values = try unpacker.unpack(data)
+          let values = try data.withContiguousStorageIfAvailable { buffer in
+            try unpacker.unpack(.init(buffer))
+          } ?? []
 
           accumulator += values
         }
