@@ -28,11 +28,11 @@ public class MainWindowController: NSWindowController, Rendering {
   )
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
-  private let remoteRenderer: RemoteRenderer
+  private let remoteRenderer: RendererProtocol
 
   public init(
     store: Store,
-    remoteRenderer: RemoteRenderer,
+    remoteRenderer: RendererProtocol,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store

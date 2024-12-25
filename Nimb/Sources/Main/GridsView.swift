@@ -28,7 +28,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   }
 
   private let store: Store
-  private let remoteRenderer: RemoteRenderer
+  private let remoteRenderer: RendererProtocol
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
   private var leftMouseInteractionTarget: GridLayer?
   private var rightMouseInteractionTarget: GridLayer?
@@ -42,7 +42,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       )
   }
 
-  init(store: Store, remoteRenderer: RemoteRenderer) {
+  init(store: Store, remoteRenderer: RendererProtocol) {
     self.store = store
     self.remoteRenderer = remoteRenderer
     super.init(frame: .init())

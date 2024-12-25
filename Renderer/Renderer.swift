@@ -5,10 +5,23 @@ import CoreGraphics
 import IOSurface
 import QuartzCore
 
-/// This object implements the protocol which we have defined. It provides the actual behavior for the service. It is 'exported' by the service to make it available to the process hosting the service
-/// over an NSXPCConnection.
-final class Renderer: NSObject, RendererProtocol {
+final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
+  var font: NSFont?
+  var cellSize: CGSize?
   var gridRenderers: [Int: GridRenderer] = [:]
+
+  @objc func setFont(_ font: NSFont, cb: @escaping (CGSize) -> Void) {
+    self.font = font
+    let cellSize = CGSize(
+      width: font.makeCellWidth(),
+      height: font.makeCellHeight()
+    )
+    self.cellSize = cellSize
+    for gridRenderer in gridRenderers.values {
+      gridRenderer.setFont(font, cellSize: cellSize)
+    }
+    cb(cellSize)
+  }
 
   @objc func register(
     ioSurface: IOSurface,
@@ -20,18 +33,14 @@ final class Renderer: NSObject, RendererProtocol {
     gridRenderers[gridID] = .init(
       ioSurface: ioSurface,
       scale: scale,
-      gridID: gridID
+      gridID: gridID,
+      font: font!,
+      cellSize: cellSize!
     )
     cb(true)
   }
 
-  @objc func render(
-    color: NSColor,
-    in rect: CGRect,
-    forGridWithID gridID: Int,
-    cb: @escaping (Bool) -> Void
-  ) {
-    gridRenderers[gridID]?.render(color: color, in: rect)
-    cb(true)
+  @objc func draw(gridDrawRequest: GridDrawRequest) {
+    gridRenderers[gridDrawRequest.gridID]?.draw(gridDrawRequest: gridDrawRequest)
   }
 }

@@ -3,8 +3,13 @@
 import AppKit
 import IOSurface
 
-/// The protocol that this service will vend as its API. This protocol will also need to be visible to the process hosting the service.
-@objc public protocol RendererProtocol {
+@objc public protocol RendererProtocol: Sendable {
+  @objc func setFont(
+    _ font: NSFont,
+    cb: @Sendable @escaping (
+      _ cellSize: CGSize
+    ) -> Void
+  )
   @objc func register(
     ioSurface: IOSurface,
     scale: CGFloat,
@@ -13,13 +18,8 @@ import IOSurface
       _ isSuccess: Bool
     ) -> Void
   )
-  @objc func render(
-    color: NSColor,
-    in rect: CGRect,
-    forGridWithID gridID: Int,
-    cb: @Sendable @escaping (
-      _ isSuccess: Bool
-    ) -> Void
+  @objc func draw(
+    gridDrawRequest: GridDrawRequest
   )
 }
 

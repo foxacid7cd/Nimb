@@ -17,7 +17,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var updatesTask: Task<Void, Never>?
   @StateActor private var rendererDataTask: Task<Void, Never>?
 
-  private var remoteRenderer: RemoteRenderer?
+  private var rendererServiceConnector: RendererServiceConnector?
+  private var remoteRenderer: RendererProtocol?
 
   override public init() {
     super.init()
@@ -29,19 +30,35 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
+      let rendererServiceConnector = RendererServiceConnector()
+      self.rendererServiceConnector = rendererServiceConnector
+
+      let remoteRenderer = await rendererServiceConnector.connect()
+      self.remoteRenderer = remoteRenderer
+
+      let font = UserDefaults.standard.appKitFont ?? NSFont.monospacedSystemFont(
+        ofSize: 13,
+        weight: .regular
+      )
+      let fontName = font.fontName
+      remoteRenderer.setFont(font) { size in
+        logger
+          .debug(
+            "Remote renderer font set to \(fontName) with size \(size.debugDescription)"
+          )
+      }
+
       let initialState = State(
         debug: UserDefaults.standard.debug,
-        font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
+        font: .init(font)
       )
       neovim = Neovim()
       store = Store(api: neovim!.api, initialState: initialState)
-      remoteRenderer = await RemoteRenderer()
       setupInitialControllers()
 
       await setupBindings(
         neovim: neovim!,
-        store: store!,
-        remoteRenderer: remoteRenderer!
+        store: store!
       )
 
       do {
@@ -70,7 +87,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationWillTerminate(_: Notification) {
     logger.debug("Application will terminate")
-    remoteRenderer?.invalidate()
+    rendererServiceConnector?.invalidate()
   }
 
   public func applicationDidBecomeActive(_: Notification) {
@@ -90,8 +107,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor
   private func setupBindings(
     neovim: Neovim,
-    store: Store,
-    remoteRenderer: RemoteRenderer
+    store: Store
   ) {
     alertsTask = Task {
       do {
@@ -134,11 +150,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       } catch {
         logger.error("Store state updates loop error: \(error)")
         await self.showCriticalAlert(error: error)
-      }
-    }
-    rendererDataTask = Task {
-      for await data in neovim.processOutputSidechannel {
-        await remoteRenderer.processNvimOutput(data: data)
       }
     }
   }

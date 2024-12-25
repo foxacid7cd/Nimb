@@ -16,11 +16,11 @@ public class MainViewController: NSViewController, Rendering {
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
   private let hostingView = MainHostingView()
-  private let remoteRenderer: RemoteRenderer
+  private let remoteRenderer: RendererProtocol
 
   init(
     store: Store,
-    remoteRenderer: RemoteRenderer,
+    remoteRenderer: RendererProtocol,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store

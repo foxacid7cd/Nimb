@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CustomDump
 import IOSurface
 
 final class GridRenderer {
@@ -8,11 +9,21 @@ final class GridRenderer {
   private let scale: CGFloat
   private let gridID: Int
   private let cgContext: CGContext
+  private var font: NSFont
+  private var cellSize: CGSize
 
-  init(ioSurface: IOSurface, scale: CGFloat, gridID: Int) {
+  init(
+    ioSurface: IOSurface,
+    scale: CGFloat,
+    gridID: Int,
+    font: NSFont,
+    cellSize: CGSize
+  ) {
     self.ioSurface = ioSurface
     self.scale = scale
     self.gridID = gridID
+    self.font = font
+    self.cellSize = cellSize
 
     cgContext = CGContext(
       data: ioSurface.baseAddress,
@@ -27,28 +38,34 @@ final class GridRenderer {
     )!
   }
 
-  func render(color: NSColor, in rect: CGRect) {
+  func setFont(_ font: NSFont, cellSize: CGSize) {
+    self.font = font
+    self.cellSize = cellSize
+  }
+
+  func draw(gridDrawRequest: GridDrawRequest) {
     ioSurface.lock(seed: nil)
 
-    cgContext.setFillColor(color.cgColor)
-
-    let font = CTFontCreateWithName("Helvetica" as CFString, 24, nil)
+    cgContext.setFillColor(NSColor.white.cgColor)
     let attributes: [NSAttributedString.Key: Any] = [
       .font: font,
       .foregroundColor: CGColor(red: 1, green: 1, blue: 1, alpha: 1),
     ]
+    for part in gridDrawRequest.parts {
+      let attributedString = NSAttributedString(
+        string: part.text,
+        attributes: attributes
+      )
+      let line = CTLineCreateWithAttributedString(attributedString)
+      var position = IntegerPoint(
+        column: part.columnsRange.lowerBound,
+        row: part.row
+      ) * cellSize
+      position.y = CGFloat(cgContext.height) - position.y - cellSize.height
+      cgContext.textPosition = position
 
-    let attributedString = NSAttributedString(
-      string: "Hello, grid \(gridID)",
-      attributes: attributes
-    )
-    let line = CTLineCreateWithAttributedString(attributedString)
-    cgContext.textPosition = CGPoint(
-      x: 10,
-      y: cgContext
-        .height - 30
-    ) // Position from bottom-left
-    CTLineDraw(line, cgContext)
+      CTLineDraw(line, cgContext)
+    }
 
     cgContext.flush()
 

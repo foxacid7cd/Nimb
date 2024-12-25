@@ -169,3 +169,8 @@ public func * (first: IntegerSize, second: CGSize) -> CGSize {
     height: Double(first.rowsCount) * second.height
   )
 }
+
+@inlinable
+public func * (first: CGPoint, second: CGFloat) -> CGPoint {
+  .init(x: first.x * second, y: first.y * second)
+}

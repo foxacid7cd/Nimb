@@ -29,7 +29,7 @@ public class GridLayer: CALayer, Rendering {
   }
 
   private let store: Store
-  private let remoteRenderer: RemoteRenderer
+  private let remoteRenderer: RendererProtocol
   private let gridID: Grid.ID
   private var ioSurface: IOSurface?
   @MainActor
@@ -80,7 +80,7 @@ public class GridLayer: CALayer, Rendering {
 
   init(
     store: Store,
-    remoteRenderer: RemoteRenderer,
+    remoteRenderer: RendererProtocol,
     gridID: Grid.ID
   ) {
     self.store = store
@@ -101,63 +101,66 @@ public class GridLayer: CALayer, Rendering {
     NSNull()
   }
 
-//  override public func draw(in ctx: CGContext) {
-//    guard let critical = critical.withValue({ $0 }) else {
-//      return
-//    }
-//
-//    let boundingRect = IntegerRectangle(
-//      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
-//      cellSize: critical.font.cellSize
-//    )
-//
-//    ctx.setShouldAntialias(false)
-//    critical.grid.drawRuns.drawBackground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    ctx.setShouldAntialias(true)
-//    critical.grid.drawRuns.drawForeground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    if
-//      critical.cursorBlinkingPhase,
-//      critical.isMouseUserInteractionEnabled,
-//      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
-//      boundingRect.contains(cursorDrawRun.origin)
-//    {
-//      cursorDrawRun.draw(
-//        to: ctx,
-//        font: critical.font,
-//        appearance: critical.appearance,
-//        upsideDownTransform: critical.upsideDownTransform
-//      )
-//    }
-//  }
+  //  override public func draw(in ctx: CGContext) {
+  //    guard let critical = critical.withValue({ $0 }) else {
+  //      return
+  //    }
+  //
+  //    let boundingRect = IntegerRectangle(
+  //      frame: ctx.boundingBoxOfClipPath.applying(critical.upsideDownTransform),
+  //      cellSize: critical.font.cellSize
+  //    )
+  //
+  //    ctx.setShouldAntialias(false)
+  //    critical.grid.drawRuns.drawBackground(
+  //      to: ctx,
+  //      boundingRect: boundingRect,
+  //      font: critical.font,
+  //      appearance: critical.appearance,
+  //      upsideDownTransform: critical.upsideDownTransform
+  //    )
+  //
+  //    ctx.setShouldAntialias(true)
+  //    critical.grid.drawRuns.drawForeground(
+  //      to: ctx,
+  //      boundingRect: boundingRect,
+  //      font: critical.font,
+  //      appearance: critical.appearance,
+  //      upsideDownTransform: critical.upsideDownTransform
+  //    )
+  //
+  //    if
+  //      critical.cursorBlinkingPhase,
+  //      critical.isMouseUserInteractionEnabled,
+  //      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
+  //      boundingRect.contains(cursorDrawRun.origin)
+  //    {
+  //      cursorDrawRun.draw(
+  //        to: ctx,
+  //        font: critical.font,
+  //        appearance: critical.appearance,
+  //        upsideDownTransform: critical.upsideDownTransform
+  //      )
+  //    }
+  //  }
 
   @MainActor
   public func createIOSurface() {
+    if bounds.width == 0 || bounds.height == 0 {
+      return
+    }
+
     let newIOSurface = IOSurface(properties: [
-      .width: bounds.width,
-      .height: bounds.height,
+      .width: bounds.width * contentsScale,
+      .height: bounds.height * contentsScale,
       .bytesPerElement: 4,
       .pixelFormat: kCVPixelFormatType_32BGRA,
     ])!
     ioSurface = newIOSurface
-    contents = newIOSurface
 
     let surfaceLayer = CALayer()
     surfaceLayer.frame = bounds
-    surfaceLayer.contentsGravity = .center
+    surfaceLayer.contentsGravity = .topLeft
     surfaceLayer.contents = newIOSurface
 
     addSublayer(surfaceLayer)
@@ -166,12 +169,13 @@ public class GridLayer: CALayer, Rendering {
       .register(
         ioSurface: newIOSurface,
         scale: contentsScale,
-        forGridWithID: gridID
+        forGridWithID: gridID,
+        cb: { isSuccess in
+          if !isSuccess {
+            logger.fault("failed to register IOSurface")
+          }
+        }
       )
-
-    Task {
-      await loop(gridID: gridID)
-    }
   }
 
   @MainActor
@@ -193,9 +197,10 @@ public class GridLayer: CALayer, Rendering {
     }
 
     if
-      updates.isCursorBlinkingPhaseUpdated || updates
-        .isMouseUserInteractionEnabledUpdated,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun
+      updates.isCursorBlinkingPhaseUpdated
+      || updates
+      .isMouseUserInteractionEnabledUpdated,
+      let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
       dirtyRectangles.append(cursorDrawRun.rectangle)
     }
@@ -206,25 +211,53 @@ public class GridLayer: CALayer, Rendering {
         dirtyRectangles.append(contentsOf: value)
 
       case .needsDisplay:
-        setNeedsDisplay()
-        return
+        dirtyRectangles = [.init(size: grid.size)]
       }
     }
 
-    for dirtyRectangle in dirtyRectangles {
-      setNeedsDisplay(
-        (dirtyRectangle * state.font.cellSize)
-          .insetBy(
-            dx: -state.font.cellSize.width * 2,
-            dy: -state.font.cellSize.height
-          )
-          .applying(upsideDownTransform)
-      )
-    }
+//    for dirtyRectangle in dirtyRectangles {
+//      setNeedsDisplay(
+//        (dirtyRectangle * state.font.cellSize)
+//          .insetBy(
+//            dx: -state.font.cellSize.width * 2,
+//            dy: -state.font.cellSize.height
+//          )
+//          .applying(upsideDownTransform)
+//      )
+//    }
 
     if ioSurface == nil {
       createIOSurface()
     }
+
+    var drawRequestParts = [GridDrawRequestPart]()
+    for dirtyRectangle in dirtyRectangles {
+      for row in dirtyRectangle.rows {
+        drawRequestParts
+          .append(
+            .init(
+              row: row,
+              columnsRange: dirtyRectangle.minColumn ..< dirtyRectangle.maxColumn,
+              text: grid.layout.cells
+                .rows[row][dirtyRectangle.minColumn ..< dirtyRectangle.maxColumn]
+                .map(\.text)
+                .joined(),
+              isBold: false,
+              isItalic: false,
+              isStrikethrough: false,
+              isUnderline: false,
+              isUndercurl: false,
+              isUnderdouble: false,
+              isUnderdotted: false,
+              isUnderdashed: false
+            )
+          )
+      }
+    }
+    remoteRenderer
+      .draw(gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts))
+
+    dirtyRectangles = []
   }
 
   @MainActor
@@ -240,9 +273,7 @@ public class GridLayer: CALayer, Rendering {
     let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
     let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
 
-    if
-      event.phase == .began
-    {
+    if event.phase == .began {
       isScrollingHorizontal = nil
       xScrollingAccumulator = 0
       xScrollingReported = -xThreshold / 2
@@ -250,11 +281,14 @@ public class GridLayer: CALayer, Rendering {
       yScrollingReported = -yThreshold / 2
     }
 
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase
-      .rawValue == 0 ? 1 : 0.9
-    xScrollingAccumulator -= event
+    let momentumPhaseScrollingSpeedMultiplier =
+      event.momentumPhase
+        .rawValue == 0 ? 1 : 0.9
+    xScrollingAccumulator -=
+      event
       .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
-    yScrollingAccumulator -= event
+    yScrollingAccumulator -=
+      event
       .scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
 
     let xScrollingDelta = xScrollingAccumulator - xScrollingReported
@@ -263,9 +297,7 @@ public class GridLayer: CALayer, Rendering {
     var horizontalScrollCount = 0
     var verticalScrollCount = 0
 
-    if
-      abs(xScrollingDelta) > xThreshold
-    {
+    if abs(xScrollingDelta) > xThreshold {
       horizontalScrollCount = Int(xScrollingDelta / xThreshold)
       let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
 
@@ -281,7 +313,8 @@ public class GridLayer: CALayer, Rendering {
     }
 
     if horizontalScrollCount != 0 || verticalScrollCount != 0 {
-      let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
+      let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false)
+        .joined()
       let point = point(for: event)
       var horizontalScrollFunctions = [any APIFunction]().cycled(times: 0)
       if horizontalScrollCount != 0 {
@@ -334,18 +367,23 @@ public class GridLayer: CALayer, Rendering {
       modifier: event.modifierFlags.makeModifiers(isSpecialKey: false).joined(),
       point: point(for: event)
     )
-    if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
+    if
+      mouseMove.modifier == previousMouseMove?.modifier,
+      mouseMove.point == previousMouseMove?.point
+    {
       return
     }
     do {
-      try store.api.fastCall(APIFunctions.NvimInputMouse(
-        button: "move",
-        action: "",
-        modifier: mouseMove.modifier,
-        grid: gridID,
-        row: mouseMove.point.row,
-        col: mouseMove.point.column
-      ))
+      try store.api.fastCall(
+        APIFunctions.NvimInputMouse(
+          button: "move",
+          action: "",
+          modifier: mouseMove.modifier,
+          grid: gridID,
+          row: mouseMove.point.row,
+          col: mouseMove.point.column
+        )
+      )
     } catch {
       store.show(alert: .init(error))
     }
@@ -379,7 +417,8 @@ public class GridLayer: CALayer, Rendering {
       return
     }
     let point = point(for: event)
-    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
+    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false)
+      .joined()
     store.apiTask { [gridID] in
       try await $0
         .nvimInputMouse(
@@ -392,22 +431,7 @@ public class GridLayer: CALayer, Rendering {
         )
     }
   }
-
-  func loop(gridID: Int) async {
-    do {
-      await remoteRenderer
-        .render(
-          color: .green,
-          in: .init(x: 0, y: 0, width: 100, height: 100),
-          forGridWithID: gridID
-        )
-
-      try await Task.sleep(for: .seconds(3), clock: .continuous)
-      await loop(gridID: gridID)
-    } catch {
-      logger.error("\(error)")
-    }
-  }
 }
 
-extension CycledTimesCollection: @unchecked @retroactive Sendable where Base: Sendable { }
+extension CycledTimesCollection: @unchecked @retroactive Sendable
+where Base: Sendable { }
