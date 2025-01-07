@@ -174,3 +174,13 @@ public func * (first: IntegerSize, second: CGSize) -> CGSize {
 public func * (first: CGPoint, second: CGFloat) -> CGPoint {
   .init(x: first.x * second, y: first.y * second)
 }
+
+@inlinable
+public func * (first: CGSize, second: CGFloat) -> CGSize {
+  .init(width: first.width * second, height: first.height * second)
+}
+
+@inlinable
+public func * (first: CGRect, second: CGFloat) -> CGRect {
+  .init(origin: first.origin * second, size: first.size * second)
+}

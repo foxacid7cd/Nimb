@@ -3,68 +3,127 @@
 import AppKit
 import CustomDump
 import IOSurface
+import Queue
+
+protocol GridRendererDelegate: AnyObject {
+  func gridRendererDidRecreateIOSurface(_ gridRenderer: GridRenderer)
+}
 
 final class GridRenderer {
-  private let ioSurface: IOSurface
-  private let scale: CGFloat
-  private let gridID: Int
-  private let cgContext: CGContext
-  private var font: NSFont
-  private var cellSize: CGSize
+  weak var delegate: GridRendererDelegate?
+
+  let gridID: Int
+
+  private(set) var ioSurface: IOSurface
+
+  private var contentsScale: CGFloat
+  private var fontState: FontState
+  private var gridSize: IntegerSize
+
+  private var cellSize: CGSize {
+    fontState.cellSize
+  }
 
   init(
-    ioSurface: IOSurface,
-    scale: CGFloat,
     gridID: Int,
-    font: NSFont,
-    cellSize: CGSize
+    contentsScale: CGFloat,
+    fontState: FontState,
+    gridSize: IntegerSize
   ) {
-    self.ioSurface = ioSurface
-    self.scale = scale
     self.gridID = gridID
-    self.font = font
-    self.cellSize = cellSize
+    self.contentsScale = contentsScale
+    self.fontState = fontState
+    self.gridSize = gridSize
+    ioSurface = Self.createIOSurface(
+      contentsScale: contentsScale,
+      gridSize: gridSize,
+      cellSize: fontState.cellSize
+    )
+  }
 
-    cgContext = CGContext(
+  private static func createIOSurface(contentsScale: CGFloat, gridSize: IntegerSize, cellSize: CGSize) -> IOSurface {
+    .init(
+      properties: [
+        .width: CGFloat(gridSize.columnsCount) * cellSize.width * contentsScale,
+        .height: CGFloat(
+          gridSize.rowsCount
+        ) * cellSize.height * contentsScale,
+        .bytesPerElement: 4,
+        .pixelFormat: kCVPixelFormatType_32BGRA,
+      ]
+    )!
+  }
+
+  func set(fontState: FontState) {
+    self.fontState = fontState
+    recreateIOSurface()
+  }
+
+  func set(contentsScale: CGFloat) {
+    self.contentsScale = contentsScale
+    recreateIOSurface()
+  }
+
+  func set(gridSize: IntegerSize) -> Bool {
+    guard gridSize != self.gridSize else {
+      return false
+    }
+
+    self.gridSize = gridSize
+    recreateIOSurface()
+
+    return true
+  }
+
+  func draw(gridDrawRequest: GridDrawRequest) {
+    ioSurface.lock(seed: nil)
+
+    let cgContext = CGContext(
       data: ioSurface.baseAddress,
       width: ioSurface.width,
       height: ioSurface.height,
       bitsPerComponent: 8,
       bytesPerRow: ioSurface.bytesPerRow,
       space: CGColorSpace(name: CGColorSpace.sRGB)!,
-      bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
-        .union(.byteOrder32Little)
-        .rawValue
+      bitmapInfo: CGBitmapInfo(
+        rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue
+      )
+      .union(.byteOrder32Little)
+      .rawValue
     )!
-  }
 
-  func setFont(_ font: NSFont, cellSize: CGSize) {
-    self.font = font
-    self.cellSize = cellSize
-  }
-
-  func draw(gridDrawRequest: GridDrawRequest) {
-    ioSurface.lock(seed: nil)
-
-    cgContext.setFillColor(NSColor.white.cgColor)
-    let attributes: [NSAttributedString.Key: Any] = [
-      .font: font,
-      .foregroundColor: CGColor(red: 1, green: 1, blue: 1, alpha: 1),
-    ]
+    cgContext.setShouldAntialias(false)
     for part in gridDrawRequest.parts {
+      let frame = IntegerRectangle(
+        origin: .init(column: part.columnsRange.lowerBound, row: part.row),
+        size: .init(columnsCount: part.columnsRange.count, rowsCount: 1)
+      )
+      cgContext.setFillColor(part.backgroundColor.cg)
+      cgContext.fill(frame * cellSize * contentsScale)
+    }
+
+    cgContext.setShouldAntialias(true)
+    for part in gridDrawRequest.parts {
+      cgContext.saveGState()
+
       let attributedString = NSAttributedString(
         string: part.text,
-        attributes: attributes
+        attributes: [
+          .font: fontState.nsFontForDraw(for: part),
+          .foregroundColor: part.foregroundColor.appKit,
+        ]
       )
       let line = CTLineCreateWithAttributedString(attributedString)
-      var position = IntegerPoint(
-        column: part.columnsRange.lowerBound,
-        row: part.row
-      ) * cellSize
-      position.y = CGFloat(cgContext.height) - position.y - cellSize.height
-      cgContext.textPosition = position
-
+      cgContext.textPosition = .init(
+        x: Double(part.columnsRange.lowerBound) * cellSize.width,
+        y: Double(
+          part.row
+        ) * cellSize.height - fontState.regular.boundingRectForFont.origin.y
+      )
+      cgContext.scaleBy(x: contentsScale, y: contentsScale)
       CTLineDraw(line, cgContext)
+
+      cgContext.restoreGState()
     }
 
     cgContext.flush()
@@ -72,34 +131,12 @@ final class GridRenderer {
     ioSurface.unlock(seed: nil)
   }
 
-//  func render(state: State, updates: State.Updates) {
-//    if updates.isAppearanceChanged {
-//      surface.lock(options: [], seed: nil)
-//      defer { surface.unlock(options: [], seed: nil) }
-//
-//      let cgContext = CGContext(
-//        data: surface.baseAddress,
-//        width: surface.width,
-//        height: surface.height,
-//        bitsPerComponent: 8,
-//        bytesPerRow: surface.bytesPerRow,
-//        space: CGColorSpaceCreateDeviceRGB(),
-//        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-//      )!
-//      cgContext.scaleBy(x: scale, y: scale)
-//      NSGraphicsContext.current = .init(
-//        cgContext: cgContext,
-//        flipped: false
-//      )
-//
-//      let graphicsContext = NSGraphicsContext.current!
-//      defer { graphicsContext.flushGraphics() }
-//
-//      NSColor.red.withAlphaComponent(0.8).setFill()
-//      NSRect(
-//        origin: .zero,
-//        size: .init(width: 200, height: 200)
-//      ).fill()
-//    }
-//  }
+  private func recreateIOSurface() {
+    ioSurface = Self.createIOSurface(
+      contentsScale: contentsScale,
+      gridSize: gridSize,
+      cellSize: cellSize
+    )
+    delegate?.gridRendererDidRecreateIOSurface(self)
+  }
 }

@@ -7,31 +7,24 @@ import ConcurrencyExtras
 import CoreMedia
 import CustomDump
 import IOSurface
+import Queue
 
-public class GridLayer: CALayer, Rendering {
-  private struct Critical {
-    var grid: Grid
-    var font: Font
-    var appearance: Appearance
-    var cursorBlinkingPhase: Bool
-    var isMouseUserInteractionEnabled: Bool
-
-    var upsideDownTransform: CGAffineTransform {
-      .init(scaleX: 1, y: -1)
-        .translatedBy(x: 0, y: -Double(grid.rowsCount) * font.cellHeight)
+public class GridLayer: CALayer, Rendering, CALayerDelegate {
+  override public var frame: CGRect {
+    didSet {
+      surfaceLayer.frame = bounds
     }
   }
 
-  override public var frame: CGRect {
+  override public var contentsScale: CGFloat {
     didSet {
-      setNeedsDisplay()
+      surfaceLayer.contentsScale = contentsScale
     }
   }
 
   private let store: Store
   private let remoteRenderer: RendererProtocol
   private let gridID: Grid.ID
-  private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
   @MainActor
@@ -44,8 +37,14 @@ public class GridLayer: CALayer, Rendering {
   private var yScrollingReported: Double = 0
   @MainActor
   private var dirtyRectangles = [IntegerRectangle]()
-  private var critical = LockIsolated<Critical?>(nil)
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
+  private let surfaceLayer = CALayer()
+
+  public weak var ioSurface: IOSurface? {
+    didSet {
+      surfaceLayer.contents = ioSurface
+    }
+  }
 
   @MainActor
   public var grid: Grid {
@@ -72,15 +71,25 @@ public class GridLayer: CALayer, Rendering {
     gridID = gridLayer.gridID
     store = gridLayer.store
     remoteRenderer = gridLayer.remoteRenderer
+    ioSurface = gridLayer.ioSurface
     super.init(layer: layer)
 
-    drawsAsynchronously = true
-    isOpaque = false
+    contentsScale = gridLayer.contentsScale
+    drawsAsynchronously = gridLayer.drawsAsynchronously
+    isOpaque = gridLayer.isOpaque
+
+    surfaceLayer.contentsScale = contentsScale
+    surfaceLayer.frame = bounds
+    surfaceLayer.contentsGravity = .bottomLeft
+    surfaceLayer.drawsAsynchronously = true
+    surfaceLayer.isOpaque = false
+    addSublayer(surfaceLayer)
   }
 
   init(
     store: Store,
     remoteRenderer: RendererProtocol,
+    ioSurface: IOSurface?,
     gridID: Grid.ID
   ) {
     self.store = store
@@ -88,8 +97,22 @@ public class GridLayer: CALayer, Rendering {
     self.gridID = gridID
     super.init()
 
+    delegate = self
+
     drawsAsynchronously = true
     isOpaque = false
+
+    surfaceLayer.delegate = self
+    surfaceLayer.contentsScale = contentsScale
+    surfaceLayer.frame = bounds
+    surfaceLayer.contentsGravity = .bottomLeft
+    surfaceLayer.drawsAsynchronously = true
+    surfaceLayer.isOpaque = false
+    addSublayer(surfaceLayer)
+
+    if let ioSurface {
+      surfaceLayer.contents = ioSurface
+    }
   }
 
   @available(*, unavailable)
@@ -98,6 +121,10 @@ public class GridLayer: CALayer, Rendering {
   }
 
   override public func action(forKey event: String) -> (any CAAction)? {
+    NSNull()
+  }
+
+  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
     NSNull()
   }
 
@@ -144,120 +171,131 @@ public class GridLayer: CALayer, Rendering {
   //    }
   //  }
 
-  @MainActor
-  public func createIOSurface() {
-    if bounds.width == 0 || bounds.height == 0 {
-      return
-    }
-
-    let newIOSurface = IOSurface(properties: [
-      .width: bounds.width * contentsScale,
-      .height: bounds.height * contentsScale,
-      .bytesPerElement: 4,
-      .pixelFormat: kCVPixelFormatType_32BGRA,
-    ])!
-    ioSurface = newIOSurface
-
-    let surfaceLayer = CALayer()
-    surfaceLayer.frame = bounds
-    surfaceLayer.contentsGravity = .topLeft
-    surfaceLayer.contents = newIOSurface
-
-    addSublayer(surfaceLayer)
-
-    remoteRenderer
-      .register(
-        ioSurface: newIOSurface,
-        scale: contentsScale,
-        forGridWithID: gridID,
-        cb: { isSuccess in
-          if !isSuccess {
-            logger.fault("failed to register IOSurface")
-          }
-        }
-      )
-  }
+//  @MainActor
+//  public func createIOSurface() {
+//    if bounds.width == 0 || bounds.height == 0 {
+//      return
+//    }
+//
+//    let newIOSurface = IOSurface(properties: [
+//      .width: bounds.width * contentsScale,
+//      .height: bounds.height * contentsScale,
+//      .bytesPerElement: 4,
+//      .pixelFormat: kCVPixelFormatType_32BGRA,
+//    ])!
+//    ioSurface = newIOSurface
+//    contents = newIOSurface
+//
+//    surfaceLayer.contents = newIOSurface
+//
+//    Task {
+//      await withCheckedContinuation { continuation in
+//        remoteRenderer
+//          .register(
+//            ioSurface: newIOSurface,
+//            scale: contentsScale,
+//            forGridWithID: gridID,
+//            cb: { isSuccess in
+//              if !isSuccess {
+//                logger.fault("failed to register IOSurface")
+//              }
+//              continuation.resume()
+//            }
+//          )
+//      }
+//    }
+//  }
 
   @MainActor
   public func render() {
-    let critical = Critical(
-      grid: grid,
-      font: state.font,
-      appearance: state.appearance,
-      cursorBlinkingPhase: state.cursorBlinkingPhase,
-      isMouseUserInteractionEnabled: state.isMouseUserInteractionEnabled
-    )
-    self.critical.withValue { $0 = critical }
-
-    dirtyRectangles.removeAll(keepingCapacity: true)
-
-    if updates.isFontUpdated || updates.isAppearanceUpdated {
-      setNeedsDisplay()
-      return
-    }
-
-    if
-      updates.isCursorBlinkingPhaseUpdated
-      || updates
-      .isMouseUserInteractionEnabledUpdated,
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun
-    {
-      dirtyRectangles.append(cursorDrawRun.rectangle)
-    }
-
-    if let gridUpdate = updates.gridUpdates[gridID] {
-      switch gridUpdate {
-      case let .dirtyRectangles(value):
-        dirtyRectangles.append(contentsOf: value)
-
-      case .needsDisplay:
-        dirtyRectangles = [.init(size: grid.size)]
+    let dirtyRows = { () -> any Sequence<Int> in
+      if updates.isFontUpdated || updates.isAppearanceUpdated {
+        return 0 ..< grid.rowsCount
       }
-    }
 
-//    for dirtyRectangle in dirtyRectangles {
-//      setNeedsDisplay(
-//        (dirtyRectangle * state.font.cellSize)
-//          .insetBy(
-//            dx: -state.font.cellSize.width * 2,
-//            dy: -state.font.cellSize.height
-//          )
-//          .applying(upsideDownTransform)
-//      )
-//    }
+      var accumulator = Set<Int>()
 
-    if ioSurface == nil {
-      createIOSurface()
-    }
+      if
+        updates.isCursorBlinkingPhaseUpdated
+        || updates
+        .isMouseUserInteractionEnabledUpdated,
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun
+      {
+        accumulator.insert(cursorDrawRun.rectangle.origin.row)
+      }
+
+      if let gridUpdate = updates.gridUpdates[gridID] {
+        switch gridUpdate {
+        case let .dirtyRectangles(values):
+          for value in values {
+            accumulator.insert(value.origin.row)
+          }
+
+        case .needsDisplay:
+          return 0 ..< grid.rowsCount
+        }
+      }
+
+      return accumulator
+    }()
 
     var drawRequestParts = [GridDrawRequestPart]()
-    for dirtyRectangle in dirtyRectangles {
-      for row in dirtyRectangle.rows {
+    for dirtyRow in dirtyRows {
+      let flippedDirtyRow = grid.rowsCount - dirtyRow - 1
+      for part in grid.layout.rowLayouts[dirtyRow].parts {
+        let decorations = state.appearance.decorations(for: part.highlightID)
+
         drawRequestParts
           .append(
             .init(
-              row: row,
-              columnsRange: dirtyRectangle.minColumn ..< dirtyRectangle.maxColumn,
-              text: grid.layout.cells
-                .rows[row][dirtyRectangle.minColumn ..< dirtyRectangle.maxColumn]
-                .map(\.text)
-                .joined(),
-              isBold: false,
-              isItalic: false,
-              isStrikethrough: false,
-              isUnderline: false,
-              isUndercurl: false,
-              isUnderdouble: false,
-              isUnderdotted: false,
-              isUnderdashed: false
+              row: flippedDirtyRow,
+              columnsRange: part.columnsRange,
+              text: part.text,
+              backgroundColor: state.appearance
+                .backgroundColor(for: part.highlightID),
+              foregroundColor: state.appearance.foregroundColor(
+                for: part.highlightID
+              ),
+              isBold: state.appearance.isBold(for: part.highlightID),
+              isItalic: state.appearance.isItalic(for: part.highlightID),
+              isStrikethrough: decorations.isStrikethrough,
+              isUnderline: decorations.isUnderline,
+              isUndercurl: decorations.isUndercurl,
+              isUnderdouble: decorations.isUnderdouble,
+              isUnderdotted: decorations.isUnderdotted,
+              isUnderdashed: decorations.isUnderdashed
             )
           )
       }
     }
-    remoteRenderer
-      .draw(gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts))
+    if drawRequestParts.isEmpty {
+      return
+    }
 
-    dirtyRectangles = []
+    Task { @MainActor [remoteRenderer, gridID, weak self] in
+      await withCheckedContinuation { continuation in
+        remoteRenderer
+          .draw(
+            gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts),
+            cb: {
+              continuation.resume()
+            }
+          )
+        self?.setNeedsDisplay()
+      }
+    }
+    //    Task {
+    //      await withCheckedContinuation { continuation in
+    //        remoteRenderer
+    //          .draw(
+    //            gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts),
+    //            cb: {
+    //              continuation.resume()
+    //            }
+    //          )
+    //        setNeedsDisplay()
+    //      }
+    //    }
   }
 
   @MainActor

@@ -17,16 +17,19 @@ public class MainViewController: NSViewController, Rendering {
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
   private let hostingView = MainHostingView()
   private let remoteRenderer: RendererProtocol
+  private let ioSurfaces: IOSurfaces
 
   init(
     store: Store,
     remoteRenderer: RendererProtocol,
+    ioSurfaces: IOSurfaces,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store
     self.remoteRenderer = remoteRenderer
+    self.ioSurfaces = ioSurfaces
     self.minOuterGridSize = minOuterGridSize
-    gridsView = .init(store: store, remoteRenderer: remoteRenderer)
+    gridsView = .init(store: store, remoteRenderer: remoteRenderer, ioSurfaces: ioSurfaces)
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,

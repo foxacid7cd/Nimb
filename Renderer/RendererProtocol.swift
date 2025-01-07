@@ -10,16 +10,14 @@ import IOSurface
       _ cellSize: CGSize
     ) -> Void
   )
-  @objc func register(
-    ioSurface: IOSurface,
-    scale: CGFloat,
-    forGridWithID gridID: Int,
-    cb: @Sendable @escaping (
-      _ isSuccess: Bool
-    ) -> Void
+  @objc func set(
+    contentsScale: CGFloat,
+    _ cb: @Sendable @escaping (_ isChanged: Bool) -> Void
   )
+  @objc func setGridSize(columnsCount: Int, rowsCount: Int, forGridWithID gridID: Int, _ cb: @Sendable @escaping (_ isChanged: Bool) -> Void)
   @objc func draw(
-    gridDrawRequest: GridDrawRequest
+    gridDrawRequest: GridDrawRequest,
+    cb: @Sendable @escaping () -> Void
   )
 }
 

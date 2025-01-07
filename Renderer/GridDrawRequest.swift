@@ -2,7 +2,8 @@
 
 import AppKit
 
-@objc(NimbGridDrawRequest) public class GridDrawRequest: NSObject, NSSecureCoding {
+@objc(NimbGridDrawRequest)
+public class GridDrawRequest: NSObject, NSSecureCoding {
   public static var supportsSecureCoding: Bool {
     true
   }
@@ -36,7 +37,8 @@ import AppKit
   }
 }
 
-@objc(NimbGridDrawRequestPart) public class GridDrawRequestPart: NSObject, NSSecureCoding {
+@objc(NimbGridDrawRequestPart)
+public class GridDrawRequestPart: NSObject, NSSecureCoding {
   public static var supportsSecureCoding: Bool {
     true
   }
@@ -44,6 +46,8 @@ import AppKit
   public var row: Int
   public var columnsRange: Range<Int>
   public var text: String
+  public var backgroundColor: Color
+  public var foregroundColor: Color
   public var isBold: Bool
   public var isItalic: Bool
   public var isStrikethrough: Bool
@@ -57,6 +61,8 @@ import AppKit
     row: Int,
     columnsRange: Range<Int>,
     text: String,
+    backgroundColor: Color,
+    foregroundColor: Color,
     isBold: Bool,
     isItalic: Bool,
     isStrikethrough: Bool,
@@ -69,6 +75,8 @@ import AppKit
     self.row = row
     self.columnsRange = columnsRange
     self.text = text
+    self.backgroundColor = backgroundColor
+    self.foregroundColor = foregroundColor
     self.isBold = isBold
     self.isItalic = isItalic
     self.isStrikethrough = isStrikethrough
@@ -104,6 +112,14 @@ import AppKit
     self.row = row
     columnsRange = columnsRangeLowerBound ..< columnsRangeUpperBound
     self.text = text
+    backgroundColor = .init(
+      rgb: coder.decodeInteger(forKey: "backgroundColorRGB"),
+      alpha: coder.decodeDouble(forKey: "backgroundColorAlpha")
+    )
+    foregroundColor = .init(
+      rgb: coder.decodeInteger(forKey: "foregroundColorRGB"),
+      alpha: coder.decodeDouble(forKey: "foregroundColorAlpha")
+    )
     isBold = coder.decodeBool(forKey: "isBold")
     isItalic = coder.decodeBool(forKey: "isItalic")
     isStrikethrough = coder.decodeBool(forKey: "isStrikethrough")
@@ -119,6 +135,10 @@ import AppKit
     coder.encode(columnsRange.lowerBound, forKey: "columnsRangeLowerBound")
     coder.encode(columnsRange.upperBound, forKey: "columnsRangeUpperBound")
     coder.encode(text, forKey: "text")
+    coder.encode(backgroundColor.rgb, forKey: "backgroundColorRGB")
+    coder.encode(backgroundColor.alpha, forKey: "backgroundColorAlpha")
+    coder.encode(foregroundColor.rgb, forKey: "foregroundColorRGB")
+    coder.encode(foregroundColor.alpha, forKey: "foregroundColorAlpha")
     coder.encode(isBold, forKey: "isBold")
     coder.encode(isItalic, forKey: "isItalic")
     coder.encode(isStrikethrough, forKey: "isStrikethrough")

@@ -4,7 +4,7 @@ import AppKit
 import Collections
 import CustomDump
 
-public class GridsView: NSView, CALayerDelegate, Rendering {
+public class GridsView: NSView, CALayerDelegate, Rendering, IOSurfacesDelegate {
   private enum MouseButton: String, Sendable {
     case left
     case right
@@ -29,6 +29,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
 
   private let store: Store
   private let remoteRenderer: RendererProtocol
+  private let ioSurfaces: IOSurfaces
   private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
   private var leftMouseInteractionTarget: GridLayer?
   private var rightMouseInteractionTarget: GridLayer?
@@ -42,10 +43,13 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       )
   }
 
-  init(store: Store, remoteRenderer: RendererProtocol) {
+  init(store: Store, remoteRenderer: RendererProtocol, ioSurfaces: IOSurfaces) {
     self.store = store
     self.remoteRenderer = remoteRenderer
+    self.ioSurfaces = ioSurfaces
     super.init(frame: .init())
+
+    ioSurfaces.delegate = self
 
     wantsLayer = true
     layer!.masksToBounds = true
@@ -77,10 +81,17 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     super.viewWillMove(toWindow: newWindow)
 
     if let newWindow {
-      let scale = newWindow.backingScaleFactor
-      layer!.contentsScale = scale
+      let contentsScale = newWindow.backingScaleFactor
 
-      arrangedGridLayers.values.forEach { $0.contentsScale = scale }
+      remoteRenderer.set(contentsScale: contentsScale) { isChanged in
+        if isChanged {
+          logger.debug("Remote renderer contentScale set to \(contentsScale)")
+        }
+      }
+
+      layer!.contentsScale = contentsScale
+
+      arrangedGridLayers.values.forEach { $0.contentsScale = contentsScale }
     }
   }
 
@@ -221,6 +232,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       let layer = GridLayer(
         store: store,
         remoteRenderer: remoteRenderer,
+        ioSurface: ioSurfaces.ioSurface(forGridWithID: id),
         gridID: id
       )
       renderChildren(layer)
@@ -229,6 +241,14 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       arrangedGridLayers[id] = layer
       return layer
     }
+  }
+
+  public func ioSurfaces(
+    _ ioSurfaces: IOSurfaces,
+    didReceive ioSurface: IOSurface,
+    forGridWithID gridID: Int
+  ) {
+    arrangedGridLayers[gridID]?.ioSurface = ioSurface
   }
 
   private func report(

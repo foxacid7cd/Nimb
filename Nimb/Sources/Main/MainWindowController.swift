@@ -29,17 +29,25 @@ public class MainWindowController: NSWindowController, Rendering {
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
   private let remoteRenderer: RendererProtocol
+  private let ioSurfaces: IOSurfaces
+
+  public var windowBackingScaleFactor: CGFloat {
+    customWindow.backingScaleFactor
+  }
 
   public init(
     store: Store,
     remoteRenderer: RendererProtocol,
+    ioSurfaces: IOSurfaces,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store
     self.remoteRenderer = remoteRenderer
+    self.ioSurfaces = ioSurfaces
     viewController = .init(
       store: store,
       remoteRenderer: remoteRenderer,
+      ioSurfaces: ioSurfaces,
       minOuterGridSize: minOuterGridSize
     )
     customWindow.contentViewController = viewController
