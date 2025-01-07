@@ -47,6 +47,6 @@ public class GridContext: NSObject, NSSecureCoding, @unchecked Sendable {
     coder.encode(ioSurface, forKey: "ioSurface")
     coder.encode(size.columnsCount, forKey: "columnsCount")
     coder.encode(size.rowsCount, forKey: "rowsCount")
-    coder.encode(contentsScale, forKey: "contentScale")
+    coder.encode(contentsScale, forKey: "contentsScale")
   }
 }

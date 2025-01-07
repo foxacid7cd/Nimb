@@ -44,7 +44,10 @@ public final class GridRenderer: @unchecked Sendable {
     }
   }
 
-  public func draw(gridDrawRequest: GridDrawRequest) {
+  public func draw(
+    gridDrawRequest: GridDrawRequest,
+    _ cb: @Sendable @escaping () -> Void
+  ) {
     asyncQueue.addOperation {
       self.ioSurface.lock(seed: nil)
 
@@ -54,8 +57,8 @@ public final class GridRenderer: @unchecked Sendable {
         height: self.ioSurface.height,
         bitsPerComponent: 8,
         bytesPerRow: self.ioSurface.bytesPerRow,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
+        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+        bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
       )!
 
       cgContext.setShouldAntialias(false)
@@ -95,6 +98,8 @@ public final class GridRenderer: @unchecked Sendable {
       cgContext.flush()
 
       self.ioSurface.unlock(seed: nil)
+
+      cb()
     }
   }
 }

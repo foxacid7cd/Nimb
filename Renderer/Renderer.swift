@@ -35,8 +35,9 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
     _ cb: @escaping @Sendable () -> Void
   ) {
     asyncQueue.addOperation {
-      self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest)
-      cb()
+      self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest) {
+        cb()
+      }
     }
   }
 }
