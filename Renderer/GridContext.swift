@@ -3,7 +3,7 @@
 import AppKit
 
 @objc(NimbGridContext)
-public final class GridContext: NSObject, NSSecureCoding, @unchecked Sendable {
+public class GridContext: NSObject, NSSecureCoding, @unchecked Sendable {
   public static var supportsSecureCoding: Bool {
     true
   }
@@ -25,7 +25,7 @@ public final class GridContext: NSObject, NSSecureCoding, @unchecked Sendable {
     self.ioSurface = ioSurface
   }
 
-  public init?(coder: NSCoder) {
+  public required init?(coder: NSCoder) {
     guard
       let font = coder.decodeObject(of: NSFont.self, forKey: "font"),
       let ioSurface = coder.decodeObject(of: IOSurface.self, forKey: "ioSurface")

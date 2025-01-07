@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-public final class API<Target: Channel>: Sendable {
+public final class API<Target: Channel>: @unchecked Sendable {
   public let neovimNotifications: AsyncThrowingStream<[NeovimNotification], any Error>
 
   let rpc: RPC<Target>

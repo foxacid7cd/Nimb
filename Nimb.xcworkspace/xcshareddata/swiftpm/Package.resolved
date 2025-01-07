@@ -1,10 +1,10 @@
 {
-  "originHash" : "216ab32895a0a4ea36762a188e2c75547607e9b860ba1b7d811f4de27172f3b6",
+  "originHash" : "4bba29b27c8b114c81e8195582690e23ecbe093879cd539ed80bc8ebd28d6408",
   "pins" : [
     {
       "identity" : "queue",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/Queue",
+      "location" : "git@github.com:mattmassicotte/Queue.git",
       "state" : {
         "revision" : "6adf359a705e3252742905b413bb8f56401043ca",
         "version" : "0.2.0"
@@ -15,14 +15,14 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextKitPlus",
       "state" : {
-        "revision" : "60e1e790c4a77ffd10176849719eb3c52bbfb2c3",
-        "version" : "0.1.5"
+        "revision" : "34e80fdc73180844e0710286418d3d0c74a6a9fe",
+        "version" : "0.1.7"
       }
     },
     {
       "identity" : "sttextview",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/STTextView",
+      "location" : "git@github.com:krzyzanowskim/STTextView.git",
       "state" : {
         "revision" : "8c4b880259f122c5ff4283adc698ac0d5d4b9027",
         "version" : "1.0.0"
@@ -31,7 +31,7 @@
     {
       "identity" : "swift-algorithms",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-algorithms",
+      "location" : "git@github.com:apple/swift-algorithms.git",
       "state" : {
         "revision" : "f6919dfc309e7f1b56224378b11e28bab5bccc42",
         "version" : "1.2.0"
@@ -40,7 +40,7 @@
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
+      "location" : "git@github.com:apple/swift-argument-parser.git",
       "state" : {
         "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
         "version" : "1.5.0"
@@ -49,34 +49,34 @@
     {
       "identity" : "swift-case-paths",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-case-paths",
+      "location" : "git@github.com:pointfreeco/swift-case-paths.git",
       "state" : {
-        "revision" : "71344dd930fde41e8f3adafe260adcbb2fc2a3dc",
-        "version" : "1.5.4"
+        "revision" : "bc92c4b27f9a84bfb498cdbfdf35d5a357e9161f",
+        "version" : "1.5.6"
       }
     },
     {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-collections",
+      "location" : "git@github.com:apple/swift-collections.git",
       "state" : {
-        "revision" : "3d2dc41a01f9e49d84f0a3925fb858bed64f702d",
-        "version" : "1.1.2"
+        "revision" : "671108c96644956dddcd89dd59c203dcdb36cec7",
+        "version" : "1.1.4"
       }
     },
     {
       "identity" : "swift-concurrency-extras",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-concurrency-extras.git",
+      "location" : "git@github.com:pointfreeco/swift-concurrency-extras.git",
       "state" : {
-        "revision" : "bb5059bde9022d69ac516803f4f227d8ac967f71",
-        "version" : "1.1.0"
+        "revision" : "82a4ae7170d98d8538ec77238b7eb8e7199ef2e8",
+        "version" : "1.3.1"
       }
     },
     {
       "identity" : "swift-custom-dump",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "location" : "git@github.com:pointfreeco/swift-custom-dump.git",
       "state" : {
         "revision" : "82645ec760917961cfa08c9c0c7104a57a0fa4b1",
         "version" : "1.3.3"
@@ -85,7 +85,7 @@
     {
       "identity" : "swift-identified-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-identified-collections",
+      "location" : "git@github.com:pointfreeco/swift-identified-collections.git",
       "state" : {
         "revision" : "2f5ab6e091dd032b63dacbda052405756010dc3b",
         "version" : "1.1.0"
@@ -103,7 +103,7 @@
     {
       "identity" : "swift-overture",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-overture",
+      "location" : "git@github.com:pointfreeco/swift-overture.git",
       "state" : {
         "revision" : "7977acd7597f413717058acc1e080731249a1d7e",
         "version" : "0.5.0"
@@ -112,25 +112,25 @@
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax",
+      "location" : "git@github.com:swiftlang/swift-syntax.git",
       "state" : {
         "branch" : "main",
-        "revision" : "0530f3ec64d83879d223675afd8e577b752b0d5f"
+        "revision" : "0082a7f8cebe29cab03f4bb59caf9d6230f7ba65"
       }
     },
     {
       "identity" : "swift-system",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-system.git",
+      "location" : "git@github.com:apple/swift-system.git",
       "state" : {
-        "revision" : "d2ba781702a1d8285419c15ee62fd734a9437ff5",
-        "version" : "1.3.2"
+        "revision" : "c8a44d836fe7913603e246acab7c528c2e780168",
+        "version" : "1.4.0"
       }
     },
     {
       "identity" : "tinyconstraints",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/roberthein/TinyConstraints.git",
+      "location" : "git@github.com:roberthein/TinyConstraints.git",
       "state" : {
         "revision" : "3262e5c591d4ab6272255df2087a01bbebd138dc",
         "version" : "4.0.2"
@@ -141,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "357ca1e5dd31f613a1d43320870ebc219386a495",
-        "version" : "1.2.2"
+        "revision" : "a3f634d1a409c7979cabc0a71b3f26ffa9fc8af1",
+        "version" : "1.4.3"
       }
     }
   ],

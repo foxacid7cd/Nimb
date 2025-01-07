@@ -40,6 +40,7 @@ public final class GridRenderer: @unchecked Sendable {
   public func set(gridContext: GridContext) {
     asyncQueue.addOperation {
       self.gridContext = gridContext
+      self.fontState = .init(gridContext.font)
     }
   }
 
@@ -53,12 +54,8 @@ public final class GridRenderer: @unchecked Sendable {
         height: self.ioSurface.height,
         bitsPerComponent: 8,
         bytesPerRow: self.ioSurface.bytesPerRow,
-        space: CGColorSpace(name: CGColorSpace.sRGB)!,
-        bitmapInfo: CGBitmapInfo(
-          rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue
-        )
-        .union(.byteOrder32Little)
-        .rawValue
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
       )!
 
       cgContext.setShouldAntialias(false)

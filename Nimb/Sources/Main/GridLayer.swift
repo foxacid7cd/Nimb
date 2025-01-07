@@ -118,6 +118,7 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
         .width: Double(gridSize.columnsCount) * cellSize.width * contentsScale,
         .height: Double(gridSize.rowsCount) * cellSize.height * contentsScale,
         .bytesPerElement: 4,
+        .cacheMode: kIOSurfaceWriteCombineCache,
         .pixelFormat: kCVPixelFormatType_32BGRA,
       ]
     )!
