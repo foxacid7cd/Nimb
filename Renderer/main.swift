@@ -14,11 +14,6 @@ class ServiceDelegate: NSObject, NSXPCListenerDelegate {
     let renderer = Renderer()
     newConnection.exportedObject = renderer
 
-    newConnection.remoteObjectInterface = NSXPCInterface(with: RendererClientProtocol.self)
-    let remoteRendererClient = newConnection.remoteObjectProxy as! RendererClientProtocol
-
-    renderer.remoteRendererClient = remoteRendererClient
-
     newConnection.resume()
 
     return true

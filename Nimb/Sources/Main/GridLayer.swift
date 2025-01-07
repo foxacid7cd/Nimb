@@ -6,10 +6,10 @@ import Collections
 import ConcurrencyExtras
 import CoreMedia
 import CustomDump
-import IOSurface
+@preconcurrency import IOSurface
 import Queue
 
-public class GridLayer: CALayer, Rendering, CALayerDelegate {
+public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable {
   override public var frame: CGRect {
     didSet {
       surfaceLayer.frame = bounds
@@ -25,6 +25,8 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
   private let store: Store
   private let remoteRenderer: RendererProtocol
   private let gridID: Grid.ID
+  private let surfaceLayer = CALayer()
+  private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
   @MainActor
@@ -35,16 +37,8 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
   private var yScrollingAccumulator: Double = 0
   @MainActor
   private var yScrollingReported: Double = 0
-  @MainActor
-  private var dirtyRectangles = [IntegerRectangle]()
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
-  private let surfaceLayer = CALayer()
-
-  public weak var ioSurface: IOSurface? {
-    didSet {
-      surfaceLayer.contents = ioSurface
-    }
-  }
+  private let remoteRendererAsyncQueue = AsyncQueue()
 
   @MainActor
   public var grid: Grid {
@@ -68,28 +62,31 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
-    gridID = gridLayer.gridID
+
     store = gridLayer.store
     remoteRenderer = gridLayer.remoteRenderer
-    ioSurface = gridLayer.ioSurface
+    gridID = gridLayer.gridID
+
     super.init(layer: layer)
 
     contentsScale = gridLayer.contentsScale
-    drawsAsynchronously = gridLayer.drawsAsynchronously
-    isOpaque = gridLayer.isOpaque
+    drawsAsynchronously = true
+    isOpaque = false
 
-    surfaceLayer.contentsScale = contentsScale
     surfaceLayer.frame = bounds
     surfaceLayer.contentsGravity = .bottomLeft
     surfaceLayer.drawsAsynchronously = true
     surfaceLayer.isOpaque = false
     addSublayer(surfaceLayer)
+
+    if let ioSurface = gridLayer.ioSurface {
+      surfaceLayer.contents = ioSurface
+    }
   }
 
   init(
     store: Store,
     remoteRenderer: RendererProtocol,
-    ioSurface: IOSurface?,
     gridID: Grid.ID
   ) {
     self.store = store
@@ -103,16 +100,11 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
     isOpaque = false
 
     surfaceLayer.delegate = self
-    surfaceLayer.contentsScale = contentsScale
     surfaceLayer.frame = bounds
     surfaceLayer.contentsGravity = .bottomLeft
     surfaceLayer.drawsAsynchronously = true
     surfaceLayer.isOpaque = false
     addSublayer(surfaceLayer)
-
-    if let ioSurface {
-      surfaceLayer.contents = ioSurface
-    }
   }
 
   @available(*, unavailable)
@@ -120,8 +112,46 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override public func action(forKey event: String) -> (any CAAction)? {
-    NSNull()
+  private static func makeIOSurface(contentsScale: CGFloat, gridSize: IntegerSize, cellSize: CGSize) -> IOSurface {
+    .init(
+      properties: [
+        .width: Double(gridSize.columnsCount) * cellSize.width * contentsScale,
+        .height: Double(gridSize.rowsCount) * cellSize.height * contentsScale,
+        .bytesPerElement: 4,
+        .pixelFormat: kCVPixelFormatType_32BGRA,
+      ]
+    )!
+  }
+
+  @MainActor
+  public func createNewIOSurface() {
+    ioSurface = Self
+      .makeIOSurface(
+        contentsScale: contentsScale,
+        gridSize: grid.size,
+        cellSize: state.font.cellSize
+      )
+    surfaceLayer.contents = ioSurface
+  }
+
+  @MainActor
+  public func registerNewGridContext() {
+    remoteRendererAsyncQueue.addOperation {
+      await withCheckedContinuation { continuation in
+        self.remoteRenderer
+          .register(
+            gridContext: .init(
+              font: self.state.font.appKit(),
+              contentsScale: self.contentsScale,
+              size: self.grid.size,
+              ioSurface: self.ioSurface!
+            ),
+            forGridWithID: self.gridID
+          ) {
+            continuation.resume()
+          }
+      }
+    }
   }
 
   public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
@@ -208,8 +238,31 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
 
   @MainActor
   public func render() {
+    if ioSurface == nil {
+      createNewIOSurface()
+      registerNewGridContext()
+    } else {
+      var shouldRecreateIOSurface = false
+
+      if updates.isFontUpdated {
+        shouldRecreateIOSurface = true
+      }
+
+      if updates.updatedLayoutGridIDs.contains(gridID) {
+        shouldRecreateIOSurface = true
+      }
+
+      if shouldRecreateIOSurface {
+        createNewIOSurface()
+        registerNewGridContext()
+      }
+    }
+
     let dirtyRows = { () -> any Sequence<Int> in
-      if updates.isFontUpdated || updates.isAppearanceUpdated {
+      if
+        updates.isFontUpdated || updates.isAppearanceUpdated || updates.updatedLayoutGridIDs
+          .contains(gridID)
+      {
         return 0 ..< grid.rowsCount
       }
 
@@ -268,34 +321,20 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
           )
       }
     }
-    if drawRequestParts.isEmpty {
-      return
-    }
-
-    Task { @MainActor [remoteRenderer, gridID, weak self] in
-      await withCheckedContinuation { continuation in
-        remoteRenderer
-          .draw(
-            gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts),
-            cb: {
-              continuation.resume()
-            }
-          )
-        self?.setNeedsDisplay()
+    if !drawRequestParts.isEmpty {
+      remoteRendererAsyncQueue.addOperation {
+        await withCheckedContinuation { continuation in
+          self.remoteRenderer
+            .draw(
+              gridDrawRequest: .init(parts: drawRequestParts),
+              forGridWithID: self.gridID,
+              {
+                continuation.resume()
+              }
+            )
+        }
       }
     }
-    //    Task {
-    //      await withCheckedContinuation { continuation in
-    //        remoteRenderer
-    //          .draw(
-    //            gridDrawRequest: .init(gridID: gridID, parts: drawRequestParts),
-    //            cb: {
-    //              continuation.resume()
-    //            }
-    //          )
-    //        setNeedsDisplay()
-    //      }
-    //    }
   }
 
   @MainActor
@@ -468,6 +507,19 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate {
           col: point.column
         )
     }
+  }
+
+  @MainActor
+  public func setNeedsDisplay(rectangle: IntegerRectangle) {
+//    setNeedsDisplay()
+//    if let ioSurface {
+//      surfaceLayer.contents = ioSurface
+//    }
+//    surfaceLayer.contents = ioSurface
+//    surfaceLayer.setNeedsDisplay(
+//      rectangle * state.font.cellSize
+//        .applying(upsideDownTransform)
+//    )
   }
 }
 

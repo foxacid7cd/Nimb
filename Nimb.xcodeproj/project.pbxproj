@@ -12,7 +12,6 @@
 		68007B642C61C88B001AD1D0 /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 68007B632C61C88B001AD1D0 /* STTextView */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
-		680BB88F2C6C69DA0038E18F /* MainHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680BB88E2C6C69D60038E18F /* MainHostingView.swift */; };
 		680BF3472C65A8E900C15CB6 /* CasePaths+Sendable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */; };
 		6814B2F22C6FFB6F00ACD872 /* nimbc.c in Sources */ = {isa = PBXBuildFile; fileRef = 6814B2F12C6FFB6100ACD872 /* nimbc.c */; };
 		6814B2FC2C7035F400ACD872 /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
@@ -106,7 +105,6 @@
 		68818CAD2CE3A8900013F9E5 /* Renderer.xpc in Copy XPC Services */ = {isa = PBXBuildFile; fileRef = 680BB87B2C6C63480038E18F /* Renderer.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		68818CAE2CE3A98C0013F9E5 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 680BB8902C6C6F5B0038E18F /* IOSurface.framework */; };
 		68818CAF2CE3A99A0013F9E5 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 680BB8902C6C6F5B0038E18F /* IOSurface.framework */; };
-		68818CC62CE3AD920013F9E5 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68818CC52CE3AD920013F9E5 /* Metal.framework */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
 		6888D8A62AF83B6B0049562D /* API+Nimb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* API+Nimb.swift */; };
 		688A56622D1CBD3D00A75CD8 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 688A56612D1CBD3D00A75CD8 /* Queue */; };
@@ -152,7 +150,6 @@
 		68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */; };
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
-		68BCB42B2D2A9F2B0045C740 /* RendererClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BCB42A2D2A9F280045C740 /* RendererClient.swift */; };
 		68C129272C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129282C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129292C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
@@ -179,7 +176,6 @@
 		68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D409102C62D61A00B33091 /* NimbNotify.swift */; };
 		68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 68DC65B12C6681A3009FBEDE /* SystemPackage */; };
 		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		68E436142D2CE30C00CAEF8A /* IOSurfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E436132D2CE30900CAEF8A /* IOSurfaces.swift */; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
 		68EFD2692B58834E0010DD54 /* entryPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EFD2682B58834E0010DD54 /* entryPoint.swift */; };
@@ -292,7 +288,6 @@
 		68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuViewController.swift; sourceTree = "<group>"; };
 		68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupmenuItemView.swift; sourceTree = "<group>"; };
 		680BB87B2C6C63480038E18F /* Renderer.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = Renderer.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
-		680BB88E2C6C69D60038E18F /* MainHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainHostingView.swift; sourceTree = "<group>"; };
 		680BB8902C6C6F5B0038E18F /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
 		680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CasePaths+Sendable.swift"; sourceTree = "<group>"; };
 		6814B2F12C6FFB6100ACD872 /* nimbc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = nimbc.c; sourceTree = "<group>"; };
@@ -376,7 +371,6 @@
 		68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOption.swift; sourceTree = "<group>"; };
 		68A8FF6B2AD2ACCB0017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
-		68BCB42A2D2A9F280045C740 /* RendererClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererClient.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nimb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nimb.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nimb.entitlements; sourceTree = "<group>"; };
 		68C129262C64078200E5A513 /* StateActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateActor.swift; sourceTree = "<group>"; };
@@ -396,7 +390,6 @@
 		68D4090E2C62D0F800B33091 /* Bundle+Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Version.swift"; sourceTree = "<group>"; };
 		68D409102C62D61A00B33091 /* NimbNotify.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NimbNotify.swift; sourceTree = "<group>"; };
 		68E2290D2C602D6700D8D72B /* nvim */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = nvim; path = .build/package/bin/nvim; sourceTree = "<group>"; };
-		68E436132D2CE30900CAEF8A /* IOSurfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSurfaces.swift; sourceTree = "<group>"; };
 		68EF609029B2B6D20056E48D /* GridLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridLayer.swift; sourceTree = "<group>"; };
 		68EF609229B2B7270056E48D /* GridDrawRuns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridDrawRuns.swift; sourceTree = "<group>"; };
 		68EFD2682B58834E0010DD54 /* entryPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = entryPoint.swift; sourceTree = "<group>"; };
@@ -422,8 +415,8 @@
 		680BB88D2C6C64870038E18F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				GridContext.swift,
 				GridDrawRequest.swift,
-				RendererClientProtocol.swift,
 				RendererProtocol.swift,
 			);
 			target = 68BFEF402934CF6100564FE2 /* Nimb */;
@@ -445,7 +438,6 @@
 				68D015922C6D441E001B5CF0 /* CasePaths in Frameworks */,
 				68D0158E2C6D441E001B5CF0 /* Collections in Frameworks */,
 				68D015942C6D441E001B5CF0 /* Overture in Frameworks */,
-				68818CC62CE3AD920013F9E5 /* Metal.framework in Frameworks */,
 				68D015982C6D441E001B5CF0 /* ConcurrencyExtras in Frameworks */,
 				68D015962C6D441E001B5CF0 /* CustomDump in Frameworks */,
 				6814B3052C7036DE00ACD872 /* libmsgpack-c.a in Frameworks */,
@@ -660,7 +652,6 @@
 			children = (
 				689D9E2829B4FAF900345713 /* MainWindowController.swift */,
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
-				680BB88E2C6C69D60038E18F /* MainHostingView.swift */,
 				689D9E2C29B50BF400345713 /* GridsView.swift */,
 				68EF609029B2B6D20056E48D /* GridLayer.swift */,
 			);
@@ -719,8 +710,6 @@
 		68BCB4262D2A9E450045C740 /* Renderer */ = {
 			isa = PBXGroup;
 			children = (
-				68E436132D2CE30900CAEF8A /* IOSurfaces.swift */,
-				68BCB42A2D2A9F280045C740 /* RendererClient.swift */,
 				684D4AC62C6C8B9B005A9AEC /* RendererServiceConnector.swift */,
 			);
 			path = Renderer;
@@ -1177,7 +1166,6 @@
 				6896CE482C68410D001F3C85 /* AsyncSequence+Throttle.swift in Sources */,
 				6888D8A62AF83B6B0049562D /* API+Nimb.swift in Sources */,
 				681B53172C5FE47600AD6C68 /* ArrayExtensions.swift in Sources */,
-				68BCB42B2D2A9F2B0045C740 /* RendererClient.swift in Sources */,
 				681B531F2C5FE47600AD6C68 /* IntKeyedDictionary.swift in Sources */,
 				681B53372C5FE4A100AD6C68 /* RPC.swift in Sources */,
 				68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */,
@@ -1194,7 +1182,6 @@
 				68A8FF572AD29F660017C28D /* Grid.swift in Sources */,
 				689081362B3F321000252558 /* FloatingWindowView.swift in Sources */,
 				681B53392C5FE4A100AD6C68 /* Unpacker.swift in Sources */,
-				680BB88F2C6C69DA0038E18F /* MainHostingView.swift in Sources */,
 				681B53352C5FE4A100AD6C68 /* Packer.swift in Sources */,
 				6861FA6229B462B8002C3C0B /* Font.swift in Sources */,
 				6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */,
@@ -1209,7 +1196,6 @@
 				6896CE422C683AE7001F3C85 /* CustomDumpHelpers.swift in Sources */,
 				689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */,
 				68A8FF5B2AD29F660017C28D /* UIOptions.swift in Sources */,
-				68E436142D2CE30C00CAEF8A /* IOSurfaces.swift in Sources */,
 				68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */,
 				688AC9002AD5EECF00DD62BE /* GridLayout.swift in Sources */,
 				689D9E2D29B50BF400345713 /* GridsView.swift in Sources */,

@@ -3,36 +3,27 @@
 import AppKit
 
 @objc(NimbGridDrawRequest)
-public class GridDrawRequest: NSObject, NSSecureCoding {
+public class GridDrawRequest: NSObject, NSSecureCoding, @unchecked Sendable {
   public static var supportsSecureCoding: Bool {
     true
   }
 
-  public var gridID: Int
   public var parts: [GridDrawRequestPart]
 
-  public init(gridID: Int, parts: [GridDrawRequestPart]) {
-    self.gridID = gridID
+  public init(parts: [GridDrawRequestPart]) {
     self.parts = parts
   }
 
   public required init?(coder: NSCoder) {
     guard
-      let gridID = coder.decodeObject(
-        of: NSNumber.self,
-        forKey: "gridID"
-      ) as? Int,
       let parts = coder.decodeArrayOfObjects(ofClass: GridDrawRequestPart.self, forKey: "parts")
     else {
       return nil
     }
-
-    self.gridID = gridID
     self.parts = parts
   }
 
   public func encode(with coder: NSCoder) {
-    coder.encode(gridID, forKey: "gridID")
     coder.encode(parts, forKey: "parts")
   }
 }

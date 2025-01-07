@@ -15,21 +15,17 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var modalOverlayView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>?
-  private let hostingView = MainHostingView()
   private let remoteRenderer: RendererProtocol
-  private let ioSurfaces: IOSurfaces
 
   init(
     store: Store,
     remoteRenderer: RendererProtocol,
-    ioSurfaces: IOSurfaces,
     minOuterGridSize: IntegerSize
   ) {
     self.store = store
     self.remoteRenderer = remoteRenderer
-    self.ioSurfaces = ioSurfaces
     self.minOuterGridSize = minOuterGridSize
-    gridsView = .init(store: store, remoteRenderer: remoteRenderer, ioSurfaces: ioSurfaces)
+    gridsView = .init(store: store, remoteRenderer: remoteRenderer)
     cmdlinesViewController = .init(store: store)
     popupmenuViewController = .init(
       store: store,
@@ -127,9 +123,6 @@ public class MainViewController: NSViewController, Rendering {
     gridsContainerView.addSubview(gridsView)
     gridsView.centerXToSuperview()
     gridsView.topToSuperview()
-
-    view.addSubview(hostingView)
-    hostingView.edgesToSuperview()
 
     modalOverlayView.wantsLayer = true
     modalOverlayView.layer!.backgroundColor = NSColor.black

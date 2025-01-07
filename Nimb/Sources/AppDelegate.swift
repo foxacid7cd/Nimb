@@ -18,7 +18,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var rendererDataTask: Task<Void, Never>?
 
   private var rendererServiceConnector: RendererServiceConnector?
-  private var ioSurfaces: IOSurfaces?
   private var remoteRenderer: RendererProtocol?
 
   override public init() {
@@ -34,10 +33,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       let rendererServiceConnector = RendererServiceConnector()
       self.rendererServiceConnector = rendererServiceConnector
 
-      let ioSurfaces = IOSurfaces()
-      self.ioSurfaces = ioSurfaces
-      rendererServiceConnector.rendererClientDelegate = ioSurfaces
-
       let remoteRenderer = await rendererServiceConnector.connect()
       self.remoteRenderer = remoteRenderer
 
@@ -45,13 +40,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         ofSize: 13,
         weight: .regular
       )
-      let fontName = font.fontName
-      remoteRenderer.setFont(font) { size in
-        logger
-          .debug(
-            "Remote renderer font set to \(fontName) with size \(size.debugDescription)"
-          )
-      }
 
       let initialState = State(
         debug: UserDefaults.standard.debug,
@@ -60,17 +48,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       neovim = Neovim()
       store = Store(api: neovim!.api, initialState: initialState)
       setupInitialControllers()
-
-      let contentsScale = mainWindowController!.windowBackingScaleFactor
-      remoteRenderer
-        .set(contentsScale: contentsScale) { isChanged in
-          if isChanged {
-            logger
-              .debug(
-                "Remote renderer contentscale set to \(contentsScale)"
-              )
-          }
-        }
 
       await setupBindings(
         neovim: neovim!,
@@ -140,8 +117,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       } catch { }
     }
     updatesTask = Task {
-      let remoteRenderer = await getRemoteRenderer()
-
       do {
         var presentedNimbNotifiesCount = 0
 
@@ -153,10 +128,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           }
           if updates.isFontUpdated {
             let appKitFont = state.font.appKit()
-            let fontName = appKitFont.fontName
-            remoteRenderer.setFont(appKitFont) { cellSize in
-              print("Remote renderer font set to \(fontName) with size \(cellSize)")
-            }
             UserDefaults.standard.appKitFont = appKitFont
           }
           if updates.isDebugUpdated {
@@ -169,25 +140,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
-          for gridID in updates.updatedLayoutGridIDs {
-            if let grid = state.grids[gridID] {
-              let size = state.grids[gridID]!.size
-              remoteRenderer
-                .setGridSize(
-                  columnsCount: size.columnsCount,
-                  rowsCount: size.rowsCount,
-                  forGridWithID: gridID,
-                  { isChanged in
-                    if isChanged {
-                      print("Remote renderer grid size set to \(size) for grid with ID \(gridID)")
-                    }
-                  }
-                )
-            }
-          }
 
           await render(state: state, updates: updates)
         }
+
         logger.debug("Store state updates loop ended")
       } catch is CancellationError {
         logger.debug("Store state updates loop cancelled")
@@ -212,7 +168,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     mainWindowController = MainWindowController(
       store: store!,
       remoteRenderer: remoteRenderer!,
-      ioSurfaces: ioSurfaces!,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
     )
 

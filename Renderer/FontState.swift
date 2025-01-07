@@ -3,14 +3,14 @@
 import AppKit
 
 @PublicInit
-struct FontState {
-  var regular: NSFont
-  var bold: NSFont
-  var italic: NSFont
-  var boldItalic: NSFont
-  var cellSize: CGSize
+public struct FontState: Equatable, @unchecked Sendable {
+  public var regular: NSFont
+  public var bold: NSFont
+  public var italic: NSFont
+  public var boldItalic: NSFont
+  public var cellSize: CGSize
 
-  init(_ font: NSFont) {
+  public init(_ font: NSFont) {
     var regular = font
     let fontManager = NSFontManager.shared
     if fontManager.traits(of: regular).contains(.boldFontMask) {
@@ -28,7 +28,7 @@ struct FontState {
     cellSize = .init(width: font.makeCellWidth(), height: font.makeCellHeight())
   }
 
-  func nsFontForDraw(for part: GridDrawRequestPart) -> NSFont {
+  public func nsFontForDraw(for part: GridDrawRequestPart) -> NSFont {
     if part.isBold, part.isItalic {
       boldItalic
     } else if part.isBold {
