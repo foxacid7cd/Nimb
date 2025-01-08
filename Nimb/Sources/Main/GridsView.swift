@@ -227,8 +227,8 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         gridID: id
       )
       gridLayer.contentsScale = layer!.contentsScale
-      renderChildren(gridLayer)
       layer!.addSublayer(gridLayer)
+      renderChildren(gridLayer)
       arrangedGridLayers[id] = gridLayer
       return gridLayer
     }

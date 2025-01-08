@@ -4,28 +4,16 @@ import Algorithms
 import AppKit
 import Collections
 import ConcurrencyExtras
+import CoreImage
 import CoreMedia
 import CustomDump
 @preconcurrency import IOSurface
 import Queue
 
-public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable {
-  override public var frame: CGRect {
-    didSet {
-      surfaceLayer.frame = bounds
-    }
-  }
-
-  override public var contentsScale: CGFloat {
-    didSet {
-      surfaceLayer.contentsScale = contentsScale
-    }
-  }
-
+public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private let store: Store
   private let remoteRenderer: RendererProtocol
   private let gridID: Grid.ID
-  private let surfaceLayer = CALayer()
   private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
@@ -38,7 +26,8 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
   @MainActor
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
-  private let remoteRendererAsyncQueue = AsyncQueue()
+  private var previousGridSize = IntegerSize(columnsCount: 0, rowsCount: 0)
+  private let rendererQueue = AsyncQueue()
 
   @MainActor
   public var grid: Grid {
@@ -72,18 +61,9 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
     contentsScale = gridLayer.contentsScale
     drawsAsynchronously = true
     isOpaque = false
-
-    surfaceLayer.frame = bounds
-    surfaceLayer.contentsGravity = .bottomLeft
-    surfaceLayer.drawsAsynchronously = true
-    surfaceLayer.isOpaque = false
-    addSublayer(surfaceLayer)
-
-    if let ioSurface = gridLayer.ioSurface {
-      surfaceLayer.contents = ioSurface
-    }
   }
 
+  @MainActor
   init(
     store: Store,
     remoteRenderer: RendererProtocol,
@@ -94,17 +74,9 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
     self.gridID = gridID
     super.init()
 
-    delegate = self
-
+    contentsGravity = .bottomLeft
     drawsAsynchronously = true
     isOpaque = false
-
-    surfaceLayer.delegate = self
-    surfaceLayer.frame = bounds
-    surfaceLayer.contentsGravity = .bottomLeft
-    surfaceLayer.drawsAsynchronously = true
-    surfaceLayer.isOpaque = false
-    addSublayer(surfaceLayer)
   }
 
   @available(*, unavailable)
@@ -112,51 +84,51 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
     fatalError("init(coder:) has not been implemented")
   }
 
-  private static func makeIOSurface(contentsScale: CGFloat, gridSize: IntegerSize, cellSize: CGSize) -> IOSurface {
-    .init(
-      properties: [
-        .width: Double(gridSize.columnsCount) * cellSize.width * contentsScale,
-        .height: Double(gridSize.rowsCount) * cellSize.height * contentsScale,
-        .bytesPerElement: 4,
-        .cacheMode: kIOSurfaceWriteCombineCache,
-        .pixelFormat: kCVPixelFormatType_32BGRA,
-      ]
-    )!
+  override public func action(forKey event: String) -> (any CAAction)? {
+    NSNull()
   }
 
   @MainActor
   public func createNewIOSurface() {
-    ioSurface = Self
-      .makeIOSurface(
-        contentsScale: contentsScale,
-        gridSize: grid.size,
-        cellSize: state.font.cellSize
-      )
-    surfaceLayer.contents = ioSurface
+    let size = grid.size * state.font.cellSize * contentsScale
+
+    let ioSurface = IOSurface(
+      properties: [
+        .width: size.width,
+        .height: size.height,
+        .bytesPerElement: 4,
+        .pixelFormat: kCVPixelFormatType_32BGRA,
+      ]
+    )!
+    self.ioSurface = ioSurface
+    contents = ioSurface
   }
 
   @MainActor
   public func registerNewGridContext() {
-    remoteRendererAsyncQueue.addOperation {
-      await withCheckedContinuation { continuation in
-        self.remoteRenderer
+    let gridID = gridID
+    let remoteRenderer = remoteRenderer
+    let font = state.font
+    let contentsScale = contentsScale
+    let gridSize = grid.size
+    let ioSurface = ioSurface!
+
+    rendererQueue.addOperation {
+      await withUnsafeContinuation { continuation in
+        remoteRenderer
           .register(
             gridContext: .init(
-              font: self.state.font.appKit(),
-              contentsScale: self.contentsScale,
-              size: self.grid.size,
-              ioSurface: self.ioSurface!
+              font: font.appKit(),
+              contentsScale: contentsScale,
+              size: gridSize,
+              ioSurface: ioSurface
             ),
-            forGridWithID: self.gridID
+            forGridWithID: gridID
           ) {
             continuation.resume()
           }
       }
     }
-  }
-
-  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
-    NSNull()
   }
 
   //  override public func draw(in ctx: CGContext) {
@@ -202,54 +174,22 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
   //    }
   //  }
 
-//  @MainActor
-//  public func createIOSurface() {
-//    if bounds.width == 0 || bounds.height == 0 {
-//      return
-//    }
-//
-//    let newIOSurface = IOSurface(properties: [
-//      .width: bounds.width * contentsScale,
-//      .height: bounds.height * contentsScale,
-//      .bytesPerElement: 4,
-//      .pixelFormat: kCVPixelFormatType_32BGRA,
-//    ])!
-//    ioSurface = newIOSurface
-//    contents = newIOSurface
-//
-//    surfaceLayer.contents = newIOSurface
-//
-//    Task {
-//      await withCheckedContinuation { continuation in
-//        remoteRenderer
-//          .register(
-//            ioSurface: newIOSurface,
-//            scale: contentsScale,
-//            forGridWithID: gridID,
-//            cb: { isSuccess in
-//              if !isSuccess {
-//                logger.fault("failed to register IOSurface")
-//              }
-//              continuation.resume()
-//            }
-//          )
-//      }
-//    }
-//  }
-
   @MainActor
   public func render() {
+    var shouldRecreateIOSurface = false
+
     if ioSurface == nil {
       createNewIOSurface()
       registerNewGridContext()
     } else {
-      var shouldRecreateIOSurface = false
-
       if updates.isFontUpdated {
         shouldRecreateIOSurface = true
       }
 
-      if updates.updatedLayoutGridIDs.contains(gridID) {
+      if
+        updates.updatedLayoutGridIDs.contains(gridID),
+        grid.size.columnsCount > previousGridSize.columnsCount || grid.size.rowsCount > previousGridSize.rowsCount
+      {
         shouldRecreateIOSurface = true
       }
 
@@ -261,8 +201,7 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
 
     let dirtyRows = { () -> any Sequence<Int> in
       if
-        updates.isFontUpdated || updates.isAppearanceUpdated || updates.updatedLayoutGridIDs
-          .contains(gridID)
+        updates.isFontUpdated || updates.isAppearanceUpdated || shouldRecreateIOSurface
       {
         return 0 ..< grid.rowsCount
       }
@@ -322,13 +261,17 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
           )
       }
     }
+
     if !drawRequestParts.isEmpty {
-      remoteRendererAsyncQueue.addOperation {
-        await withCheckedContinuation { continuation in
-          self.remoteRenderer
+      let remoteRenderer = remoteRenderer
+      let gridID = gridID
+
+      rendererQueue.addOperation {
+        await withUnsafeContinuation { continuation in
+          remoteRenderer
             .draw(
               gridDrawRequest: .init(parts: drawRequestParts),
-              forGridWithID: self.gridID,
+              forGridWithID: gridID,
               {
                 continuation.resume()
               }
@@ -336,6 +279,8 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
         }
       }
     }
+
+    previousGridSize = grid.size
   }
 
   @MainActor
@@ -508,19 +453,6 @@ public class GridLayer: CALayer, Rendering, CALayerDelegate, @unchecked Sendable
           col: point.column
         )
     }
-  }
-
-  @MainActor
-  public func setNeedsDisplay(rectangle: IntegerRectangle) {
-//    setNeedsDisplay()
-//    if let ioSurface {
-//      surfaceLayer.contents = ioSurface
-//    }
-//    surfaceLayer.contents = ioSurface
-//    surfaceLayer.setNeedsDisplay(
-//      rectangle * state.font.cellSize
-//        .applying(upsideDownTransform)
-//    )
   }
 }
 

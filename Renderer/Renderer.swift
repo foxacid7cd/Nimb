@@ -7,7 +7,7 @@ import QuartzCore
 import Queue
 
 public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
-  private let asyncQueue = AsyncQueue()
+  private let asyncQueue = AsyncQueue(attributes: .concurrent)
   private var gridRenderers = IntKeyedDictionary<GridRenderer>()
 
   @objc public func register(
@@ -15,11 +15,11 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
     forGridWithID gridID: Int,
     _ cb: @Sendable @escaping () -> Void
   ) {
-    asyncQueue.addOperation {
+    asyncQueue.addBarrierOperation {
       if let gridRenderer = self.gridRenderers[gridID] {
-        gridRenderer.set(gridContext: gridContext)
+        await gridRenderer.set(gridContext: gridContext)
       } else {
-        let gridRenderer = GridRenderer(
+        let gridRenderer = await GridRenderer(
           gridID: gridID,
           gridContext: gridContext
         )
@@ -35,9 +35,7 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
     _ cb: @escaping @Sendable () -> Void
   ) {
     asyncQueue.addOperation {
-      self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest) {
-        cb()
-      }
+      await self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest, cb)
     }
   }
 }
