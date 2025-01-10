@@ -11,9 +11,22 @@ import CustomDump
 import Queue
 
 public class GridLayer: CALayer, Rendering, @unchecked Sendable {
+  private class SurfaceLayer: CALayer {
+    override func action(forKey event: String) -> (any CAAction)? {
+      NSNull()
+    }
+  }
+
+  override public var contentsScale: CGFloat {
+    didSet {
+      surfaceLayer.contentsScale = contentsScale
+    }
+  }
+
   private let store: Store
   private let remoteRenderer: RendererProtocol
   private let gridID: Grid.ID
+  private let surfaceLayer = SurfaceLayer()
   private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
@@ -57,10 +70,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     gridID = gridLayer.gridID
 
     super.init(layer: layer)
-
-    contentsScale = gridLayer.contentsScale
-    drawsAsynchronously = true
-    isOpaque = false
   }
 
   @MainActor
@@ -74,9 +83,13 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     self.gridID = gridID
     super.init()
 
-    contentsGravity = .bottomLeft
     drawsAsynchronously = true
     isOpaque = false
+
+    surfaceLayer.contentsGravity = .bottomLeft
+    surfaceLayer.isOpaque = false
+    surfaceLayer.contentsScale = contentsScale
+    addSublayer(surfaceLayer)
   }
 
   @available(*, unavailable)
@@ -101,7 +114,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       ]
     )!
     self.ioSurface = ioSurface
-    contents = ioSurface
+    surfaceLayer.contents = ioSurface
   }
 
   @MainActor
@@ -197,6 +210,13 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
         createNewIOSurface()
         registerNewGridContext()
       }
+    }
+
+    if grid.size != previousGridSize {
+      surfaceLayer.frame = .init(
+        origin: .zero,
+        size: grid.size * state.font.cellSize
+      )
     }
 
     let dirtyRows = { () -> any Sequence<Int> in

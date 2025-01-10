@@ -17,9 +17,9 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
   ) {
     asyncQueue.addBarrierOperation {
       if let gridRenderer = self.gridRenderers[gridID] {
-        await gridRenderer.set(gridContext: gridContext)
+        gridRenderer.set(gridContext: gridContext)
       } else {
-        let gridRenderer = await GridRenderer(
+        let gridRenderer = GridRenderer(
           gridID: gridID,
           gridContext: gridContext
         )
@@ -35,7 +35,7 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
     _ cb: @escaping @Sendable () -> Void
   ) {
     asyncQueue.addOperation {
-      await self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest, cb)
+      self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest, cb)
     }
   }
 }

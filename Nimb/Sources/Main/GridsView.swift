@@ -49,7 +49,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
 
     wantsLayer = true
     layer!.masksToBounds = true
-    layer!.drawsAsynchronously = true
     layer!.delegate = self
   }
 

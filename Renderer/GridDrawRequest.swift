@@ -29,7 +29,7 @@ public class GridDrawRequest: NSObject, NSSecureCoding, @unchecked Sendable {
 }
 
 @objc(NimbGridDrawRequestPart)
-public class GridDrawRequestPart: NSObject, NSSecureCoding {
+public class GridDrawRequestPart: NSObject, NSSecureCoding, @unchecked Sendable {
   public static var supportsSecureCoding: Bool {
     true
   }
