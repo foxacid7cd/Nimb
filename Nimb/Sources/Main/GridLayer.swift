@@ -15,6 +15,10 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     override func action(forKey event: String) -> (any CAAction)? {
       NSNull()
     }
+
+    override func hitTest(_: CGPoint) -> CALayer? {
+      nil
+    }
   }
 
   override public var contentsScale: CGFloat {
