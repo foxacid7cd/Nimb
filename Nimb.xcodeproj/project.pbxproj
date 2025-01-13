@@ -64,6 +64,9 @@
 		68220E752C668FA5004529E3 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
 		6823AE432D1C679500FA6A45 /* IntegerGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53112C5FE47600AD6C68 /* IntegerGeometry.swift */; };
 		6824D94F2C6B784900FCDA1E /* SharedDrawRunsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6824D94E2C6B783A00FCDA1E /* SharedDrawRunsCache.swift */; };
+		68315E7B2D34BB000091345F /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 68315E7A2D34BB000091345F /* SwiftSyntax */; };
+		68315E7D2D34BB0A0091345F /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 68315E7C2D34BB0A0091345F /* Collections */; };
+		68315E7F2D34BB1C0091345F /* SwiftSyntaxBuilder in Frameworks */ = {isa = PBXBuildFile; productRef = 68315E7E2D34BB1C0091345F /* SwiftSyntaxBuilder */; };
 		6837091829B41C6400E02348 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6837091729B41C6400E02348 /* AppDelegate.swift */; };
 		6838B13D2C523BC100385655 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13C2C523BC100385655 /* APIError.swift */; };
 		6838B13F2C524A3D00385655 /* NeovimErrorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6838B13E2C524A3D00385655 /* NeovimErrorEvent.swift */; };
@@ -462,12 +465,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				68220E732C668F92004529E3 /* libmsgpack-c.a in Frameworks */,
+				68315E7F2D34BB1C0091345F /* SwiftSyntaxBuilder in Frameworks */,
 				686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */,
 				687B788A2D2DB53300792F4A /* ArgumentParser in Frameworks */,
 				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
 				68740B032C688D360080A967 /* ConcurrencyExtras in Frameworks */,
 				688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */,
+				68315E7D2D34BB0A0091345F /* Collections in Frameworks */,
 				681B53472C5FE53E00AD6C68 /* CustomDump in Frameworks */,
+				68315E7B2D34BB000091345F /* SwiftSyntax in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -876,6 +882,9 @@
 				68740B022C688D360080A967 /* ConcurrencyExtras */,
 				688A76512C6B23F300B6B9C0 /* Algorithms */,
 				687B78892D2DB53300792F4A /* ArgumentParser */,
+				68315E7A2D34BB000091345F /* SwiftSyntax */,
+				68315E7C2D34BB0A0091345F /* Collections */,
+				68315E7E2D34BB1C0091345F /* SwiftSyntaxBuilder */,
 			);
 			productName = generate;
 			productReference = 681B52F32C5FE31A00AD6C68 /* generate */;
@@ -1773,8 +1782,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:swiftlang/swift-syntax.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 600.0.1;
 			};
 		};
 		68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */ = {
@@ -1834,6 +1843,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCBA2C5F7F5A00844461 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
 			productName = CustomDump;
+		};
+		68315E7A2D34BB000091345F /* SwiftSyntax */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68A8098F2D0FE73100473A5C /* XCRemoteSwiftPackageReference "swift-syntax" */;
+			productName = SwiftSyntax;
+		};
+		68315E7C2D34BB0A0091345F /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 687B78832D2DB4D300792F4A /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		68315E7E2D34BB1C0091345F /* SwiftSyntaxBuilder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68A8098F2D0FE73100473A5C /* XCRemoteSwiftPackageReference "swift-syntax" */;
+			productName = SwiftSyntaxBuilder;
 		};
 		686AC82A2C5FE91F00AC1E62 /* CasePaths */ = {
 			isa = XCSwiftPackageProductDependency;

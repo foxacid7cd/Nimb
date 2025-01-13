@@ -281,8 +281,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     if !drawRequestParts.isEmpty {
-      let surfaceLayer = surfaceLayer
-      let ioSurface = ioSurface!
       let remoteRenderer = remoteRenderer
       let gridID = gridID
 
