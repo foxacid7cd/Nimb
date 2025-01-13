@@ -85,6 +85,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
     drawsAsynchronously = true
     isOpaque = false
+    masksToBounds = true
 
     surfaceLayer.contentsGravity = .bottomLeft
     surfaceLayer.isOpaque = false
@@ -115,6 +116,10 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     )!
     self.ioSurface = ioSurface
     surfaceLayer.contents = ioSurface
+    surfaceLayer.frame = .init(
+      origin: .zero,
+      size: grid.size * state.font.cellSize
+    )
   }
 
   @MainActor
@@ -212,13 +217,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       }
     }
 
-    if grid.size != previousGridSize {
-      surfaceLayer.frame = .init(
-        origin: .zero,
-        size: grid.size * state.font.cellSize
-      )
-    }
-
     let dirtyRows = { () -> any Sequence<Int> in
       if
         updates.isFontUpdated || updates.isAppearanceUpdated || shouldRecreateIOSurface
@@ -283,6 +281,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     if !drawRequestParts.isEmpty {
+      let surfaceLayer = surfaceLayer
+      let ioSurface = ioSurface!
       let remoteRenderer = remoteRenderer
       let gridID = gridID
 
@@ -296,6 +296,9 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
                 continuation.resume()
               }
             )
+        }
+        Task { @MainActor in
+          self.setNeedsDisplay()
         }
       }
     }
