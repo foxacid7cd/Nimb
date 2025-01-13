@@ -226,14 +226,14 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
       var accumulator = Set<Int>()
 
-      if
-        updates.isCursorBlinkingPhaseUpdated
-        || updates
-        .isMouseUserInteractionEnabledUpdated,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun
-      {
-        accumulator.insert(cursorDrawRun.rectangle.origin.row)
-      }
+//      if
+//        updates.isCursorBlinkingPhaseUpdated
+//        || updates
+//        .isMouseUserInteractionEnabledUpdated,
+//        let cursorDrawRun = grid.drawRuns.cursorDrawRun
+//      {
+//        accumulator.insert(cursorDrawRun.rectangle.origin.row)
+//      }
 
       if let gridUpdate = updates.gridUpdates[gridID] {
         switch gridUpdate {

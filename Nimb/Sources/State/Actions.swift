@@ -40,7 +40,6 @@ public enum Actions {
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       state.font = value
-      state.flushDrawRuns()
       return .init(isFontUpdated: true)
     }
   }

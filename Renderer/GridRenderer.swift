@@ -55,9 +55,28 @@ public final class GridRenderer: @unchecked Sendable {
 
   public func set(gridContext: GridContext) {
     asyncQueue.addOperation {
+      self.ioSurface.lock(seed: nil)
+      gridContext.ioSurface.lock(seed: nil)
+
+      let newCGContext = Self.makeCGContext(ioSurface: gridContext.ioSurface)
+      newCGContext
+        .draw(
+          self.cgContext.makeImage()!,
+          in: .init(
+            origin: .zero,
+            size: .init(
+              width: gridContext.ioSurface.width,
+              height: gridContext.ioSurface.height
+            )
+          )
+        )
+
+      self.ioSurface.unlock(seed: nil)
+      gridContext.ioSurface.unlock(seed: nil)
+
       self.gridContext = gridContext
       self.fontState = .init(gridContext.font)
-      self.cgContext = Self.makeCGContext(ioSurface: gridContext.ioSurface)
+      self.cgContext = newCGContext
     }
   }
 

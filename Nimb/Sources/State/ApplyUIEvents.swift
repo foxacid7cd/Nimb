@@ -12,7 +12,6 @@ public extension Actions {
     S: Sendable
   {
     public var uiEvents: S
-    public var sharedDrawRunsCache: SharedDrawRunsCache
 
     public func apply(to state: inout State, handleError: (any Error) -> Void) -> State.Updates {
       var updates = State.Updates()
@@ -86,8 +85,7 @@ public extension Actions {
               id: gridID,
               size: outerGrid!.size,
               font: font,
-              appearance: appearance,
-              sharedCache: sharedDrawRunsCache
+              appearance: appearance
             )
             grid!.isHidden = true
           }
@@ -95,8 +93,7 @@ public extension Actions {
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
-          appearance: appearance,
-          sharedCache: sharedDrawRunsCache
+          appearance: appearance
         )
         if let result {
           Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -207,21 +204,12 @@ public extension Actions {
                 lineUpdates: [(originColumn, cells)],
                 forRow: row,
                 font: state.font,
-                appearance: state.appearance,
-                sharedCache: sharedDrawRunsCache
+                appearance: state.appearance
               )
 
             update(&state.grids[gridID]!) { grid in
               grid.layout.cells.rows[row] = lineUpdatesResult.rowCells
               grid.layout.rowLayouts[row] = lineUpdatesResult.rowLayout
-              grid.drawRuns.rowDrawRuns[row] = lineUpdatesResult.rowDrawRun
-
-              if lineUpdatesResult.shouldUpdateCursorDrawRun {
-                grid.drawRuns.cursorDrawRun!.updateParent(
-                  with: grid.layout,
-                  rowDrawRuns: grid.drawRuns.rowDrawRuns
-                )
-              }
             }
 
             update(&updates.gridUpdates[gridID]) { updates in
@@ -404,7 +392,6 @@ public extension Actions {
           state.appearance
             .defaultBackgroundColor = background
           state.appearance.defaultSpecialColor = special
-          state.flushDrawRuns()
 
           appearanceUpdated()
 
@@ -416,8 +403,6 @@ public extension Actions {
           if
             state.grids[gridID]?.size != size
           {
-            let font = state.font
-            let appearance = state.appearance
             update(&state.grids[gridID]) { grid in
               if grid == nil {
                 let cells = TwoDimensionalArray(
@@ -428,12 +413,6 @@ public extension Actions {
                 grid = .init(
                   id: gridID,
                   layout: layout,
-                  drawRuns: .init(
-                    layout: layout,
-                    font: font,
-                    appearance: appearance,
-                    sharedCache: sharedDrawRunsCache
-                  ),
                   associatedWindow: nil,
                   isHidden: false
                 )

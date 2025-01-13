@@ -47,16 +47,13 @@ public struct Grid: Sendable, Identifiable {
     public var row: Int
     public var rowCells: [Cell]
     public var rowLayout: RowLayout
-    public var rowDrawRun: RowDrawRun
     public var dirtyRectangles: [IntegerRectangle]
-    public var shouldUpdateCursorDrawRun: Bool
   }
 
   public static let OuterID = 1
 
   public var id: Int
   public var layout: GridLayout
-  public var drawRuns: GridDrawRuns
   public var associatedWindow: AssociatedWindow?
   public var isHidden: Bool
 
@@ -89,8 +86,7 @@ public struct Grid: Sendable, Identifiable {
     id: Int,
     size: IntegerSize,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   ) {
     let layout = GridLayout(cells: .init(
       size: size,
@@ -99,12 +95,6 @@ public struct Grid: Sendable, Identifiable {
 
     self.id = id
     self.layout = layout
-    drawRuns = .init(
-      layout: layout,
-      font: font,
-      appearance: appearance,
-      sharedCache: sharedCache
-    )
     associatedWindow = nil
     isHidden = false
   }
@@ -112,8 +102,7 @@ public struct Grid: Sendable, Identifiable {
   public mutating func apply(
     update: Update,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   )
     -> UpdateResult?
   {
@@ -134,22 +123,6 @@ public struct Grid: Sendable, Identifiable {
       }
       layout = .init(cells: cells)
 
-      let cursorDrawRun = drawRuns.cursorDrawRun
-      drawRuns = .init(
-        layout: layout,
-        font: font,
-        appearance: appearance,
-        sharedCache: sharedCache
-      )
-
-      if
-        let cursorDrawRun,
-        cursorDrawRun.origin.column < integerSize.columnsCount,
-        cursorDrawRun.origin.row < integerSize.rowsCount
-      {
-        drawRuns.cursorDrawRun = cursorDrawRun
-      }
-
       return .needsDisplay
 
     case let .scroll(rectangle, offset):
@@ -159,11 +132,8 @@ public struct Grid: Sendable, Identifiable {
         }
       }
 
-      var shouldUpdateCursorDrawRun = false
-
       let cellsCopy = layout.cells
       let rowLayoutsCopy = layout.rowLayouts
-      let rowDrawRunsCopy = drawRuns.rowDrawRuns
 
       let toRectangle = rectangle
         .applying(offset: -offset)
@@ -175,37 +145,13 @@ public struct Grid: Sendable, Identifiable {
         if rectangle.size.columnsCount == size.columnsCount {
           layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
           layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-          drawRuns.rowDrawRuns[toRow] = rowDrawRunsCopy[fromRow]
         } else {
           layout.cells.rows[toRow].replaceSubrange(
             rectangle.columns,
             with: cellsCopy.rows[fromRow][rectangle.columns]
           )
           layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
-          drawRuns.rowDrawRuns[toRow] = .init(
-            row: toRow,
-            layout: layout.rowLayouts[toRow],
-            font: font,
-            appearance: appearance,
-            old: drawRuns.rowDrawRuns[toRow],
-            sharedCache: sharedCache
-          )
         }
-
-        if
-          drawRuns.cursorDrawRun != nil,
-          drawRuns.cursorDrawRun!.origin.row == toRow,
-          rectangle.columns.contains(drawRuns.cursorDrawRun!.origin.column)
-        {
-          shouldUpdateCursorDrawRun = true
-        }
-      }
-
-      if shouldUpdateCursorDrawRun {
-        drawRuns.cursorDrawRun!.updateParent(
-          with: layout,
-          rowDrawRuns: drawRuns.rowDrawRuns
-        )
       }
 
       return .dirtyRectangles([toRectangle])
@@ -214,10 +160,9 @@ public struct Grid: Sendable, Identifiable {
       layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
-      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
       return .needsDisplay
 
-    case let .cursor(style, position):
+    case let .cursor(_, position):
       let columnsCount =
         if
           position.row < layout.rowLayouts.count,
@@ -240,26 +185,13 @@ public struct Grid: Sendable, Identifiable {
           1
         }
 
-      drawRuns.cursorDrawRun = .init(
-        layout: layout,
-        rowDrawRuns: drawRuns.rowDrawRuns,
-        origin: position,
-        columnsCount: columnsCount,
-        style: style,
-        font: font,
-        appearance: appearance
-      )
       return .dirtyRectangles([.init(
         origin: position,
         size: .init(columnsCount: columnsCount, rowsCount: 1)
       )])
 
     case .clearCursor:
-      guard let cursorDrawRun = drawRuns.cursorDrawRun else {
-        return nil
-      }
-      drawRuns.cursorDrawRun = nil
-      return .dirtyRectangles([cursorDrawRun.rectangle])
+      return .dirtyRectangles([])
     }
   }
 
@@ -268,13 +200,11 @@ public struct Grid: Sendable, Identifiable {
     lineUpdates: [(originColumn: Int, cells: [Cell])],
     forRow row: Int,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   )
     -> LineUpdatesResult
   {
     var dirtyRectangles = [IntegerRectangle]()
-    var shouldUpdateCursorDrawRun = false
 
     var rowCells = layout.cells.rows[row]
     for (originColumn, cells) in lineUpdates {
@@ -286,50 +216,13 @@ public struct Grid: Sendable, Identifiable {
         origin: .init(column: originColumn, row: row),
         size: .init(columnsCount: cells.count, rowsCount: 1)
       ))
-
-      if
-        let cursorDrawRun = drawRuns.cursorDrawRun,
-        cursorDrawRun.origin.row == row,
-        (originColumn ..< originColumn + cells.count)
-          .contains(cursorDrawRun.origin.column)
-      {
-        shouldUpdateCursorDrawRun = true
-      }
     }
     let rowLayout = RowLayout(rowCells: rowCells)
-    let rowDrawRun = RowDrawRun(
-      row: row,
-      layout: rowLayout,
-      font: font,
-      appearance: appearance,
-      old: drawRuns.rowDrawRuns[row],
-      sharedCache: sharedCache
-    )
     return .init(
       row: row,
       rowCells: rowCells,
       rowLayout: rowLayout,
-      rowDrawRun: rowDrawRun,
-      dirtyRectangles: dirtyRectangles,
-      shouldUpdateCursorDrawRun: shouldUpdateCursorDrawRun
+      dirtyRectangles: dirtyRectangles
     )
-  }
-
-  public mutating func flushDrawRuns(font: Font, appearance: Appearance) {
-    for index in drawRuns.rowDrawRuns.indices {
-      drawRuns.rowDrawRuns[index].drawRunsCache.removeAll(keepingCapacity: true)
-    }
-    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
-    if let cursorDrawRun = drawRuns.cursorDrawRun {
-      drawRuns.cursorDrawRun = .init(
-        layout: layout,
-        rowDrawRuns: drawRuns.rowDrawRuns,
-        origin: cursorDrawRun.origin,
-        columnsCount: cursorDrawRun.columnsCount,
-        style: cursorDrawRun.style,
-        font: font,
-        appearance: appearance
-      )
-    }
   }
 }

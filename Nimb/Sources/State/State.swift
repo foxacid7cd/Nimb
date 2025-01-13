@@ -187,12 +187,6 @@ public struct State: Sendable {
     return false
   }
 
-  public mutating func flushDrawRuns() {
-    for gridID in grids.keys {
-      grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
-    }
-  }
-
   public mutating func apply(updates: Updates, from state: State) {
     if updates.isRawOptionsUpdated {
       rawOptions = state.rawOptions
