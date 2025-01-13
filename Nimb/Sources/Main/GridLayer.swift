@@ -40,6 +40,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
   private var previousGridSize = IntegerSize(columnsCount: 0, rowsCount: 0)
+  private var previousCursorRow: Int?
   private let rendererQueue = AsyncQueue()
 
   @MainActor
@@ -226,6 +227,15 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
       var accumulator = Set<Int>()
 
+      if updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated {
+        if let previousCursorRow {
+          accumulator.insert(previousCursorRow)
+        }
+        if let cursor = state.cursor, cursor.gridID == gridID {
+          accumulator.insert(cursor.position.row)
+        }
+      }
+
 //      if
 //        updates.isCursorBlinkingPhaseUpdated
 //        || updates
@@ -237,9 +247,11 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
       if let gridUpdate = updates.gridUpdates[gridID] {
         switch gridUpdate {
-        case let .dirtyRectangles(values):
-          for value in values {
-            accumulator.insert(value.origin.row)
+        case let .dirtyRectangles(rectangles):
+          for rectangle in rectangles {
+            for row in rectangle.minRow ..< rectangle.maxRow {
+              accumulator.insert(row)
+            }
           }
 
         case .needsDisplay:
@@ -277,6 +289,45 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
               isUnderdashed: decorations.isUnderdashed
             )
           )
+
+        if
+          let cursor = state.cursor, cursor.gridID == gridID, cursor.position.row == dirtyRow, part.columnsRange
+            .contains(cursor.position.column), state.cursorBlinkingPhase
+        {
+          var cell: RowPart.Cell?
+          let currentColumn = part.columnsRange.startIndex
+          for currentCell in part.cells {
+            if
+              (currentColumn + currentCell.columnsRange.lowerBound ..< currentColumn + currentCell.columnsRange.upperBound).contains(
+                cursor.position.column
+              )
+            {
+              cell = currentCell
+              break
+            }
+          }
+          drawRequestParts
+            .append(
+              .init(
+                row: flippedDirtyRow,
+                columnsRange: currentColumn + cell!.columnsRange.lowerBound ..< currentColumn + cell!.columnsRange.upperBound,
+                text: String(part.text[cell!.textRange]),
+                backgroundColor: state.appearance.foregroundColor(
+                  for: part.highlightID
+                ),
+                foregroundColor: state.appearance
+                  .backgroundColor(for: part.highlightID),
+                isBold: state.appearance.isBold(for: part.highlightID),
+                isItalic: state.appearance.isItalic(for: part.highlightID),
+                isStrikethrough: decorations.isStrikethrough,
+                isUnderline: decorations.isUnderline,
+                isUndercurl: decorations.isUndercurl,
+                isUnderdouble: decorations.isUnderdouble,
+                isUnderdotted: decorations.isUnderdotted,
+                isUnderdashed: decorations.isUnderdashed
+              )
+            )
+        }
       }
     }
 
@@ -302,6 +353,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     previousGridSize = grid.size
+    previousCursorRow = state.cursor?.gridID == gridID ? state.cursor?.position.row : nil
   }
 
   @MainActor
