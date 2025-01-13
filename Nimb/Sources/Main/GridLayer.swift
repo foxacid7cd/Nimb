@@ -222,6 +222,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       }
     }
 
+    let cursorRow = state.cursor?.gridID == gridID ? state.cursor?.position.row : nil
+
     let dirtyRows = { () -> any Sequence<Int> in
       if
         updates.isFontUpdated || updates.isAppearanceUpdated || shouldRecreateIOSurface
@@ -231,23 +233,19 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
       var accumulator = Set<Int>()
 
-      if updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated {
+      if let cursorRow, cursorRow != previousCursorRow {
+        accumulator.insert(cursorRow)
         if let previousCursorRow {
           accumulator.insert(previousCursorRow)
         }
-        if let cursor = state.cursor, cursor.gridID == gridID {
-          accumulator.insert(cursor.position.row)
+      } else if updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated {
+        if let cursorRow {
+          accumulator.insert(cursorRow)
+        }
+        if let previousCursorRow {
+          accumulator.insert(previousCursorRow)
         }
       }
-
-//      if
-//        updates.isCursorBlinkingPhaseUpdated
-//        || updates
-//        .isMouseUserInteractionEnabledUpdated,
-//        let cursorDrawRun = grid.drawRuns.cursorDrawRun
-//      {
-//        accumulator.insert(cursorDrawRun.rectangle.origin.row)
-//      }
 
       if let gridUpdate = updates.gridUpdates[gridID] {
         switch gridUpdate {
@@ -357,7 +355,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     previousGridSize = grid.size
-    previousCursorRow = state.cursor?.gridID == gridID ? state.cursor?.position.row : nil
+    previousCursorRow = cursorRow
   }
 
   @MainActor
