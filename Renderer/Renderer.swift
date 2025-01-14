@@ -29,13 +29,10 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
     }
   }
 
-  @objc public func draw(
-    gridDrawRequest: GridDrawRequest,
-    forGridWithID gridID: Int,
-    _ cb: @escaping @Sendable () -> Void
-  ) {
+  @objc public func execute(renderOperations: GridRenderOperations, forGridWithID gridID: Int, _ cb: @Sendable @escaping () -> Void) {
     asyncQueue.addOperation {
-      self.gridRenderers[gridID]!.draw(gridDrawRequest: gridDrawRequest, cb)
+      self.gridRenderers[gridID]!
+        .execute(renderOperations: renderOperations, cb)
     }
   }
 }

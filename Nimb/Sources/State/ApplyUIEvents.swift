@@ -76,33 +76,37 @@ public extension Actions {
       }
 
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
-        let font = state.font
-        let appearance = state.appearance
-        let outerGrid = state.outerGrid
-        Overture.update(&state.grids[gridID]) { grid in
-          if grid == nil {
-            grid = Grid(
-              id: gridID,
-              size: outerGrid!.size,
-              font: font,
-              appearance: appearance
-            )
-            grid!.isHidden = true
-          }
-        }
-        let result = state.grids[gridID]!.apply(
-          update: update,
-          font: font,
-          appearance: appearance
-        )
-        if let result {
-          Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
-            if gridUpdate == nil {
-              gridUpdate = .dirtyRectangles([])
-            }
-            gridUpdate!.formUnion(result)
-          }
-        }
+        var gridUpdates = updates.gridUpdates[gridID] ?? []
+        gridUpdates.append(update)
+        updates.gridUpdates[gridID] = gridUpdates
+
+//        let font = state.font
+//        let appearance = state.appearance
+//        let outerGrid = state.outerGrid
+//        Overture.update(&state.grids[gridID]) { grid in
+//          if grid == nil {
+//            grid = Grid(
+//              id: gridID,
+//              size: outerGrid!.size,
+//              font: font,
+//              appearance: appearance
+//            )
+//            grid!.isHidden = true
+//          }
+//        }
+//        let result = state.grids[gridID]!.apply(
+//          update: update,
+//          font: font,
+//          appearance: appearance
+//        )
+//        if let result {
+//          Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
+//            if gridUpdate == nil {
+//              gridUpdate = .dirtyRectangles([])
+//            }
+//            gridUpdate!.formUnion(result)
+//          }
+//        }
       }
 
       func popupmenuUpdated() {
@@ -199,34 +203,39 @@ public extension Actions {
               }
             }
 
-            let lineUpdatesResult = state.grids[gridID]!
-              .applying(
-                lineUpdates: [(originColumn, cells)],
-                forRow: row,
-                font: state.font,
-                appearance: state.appearance
-              )
+            apply(
+              update: .line(row: row, originColumn: originColumn, cells: cells),
+              toGridWithID: gridID
+            )
 
-            update(&state.grids[gridID]!) { grid in
-              grid.layout.cells.rows[row] = lineUpdatesResult.rowCells
-              grid.layout.rowLayouts[row] = lineUpdatesResult.rowLayout
-            }
-
-            update(&updates.gridUpdates[gridID]) { updates in
-              let dirtyRectangles = lineUpdatesResult.dirtyRectangles
-
-              switch updates {
-              case var .dirtyRectangles(accumulator):
-                accumulator += dirtyRectangles
-                updates = .dirtyRectangles(accumulator)
-
-              case .none:
-                updates = .dirtyRectangles(dirtyRectangles)
-
-              default:
-                break
-              }
-            }
+//            let lineUpdatesResult = state.grids[gridID]!
+//              .applying(
+//                lineUpdates: [(originColumn, cells)],
+//                forRow: row,
+//                font: state.font,
+//                appearance: state.appearance
+//              )
+//
+//            update(&state.grids[gridID]!) { grid in
+//              grid.layout.cells.rows[row] = lineUpdatesResult.rowCells
+//              grid.layout.rowLayouts[row] = lineUpdatesResult.rowLayout
+//            }
+//
+//            update(&updates.gridUpdates[gridID]) { updates in
+//              let dirtyRectangles = lineUpdatesResult.dirtyRectangles
+//
+//              switch updates {
+//              case var .dirtyRectangles(accumulator):
+//                accumulator += dirtyRectangles
+//                updates = .dirtyRectangles(accumulator)
+//
+//              case .none:
+//                updates = .dirtyRectangles(dirtyRectangles)
+//
+//              default:
+//                break
+//              }
+//            }
 
           } catch {
             handleError(error)
@@ -400,42 +409,65 @@ public extension Actions {
             columnsCount: width,
             rowsCount: height
           )
-          if
-            state.grids[gridID]?.size != size
-          {
+          if state.grids[gridID]?.size != size {
             update(&state.grids[gridID]) { grid in
               if grid == nil {
-                let cells = TwoDimensionalArray(
-                  size: size,
-                  repeatingElement: Cell.default
-                )
-                let layout = GridLayout(cells: cells)
                 grid = .init(
                   id: gridID,
-                  layout: layout,
+                  size: size,
                   associatedWindow: nil,
                   isHidden: false
                 )
               }
             }
-
-            if
-              let cursor = state.cursor,
-              cursor.gridID == gridID,
-              cursor.position.column >= size.columnsCount,
-              cursor.position.row >= size.rowsCount
-            {
-              state.cursor = nil
-
-              cursorUpdated(oldCursor: cursor)
-            }
-
             state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
             updates.isGridsHierarchyUpdated = true
-
             updatedLayout(forGridWithID: gridID)
-            apply(update: .resize(size), toGridWithID: gridID)
           }
+          apply(
+            update: .resize(size),
+            toGridWithID: gridID
+          )
+//          let size = IntegerSize(
+//            columnsCount: width,
+//            rowsCount: height
+//          )
+//          if
+//            state.grids[gridID]?.size != size
+//          {
+//            update(&state.grids[gridID]) { grid in
+//              if grid == nil {
+//                let cells = TwoDimensionalArray(
+//                  size: size,
+//                  repeatingElement: Cell.default
+//                )
+//                let layout = GridLayout(cells: cells)
+//                grid = .init(
+//                  id: gridID,
+//                  layout: layout,
+//                  associatedWindow: nil,
+//                  isHidden: false
+//                )
+//              }
+//            }
+//
+//            if
+//              let cursor = state.cursor,
+//              cursor.gridID == gridID,
+//              cursor.position.column >= size.columnsCount,
+//              cursor.position.row >= size.rowsCount
+//            {
+//              state.cursor = nil
+//
+//              cursorUpdated(oldCursor: cursor)
+//            }
+//
+//            state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
+//            updates.isGridsHierarchyUpdated = true
+//
+//            updatedLayout(forGridWithID: gridID)
+//            apply(update: .resize(size), toGridWithID: gridID)
+//          }
 
         case let .gridScroll(
           gridID,

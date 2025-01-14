@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class MainViewController: NSViewController, Rendering {
+public class MainViewController: NSViewController {
   let gridsView: GridsView
 
   private let store: Store
@@ -69,6 +69,7 @@ public class MainViewController: NSViewController, Rendering {
   override public func loadView() {
     let view = NSView()
     view.wantsLayer = true
+    view.layer!.backgroundColor = NSColor.black.cgColor
 
     //    let visualEffectView = NSVisualEffectView()
     //    visualEffectView.blendingMode = .withinWindow
@@ -161,25 +162,33 @@ public class MainViewController: NSViewController, Rendering {
     }
   }
 
-  public func render() {
-    if updates.isFontUpdated {
-      reportOuterGridSizeChanged()
-    }
-
-    if updates.isAppearanceUpdated {
-      renderBackground()
-    }
-
-    renderChildren(gridsView, tablineView)
-
-    if updates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = state
-        .cmdlines.dictionary
-        .isEmpty
-    }
-
-    renderChildren(cmdlinesViewController, popupmenuViewController)
+  public func handle(font: Font) {
+    gridsView.handle(font: font)
   }
+
+  public func handle(uiEvents: [UIEvent]) {
+    gridsView.handle(uiEvents: uiEvents)
+  }
+
+//  public func render() {
+//    if updates.isFontUpdated {
+//      reportOuterGridSizeChanged()
+//    }
+//
+//    if updates.isAppearanceUpdated {
+//      renderBackground()
+//    }
+//
+//    renderChildren(gridsView, tablineView)
+//
+//    if updates.isCmdlinesUpdated {
+//      modalOverlayView.isHidden = state
+//        .cmdlines.dictionary
+//        .isEmpty
+//    }
+//
+//    renderChildren(cmdlinesViewController, popupmenuViewController)
+//  }
 
   public func windowFrame(
     forGridID gridID: Grid.ID,
@@ -190,22 +199,22 @@ public class MainViewController: NSViewController, Rendering {
     gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
-  public func reportOuterGridSizeChanged() {
-    let outerGridSizeNeeded = IntegerSize(
-      columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
-      rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
-    )
-    reportOuterGridSizeChangedContinuation
-      .yield(outerGridSizeNeeded)
-  }
+//  public func reportOuterGridSizeChanged() {
+//    let outerGridSizeNeeded = IntegerSize(
+//      columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
+//      rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
+//    )
+//    reportOuterGridSizeChangedContinuation
+//      .yield(outerGridSizeNeeded)
+//  }
 
-  public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
-    let mainFrameSize = outerGridSize * state.font.cellSize
-    return .init(
-      width: mainFrameSize.width,
-      height: mainFrameSize.height + tablineView.intrinsicContentSize.height
-    )
-  }
+//  public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
+//    let mainFrameSize = outerGridSize * state.font.cellSize
+//    return .init(
+//      width: mainFrameSize.width,
+//      height: mainFrameSize.height + tablineView.intrinsicContentSize.height
+//    )
+//  }
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
     guard let window = view.window, let screen = window.screen ?? .main else {
@@ -244,7 +253,7 @@ public class MainViewController: NSViewController, Rendering {
 //    ))
   }
 
-  private func renderBackground() {
-    view.layer!.backgroundColor = state.appearance.defaultBackgroundColor.appKit.cgColor
-  }
+//  private func renderBackground() {
+//    view.layer!.backgroundColor = state.appearance.defaultBackgroundColor.appKit.cgColor
+//  }
 }

@@ -28,7 +28,7 @@ public struct FontState: Equatable, @unchecked Sendable {
     cellSize = .init(width: font.makeCellWidth(), height: font.makeCellHeight())
   }
 
-  public func nsFontForDraw(for part: GridDrawRequestPart) -> NSFont {
+  public func nsFontForDraw(for part: GridRenderDrawOperationPart) -> NSFont {
     if part.isBold, part.isItalic {
       boldItalic
     } else if part.isBold {

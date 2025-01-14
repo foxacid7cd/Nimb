@@ -2,7 +2,7 @@
 
 import AppKit
 
-class MsgShowsWindowController: NSWindowController, Rendering {
+class MsgShowsWindowController: NSWindowController {
   private class CustomWindow: NSPanel {
     override var canBecomeMain: Bool {
       false
@@ -58,23 +58,23 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
-    renderChildren(viewController)
-
-    if !updates.msgShowsUpdates.isEmpty {
-      if !state.msgShows.isEmpty {
-        if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
-          customWindow!.setFrame(frame, display: false, animate: false)
-          isWindowInitiallyShown = true
-        }
-        customWindow!.isFloatingPanel = state.hasModalMsgShows
-        customWindow!.setIsVisible(true)
-        customWindow!.orderFrontRegardless()
-      } else {
-        customWindow!.setIsVisible(false)
-      }
-    }
-  }
+//  public func render() {
+//    renderChildren(viewController)
+//
+//    if !updates.msgShowsUpdates.isEmpty {
+//      if !state.msgShows.isEmpty {
+//        if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
+//          customWindow!.setFrame(frame, display: false, animate: false)
+//          isWindowInitiallyShown = true
+//        }
+//        customWindow!.isFloatingPanel = state.hasModalMsgShows
+//        customWindow!.setIsVisible(true)
+//        customWindow!.orderFrontRegardless()
+//      } else {
+//        customWindow!.setIsVisible(false)
+//      }
+//    }
+//  }
 
   private func saveWindowFrame() {
     UserDefaults.standard.lastMsgShowsWindowFrame = customWindow.frame

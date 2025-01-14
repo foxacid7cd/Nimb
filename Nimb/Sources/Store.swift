@@ -51,115 +51,118 @@ public final class Store: Sendable {
     (actions, actionsContinuation) = AsyncStream.makeStream()
 
     (alerts, alertsContinuation) = AsyncStream.makeStream()
+//
+//    let applyUIEventsActions = api.neovimNotifications
+//      .compactMap { [
+//        alertsContinuation
+//      ] neovimNotificationsBatch in
+//        var actionsAccumulator = [Action]()
+//
+//        for notification in neovimNotificationsBatch {
+//          switch notification {
+//          case let .redraw(uiEvents):
+//            actionsAccumulator
+//              .append(
+//                Actions
+//                  .ApplyUIEvents(uiEvents: uiEvents)
+//              )
+//
+//          case let .nvimErrorEvent(event):
+//            alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
+//
+//          case let .nimbNotify(value):
+//            alertsContinuation.yield("nimbNotify received \(cd: value)")
+//          }
+//        }
+//
+//        return actionsAccumulator.isEmpty ? nil : actionsAccumulator
+//      }
 
-    let applyUIEventsActions = api.neovimNotifications
-      .compactMap { [
-        alertsContinuation
-      ] neovimNotificationsBatch in
-        var actionsAccumulator = [Action]()
+//    let allActions = AsyncThrowingStream<[Action], any Error> { continuation in
+//      let task = Task {
+//        await withTaskGroup(of: (any Error)?.self) { group in
+//          group.addTask {
+//            for await action in actions {
+//              guard !Task.isCancelled else {
+//                return nil
+//              }
+//              continuation.yield([action])
+//            }
+//            return nil
+//          }
+//          group.addTask {
+//            do {
+//              for try await action in applyUIEventsActions {
+//                guard !Task.isCancelled else {
+//                  return nil
+//                }
+//                continuation.yield(action)
+//              }
+//              return nil
+//            } catch {
+//              return error
+//            }
+//          }
+//          for await error in group {
+//            if let error {
+//              continuation.finish(throwing: error)
+//              return
+//            }
+//          }
+//          continuation.finish()
+//        }
+//      }
+//      continuation.onTermination = { _ in
+//        task.cancel()
+//      }
+//    }
 
-        for notification in neovimNotificationsBatch {
-          switch notification {
-          case let .redraw(uiEvents):
-            actionsAccumulator
-              .append(
-                Actions
-                  .ApplyUIEvents(uiEvents: uiEvents)
-              )
-
-          case let .nvimErrorEvent(event):
-            alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
-
-          case let .nimbNotify(value):
-            alertsContinuation.yield("nimbNotify received \(cd: value)")
-          }
-        }
-
-        return actionsAccumulator.isEmpty ? nil : actionsAccumulator
-      }
-
-    let allActions = AsyncThrowingStream<[Action], any Error> { continuation in
-      let task = Task {
-        await withTaskGroup(of: (any Error)?.self) { group in
-          group.addTask {
-            for await action in actions {
-              guard !Task.isCancelled else {
-                return nil
-              }
-              continuation.yield([action])
-            }
-            return nil
-          }
-          group.addTask {
-            do {
-              for try await action in applyUIEventsActions {
-                guard !Task.isCancelled else {
-                  return nil
-                }
-                continuation.yield(action)
-              }
-              return nil
-            } catch {
-              return error
-            }
-          }
-          for await error in group {
-            if let error {
-              continuation.finish(throwing: error)
-              return
-            }
-          }
-          continuation.finish()
-        }
-      }
-      continuation.onTermination = { _ in
-        task.cancel()
-      }
-    }
-
-    updates = AsyncThrowingStream<(state: State, updates: State.Updates), any Error> { [alertsContinuation] continuation in
-      let task = Task {
-        var (state, updates) = (initialState, State.Updates())
-        continuation.yield((state, updates))
-
-        do {
-          for try await actions in allActions {
-            try Task.checkCancellation()
-
-            if updates.needFlush {
-              updates = .init(needFlush: false)
-            }
-
-            for action in actions {
-              let newUpdates = action.apply(to: &state) { error in
-                alertsContinuation.yield(.init(error))
-              }
-              updates.formUnion(newUpdates)
-            }
-            if updates.needFlush {
-              continuation.yield((state, updates))
-            }
-
-            await Task.yield()
-          }
-          continuation.finish()
-        } catch is CancellationError {
-        } catch {
-          continuation.finish(throwing: error)
-        }
-      }
-
-      continuation.onTermination = { _ in
-        task.cancel()
-      }
-    }
-    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
-      var state = previous.state
-      state.apply(updates: latest.updates, from: latest.state)
-      var updates = previous.updates
-      updates.formUnion(latest.updates)
-      return (state, updates)
-    }
+    updates = .init(unfolding: {
+      nil
+    })
+//    updates = AsyncThrowingStream<(state: State, updates: State.Updates), any Error> { [alertsContinuation] continuation in
+//      let task = Task {
+//        var (state, updates) = (initialState, State.Updates())
+//        continuation.yield((state, updates))
+//
+//        do {
+//          for try await actions in allActions {
+//            try Task.checkCancellation()
+//
+//            if updates.needFlush {
+//              updates = .init(needFlush: false)
+//            }
+//
+//            for action in actions {
+//              let newUpdates = action.apply(to: &state) { error in
+//                alertsContinuation.yield(.init(error))
+//              }
+//              updates.formUnion(newUpdates)
+//            }
+//            if updates.needFlush {
+//              continuation.yield((state, updates))
+//            }
+//
+//            await Task.yield()
+//          }
+//          continuation.finish()
+//        } catch is CancellationError {
+//        } catch {
+//          continuation.finish(throwing: error)
+//        }
+//      }
+//
+//      continuation.onTermination = { _ in
+//        task.cancel()
+//      }
+//    }
+//    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
+//      var state = previous.state
+//      state.apply(updates: latest.updates, from: latest.state)
+//      var updates = previous.updates
+//      updates.formUnion(latest.updates)
+//      return (state, updates)
+//    }
   }
 
   @discardableResult

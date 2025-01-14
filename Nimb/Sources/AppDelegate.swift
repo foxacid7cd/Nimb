@@ -4,7 +4,7 @@ import AppKit
 import CustomDump
 
 @MainActor
-public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
+public class AppDelegate: NSObject, NSApplicationDelegate {
   private var neovim: Neovim?
   private var store: Store?
 
@@ -24,10 +24,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     super.init()
   }
 
-  public func render() {
-    renderChildren(mainMenuController!, msgShowsWindowController!, mainWindowController!)
-  }
-
   public func applicationDidFinishLaunching(_: Notification) {
     Task {
       let rendererServiceConnector = RendererServiceConnector()
@@ -36,23 +32,44 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       let remoteRenderer = await rendererServiceConnector.connect()
       self.remoteRenderer = remoteRenderer
 
-      let font = UserDefaults.standard.appKitFont ?? NSFont.monospacedSystemFont(
+      let nsFont = UserDefaults.standard.appKitFont ?? NSFont.monospacedSystemFont(
         ofSize: 13,
         weight: .regular
       )
+      let font = Font(nsFont)
 
       let initialState = State(
         debug: UserDefaults.standard.debug,
-        font: .init(font)
+        font: font
       )
       neovim = Neovim()
       store = Store(api: neovim!.api, initialState: initialState)
       setupInitialControllers()
+      mainWindowController!.handle(font: font)
 
-      await setupBindings(
-        neovim: neovim!,
-        store: store!
-      )
+//      await setupBindings(
+//        neovim: neovim!,
+//        store: store!
+//      )
+
+      Task {
+        do {
+          for try await notificationsBatch in neovim!.api.neovimNotifications {
+            for notification in notificationsBatch {
+              switch notification {
+              case let .redraw(uiEvents):
+
+                mainWindowController!.handle(uiEvents: uiEvents)
+
+              default:
+                break
+              }
+            }
+          }
+        } catch {
+          fatalError(String(customDumping: error))
+        }
+      }
 
       do {
         try await neovim!.bootstrap()
@@ -92,74 +109,71 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   @MainActor
-  public func render(state: State, updates: State.Updates) {
-    update(renderContext: .init(state: state, updates: updates))
-    render()
-  }
+  public func render(state: State, updates: State.Updates) { }
 
   @MainActor
   public func getRemoteRenderer() async -> RendererProtocol {
     remoteRenderer!
   }
 
-  @StateActor
-  private func setupBindings(
-    neovim: Neovim,
-    store: Store
-  ) {
-    alertsTask = Task {
-      do {
-        for await alert in store.alerts {
-          try Task.checkCancellation()
-
-          await show(alert: alert)
-        }
-      } catch { }
-    }
-    updatesTask = Task {
-      do {
-        var presentedNimbNotifiesCount = 0
-
-        for await (state, updates) in store.updates {
-          try Task.checkCancellation()
-
-          if updates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = state.outerGrid!.size
-          }
-          if updates.isFontUpdated {
-            let appKitFont = state.font.appKit()
-            UserDefaults.standard.appKitFont = appKitFont
-          }
-          if updates.isDebugUpdated {
-            UserDefaults.standard.debug = state.debug
-          }
-          if updates.isNimbNotifiesUpdated {
-            for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
-              let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              await self.showNimbNotify(notification)
-            }
-            presentedNimbNotifiesCount = state.nimbNotifies.count
-          }
-
-          await render(state: state, updates: updates)
-        }
-
-        logger.debug("Store state updates loop ended")
-      } catch is CancellationError {
-        logger.debug("Store state updates loop cancelled")
-      } catch {
-        logger.error("Store state updates loop error: \(error)")
-        await self.showCriticalAlert(error: error)
-      }
-    }
-  }
+//  @StateActor
+//  private func setupBindings(
+//    neovim: Neovim,
+//    store: Store
+//  ) {
+//    alertsTask = Task {
+//      do {
+//        for await alert in store.alerts {
+//          try Task.checkCancellation()
+//
+//          await show(alert: alert)
+//        }
+//      } catch { }
+//    }
+//    updatesTask = Task {
+//      do {
+//        var presentedNimbNotifiesCount = 0
+//
+//        for await (state, updates) in store.updates {
+//          try Task.checkCancellation()
+//
+//          if updates.isOuterGridLayoutUpdated {
+//            UserDefaults.standard.outerGridSize = state.outerGrid!.size
+//          }
+//          if updates.isFontUpdated {
+//            let appKitFont = state.font.appKit()
+//            UserDefaults.standard.appKitFont = appKitFont
+//          }
+//          if updates.isDebugUpdated {
+//            UserDefaults.standard.debug = state.debug
+//          }
+//          if updates.isNimbNotifiesUpdated {
+//            for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
+//              let notification = state.nimbNotifies[presentedNimbNotifiesCount]
+//              await self.showNimbNotify(notification)
+//            }
+//            presentedNimbNotifiesCount = state.nimbNotifies.count
+//          }
+//
+//          await render(state: state, updates: updates)
+//        }
+//
+//        logger.debug("Store state updates loop ended")
+//      } catch is CancellationError {
+//        logger.debug("Store state updates loop cancelled")
+//      } catch {
+//        logger.error("Store state updates loop error: \(error)")
+//        await self.showCriticalAlert(error: error)
+//      }
+//    }
+//  }
 
   private func setupInitialControllers() {
     mainMenuController = MainMenuController(store: store!)
     mainMenuController!.settingsClicked = { [unowned self] in
       if settingsWindowController == nil {
         settingsWindowController = .init(store: store!)
-        renderChildren(settingsWindowController!)
+//        renderChildren(settingsWindowController!)
       }
       settingsWindowController!.showWindow(nil)
     }

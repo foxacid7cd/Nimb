@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class SettingsWindowController: NSWindowController, Rendering {
+public class SettingsWindowController: NSWindowController {
   private class CustomWindow: NSPanel { }
 
   private let store: Store

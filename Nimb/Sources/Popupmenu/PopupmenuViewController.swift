@@ -3,7 +3,7 @@
 import AppKit
 import CasePaths
 
-public class PopupmenuViewController: NSViewController, Rendering {
+public class PopupmenuViewController: NSViewController {
   public var anchorConstraints = [NSLayoutConstraint]()
 
   public var willShowPopupmenu: (() -> Void)?
@@ -37,7 +37,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
     scrollView.edgesToSuperview()
 
     tableView.headerView = nil
-    tableView.delegate = self
+//    tableView.delegate = self
     tableView.backgroundColor = .clear
     tableView.addTableColumn(
       .init(identifier: PopupmenuItemView.reuseIdentifier)
@@ -56,18 +56,18 @@ public class PopupmenuViewController: NSViewController, Rendering {
     customView.toggle(on: false)
   }
 
-  public func render() {
-    if tableView.dataSource == nil {
-      tableView.dataSource = self
-    }
+//  public func render() {
+//    if tableView.dataSource == nil {
+//      tableView.dataSource = self
+//    }
 
-    if let popupmenu = state.popupmenu {
-      if updates.isPopupmenuUpdated {
-        NSLayoutConstraint.deactivate(anchorConstraints)
-
-        switch popupmenu.anchor {
-        case .grid:
-          break
+//    if let popupmenu = state.popupmenu {
+//      if updates.isPopupmenuUpdated {
+//        NSLayoutConstraint.deactivate(anchorConstraints)
+//
+//        switch popupmenu.anchor {
+//        case .grid:
+//          break
 //          let offset = origin * state.font.cellSize
 //          anchorConstraints = [
 //            view.leading(to: gridView, offset: offset.x - 13),
@@ -75,104 +75,104 @@ public class PopupmenuViewController: NSViewController, Rendering {
 //            view.width(290),
 //          ]
 
-        case .cmdline:
-          let cmdlinesView = getCmdlinesView()
-          anchorConstraints = [
-            view.leading(to: cmdlinesView),
-            view.trailing(to: cmdlinesView),
-            view.topToBottom(of: cmdlinesView, offset: 8),
-          ]
-        }
-      }
-      if updates.isPopupmenuUpdated || updates.isAppearanceUpdated {
-        tableView.reloadData()
-        storePreviousSelectedItemIndex(for: popupmenu)
-        scrollToSelectedRow(for: popupmenu)
-      } else if updates.isPopupmenuSelectionUpdated {
-        scrollToSelectedRow(for: popupmenu)
-        if
-          let previousSelectedItemIndex,
-          previousSelectedItemIndex < popupmenu.items.count,
-          let selectedItemIndex = popupmenu.selectedItemIndex,
-          selectedItemIndex < popupmenu.items.count
-        {
-          tableView.reloadData(
-            forRowIndexes: [previousSelectedItemIndex, selectedItemIndex],
-            columnIndexes: [0]
-          )
-        } else {
-          tableView.reloadData()
-        }
-        storePreviousSelectedItemIndex(for: popupmenu)
-      }
-    }
-
-    if updates.isPopupmenuUpdated {
-      let on = state.popupmenu != nil
-      if on {
-        willShowPopupmenu?()
-      }
-      let isSuccess = customView.toggle(on: on)
-      if on, isSuccess {
-        scrollView.contentView.scroll(to: .init(
-          x: -scrollView.contentInsets.left,
-          y: -scrollView.contentInsets.top
-        ))
-      }
-    }
-
-    func storePreviousSelectedItemIndex(for popupmenu: Popupmenu) {
-      if let selectedItemIndex = popupmenu.selectedItemIndex {
-        previousSelectedItemIndex = selectedItemIndex
-      }
-    }
-
-    func scrollToSelectedRow(for popupmenu: Popupmenu) {
-      if let selectedItemIndex = popupmenu.selectedItemIndex {
-        tableView.scrollRowToVisible(selectedItemIndex)
-      }
-    }
-  }
+//        case .cmdline:
+//          let cmdlinesView = getCmdlinesView()
+//          anchorConstraints = [
+//            view.leading(to: cmdlinesView),
+//            view.trailing(to: cmdlinesView),
+//            view.topToBottom(of: cmdlinesView, offset: 8),
+//          ]
+//        }
+//      }
+//      if updates.isPopupmenuUpdated || updates.isAppearanceUpdated {
+//        tableView.reloadData()
+//        storePreviousSelectedItemIndex(for: popupmenu)
+//        scrollToSelectedRow(for: popupmenu)
+//      } else if updates.isPopupmenuSelectionUpdated {
+//        scrollToSelectedRow(for: popupmenu)
+//        if
+//          let previousSelectedItemIndex,
+//          previousSelectedItemIndex < popupmenu.items.count,
+//          let selectedItemIndex = popupmenu.selectedItemIndex,
+//          selectedItemIndex < popupmenu.items.count
+//        {
+//          tableView.reloadData(
+//            forRowIndexes: [previousSelectedItemIndex, selectedItemIndex],
+//            columnIndexes: [0]
+//          )
+//        } else {
+//          tableView.reloadData()
+//        }
+//        storePreviousSelectedItemIndex(for: popupmenu)
+//      }
+//    }
+//
+//    if updates.isPopupmenuUpdated {
+//      let on = state.popupmenu != nil
+//      if on {
+//        willShowPopupmenu?()
+//      }
+//      let isSuccess = customView.toggle(on: on)
+//      if on, isSuccess {
+//        scrollView.contentView.scroll(to: .init(
+//          x: -scrollView.contentInsets.left,
+//          y: -scrollView.contentInsets.top
+//        ))
+//      }
+//    }
+//
+//    func storePreviousSelectedItemIndex(for popupmenu: Popupmenu) {
+//      if let selectedItemIndex = popupmenu.selectedItemIndex {
+//        previousSelectedItemIndex = selectedItemIndex
+//      }
+//    }
+//
+//    func scrollToSelectedRow(for popupmenu: Popupmenu) {
+//      if let selectedItemIndex = popupmenu.selectedItemIndex {
+//        tableView.scrollRowToVisible(selectedItemIndex)
+//      }
+//    }
+//  }
 }
 
-extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
-  public func numberOfRows(in tableView: NSTableView) -> Int {
-    state.popupmenu?.items.count ?? 0
-  }
-
-  public func tableView(
-    _ tableView: NSTableView,
-    viewFor tableColumn: NSTableColumn?,
-    row: Int
-  )
-    -> NSView?
-  {
-    var itemView = tableView.makeView(
-      withIdentifier: PopupmenuItemView.reuseIdentifier,
-      owner: self
-    ) as? PopupmenuItemView
-    if itemView == nil {
-      itemView = .init(store: store)
-      itemView!.identifier = PopupmenuItemView.reuseIdentifier
-    }
-    if let popupmenu = state.popupmenu, row < popupmenu.items.count {
-      itemView!.item = popupmenu.items[row]
-      itemView!.isSelected = popupmenu.selectedItemIndex == row
-      itemView!.render()
-    }
-    return itemView
-  }
-
-  public func tableView(
-    _ tableView: NSTableView,
-    shouldSelectRow row: Int
-  )
-    -> Bool
-  {
-//    store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
-    false
-  }
-}
+// extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
+//  public func numberOfRows(in tableView: NSTableView) -> Int {
+//    state.popupmenu?.items.count ?? 0
+//  }
+//
+//  public func tableView(
+//    _ tableView: NSTableView,
+//    viewFor tableColumn: NSTableColumn?,
+//    row: Int
+//  )
+//    -> NSView?
+//  {
+//    var itemView = tableView.makeView(
+//      withIdentifier: PopupmenuItemView.reuseIdentifier,
+//      owner: self
+//    ) as? PopupmenuItemView
+//    if itemView == nil {
+//      itemView = .init(store: store)
+//      itemView!.identifier = PopupmenuItemView.reuseIdentifier
+//    }
+//    if let popupmenu = state.popupmenu, row < popupmenu.items.count {
+//      itemView!.item = popupmenu.items[row]
+//      itemView!.isSelected = popupmenu.selectedItemIndex == row
+//      itemView!.render()
+//    }
+//    return itemView
+//  }
+//
+//  public func tableView(
+//    _ tableView: NSTableView,
+//    shouldSelectRow row: Int
+//  )
+//    -> Bool
+//  {
+////    store.reportPopupmenuItemSelected(atIndex: row, isFinish: false)
+//    false
+//  }
+// }
 
 private class TableView: NSTableView {
   override var acceptsFirstResponder: Bool {

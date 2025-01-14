@@ -34,7 +34,7 @@ public struct State: Sendable {
     public var isCmdlinesUpdated: Bool = false
     public var msgShowsUpdates: [MsgShowsUpdate] = []
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
-    public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
+    public var gridUpdates: IntKeyedDictionary<[Grid.Update]> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isGridsHierarchyUpdated: Bool = false
     public var isPopupmenuUpdated: Bool = false
@@ -80,7 +80,7 @@ public struct State: Sendable {
           if accumulator == nil {
             accumulator = gridUpdate
           } else {
-            accumulator!.formUnion(gridUpdate)
+            accumulator!.append(contentsOf: gridUpdate)
           }
         }
       }

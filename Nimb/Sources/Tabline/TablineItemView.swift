@@ -2,7 +2,7 @@
 
 import AppKit
 
-class TablineItemView: NSView, Rendering {
+class TablineItemView: NSView {
   override var frame: NSRect {
     didSet {
       if frame != oldValue {
@@ -155,21 +155,21 @@ class TablineItemView: NSView, Rendering {
     )
   }
 
-  private func makeFont(
-    for highlightName: Appearance
-      .ObservedHighlightName
-  )
-    -> NSFont
-  {
-    var font = NSFont.systemFont(
-      ofSize: NSFont.systemFontSize,
-      weight: state.appearance.isBold(for: highlightName) ? .heavy : .semibold
-    )
-    if state.appearance.isItalic(for: highlightName) {
-      font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
-    }
-    return font
-  }
+//  private func makeFont(
+//    for highlightName: Appearance
+//      .ObservedHighlightName
+//  )
+//    -> NSFont
+//  {
+//    var font = NSFont.systemFont(
+//      ofSize: NSFont.systemFontSize,
+//      weight: state.appearance.isBold(for: highlightName) ? .heavy : .semibold
+//    )
+//    if state.appearance.isItalic(for: highlightName) {
+//      font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
+//    }
+//    return font
+//  }
 
   @objc private func handleClick(_: NSClickGestureRecognizer) {
     clicked?()

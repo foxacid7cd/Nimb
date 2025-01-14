@@ -2,7 +2,7 @@
 
 import AppKit
 
-public class MainWindowController: NSWindowController, Rendering {
+public class MainWindowController: NSWindowController {
   private class CustomWindow: NSWindow {
     override var canBecomeMain: Bool {
       true
@@ -29,6 +29,8 @@ public class MainWindowController: NSWindowController, Rendering {
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
   private let remoteRenderer: RendererProtocol
+  private var font: Font?
+  private var outerGridSize: IntegerSize?
 
   public init(
     store: Store,
@@ -64,40 +66,74 @@ public class MainWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
-    if updates.isMouseUserInteractionEnabledUpdated {
-      renderIsMouseUserInteractionEnabled()
+  public func handle(font: Font) {
+    self.font = font
+
+    viewController.handle(font: font)
+
+    showWindowInitiallyIfNeeded()
+  }
+
+  public func handle(uiEvents: [UIEvent]) {
+    for uiEvent in uiEvents {
+      switch uiEvent {
+      case let .gridResize(gridID, width, height):
+        if gridID == Grid.OuterID {
+          outerGridSize = .init(columnsCount: width, rowsCount: height)
+          showWindowInitiallyIfNeeded()
+        }
+
+      default:
+        break
+      }
     }
 
-    renderChildren(viewController)
+    viewController.handle(uiEvents: uiEvents)
+  }
 
-    if !isWindowInitiallyShown, let outerGrid = state.outerGrid {
-      isWindowInitiallyShown = true
-
-      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
-        .estimatedContentSize(outerGridSize: outerGrid.size)
+  private func showWindowInitiallyIfNeeded() {
+    if !isWindowInitiallyShown, let font, let outerGridSize {
+      let contentSize = outerGridSize * font.cellSize
       customWindow.setContentSize(contentSize)
       customWindow.makeKeyAndOrderFront(nil)
+      customWindow.center()
     }
   }
+
+//  public func render() {
+//    if updates.isMouseUserInteractionEnabledUpdated {
+//      renderIsMouseUserInteractionEnabled()
+//    }
+//
+//    renderChildren(viewController)
+//
+//    if !isWindowInitiallyShown, let outerGrid = state.outerGrid {
+//      isWindowInitiallyShown = true
+//
+//      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
+//        .estimatedContentSize(outerGridSize: outerGrid.size)
+//      customWindow.setContentSize(contentSize)
+//      customWindow.makeKeyAndOrderFront(nil)
+//    }
+//  }
 
   private func saveWindowFrame() {
     UserDefaults.standard.lastWindowSize = customWindow.frame.size
   }
 
-  private func renderIsMouseUserInteractionEnabled() {
-    if state.isMouseUserInteractionEnabled {
-      customWindow.styleMask.insert(.resizable)
-    } else {
-      customWindow.styleMask.remove(.resizable)
-    }
-  }
+//  private func renderIsMouseUserInteractionEnabled() {
+//    if state.isMouseUserInteractionEnabled {
+//      customWindow.styleMask.insert(.resizable)
+//    } else {
+//      customWindow.styleMask.remove(.resizable)
+//    }
+//  }
 }
 
 extension MainWindowController: NSWindowDelegate {
   public func windowDidResize(_: Notification) {
     if isWindowInitiallyShown {
-      viewController.reportOuterGridSizeChanged()
+//      viewController.reportOuterGridSizeChanged()
       if !customWindow.inLiveResize {
         saveWindowFrame()
       }
@@ -105,7 +141,7 @@ extension MainWindowController: NSWindowDelegate {
   }
 
   public func windowDidEndLiveResize(_: Notification) {
-    viewController.reportOuterGridSizeChanged()
+//    viewController.reportOuterGridSizeChanged()
     saveWindowFrame()
   }
 }

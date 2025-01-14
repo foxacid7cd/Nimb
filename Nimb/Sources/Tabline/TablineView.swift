@@ -5,7 +5,7 @@ import TinyConstraints
 
 extension Notification: @unchecked @retroactive Sendable { }
 
-final class TablineView: NSVisualEffectView, Rendering {
+final class TablineView: NSVisualEffectView {
   override public var isOpaque: Bool {
     true
   }
@@ -185,189 +185,190 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
-  func render() {
-    guard isRendered else {
-      return
-    }
-
-    if updates.isTitleUpdated || updates.isApplicationActiveUpdated {
-      titleTextField.attributedStringValue = .init(
-        string: state.title ?? "",
-        attributes: [
-          .foregroundColor: state.isApplicationActive ?
-            NSColor.labelColor :
-            NSColor.secondaryLabelColor,
-          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
-          .paragraphStyle: titleParagraphStyle,
-        ]
-      )
-    }
-
-    if updates.isApplicationActiveUpdated {
-      titleTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
-
-      let sublayersOpacity: Double = state.isApplicationActive ? 1 : 0.7
-      buffersScrollView.alphaValue = sublayersOpacity
-      tabsScrollView.alphaValue = sublayersOpacity
-
-      if state.isApplicationActive {
-        buffersScrollView.layer!.filters = []
-        tabsScrollView.layer!.filters = []
-      } else {
-        let monochromeFilter = CIFilter(
-          name: "CIColorControls",
-          parameters: [kCIInputSaturationKey: 0]
-        )!
-        buffersScrollView.layer!.filters = [monochromeFilter]
-        tabsScrollView.layer!.filters = [monochromeFilter]
-      }
-    }
-
-    if let tabline = state.tabline {
-      if updates.tabline.isBuffersUpdated {
-        reloadBuffers()
-      } else if updates.tabline.isSelectedBufferUpdated {
-        for (bufferIndex, buffer) in tabline.buffers.enumerated() {
-          let itemView = buffersStackView
-            .arrangedSubviews[bufferIndex] as! TablineItemView
-          let isSelected = buffer.id == tabline.currentBufferID
-          if isSelected != itemView.isSelected {
-            itemView.isSelected = isSelected
-
-            if itemView.isSelected {
-              buffersScrollView.contentView.scrollToVisible(itemView.frame)
-            }
-          }
-
-          itemView.render()
-        }
-      }
-
-      if updates.tabline.isTabpagesUpdated {
-        reloadTabpages()
-      } else if updates.tabline.isTabpagesContentUpdated {
-        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-          let itemView = tabsStackView
-            .arrangedSubviews[tabpageIndex] as! TablineItemView
-          itemView.text = "\(tabpageIndex + 1)"
-
-          itemView.isSelected = tabpage.id == tabline.currentTabpageID
-          if itemView.isSelected {
-            tabsScrollView.contentView.scrollToVisible(itemView.frame)
-          }
-
-          itemView.render()
-        }
-
-      } else if updates.tabline.isSelectedTabpageUpdated {
-        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-          let itemView = tabsStackView
-            .arrangedSubviews[tabpageIndex] as! TablineItemView
-
-          let isSelected = tabpage.id == tabline.currentTabpageID
-          if isSelected != itemView.isSelected {
-            itemView.isSelected = isSelected
-            itemView.render()
-
-            if itemView.isSelected {
-              tabsScrollView.contentView.scrollToVisible(itemView.frame)
-            }
-          }
-        }
-      }
-    }
-  }
+  //  func render() {
+  //    guard isRendered else {
+  //      return
+  //    }
+  //
+  //    if updates.isTitleUpdated || updates.isApplicationActiveUpdated {
+  //      titleTextField.attributedStringValue = .init(
+  //        string: state.title ?? "",
+  //        attributes: [
+  //          .foregroundColor: state.isApplicationActive ?
+  //            NSColor.labelColor :
+  //            NSColor.secondaryLabelColor,
+  //          .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
+  //          .paragraphStyle: titleParagraphStyle,
+  //        ]
+  //      )
+  //    }
+  //
+  //    if updates.isApplicationActiveUpdated {
+  //      titleTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
+  //
+  //      let sublayersOpacity: Double = state.isApplicationActive ? 1 : 0.7
+  //      buffersScrollView.alphaValue = sublayersOpacity
+  //      tabsScrollView.alphaValue = sublayersOpacity
+  //
+  //      if state.isApplicationActive {
+  //        buffersScrollView.layer!.filters = []
+  //        tabsScrollView.layer!.filters = []
+  //      } else {
+  //        let monochromeFilter = CIFilter(
+  //          name: "CIColorControls",
+  //          parameters: [kCIInputSaturationKey: 0]
+  //        )!
+  //        buffersScrollView.layer!.filters = [monochromeFilter]
+  //        tabsScrollView.layer!.filters = [monochromeFilter]
+  //      }
+  //    }
+  //
+  //    if let tabline = state.tabline {
+  //      if updates.tabline.isBuffersUpdated {
+  //        reloadBuffers()
+  //      } else if updates.tabline.isSelectedBufferUpdated {
+  //        for (bufferIndex, buffer) in tabline.buffers.enumerated() {
+  //          let itemView = buffersStackView
+  //            .arrangedSubviews[bufferIndex] as! TablineItemView
+  //          let isSelected = buffer.id == tabline.currentBufferID
+  //          if isSelected != itemView.isSelected {
+  //            itemView.isSelected = isSelected
+  //
+  //            if itemView.isSelected {
+  //              buffersScrollView.contentView.scrollToVisible(itemView.frame)
+  //            }
+  //          }
+  //
+  //          itemView.render()
+  //        }
+  //      }
+  //
+  //      if updates.tabline.isTabpagesUpdated {
+  //        reloadTabpages()
+  //      } else if updates.tabline.isTabpagesContentUpdated {
+  //        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+  //          let itemView = tabsStackView
+  //            .arrangedSubviews[tabpageIndex] as! TablineItemView
+  //          itemView.text = "\(tabpageIndex + 1)"
+  //
+  //          itemView.isSelected = tabpage.id == tabline.currentTabpageID
+  //          if itemView.isSelected {
+  //            tabsScrollView.contentView.scrollToVisible(itemView.frame)
+  //          }
+  //
+  //          itemView.render()
+  //        }
+  //
+  //      } else if updates.tabline.isSelectedTabpageUpdated {
+  //        for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+  //          let itemView = tabsStackView
+  //            .arrangedSubviews[tabpageIndex] as! TablineItemView
+  //
+  //          let isSelected = tabpage.id == tabline.currentTabpageID
+  //          if isSelected != itemView.isSelected {
+  //            itemView.isSelected = isSelected
+  //            itemView.render()
+  //
+  //            if itemView.isSelected {
+  //              tabsScrollView.contentView.scrollToVisible(itemView.frame)
+  //            }
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
 
   private func reloadBuffers() {
     buffersStackView.arrangedSubviews
       .forEach { $0.removeFromSuperview() }
 
-    guard let tabline = state.tabline else {
-      return
-    }
+    //    guard let tabline = state.tabline else {
+    //      return
+    //    }
 
-    for buffer in tabline.buffers {
-      let text: String =
-        if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
-          String(match.output.1)
-        } else {
-          buffer.name
-        }
-
-      let itemView = TablineItemView(store: store)
-      itemView.filledColor = .systemGreen
-      itemView.text = text
-      let isSelected = buffer.id == tabline.currentBufferID
-      itemView.isSelected = isSelected
-      if isSelected {
-        var observation: NSKeyValueObservation?
-        observation = itemView
-          .observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
-            Task { @MainActor in
-              if itemView.frame.size != .zero, observation != nil {
-                buffersScrollView.contentView.scrollToVisible(itemView.frame)
-                observation = nil
-              }
-            }
-          }
-      }
-      itemView.isLast = false
-      itemView.clicked = { [store] in
-        store.apiTask {
-          try await $0.nvimSetCurrentBuf(bufferID: buffer.id)
-        }
-      }
-      itemView.render()
-      buffersStackView.addArrangedSubview(itemView)
-
-      itemView.heightToSuperview()
-      itemView.setContentCompressionResistancePriority(
-        .init(rawValue: 800),
-        for: .horizontal
-      )
-    }
+    //    for buffer in tabline.buffers {
+    //      let text: String =
+    //        if let match = buffer.name.firstMatch(of: /([^\/]+$)/) {
+    //          String(match.output.1)
+    //        } else {
+    //          buffer.name
+    //        }
+    //
+    //      let itemView = TablineItemView(store: store)
+    //      itemView.filledColor = .systemGreen
+    //      itemView.text = text
+    //      let isSelected = buffer.id == tabline.currentBufferID
+    //      itemView.isSelected = isSelected
+    //      if isSelected {
+    //        var observation: NSKeyValueObservation?
+    //        observation = itemView
+    //          .observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
+    //            Task { @MainActor in
+    //              if itemView.frame.size != .zero, observation != nil {
+    //                buffersScrollView.contentView.scrollToVisible(itemView.frame)
+    //                observation = nil
+    //              }
+    //            }
+    //          }
+    //      }
+    //      itemView.isLast = false
+    //      itemView.clicked = { [store] in
+    //        store.apiTask {
+    //          try await $0.nvimSetCurrentBuf(bufferID: buffer.id)
+    //        }
+    //      }
+    //      itemView.render()
+    //      buffersStackView.addArrangedSubview(itemView)
+    //
+    //      itemView.heightToSuperview()
+    //      itemView.setContentCompressionResistancePriority(
+    //        .init(rawValue: 800),
+    //        for: .horizontal
+    //      )
+    //    }
   }
 
   private func reloadTabpages() {
-    tabsStackView.arrangedSubviews
-      .forEach { $0.removeFromSuperview() }
-
-    guard let tabline = state.tabline else {
-      return
-    }
-
-    for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
-      let itemView = TablineItemView(store: store)
-      itemView.filledColor = .cyan
-      itemView.text = "\(tabpageIndex + 1)"
-      let isSelected = tabpage.id == tabline.currentTabpageID
-      itemView.isSelected = isSelected
-      if isSelected {
-        var observation: NSKeyValueObservation?
-        observation = itemView
-          .observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
-            Task { @MainActor in
-              if itemView.frame.size != .zero, observation != nil {
-                tabsScrollView.contentView.scrollToVisible(itemView.frame)
-                observation = nil
-              }
-            }
-          }
-      }
-      itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
-      itemView.clicked = { [store] in
-        store.apiTask {
-          try await $0.nvimSetCurrentTabpage(tabpageID: tabpage.id)
-        }
-      }
-      itemView.render()
-      tabsStackView.addArrangedSubview(itemView)
-
-      itemView.heightToSuperview()
-      itemView.setContentCompressionResistancePriority(
-        .init(rawValue: 800),
-        for: .horizontal
-      )
-    }
+    //    tabsStackView.arrangedSubviews
+    //      .forEach { $0.removeFromSuperview() }
+    //
+    //    guard let tabline = state.tabline else {
+    //      return
+    //    }
+    //
+    //    for (tabpageIndex, tabpage) in tabline.tabpages.enumerated() {
+    //      let itemView = TablineItemView(store: store)
+    //      itemView.filledColor = .cyan
+    //      itemView.text = "\(tabpageIndex + 1)"
+    //      let isSelected = tabpage.id == tabline.currentTabpageID
+    //      itemView.isSelected = isSelected
+    //      if isSelected {
+    //        var observation: NSKeyValueObservation?
+    //        observation = itemView
+    //          .observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
+    //            Task { @MainActor in
+    //              if itemView.frame.size != .zero, observation != nil {
+    //                tabsScrollView.contentView.scrollToVisible(itemView.frame)
+    //                observation = nil
+    //              }
+    //            }
+    //          }
+    //      }
+    //      itemView.isLast = tabpageIndex == tabline.tabpages.count - 1
+    //      itemView.clicked = { [store] in
+    //        store.apiTask {
+    //          try await $0.nvimSetCurrentTabpage(tabpageID: tabpage.id)
+    //        }
+    //      }
+    //      itemView.render()
+    //      tabsStackView.addArrangedSubview(itemView)
+    //
+    //      itemView.heightToSuperview()
+    //      itemView.setContentCompressionResistancePriority(
+    //        .init(rawValue: 800),
+    //        for: .horizontal
+    //      )
+    //    }
+    //  }
   }
 }

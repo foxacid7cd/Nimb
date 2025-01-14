@@ -3,7 +3,7 @@
 import AppKit
 import TinyConstraints
 
-public class CmdlinesViewController: NSViewController, Rendering {
+public class CmdlinesViewController: NSViewController {
   private static let observedHighlightName: Set<
     Appearance
       .ObservedHighlightName
@@ -58,51 +58,51 @@ public class CmdlinesViewController: NSViewController, Rendering {
     customView.toggle(on: false)
   }
 
-  public func render() {
-    if updates.isCmdlinesUpdated || updates.isAppearanceUpdated {
-      if !state.cmdlines.dictionary.isEmpty {
-        cmdlineViews = [:]
-        contentView.arrangedSubviews
-          .forEach { $0.removeFromSuperview() }
-
-        let cmdlines = state.cmdlines.dictionary.values
-          .sorted(by: { $0.level < $1.level })
-
-        for (index, cmdline) in cmdlines.enumerated() {
-          let cmdlineView = CmdlineView(store: store, level: cmdline.level)
-          contentView.addArrangedSubview(cmdlineView)
-          cmdlineView.width(to: contentView)
-          cmdlineViews[cmdline.level] = cmdlineView
-          renderChildren(cmdlineView)
-
-          if index < cmdlines.count - 1 {
-            let separatorView = NSView()
-            separatorView.wantsLayer = true
-            separatorView.layer!.backgroundColor = state.appearance
-              .foregroundColor(for: .normalFloat)
-              .with(alpha: 0.3)
-              .appKit
-              .cgColor
-            contentView.addArrangedSubview(separatorView)
-            separatorView.height(1)
-            separatorView.width(to: contentView)
-          }
-        }
-      }
-    }
-
-    if
-      updates.isCursorBlinkingPhaseUpdated || updates
-        .isMouseUserInteractionEnabledUpdated
-    {
-      for (_, cmdlineView) in cmdlineViews {
-        cmdlineView.setNeedsDisplayTextView()
-      }
-    }
-
-    if updates.isCmdlinesUpdated {
-      let on = !state.cmdlines.dictionary.isEmpty
-      customView.toggle(on: on)
-    }
-  }
+//  public func render() {
+//    if updates.isCmdlinesUpdated || updates.isAppearanceUpdated {
+//      if !state.cmdlines.dictionary.isEmpty {
+//        cmdlineViews = [:]
+//        contentView.arrangedSubviews
+//          .forEach { $0.removeFromSuperview() }
+//
+//        let cmdlines = state.cmdlines.dictionary.values
+//          .sorted(by: { $0.level < $1.level })
+//
+//        for (index, cmdline) in cmdlines.enumerated() {
+//          let cmdlineView = CmdlineView(store: store, level: cmdline.level)
+//          contentView.addArrangedSubview(cmdlineView)
+//          cmdlineView.width(to: contentView)
+//          cmdlineViews[cmdline.level] = cmdlineView
+//          renderChildren(cmdlineView)
+//
+//          if index < cmdlines.count - 1 {
+//            let separatorView = NSView()
+//            separatorView.wantsLayer = true
+//            separatorView.layer!.backgroundColor = state.appearance
+//              .foregroundColor(for: .normalFloat)
+//              .with(alpha: 0.3)
+//              .appKit
+//              .cgColor
+//            contentView.addArrangedSubview(separatorView)
+//            separatorView.height(1)
+//            separatorView.width(to: contentView)
+//          }
+//        }
+//      }
+//    }
+//
+//    if
+//      updates.isCursorBlinkingPhaseUpdated || updates
+//        .isMouseUserInteractionEnabledUpdated
+//    {
+//      for (_, cmdlineView) in cmdlineViews {
+//        cmdlineView.setNeedsDisplayTextView()
+//      }
+//    }
+//
+//    if updates.isCmdlinesUpdated {
+//      let on = !state.cmdlines.dictionary.isEmpty
+//      customView.toggle(on: on)
+//    }
+//  }
 }

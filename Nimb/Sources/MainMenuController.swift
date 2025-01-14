@@ -4,7 +4,7 @@ import AppKit
 import CustomDump
 
 @MainActor
-final class MainMenuController: NSObject, Rendering {
+final class MainMenuController: NSObject {
   let menu = NSMenu()
 
   var settingsClicked: (@MainActor () -> Void)?
@@ -85,9 +85,9 @@ final class MainMenuController: NSObject, Rendering {
     pasteItem.target = self
     editMenu.addItem(pasteItem)
 
-    viewMenu.delegate = self
-
-    debugMenu.delegate = self
+    //    viewMenu.delegate = self
+    //
+    //    debugMenu.delegate = self
 
     let windowMenu = NSMenu(title: "Window")
     let helpMenu = NSMenu(title: "Help")
@@ -195,7 +195,7 @@ final class MainMenuController: NSObject, Rendering {
   @objc private func handleFont() {
     let fontManager = NSFontManager.shared
     fontManager.target = self
-    fontManager.setSelectedFont(state.font.appKit(), isMultiple: false)
+    //    fontManager.setSelectedFont(state.font.appKit(), isMultiple: false)
     fontManager.fontPanel(true)!.makeKeyAndOrderFront(nil)
   }
 
@@ -211,17 +211,17 @@ final class MainMenuController: NSObject, Rendering {
     changeFontSize { _ in NSFont.systemFontSize }
   }
 
-  private func changeFontSize(_ modifier: (_ fontSize: Double) -> Double) {
-    let currentFont = state.font.appKit()
-    let newFontSize = modifier(currentFont.pointSize)
-    guard newFontSize != currentFont.pointSize else {
-      return
-    }
-    let newFont = NSFontManager.shared.convert(
-      currentFont,
-      toSize: newFontSize
-    )
-    store.dispatch(Actions.SetFont(value: Font(newFont)))
+  private func changeFontSize(_: (_ fontSize: Double) -> Double) {
+    //    let currentFont = state.font.appKit()
+    //    let newFontSize = modifier(currentFont.pointSize)
+    //    guard newFontSize != currentFont.pointSize else {
+    //      return
+    //    }
+    //    let newFont = NSFontManager.shared.convert(
+    //      currentFont,
+    //      toSize: newFontSize
+    //    )
+    //    store.dispatch(Actions.SetFont(value: Font(newFont)))
   }
 
   @objc private func handleCopy() {
@@ -261,62 +261,64 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleLogState() {
-    Task { @MainActor in
-      var dump = ""
-      customDump(self.state, to: &dump, maxDepth: 10)
-
-      let temporaryFileURL = FileManager.default.temporaryDirectory
-        .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")
-      FileManager.default.createFile(
-        atPath: temporaryFileURL.path(),
-        contents: nil
-      )
-
-      do {
-        let fileHandle = try FileHandle(forWritingTo: temporaryFileURL)
-        try fileHandle.write(contentsOf: dump.data(using: .utf8)!)
-        try fileHandle.close()
-
-        NSWorkspace.shared.open(temporaryFileURL)
-      } catch {
-        logger
-          .error(
-            "could not create or write file handle to temporary file with error \(error)"
-          )
-      }
-    }
+    //    Task { @MainActor in
+    //      var dump = ""
+    //      customDump(self.state, to: &dump, maxDepth: 10)
+    //
+    //      let temporaryFileURL = FileManager.default.temporaryDirectory
+    //        .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")
+    //      FileManager.default.createFile(
+    //        atPath: temporaryFileURL.path(),
+    //        contents: nil
+    //      )
+    //
+    //      do {
+    //        let fileHandle = try FileHandle(forWritingTo: temporaryFileURL)
+    //        try fileHandle.write(contentsOf: dump.data(using: .utf8)!)
+    //        try fileHandle.close()
+    //
+    //        NSWorkspace.shared.open(temporaryFileURL)
+    //      } catch {
+    //        logger
+    //          .error(
+    //            "could not create or write file handle to temporary file with error \(error)"
+    //          )
+    //      }
+    //    }
   }
 
   private func requestTextForCopy() async -> String? {
-    guard
-      let mode = state.mode,
-      let modeInfo = state.modeInfo
-    else {
-      return nil
-    }
-
-    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
-    let firstCharacter = shortName?.lowercased().first
-    if ["i", "n", "o", "r", "s", "v"].contains(firstCharacter) {
-      return await store.apiAsyncTask { api in
-        let rawSuccess = try await api.nimb(method: "buf_text_for_copy")
-        guard let text = rawSuccess.flatMap(\.string) else {
-          throw Failure("success result is not a string", rawSuccess as Any)
-        }
-        return text
-      }
-    } else if firstCharacter == "c" {
-      if
-        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
-        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
-      {
-        return cmdline.contentParts
-          .map { _ in "" }
-          .joined()
-      }
-    }
-
-    return nil
+    nil
+    //    guard
+    //      let mode = state.mode,
+    //      let modeInfo = state.modeInfo
+    //    else {
+    //      return nil
+    //    }
+    //
+    //    let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
+    //    let firstCharacter = shortName?.lowercased().first
+    //    if ["i", "n", "o", "r", "s", "v"].contains(firstCharacter) {
+    //      return await store.apiAsyncTask { api in
+    //        let rawSuccess = try await api.nimb(method: "buf_text_for_copy")
+    //        guard let text = rawSuccess.flatMap(\.string) else {
+    //          throw Failure("success result is not a string", rawSuccess as Any)
+    //        }
+    //        return text
+    //      }
+    //    } else if firstCharacter == "c" {
+    //      if
+    //        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
+    //        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
+    //      {
+    //        return cmdline.contentParts
+    //          .map { _ in "" }
+    //          .joined()
+    //      }
+    //    }
+    //
+    //    return nil
+    //  }
   }
 }
 
@@ -335,106 +337,106 @@ extension MainMenuController: NSFontChanging {
     guard let sender else {
       return
     }
-    let newFont = sender.convert(state.font.appKit())
-    store.dispatch(Actions.SetFont(value: .init(newFont)))
+//    let newFont = sender.convert(state.font.appKit())
+//    store.dispatch(Actions.SetFont(value: .init(newFont)))
   }
 }
 
 extension MainMenuController: NSMenuDelegate {
-  func menuNeedsUpdate(_ menu: NSMenu) {
-    guard isRendered else {
-      return
-    }
-    switch menu {
-    case viewMenu:
-      menu.items = fontMenuLayout.map { item in
-        switch item {
-        case .currentFontDescription:
-          let currentFont = state.font.appKit()
-          let name = (currentFont.displayName ?? currentFont.fontName)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-          return makeItem("\(name), \(currentFont.pointSize)")
-
-        case .select:
-          return makeItem(
-            "Select Font",
-            action: #selector(handleFont),
-            keyEquivalent: "t"
-          )
-
-        case .separator:
-          return .separator()
-
-        case .increaseSize:
-          return makeItem(
-            "Increase Font Size",
-            action: #selector(handleIncreaseFontSize),
-            keyEquivalent: "+"
-          )
-
-        case .decreaseSize:
-          return makeItem(
-            "Decrease Font Size",
-            action: #selector(handleDecreaseFontSize),
-            keyEquivalent: "-"
-          )
-
-        case .resetSize:
-          return makeItem(
-            "Reset Font Size",
-            action: #selector(handleResetFontSize),
-            keyEquivalent: "o",
-            keyEquivalentModifierMask: [.control, .command]
-          )
-        }
-      }
-
-    case debugMenu:
-      let toggleUIEventsLoggingMenuItem = NSMenuItem(
-        title: state.debug
-          .isUIEventsLoggingEnabled ? "Disable UI events logging" :
-          "Enable UI events logging",
-        action: #selector(handleToggleUIEventsLogging),
-        keyEquivalent: ""
-      )
-      toggleUIEventsLoggingMenuItem.target = self
-
-      let logStateMenuItem = NSMenuItem(
-        title: "Dump current application state",
-        action: #selector(handleLogState),
-        keyEquivalent: ""
-      )
-      logStateMenuItem.target = self
-
-      let toggleMessagePackInspector = NSMenuItem(
-        title: state.debug
-          .isMessagePackInspectorEnabled ? "Disable msgpack data capturing" :
-          "Enable msgpack data capturing",
-        action: #selector(handleToggleMessagePackInspector),
-        keyEquivalent: ""
-      )
-      toggleMessagePackInspector.target = self
-
-      let toggleStoreActionsLoggingMenuItem = NSMenuItem(
-        title: state.debug
-          .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
-          "Enable store actions logging",
-        action: #selector(handleToggleStoreActionsLogging),
-        keyEquivalent: ""
-      )
-      toggleStoreActionsLoggingMenuItem.target = self
-
-      menu.items = [
-        logStateMenuItem,
-        NSMenuItem.separator(),
-        toggleUIEventsLoggingMenuItem,
-        toggleMessagePackInspector,
-        toggleStoreActionsLoggingMenuItem,
-      ]
-
-    default:
-      break
-    }
+  func menuNeedsUpdate(_: NSMenu) {
+//    guard isRendered else {
+//      return
+//    }
+//    switch menu {
+//    case viewMenu:
+//      menu.items = fontMenuLayout.map { item in
+//        switch item {
+//        case .currentFontDescription:
+//          let currentFont = state.font.appKit()
+//          let name = (currentFont.displayName ?? currentFont.fontName)
+//            .trimmingCharacters(in: .whitespacesAndNewlines)
+//          return makeItem("\(name), \(currentFont.pointSize)")
+//
+//        case .select:
+//          return makeItem(
+//            "Select Font",
+//            action: #selector(handleFont),
+//            keyEquivalent: "t"
+//          )
+//
+//        case .separator:
+//          return .separator()
+//
+//        case .increaseSize:
+//          return makeItem(
+//            "Increase Font Size",
+//            action: #selector(handleIncreaseFontSize),
+//            keyEquivalent: "+"
+//          )
+//
+//        case .decreaseSize:
+//          return makeItem(
+//            "Decrease Font Size",
+//            action: #selector(handleDecreaseFontSize),
+//            keyEquivalent: "-"
+//          )
+//
+//        case .resetSize:
+//          return makeItem(
+//            "Reset Font Size",
+//            action: #selector(handleResetFontSize),
+//            keyEquivalent: "o",
+//            keyEquivalentModifierMask: [.control, .command]
+//          )
+//        }
+//      }
+//
+//    case debugMenu:
+//      let toggleUIEventsLoggingMenuItem = NSMenuItem(
+//        title: state.debug
+//          .isUIEventsLoggingEnabled ? "Disable UI events logging" :
+//          "Enable UI events logging",
+//        action: #selector(handleToggleUIEventsLogging),
+//        keyEquivalent: ""
+//      )
+//      toggleUIEventsLoggingMenuItem.target = self
+//
+//      let logStateMenuItem = NSMenuItem(
+//        title: "Dump current application state",
+//        action: #selector(handleLogState),
+//        keyEquivalent: ""
+//      )
+//      logStateMenuItem.target = self
+//
+//      let toggleMessagePackInspector = NSMenuItem(
+//        title: state.debug
+//          .isMessagePackInspectorEnabled ? "Disable msgpack data capturing" :
+//          "Enable msgpack data capturing",
+//        action: #selector(handleToggleMessagePackInspector),
+//        keyEquivalent: ""
+//      )
+//      toggleMessagePackInspector.target = self
+//
+//      let toggleStoreActionsLoggingMenuItem = NSMenuItem(
+//        title: state.debug
+//          .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
+//          "Enable store actions logging",
+//        action: #selector(handleToggleStoreActionsLogging),
+//        keyEquivalent: ""
+//      )
+//      toggleStoreActionsLoggingMenuItem.target = self
+//
+//      menu.items = [
+//        logStateMenuItem,
+//        NSMenuItem.separator(),
+//        toggleUIEventsLoggingMenuItem,
+//        toggleMessagePackInspector,
+//        toggleStoreActionsLoggingMenuItem,
+//      ]
+//
+//    default:
+//      break
+//    }
   }
 
   private func makeItem(
