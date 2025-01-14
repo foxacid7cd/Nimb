@@ -42,7 +42,6 @@ public class GridLayer: CALayer, @unchecked Sendable {
   private let store: Store
   private let remoteRenderer: RendererProtocol
   private let surfaceLayer = SurfaceLayer()
-  private var layout: GridLayout?
   private var ioSurface: IOSurface?
   @MainActor
   private var isScrollingHorizontal: Bool?
@@ -59,9 +58,10 @@ public class GridLayer: CALayer, @unchecked Sendable {
   private var previousCursorRow: Int?
   private let rendererQueue: AsyncQueue
   private let renderOperationsContinuation: AsyncStream<[GridRenderOperation]>.Continuation
+  private var cells: TwoDimensionalArray<Cell>?
 
   public var gridSize: IntegerSize? {
-    layout?.size
+    cells?.size
   }
 
   @MainActor
@@ -626,32 +626,50 @@ public class GridLayer: CALayer, @unchecked Sendable {
 
   @MainActor
   public func handleResize(gridSize: IntegerSize) {
-    if let layout {
-      if layout.cells.size != gridSize {
-        let copyColumnsCount = min(layout.columnsCount, gridSize.columnsCount)
-        let copyColumnsRange = 0 ..< copyColumnsCount
-        let copyRowsCount = min(layout.rowsCount, gridSize.rowsCount)
-        var cells = TwoDimensionalArray<Cell>(
-          size: gridSize,
-          repeatingElement: .default
-        )
-        for row in 0 ..< copyRowsCount {
-          cells.rows[row].replaceSubrange(
-            copyColumnsRange,
-            with: layout.cells.rows[row][copyColumnsRange]
-          )
-        }
-        self.layout = .init(cells: cells)
-        createNewIOSurface()
-        registerNewGridContext()
-        redraw(dirtyRows: 0 ..< gridSize.rowsCount)
+    var shouldRecreateIOSurface = false
+    if ioSurface == nil {
+      shouldRecreateIOSurface = true
+    } else if self.gridSize != gridSize {
+      shouldRecreateIOSurface = true
+    }
+
+    let newCells = TwoDimensionalArray<Cell>(size: gridSize) { point in
+      if let cells, IntegerRectangle(size: cells.size).contains(point) {
+        cells[point]
+      } else {
+        .default
       }
-    } else {
-      layout = .init(cells: .init(size: gridSize, repeatingElement: .default))
+    }
+    cells = newCells
+
+    if shouldRecreateIOSurface {
       createNewIOSurface()
       registerNewGridContext()
-      redraw(dirtyRows: 0 ..< gridSize.rowsCount)
     }
+//    if let layout {
+//      if layout.cells.size != gridSize {
+//        let copyColumnsCount = min(layout.columnsCount, gridSize.columnsCount)
+//        let copyColumnsRange = 0 ..< copyColumnsCount
+//        let copyRowsCount = min(layout.rowsCount, gridSize.rowsCount)
+//        var cells = TwoDimensionalArray<Cell>(
+//          size: gridSize,
+//          repeatingElement: .default
+//        )
+//        for row in 0 ..< copyRowsCount {
+//          cells.rows[row].replaceSubrange(
+//            copyColumnsRange,
+//            with: layout.cells.rows[row][copyColumnsRange]
+//          )
+//        }
+//        self.layout = .init(cells: cells)
+//        createNewIOSurface()
+//        registerNewGridContext()
+//      }
+//    } else {
+//      layout = .init(cells: .init(size: gridSize, repeatingElement: .default))
+//      createNewIOSurface()
+//      registerNewGridContext()
+//    }
   }
 
   @MainActor
@@ -703,52 +721,126 @@ public class GridLayer: CALayer, @unchecked Sendable {
         }
       }
 
-      layout!.cells.rows[row].replaceSubrange(
-        originColumn ..< originColumn + cells.count,
-        with: cells
-      )
-      layout!.rowLayouts[row] = RowLayout(rowCells: layout!.cells.rows[row])
+      self.cells!
+        .rows[row]
+        .replaceSubrange(
+          originColumn ..< originColumn + cells.count,
+          with: cells
+        )
 
-      redraw(dirtyRows: [row])
+//      self.layout!.cells.rows[part.row].replaceSubrange(
+//        part.originColumn ..< part.originColumn + cells.count,
+//        with: cells
+//      )
+//      self.layout!.rowLayouts[part.row] = RowLayout(rowCells: self.layout!.cells.rows[part.row])
+//
+//      dirtyRows.insert(part.row)
+      //              redraw(dirtyRows: [part.row])
+
+      _ = renderOperationsContinuation
+        .yield(
+          [.init(
+            type: .draw,
+            draw: [.init(row: self.cells!.rowsCount - 1 - row, cells: self.cells!.rows[row])],
+            scroll: nil
+          )]
+        )
 
     } catch {
       logger.error("failed to handle line \(error)")
     }
+
+//    do {
+//      var cells = [Cell]()
+//      var highlightID = 0
+//
+//      for value in data {
+//        guard
+//          case let .array(arrayValue) = value,
+//          !arrayValue.isEmpty,
+//          case let .string(text) = arrayValue[0]
+//        else {
+//          throw Failure("invalid grid line cell value", value)
+//        }
+//
+//        var repeatCount = 1
+//
+//        if arrayValue.count > 1 {
+//          guard
+//            case let .integer(newHighlightID) = arrayValue[1]
+//          else {
+//            throw Failure(
+//              "invalid grid line cell highlight value",
+//              arrayValue[1]
+//            )
+//          }
+//
+//          highlightID = newHighlightID
+//
+//          if arrayValue.count > 2 {
+//            guard
+//              case let .integer(newRepeatCount) = arrayValue[2]
+//            else {
+//              throw Failure(
+//                "invalid grid line cell repeat count value",
+//                arrayValue[2]
+//              )
+//            }
+//
+//            repeatCount = newRepeatCount
+//          }
+//        }
+//
+//        let cell = Cell(text: text, highlightID: highlightID)
+//        for _ in 0 ..< repeatCount {
+//          cells.append(cell)
+//        }
+//      }
+//
+//      layout!.cells.rows[row].replaceSubrange(
+//        originColumn ..< originColumn + cells.count,
+//        with: cells
+//      )
+//      layout!.rowLayouts[row] = RowLayout(rowCells: layout!.cells.rows[row])
+//
+//    } catch {
+//      logger.error("failed to handle line \(error)")
+//    }
   }
 
   @MainActor
   public func handleScroll(rectangle: IntegerRectangle, offset: IntegerSize) {
-    guard var layout, let gridSize else {
-      return
-    }
-
-    if offset.columnsCount != 0 {
-      logger.fault("horizontal scroll not supported!!!")
-    }
-
-    let cellsCopy = layout.cells
-    let rowLayoutsCopy = layout.rowLayouts
-
-    let toRectangle = rectangle
-      .applying(offset: -offset)
-      .intersection(with: rectangle)
-
-    for toRow in toRectangle.rows {
-      let fromRow = toRow + offset.rowsCount
-
-      if rectangle.size.columnsCount == gridSize.columnsCount {
-        layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
-        layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-      } else {
-        layout.cells.rows[toRow].replaceSubrange(
-          rectangle.columns,
-          with: cellsCopy.rows[fromRow][rectangle.columns]
-        )
-        layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
-      }
-    }
-
-    self.layout = layout
+//    guard var layout, let gridSize else {
+//      return
+//    }
+//
+//    if offset.columnsCount != 0 {
+//      logger.fault("horizontal scroll not supported!!!")
+//    }
+//
+//    let cellsCopy = layout.cells
+//    let rowLayoutsCopy = layout.rowLayouts
+//
+//    let toRectangle = rectangle
+//      .applying(offset: -offset)
+//      .intersection(with: rectangle)
+//
+//    for toRow in toRectangle.rows {
+//      let fromRow = toRow + offset.rowsCount
+//
+//      if rectangle.size.columnsCount == gridSize.columnsCount {
+//        layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
+//        layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
+//      } else {
+//        layout.cells.rows[toRow].replaceSubrange(
+//          rectangle.columns,
+//          with: cellsCopy.rows[fromRow][rectangle.columns]
+//        )
+//        layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
+//      }
+//    }
+//
+//    self.layout = layout
 
     _ = renderOperationsContinuation
       .yield(
@@ -778,221 +870,221 @@ public class GridLayer: CALayer, @unchecked Sendable {
 
   @MainActor
   public func handleClear() {
-    guard var layout else {
-      return
-    }
-    layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
-    layout.rowLayouts = layout.cells.rows
-      .map(RowLayout.init(rowCells:))
-    self.layout = layout
-
-    redraw(dirtyRows: 0 ..< layout.cells.size.rowsCount)
+//    guard var layout else {
+//      return
+//    }
+//    layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
+//    layout.rowLayouts = layout.cells.rows
+//      .map(RowLayout.init(rowCells:))
+//    self.layout = layout
+//
+//    redraw(dirtyRows: 0 ..< layout.cells.size.rowsCount)
   }
 
-  @MainActor
-  private func redraw(dirtyRows: any Sequence<Int>) {
-    guard let gridSize, let layout else {
-      return
-    }
+//  @MainActor
+//  private func redraw(dirtyRows: any Sequence<Int>) {
+//    guard let gridSize, let layout else {
+//      return
+//    }
+//
+//    let renderOperationsContinuation = renderOperationsContinuation
+//
+//    var drawOperationParts = [GridRenderDrawOperationPart]()
+//
+//    for dirtyRow in dirtyRows {
+//      let flippedDirtyRow = gridSize.rowsCount - dirtyRow - 1
+//      for part in layout.rowLayouts[dirtyRow].parts {
+//        //            let decorations = state.appearance.decorations(for: part.highlightID)
+//
+//        drawOperationParts
+//          .append(
+//            .init(
+//              row: flippedDirtyRow,
+//              columnsRange: part.columnsRange,
+//              text: part.text,
+//              backgroundColor: Color.black,
+//              foregroundColor: Color.white,
+//              isBold: false,
+//              isItalic: false,
+//              isStrikethrough: false,
+//              isUnderline: false,
+//              isUndercurl: false,
+//              isUnderdouble: false,
+//              isUnderdotted: false,
+//              isUnderdashed: false
+//            )
+//          )
 
-    let renderOperationsContinuation = renderOperationsContinuation
-
-    var drawOperationParts = [GridRenderDrawOperationPart]()
-
-    for dirtyRow in dirtyRows {
-      let flippedDirtyRow = gridSize.rowsCount - dirtyRow - 1
-      for part in layout.rowLayouts[dirtyRow].parts {
-        //            let decorations = state.appearance.decorations(for: part.highlightID)
-
-        drawOperationParts
-          .append(
-            .init(
-              row: flippedDirtyRow,
-              columnsRange: part.columnsRange,
-              text: part.text,
-              backgroundColor: Color.black,
-              foregroundColor: Color.white,
-              isBold: false,
-              isItalic: false,
-              isStrikethrough: false,
-              isUnderline: false,
-              isUndercurl: false,
-              isUnderdouble: false,
-              isUnderdotted: false,
-              isUnderdashed: false
-            )
-          )
-
-        //            if
-        //              let cursor = state.cursor, cursor.gridID == gridID, cursor.position.row == dirtyRow, part.columnsRange
-        //                .contains(cursor.position.column), state.cursorBlinkingPhase
-        //            {
-        //              var cell: RowPart.Cell?
-        //              let currentColumn = part.columnsRange.startIndex
-        //              for currentCell in part.cells {
-        //                if
-        //                  (currentColumn + currentCell.columnsRange.lowerBound ..< currentColumn + currentCell.columnsRange.upperBound).contains(
-        //                    cursor.position.column
-        //                  )
-        //                {
-        //                  cell = currentCell
-        //                  break
-        //                }
-        //              }
-        //              drawRequestParts
-        //                .append(
-        //                  .init(
-        //                    row: flippedDirtyRow,
-        //                    columnsRange: currentColumn + cell!.columnsRange.lowerBound ..< currentColumn + cell!.columnsRange.upperBound,
-        //                    text: String(part.text[cell!.textRange]),
-        //                    backgroundColor: state.appearance.foregroundColor(
-        //                      for: part.highlightID
-        //                    ),
-        //                    foregroundColor: state.appearance
-        //                      .backgroundColor(for: part.highlightID),
-        //                    isBold: state.appearance.isBold(for: part.highlightID),
-        //                    isItalic: state.appearance.isItalic(for: part.highlightID),
-        //                    isStrikethrough: decorations.isStrikethrough,
-        //                    isUnderline: decorations.isUnderline,
-        //                    isUndercurl: decorations.isUndercurl,
-        //                    isUnderdouble: decorations.isUnderdouble,
-        //                    isUnderdotted: decorations.isUnderdotted,
-        //                    isUnderdashed: decorations.isUnderdashed
-        //                  )
-        //                )
-        //            }
-      }
-
-      _ = renderOperationsContinuation
-        .yield([.init(type: .draw, draw: drawOperationParts, scroll: nil)])
-
-      //    if !drawRequestParts.isEmpty {
-      //      let remoteRenderer = remoteRenderer
-      //      let gridID = gridID
-      //
-      //      rendererQueue.addOperation {
-      //        await withUnsafeContinuation { continuation in
-      //          remoteRenderer
-      //            .draw(
-      //              gridDrawRequest: .init(parts: drawRequestParts),
-      //              forGridWithID: gridID,
-      //              {
-      //                continuation.resume()
-      //              }
-      //            )
-      //        }
-      //        Task { @MainActor in
-      //          self.setNeedsDisplay()
-      //        }
-      //      }
-      //    }
-
-      //
-      //  @MainActor
-      //  private func apply(
-      //    update: Grid.Update
-      //  )
-      //    -> Grid.UpdateResult?
-      //  {
-      //    switch update {
-      //    case let .resize(integerSize):
-      //      let copyColumnsCount = min(layout!.columnsCount, integerSize.columnsCount)
-      //      let copyColumnsRange = 0 ..< copyColumnsCount
-      //      let copyRowsCount = min(layout!.rowsCount, integerSize.rowsCount)
-      //      var cells = TwoDimensionalArray<Cell>(
-      //        size: integerSize,
-      //        repeatingElement: .default
-      //      )
-      //      for row in 0 ..< copyRowsCount {
-      //        cells.rows[row].replaceSubrange(
-      //          copyColumnsRange,
-      //          with: layout!.cells.rows[row][copyColumnsRange]
-      //        )
-      //      }
-      //      layout = .init(cells: cells)
-      //
-      //      return .needsDisplay
-      //
-      //    case let .line(row, originColumn, cells):
-      //      layout!.cells.rows[row].replaceSubrange(
-      //        originColumn ..< originColumn + cells.count,
-      //        with: cells
-      //      )
-      //      layout!.rowLayouts[row] = RowLayout(rowCells: layout!.cells.rows[row])
-      //      return .dirtyRectangles([.init(
-      //        origin: .init(column: originColumn, row: row),
-      //        size: .init(columnsCount: cells.count, rowsCount: 1)
-      //      )])
-      //
-      //    case let .scroll(rectangle, offset):
-      //      if offset.columnsCount != 0 {
-      //        Task { @MainActor in
-      //          logger.error("horizontal scroll not supported!!!")
-      //        }
-      //      }
-      //
-      //      let cellsCopy = layout!.cells
-      //      let rowLayoutsCopy = layout!.rowLayouts
-      //
-      //      let toRectangle = rectangle
-      //        .applying(offset: -offset)
-      //        .intersection(with: rectangle)
-      //
-      //      for toRow in toRectangle.rows {
-      //        let fromRow = toRow + offset.rowsCount
-      //
-      //        if rectangle.size.columnsCount == grid.size.columnsCount {
-      //          layout!.cells.rows[toRow] = cellsCopy.rows[fromRow]
-      //          layout!.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-      //        } else {
-      //          layout!.cells.rows[toRow].replaceSubrange(
-      //            rectangle.columns,
-      //            with: cellsCopy.rows[fromRow][rectangle.columns]
-      //          )
-      //          layout!.rowLayouts[toRow] = .init(rowCells: layout!.cells.rows[toRow])
-      //        }
-      //      }
-      //
-      //      return .dirtyRectangles([toRectangle])
-      //
-      //    case .clear:
-      //      layout!.cells = .init(size: layout!.cells.size, repeatingElement: .default)
-      //      layout!.rowLayouts = layout!.cells.rows
-      //        .map(RowLayout.init(rowCells:))
-      //      return .needsDisplay
-      //
-      //    case let .cursor(_, position):
-      //      let columnsCount =
-      //        if
-      //          position.row < layout!.rowLayouts.count,
-      //          let rowPart = layout!.rowLayouts[position.row].parts
-      //            .first(where: { $0.columnsRange.contains(position.column) }),
-      //            position.column < rowPart.columnsCount,
-      //            let rowPartCell = rowPart.cells
-      //              .first(where: {
-      //                (
-      //                  (
-      //                    $0.columnsRange.lowerBound + rowPart.columnsRange
-      //                      .lowerBound
-      //                  ) ..<
-      //                    ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
-      //                ).contains(position.column)
-      //              })
-      //        {
-      //          rowPartCell.columnsRange.count
-      //        } else {
-      //          1
-      //        }
-      //
-      //      return .dirtyRectangles([.init(
-      //        origin: position,
-      //        size: .init(columnsCount: columnsCount, rowsCount: 1)
-      //      )])
-      //
-      //    case .clearCursor:
-      //      return .dirtyRectangles([])
-      //    }
-      //  }
-    }
-  }
+  //            if
+  //              let cursor = state.cursor, cursor.gridID == gridID, cursor.position.row == dirtyRow, part.columnsRange
+  //                .contains(cursor.position.column), state.cursorBlinkingPhase
+  //            {
+  //              var cell: RowPart.Cell?
+  //              let currentColumn = part.columnsRange.startIndex
+  //              for currentCell in part.cells {
+  //                if
+  //                  (currentColumn + currentCell.columnsRange.lowerBound ..< currentColumn + currentCell.columnsRange.upperBound).contains(
+  //                    cursor.position.column
+  //                  )
+  //                {
+  //                  cell = currentCell
+  //                  break
+  //                }
+  //              }
+  //              drawRequestParts
+  //                .append(
+  //                  .init(
+  //                    row: flippedDirtyRow,
+  //                    columnsRange: currentColumn + cell!.columnsRange.lowerBound ..< currentColumn + cell!.columnsRange.upperBound,
+  //                    text: String(part.text[cell!.textRange]),
+  //                    backgroundColor: state.appearance.foregroundColor(
+  //                      for: part.highlightID
+  //                    ),
+  //                    foregroundColor: state.appearance
+  //                      .backgroundColor(for: part.highlightID),
+  //                    isBold: state.appearance.isBold(for: part.highlightID),
+  //                    isItalic: state.appearance.isItalic(for: part.highlightID),
+  //                    isStrikethrough: decorations.isStrikethrough,
+  //                    isUnderline: decorations.isUnderline,
+  //                    isUndercurl: decorations.isUndercurl,
+  //                    isUnderdouble: decorations.isUnderdouble,
+  //                    isUnderdotted: decorations.isUnderdotted,
+  //                    isUnderdashed: decorations.isUnderdashed
+  //                  )
+  //                )
+  //            }
 }
+
+//      _ = renderOperationsContinuation
+//        .yield([.init(type: .draw, draw: drawOperationParts, scroll: nil)])
+
+//    if !drawRequestParts.isEmpty {
+//      let remoteRenderer = remoteRenderer
+//      let gridID = gridID
+//
+//      rendererQueue.addOperation {
+//        await withUnsafeContinuation { continuation in
+//          remoteRenderer
+//            .draw(
+//              gridDrawRequest: .init(parts: drawRequestParts),
+//              forGridWithID: gridID,
+//              {
+//                continuation.resume()
+//              }
+//            )
+//        }
+//        Task { @MainActor in
+//          self.setNeedsDisplay()
+//        }
+//      }
+//    }
+
+//
+//  @MainActor
+//  private func apply(
+//    update: Grid.Update
+//  )
+//    -> Grid.UpdateResult?
+//  {
+//    switch update {
+//    case let .resize(integerSize):
+//      let copyColumnsCount = min(layout!.columnsCount, integerSize.columnsCount)
+//      let copyColumnsRange = 0 ..< copyColumnsCount
+//      let copyRowsCount = min(layout!.rowsCount, integerSize.rowsCount)
+//      var cells = TwoDimensionalArray<Cell>(
+//        size: integerSize,
+//        repeatingElement: .default
+//      )
+//      for row in 0 ..< copyRowsCount {
+//        cells.rows[row].replaceSubrange(
+//          copyColumnsRange,
+//          with: layout!.cells.rows[row][copyColumnsRange]
+//        )
+//      }
+//      layout = .init(cells: cells)
+//
+//      return .needsDisplay
+//
+//    case let .line(row, originColumn, cells):
+//      layout!.cells.rows[row].replaceSubrange(
+//        originColumn ..< originColumn + cells.count,
+//        with: cells
+//      )
+//      layout!.rowLayouts[row] = RowLayout(rowCells: layout!.cells.rows[row])
+//      return .dirtyRectangles([.init(
+//        origin: .init(column: originColumn, row: row),
+//        size: .init(columnsCount: cells.count, rowsCount: 1)
+//      )])
+//
+//    case let .scroll(rectangle, offset):
+//      if offset.columnsCount != 0 {
+//        Task { @MainActor in
+//          logger.error("horizontal scroll not supported!!!")
+//        }
+//      }
+//
+//      let cellsCopy = layout!.cells
+//      let rowLayoutsCopy = layout!.rowLayouts
+//
+//      let toRectangle = rectangle
+//        .applying(offset: -offset)
+//        .intersection(with: rectangle)
+//
+//      for toRow in toRectangle.rows {
+//        let fromRow = toRow + offset.rowsCount
+//
+//        if rectangle.size.columnsCount == grid.size.columnsCount {
+//          layout!.cells.rows[toRow] = cellsCopy.rows[fromRow]
+//          layout!.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
+//        } else {
+//          layout!.cells.rows[toRow].replaceSubrange(
+//            rectangle.columns,
+//            with: cellsCopy.rows[fromRow][rectangle.columns]
+//          )
+//          layout!.rowLayouts[toRow] = .init(rowCells: layout!.cells.rows[toRow])
+//        }
+//      }
+//
+//      return .dirtyRectangles([toRectangle])
+//
+//    case .clear:
+//      layout!.cells = .init(size: layout!.cells.size, repeatingElement: .default)
+//      layout!.rowLayouts = layout!.cells.rows
+//        .map(RowLayout.init(rowCells:))
+//      return .needsDisplay
+//
+//    case let .cursor(_, position):
+//      let columnsCount =
+//        if
+//          position.row < layout!.rowLayouts.count,
+//          let rowPart = layout!.rowLayouts[position.row].parts
+//            .first(where: { $0.columnsRange.contains(position.column) }),
+//            position.column < rowPart.columnsCount,
+//            let rowPartCell = rowPart.cells
+//              .first(where: {
+//                (
+//                  (
+//                    $0.columnsRange.lowerBound + rowPart.columnsRange
+//                      .lowerBound
+//                  ) ..<
+//                    ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
+//                ).contains(position.column)
+//              })
+//        {
+//          rowPartCell.columnsRange.count
+//        } else {
+//          1
+//        }
+//
+//      return .dirtyRectangles([.init(
+//        origin: position,
+//        size: .init(columnsCount: columnsCount, rowsCount: 1)
+//      )])
+//
+//    case .clearCursor:
+//      return .dirtyRectangles([])
+//    }
+//  }
+//    }
+//  }
+// }

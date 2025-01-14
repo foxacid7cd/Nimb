@@ -73,6 +73,13 @@
 		6842B4E52D1B703F00BADE9B /* NSFontCellSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */; };
 		684D4AC72C6C8BA1005A9AEC /* RendererServiceConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684D4AC62C6C8B9B005A9AEC /* RendererServiceConnector.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
+		685977C52D35FF560063E943 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532D2C5FE4A100AD6C68 /* Value.swift */; };
+		685977C62D35FFFF0063E943 /* GridLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688AC8FF2AD5EECF00DD62BE /* GridLayout.swift */; };
+		685977C72D3600090063E943 /* Highlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF492AD29F660017C28D /* Highlight.swift */; };
+		685977C82D36002C0063E943 /* Failure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53102C5FE47600AD6C68 /* Failure.swift */; };
+		685977C92D3601490063E943 /* TwoDimensionalArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */; };
+		685977CA2D3601560063E943 /* Unpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532C2C5FE4A100AD6C68 /* Unpacker.swift */; };
+		685977CB2D3601630063E943 /* Packer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532A2C5FE4A100AD6C68 /* Packer.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
 		68698B242C6651260084BB74 /* CmdlineTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68698B232C6651260084BB74 /* CmdlineTextView.swift */; };
 		6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
@@ -1075,9 +1082,16 @@
 				68F36A642D1C852700F3FDB2 /* Color.swift in Sources */,
 				6814B2FC2C7035F400ACD872 /* References.swift in Sources */,
 				6842B4E52D1B703F00BADE9B /* NSFontCellSize.swift in Sources */,
+				685977C52D35FF560063E943 /* Value.swift in Sources */,
+				685977C72D3600090063E943 /* Highlight.swift in Sources */,
+				685977CB2D3601630063E943 /* Packer.swift in Sources */,
+				685977CA2D3601560063E943 /* Unpacker.swift in Sources */,
+				685977C62D35FFFF0063E943 /* GridLayout.swift in Sources */,
 				6814B31E2C70374C00ACD872 /* OSLog.swift in Sources */,
 				6823AE432D1C679500FA6A45 /* IntegerGeometry.swift in Sources */,
+				685977C92D3601490063E943 /* TwoDimensionalArray.swift in Sources */,
 				68D0159D2C6D448D001B5CF0 /* Macros.swift in Sources */,
+				685977C82D36002C0063E943 /* Failure.swift in Sources */,
 				68D015882C6D4347001B5CF0 /* IntKeyedDictionary.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

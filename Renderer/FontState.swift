@@ -29,14 +29,6 @@ public struct FontState: Equatable, @unchecked Sendable {
   }
 
   public func nsFontForDraw(for part: GridRenderDrawOperationPart) -> NSFont {
-    if part.isBold, part.isItalic {
-      boldItalic
-    } else if part.isBold {
-      bold
-    } else if part.isItalic {
-      italic
-    } else {
-      regular
-    }
+    regular
   }
 }

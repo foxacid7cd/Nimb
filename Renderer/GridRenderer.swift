@@ -14,6 +14,7 @@ public final class GridRenderer: @unchecked Sendable {
   private var fontState: FontState
   private var cgContext: CGContext
   private let asyncQueue = AsyncQueue()
+  private var layout: GridLayout?
 
   private var ioSurface: IOSurface {
     gridContext.ioSurface
@@ -55,6 +56,27 @@ public final class GridRenderer: @unchecked Sendable {
 
   public func set(gridContext: GridContext) {
     asyncQueue.addOperation {
+      if let layout = self.layout {
+        if layout.size != gridContext.size {
+          self.layout = .init(
+            cells: .init(size: gridContext.size, elementAtPoint: { point in
+              if IntegerRectangle(size: layout.size).contains(point) {
+                layout.cells[point]
+              } else {
+                .default
+              }
+            })
+          )
+          self.layout!.rowLayouts = (0 ..< gridContext.size.rowsCount).map { row in
+            RowLayout(rowCells: self.layout!.cells.rows[row])
+          }
+        }
+      } else {
+        self.layout = .init(
+          cells: .init(size: gridContext.size, repeatingElement: .default)
+        )
+      }
+
       self.ioSurface.lock(seed: nil)
       gridContext.ioSurface.lock(seed: nil)
 
@@ -84,58 +106,88 @@ public final class GridRenderer: @unchecked Sendable {
     asyncQueue.addOperation {
       let fontState = self.fontState
 
+      self.ioSurface.lock(seed: nil)
+
+      if self.layout == nil {
+        self.layout = .init(
+          cells: .init(size: self.gridSize, repeatingElement: .default)
+        )
+      }
+
       for renderOperation in renderOperations.array {
         switch renderOperation.type {
         case .draw:
-          self.ioSurface.lock(seed: nil)
+          var dirtyRows = Set<Int>()
 
           let drawOperationParts = renderOperation.draw!
 
-          self.cgContext.setShouldAntialias(false)
           for part in drawOperationParts {
-            let frame = IntegerRectangle(
-              origin: .init(column: part.columnsRange.lowerBound, row: part.row),
-              size: .init(columnsCount: part.columnsRange.count, rowsCount: 1)
-            )
-            self.cgContext.setFillColor(part.backgroundColor.cg)
-            self.cgContext.fill(frame * fontState.cellSize * self.contentsScale)
+            self.layout!.cells.rows[part.row] = part.cells
+            self.layout!.rowLayouts[part.row] = RowLayout(rowCells: self.layout!.cells.rows[part.row])
+
+            dirtyRows.insert(part.row)
+//              redraw(dirtyRows: [part.row])
           }
 
-          self.cgContext.setShouldAntialias(true)
-          for part in drawOperationParts {
-            self.cgContext.saveGState()
+          for dirtyRow in dirtyRows {
+            self.cgContext.setShouldAntialias(false)
+            for part in self.layout!.rowLayouts[dirtyRow].parts {
+              let frame = IntegerRectangle(
+                origin: .init(
+                  column: part.columnsRange.lowerBound,
+                  row: dirtyRow
+                ),
+                size: .init(columnsCount: part.columnsRange.count, rowsCount: 1)
+              )
+              self.cgContext.setFillColor(NSColor.black.cgColor)
+              self.cgContext.fill(frame * fontState.cellSize * self.contentsScale)
+            }
 
-            let attributedString = NSAttributedString(
-              string: part.text,
-              attributes: [
-                .font: fontState.nsFontForDraw(for: part),
-                .foregroundColor: part.foregroundColor.appKit,
-              ]
-            )
-            let ctLine = CTLineCreateWithAttributedString(
-              attributedString
-            )
+            self.cgContext.setShouldAntialias(true)
+            for part in self.layout!.rowLayouts[dirtyRow].parts {
+              self.cgContext.saveGState()
 
-            self.cgContext.textPosition = .init(
-              x: Double(part.columnsRange.lowerBound) * fontState.cellSize.width,
-              y: Double(
-                part.row
-              ) * fontState.cellSize.height - fontState.regular.boundingRectForFont.origin.y
-            )
-            self.cgContext.scaleBy(x: self.contentsScale, y: self.contentsScale)
-            CTLineDraw(ctLine, self.cgContext)
+              let attributedString = NSAttributedString(
+                string: part.text,
+                attributes: [
+                  .font: fontState.regular,
+                  .foregroundColor: NSColor.white,
+                ]
+              )
+              let ctLine = CTLineCreateWithAttributedString(
+                attributedString
+              )
 
-            self.cgContext.restoreGState()
+              self.cgContext.textPosition = .init(
+                x: Double(part.columnsRange.lowerBound) * fontState.cellSize.width,
+                y: Double(
+                  dirtyRow
+                ) * fontState.cellSize.height - fontState.regular.boundingRectForFont.origin.y
+              )
+              self.cgContext.scaleBy(x: self.contentsScale, y: self.contentsScale)
+              CTLineDraw(ctLine, self.cgContext)
+
+              self.cgContext.restoreGState()
+            }
           }
-
-          self.cgContext.flush()
-
-          self.ioSurface.unlock(seed: nil)
 
         case .scroll:
-          self.ioSurface.lock(seed: nil)
-
           let scrollOperation = renderOperation.scroll!
+
+          self.cgContext.saveGState()
+
+          let toRectangle = IntegerRectangle(
+            origin: .init(
+              column: scrollOperation.offset.columnsCount,
+              row: scrollOperation.offset.rowsCount
+            ),
+            size: self.gridSize
+          )
+          .intersection(with: IntegerRectangle(size: self.gridSize))
+
+          self.cgContext.clip(to: [
+            toRectangle * self.cellSize * self.contentsScale,
+          ])
 
           let image = self.cgContext.makeImage()!
           self.cgContext
@@ -150,11 +202,13 @@ public final class GridRenderer: @unchecked Sendable {
               )
             )
 
-          self.cgContext.flush()
-
-          self.ioSurface.unlock(seed: nil)
+          self.cgContext.restoreGState()
         }
       }
+
+      self.cgContext.flush()
+
+      self.ioSurface.unlock(seed: nil)
 
       cb()
     }
