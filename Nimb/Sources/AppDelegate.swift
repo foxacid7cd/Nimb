@@ -59,6 +59,45 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
               switch notification {
               case let .redraw(uiEvents):
                 Task { @MainActor in
+                  for uiEvent in uiEvents {
+                    switch uiEvent {
+                    case let .hlAttrDefine(id, rgbAttrs, _, info):
+                      remoteRenderer
+                        .handle(
+                          appearanceChange: .init(
+                            type: .hlAttrDefine,
+                            hlAttrDefineChange: .init(
+                              id: id,
+                              rgbAttrs: rgbAttrs,
+                              info: info
+                            )
+                          )
+                        ) { }
+
+                    case let .defaultColorsSet(
+                      rgbFg,
+                      rgbBg,
+                      rgbSp,
+                      _,
+                      _
+                    ):
+                      remoteRenderer
+                        .handle(
+                          appearanceChange: .init(
+                            type: .defaultColorsSet,
+                            defaultColorsSetChange: .init(
+                              fg: rgbFg,
+                              bg: rgbBg,
+                              sp: rgbSp
+                            )
+                          )
+                        ) { }
+
+                    default:
+                      break
+                    }
+                  }
+
                   mainWindowController!.handle(uiEvents: uiEvents)
                 }
 

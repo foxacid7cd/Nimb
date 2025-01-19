@@ -60,8 +60,8 @@ public class GridLayer: CALayer, @unchecked Sendable {
   private var previousGridSize = IntegerSize(columnsCount: 0, rowsCount: 0)
   private var previousCursorRow: Int?
   private let rendererQueue: AsyncQueue
-  private var gridSize: IntegerSize?
   private var pendingRenderOperations = [GridRenderOperation]()
+  private var gridSize: IntegerSize?
 
   @MainActor
   private var upsideDownTransform: CGAffineTransform {
@@ -766,7 +766,10 @@ public class GridLayer: CALayer, @unchecked Sendable {
           self.surfaceLayer.contents = result.ioSurface!
           self.surfaceLayer.frame = .init(
             origin: .zero,
-            size: self.gridSize! * self.font!.cellSize
+            size: .init(
+              width: Double(result.ioSurface!.width) / self.contentsScale,
+              height: Double(result.ioSurface!.height) / self.contentsScale
+            )
           )
         }
         self.setNeedsDisplay()

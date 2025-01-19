@@ -5,18 +5,18 @@ import AppKit
 @preconcurrency import CoreText
 import CustomDump
 import IOSurface
-import Queue
 
+@MainActor
 public final class GridRenderer: @unchecked Sendable {
   public let gridID: Int
 
+  private let globalState: RendererGlobalState
   private var font: NSFont?
   private var fontState: FontState?
   private var contentsScale: Double?
   private var layout: GridLayout?
   private var ioSurface: IOSurface?
   private var cgContext: CGContext?
-  private let asyncQueue = AsyncQueue()
 
   private var gridSize: IntegerSize? {
     layout?.size
@@ -26,10 +26,16 @@ public final class GridRenderer: @unchecked Sendable {
     fontState?.cellSize
   }
 
+  private var appearance: Appearance {
+    globalState.appearance
+  }
+
   public init(
-    gridID: Int
+    gridID: Int,
+    globalState: RendererGlobalState
   ) {
     self.gridID = gridID
+    self.globalState = globalState
   }
 
   private static func makeCGContext(ioSurface: IOSurface) -> CGContext {
@@ -48,277 +54,267 @@ public final class GridRenderer: @unchecked Sendable {
     renderOperations: GridRenderOperations,
     _ cb: @Sendable @escaping (_ result: GridRenderOperationsResult) -> Void
   ) {
-    asyncQueue.addOperation {
-      var newIOSurface: IOSurface?
+    var newIOSurface: IOSurface?
 
-      for renderOperation in renderOperations.array {
-        switch renderOperation.type {
-        case .resize:
-          let resizeOperation = renderOperation.resize!
+    for renderOperation in renderOperations.array {
+      switch renderOperation.type {
+      case .resize:
+        let resizeOperation = renderOperation.resize!
 
-          self.font = resizeOperation.font
-          self.fontState = .init(resizeOperation.font)
-          self.contentsScale = resizeOperation.contentsScale
+        font = resizeOperation.font
+        fontState = .init(resizeOperation.font)
+        contentsScale = resizeOperation.contentsScale
 
-          if let layout = self.layout {
-            if layout.size != resizeOperation.size {
-              self.layout = .init(
-                cells: .init(size: resizeOperation.size, elementAtPoint: { point in
-                  if IntegerRectangle(size: layout.size).contains(point) {
-                    layout.cells[point]
-                  } else {
-                    .default
-                  }
-                })
-              )
-              self.layout!.rowLayouts = (0 ..< resizeOperation.size.rowsCount)
-                .map { row in
-                  RowLayout(rowCells: self.layout!.cells.rows[row])
-                }
-            }
-          } else {
+        if let layout {
+          if layout.size != resizeOperation.size {
             self.layout = .init(
-              cells: .init(
-                size: resizeOperation.size,
-                repeatingElement: .default
-              )
+              cells: .init(size: resizeOperation.size, elementAtPoint: { point in
+                if IntegerRectangle(size: layout.size).contains(point) {
+                  layout.cells[point]
+                } else {
+                  .default
+                }
+              })
             )
+            self.layout!.rowLayouts = (0 ..< resizeOperation.size.rowsCount)
+              .map { row in
+                RowLayout(rowCells: self.layout!.cells.rows[row])
+              }
           }
+        } else {
+          layout = .init(
+            cells: .init(
+              size: resizeOperation.size,
+              repeatingElement: .default
+            )
+          )
+        }
 
-          let ioSurfaceSize = self.gridSize! * self.fontState!.cellSize * self.contentsScale!
+        let ioSurfaceSize = gridSize! * fontState!.cellSize * contentsScale!
 
-          let ioSurface = IOSurface(
-            properties: [
-              .width: ioSurfaceSize.width,
-              .height: ioSurfaceSize.height,
-              .bytesPerElement: 4,
-              .pixelFormat: kCVPixelFormatType_32BGRA,
-            ]
-          )!
-          newIOSurface = ioSurface
-          let cgContext = Self.makeCGContext(ioSurface: ioSurface)
+        let ioSurface = IOSurface(
+          properties: [
+            .width: ioSurfaceSize.width,
+            .height: ioSurfaceSize.height,
+            .bytesPerElement: 4,
+            .pixelFormat: kCVPixelFormatType_32BGRA,
+          ]
+        )!
+        newIOSurface = ioSurface
+        let cgContext = Self.makeCGContext(ioSurface: ioSurface)
 
-          if let oldIOSurface = self.ioSurface, let oldCGContext = self.cgContext {
-            oldIOSurface.lock(seed: nil)
-            ioSurface.lock(seed: nil)
+        if let oldIOSurface = self.ioSurface, let oldCGContext = self.cgContext {
+          oldIOSurface.lock(seed: nil)
+          ioSurface.lock(seed: nil)
 
-            cgContext
-              .draw(
-                oldCGContext.makeImage()!,
-                in: .init(
-                  origin: .zero,
-                  size: .init(
-                    width: ioSurface.width,
-                    height: ioSurface.height
-                  )
+          cgContext
+            .draw(
+              oldCGContext.makeImage()!,
+              in: .init(
+                origin: .zero,
+                size: .init(
+                  width: ioSurface.width,
+                  height: ioSurface.height
                 )
               )
+            )
 
-            cgContext.flush()
+          cgContext.flush()
 
-            oldIOSurface.unlock(seed: nil)
-            ioSurface.unlock(seed: nil)
-          }
+          oldIOSurface.unlock(seed: nil)
+          ioSurface.unlock(seed: nil)
+        }
 
-          self.ioSurface = ioSurface
-          self.cgContext = cgContext
+        self.ioSurface = ioSurface
+        self.cgContext = cgContext
 
-        case .draw:
-          var dirtyRows = Set<Int>()
+      case .draw:
+        var dirtyRows = Set<Int>()
 
-          let drawOperationParts = renderOperation.draw!
+        let drawOperationParts = renderOperation.draw!
 
-          for part in drawOperationParts {
-            do {
-              var cells = [Cell]()
-              var highlightID = 0
+        for part in drawOperationParts {
+          do {
+            var cells = [Cell]()
+            var highlightID = 0
 
-              for value in part.data {
+            for value in part.data {
+              guard
+                case let .array(arrayValue) = value,
+                !arrayValue.isEmpty,
+                case let .string(text) = arrayValue[0]
+              else {
+                throw Failure("invalid grid line cell value", value)
+              }
+
+              var repeatCount = 1
+
+              if arrayValue.count > 1 {
                 guard
-                  case let .array(arrayValue) = value,
-                  !arrayValue.isEmpty,
-                  case let .string(text) = arrayValue[0]
+                  case let .integer(newHighlightID) = arrayValue[1]
                 else {
-                  throw Failure("invalid grid line cell value", value)
+                  throw Failure(
+                    "invalid grid line cell highlight value",
+                    arrayValue[1]
+                  )
                 }
 
-                var repeatCount = 1
+                highlightID = newHighlightID
 
-                if arrayValue.count > 1 {
+                if arrayValue.count > 2 {
                   guard
-                    case let .integer(newHighlightID) = arrayValue[1]
+                    case let .integer(newRepeatCount) = arrayValue[2]
                   else {
                     throw Failure(
-                      "invalid grid line cell highlight value",
-                      arrayValue[1]
+                      "invalid grid line cell repeat count value",
+                      arrayValue[2]
                     )
                   }
 
-                  highlightID = newHighlightID
-
-                  if arrayValue.count > 2 {
-                    guard
-                      case let .integer(newRepeatCount) = arrayValue[2]
-                    else {
-                      throw Failure(
-                        "invalid grid line cell repeat count value",
-                        arrayValue[2]
-                      )
-                    }
-
-                    repeatCount = newRepeatCount
-                  }
-                }
-
-                let cell = Cell(text: text, highlightID: highlightID)
-                for _ in 0 ..< repeatCount {
-                  cells.append(cell)
+                  repeatCount = newRepeatCount
                 }
               }
 
-              self.layout!.cells
-                .rows[part.row]
-                .replaceSubrange(
-                  part.colStart ..< part.colStart + cells.count,
-                  with: cells
-                )
-
-              //      self.layout!.cells.rows[part.row].replaceSubrange(
-              //        part.originColumn ..< part.originColumn + cells.count,
-              //        with: cells
-              //      )
-              //      self.layout!.rowLayouts[part.row] = RowLayout(rowCells: self.layout!.cells.rows[part.row])
-              //
-              //      dirtyRows.insert(part.row)
-              //              redraw(dirtyRows: [part.row])
-
-            } catch {
-              logger.error("failed to handle line \(error)")
+              let cell = Cell(text: text, highlightID: highlightID)
+              for _ in 0 ..< repeatCount {
+                cells.append(cell)
+              }
             }
 
-            dirtyRows.insert(part.row)
+            layout!.cells
+              .rows[part.row]
+              .replaceSubrange(
+                part.colStart ..< part.colStart + cells.count,
+                with: cells
+              )
+
+          } catch {
+            logger.error("failed to handle line \(error)")
           }
 
-          self.ioSurface!.lock(seed: nil)
+          dirtyRows.insert(part.row)
+        }
 
-          for dirtyRow in dirtyRows {
-            self.layout!
-              .rowLayouts[dirtyRow] = RowLayout(
-                rowCells: self.layout!.cells.rows[dirtyRow]
-              )
+        ioSurface!.lock(seed: nil)
 
-            let flippedDirtyRow = self.gridSize!.rowsCount - dirtyRow - 1
-
-            self.cgContext!.setShouldAntialias(false)
-            for part in self.layout!.rowLayouts[dirtyRow].parts {
-              let frame = IntegerRectangle(
-                origin: .init(
-                  column: part.columnsRange.lowerBound,
-                  row: flippedDirtyRow
-                ),
-                size: .init(columnsCount: part.columnsRange.count, rowsCount: 1)
-              )
-              self.cgContext!.setFillColor(NSColor.black.cgColor)
-              self.cgContext!.fill(frame * self.fontState!.cellSize * self.contentsScale!)
-            }
-
-            self.cgContext!.setShouldAntialias(true)
-            for part in self.layout!.rowLayouts[dirtyRow].parts {
-              self.cgContext!.saveGState()
-
-              let attributedString = NSAttributedString(
-                string: part.text,
-                attributes: [
-                  .font: self.fontState!.regular,
-                  .foregroundColor: NSColor.white,
-                ]
-              )
-              let ctLine = CTLineCreateWithAttributedString(
-                attributedString
-              )
-
-              self.cgContext!.textPosition = .init(
-                x: Double(part.columnsRange.lowerBound) * self.fontState!.cellSize.width,
-                y: Double(
-                  flippedDirtyRow
-                ) * self.fontState!.cellSize.height - self.fontState!.regular.boundingRectForFont.origin.y
-              )
-              self.cgContext!.scaleBy(x: self.contentsScale!, y: self.contentsScale!)
-              CTLineDraw(ctLine, self.cgContext!)
-
-              self.cgContext!.restoreGState()
-            }
-
-            self.cgContext!.flush()
-
-            self.ioSurface!.unlock(seed: nil)
-          }
-
-        case .scroll:
-          let scrollOperation = renderOperation.scroll!
-
-          let cellsCopy = self.layout!.cells
-          let rowLayoutsCopy = self.layout!.rowLayouts
-
-          let toRectangle = scrollOperation.rectangle
-            .applying(offset: -scrollOperation.offset)
-            .intersection(with: scrollOperation.rectangle)
-
-          for toRow in toRectangle.rows {
-            let fromRow = toRow + scrollOperation.offset.rowsCount
-
-            if scrollOperation.rectangle.size.columnsCount == self.layout!.size.columnsCount {
-              self.layout!.cells.rows[toRow] = cellsCopy.rows[fromRow]
-              self.layout!.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
-            } else {
-              self.layout!.cells.rows[toRow].replaceSubrange(
-                scrollOperation.rectangle.columns,
-                with: cellsCopy.rows[fromRow][scrollOperation.rectangle.columns]
-              )
-              self.layout!.rowLayouts[toRow] = .init(rowCells: self.layout!.cells.rows[toRow])
-            }
-          }
-
-          self.ioSurface!.lock(seed: nil)
-
-          self.cgContext!.saveGState()
-
-          let image = self.cgContext!.makeImage()!
-
-          self.cgContext!.clip(
-            to: [
-              IntegerRectangle(
-                origin: .init(
-                  column: toRectangle.origin.column,
-                  row: self.layout!.cells.size.rowsCount - toRectangle.size.rowsCount - toRectangle.origin.row
-                ),
-                size: toRectangle.size
-              ) * self.cellSize! * self.contentsScale!,
-            ]
-          )
-
-          self.cgContext!
-            .draw(
-              image,
-              in: .init(
-                origin: .init(
-                  column: scrollOperation.offset.columnsCount,
-                  row: scrollOperation.offset.rowsCount
-                ) * self.cellSize! * self.contentsScale!,
-                size: .init(width: image.width, height: image.height)
-              )
+        for dirtyRow in dirtyRows {
+          layout!
+            .rowLayouts[dirtyRow] = RowLayout(
+              rowCells: layout!.cells.rows[dirtyRow]
             )
 
-          self.cgContext!.restoreGState()
+          let flippedDirtyRow = gridSize!.rowsCount - dirtyRow - 1
 
-          self.cgContext!.flush()
+          cgContext!.setShouldAntialias(false)
+          for part in layout!.rowLayouts[dirtyRow].parts {
+            let frame = IntegerRectangle(
+              origin: .init(
+                column: part.columnsRange.lowerBound,
+                row: flippedDirtyRow
+              ),
+              size: .init(columnsCount: part.columnsRange.count, rowsCount: 1)
+            )
+            cgContext!
+              .setFillColor(appearance.backgroundColor(for: part.highlightID).cg)
+            cgContext!.fill(frame * fontState!.cellSize * contentsScale!)
+          }
 
-          self.ioSurface!.unlock(seed: nil)
+          cgContext!.setShouldAntialias(true)
+          for part in layout!.rowLayouts[dirtyRow].parts {
+            cgContext!.saveGState()
+
+            let attributedString = NSAttributedString(
+              string: part.text,
+              attributes: [
+                .font: fontState!.regular,
+                .foregroundColor: appearance.foregroundColor(for: part.highlightID).appKit,
+              ]
+            )
+            let ctLine = CTLineCreateWithAttributedString(
+              attributedString
+            )
+
+            cgContext!.textPosition = .init(
+              x: Double(part.columnsRange.lowerBound) * fontState!.cellSize.width,
+              y: Double(
+                flippedDirtyRow
+              ) * fontState!.cellSize.height - fontState!.regular.boundingRectForFont.origin.y
+            )
+            cgContext!.scaleBy(x: contentsScale!, y: contentsScale!)
+            CTLineDraw(ctLine, cgContext!)
+
+            cgContext!.restoreGState()
+          }
+
+          cgContext!.flush()
+
+          ioSurface!.unlock(seed: nil)
         }
-      }
 
-      cb(.init(isIOSurfaceUpdated: newIOSurface != nil, ioSurface: newIOSurface))
+      case .scroll:
+        let scrollOperation = renderOperation.scroll!
+
+        let cellsCopy = layout!.cells
+        let rowLayoutsCopy = layout!.rowLayouts
+
+        let toRectangle = scrollOperation.rectangle
+          .applying(offset: -scrollOperation.offset)
+          .intersection(with: scrollOperation.rectangle)
+
+        for toRow in toRectangle.rows {
+          let fromRow = toRow + scrollOperation.offset.rowsCount
+
+          if scrollOperation.rectangle.size.columnsCount == layout!.size.columnsCount {
+            layout!.cells.rows[toRow] = cellsCopy.rows[fromRow]
+            layout!.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
+          } else {
+            layout!.cells.rows[toRow].replaceSubrange(
+              scrollOperation.rectangle.columns,
+              with: cellsCopy.rows[fromRow][scrollOperation.rectangle.columns]
+            )
+            layout!.rowLayouts[toRow] = .init(rowCells: layout!.cells.rows[toRow])
+          }
+        }
+
+        ioSurface!.lock(seed: nil)
+
+        cgContext!.saveGState()
+
+        let image = cgContext!.makeImage()!
+
+        cgContext!.clip(
+          to: [
+            IntegerRectangle(
+              origin: .init(
+                column: toRectangle.origin.column,
+                row: layout!.cells.size.rowsCount - toRectangle.size.rowsCount - toRectangle.origin.row
+              ),
+              size: toRectangle.size
+            ) * cellSize! * contentsScale!,
+          ]
+        )
+
+        cgContext!
+          .draw(
+            image,
+            in: .init(
+              origin: .init(
+                column: scrollOperation.offset.columnsCount,
+                row: scrollOperation.offset.rowsCount
+              ) * cellSize! * contentsScale!,
+              size: .init(width: image.width, height: image.height)
+            )
+          )
+
+        cgContext!.restoreGState()
+
+        cgContext!.flush()
+
+        ioSurface!.unlock(seed: nil)
+      }
     }
+
+    cb(.init(isIOSurfaceUpdated: newIOSurface != nil, ioSurface: newIOSurface))
   }
 
 //  public func draw(

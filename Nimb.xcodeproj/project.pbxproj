@@ -114,6 +114,7 @@
 		68818CAE2CE3A98C0013F9E5 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 680BB8902C6C6F5B0038E18F /* IOSurface.framework */; };
 		68818CAF2CE3A99A0013F9E5 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 680BB8902C6C6F5B0038E18F /* IOSurface.framework */; };
 		6882EB4B2AC5D4ED001FAA2E /* TablineItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6882EB4A2AC5D4ED001FAA2E /* TablineItemView.swift */; };
+		6884D4172D3CB93E00275934 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF4B2AD29F660017C28D /* Appearance.swift */; };
 		6888D8A62AF83B6B0049562D /* API+Nimb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6888D8A52AF83B6B0049562D /* API+Nimb.swift */; };
 		688A56622D1CBD3D00A75CD8 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 688A56612D1CBD3D00A75CD8 /* Queue */; };
 		688A56642D1CBD5100A75CD8 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 688A56632D1CBD5100A75CD8 /* Queue */; };
@@ -416,6 +417,7 @@
 		680BB88D2C6C64870038E18F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AppearanceChange.swift,
 				GridContext.swift,
 				GridRenderOperations.swift,
 				RendererProtocol.swift,
@@ -1084,6 +1086,7 @@
 				6842B4E52D1B703F00BADE9B /* NSFontCellSize.swift in Sources */,
 				685977C52D35FF560063E943 /* Value.swift in Sources */,
 				685977C72D3600090063E943 /* Highlight.swift in Sources */,
+				6884D4172D3CB93E00275934 /* Appearance.swift in Sources */,
 				685977CB2D3601630063E943 /* Packer.swift in Sources */,
 				685977CA2D3601560063E943 /* Unpacker.swift in Sources */,
 				685977C62D35FFFF0063E943 /* GridLayout.swift in Sources */,

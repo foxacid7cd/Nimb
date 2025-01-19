@@ -7,8 +7,15 @@ import QuartzCore
 import Queue
 
 public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
+  private let globalState = RendererGlobalState()
   private let asyncQueue = AsyncQueue()
   private var gridRenderers = IntKeyedDictionary<GridRenderer>()
+
+  @objc public func handle(appearanceChange: AppearanceChange, _ cb: @Sendable @escaping () -> Void) {
+    asyncQueue.addOperation {
+      await self.globalState.handle(appearanceChange: appearanceChange, cb)
+    }
+  }
 
   @objc public func execute(
     renderOperations: GridRenderOperations,
@@ -17,10 +24,10 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
   ) {
     asyncQueue.addOperation {
       if self.gridRenderers[gridID] == nil {
-        self.gridRenderers[gridID] = .init(gridID: gridID)
+        self.gridRenderers[gridID] = await .init(gridID: gridID, globalState: self.globalState)
       }
 
-      self.gridRenderers[gridID]!
+      await self.gridRenderers[gridID]!
         .execute(renderOperations: renderOperations, cb)
     }
   }

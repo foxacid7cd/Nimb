@@ -3,6 +3,7 @@
 import AppKit
 
 @objc public protocol RendererProtocol: AnyObject, Sendable {
+  @objc func handle(appearanceChange: AppearanceChange, _ cb: @Sendable @escaping () -> Void)
   @objc func execute(
     renderOperations: GridRenderOperations,
     forGridWithID gridID: Int,
