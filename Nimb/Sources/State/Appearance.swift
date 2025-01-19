@@ -59,7 +59,7 @@ public struct Appearance: Sendable {
   }
 
   public func foregroundColor(for name: ObservedHighlightName) -> Color {
-    guard 
+    guard
       let (id, _) = observedHighlights[name],
       let highlight = highlights[id],
       let foregroundColor = highlight.foregroundColor

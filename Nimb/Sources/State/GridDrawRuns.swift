@@ -128,7 +128,7 @@ public struct RowDrawRun: Sendable {
       var reusedDrawRun: DrawRun?
 
       if let old {
-        if 
+        if
           let index = previousReusedOldDrawRunIndex.map({ $0 + 1 }),
           index < old.drawRuns.endIndex,
           old.drawRuns[index].shouldBeReused(for: part)

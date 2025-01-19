@@ -38,7 +38,7 @@ public enum UIEventsChunk: Sendable {
     public var id: Int
 
     public init(raw: Value) throws {
-      guard 
+      guard
         case let .dictionary(raw) = raw,
         case let .string(kind) = raw["kind"],
         case let .integer(id) = raw["id"]
