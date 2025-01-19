@@ -89,8 +89,7 @@ public struct Grid: Sendable, Identifiable {
     id: Int,
     size: IntegerSize,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   ) {
     let layout = GridLayout(cells: .init(
       size: size,
@@ -102,8 +101,7 @@ public struct Grid: Sendable, Identifiable {
     drawRuns = .init(
       layout: layout,
       font: font,
-      appearance: appearance,
-      sharedCache: sharedCache
+      appearance: appearance
     )
     associatedWindow = nil
     isHidden = false
@@ -112,8 +110,7 @@ public struct Grid: Sendable, Identifiable {
   public mutating func apply(
     update: Update,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   )
     -> UpdateResult?
   {
@@ -138,8 +135,7 @@ public struct Grid: Sendable, Identifiable {
       drawRuns = .init(
         layout: layout,
         font: font,
-        appearance: appearance,
-        sharedCache: sharedCache
+        appearance: appearance
       )
 
       if
@@ -187,8 +183,7 @@ public struct Grid: Sendable, Identifiable {
             layout: layout.rowLayouts[toRow],
             font: font,
             appearance: appearance,
-            old: drawRuns.rowDrawRuns[toRow],
-            sharedCache: sharedCache
+            old: drawRuns.rowDrawRuns[toRow]
           )
         }
 
@@ -268,8 +263,7 @@ public struct Grid: Sendable, Identifiable {
     lineUpdates: [(originColumn: Int, cells: [Cell])],
     forRow row: Int,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   )
     -> LineUpdatesResult
   {
@@ -302,8 +296,7 @@ public struct Grid: Sendable, Identifiable {
       layout: rowLayout,
       font: font,
       appearance: appearance,
-      old: drawRuns.rowDrawRuns[row],
-      sharedCache: sharedCache
+      old: drawRuns.rowDrawRuns[row]
     )
     return .init(
       row: row,

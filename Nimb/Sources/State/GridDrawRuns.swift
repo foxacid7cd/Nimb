@@ -9,16 +9,13 @@ import SwiftUI
 public struct GridDrawRuns: Sendable {
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
-  public var sharedCache: SharedDrawRunsCache
 
   public init(
     layout: GridLayout,
     font: Font,
-    appearance: Appearance,
-    sharedCache: SharedDrawRunsCache
+    appearance: Appearance
   ) {
     rowDrawRuns = []
-    self.sharedCache = sharedCache
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
 
@@ -35,8 +32,7 @@ public struct GridDrawRuns: Sendable {
           layout: layout,
           font: font,
           appearance: appearance,
-          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
-          sharedCache: sharedCache
+          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
         )
       }
   }
@@ -115,15 +111,13 @@ public struct DrawRunsCachingKey: Sendable, Hashable {
 public struct RowDrawRun: Sendable {
   public var drawRuns: [DrawRun]
   public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
-  public var sharedCache: SharedDrawRunsCache
 
   public init(
     row: Int,
     layout: RowLayout,
     font: Font,
     appearance: Appearance,
-    old: RowDrawRun?,
-    sharedCache: SharedDrawRunsCache
+    old: RowDrawRun?
   ) {
     var drawRuns = [DrawRun]()
     var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
@@ -159,10 +153,6 @@ public struct RowDrawRun: Sendable {
         }
       }
 
-      if reusedDrawRun == nil, SharedDrawRunsCache.shouldCacheDrawRun(forKey: .init(part)), let drawRun = sharedCache.drawRun(forKey: .init(part)) {
-        reusedDrawRun = drawRun
-      }
-
       var drawRun = reusedDrawRun ?? .init(
         text: part.text,
         rowPartCells: part.cells,
@@ -176,15 +166,11 @@ public struct RowDrawRun: Sendable {
         index: drawRuns.count,
         drawRun: drawRun
       )
-      if SharedDrawRunsCache.shouldCacheDrawRun(forKey: .init(drawRun)) {
-        sharedCache.set(drawRun: drawRun, forKey: .init(drawRun))
-      }
       drawRuns.append(drawRun)
     }
 
     self.drawRuns = drawRuns
     self.drawRunsCache = drawRunsCache
-    self.sharedCache = sharedCache
   }
 
   public func drawBackground(

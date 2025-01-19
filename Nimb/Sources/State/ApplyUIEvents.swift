@@ -12,7 +12,6 @@ public extension Actions {
     S: Sendable
   {
     public var uiEvents: S
-    public var sharedDrawRunsCache: SharedDrawRunsCache
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       var updates = State.Updates()
@@ -86,8 +85,7 @@ public extension Actions {
               id: gridID,
               size: outerGrid!.size,
               font: font,
-              appearance: appearance,
-              sharedCache: sharedDrawRunsCache
+              appearance: appearance
             )
             grid!.isHidden = true
           }
@@ -95,8 +93,7 @@ public extension Actions {
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
-          appearance: appearance,
-          sharedCache: sharedDrawRunsCache
+          appearance: appearance
         )
         if let result {
           Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -319,8 +316,7 @@ public extension Actions {
                     drawRuns: .init(
                       layout: layout,
                       font: font,
-                      appearance: appearance,
-                      sharedCache: sharedDrawRunsCache
+                      appearance: appearance
                     ),
                     associatedWindow: nil,
                     isHidden: false
@@ -907,8 +903,7 @@ public extension Actions {
                   lineUpdates: lineUpdates,
                   forRow: row,
                   font: font,
-                  appearance: appearance,
-                  sharedCache: sharedDrawRunsCache
+                  appearance: appearance
                 )
               )
             }

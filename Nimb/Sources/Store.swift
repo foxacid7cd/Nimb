@@ -43,7 +43,6 @@ public final class Store: Sendable {
 
   private let actionsContinuation: AsyncStream<Action>.Continuation
   private let alertsContinuation: AsyncStream<Alert>.Continuation
-  private let sharedDrawRunsCache = SharedDrawRunsCache()
 
   public init(api: API<ProcessChannel>, initialState: State) {
     self.api = api
@@ -55,8 +54,7 @@ public final class Store: Sendable {
 
     let applyUIEventsActions = api.neovimNotifications
       .compactMap { [
-        alertsContinuation,
-        sharedDrawRunsCache
+        alertsContinuation
       ] neovimNotificationsBatch in
         var actionsAccumulator = [Action]()
 
@@ -67,8 +65,7 @@ public final class Store: Sendable {
               .append(
                 Actions
                   .ApplyUIEvents(
-                    uiEvents: uiEvents,
-                    sharedDrawRunsCache: sharedDrawRunsCache
+                    uiEvents: uiEvents
                   )
               )
 
