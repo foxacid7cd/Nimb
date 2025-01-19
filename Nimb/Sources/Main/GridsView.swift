@@ -88,8 +88,6 @@ public class GridsView: NSView, CALayerDelegate {
       for gridLayer in arrangedGridLayers.values {
         if gridLayer.contentsScale != contentsScale {
           gridLayer.contentsScale = contentsScale
-          gridLayer.createNewIOSurface()
-          gridLayer.registerNewGridContext()
         }
       }
     }
@@ -262,6 +260,7 @@ public class GridsView: NSView, CALayerDelegate {
         }
         let gridLayer = arrangedGridLayer(forGridWithID: gridID)
         gridLayer.handleResize(gridSize: size)
+        gridLayer.lastHandledGridSize = size
         gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
         shouldWalkGridFrames = true
 
@@ -285,6 +284,7 @@ public class GridsView: NSView, CALayerDelegate {
         let gridLayer = arrangedGridLayer(forGridWithID: gridID)
         gridLayer.associatedWindow = .plain(.init(id: windowID, origin: origin))
         gridLayer.handleResize(gridSize: size)
+        gridLayer.lastHandledGridSize = size
         gridLayer.isHidden = false
         gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
 
@@ -358,6 +358,11 @@ public class GridsView: NSView, CALayerDelegate {
       case let .gridClear(gridID):
         let gridLayer = arrangedGridLayer(forGridWithID: gridID)
         gridLayer.handleClear()
+
+      case .flush:
+        for gridLayer in arrangedGridLayers.values {
+          gridLayer.handleFlush()
+        }
 
       default:
         break
@@ -463,14 +468,16 @@ public class GridsView: NSView, CALayerDelegate {
             break
 
           case .northEast:
-            gridColumn -= Double(anchorGridLayer.gridSize!.columnsCount)
+            gridColumn -= Double(
+              anchorGridLayer.lastHandledGridSize!.columnsCount
+            )
 
           case .southWest:
-            gridRow -= Double(anchorGridLayer.gridSize!.rowsCount)
+            gridRow -= Double(anchorGridLayer.lastHandledGridSize!.rowsCount)
 
           case .southEast:
-            gridColumn -= Double(anchorGridLayer.gridSize!.columnsCount)
-            gridRow -= Double(anchorGridLayer.gridSize!.rowsCount)
+            gridColumn -= Double(anchorGridLayer.lastHandledGridSize!.columnsCount)
+            gridRow -= Double(anchorGridLayer.lastHandledGridSize!.rowsCount)
           }
           positionsInParent[id] = .init(
             x: gridColumn * font.cellWidth,
@@ -487,7 +494,7 @@ public class GridsView: NSView, CALayerDelegate {
 
       let frame = CGRect(
         origin: positionsInParent[id]!,
-        size: gridLayer.gridSize! * font.cellSize
+        size: gridLayer.lastHandledGridSize! * font.cellSize
       )
 
       try body(id, frame, Double(1_000_000 * depth + nodesCount * 1000))

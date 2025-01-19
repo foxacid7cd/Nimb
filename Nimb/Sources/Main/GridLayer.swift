@@ -37,6 +37,9 @@ public class GridLayer: CALayer, @unchecked Sendable {
 
   public var associatedWindow: AssociatedWindow?
 
+  @MainActor
+  public var lastHandledGridSize: IntegerSize?
+
   let gridID: Grid.ID
 
   private let store: Store
@@ -57,12 +60,8 @@ public class GridLayer: CALayer, @unchecked Sendable {
   private var previousGridSize = IntegerSize(columnsCount: 0, rowsCount: 0)
   private var previousCursorRow: Int?
   private let rendererQueue: AsyncQueue
-  private let renderOperationsContinuation: AsyncStream<[GridRenderOperation]>.Continuation
-  private var cells: TwoDimensionalArray<Cell>?
-
-  public var gridSize: IntegerSize? {
-    cells?.size
-  }
+  private var gridSize: IntegerSize?
+  private var pendingRenderOperations = [GridRenderOperation]()
 
   @MainActor
   private var upsideDownTransform: CGAffineTransform {
@@ -79,10 +78,6 @@ public class GridLayer: CALayer, @unchecked Sendable {
     store = gridLayer.store
     remoteRenderer = gridLayer.remoteRenderer
     gridID = gridLayer.gridID
-
-    let (_, renderOperationsContinuation) = AsyncStream
-      .makeStream(of: [GridRenderOperation].self, bufferingPolicy: .unbounded)
-    self.renderOperationsContinuation = renderOperationsContinuation
 
     rendererQueue = .init()
 
@@ -101,10 +96,6 @@ public class GridLayer: CALayer, @unchecked Sendable {
     self.gridID = gridID
     self.rendererQueue = rendererQueue
 
-    let (renderOperationStream, renderOperationsContinuation) = AsyncStream
-      .makeStream(of: [GridRenderOperation].self, bufferingPolicy: .unbounded)
-    self.renderOperationsContinuation = renderOperationsContinuation
-
     super.init()
 
     isOpaque = false
@@ -115,34 +106,6 @@ public class GridLayer: CALayer, @unchecked Sendable {
     surfaceLayer.isOpaque = false
     surfaceLayer.contentsScale = contentsScale
     addSublayer(surfaceLayer)
-
-    let renderOperationBatches = renderOperationStream
-      .throttle(
-        for: .milliseconds(1000 / 200),
-        clock: .continuous
-      ) { previous, latest in
-        var accumulator = previous
-        accumulator.append(contentsOf: latest)
-        return accumulator
-      }
-    let rendererQueue = rendererQueue
-    Task {
-      for await renderOperations in renderOperationBatches {
-        rendererQueue.addOperation {
-          await withUnsafeContinuation { continuation in
-            remoteRenderer.execute(
-              renderOperations: .init(array: renderOperations),
-              forGridWithID: gridID
-            ) {
-              continuation.resume()
-            }
-          }
-          Task { @MainActor in
-            self.setNeedsDisplay()
-          }
-        }
-      }
-    }
   }
 
   @available(*, unavailable)
@@ -154,55 +117,28 @@ public class GridLayer: CALayer, @unchecked Sendable {
     NSNull()
   }
 
-  @MainActor
-  public func createNewIOSurface() {
-    guard let font, let gridSize else {
-      return
-    }
-    let size = gridSize * font.cellSize * contentsScale
-
-    let ioSurface = IOSurface(
-      properties: [
-        .width: size.width,
-        .height: size.height,
-        .bytesPerElement: 4,
-        .pixelFormat: kCVPixelFormatType_32BGRA,
-      ]
-    )!
-    self.ioSurface = ioSurface
-    surfaceLayer.contents = ioSurface
-    surfaceLayer.frame = .init(
-      origin: .zero,
-      size: gridSize * font.cellSize
-    )
-  }
-
-  @MainActor
-  public func registerNewGridContext() {
-    guard let font, let gridSize, let ioSurface else {
-      return
-    }
-    let gridID = gridID
-    let remoteRenderer = remoteRenderer
-    let contentsScale = contentsScale
-
-    rendererQueue.addOperation {
-      await withUnsafeContinuation { continuation in
-        remoteRenderer
-          .register(
-            gridContext: .init(
-              font: font.appKit(),
-              contentsScale: contentsScale,
-              size: gridSize,
-              ioSurface: ioSurface
-            ),
-            forGridWithID: gridID
-          ) {
-            continuation.resume()
-          }
-      }
-    }
-  }
+//  @MainActor
+//  public func createNewIOSurface() {
+//    guard let font, let gridSize else {
+//      return
+//    }
+//    let size = gridSize * font.cellSize * contentsScale
+//
+//    let ioSurface = IOSurface(
+//      properties: [
+//        .width: size.width,
+//        .height: size.height,
+//        .bytesPerElement: 4,
+//        .pixelFormat: kCVPixelFormatType_32BGRA,
+//      ]
+//    )!
+//    self.ioSurface = ioSurface
+//    surfaceLayer.contents = ioSurface
+//    surfaceLayer.frame = .init(
+//      origin: .zero,
+//      size: gridSize * font.cellSize
+//    )
+//  }
 
   //  override public func draw(in ctx: CGContext) {
   //    guard let critical = critical.withValue({ $0 }) else {
@@ -624,28 +560,20 @@ public class GridLayer: CALayer, @unchecked Sendable {
     }
   }
 
-  @MainActor
   public func handleResize(gridSize: IntegerSize) {
-    var shouldRecreateIOSurface = false
-    if ioSurface == nil {
-      shouldRecreateIOSurface = true
-    } else if self.gridSize != gridSize {
-      shouldRecreateIOSurface = true
-    }
+    self.gridSize = gridSize
+    pendingRenderOperations
+      .append(
+        .init(
+          type: .resize,
+          resize: .init(
+            font: font!.appKit(),
+            contentsScale: contentsScale,
+            size: gridSize
+          )
+        )
+      )
 
-    let newCells = TwoDimensionalArray<Cell>(size: gridSize) { point in
-      if let cells, IntegerRectangle(size: cells.size).contains(point) {
-        cells[point]
-      } else {
-        .default
-      }
-    }
-    cells = newCells
-
-    if shouldRecreateIOSurface {
-      createNewIOSurface()
-      registerNewGridContext()
-    }
 //    if let layout {
 //      if layout.cells.size != gridSize {
 //        let copyColumnsCount = min(layout.columnsCount, gridSize.columnsCount)
@@ -672,82 +600,19 @@ public class GridLayer: CALayer, @unchecked Sendable {
 //    }
   }
 
-  @MainActor
   public func handleLine(row: Int, originColumn: Int, data: [Value], wrap: Bool) {
-    do {
-      var cells = [Cell]()
-      var highlightID = 0
+    if case .draw = pendingRenderOperations.last?.type {
+      pendingRenderOperations[pendingRenderOperations.count - 1].draw!
+        .append(.init(row: row, colStart: originColumn, data: data, wrap: wrap))
 
-      for value in data {
-        guard
-          case let .array(arrayValue) = value,
-          !arrayValue.isEmpty,
-          case let .string(text) = arrayValue[0]
-        else {
-          throw Failure("invalid grid line cell value", value)
-        }
-
-        var repeatCount = 1
-
-        if arrayValue.count > 1 {
-          guard
-            case let .integer(newHighlightID) = arrayValue[1]
-          else {
-            throw Failure(
-              "invalid grid line cell highlight value",
-              arrayValue[1]
-            )
-          }
-
-          highlightID = newHighlightID
-
-          if arrayValue.count > 2 {
-            guard
-              case let .integer(newRepeatCount) = arrayValue[2]
-            else {
-              throw Failure(
-                "invalid grid line cell repeat count value",
-                arrayValue[2]
-              )
-            }
-
-            repeatCount = newRepeatCount
-          }
-        }
-
-        let cell = Cell(text: text, highlightID: highlightID)
-        for _ in 0 ..< repeatCount {
-          cells.append(cell)
-        }
-      }
-
-      self.cells!
-        .rows[row]
-        .replaceSubrange(
-          originColumn ..< originColumn + cells.count,
-          with: cells
-        )
-
-//      self.layout!.cells.rows[part.row].replaceSubrange(
-//        part.originColumn ..< part.originColumn + cells.count,
-//        with: cells
-//      )
-//      self.layout!.rowLayouts[part.row] = RowLayout(rowCells: self.layout!.cells.rows[part.row])
-//
-//      dirtyRows.insert(part.row)
-      //              redraw(dirtyRows: [part.row])
-
-      _ = renderOperationsContinuation
-        .yield(
-          [.init(
+    } else {
+      pendingRenderOperations
+        .append(
+          .init(
             type: .draw,
-            draw: [.init(row: self.cells!.rowsCount - 1 - row, cells: self.cells!.rows[row])],
-            scroll: nil
-          )]
+            draw: [.init(row: row, colStart: originColumn, data: data, wrap: wrap)]
+          )
         )
-
-    } catch {
-      logger.error("failed to handle line \(error)")
     }
 
 //    do {
@@ -808,8 +673,12 @@ public class GridLayer: CALayer, @unchecked Sendable {
 //    }
   }
 
-  @MainActor
   public func handleScroll(rectangle: IntegerRectangle, offset: IntegerSize) {
+    pendingRenderOperations
+      .append(
+        .init(type: .scroll, scroll: .init(rectangle: rectangle, offset: offset))
+      )
+
 //    guard var layout, let gridSize else {
 //      return
 //    }
@@ -842,15 +711,6 @@ public class GridLayer: CALayer, @unchecked Sendable {
 //
 //    self.layout = layout
 
-    _ = renderOperationsContinuation
-      .yield(
-        [.init(
-          type: .scroll,
-          draw: nil,
-          scroll: .init(rectangle: rectangle, offset: offset)
-        )]
-      )
-
     //    rendererQueue.addOperation {
     //      await withUnsafeContinuation { continuation in
     //        self.remoteRenderer
@@ -868,8 +728,10 @@ public class GridLayer: CALayer, @unchecked Sendable {
     //    }
   }
 
-  @MainActor
   public func handleClear() {
+//    pendingRenderOperations
+//      .append(.clear)
+
 //    guard var layout else {
 //      return
 //    }
@@ -879,6 +741,37 @@ public class GridLayer: CALayer, @unchecked Sendable {
 //    self.layout = layout
 //
 //    redraw(dirtyRows: 0 ..< layout.cells.size.rowsCount)
+  }
+
+  public func handleFlush() {
+    guard !pendingRenderOperations.isEmpty else {
+      return
+    }
+
+    let renderOperations = GridRenderOperations(array: pendingRenderOperations)
+    pendingRenderOperations.removeAll(keepingCapacity: true)
+
+    rendererQueue.addOperation {
+      let result = await withUnsafeContinuation { continuation in
+        self.remoteRenderer
+          .execute(
+            renderOperations: renderOperations,
+            forGridWithID: self.gridID
+          ) { result in
+            continuation.resume(returning: result)
+          }
+      }
+      Task { @MainActor in
+        if result.isIOSurfaceUpdated {
+          self.surfaceLayer.contents = result.ioSurface!
+          self.surfaceLayer.frame = .init(
+            origin: .zero,
+            size: self.gridSize! * self.font!.cellSize
+          )
+        }
+        self.setNeedsDisplay()
+      }
+    }
   }
 
 //  @MainActor

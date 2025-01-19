@@ -52,14 +52,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 //        store: store!
 //      )
 
-      Task {
+      Task { @StateActor in
         do {
-          for try await notificationsBatch in neovim!.api.neovimNotifications {
+          for try await notificationsBatch in await neovim!.api.neovimNotifications {
             for notification in notificationsBatch {
               switch notification {
               case let .redraw(uiEvents):
-
-                mainWindowController!.handle(uiEvents: uiEvents)
+                Task { @MainActor in
+                  mainWindowController!.handle(uiEvents: uiEvents)
+                }
 
               default:
                 break

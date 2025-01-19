@@ -1,6 +1,37 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
+import AppKit
+
+@objc(NimbGridRenderOperationsResult)
+public class GridRenderOperationsResult: NSObject, NSCoding, NSSecureCoding, @unchecked Sendable {
+  public static var supportsSecureCoding: Bool {
+    true
+  }
+
+  public let isIOSurfaceUpdated: Bool
+  public let ioSurface: IOSurface?
+
+  public init(isIOSurfaceUpdated: Bool, ioSurface: IOSurface?) {
+    self.isIOSurfaceUpdated = isIOSurfaceUpdated
+    self.ioSurface = ioSurface
+  }
+
+  public required init?(coder: NSCoder) {
+    isIOSurfaceUpdated = coder.decodeBool(forKey: "isIOSurfaceUpdated")
+    if isIOSurfaceUpdated {
+      ioSurface = coder.decodeObject(of: IOSurface.self, forKey: "ioSurface")
+    } else {
+      ioSurface = nil
+    }
+  }
+
+  public func encode(with coder: NSCoder) {
+    coder.encode(isIOSurfaceUpdated, forKey: "isIOSurfaceUpdated")
+    if isIOSurfaceUpdated {
+      coder.encode(ioSurface, forKey: "ioSurface")
+    }
+  }
+}
 
 @objc(NimbGridRenderOperations)
 public class GridRenderOperations: NSObject, NSCoding, NSSecureCoding, @unchecked Sendable {
@@ -19,7 +50,7 @@ public class GridRenderOperations: NSObject, NSCoding, NSSecureCoding, @unchecke
     self.array = array
   }
 
-  init(array: [GridRenderOperation]) {
+  public init(array: [GridRenderOperation]) {
     self.array = array
   }
 
@@ -34,16 +65,19 @@ public class GridRenderOperation: NSObject, NSCoding, NSSecureCoding, @unchecked
     true
   }
 
-  public let type: GridRenderOperationType
-  public let draw: [GridRenderDrawOperationPart]?
-  public let scroll: GridRenderScrollOperation?
+  public var type: GridRenderOperationType
+  public var resize: GridRenderResizeOperation?
+  public var draw: [GridRenderDrawOperationPart]?
+  public var scroll: GridRenderScrollOperation?
 
   public init(
     type: GridRenderOperationType,
-    draw: [GridRenderDrawOperationPart]?,
-    scroll: GridRenderScrollOperation?
+    resize: GridRenderResizeOperation? = nil,
+    draw: [GridRenderDrawOperationPart]? = nil,
+    scroll: GridRenderScrollOperation? = nil
   ) {
     self.type = type
+    self.resize = resize
     self.draw = draw
     self.scroll = scroll
   }
@@ -57,17 +91,30 @@ public class GridRenderOperation: NSObject, NSCoding, NSSecureCoding, @unchecked
 
     self.type = type
     switch type {
+    case .resize:
+      guard
+        let resize = coder.decodeObject(
+          of: GridRenderResizeOperation.self,
+          forKey: "resize"
+        )
+      else {
+        return nil
+      }
+      self.resize = resize
+      draw = nil
+      scroll = nil
+
     case .draw:
       guard
         let draw = coder.decodeArrayOfObjects(ofClass: GridRenderDrawOperationPart.self, forKey: "draw")
       else {
         return nil
       }
+      resize = nil
       self.draw = draw
       scroll = nil
 
     case .scroll:
-      draw = nil
       guard
         let scroll = coder.decodeObject(
           of: GridRenderScrollOperation.self,
@@ -76,6 +123,8 @@ public class GridRenderOperation: NSObject, NSCoding, NSSecureCoding, @unchecked
       else {
         return nil
       }
+      resize = nil
+      draw = nil
       self.scroll = scroll
     }
   }
@@ -83,6 +132,8 @@ public class GridRenderOperation: NSObject, NSCoding, NSSecureCoding, @unchecked
   public func encode(with coder: NSCoder) {
     coder.encode(type.rawValue, forKey: "type")
     switch type {
+    case .resize:
+      coder.encode(resize!, forKey: "resize")
     case .draw:
       coder.encode(draw!, forKey: "draw")
     case .scroll:
@@ -92,8 +143,47 @@ public class GridRenderOperation: NSObject, NSCoding, NSSecureCoding, @unchecked
 }
 
 public enum GridRenderOperationType: Int {
+  case resize
   case draw
   case scroll
+}
+
+@objc(NimbGridRenderResizeOperation)
+public class GridRenderResizeOperation: NSObject, NSCoding, NSSecureCoding, @unchecked Sendable {
+  public static var supportsSecureCoding: Bool {
+    true
+  }
+
+  public let font: NSFont
+  public let contentsScale: Double
+  public let size: IntegerSize
+
+  public init(font: NSFont, contentsScale: Double, size: IntegerSize) {
+    self.font = font
+    self.contentsScale = contentsScale
+    self.size = size
+  }
+
+  public required init?(coder: NSCoder) {
+    guard
+      let font = coder.decodeObject(of: NSFont.self, forKey: "font")
+    else {
+      return nil
+    }
+    self.font = font
+    contentsScale = coder.decodeDouble(forKey: "contentsScale")
+    size = .init(
+      columnsCount: coder.decodeInteger(forKey: "size.columnsCount"),
+      rowsCount: coder.decodeInteger(forKey: "size.rowsCount")
+    )
+  }
+
+  public func encode(with coder: NSCoder) {
+    coder.encode(font, forKey: "font")
+    coder.encode(contentsScale, forKey: "contentsScale")
+    coder.encode(size.columnsCount, forKey: "size.columnsCount")
+    coder.encode(size.rowsCount, forKey: "size.rowsCount")
+  }
 }
 
 @objc(NimbGridRenderDrawOperationPart)
@@ -103,41 +193,44 @@ public class GridRenderDrawOperationPart: NSObject, NSCoding, NSSecureCoding, @u
   }
 
   public let row: Int
-  public let cells: [Cell]
-
-  public init(row: Int, cells: [Cell]) {
-    self.row = row
-    self.cells = cells
-  }
+  public let colStart: Int
+  public let data: [Value]
+  public let wrap: Bool
 
   public required init?(coder: NSCoder) {
     row = coder.decodeInteger(forKey: "row")
+    colStart = coder.decodeInteger(forKey: "colStart")
+    wrap = coder.decodeBool(forKey: "wrap")
 
-    if
-      let cellTexts = coder
-        .decodeArrayOfObjects(
-          ofClass: NSString.self,
-          forKey: "cells.text"
-        ) as? [String],
-        let cellHighlightIDs = coder
-          .decodeArrayOfObjects(ofClass: NSNumber.self, forKey: "cells.highlightID") as? [Int]
-    {
-      cells = zip(cellTexts, cellHighlightIDs).map { text, highlightID in
-        .init(text: text, highlightID: highlightID)
-      }
-    } else {
+    guard let rawData = coder.decodeObject(of: NSData.self, forKey: "data") as? Data else {
       return nil
     }
+    let unpacker = Unpacker()
+    let unpacked = rawData.withUnsafeBytes { bufferPointer in
+      try? unpacker.unpack(bufferPointer)
+    }
+    guard case let .array(data) = unpacked?.first else {
+      return nil
+    }
+
+    self.data = data
+  }
+
+  init(row: Int, colStart: Int, data: [Value], wrap: Bool) {
+    self.row = row
+    self.colStart = colStart
+    self.data = data
+    self.wrap = wrap
   }
 
   public func encode(with coder: NSCoder) {
     coder.encode(row, forKey: "row")
+    coder.encode(colStart, forKey: "colStart")
+    coder.encode(wrap, forKey: "wrap")
 
-    let cellTexts = cells.map(\.text)
-    coder.encode(cellTexts, forKey: "cells.text")
-
-    let cellHighlightIDs = cells.map(\.highlightID)
-    coder.encode(cellHighlightIDs, forKey: "cells.highlightID")
+    let packer = Packer()
+    let rawData = packer.pack(.array(data))
+    coder.encode(rawData as NSData, forKey: "data")
   }
 }
 

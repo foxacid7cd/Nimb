@@ -10,27 +10,16 @@ public final class Renderer: NSObject, RendererProtocol, @unchecked Sendable {
   private let asyncQueue = AsyncQueue()
   private var gridRenderers = IntKeyedDictionary<GridRenderer>()
 
-  @objc public func register(
-    gridContext: GridContext,
+  @objc public func execute(
+    renderOperations: GridRenderOperations,
     forGridWithID gridID: Int,
-    _ cb: @Sendable @escaping () -> Void
+    _ cb: @Sendable @escaping (_ result: GridRenderOperationsResult) -> Void
   ) {
     asyncQueue.addOperation {
-      if let gridRenderer = self.gridRenderers[gridID] {
-        gridRenderer.set(gridContext: gridContext)
-      } else {
-        let gridRenderer = GridRenderer(
-          gridID: gridID,
-          gridContext: gridContext
-        )
-        self.gridRenderers[gridID] = gridRenderer
+      if self.gridRenderers[gridID] == nil {
+        self.gridRenderers[gridID] = .init(gridID: gridID)
       }
-      cb()
-    }
-  }
 
-  @objc public func execute(renderOperations: GridRenderOperations, forGridWithID gridID: Int, _ cb: @Sendable @escaping () -> Void) {
-    asyncQueue.addOperation {
       self.gridRenderers[gridID]!
         .execute(renderOperations: renderOperations, cb)
     }
