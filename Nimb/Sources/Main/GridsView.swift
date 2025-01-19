@@ -47,7 +47,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
 
     wantsLayer = true
     layer!.masksToBounds = true
-    layer!.drawsAsynchronously = true
     layer!.delegate = self
   }
 
@@ -218,9 +217,9 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     } else {
       let layer = GridLayer(
         store: store,
-        gridID: id,
-        contentsScale: layer!.contentsScale
+        gridID: id
       )
+      layer.contentsScale = self.layer!.contentsScale
       renderChildren(layer)
       self.layer!.addSublayer(layer)
       arrangedGridLayers[id] = layer

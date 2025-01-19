@@ -1,5 +1,5 @@
 {
-  "originHash" : "88ad48209b1d5eb02b7c9e452b010d07536263feed0f15e59b59adc285daa09b",
+  "originHash" : "52a4b67a01e9bb4302515623dbbcb88493391cf32559e7d6b0f63dfc56f5dcae",
   "pins" : [
     {
       "identity" : "coretextswift",
@@ -7,6 +7,15 @@
       "location" : "https://github.com/krzyzanowskim/CoreTextSwift",
       "state" : {
         "revision" : "833177201d6421e6322296f39fce6ff6ae52618a",
+        "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "queue",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:mattmassicotte/Queue.git",
+      "state" : {
+        "revision" : "6adf359a705e3252742905b413bb8f56401043ca",
         "version" : "0.2.0"
       }
     },

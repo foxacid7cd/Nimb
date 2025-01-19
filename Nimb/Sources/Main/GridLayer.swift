@@ -6,8 +6,9 @@ import Collections
 import ConcurrencyExtras
 import CustomDump
 @preconcurrency import QuartzCore
+import Queue
 
-public class GridLayer: CALayer, Rendering {
+public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private enum DirtyRectangles {
     case all
     case array([IntegerRectangle])
@@ -32,31 +33,8 @@ public class GridLayer: CALayer, Rendering {
     }
   }
 
-  private class SurfaceLayer: CALayer {
-    override func action(forKey event: String) -> (any CAAction)? {
-      NSNull()
-    }
-
-    override func hitTest(_: CGPoint) -> CALayer? {
-      nil
-    }
-  }
-
-  override public var frame: CGRect {
-    didSet {
-      surfaceLayer.frame = bounds
-    }
-  }
-
-  override public var contentsScale: CGFloat {
-    didSet {
-      surfaceLayer.contentsScale = contentsScale
-    }
-  }
-
   private let gridID: Grid.ID
   private let store: Store
-  private let surfaceLayer = SurfaceLayer()
   @MainActor
   private var isScrollingHorizontal: Bool?
   @MainActor
@@ -68,9 +46,7 @@ public class GridLayer: CALayer, Rendering {
   @MainActor
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
-  private var ioSurface: IOSurface?
-  private var ioSurfaceGridSize: IntegerSize?
-  private var cgContext: CGContext?
+  private var defaultBackgroundColor: Color?
 
   @MainActor
   public var grid: Grid {
@@ -102,35 +78,16 @@ public class GridLayer: CALayer, Rendering {
   @MainActor
   init(
     store: Store,
-    gridID: Grid.ID,
-    contentsScale: Double
+    gridID: Grid.ID
   ) {
     self.store = store
     self.gridID = gridID
     super.init()
 
-    self.contentsScale = contentsScale
-//    drawsAsynchronously = true
-    isOpaque = true
+    isOpaque = false
     masksToBounds = true
-
-    surfaceLayer.contentsScale = contentsScale
-    surfaceLayer.frame = bounds
-//    surfaceLayer.drawsAsynchronously = true
-    surfaceLayer.isOpaque = false
-    surfaceLayer.contentsGravity = .bottomLeft
-    addSublayer(surfaceLayer)
-
-//    ioSurfaceGridSize = grid.size
-//    ioSurface = Self
-//      .makeIOSurface(
-//        contentsScale: contentsScale,
-//        cellSize: state.font.cellSize,
-//        gridSize: grid.size
-//      )
-//    surfaceLayer.contents = ioSurface!
-//    surfaceLayer.contentsRect = .init(origin: .zero, size: grid.size * state.font.cellSize)
-//    cgContext = Self.makeCGContext(ioSurface: ioSurface!)
+    drawsAsynchronously = true
+    needsDisplayOnBoundsChange = false
   }
 
   @available(*, unavailable)
@@ -142,124 +99,76 @@ public class GridLayer: CALayer, Rendering {
     NSNull()
   }
 
-  private static func makeIOSurface(contentsScale: Double, cellSize: CGSize, gridSize: IntegerSize) -> IOSurface {
-    let size = gridSize * cellSize * contentsScale
-    return .init(
-      properties: [
-        .width: size.width,
-        .height: size.height,
-        .bytesPerElement: 4,
-        .pixelFormat: kCVPixelFormatType_32BGRA,
-      ]
-    )!
-  }
+  override public func draw(in ctx: CGContext) {
+    MainActor.assumeIsolated {
+      let boundingRect = IntegerRectangle(
+        frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
+        cellSize: state.font.cellSize
+      )
 
-  private static func makeCGContext(ioSurface: IOSurface) -> CGContext {
-    .init(
-      data: ioSurface.baseAddress,
-      width: ioSurface.width,
-      height: ioSurface.height,
-      bitsPerComponent: 8,
-      bytesPerRow: ioSurface.bytesPerRow,
-      space: CGColorSpace(name: CGColorSpace.sRGB)!,
-      bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
-    )!
-  }
+      ctx.setShouldAntialias(false)
+      grid.drawRuns.drawBackground(
+        to: ctx,
+        boundingRect: boundingRect,
+        font: state.font,
+        appearance: state.appearance,
+        upsideDownTransform: upsideDownTransform,
+        contentsScale: contentsScale
+      )
 
-//
-//  override public func draw(in ctx: CGContext) {
-//    let boundingRect = IntegerRectangle(
-//      frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
-//      cellSize: state.font.cellSize
-//    )
-//
-//    ctx.setShouldAntialias(false)
-//    critical.grid.drawRuns.drawBackground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    ctx.setShouldAntialias(true)
-//    critical.grid.drawRuns.drawForeground(
-//      to: ctx,
-//      boundingRect: boundingRect,
-//      font: critical.font,
-//      appearance: critical.appearance,
-//      upsideDownTransform: critical.upsideDownTransform
-//    )
-//
-//    if
-//      critical.cursorBlinkingPhase,
-//      critical.isMouseUserInteractionEnabled,
-//      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
-//      boundingRect.contains(cursorDrawRun.origin)
-//    {
-//      cursorDrawRun.draw(
-//        to: ctx,
-//        font: critical.font,
-//        appearance: critical.appearance,
-//        upsideDownTransform: critical.upsideDownTransform
-//      )
-//    }
-//  }
+      ctx.setShouldAntialias(true)
+      grid.drawRuns.drawForeground(
+        to: ctx,
+        boundingRect: boundingRect,
+        font: state.font,
+        appearance: state.appearance,
+        upsideDownTransform: upsideDownTransform,
+        contentsScale: contentsScale
+      )
+
+      if
+        state.cursorBlinkingPhase,
+        state.isMouseUserInteractionEnabled,
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+        boundingRect.contains(cursorDrawRun.origin)
+      {
+        cursorDrawRun.draw(
+          to: ctx,
+          font: state.font,
+          appearance: state.appearance,
+          upsideDownTransform: upsideDownTransform
+        )
+      }
+    }
+  }
 
   @MainActor
   public func render() {
-    var shouldRecreateIOSurface = false
-    if ioSurface == nil {
-      shouldRecreateIOSurface = true
-    } else if updates.isFontUpdated {
-      shouldRecreateIOSurface = true
-    } else if updates.updatedLayoutGridIDs.contains(gridID), grid.size != ioSurfaceGridSize {
-      shouldRecreateIOSurface = true
+    if defaultBackgroundColor != state.appearance.defaultBackgroundColor {
+      defaultBackgroundColor = state.appearance.defaultBackgroundColor
+      backgroundColor = defaultBackgroundColor!.cg
     }
 
-    if shouldRecreateIOSurface {
-      let ioSurface = Self.makeIOSurface(
-        contentsScale: contentsScale,
-        cellSize: state.font.cellSize,
-        gridSize: grid.size
-      )
-      let cgContext = Self.makeCGContext(ioSurface: ioSurface)
+    callSetNeedsDisplayForUpdates()
+    displayIfNeeded()
+  }
 
-      if let oldIOSurface = self.ioSurface, let oldCGContext = self.cgContext {
-        oldIOSurface.lock(seed: nil)
-        ioSurface.lock(seed: nil)
-
-        cgContext
-          .draw(
-            oldCGContext.makeImage()!,
-            in: .init(
-              origin: .zero,
-              size: .init(
-                width: ioSurface.width,
-                height: ioSurface.height
-              )
-            )
-          )
-
-        cgContext.flush()
-
-        oldIOSurface.unlock(seed: nil)
-        ioSurface.unlock(seed: nil)
-      }
-
-      self.ioSurface = ioSurface
-      surfaceLayer.contents = ioSurface
-      surfaceLayer.contentsRect = .init(
-        origin: .init(),
-        size: grid.size * state.font.cellSize
-      )
-      self.cgContext = cgContext
-    }
-
-    var dirtyRectangles = DirtyRectangles.array([])
-
+  @MainActor
+  public func callSetNeedsDisplayForUpdates() {
     if updates.isFontUpdated || updates.isAppearanceUpdated {
-      dirtyRectangles.formUnion(.all)
+      return setNeedsDisplay()
+    }
+
+    if let gridUpdate = updates.gridUpdates[gridID] {
+      switch gridUpdate {
+      case let .dirtyRectangles(value):
+        for rectangle in value {
+          setNeedsDisplay((rectangle * state.font.cellSize).insetBy(dx: -state.font.cellSize.width * 2, dy: -state.font.cellSize.height).applying(upsideDownTransform))
+        }
+
+      case .needsDisplay:
+        return setNeedsDisplay()
+      }
     }
 
     if
@@ -267,113 +176,8 @@ public class GridLayer: CALayer, Rendering {
         .isMouseUserInteractionEnabledUpdated,
         let cursorDrawRun = grid.drawRuns.cursorDrawRun
     {
-      dirtyRectangles.append(cursorDrawRun.rectangle)
+      setNeedsDisplay((cursorDrawRun.rectangle * state.font.cellSize).applying(upsideDownTransform))
     }
-
-    if let gridUpdate = updates.gridUpdates[gridID] {
-      switch gridUpdate {
-      case let .dirtyRectangles(value):
-        for rectangle in value {
-          dirtyRectangles.append(rectangle)
-        }
-
-      case .needsDisplay:
-        dirtyRectangles.formUnion(.all)
-      }
-    }
-
-//    for dirtyRectangle in dirtyRectangles {
-//      setNeedsDisplay(
-//        (dirtyRectangle * state.font.cellSize)
-//          .insetBy(
-//            dx: -state.font.cellSize.width * 2,
-//            dy: -state.font.cellSize.height
-//          )
-//          .applying(upsideDownTransform)
-//      )
-//    }
-
-    let dirtyRectanglesArray: [IntegerRectangle] =
-      switch dirtyRectangles {
-      case .all:
-        [IntegerRectangle(
-          origin: .init(),
-          size: grid.size
-        )]
-
-      case let .array(array):
-        array
-      }
-
-    if dirtyRectanglesArray.isEmpty {
-      return
-    }
-
-    ioSurface!.lock(seed: nil)
-
-    cgContext!.setShouldAntialias(false)
-    for dirtyRectangle in dirtyRectanglesArray {
-      grid.drawRuns
-        .drawBackground(
-          to: cgContext!,
-          boundingRect: dirtyRectangle,
-          font: state.font,
-          appearance: state.appearance,
-          upsideDownTransform: upsideDownTransform,
-          contentsScale: contentsScale
-        )
-    }
-
-    cgContext!.setShouldAntialias(true)
-    for dirtyRectangle in dirtyRectanglesArray {
-      grid.drawRuns
-        .drawForeground(
-          to: cgContext!,
-          boundingRect: dirtyRectangle,
-          font: state.font,
-          appearance: state.appearance,
-          upsideDownTransform: upsideDownTransform,
-          contentsScale: contentsScale
-        )
-    }
-
-    cgContext!.flush()
-
-    ioSurface!.unlock(seed: nil)
-
-    setNeedsDisplay()
-
-    //    ctx.setShouldAntialias(false)
-    //    critical.grid.drawRuns.drawBackground(
-    //      to: ctx,
-    //      boundingRect: boundingRect,
-    //      font: critical.font,
-    //      appearance: critical.appearance,
-    //      upsideDownTransform: critical.upsideDownTransform
-    //    )
-    //
-    //    ctx.setShouldAntialias(true)
-    //    critical.grid.drawRuns.drawForeground(
-    //      to: ctx,
-    //      boundingRect: boundingRect,
-    //      font: critical.font,
-    //      appearance: critical.appearance,
-    //      upsideDownTransform: critical.upsideDownTransform
-    //    )
-    //
-    //    if
-    //      critical.cursorBlinkingPhase,
-    //      critical.isMouseUserInteractionEnabled,
-    //      let cursorDrawRun = critical.grid.drawRuns.cursorDrawRun,
-    //      boundingRect.contains(cursorDrawRun.origin)
-    //    {
-    //      cursorDrawRun.draw(
-    //        to: ctx,
-    //        font: critical.font,
-    //        appearance: critical.appearance,
-    //        upsideDownTransform: critical.upsideDownTransform
-    //      )
-    //    }
   }
 
   @MainActor
@@ -544,3 +348,5 @@ public class GridLayer: CALayer, Rendering {
 }
 
 extension CycledTimesCollection: @unchecked @retroactive Sendable where Base: Sendable { }
+
+extension CGContext: @unchecked @retroactive Sendable { }

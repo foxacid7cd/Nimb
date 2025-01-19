@@ -446,7 +446,7 @@ public struct DrawRun: Sendable {
       )
     )
     context.setFillColor(appearance.backgroundColor(for: highlightID).cg)
-    context.fill([rect * contentsScale])
+    context.fill([rect])
   }
 
   public func drawForeground(
@@ -495,9 +495,6 @@ public struct DrawRun: Sendable {
 
     context.setFillColor(foregroundColor.appKit.cgColor)
 
-    context.saveGState()
-    context.scaleBy(x: contentsScale, y: contentsScale)
-
     let textPosition = origin
     for glyphRun in glyphRuns {
       context.textMatrix = glyphRun.textMatrix
@@ -510,8 +507,6 @@ public struct DrawRun: Sendable {
         context
       )
     }
-
-    context.restoreGState()
   }
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {

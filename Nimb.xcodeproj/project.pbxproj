@@ -120,6 +120,7 @@
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
 		689F997F2D3CCF530098ECEC /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 689F997E2D3CCF530098ECEC /* STTextView */; };
+		689F99822D3CF8EE0098ECEC /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 689F99812D3CF8EE0098ECEC /* Queue */; };
 		68A4101D2C5D46F20092050B /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4101C2C5D46F20092050B /* TablineView.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -413,6 +414,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				689F99822D3CF8EE0098ECEC /* Queue in Frameworks */,
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
 				688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */,
@@ -817,6 +819,7 @@
 				688A764F2C6B1E4F00B6B9C0 /* Algorithms */,
 				6808BE242D3CC0E300893789 /* CustomDump */,
 				689F997E2D3CCF530098ECEC /* STTextView */,
+				689F99812D3CF8EE0098ECEC /* Queue */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -871,6 +874,7 @@
 				688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 				68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */,
 				689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */,
+				689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -1534,6 +1538,14 @@
 				version = "2.0.0-beta5";
 			};
 		};
+		689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "git@github.com:mattmassicotte/Queue.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.0;
+			};
+		};
 		68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:apple/swift-argument-parser.git";
@@ -1692,6 +1704,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */;
 			productName = STTextView;
+		};
+		689F99812D3CF8EE0098ECEC /* Queue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */;
+			productName = Queue;
 		};
 		68C9BCA52C5F7E4900844461 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
