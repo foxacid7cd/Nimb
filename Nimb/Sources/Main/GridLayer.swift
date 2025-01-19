@@ -101,6 +101,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   override public func draw(in ctx: CGContext) {
     MainActor.assumeIsolated {
+      print(ctx.boundingBoxOfClipPath)
+
       let boundingRect = IntegerRectangle(
         frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
         cellSize: state.font.cellSize
@@ -163,7 +165,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
-          setNeedsDisplay((rectangle * state.font.cellSize).insetBy(dx: -state.font.cellSize.width * 2, dy: -state.font.cellSize.height).applying(upsideDownTransform))
+          setNeedsDisplay((rectangle * state.font.cellSize).insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height / 2).applying(upsideDownTransform))
         }
 
       case .needsDisplay:
