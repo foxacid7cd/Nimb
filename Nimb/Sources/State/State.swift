@@ -256,6 +256,7 @@ public struct State: Sendable {
     ]
     var positionsInParent = IntKeyedDictionary<CGPoint>()
     var nodesCount = 0
+    var anchorGridIDToFloatingWindowGridIDs = IntKeyedDictionary<Set<Grid.ID>>()
     while let (id, depth) = queue.popFirst() {
       guard let grid = grids[id] else {
         Task { @MainActor in
@@ -273,6 +274,14 @@ public struct State: Sendable {
           positionsInParent[id] = window.origin * font.cellSize
 
         case let .floating(floatingWindow):
+          update(&anchorGridIDToFloatingWindowGridIDs[floatingWindow.anchorGridID]) { accumulator in
+            if accumulator == nil {
+              accumulator = [id]
+            } else {
+              accumulator!.insert(id)
+            }
+          }
+
           guard let anchorGrid = grids[floatingWindow.anchorGridID] else {
             Task { @MainActor in
               logger
@@ -335,6 +344,12 @@ public struct State: Sendable {
             .map { (id: $0, depth: nextDepth) }
         )
       nodesCount += 1
+
+      if let floatingWindowGridIDs = anchorGridIDToFloatingWindowGridIDs[id] {
+        for floatingWindowGridID in floatingWindowGridIDs {
+          queue.append((id: floatingWindowGridID, depth: nextDepth))
+        }
+      }
     }
   }
 }
