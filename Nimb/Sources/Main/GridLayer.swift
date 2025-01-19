@@ -101,8 +101,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   override public func draw(in ctx: CGContext) {
     MainActor.assumeIsolated {
-      print(ctx.boundingBoxOfClipPath)
-
       let boundingRect = IntegerRectangle(
         frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
         cellSize: state.font.cellSize
