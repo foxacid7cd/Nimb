@@ -2,13 +2,12 @@
 
 import AppKit
 import CustomDump
-
-// import STTextView
+import STTextViewAppKit
 
 public class MsgShowsViewController: NSViewController, Rendering {
   private let store: Store
   private lazy var scrollView = NSScrollView()
-  ///  private lazy var textView = STTextView()
+  private lazy var textView = STTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
 
   public init(store: Store) {
@@ -34,14 +33,13 @@ public class MsgShowsViewController: NSViewController, Rendering {
     view.addSubview(scrollView)
     scrollView.edgesToSuperview()
 
-//    textView.isEditable = false
-//    textView.isSelectable = true
-//    textView.usesRuler = false
-//    textView.usesFontPanel = false
-//    textView.widthTracksTextView = true
-//    textView.heightTracksTextView = true
-//    textView.isHorizontalContentSizeConstraintActive = true
-//    scrollView.documentView = textView
+    textView.isEditable = false
+    textView.isSelectable = true
+    textView.usesFontPanel = false
+    textView.widthTracksTextView = true
+    textView.heightTracksTextView = true
+    textView.isHorizontalContentSizeConstraintActive = true
+    scrollView.documentView = textView
 
     self.view = view
   }
@@ -91,7 +89,7 @@ public class MsgShowsViewController: NSViewController, Rendering {
   }
 
   public func renderText() {
-//    textView.setAttributedString(renderedMsgShows.map(\.1).joined(separator: .init(string: "\n")))
+    textView.attributedText = renderedMsgShows.map(\.1).joined(separator: .init(string: "\n"))
   }
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
