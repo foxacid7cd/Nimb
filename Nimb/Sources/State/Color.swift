@@ -11,22 +11,11 @@ public struct Color: Sendable, Hashable {
   public var alpha: Double = 1
 
   public var swiftUI: SwiftUI.Color {
-    .init(
-      .sRGB,
-      red: red,
-      green: green,
-      blue: blue
-    )
-    .opacity(alpha)
+    .init(red: red, green: green, blue: blue).opacity(alpha)
   }
 
   public var appKit: NSColor {
-    .init(
-      srgbRed: red,
-      green: green,
-      blue: blue,
-      alpha: alpha
-    )
+    NSColor(deviceRed: red, green: green, blue: blue, alpha: alpha)
   }
 
   public var cg: CGColor {
