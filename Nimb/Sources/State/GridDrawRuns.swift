@@ -46,7 +46,8 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
+    contentsScale: Double
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -59,7 +60,8 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform
+        upsideDownTransform: upsideDownTransform,
+        contentsScale: contentsScale
       )
     }
   }
@@ -69,7 +71,8 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
+    contentsScale: Double
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -82,7 +85,8 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform
+        upsideDownTransform: upsideDownTransform,
+        contentsScale: contentsScale
       )
     }
   }
@@ -188,7 +192,8 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
+    contentsScale: Double
   ) {
     for drawRun in drawRuns {
       let rect = CGRect(
@@ -203,7 +208,8 @@ public struct RowDrawRun: Sendable {
         to: context,
         at: rect.origin,
         font: font,
-        appearance: appearance
+        appearance: appearance,
+        contentsScale: contentsScale
       )
     }
   }
@@ -213,7 +219,8 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
+    contentsScale: Double
   ) {
     for drawRun in drawRuns {
       let rect = CGRect(
@@ -228,7 +235,8 @@ public struct RowDrawRun: Sendable {
         to: context,
         at: rect.origin,
         font: font,
-        appearance: appearance
+        appearance: appearance,
+        contentsScale: contentsScale
       )
     }
   }
@@ -427,7 +435,8 @@ public struct DrawRun: Sendable {
     to context: CGContext,
     at origin: CGPoint,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
+    contentsScale: Double
   ) {
     let rect = CGRect(
       origin: origin,
@@ -437,14 +446,15 @@ public struct DrawRun: Sendable {
       )
     )
     context.setFillColor(appearance.backgroundColor(for: highlightID).cg)
-    context.fill([rect])
+    context.fill([rect * contentsScale])
   }
 
   public func drawForeground(
     to context: CGContext,
     at origin: CGPoint,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
+    contentsScale: Double
   ) {
     context.setLineWidth(1)
 
@@ -485,6 +495,9 @@ public struct DrawRun: Sendable {
 
     context.setFillColor(foregroundColor.appKit.cgColor)
 
+    context.saveGState()
+    context.scaleBy(x: contentsScale, y: contentsScale)
+
     let textPosition = origin
     for glyphRun in glyphRuns {
       context.textMatrix = glyphRun.textMatrix
@@ -497,6 +510,8 @@ public struct DrawRun: Sendable {
         context
       )
     }
+
+    context.restoreGState()
   }
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {

@@ -218,10 +218,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     } else {
       let layer = GridLayer(
         store: store,
-        gridID: id
+        gridID: id,
+        contentsScale: layer!.contentsScale
       )
       renderChildren(layer)
-      layer.contentsScale = self.layer!.contentsScale
       self.layer!.addSublayer(layer)
       arrangedGridLayers[id] = layer
       return layer

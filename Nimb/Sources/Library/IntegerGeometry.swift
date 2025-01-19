@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import CoreGraphics
 import Foundation
 
 @PublicInit
@@ -168,4 +169,19 @@ public func * (first: IntegerSize, second: CGSize) -> CGSize {
     width: Double(first.columnsCount) * second.width,
     height: Double(first.rowsCount) * second.height
   )
+}
+
+@inlinable
+public func * (first: CGSize, second: Double) -> CGSize {
+  .init(width: first.width * second, height: first.height * second)
+}
+
+@inlinable
+public func * (first: CGPoint, second: Double) -> CGPoint {
+  .init(x: first.x * second, y: first.y * second)
+}
+
+@inlinable
+public func * (first: CGRect, second: Double) -> CGRect {
+  .init(origin: first.origin * second, size: first.size * second)
 }
