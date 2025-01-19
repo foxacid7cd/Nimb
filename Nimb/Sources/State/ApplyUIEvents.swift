@@ -409,7 +409,7 @@ public extension Actions {
               state
                 .grids[gridID] != nil
             else {
-              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              logger.error("winPos UI event: Grid \(gridID) doesn't exist or destroyed")
               break
             }
 
@@ -445,7 +445,7 @@ public extension Actions {
               state
                 .grids[gridID] != nil
             else {
-              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+              logger.error("winFloatPos UI event: Grid \(gridID) doesn't exist or destroyed")
               break
             }
 
@@ -468,11 +468,8 @@ public extension Actions {
             updatedLayout(forGridWithID: gridID)
 
           case let .winHide(gridID):
-            guard
-              state
-                .grids[gridID] != nil
-            else {
-              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+            if state.grids[gridID] == nil {
+              logger.error("winHide UI event: grid \(gridID) doesn't exist or destroyed")
               break
             }
 
@@ -481,11 +478,8 @@ public extension Actions {
             updatedLayout(forGridWithID: gridID)
 
           case let .winClose(gridID):
-            guard
-              state
-                .grids[gridID] != nil
-            else {
-              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
+            if state.grids[gridID] == nil {
+              logger.error("winClose UI event: Grid \(gridID) doesn't exist or destroyed")
               break
             }
             state.grids[gridID]?.associatedWindow = nil
@@ -790,19 +784,36 @@ public extension Actions {
               appearance: appearance
             )
 
-            guard
-              state
-                .grids[gridID] != nil
-            else {
-              handleError(Failure("Grid \(gridID) doesn't exist or destroyed"))
-              break
+            if state.grids[gridID] == nil {
+              logger.error("gridLines UI event: Grid \(gridID) doesn't exist or destroyed, trying to recover by creating a new one")
+              if let outerGrid = state.outerGrid {
+                let cells = TwoDimensionalArray(
+                  size: outerGrid.size,
+                  repeatingElement: Cell.default
+                )
+                let layout = GridLayout(cells: cells)
+                state.grids[gridID] = .init(
+                  id: gridID,
+                  layout: layout,
+                  drawRuns: .init(
+                    layout: layout,
+                    font: font,
+                    appearance: appearance
+                  ),
+                  associatedWindow: nil,
+                  isHidden: false
+                )
+              } else {
+                handleError(Failure("gridLines UI event: Grid \(gridID) doesn't exist or destroyed and outer grid is missing"))
+                break
+              }
             }
 
             update(&state.grids[gridID]) { grid in
               for result in results {
-                grid?.layout.cells.rows[result.row] = result.rowCells
-                grid?.layout.rowLayouts[result.row] = result.rowLayout
-                grid?.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
+                grid!.layout.cells.rows[result.row] = result.rowCells
+                grid!.layout.rowLayouts[result.row] = result.rowLayout
+                grid!.drawRuns.rowDrawRuns[result.row] = result.rowDrawRun
 
                 if result.shouldUpdateCursorDrawRun {
                   grid!.drawRuns.cursorDrawRun!.updateParent(
