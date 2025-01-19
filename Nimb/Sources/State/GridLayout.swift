@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import AppKit
 import Overture
 
 @PublicInit
@@ -95,6 +96,34 @@ public struct RowLayout: Sendable {
         columnsRange: columnsRangeStart ..< rowColumnsCount
       ))
     }
+
+//    let attributedString = NSMutableAttributedString()
+//
+//    var string = ""
+//    var currentHighlightID: Highlight.ID?
+//    func appendAttributedString() {
+//      attributedString
+//        .append(
+//          .init(
+//            attributedString: .init(
+//              string: string,
+//              attributes: [.highlightID: currentHighlightID!]
+//            )
+//          )
+//        )
+//      string = ""
+//      currentHighlightID = nil
+//    }
+//    for cell in rowCells {
+//      if currentHighlightID == nil {
+//        currentHighlightID = cell.highlightID
+//      }
+//      if currentHighlightID != cell.highlightID {
+//        appendAttributedString()
+//      }
+//      string.append(cell.text)
+//    }
+//    appendAttributedString()
 
     self.init(
       parts: parts

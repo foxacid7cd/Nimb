@@ -119,12 +119,13 @@ public final class Store: Sendable {
       }
     }
 
-    updates = AsyncThrowingStream<(state: State, updates: State.Updates), any Error> { [alertsContinuation] continuation in
+    updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
       let task = Task {
         var (state, updates) = (initialState, State.Updates())
         continuation.yield((state, updates))
 
         do {
+          var counter = 0
           for try await actions in allActions {
             try Task.checkCancellation()
 
@@ -142,13 +143,18 @@ public final class Store: Sendable {
               continuation.yield((state, updates))
             }
 
-            await Task.yield()
+            counter += 1
+            if counter.isMultiple(of: 5) {
+              await Task.yield()
+              counter = 0
+            }
           }
-          continuation.finish()
         } catch is CancellationError {
         } catch {
-          continuation.finish(throwing: error)
+          alertsContinuation.yield(.init(error))
         }
+
+        continuation.finish()
       }
 
       continuation.onTermination = { _ in

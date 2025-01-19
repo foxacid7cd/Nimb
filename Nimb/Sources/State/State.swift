@@ -282,6 +282,15 @@ public struct State: Sendable {
             }
             break
           }
+          guard let anchorPositionInParent = positionsInParent[anchorGrid.id] else {
+            Task { @MainActor in
+              logger
+                .fault(
+                  "State.walkingGrids: floating window anchor grid \(floatingWindow.anchorGridID) position not found"
+                )
+            }
+            break
+          }
 
           var gridColumn: Double = floatingWindow.anchorColumn
           var gridRow: Double = floatingWindow.anchorRow
@@ -302,7 +311,7 @@ public struct State: Sendable {
           positionsInParent[id] = .init(
             x: gridColumn * font.cellWidth,
             y: gridRow * font.cellHeight
-          ) + positionsInParent[anchorGrid.id]!
+          ) + anchorPositionInParent
 
         case .external:
           positionsInParent[id] = .init()
@@ -313,7 +322,7 @@ public struct State: Sendable {
       }
 
       let frame = CGRect(
-        origin: positionsInParent[id]!,
+        origin: positionsInParent[id] ?? .init(),
         size: grid.size * font.cellSize
       )
 
