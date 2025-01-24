@@ -17,15 +17,6 @@ class TablineItemView: NSView, Rendering {
   var clicked: (() -> Void)?
   var filledColor: NSColor?
 
-  private let store: Store
-  private let backgroundImageView = NSImageView()
-  private let accentBackgroundImageView = NSImageView()
-  private let textField = NSTextField(labelWithString: "")
-  private var trackingArea: NSTrackingArea?
-  private var isMouseInside = false
-  private var shouldRedrawImageViews = false
-  private var isAnimated = false
-
   var text = "" {
     didSet {
       if text != oldValue {
@@ -35,6 +26,15 @@ class TablineItemView: NSView, Rendering {
       }
     }
   }
+
+  private let store: Store
+  private let backgroundImageView = NSImageView()
+  private let accentBackgroundImageView = NSImageView()
+  private let textField = NSTextField(labelWithString: "")
+  private var trackingArea: NSTrackingArea?
+  private var isMouseInside = false
+  private var shouldRedrawImageViews = false
+  private var isAnimated = false
 
   init(store: Store) {
     self.store = store

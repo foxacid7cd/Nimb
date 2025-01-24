@@ -900,7 +900,17 @@ public extension Actions {
                     }
                   }
 
-                  let cell = Cell(text: text, highlightID: highlightID)
+                  if text.count > 1 {
+                    handleError(Failure("grid line cell text has more than one character", text))
+                  } else if text.isEmpty, !cells.isEmpty {
+                    cells[cells.count - 1].isDoubleWidth = true
+                  }
+
+                  let cell = Cell(
+                    character: text.first ?? Cell.default.character,
+                    isDoubleWidth: false,
+                    highlightID: highlightID
+                  )
                   for _ in 0 ..< repeatCount {
                     cells.append(cell)
                   }

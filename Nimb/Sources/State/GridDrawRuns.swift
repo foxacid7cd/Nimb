@@ -90,18 +90,18 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct DrawRunsCachingKey: Sendable, Hashable {
-  public var text: String
+  public var cells: [Cell]
   public var highlightID: Highlight.ID
   public var columnsCount: Int
 
   public init(_ drawRun: DrawRun) {
-    text = drawRun.text
+    cells = drawRun.rowPartCells
     highlightID = drawRun.highlightID
     columnsCount = drawRun.columnsRange.count
   }
 
   public init(_ rowPart: RowPart) {
-    text = rowPart.text
+    cells = rowPart.cells
     highlightID = rowPart.highlightID
     columnsCount = rowPart.columnsCount
   }
@@ -154,7 +154,6 @@ public struct RowDrawRun: Sendable {
       }
 
       var drawRun = reusedDrawRun ?? .init(
-        text: part.text,
         rowPartCells: part.cells,
         columnsRange: part.columnsRange,
         highlightID: part.highlightID,
@@ -230,8 +229,7 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public var text: String
-  public var rowPartCells: [RowPart.Cell]
+  public var rowPartCells: [Cell]
   public var highlightID: Highlight.ID
   public var columnsRange: Range<Int>
   public var glyphRuns: [GlyphRun]
@@ -240,8 +238,7 @@ public struct DrawRun: Sendable {
   public var underlineLineDashLengths: [CGFloat]
 
   public init(
-    text: String,
-    rowPartCells: [RowPart.Cell],
+    rowPartCells: [Cell],
     columnsRange: Range<Int>,
     highlightID: Highlight.ID,
     font: Font,
@@ -258,8 +255,9 @@ public struct DrawRun: Sendable {
       isBold: isBold,
       isItalic: isItalic
     )
+
     let attributedString = NSAttributedString(
-      string: text,
+      string: .init(rowPartCells.map(\.character)),
       attributes: [.font: appKitFont]
     )
 
@@ -406,7 +404,6 @@ public struct DrawRun: Sendable {
     }
 
     self = .init(
-      text: text,
       rowPartCells: rowPartCells,
       highlightID: highlightID,
       columnsRange: columnsRange,
@@ -497,7 +494,7 @@ public struct DrawRun: Sendable {
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {
     guard
-      text == rowPart.text,
+      rowPartCells == rowPart.cells,
       highlightID == rowPart.highlightID,
       rowPartCells == rowPart.cells,
       columnsRange.count == rowPart.columnsRange.count
@@ -551,6 +548,8 @@ public struct CursorDrawRun: Sendable {
     var parentDrawRun: DrawRun?
     var cursorColumnsRange: Range<Int>?
 
+    var rowPartCellsCount = 0
+
     drawRunsLoop:
       for drawRun in rowDrawRuns[origin.row].drawRuns
     {
@@ -560,13 +559,12 @@ public struct CursorDrawRun: Sendable {
           row: origin.row
         )
         parentDrawRun = drawRun
-        for rowPartCell in drawRun.rowPartCells {
-          let lowerBound = drawRun.columnsRange.lowerBound + rowPartCell
-            .columnsRange.lowerBound
-          let upperBound = drawRun.columnsRange.lowerBound + rowPartCell
-            .columnsRange.upperBound
-          if (lowerBound ..< upperBound).contains(origin.column) {
-            cursorColumnsRange = rowPartCell.columnsRange
+        for (rowPartCellIndex, rowPartCell) in drawRun.rowPartCells.enumerated() {
+          let lowerBound = rowPartCellsCount + rowPartCellIndex
+          let upperBound = lowerBound + (rowPartCell.isDoubleWidth ? 2 : 1)
+          let range = lowerBound ..< upperBound
+          if range.contains(origin.column) {
+            cursorColumnsRange = range
             break drawRunsLoop
           }
         }
@@ -575,6 +573,8 @@ public struct CursorDrawRun: Sendable {
         }
         break
       }
+
+      rowPartCellsCount += drawRun.rowPartCells.count
     }
     guard
       let parentOrigin,

@@ -214,27 +214,11 @@ public struct Grid: Sendable, Identifiable {
 
     case let .cursor(style, position):
       let columnsCount =
-        if
-          position.row < layout.rowLayouts.count,
-          let rowPart = layout.rowLayouts[position.row].parts
-            .first(where: { $0.columnsRange.contains(position.column) }),
-            position.column < rowPart.columnsCount,
-            let rowPartCell = rowPart.cells
-              .first(where: {
-                (
-                  (
-                    $0.columnsRange.lowerBound + rowPart.columnsRange
-                      .lowerBound
-                  ) ..<
-                    ($0.columnsRange.upperBound + rowPart.columnsRange.lowerBound)
-                ).contains(position.column)
-              })
-        {
-          rowPartCell.columnsRange.count
+        if position.row < layout.rowsCount, position.column < layout.columnsCount {
+          layout.cells.rows[position.row][position.column].isDoubleWidth ? 2 : 1
         } else {
           1
         }
-
       drawRuns.cursorDrawRun = .init(
         layout: layout,
         rowDrawRuns: drawRuns.rowDrawRuns,
@@ -244,10 +228,14 @@ public struct Grid: Sendable, Identifiable {
         font: font,
         appearance: appearance
       )
-      return .dirtyRectangles([.init(
-        origin: position,
-        size: .init(columnsCount: columnsCount, rowsCount: 1)
-      )])
+      return .dirtyRectangles(
+        [
+          .init(
+            origin: position,
+            size: .init(columnsCount: columnsCount, rowsCount: 1)
+          ),
+        ]
+      )
 
     case .clearCursor:
       guard let cursorDrawRun = drawRuns.cursorDrawRun else {

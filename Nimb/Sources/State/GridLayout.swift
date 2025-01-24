@@ -28,13 +28,15 @@ public struct GridLayout: Sendable {
 }
 
 @PublicInit
-public struct Cell: Sendable {
+public struct Cell: Sendable, Hashable {
   public static let `default` = Self(
-    text: " ",
+    character: " ",
+    isDoubleWidth: false,
     highlightID: .zero
   )
 
-  public var text: String
+  public var character: Character
+  public var isDoubleWidth: Bool
   public var highlightID: Highlight.ID
 }
 
@@ -43,58 +45,32 @@ public struct RowLayout: Sendable {
   public var parts: [RowPart]
 
   public init(rowCells: [Cell]) {
-    let chunks = rowCells.chunked {
-      !$0.text.isEmpty && $0.highlightID == $1.highlightID
+    var chunks = [[Cell]]()
+    for (index, rowCell) in rowCells.enumerated() {
+      let previousCell = index > 0 ? rowCells[index - 1] : nil
+
+      if
+        chunks
+          .isEmpty || (
+            previousCell?.highlightID != rowCell.highlightID && !chunks[chunks.count - 1].isEmpty
+          )
+      {
+        chunks.append([])
+      }
+      chunks[chunks.count - 1].append(rowCell)
+
+      let isPreviousCellDoubleWidth = index > 0 && rowCells[index - 1].isDoubleWidth
+      if isPreviousCellDoubleWidth, index != rowCells.count - 1 {
+        chunks.append([])
+      }
     }
 
     var rowColumnsCount = 0
     var parts = [RowPart]()
 
     for cells in chunks {
-      var partText = ""
-      var partCells = [RowPart.Cell]()
-      var partColumnsCount = 0
-
-      for cellIndex in cells.indices {
-        let nextCellIndex = cellIndex + 1
-
-        let text = cells[cellIndex].text
-
-        let textRangeStart = partText.endIndex
-        partText.append(text)
-
-        let columnsCount =
-          if !text.isEmpty {
-            if
-              nextCellIndex < cells.endIndex,
-              cells[nextCellIndex].text.isEmpty
-            {
-              2
-            } else {
-              1
-            }
-          } else {
-            0
-          }
-
-        let columnsRangeStart = partColumnsCount
-        partColumnsCount += columnsCount
-
-        partCells.append(.init(
-          textRange: textRangeStart ..< partText.endIndex,
-          columnsRange: columnsRangeStart ..< partColumnsCount
-        ))
-      }
-
-      let columnsRangeStart = rowColumnsCount
-      rowColumnsCount += partColumnsCount
-
-      parts.append(.init(
-        highlightID: cells.first!.highlightID,
-        text: partText,
-        cells: partCells,
-        columnsRange: columnsRangeStart ..< rowColumnsCount
-      ))
+      parts.append(.init(highlightID: cells.first!.highlightID, cells: cells, columnsRange: rowColumnsCount ..< rowColumnsCount + cells.count))
+      rowColumnsCount += cells.count
     }
 
 //    let attributedString = NSMutableAttributedString()
@@ -133,18 +109,7 @@ public struct RowLayout: Sendable {
 
 @PublicInit
 public struct RowPart: Sendable, Hashable {
-  @PublicInit
-  public struct Cell: Sendable, Hashable {
-    public var textRange: Range<String.Index>
-    public var columnsRange: Range<Int>
-
-    public var columnsCount: Int {
-      columnsRange.count
-    }
-  }
-
   public var highlightID: Highlight.ID
-  public var text: String
   public var cells: [Cell]
   public var columnsRange: Range<Int>
 

@@ -14,6 +14,14 @@ final class TablineView: NSVisualEffectView, Rendering {
     .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
   }
 
+  var preferredViewHeight: CGFloat = 0 {
+    didSet {
+      if preferredViewHeight != oldValue {
+        invalidateIntrinsicContentSize()
+      }
+    }
+  }
+
   private let store: Store
   private let buffersScrollView = NSScrollView()
   private let buffersStackView = NSStackView(views: [])
@@ -31,14 +39,6 @@ final class TablineView: NSVisualEffectView, Rendering {
     paragraphStyle.lineBreakMode = .byTruncatingTail
     return paragraphStyle
   }()
-
-  var preferredViewHeight: CGFloat = 0 {
-    didSet {
-      if preferredViewHeight != oldValue {
-        invalidateIntrinsicContentSize()
-      }
-    }
-  }
 
   init(store: Store) {
     self.store = store
