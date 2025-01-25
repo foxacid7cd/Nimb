@@ -5,34 +5,9 @@ import AppKit
 import Collections
 import ConcurrencyExtras
 import CustomDump
-@preconcurrency import QuartzCore
 import Queue
 
 public class GridLayer: CALayer, Rendering, @unchecked Sendable {
-  private enum DirtyRectangles {
-    case all
-    case array([IntegerRectangle])
-
-    mutating func formUnion(_ other: DirtyRectangles) {
-      switch (self, other) {
-      case (_, .all),
-           (.all, _):
-        self = .all
-      case let (.array(array1), .array(array2)):
-        self = .array(array1 + array2)
-      }
-    }
-
-    mutating func append(_ rectangle: IntegerRectangle) {
-      switch self {
-      case .all:
-        self = .all
-      case let .array(array):
-        self = .array(array + [rectangle])
-      }
-    }
-  }
-
   private let gridID: Grid.ID
   private let store: Store
   @MainActor
@@ -46,7 +21,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   @MainActor
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
-  private var defaultBackgroundColor: Color?
 
   @MainActor
   public var grid: Grid {
@@ -87,7 +61,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     isOpaque = false
     masksToBounds = true
     drawsAsynchronously = true
-    needsDisplayOnBoundsChange = false
   }
 
   @available(*, unavailable)
@@ -146,11 +119,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func render() {
-    if defaultBackgroundColor != state.appearance.defaultBackgroundColor {
-      defaultBackgroundColor = state.appearance.defaultBackgroundColor
-      backgroundColor = defaultBackgroundColor!.cg
-    }
-
     callSetNeedsDisplayForUpdates()
   }
 

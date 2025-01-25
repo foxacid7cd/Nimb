@@ -256,12 +256,8 @@ public struct State: Sendable {
     ]
     var positionsInParent = IntKeyedDictionary<CGPoint>()
     var nodesCount = 0
-    var anchorGridIDToFloatingWindowGridIDs = IntKeyedDictionary<Set<Grid.ID>>()
     while let (id, depth) = queue.popFirst() {
       guard let grid = grids[id] else {
-        Task { @MainActor in
-          logger.fault("State.walkingGrids: grid \(id) not found")
-        }
         continue
       }
 
@@ -274,15 +270,7 @@ public struct State: Sendable {
           positionsInParent[id] = window.origin * font.cellSize
 
         case let .floating(floatingWindow):
-          update(&anchorGridIDToFloatingWindowGridIDs[floatingWindow.anchorGridID]) { accumulator in
-            if accumulator == nil {
-              accumulator = [id]
-            } else {
-              accumulator!.insert(id)
-            }
-          }
-
-          guard let anchorGrid = grids[floatingWindow.anchorGridID] else {
+          guard let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID] else {
             Task { @MainActor in
               logger
                 .fault(
@@ -303,19 +291,20 @@ public struct State: Sendable {
 
           var gridColumn: Double = floatingWindow.anchorColumn
           var gridRow: Double = floatingWindow.anchorRow
+          let gridSize = grid.windowSizeOrSize
           switch floatingWindow.anchor {
           case .northWest:
             break
 
           case .northEast:
-            gridColumn -= Double(anchorGrid.columnsCount)
+            gridColumn -= Double(gridSize.columnsCount)
 
           case .southWest:
-            gridRow -= Double(anchorGrid.rowsCount)
+            gridRow -= Double(gridSize.rowsCount)
 
           case .southEast:
-            gridColumn -= Double(anchorGrid.columnsCount)
-            gridRow -= Double(anchorGrid.rowsCount)
+            gridColumn -= Double(gridSize.columnsCount)
+            gridRow -= Double(gridSize.rowsCount)
           }
           positionsInParent[id] = .init(
             x: gridColumn * font.cellWidth,
@@ -330,12 +319,14 @@ public struct State: Sendable {
         positionsInParent[id] = .init()
       }
 
-      let frame = CGRect(
-        origin: positionsInParent[id] ?? .init(),
-        size: grid.size * font.cellSize
-      )
+      if let positionInParent = positionsInParent[id] {
+        let frame = CGRect(
+          origin: positionInParent,
+          size: grid.windowSizeOrSize * font.cellSize
+        )
+        try body(id, frame, Double(1_000_000 * depth + nodesCount * 1000))
+      }
 
-      try body(id, frame, Double(1_000_000 * depth + nodesCount * 1000))
       let nextDepth = depth + 1
       queue
         .append(
@@ -344,12 +335,6 @@ public struct State: Sendable {
             .map { (id: $0, depth: nextDepth) }
         )
       nodesCount += 1
-
-      if let floatingWindowGridIDs = anchorGridIDToFloatingWindowGridIDs[id] {
-        for floatingWindowGridID in floatingWindowGridIDs {
-          queue.append((id: floatingWindowGridID, depth: nextDepth))
-        }
-      }
     }
   }
 }

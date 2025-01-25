@@ -46,8 +46,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     super.init(frame: .init())
 
     wantsLayer = true
+    layer!.isOpaque = true
     layer!.masksToBounds = true
     layer!.delegate = self
+    layer!.drawsAsynchronously = true
   }
 
   @available(*, unavailable)
@@ -192,13 +194,14 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    defer { CATransaction.commit() }
 
     renderChildren(
       arrangedGridLayers.values
         .lazy
         .filter { !$0.isHidden }
     )
+
+    CATransaction.commit()
   }
 
   public func windowFrame(

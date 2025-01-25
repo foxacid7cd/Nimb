@@ -28,25 +28,30 @@ public struct GridsHierarchy: Sendable {
   }
 
   public mutating func addNode(id: Grid.ID, parent: Grid.ID) {
-    if let existing = allNodes[id] {
+    if var existing = allNodes[id] {
       if existing.parent != parent {
-        removeNode(id: id)
+        allNodes[existing.parent]?.children.remove(id)
+        existing.parent = parent
       }
+      allNodes[id] = existing
+    } else {
+      allNodes[id] = .init(id: id, parent: parent, children: .init())
     }
-    allNodes[id] = .init(id: id, parent: parent, children: .init())
 
     if id != Grid.OuterID {
-      update(&allNodes[parent]) { parentNode in
-        guard parentNode != nil else {
-          Task { @MainActor in
-            logger
-              .warning(
-                "GridsHierarchy.addNode: parent node with id \(parent) not found"
-              )
-          }
-          return
+      if allNodes[parent] == nil {
+        allNodes[parent] = .init(
+          id: parent,
+          parent: Grid.OuterID,
+          children: [id]
+        )
+        if allNodes[Grid.OuterID] == nil {
+          allNodes[Grid.OuterID] = .init(id: Grid.OuterID, parent: Grid.OuterID, children: [parent])
+        } else {
+          allNodes[Grid.OuterID]!.children.append(parent)
         }
-        parentNode!.children.append(id)
+      } else {
+        allNodes[parent]!.children.append(id)
       }
     }
   }

@@ -4,6 +4,7 @@
 public struct Window: Sendable, Identifiable {
   public var id: References.Window
   public var origin: IntegerPoint
+  public var size: IntegerSize
 }
 
 @PublicInit

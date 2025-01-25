@@ -239,6 +239,8 @@ public class MainViewController: NSViewController, Rendering {
   }
 
   private func renderBackground() {
-    view.layer!.backgroundColor = state.appearance.defaultBackgroundColor.appKit.cgColor
+    let backgroundCGColor = state.appearance.defaultBackgroundColor.appKit.cgColor
+    view.layer!.backgroundColor = backgroundCGColor
+    gridsView.layer!.backgroundColor = backgroundCGColor
   }
 }

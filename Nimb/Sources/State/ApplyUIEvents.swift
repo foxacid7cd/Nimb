@@ -321,7 +321,8 @@ public extension Actions {
           state.grids[gridID]?.associatedWindow = .plain(
             .init(
               id: windowID,
-              origin: origin
+              origin: origin,
+              size: size
             )
           )
           state.grids[gridID]?.isHidden = false
@@ -330,9 +331,6 @@ public extension Actions {
           updates.isGridsHierarchyUpdated = true
 
           updatedLayout(forGridWithID: gridID)
-          if size != state.grids[gridID]!.size {
-            apply(update: .resize(size), toGridWithID: gridID)
-          }
 
         case let .winFloatPos(
           gridID,

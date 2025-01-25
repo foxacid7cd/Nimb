@@ -73,7 +73,6 @@ public final class Neovim: Sendable {
     api = .init(rpc)
   }
 
-  @MainActor
   public func bootstrap() async throws {
     try process.run()
 

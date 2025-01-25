@@ -64,6 +64,14 @@ public struct Grid: Sendable, Identifiable {
     layout.size
   }
 
+  public var windowSizeOrSize: IntegerSize {
+    if case let .plain(window) = associatedWindow {
+      window.size
+    } else {
+      size
+    }
+  }
+
   public var rowsCount: Int {
     size.rowsCount
   }
