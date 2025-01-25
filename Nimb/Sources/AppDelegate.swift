@@ -2,19 +2,20 @@
 
 import AppKit
 import CustomDump
+import Queue
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
-  private var neovim: Neovim?
-  private var store: Store?
-
   private var mainMenuController: MainMenuController?
   private var msgShowsWindowController: MsgShowsWindowController?
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
-  private var alertsTask: Task<Void, Never>?
-  private var updatesTask: Task<Void, Never>?
+  private var neovim: Neovim?
+  private var store: Store?
+  @StateActor private var alertsTask: Task<Void, Never>?
+  @StateActor private var updatesTask: Task<Void, Never>?
+  @StateActor private let renderQueue = AsyncQueue()
 
   override public init() {
     super.init()
@@ -25,37 +26,43 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   public func applicationDidFinishLaunching(_: Notification) {
-    Task {
-      let initialState = State(
-        debug: UserDefaults.standard.debug,
-        font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
-      )
+    let initialState = State(
+      debug: UserDefaults.standard.debug,
+      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
+    )
 
-      neovim = Neovim()
-      store = Store(api: neovim!.api, initialState: initialState)
-      setupInitialControllers()
+    let neovim = Neovim()
+    self.neovim = neovim
 
-      await setupBindings(store: store!)
+    let store = Store(api: neovim.api, initialState: initialState)
+    self.store = store
+
+    setupInitialControllers(store: store)
+
+    Task { @StateActor in
+      setupBindings(store: store)
 
       do {
-        try await neovim!.bootstrap()
-
-        _ = await NotificationCenter.default
-          .notifications(
-            named: Process.didTerminateNotification,
-            object: neovim!.process
-          )
-          .makeAsyncIterator()
-          .next()
-        let status = neovim!.process.terminationStatus
-        let reason = neovim!.process.terminationReason.rawValue
-        logger.debug("Neovim process terminated with status \(status) and reason \(reason)")
+        try await neovim.bootstrap()
       } catch {
         logger.error("Neovim process boostrap error: \(String(customDumping: error))")
         await showCriticalAlert(error: error)
       }
 
-      NSApplication.shared.terminate(nil)
+      Task { @MainActor in
+        _ = await NotificationCenter.default
+          .notifications(
+            named: Process.didTerminateNotification,
+            object: neovim.process
+          )
+          .makeAsyncIterator()
+          .next()
+        let status = neovim.process.terminationStatus
+        let reason = neovim.process.terminationReason.rawValue
+        logger.debug("Neovim process terminated with status \(status) and reason \(reason)")
+
+        NSApplication.shared.terminate(nil)
+      }
     }
 
     logger.debug("Application did finish launching")
@@ -79,13 +86,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     render()
   }
 
+  @StateActor
   private func setupBindings(store: Store) {
     alertsTask = Task {
       do {
         for await alert in store.alerts {
           try Task.checkCancellation()
 
-          show(alert: alert)
+          await show(alert: alert)
         }
       } catch { }
     }
@@ -96,24 +104,27 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         for await (state, updates) in store.updates {
           try Task.checkCancellation()
 
-          if updates.isOuterGridLayoutUpdated {
-            UserDefaults.standard.outerGridSize = state.outerGrid!.size
-          }
-          if updates.isFontUpdated {
-            UserDefaults.standard.appKitFont = state.font.appKit()
-          }
-          if updates.isDebugUpdated {
-            UserDefaults.standard.debug = state.debug
-          }
           if updates.isNimbNotifiesUpdated {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              self.showNimbNotify(notification)
+              await self.showNimbNotify(notification)
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          render(state: state, updates: updates)
+          renderQueue.addOperation { @MainActor [state, updates] in
+            if updates.isOuterGridLayoutUpdated {
+              UserDefaults.standard.outerGridSize = state.outerGrid!.size
+            }
+            if updates.isFontUpdated {
+              UserDefaults.standard.appKitFont = state.font.appKit()
+            }
+            if updates.isDebugUpdated {
+              UserDefaults.standard.debug = state.debug
+            }
+
+            self.render(state: state, updates: updates)
+          }
         }
         logger.debug("Store state updates loop ended")
       } catch is CancellationError {
@@ -125,11 +136,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  private func setupInitialControllers() {
-    mainMenuController = MainMenuController(store: store!)
+  private func setupInitialControllers(store: Store) {
+    mainMenuController = MainMenuController(store: store)
     mainMenuController!.settingsClicked = { [unowned self] in
       if settingsWindowController == nil {
-        settingsWindowController = .init(store: store!)
+        settingsWindowController = .init(store: store)
         renderChildren(settingsWindowController!)
       }
       settingsWindowController!.showWindow(nil)
@@ -137,11 +148,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     NSApplication.shared.mainMenu = mainMenuController!.menu
 
     mainWindowController = MainWindowController(
-      store: store!,
+      store: store,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
     )
 
-    msgShowsWindowController = MsgShowsWindowController(store: store!)
+    msgShowsWindowController = MsgShowsWindowController(store: store)
   }
 
   private func showCriticalAlert(error: Error) async {

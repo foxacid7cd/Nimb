@@ -142,12 +142,6 @@ public final class Store: Sendable {
             if updates.needFlush {
               continuation.yield((state, updates))
             }
-
-            counter += 1
-            if counter.isMultiple(of: 5) {
-              await Task.yield()
-              counter = 0
-            }
           }
         } catch is CancellationError {
         } catch {
