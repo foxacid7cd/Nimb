@@ -185,7 +185,7 @@ public final class Store: Sendable {
   public nonisolated func apiTask(
     _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
   ) {
-    Task { @StateActor in
+    Task {
       do {
         _ = try await body(api)
       } catch {
