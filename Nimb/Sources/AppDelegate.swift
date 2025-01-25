@@ -15,9 +15,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var store: Store?
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
-  @StateActor private let renderQueue = AsyncQueue()
-  @StateActor private var latestStateAndUpdates: (State, State.Updates)?
   @StateActor private var renderTask: Task<Void, Never>?
+  @StateActor private var pendingStateAndUpdates: (State, State.Updates)?
 
   override public init() {
     super.init()
@@ -114,19 +113,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          if var (_, updatesAccumulator) = latestStateAndUpdates {
+          if var (_, updatesAccumulator) = pendingStateAndUpdates {
             updatesAccumulator.formUnion(updates)
-            latestStateAndUpdates = (state, updatesAccumulator)
+            pendingStateAndUpdates = (state, updatesAccumulator)
           } else {
-            latestStateAndUpdates = (state, updates)
+            pendingStateAndUpdates = (state, updates)
           }
 
           renderTask?.cancel()
-          renderTask = Task { @MainActor in
-            guard !Task.isCancelled else {
-              return
-            }
-            if let (state, updates) = await consumeLatestStateAndUpdates() {
+          if updates.needFlush {
+            renderTask = Task { @MainActor in
+              guard !Task.isCancelled, let (state, updates) = await self.consumePendingStateAndUpdates() else {
+                return
+              }
               if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
                 UserDefaults.standard.outerGridSize = outerGrid.size
               }
@@ -148,6 +147,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         await self.showCriticalAlert(error: error)
       }
     }
+  }
+
+  @StateActor
+  private func consumePendingStateAndUpdates() -> (State, State.Updates)? {
+    defer { pendingStateAndUpdates = nil }
+    return pendingStateAndUpdates
   }
 
   private func setupInitialControllers(store: Store) {
@@ -213,12 +218,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     appKitAlert.messageText = alert.message
     appKitAlert.addButton(withTitle: "Close")
     appKitAlert.beginSheetModal(for: mainWindowController!.window!)
-  }
-
-  @StateActor
-  private func consumeLatestStateAndUpdates() -> (State, State.Updates)? {
-    defer { latestStateAndUpdates = nil }
-    return latestStateAndUpdates
   }
 
   private func showNimbNotify(_ notify: NimbNotify) {

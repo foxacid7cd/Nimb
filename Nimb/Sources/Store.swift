@@ -128,26 +128,24 @@ public final class Store: Sendable {
           for try await actions in allActions {
             try Task.checkCancellation()
 
-            if updates.needFlush {
-              updates = .init(needFlush: false)
-            }
-
             for action in actions {
               let newUpdates = action.apply(to: &state) { error in
                 alertsContinuation.yield(.init(error))
               }
               updates.formUnion(newUpdates)
-            }
-            if updates.needFlush {
-              continuation.yield((state, updates))
+
+              if updates.needFlush {
+                continuation.yield((state, updates))
+                updates = .init(needFlush: false)
+              }
             }
           }
+          continuation.finish()
         } catch is CancellationError {
         } catch {
           alertsContinuation.yield(.init(error))
+          continuation.finish()
         }
-
-        continuation.finish()
       }
 
       continuation.onTermination = { _ in
