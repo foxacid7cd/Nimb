@@ -125,7 +125,6 @@ public final class Store: Sendable {
         continuation.yield((state, updates))
 
         do {
-          var counter = 0
           for try await actions in allActions {
             try Task.checkCancellation()
 
@@ -155,13 +154,11 @@ public final class Store: Sendable {
         task.cancel()
       }
     }
-//    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
-//      var state = previous.state
-//      state.apply(updates: latest.updates, from: latest.state)
-//      var updates = previous.updates
-//      updates.formUnion(latest.updates)
-//      return (state, updates)
-//    }
+    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
+      var updates = previous.updates
+      updates.formUnion(latest.updates)
+      return (latest.state, updates)
+    }
   }
 
   @discardableResult

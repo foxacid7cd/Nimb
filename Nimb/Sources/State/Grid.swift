@@ -268,18 +268,6 @@ public struct Grid: Sendable, Identifiable {
       old: drawRuns.rowDrawRuns[row]
     )
 
-    if
-      let cursorDrawRun = drawRuns.cursorDrawRun,
-      cursorDrawRun.origin.row == row,
-      (originColumn ..< originColumn + cells.count)
-        .contains(cursorDrawRun.origin.column)
-    {
-      drawRuns.cursorDrawRun!.updateParent(
-        with: layout,
-        rowDrawRuns: drawRuns.rowDrawRuns
-      )
-    }
-
     return .init(
       origin: .init(column: originColumn, row: row),
       size: .init(columnsCount: cells.count, rowsCount: 1)
