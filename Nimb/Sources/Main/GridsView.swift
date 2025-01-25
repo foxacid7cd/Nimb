@@ -46,6 +46,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     super.init(frame: .init())
 
     wantsLayer = true
+    canDrawConcurrently = true
     layer!.isOpaque = true
     layer!.masksToBounds = true
     layer!.delegate = self
@@ -138,6 +139,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
+
     for gridID in updates.destroyedGridIDs {
       let layer = arrangedGridLayer(forGridWithID: gridID)
       layer.isHidden = true
@@ -192,16 +197,11 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       }
     }
 
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-
     renderChildren(
       arrangedGridLayers.values
         .lazy
         .filter { !$0.isHidden }
     )
-
-    CATransaction.commit()
   }
 
   public func windowFrame(

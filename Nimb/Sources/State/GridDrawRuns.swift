@@ -52,6 +52,7 @@ public struct GridDrawRuns: Sendable {
     }
     for row in fromRow ..< toRow {
       rowDrawRuns[row].drawBackground(
+        columnsRange: boundingRect.columns,
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         to: context,
         font: font,
@@ -77,6 +78,7 @@ public struct GridDrawRuns: Sendable {
     }
     for row in fromRow ..< toRow {
       rowDrawRuns[row].drawForeground(
+        columnsRange: boundingRect.columns,
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         to: context,
         font: font,
@@ -173,6 +175,7 @@ public struct RowDrawRun: Sendable {
   }
 
   public func drawBackground(
+    columnsRange: Range<Int>,
     at origin: CGPoint,
     to context: CGContext,
     font: Font,
@@ -180,7 +183,7 @@ public struct RowDrawRun: Sendable {
     upsideDownTransform: CGAffineTransform,
     contentsScale: Double
   ) {
-    for drawRun in drawRuns {
+    for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
         x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
@@ -200,6 +203,7 @@ public struct RowDrawRun: Sendable {
   }
 
   public func drawForeground(
+    columnsRange: Range<Int>,
     at origin: CGPoint,
     to context: CGContext,
     font: Font,
@@ -207,7 +211,7 @@ public struct RowDrawRun: Sendable {
     upsideDownTransform: CGAffineTransform,
     contentsScale: Double
   ) {
-    for drawRun in drawRuns {
+    for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
         x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,

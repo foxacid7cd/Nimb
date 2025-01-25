@@ -43,6 +43,7 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.title = ""
     customWindow.isMovable = false
     customWindow.isOpaque = true
+    customWindow.allowsConcurrentViewDrawing = true
     customWindow.keyPressed = { keyPress in
       store.api.keyPressed(keyPress)
     }

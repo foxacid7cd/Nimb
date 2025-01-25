@@ -130,11 +130,20 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
     let upsideDownTransform = upsideDownTransform
 
+    var isCursorDrawRunRectangleIntersected = false
+
     if let gridUpdate = updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
-          setNeedsDisplay((rectangle * state.font.cellSize).insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height / 2).applying(upsideDownTransform))
+          setNeedsDisplay(
+            (rectangle * state.font.cellSize)
+              .insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height / 2)
+              .applying(upsideDownTransform)
+          )
+          if let cursorDrawRun = grid.drawRuns.cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
+            isCursorDrawRunRectangleIntersected = true
+          }
         }
 
       case .needsDisplay:
@@ -145,9 +154,13 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     if
       updates.isCursorBlinkingPhaseUpdated || updates
         .isMouseUserInteractionEnabledUpdated,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun
+        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+        !isCursorDrawRunRectangleIntersected
     {
-      setNeedsDisplay((cursorDrawRun.rectangle * state.font.cellSize).applying(upsideDownTransform))
+      setNeedsDisplay(
+        (cursorDrawRun.rectangle * state.font.cellSize)
+          .applying(upsideDownTransform)
+      )
     }
   }
 
