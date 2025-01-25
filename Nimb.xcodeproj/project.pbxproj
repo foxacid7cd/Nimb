@@ -141,7 +141,6 @@
 		68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */; };
 		68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF6B2AD2ACCB0017C28D /* References.swift */; };
 		68AB575A2ACF4C7000FD34CA /* MainMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AB57592ACF4C7000FD34CA /* MainMenuController.swift */; };
-		68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */; };
 		68C129272C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129282C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C129292C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
@@ -329,7 +328,6 @@
 		68A8FF6A2AD2ACCB0017C28D /* UIOption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIOption.swift; sourceTree = "<group>"; };
 		68A8FF6B2AD2ACCB0017C28D /* References.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		68AB57592ACF4C7000FD34CA /* MainMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuController.swift; sourceTree = "<group>"; };
-		68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEventsChunk.swift; sourceTree = "<group>"; };
 		68BFEF412934CF6100564FE2 /* Nimb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nimb.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68BFEF4B2934CF6200564FE2 /* Nimb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Nimb.entitlements; sourceTree = "<group>"; };
 		68C129262C64078200E5A513 /* StateActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateActor.swift; sourceTree = "<group>"; };
@@ -685,7 +683,6 @@
 				68FAC3F22AF685AB00490F09 /* Action.swift */,
 				68FAC3F62AF6932F00490F09 /* Actions.swift */,
 				68FAC3F42AF68DB700490F09 /* ApplyUIEvents.swift */,
-				68BA573B2AE9EC10002E041B /* UIEventsChunk.swift */,
 				68A8FF4B2AD29F660017C28D /* Appearance.swift */,
 				68A8FF462AD29F650017C28D /* Cmdlines.swift */,
 				68A8FF432AD29F650017C28D /* Color.swift */,
@@ -1052,7 +1049,6 @@
 				68F0D4F32AECFDFC000954FF /* OSLog.swift in Sources */,
 				6896CE4A2C6860E8001F3C85 /* Neovim.swift in Sources */,
 				687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */,
-				68BA573C2AE9EC10002E041B /* UIEventsChunk.swift in Sources */,
 				687644882C5373670022D916 /* NeovimNotification.swift in Sources */,
 				68A8FF6F2AD2ACCB0017C28D /* References.swift in Sources */,
 				68A8FF622AD29F660017C28D /* Cursor.swift in Sources */,

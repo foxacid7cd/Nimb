@@ -246,53 +246,43 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 
-  @Sendable
-  public func applying(
-    lineUpdates: [(originColumn: Int, cells: [Cell])],
-    forRow row: Int,
+  public mutating func applyLineUpdate(
+    originColumn: Int,
+    cells: [Cell],
+    row: Int,
     font: Font,
     appearance: Appearance
   )
-    -> LineUpdatesResult
-  {
-    var dirtyRectangles = [IntegerRectangle]()
-    var shouldUpdateCursorDrawRun = false
+  -> IntegerRectangle {
+    layout.cells.rows[row].replaceSubrange(
+      originColumn ..< originColumn + cells.count,
+      with: cells
+    )
 
-    var rowCells = layout.cells.rows[row]
-    for (originColumn, cells) in lineUpdates {
-      rowCells.replaceSubrange(
-        originColumn ..< originColumn + cells.count,
-        with: cells
-      )
-      dirtyRectangles.append(.init(
-        origin: .init(column: originColumn, row: row),
-        size: .init(columnsCount: cells.count, rowsCount: 1)
-      ))
-
-      if
-        let cursorDrawRun = drawRuns.cursorDrawRun,
-        cursorDrawRun.origin.row == row,
-        (originColumn ..< originColumn + cells.count)
-          .contains(cursorDrawRun.origin.column)
-      {
-        shouldUpdateCursorDrawRun = true
-      }
-    }
-    let rowLayout = RowLayout(rowCells: rowCells)
-    let rowDrawRun = RowDrawRun(
+    layout.rowLayouts[row] = RowLayout(rowCells: layout.cells.rows[row])
+    drawRuns.rowDrawRuns[row] = RowDrawRun(
       row: row,
-      layout: rowLayout,
+      layout: layout.rowLayouts[row],
       font: font,
       appearance: appearance,
       old: drawRuns.rowDrawRuns[row]
     )
+
+    if
+      let cursorDrawRun = drawRuns.cursorDrawRun,
+      cursorDrawRun.origin.row == row,
+      (originColumn ..< originColumn + cells.count)
+        .contains(cursorDrawRun.origin.column)
+    {
+      drawRuns.cursorDrawRun!.updateParent(
+        with: layout,
+        rowDrawRuns: drawRuns.rowDrawRuns
+      )
+    }
+
     return .init(
-      row: row,
-      rowCells: rowCells,
-      rowLayout: rowLayout,
-      rowDrawRun: rowDrawRun,
-      dirtyRectangles: dirtyRectangles,
-      shouldUpdateCursorDrawRun: shouldUpdateCursorDrawRun
+      origin: .init(column: originColumn, row: row),
+      size: .init(columnsCount: cells.count, rowsCount: 1)
     )
   }
 
