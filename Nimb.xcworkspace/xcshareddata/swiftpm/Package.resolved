@@ -1,5 +1,5 @@
 {
-  "originHash" : "52a4b67a01e9bb4302515623dbbcb88493391cf32559e7d6b0f63dfc56f5dcae",
+  "originHash" : "e675cb611f6b539b43027599bcad788631983a33e298f6fa18bc8933957b353c",
   "pins" : [
     {
       "identity" : "coretextswift",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextKitPlus",
       "state" : {
-        "revision" : "34e80fdc73180844e0710286418d3d0c74a6a9fe",
-        "version" : "0.1.7"
+        "revision" : "446d6d431b163840ac5cc844ca5cf4704886c30e",
+        "version" : "0.1.8"
       }
     },
     {
