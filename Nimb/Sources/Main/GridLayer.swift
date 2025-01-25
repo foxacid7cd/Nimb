@@ -152,7 +152,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     callSetNeedsDisplayForUpdates()
-    displayIfNeeded()
   }
 
   @MainActor
