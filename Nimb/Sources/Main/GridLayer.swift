@@ -101,6 +101,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   override public func draw(in ctx: CGContext) {
     MainActor.assumeIsolated {
+      let upsideDownTransform = self.upsideDownTransform
+
       let boundingRect = IntegerRectangle(
         frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
         cellSize: state.font.cellSize
@@ -159,6 +161,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       return setNeedsDisplay()
     }
 
+    let upsideDownTransform = upsideDownTransform
+
     if let gridUpdate = updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
@@ -189,9 +193,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       return
     }
 
-    let scrollingSpeedMultiplier = 1.1
-    let xThreshold = state.font.cellWidth * 8 * scrollingSpeedMultiplier
-    let yThreshold = state.font.cellHeight * scrollingSpeedMultiplier
+    let xThreshold = state.font.cellWidth * 12
+    let yThreshold = state.font.cellHeight * 1.1
 
     if
       event.phase == .began
