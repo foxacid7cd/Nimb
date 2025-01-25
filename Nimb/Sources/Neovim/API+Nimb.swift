@@ -28,15 +28,15 @@ public extension API {
     return nil
   }
 
-  func nimbFast(method: String, parameters: [Value] = []) throws {
-    try fastCall(APIFunctions.NvimExecLua(
+  func nimbFast(method: String, parameters: [Value] = []) {
+    fastCall(APIFunctions.NvimExecLua(
       code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
       args: parameters
     ))
   }
 
-  func keyPressed(_ keyPress: KeyPress) throws {
-    try fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
+  func keyPressed(_ keyPress: KeyPress) {
+    fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
   }
 }
 

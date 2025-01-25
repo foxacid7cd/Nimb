@@ -234,14 +234,10 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
         ].cycled(times: abs(verticalScrollCount))
       }
 
-      do {
-        try store.api
-          .fastCallsTransaction(
-            with: chain(horizontalScrollFunctions, verticalScrollFunctions)
-          )
-      } catch {
-        store.show(alert: .init(error))
-      }
+      store.api
+        .fastCallsTransaction(
+          with: chain(horizontalScrollFunctions, verticalScrollFunctions)
+        )
     }
   }
 
@@ -260,18 +256,14 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
       return
     }
-    do {
-      try store.api.fastCall(APIFunctions.NvimInputMouse(
-        button: "move",
-        action: "",
-        modifier: mouseMove.modifier,
-        grid: gridID,
-        row: mouseMove.point.row,
-        col: mouseMove.point.column
-      ))
-    } catch {
-      store.show(alert: .init(error))
-    }
+    store.api.fastCall(APIFunctions.NvimInputMouse(
+      button: "move",
+      action: "",
+      modifier: mouseMove.modifier,
+      grid: gridID,
+      row: mouseMove.point.row,
+      col: mouseMove.point.column
+    ))
     previousMouseMove = mouseMove
   }
 
@@ -303,17 +295,14 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
     let point = point(for: event)
     let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
-    store.apiTask { [gridID] in
-      try await $0
-        .nvimInputMouse(
-          button: mouseButton,
-          action: action,
-          modifier: modifier,
-          grid: gridID,
-          row: point.row,
-          col: point.column
-        )
-    }
+    store.api.fastCall(APIFunctions.NvimInputMouse(
+      button: mouseButton,
+      action: action,
+      modifier: modifier,
+      grid: gridID,
+      row: point.row,
+      col: point.column
+    ))
   }
 }
 

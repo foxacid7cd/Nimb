@@ -39,14 +39,15 @@ public class MainViewController: NSViewController, Rendering {
         .throttle(for: .milliseconds(50), clock: .continuous) { _, latest in latest }
 
       for await outerGridSize in outerGridSizes {
-        store.apiTask {
-          try await $0
-            .nvimUITryResizeGrid(
-              grid: Grid.OuterID,
-              width: outerGridSize.columnsCount,
-              height: outerGridSize.rowsCount
-            )
-        }
+        store.api
+          .fastCall(
+            APIFunctions
+              .NvimUITryResizeGrid(
+                grid: Grid.OuterID,
+                width: outerGridSize.columnsCount,
+                height: outerGridSize.rowsCount
+              )
+          )
       }
     }
   }

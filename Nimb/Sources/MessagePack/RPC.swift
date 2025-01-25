@@ -7,6 +7,7 @@ import Combine
 import ConcurrencyExtras
 import CustomDump
 import Foundation
+import Queue
 
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
@@ -15,6 +16,7 @@ public final class RPC<Target: Channel>: Sendable {
   private let storage = LockIsolated<Storage>(.init())
   private let packer = LockIsolated<Packer>(.init())
   private let unpacker = LockIsolated<Unpacker>(.init())
+  private let queue = AsyncQueue()
 
   public init(_ target: Target, maximumConcurrentRequests: Int) {
     self.target = target
@@ -63,9 +65,9 @@ public final class RPC<Target: Channel>: Sendable {
   public func call(
     method: String,
     withParameters parameters: [Value]
-  ) async throws
+  ) async
   -> Message.Response.Result {
-    try await withUnsafeThrowingContinuation { continuation in
+    await withUnsafeContinuation { continuation in
       Task {
         let request = Message.Request(
           id: storage.withValue {
@@ -76,9 +78,7 @@ public final class RPC<Target: Channel>: Sendable {
           method: method,
           parameters: parameters
         )
-        do {
-          try send(request: request)
-        } catch { }
+        send(request: request)
       }
     }
   }
@@ -86,8 +86,8 @@ public final class RPC<Target: Channel>: Sendable {
   public func fastCall(
     method: String,
     withParameters parameters: [Value]
-  ) throws {
-    try send(
+  ) {
+    send(
       request: .init(
         id: storage.withValue { $0.announceRequest() },
         method: method,
@@ -99,33 +99,44 @@ public final class RPC<Target: Channel>: Sendable {
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value]
-  )> & Sendable) throws {
-    var data = Data()
-
-    for call in calls {
-      data.append(
-        packer.withValue {
-          $0
-            .pack(
-              Message.Request(
-                id: storage.withValue { $0.announceRequest() },
-                method: call.method,
-                parameters: call.parameters
-              )
-              .makeValue()
-            )
-        }
-      )
+  )> & Sendable) {
+    let messages = storage.withValue { storage in
+      calls.map { call in
+        Message.Request(
+          id: storage.announceRequest(),
+          method: call.method,
+          parameters: call.parameters
+        )
+      }
     }
 
-    try target.write(data)
+    let data = packer.withValue { packer in
+      var data = Data()
+
+      for message in messages {
+        data.append(
+          packer.pack(
+            message.makeValue()
+          )
+        )
+      }
+
+      return data
+    }
+
+    queue.addOperation { [target] in
+      try? target.write(data)
+    }
   }
 
-  public func send(request: Message.Request) throws {
+  public func send(request: Message.Request) {
     let data = packer.withValue {
       $0.pack(request.makeValue())
     }
-    try target.write(data)
+
+    queue.addOperation { [target] in
+      try? target.write(data)
+    }
   }
 }
 

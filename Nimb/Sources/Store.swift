@@ -154,35 +154,6 @@ public final class Store: Sendable {
         task.cancel()
       }
     }
-    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
-      var updates = previous.updates
-      updates.formUnion(latest.updates)
-      return (latest.state, updates)
-    }
-  }
-
-  @discardableResult
-  public func apiAsyncTask<T: Sendable>(_ body: @escaping @Sendable (API<ProcessChannel>) async throws -> T) async -> T? {
-    await Task {
-      do {
-        return try await body(api)
-      } catch {
-        alertsContinuation.yield(.init(error))
-        return nil
-      }
-    }.value
-  }
-
-  public nonisolated func apiTask(
-    _ body: @escaping @Sendable (API<ProcessChannel>) async throws -> Void
-  ) {
-    Task {
-      do {
-        _ = try await body(api)
-      } catch {
-        alertsContinuation.yield(.init(error))
-      }
-    }
   }
 
   public nonisolated func dispatch(_ action: Action) {

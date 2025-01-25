@@ -122,9 +122,7 @@ final class MainMenuController: NSObject, Rendering {
     switch panel.runModal() {
     case .OK:
       if let url = panel.url {
-        store.apiTask {
-          try await $0.nimb(method: "edit", parameters: [.string(url.path())])
-        }
+        store.api.nimbFast(method: "edit", parameters: [.string(url.path())])
       }
 
     default:
@@ -133,9 +131,7 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleSave() {
-    store.apiTask {
-      _ = try await $0.nimb(method: "write")
-    }
+    store.api.nimbFast(method: "write")
   }
 
   @objc private func handleSaveAs() {
@@ -157,39 +153,34 @@ final class MainMenuController: NSObject, Rendering {
         let url = URL(filePath: "panel")
         panel.directoryURL = url.deletingLastPathComponent()
         panel.nameFieldStringValue = url.lastPathComponent
-        store.apiTask {
-          _ = try await $0.nimb(method: "save_as", parameters: [.string(url.path())])
-        }
+        store.api.nimbFast(method: "save_as", parameters: [.string(url.path())])
       }
     }
   }
 
   private func getCurrentBufferInfo() async -> (name: String, type: String)? {
-    await store.apiAsyncTask { api in
-      async let name = api.nvimBufGetName(bufferID: .current)
-      async let rawBuftype = api.nvimGetOptionValue(
+    guard
+      let name = try? await store.api.nvimBufGetName(bufferID: .current),
+      let rawBuftype = try? await store.api.nvimGetOptionValue(
         name: "buftype",
         opts: ["buf": .integer(0)]
       )
-      do {
-        return try await (
-          name: name,
-          type: rawBuftype[case: \.string] ?? ""
-        )
-      }
+    else {
+      return nil
     }
+
+    return (
+      name: name,
+      type: rawBuftype[case: \.string] ?? ""
+    )
   }
 
   @objc private func handleCloseWindow() {
-    store.apiTask {
-      try await $0.nimb(method: "close")
-    }
+    store.api.nimbFast(method: "close")
   }
 
   @objc private func handleQuit() {
-    store.apiTask {
-      try await $0.nimb(method: "quit_all")
-    }
+    store.api.nimbFast(method: "quit")
   }
 
   @objc private func handleFont() {
@@ -243,9 +234,7 @@ final class MainMenuController: NSObject, Rendering {
       return
     }
 
-    store.apiTask {
-      try await $0.nvimPaste(data: text, crlf: false, phase: -1)
-    }
+    store.api.fastCall(APIFunctions.NvimPaste(data: text, crlf: false, phase: -1))
   }
 
   @objc private func handleToggleUIEventsLogging() {
@@ -305,13 +294,13 @@ final class MainMenuController: NSObject, Rendering {
     let shortName = modeInfo.cursorStyles[mode.cursorStyleIndex].shortName
     let firstCharacter = shortName?.lowercased().first
     if ["i", "n", "o", "r", "s", "v"].contains(firstCharacter) {
-      return await store.apiAsyncTask { api in
-        let rawSuccess = try await api.nimb(method: "buf_text_for_copy")
-        guard let text = rawSuccess.flatMap(\.string) else {
-          throw Failure("success result is not a string", rawSuccess as Any)
-        }
-        return text
+      guard
+        let rawSuccess = try? await store.api.nimb(method: "buf_text_for_copy"),
+        case let .string(text) = rawSuccess
+      else {
+        return nil
       }
+      return text
     } else if firstCharacter == "c" {
       if
         let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,

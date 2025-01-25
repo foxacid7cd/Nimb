@@ -49,8 +49,8 @@ public final class API<Target: Channel>: Sendable {
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
 
-  public func fastCall<T: APIFunction>(_ apiFunction: T) throws {
-    try rpc.fastCall(
+  public func fastCall<T: APIFunction>(_ apiFunction: T) {
+    rpc.fastCall(
       method: T.method,
       withParameters: apiFunction.parameters
     )
@@ -58,9 +58,9 @@ public final class API<Target: Channel>: Sendable {
 
   public func fastCallsTransaction<S: Sequence>(
     with apiFunctions: S
-  ) throws where S.Element == any APIFunction {
+  ) where S.Element == any APIFunction {
     for apiFunction in apiFunctions {
-      try rpc.fastCall(
+      rpc.fastCall(
         method: type(of: apiFunction).method,
         withParameters: apiFunction.parameters
       )

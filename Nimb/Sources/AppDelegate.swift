@@ -16,6 +16,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
   @StateActor private let renderQueue = AsyncQueue()
+  @StateActor private var latestStateAndUpdates: (State, State.Updates)?
+  @StateActor private var renderTask: Task<Void, Never>?
 
   override public init() {
     super.init()
@@ -112,18 +114,30 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          renderQueue.addOperation { @MainActor [state, updates] in
-            if updates.isOuterGridLayoutUpdated {
-              UserDefaults.standard.outerGridSize = state.outerGrid!.size
-            }
-            if updates.isFontUpdated {
-              UserDefaults.standard.appKitFont = state.font.appKit()
-            }
-            if updates.isDebugUpdated {
-              UserDefaults.standard.debug = state.debug
-            }
+          if var (_, updatesAccumulator) = latestStateAndUpdates {
+            updatesAccumulator.formUnion(updates)
+            latestStateAndUpdates = (state, updatesAccumulator)
+          } else {
+            latestStateAndUpdates = (state, updates)
+          }
 
-            self.render(state: state, updates: updates)
+          renderTask?.cancel()
+          renderTask = Task { @MainActor in
+            guard !Task.isCancelled else {
+              return
+            }
+            if let (state, updates) = await consumeLatestStateAndUpdates() {
+              if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
+                UserDefaults.standard.outerGridSize = outerGrid.size
+              }
+              if updates.isFontUpdated {
+                UserDefaults.standard.appKitFont = state.font.appKit()
+              }
+              if updates.isDebugUpdated {
+                UserDefaults.standard.debug = state.debug
+              }
+              self.render(state: state, updates: updates)
+            }
           }
         }
         logger.debug("Store state updates loop ended")
@@ -199,6 +213,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     appKitAlert.messageText = alert.message
     appKitAlert.addButton(withTitle: "Close")
     appKitAlert.beginSheetModal(for: mainWindowController!.window!)
+  }
+
+  @StateActor
+  private func consumeLatestStateAndUpdates() -> (State, State.Updates)? {
+    defer { latestStateAndUpdates = nil }
+    return latestStateAndUpdates
   }
 
   private func showNimbNotify(_ notify: NimbNotify) {
