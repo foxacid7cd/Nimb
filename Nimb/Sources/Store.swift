@@ -161,13 +161,13 @@ public final class Store: Sendable {
         task.cancel()
       }
     }
-    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
-      var state = previous.state
-      state.apply(updates: latest.updates, from: latest.state)
-      var updates = previous.updates
-      updates.formUnion(latest.updates)
-      return (state, updates)
-    }
+//    .throttle(for: .milliseconds(1000 / 120), clock: .continuous) { previous, latest in
+//      var state = previous.state
+//      state.apply(updates: latest.updates, from: latest.state)
+//      var updates = previous.updates
+//      updates.formUnion(latest.updates)
+//      return (state, updates)
+//    }
   }
 
   @discardableResult
