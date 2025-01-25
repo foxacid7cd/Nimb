@@ -24,7 +24,7 @@ public struct Appearance: Sendable {
   public var highlights: IntKeyedDictionary<Highlight> = [:]
   public var observedHighlights: TreeDictionary<
     ObservedHighlightName,
-    (id: Int, kind: String)
+    (id: Int?, kind: String?)
   > =
     [:]
   public var defaultForegroundColor: Color = .black
@@ -32,7 +32,7 @@ public struct Appearance: Sendable {
   public var defaultSpecialColor: Color = .black
 
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
-    guard let (id, _) = observedHighlights[name] else {
+    guard let (id, _) = observedHighlights[name], let id else {
       return nil
     }
     return highlights[id]
@@ -41,6 +41,7 @@ public struct Appearance: Sendable {
   public func isItalic(for name: ObservedHighlightName) -> Bool {
     guard
       let (id, _) = observedHighlights[name],
+      let id,
       let highlight = highlights[id]
     else {
       return false
@@ -51,6 +52,7 @@ public struct Appearance: Sendable {
   public func isBold(for name: ObservedHighlightName) -> Bool {
     guard
       let (id, _) = observedHighlights[name],
+      let id,
       let highlight = highlights[id]
     else {
       return false
@@ -61,6 +63,7 @@ public struct Appearance: Sendable {
   public func foregroundColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
+      let id,
       let highlight = highlights[id],
       let foregroundColor = highlight.foregroundColor
     else {
@@ -72,6 +75,7 @@ public struct Appearance: Sendable {
   public func backgroundColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
+      let id,
       let highlight = highlights[id]
     else {
       return defaultBackgroundColor
@@ -83,6 +87,7 @@ public struct Appearance: Sendable {
   public func specialColor(for name: ObservedHighlightName) -> Color {
     guard
       let (id, _) = observedHighlights[name],
+      let id,
       let highlight = highlights[id],
       let specialColor = highlight.specialColor
     else {

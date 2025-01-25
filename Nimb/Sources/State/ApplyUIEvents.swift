@@ -764,21 +764,23 @@ public extension Actions {
 
           for rawInfoItem in info {
             guard
-              case let .dictionary(dict) = rawInfoItem,
-              case let .string(kind) = dict["kind"],
-              case let .integer(infoID) = dict["id"],
-              case let .string(hiName) = dict["hi_name"]
+              case let .dictionary(dict) = rawInfoItem
             else {
               handleError(Failure("invalid hl attr define info item", rawInfoItem))
               continue
             }
 
             if
+              case let .string(hiName) = dict["hi_name"],
               let observedHighlightName = Appearance.ObservedHighlightName(
                 rawValue: hiName
               )
             {
-              state.appearance.observedHighlights[observedHighlightName] = (infoID, kind)
+              state.appearance
+                .observedHighlights[observedHighlightName] = (
+                  dict["id"].flatMap(\.integer),
+                  dict["kind"].flatMap(\.string)
+                )
               updates.updatedObservedHighlightNames
                 .insert(observedHighlightName)
             }

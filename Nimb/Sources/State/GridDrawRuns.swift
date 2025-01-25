@@ -42,8 +42,7 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform,
-    contentsScale: Double
+    upsideDownTransform: CGAffineTransform
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -57,8 +56,7 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform,
-        contentsScale: contentsScale
+        upsideDownTransform: upsideDownTransform
       )
     }
   }
@@ -68,8 +66,7 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform,
-    contentsScale: Double
+    upsideDownTransform: CGAffineTransform
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -83,8 +80,7 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform,
-        contentsScale: contentsScale
+        upsideDownTransform: upsideDownTransform
       )
     }
   }
@@ -163,6 +159,7 @@ public struct RowDrawRun: Sendable {
         appearance: appearance
       )
       drawRun.columnsRange = part.columnsRange
+      drawRun.highlightID = part.highlightID
       drawRunsCache[.init(drawRun)] = (
         index: drawRuns.count,
         drawRun: drawRun
@@ -180,8 +177,7 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform,
-    contentsScale: Double
+    upsideDownTransform: CGAffineTransform
   ) {
     for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
@@ -196,8 +192,7 @@ public struct RowDrawRun: Sendable {
         to: context,
         at: rect.origin,
         font: font,
-        appearance: appearance,
-        contentsScale: contentsScale
+        appearance: appearance
       )
     }
   }
@@ -208,8 +203,7 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform,
-    contentsScale: Double
+    upsideDownTransform: CGAffineTransform
   ) {
     for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
@@ -222,10 +216,9 @@ public struct RowDrawRun: Sendable {
 
       drawRun.drawForeground(
         to: context,
-        at: rect.origin,
+        at: rect,
         font: font,
-        appearance: appearance,
-        contentsScale: contentsScale
+        appearance: appearance
       )
     }
   }
@@ -237,9 +230,6 @@ public struct DrawRun: Sendable {
   public var highlightID: Highlight.ID
   public var columnsRange: Range<Int>
   public var glyphRuns: [GlyphRun]
-  public var strikethroughPath: Path?
-  public var underlinePath: Path?
-  public var underlineLineDashLengths: [CGFloat]
 
   public init(
     rowPartCells: [Cell],
@@ -248,11 +238,6 @@ public struct DrawRun: Sendable {
     font: Font,
     appearance: Appearance
   ) {
-    let size = CGSize(
-      width: Double(columnsRange.count) * font.cellWidth,
-      height: font.cellHeight
-    )
-
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
     let appKitFont = font.appKit(
@@ -323,98 +308,11 @@ public struct DrawRun: Sendable {
         )
       }
 
-    var strikethroughPath: Path?
-
-    let decorations = appearance.decorations(for: highlightID)
-    if decorations.isStrikethrough {
-      let strikethroughY = bounds.height + yOffset - ascent
-
-      var path = Path()
-      path.move(to: .init(x: 0, y: strikethroughY))
-      path.addLine(to: .init(x: size.width, y: strikethroughY))
-
-      strikethroughPath = path
-    }
-
-    var underlinePath: Path?
-    var underlineLineDashLengths = [CGFloat]()
-
-    let underlineY: CGFloat = 0
-    if decorations.isUnderdashed {
-      underlineLineDashLengths = [2, 2]
-      drawUnderlinePath { path in
-        path.addLines([
-          .init(x: 0, y: underlineY),
-          .init(x: size.width, y: underlineY),
-        ])
-      }
-
-    } else if decorations.isUnderdotted {
-      underlineLineDashLengths = [1, 1]
-      drawUnderlinePath { path in
-        path.addLines([
-          .init(x: 0, y: underlineY),
-          .init(x: size.width, y: underlineY),
-        ])
-      }
-
-    } else if decorations.isUnderdouble {
-      drawUnderlinePath { path in
-        path.addLines([
-          .init(x: 0, y: underlineY),
-          .init(x: size.width, y: underlineY),
-        ])
-        path.addLines([
-          .init(x: 0, y: underlineY + 3),
-          .init(x: size.width, y: underlineY + 3),
-        ])
-      }
-
-    } else if decorations.isUndercurl {
-      drawUnderlinePath { path in
-        let widthDivider = 3
-
-        let xStep = font.cellWidth / Double(widthDivider)
-        let pointsCount = columnsRange.count * widthDivider + 3
-
-        let oddUnderlineY = underlineY + 3
-        let evenUnderlineY = underlineY
-
-        path.move(to: .init(x: 0, y: oddUnderlineY))
-        for index in 1 ..< pointsCount {
-          let isEven = index.isMultiple(of: 2)
-
-          path.addLine(
-            to: .init(
-              x: Double(index) * xStep,
-              y: isEven ? evenUnderlineY : oddUnderlineY
-            )
-          )
-        }
-      }
-
-    } else if decorations.isUnderline {
-      drawUnderlinePath { path in
-        path.move(to: .init(x: 0, y: underlineY))
-        path.addLine(to: .init(x: size.width, y: underlineY))
-      }
-    }
-
-    func drawUnderlinePath(with body: (inout Path) -> Void) {
-      var path = Path()
-      body(&path)
-
-      underlinePath = path
-    }
-
     self = .init(
       rowPartCells: rowPartCells,
       highlightID: highlightID,
       columnsRange: columnsRange,
-      glyphRuns: glyphRuns,
-      strikethroughPath: strikethroughPath,
-      underlinePath: underlinePath,
-      underlineLineDashLengths: underlineLineDashLengths
+      glyphRuns: glyphRuns
     )
   }
 
@@ -422,8 +320,7 @@ public struct DrawRun: Sendable {
     to context: CGContext,
     at origin: CGPoint,
     font: Font,
-    appearance: Appearance,
-    contentsScale: Double
+    appearance: Appearance
   ) {
     let rect = CGRect(
       origin: origin,
@@ -438,54 +335,77 @@ public struct DrawRun: Sendable {
 
   public func drawForeground(
     to context: CGContext,
-    at origin: CGPoint,
+    at rect: CGRect,
     font: Font,
-    appearance: Appearance,
-    contentsScale: Double
+    appearance: Appearance
   ) {
+    let decorations = appearance.decorations(for: highlightID)
+    let specialColor = appearance.specialColor(for: highlightID)
+    let specialCGColor = specialColor.cg
+
     context.setLineWidth(1)
+    context.setLineCap(.round)
+    context.setLineJoin(.round)
+    context.setStrokeColor(specialCGColor)
 
-    let foregroundColor = appearance.foregroundColor(for: highlightID)
+    if decorations.isStrikethrough {
+      let strikethroughY = rect.height / 2 + rect.origin.y
 
-    if let strikethroughPath {
-      var offsetAffineTransform = CGAffineTransform(
-        translationX: origin.x,
-        y: origin.y
-      )
-
-      context.addPath(
-        strikethroughPath.cgPath.copy(using: &offsetAffineTransform)!
-      )
-      context.setStrokeColor(foregroundColor.appKit.cgColor)
-      context.strokePath()
+      context.move(to: .init(x: rect.minX, y: strikethroughY))
+      context.addLine(to: .init(x: rect.maxX, y: strikethroughY))
+      context.closePath()
+      context.drawPath(using: .stroke)
     }
 
-    if let underlinePath {
-      var offsetAffineTransform = CGAffineTransform(
-        translationX: origin.x,
-        y: origin.y
-      )
+    let underlineY = rect.origin.y + 0.5
 
-      if !underlineLineDashLengths.isEmpty {
-        context.setLineDash(phase: 0.5, lengths: underlineLineDashLengths)
+    if decorations.isUnderline || decorations.isUnderdashed || decorations.isUnderdotted {
+      if decorations.isUnderdashed {
+        context.setLineDash(phase: 0.5, lengths: [2, 2])
+      } else if decorations.isUnderdotted {
+        context.setLineDash(phase: 0.5, lengths: [1, 1])
       }
-      context.addPath(
-        underlinePath.cgPath.copy(using: &offsetAffineTransform)!
-      )
-      context
-        .setStrokeColor(
-          appearance.specialColor(for: highlightID).appKit
-            .cgColor
+      context.move(to: .init(x: rect.minX, y: underlineY))
+      context.addLine(to: .init(x: rect.maxX, y: underlineY))
+      context.closePath()
+      context.drawPath(using: .stroke)
+    } else if decorations.isUnderdouble {
+      context.move(to: .init(x: rect.minX, y: underlineY))
+      context.addLine(to: .init(x: rect.maxX, y: underlineY))
+      context.move(to: .init(x: rect.minX, y: underlineY + 3))
+      context.addLine(to: .init(x: rect.maxX, y: underlineY + 3))
+      context.closePath()
+      context.drawPath(using: .stroke)
+    } else if decorations.isUndercurl {
+      let widthDivider = 3
+
+      let xStep = font.cellWidth / Double(widthDivider)
+      let pointsCount = columnsRange.count * widthDivider + 3
+
+      let oddUnderlineY = underlineY + 3
+      let evenUnderlineY = underlineY
+
+      context.move(to: .init(x: rect.minX, y: oddUnderlineY))
+      for index in 1 ..< pointsCount {
+        let isEven = index.isMultiple(of: 2)
+
+        context.addLine(
+          to: .init(
+            x: rect.minX + Double(index) * xStep,
+            y: isEven ? evenUnderlineY : oddUnderlineY
+          )
         )
-      context.strokePath()
+      }
+      context.closePath()
+      context.drawPath(using: .stroke)
     }
 
-    context.setFillColor(foregroundColor.appKit.cgColor)
+    context.setTextDrawingMode(.fill)
+    context.setFillColor(appearance.foregroundColor(for: highlightID).cg)
 
-    let textPosition = origin
     for glyphRun in glyphRuns {
       context.textMatrix = glyphRun.textMatrix
-      context.textPosition = textPosition
+      context.textPosition = rect.origin
       CTFontDrawGlyphs(
         glyphRun.appKitFont,
         glyphRun.glyphs,
@@ -497,10 +417,13 @@ public struct DrawRun: Sendable {
   }
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {
-    guard
-      rowPartCells == rowPart.cells
-    else {
+    guard rowPart.cells.count == rowPartCells.count else {
       return false
+    }
+    for (rowPartCell, cell) in zip(rowPart.cells, rowPartCells) {
+      if rowPartCell.character != cell.character || rowPartCell.isDoubleWidth != cell.isDoubleWidth {
+        return false
+      }
     }
     return true
   }
@@ -625,8 +548,6 @@ public struct CursorDrawRun: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
-    context.saveGState()
-
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
 
@@ -643,6 +564,9 @@ public struct CursorDrawRun: Sendable {
     let rect = cellFrame
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(upsideDownTransform)
+
+    context.setAllowsAntialiasing(false)
+    context.setShouldAntialias(false)
 
     context.setFillColor(cursorBackgroundColor.cg)
     context.fill([rect])
@@ -662,6 +586,9 @@ public struct CursorDrawRun: Sendable {
       let parentRect = (parentRectangle * font.cellSize)
         .applying(upsideDownTransform)
 
+      context.setAllowsAntialiasing(true)
+      context.setShouldAntialias(true)
+
       for glyphRun in parentDrawRun.glyphRuns {
         context.textMatrix = glyphRun.textMatrix
         context.textPosition = parentRect.origin
@@ -674,7 +601,5 @@ public struct CursorDrawRun: Sendable {
         )
       }
     }
-
-    context.restoreGState()
   }
 }

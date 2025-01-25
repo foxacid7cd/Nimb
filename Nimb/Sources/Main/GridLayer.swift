@@ -76,29 +76,36 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     MainActor.assumeIsolated {
       let upsideDownTransform = self.upsideDownTransform
 
+      ctx.saveGState()
+      defer { ctx.restoreGState() }
+
       let boundingRect = IntegerRectangle(
         frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
         cellSize: state.font.cellSize
       )
 
+      ctx.setAllowsAntialiasing(false)
+      ctx.setAllowsFontSmoothing(false)
       ctx.setShouldAntialias(false)
+      ctx.setShouldSmoothFonts(false)
       grid.drawRuns.drawBackground(
         to: ctx,
         boundingRect: boundingRect,
         font: state.font,
         appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform,
-        contentsScale: contentsScale
+        upsideDownTransform: upsideDownTransform
       )
 
+      ctx.setAllowsAntialiasing(true)
+      ctx.setAllowsFontSmoothing(true)
       ctx.setShouldAntialias(true)
+      ctx.setShouldSmoothFonts(true)
       grid.drawRuns.drawForeground(
         to: ctx,
         boundingRect: boundingRect,
         font: state.font,
         appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform,
-        contentsScale: contentsScale
+        upsideDownTransform: upsideDownTransform
       )
 
       if
