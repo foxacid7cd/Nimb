@@ -13,8 +13,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
 
-  @StateActor private var alertsTask: Task<Void, Never>?
-  @StateActor private var updatesTask: Task<Void, Never>?
+  private var alertsTask: Task<Void, Never>?
+  private var updatesTask: Task<Void, Never>?
 
   override public init() {
     super.init()
@@ -79,14 +79,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     render()
   }
 
-  @StateActor
   private func setupBindings(store: Store) {
     alertsTask = Task {
       do {
         for await alert in store.alerts {
           try Task.checkCancellation()
 
-          await show(alert: alert)
+          show(alert: alert)
         }
       } catch { }
     }
@@ -109,12 +108,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           if updates.isNimbNotifiesUpdated {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              await self.showNimbNotify(notification)
+              self.showNimbNotify(notification)
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          await render(state: state, updates: updates)
+          render(state: state, updates: updates)
         }
         logger.debug("Store state updates loop ended")
       } catch is CancellationError {

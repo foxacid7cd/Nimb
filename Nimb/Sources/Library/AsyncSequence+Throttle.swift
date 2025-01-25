@@ -5,7 +5,7 @@ import ConcurrencyExtras
 public extension AsyncSequence where Element: Sendable, Self: Sendable {
   func throttle<C: Clock>(for interval: C.Duration, clock: C, _ combineThrottled: @Sendable @escaping (Element, Element) -> Element) -> AsyncStream<Element> {
     .init { continuation in
-      let task = Task { @StateActor in
+      let task = Task {
         let lastEmit = LockIsolated(clock.now)
 
         let accumulator = LockIsolated<Element?>(nil)

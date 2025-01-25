@@ -36,7 +36,7 @@ public class MainViewController: NSViewController, Rendering {
 
     reportOuterGridSizeChangedTask = Task {
       let outerGridSizes = reportOuterGridSizeChanged
-        .throttle(for: .milliseconds(100), clock: .continuous) { _, latest in latest }
+        .throttle(for: .milliseconds(50), clock: .continuous) { _, latest in latest }
 
       for await outerGridSize in outerGridSizes {
         store.apiTask {
