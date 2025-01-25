@@ -73,6 +73,7 @@ public class MainWindowController: NSWindowController, Rendering {
       let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
         .estimatedContentSize(outerGridSize: outerGrid.size)
       customWindow.setContentSize(contentSize)
+      customWindow.makeMain()
       customWindow.makeKeyAndOrderFront(nil)
     }
   }

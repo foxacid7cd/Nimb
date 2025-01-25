@@ -11,6 +11,7 @@ SWIFTFORMAT := /opt/homebrew/bin/swiftformat
 export CMAKE_GENERATOR := Ninja
 export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
+export NSUnbufferedIO := YES
 
 # Targets
 .PHONY: all test clean neovim generate format app install
