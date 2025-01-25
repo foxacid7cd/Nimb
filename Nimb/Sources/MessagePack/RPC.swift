@@ -124,9 +124,7 @@ public final class RPC<Target: Channel>: Sendable {
       return data
     }
 
-    queue.addOperation { [target] in
-      try? target.write(data)
-    }
+    try? target.write(data)
   }
 
   public func send(request: Message.Request) {
@@ -134,9 +132,7 @@ public final class RPC<Target: Channel>: Sendable {
       $0.pack(request.makeValue())
     }
 
-    queue.addOperation { [target] in
-      try? target.write(data)
-    }
+    try? target.write(data)
   }
 }
 

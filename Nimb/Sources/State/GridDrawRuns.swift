@@ -494,10 +494,7 @@ public struct DrawRun: Sendable {
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {
     guard
-      rowPartCells == rowPart.cells,
-      highlightID == rowPart.highlightID,
-      rowPartCells == rowPart.cells,
-      columnsRange.count == rowPart.columnsRange.count
+      rowPartCells == rowPart.cells
     else {
       return false
     }
@@ -624,6 +621,8 @@ public struct CursorDrawRun: Sendable {
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform
   ) {
+    context.saveGState()
+
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
 
@@ -645,7 +644,6 @@ public struct CursorDrawRun: Sendable {
     context.fill([rect])
 
     if shouldDrawParentText {
-      context.saveGState()
       context.clip(to: [rect])
 
       context.setFillColor(cursorForegroundColor.cg)
@@ -671,7 +669,8 @@ public struct CursorDrawRun: Sendable {
           context
         )
       }
-      context.restoreGState()
     }
+
+    context.restoreGState()
   }
 }

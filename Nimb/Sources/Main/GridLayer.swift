@@ -161,7 +161,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     let xThreshold = state.font.cellWidth * 12
-    let yThreshold = state.font.cellHeight * 1.1
+    let yThreshold = state.font.cellHeight * 1.25
 
     if
       event.phase == .began
