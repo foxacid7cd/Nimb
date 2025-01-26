@@ -54,7 +54,7 @@ public struct State: Sendable {
     }
 
     public mutating func formUnion(_ updates: Updates) {
-      needFlush = updates.needFlush
+      needFlush = needFlush || updates.needFlush
       isRawOptionsUpdated = isRawOptionsUpdated || updates.isRawOptionsUpdated
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated

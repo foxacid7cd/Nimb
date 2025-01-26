@@ -10,7 +10,7 @@ SWIFTFORMAT := /opt/homebrew/bin/swiftformat
 # CMake Configuration
 export CMAKE_GENERATOR := Ninja
 export CMAKE_BUILD_TYPE := Release
-export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
+export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
 
 # Targets
 .PHONY: all test clean neovim generate format app install
@@ -27,7 +27,7 @@ neovim:
 	@echo "Building Neovim..."
 	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && mkdir -p $(BUILD_DIR)/package && \
 	pushd $(NEOVIM_DIR) > /dev/null && \
-		make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=$PWD/../../../.build/package install && \
+		make CMAKE_INSTALL_PREFIX=$PWD/../../../.build/package install && \
 	popd > /dev/null
 
 # Clean Neovim

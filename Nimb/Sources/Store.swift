@@ -128,12 +128,16 @@ public final class Store: Sendable {
           for try await actions in allActions {
             try Task.checkCancellation()
 
+            var updatesAccumulator = State.Updates()
+
             for action in actions {
               let updates = action.apply(to: &state) { error in
                 alertsContinuation.yield(.init(error))
               }
-              continuation.yield((state, updates))
+              updatesAccumulator.formUnion(updates)
             }
+
+            continuation.yield((state, updatesAccumulator))
           }
           continuation.finish()
         } catch is CancellationError {
