@@ -11,7 +11,6 @@ SWIFTFORMAT := /opt/homebrew/bin/swiftformat
 export CMAKE_GENERATOR := Ninja
 export CMAKE_BUILD_TYPE := Release
 export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
-export NSUnbufferedIO := YES
 
 # Targets
 .PHONY: all test clean neovim generate format app install
@@ -19,9 +18,9 @@ export NSUnbufferedIO := YES
 # macOS App
 app:
 	xcodebuild archive -workspace Nimb.xcworkspace \
-		-scheme Nimb -configuration Release -archivePath $(BUILD_DIR)/Nimb.xcarchive | xcbeautify; \
+		-scheme Nimb -configuration Release -archivePath $(BUILD_DIR)/Nimb.xcarchive && \
 	xcodebuild -exportArchive -archivePath $(BUILD_DIR)/Nimb.xcarchive \
-		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) -exportPath $(INSTALL_DIR) | xcbeautify
+		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) -exportPath $(INSTALL_DIR)
 
 # Neovim
 neovim: 
