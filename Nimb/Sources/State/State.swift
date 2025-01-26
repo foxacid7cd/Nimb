@@ -18,7 +18,7 @@ public struct State: Sendable {
 
   @PublicInit
   public struct Updates: Sendable {
-    public var needFlush: Bool = true
+    public var needFlush: Bool = false
     public var isRawOptionsUpdated: Bool = false
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
@@ -291,7 +291,7 @@ public struct State: Sendable {
 
           var gridColumn: Double = floatingWindow.anchorColumn
           var gridRow: Double = floatingWindow.anchorRow
-          let gridSize = grid.windowSizeOrSize
+          let gridSize = grid.size
           switch floatingWindow.anchor {
           case .northWest:
             break

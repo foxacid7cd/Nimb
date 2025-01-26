@@ -217,14 +217,21 @@ public struct DrawRun: Sendable {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
 
-    let globalDrawRunsCacheKey = GlobalDrawRunsCache.Key(
-      cells: rowPartCells,
-      font: font,
-      isBold: isBold,
-      isItalic: isItalic
-    )
-    let shouldUseGlobalDrawRunsCache = rowPartCells.count <= 6
-    if shouldUseGlobalDrawRunsCache, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(for: globalDrawRunsCacheKey) {
+    let shouldUseCache = rowPartCells.count <= 6
+    var cacheKey: Int?
+    if shouldUseCache {
+      var hasher = Hasher()
+      hasher.combine(rowPartCells)
+      hasher.combine(font)
+      hasher.combine(isBold)
+      hasher.combine(isItalic)
+      cacheKey = hasher.finalize()
+    }
+    if
+      let cacheKey, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(
+        for: cacheKey
+      )
+    {
       self = cachedDrawRun
     } else {
       let appKitFont = font.appKit(
@@ -301,8 +308,8 @@ public struct DrawRun: Sendable {
         originColumn: originColumn,
         glyphRuns: glyphRuns
       )
-      if shouldUseGlobalDrawRunsCache {
-        GlobalDrawRunsCache.shared.store(drawRun, forKey: globalDrawRunsCacheKey)
+      if let cacheKey {
+        GlobalDrawRunsCache.shared.store(drawRun, forKey: cacheKey)
       }
       self = drawRun
     }
@@ -586,25 +593,17 @@ public struct CursorDrawRun: Sendable {
 }
 
 public final class GlobalDrawRunsCache: @unchecked Sendable {
-  @PublicInit
-  public struct Key: Sendable, Hashable {
-    public var cells: [RowPartCell]
-    public var font: Font
-    public var isBold: Bool
-    public var isItalic: Bool
-  }
-
   public static let shared = GlobalDrawRunsCache()
 
-  private var dictionary = LockIsolated(OrderedDictionary<Key, DrawRun>())
+  private var dictionary = LockIsolated(OrderedDictionary<Int, DrawRun>())
 
-  public func drawRun(for key: Key) -> DrawRun? {
+  public func drawRun(for key: Int) -> DrawRun? {
     dictionary.withValue { dictionary in
       dictionary[key]
     }
   }
 
-  public func store(_ drawRun: DrawRun, forKey key: Key) {
+  public func store(_ drawRun: DrawRun, forKey key: Int) {
     dictionary.withValue { dictionary in
       dictionary.updateValue(drawRun, forKey: key)
 
