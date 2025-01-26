@@ -164,14 +164,15 @@ final class MainMenuController: NSObject, Rendering {
       let rawBuftype = try? await store.api.nvimGetOptionValue(
         name: "buftype",
         opts: ["buf": .integer(0)]
-      )
+      ),
+      case let .string(buftype) = rawBuftype
     else {
       return nil
     }
 
     return (
       name: name,
-      type: rawBuftype[case: \.string] ?? ""
+      type: buftype
     )
   }
 
@@ -180,7 +181,7 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleQuit() {
-    store.api.nimbFast(method: "quit")
+    store.api.nimbFast(method: "quit_all")
   }
 
   @objc private func handleFont() {
@@ -252,7 +253,7 @@ final class MainMenuController: NSObject, Rendering {
   @objc private func handleLogState() {
     Task {
       var dump = ""
-      customDump(self.state, to: &dump, maxDepth: 10)
+      customDump(self.state, to: &dump, maxDepth: 2)
 
       do {
         let log = try await lastLogEntries()
