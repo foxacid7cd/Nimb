@@ -762,14 +762,8 @@ public extension Actions {
           state.appearance.highlights[id] = highlight
 
           for rawInfoItem in info {
-            guard
-              case let .dictionary(dict) = rawInfoItem
-            else {
-              handleError(Failure("invalid hl attr define info item", rawInfoItem))
-              continue
-            }
-
             if
+              case let .dictionary(dict) = rawInfoItem,
               case let .string(hiName) = dict["hi_name"],
               let observedHighlightName = Appearance.ObservedHighlightName(
                 rawValue: hiName

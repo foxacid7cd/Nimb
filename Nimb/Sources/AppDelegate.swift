@@ -15,8 +15,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var store: Store?
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
-  @StateActor private var renderTask: Task<Void, Never>?
-  @StateActor private var pendingStateAndUpdates: (State, State.Updates)?
+  @StateActor private var renderQueue = AsyncQueue()
 
   override public init() {
     super.init()
@@ -113,30 +112,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          if var (_, updatesAccumulator) = pendingStateAndUpdates {
-            updatesAccumulator.formUnion(updates)
-            pendingStateAndUpdates = (state, updatesAccumulator)
-          } else {
-            pendingStateAndUpdates = (state, updates)
-          }
-
-          renderTask?.cancel()
-          if updates.needFlush {
-            renderTask = Task { @MainActor in
-              guard !Task.isCancelled, let (state, updates) = await self.consumePendingStateAndUpdates() else {
-                return
-              }
-              if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
-                UserDefaults.standard.outerGridSize = outerGrid.size
-              }
-              if updates.isFontUpdated {
-                UserDefaults.standard.appKitFont = state.font.appKit()
-              }
-              if updates.isDebugUpdated {
-                UserDefaults.standard.debug = state.debug
-              }
-              self.render(state: state, updates: updates)
+          renderQueue.addOperation { @MainActor [state, updates] in
+            guard !Task.isCancelled else {
+              return
             }
+            if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
+              UserDefaults.standard.outerGridSize = outerGrid.size
+            }
+            if updates.isFontUpdated {
+              UserDefaults.standard.appKitFont = state.font.appKit()
+            }
+            if updates.isDebugUpdated {
+              UserDefaults.standard.debug = state.debug
+            }
+            self.render(state: state, updates: updates)
           }
         }
         logger.debug("Store state updates loop ended")
@@ -147,12 +136,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         await self.showCriticalAlert(error: error)
       }
     }
-  }
-
-  @StateActor
-  private func consumePendingStateAndUpdates() -> (State, State.Updates)? {
-    defer { pendingStateAndUpdates = nil }
-    return pendingStateAndUpdates
   }
 
   private func setupInitialControllers(store: Store) {
