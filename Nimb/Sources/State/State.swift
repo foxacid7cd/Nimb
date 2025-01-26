@@ -261,6 +261,8 @@ public struct State: Sendable {
         continue
       }
 
+      var zIndex = nodesCount
+
       if id == Grid.OuterID {
         positionsInParent[id] = .init()
 
@@ -270,6 +272,8 @@ public struct State: Sendable {
           positionsInParent[id] = window.origin * font.cellSize
 
         case let .floating(floatingWindow):
+          zIndex = floatingWindow.zIndex
+
           guard let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID] else {
             Task { @MainActor in
               logger
@@ -324,7 +328,7 @@ public struct State: Sendable {
           origin: positionInParent,
           size: grid.windowSizeOrSize * font.cellSize
         )
-        try body(id, frame, Double(1_000_000 * depth + nodesCount * 1000))
+        try body(id, frame, Double(1_000_000 * depth + zIndex * 1000))
       }
 
       let nextDepth = depth + 1
