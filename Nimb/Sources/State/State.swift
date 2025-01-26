@@ -251,47 +251,31 @@ public struct State: Sendable {
   }
 
   public func walkingGridFrames(_ body: (_ id: Grid.ID, _ frame: CGRect, _ zPosition: Double) throws -> Void) rethrows {
-    var queue: Deque<(id: Int, depth: Int)> = [
-      (id: Grid.OuterID, depth: 0),
-    ]
-    var positionsInParent = IntKeyedDictionary<CGPoint>()
-    var nodesCount = 0
-    while let (id, depth) = queue.popFirst() {
-      guard let grid = grids[id] else {
+    var queue: Deque<(id: Grid.ID, indexInParent: Int)> = [(id: Grid.OuterID, indexInParent: 0)]
+    var layouts = IntKeyedDictionary<(positionInParent: CGPoint, zIndex: Int)>()
+    while let (id, indexInParent) = queue.popFirst() {
+      guard let grid = grids[id], let gridsHierarchyNode = gridsHierarchy.allNodes[id] else {
         continue
       }
 
-      var zIndex = nodesCount
+      let layout: (positionInParent: CGPoint, zIndex: Int)
+
+      let parentZIndex = layouts[gridsHierarchyNode.parent]?.zIndex ?? 0
 
       if id == Grid.OuterID {
-        positionsInParent[id] = .init()
+        layout = (.init(), 0)
 
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
         case let .plain(window):
-          positionsInParent[id] = window.origin * font.cellSize
+          layout = (
+            positionInParent: window.origin * font.cellSize,
+            zIndex: parentZIndex + 1_000_000 + indexInParent
+          )
 
         case let .floating(floatingWindow):
-          zIndex = floatingWindow.zIndex
-
-          guard let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID] else {
-            Task { @MainActor in
-              logger
-                .fault(
-                  "State.walkingGrids: floating window anchor grid \(floatingWindow.anchorGridID) not found"
-                )
-            }
-            break
-          }
-          guard let anchorPositionInParent = positionsInParent[anchorGrid.id] else {
-            Task { @MainActor in
-              logger
-                .fault(
-                  "State.walkingGrids: floating window anchor grid \(floatingWindow.anchorGridID) position not found"
-                )
-            }
-            break
-          }
+          let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID]!
+          let anchorPositionInParent = layouts[anchorGrid.id]!.positionInParent
 
           var gridColumn: Double = floatingWindow.anchorColumn
           var gridRow: Double = floatingWindow.anchorRow
@@ -310,35 +294,33 @@ public struct State: Sendable {
             gridColumn -= Double(gridSize.columnsCount)
             gridRow -= Double(gridSize.rowsCount)
           }
-          positionsInParent[id] = .init(
-            x: gridColumn * font.cellWidth,
-            y: gridRow * font.cellHeight
-          ) + anchorPositionInParent
+          layout = (
+            positionInParent: .init(
+              x: gridColumn * font.cellWidth,
+              y: gridRow * font.cellHeight
+            ) + anchorPositionInParent,
+            zIndex: parentZIndex + 1_000_000 + 1000 + floatingWindow.zIndex
+          )
 
         case .external:
-          positionsInParent[id] = .init()
+          layout = (.init(), 0)
         }
 
       } else {
-        positionsInParent[id] = .init()
+        layout = (.init(), 0)
       }
 
-      if let positionInParent = positionsInParent[id] {
-        let frame = CGRect(
-          origin: positionInParent,
-          size: grid.windowSizeOrSize * font.cellSize
-        )
-        try body(id, frame, Double(1_000_000 * depth + zIndex * 1000))
-      }
+      layouts[id] = layout
 
-      let nextDepth = depth + 1
-      queue
-        .append(
-          contentsOf: gridsHierarchy.allNodes[id]!
-            .children
-            .map { (id: $0, depth: nextDepth) }
-        )
-      nodesCount += 1
+      let frame = CGRect(
+        origin: layout.positionInParent,
+        size: grid.windowSizeOrSize * font.cellSize
+      )
+      try body(id, frame, Double(layout.zIndex))
+
+      for (indexInParent, id) in gridsHierarchyNode.children.enumerated() {
+        queue.append((id, indexInParent))
+      }
     }
   }
 }
