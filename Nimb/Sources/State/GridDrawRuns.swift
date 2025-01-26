@@ -344,22 +344,21 @@ public struct DrawRun: Sendable {
     let specialCGColor = specialColor.cg
 
     context.setLineWidth(1)
-    context.setLineCap(.round)
-    context.setLineJoin(.round)
     context.setStrokeColor(specialCGColor)
 
     if decorations.isStrikethrough {
       let strikethroughY = rect.height / 2 + rect.origin.y
 
+      context.beginPath()
       context.move(to: .init(x: rect.minX, y: strikethroughY))
       context.addLine(to: .init(x: rect.maxX, y: strikethroughY))
-      context.closePath()
       context.drawPath(using: .stroke)
     }
 
     let underlineY = rect.origin.y + 0.5
 
     if decorations.isUnderline || decorations.isUnderdashed || decorations.isUnderdotted {
+      context.beginPath()
       if decorations.isUnderdashed {
         context.setLineDash(phase: 0.5, lengths: [2, 2])
       } else if decorations.isUnderdotted {
@@ -367,25 +366,26 @@ public struct DrawRun: Sendable {
       }
       context.move(to: .init(x: rect.minX, y: underlineY))
       context.addLine(to: .init(x: rect.maxX, y: underlineY))
-      context.closePath()
       context.drawPath(using: .stroke)
     } else if decorations.isUnderdouble {
+      context.beginPath()
       context.move(to: .init(x: rect.minX, y: underlineY))
       context.addLine(to: .init(x: rect.maxX, y: underlineY))
       context.move(to: .init(x: rect.minX, y: underlineY + 3))
       context.addLine(to: .init(x: rect.maxX, y: underlineY + 3))
-      context.closePath()
       context.drawPath(using: .stroke)
     } else if decorations.isUndercurl {
+      context.beginPath()
+
       let widthDivider = 3
 
       let xStep = font.cellWidth / Double(widthDivider)
-      let pointsCount = columnsRange.count * widthDivider + 3
+      let pointsCount = columnsRange.count * widthDivider + 1
 
       let oddUnderlineY = underlineY + 3
       let evenUnderlineY = underlineY
 
-      context.move(to: .init(x: rect.minX, y: oddUnderlineY))
+      context.move(to: .init(x: rect.minX, y: evenUnderlineY))
       for index in 1 ..< pointsCount {
         let isEven = index.isMultiple(of: 2)
 
@@ -396,7 +396,6 @@ public struct DrawRun: Sendable {
           )
         )
       }
-      context.closePath()
       context.drawPath(using: .stroke)
     }
 
