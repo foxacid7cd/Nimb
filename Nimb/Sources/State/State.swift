@@ -251,31 +251,66 @@ public struct State: Sendable {
   }
 
   public func walkingGridFrames(_ body: (_ id: Grid.ID, _ frame: CGRect, _ zPosition: Double) throws -> Void) rethrows {
-    var queue: Deque<(id: Grid.ID, indexInParent: Int)> = [(id: Grid.OuterID, indexInParent: 0)]
-    var layouts = IntKeyedDictionary<(positionInParent: CGPoint, zIndex: Int)>()
-    while let (id, indexInParent) = queue.popFirst() {
+    var queue: Deque<(id: Grid.ID, depth: Int, indexInParent: Int)> = [(id: Grid.OuterID, depth: 0, indexInParent: 0)]
+    var layouts = OrderedDictionary<Grid.ID, (size: IntegerSize, positionInParent: CGPoint, depth: Int, indexInParent: Int, floatingZIndex: Int?)>()
+    while let (id, depth, indexInParent) = queue.popFirst() {
       guard let grid = grids[id], let gridsHierarchyNode = gridsHierarchy.allNodes[id] else {
         continue
       }
 
-      let layout: (positionInParent: CGPoint, zIndex: Int)
-
-      let parentZIndex = layouts[gridsHierarchyNode.parent]?.zIndex ?? 0
+      if layouts[id] != nil {
+        logger.fault("walkingGridFrames: internal inconsistency, grid with id \(id) already layouted")
+        continue
+      }
 
       if id == Grid.OuterID {
-        layout = (.init(), 0)
+        layouts.updateValue(
+          (
+            size: grid.size,
+            positionInParent: .init(),
+            depth: depth,
+            indexInParent: indexInParent,
+            floatingZIndex: nil
+          ),
+          forKey: id,
+          insertingAt: 0
+        )
 
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
         case let .plain(window):
-          layout = (
-            positionInParent: window.origin * font.cellSize,
-            zIndex: parentZIndex + 1_000_000 + indexInParent
+          var position: Int?
+          for (index, layout) in layouts.values.enumerated() {
+            if depth < layout.depth {
+              position = index
+              break
+            } else if depth == layout.depth {
+              if layout.floatingZIndex != nil {
+                position = index
+                break
+              }
+              if indexInParent < layout.indexInParent {
+                position = index
+                break
+              }
+            }
+          }
+
+          layouts.updateValue(
+            (
+              size: window.size,
+              positionInParent: window.origin * font.cellSize,
+              depth: depth,
+              indexInParent: indexInParent,
+              floatingZIndex: nil
+            ),
+            forKey: id,
+            insertingAt: position ?? layouts.count
           )
 
         case let .floating(floatingWindow):
           let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID]!
-          let anchorPositionInParent = layouts[anchorGrid.id]!.positionInParent
+          let anchorLayout = layouts[anchorGrid.id]!
 
           var gridColumn: Double = floatingWindow.anchorColumn
           var gridRow: Double = floatingWindow.anchorRow
@@ -294,33 +329,63 @@ public struct State: Sendable {
             gridColumn -= Double(gridSize.columnsCount)
             gridRow -= Double(gridSize.rowsCount)
           }
-          layout = (
-            positionInParent: .init(
-              x: gridColumn * font.cellWidth,
-              y: gridRow * font.cellHeight
-            ) + anchorPositionInParent,
-            zIndex: parentZIndex + 1_000_000 + 1000 + floatingWindow.zIndex
+
+          var position: Int?
+          for (index, layout) in layouts.values.enumerated() {
+            if depth < layout.depth {
+              position = index
+              break
+            } else if depth == layout.depth {
+              if let layoutFloatingZIndex = layout.floatingZIndex {
+                if floatingWindow.zIndex < layoutFloatingZIndex {
+                  position = index
+                  break
+                } else if floatingWindow.zIndex == layoutFloatingZIndex {
+                  if indexInParent < layout.indexInParent {
+                    position = index
+                    break
+                  }
+                }
+              }
+            }
+          }
+
+          layouts.updateValue(
+            (
+              size: gridSize,
+              positionInParent: .init(
+                x: gridColumn * font.cellWidth,
+                y: gridRow * font.cellHeight
+              ) + anchorLayout.positionInParent,
+              depth: depth,
+              indexInParent: indexInParent,
+              floatingZIndex: floatingWindow.zIndex
+            ),
+            forKey: id,
+            insertingAt: position ?? layouts.count
           )
 
         case .external:
-          layout = (.init(), 0)
+          break
         }
-
-      } else {
-        layout = (.init(), 0)
       }
 
-      layouts[id] = layout
+      let nextDepth = depth + 1
+      for (index, id) in gridsHierarchyNode.children.enumerated() {
+        queue.append((id: id, depth: nextDepth, indexInParent: index))
+      }
+    }
+
+    customDump(layouts)
+
+    for (index, keyValues) in layouts.enumerated() {
+      let (id, layout) = keyValues
 
       let frame = CGRect(
         origin: layout.positionInParent,
-        size: grid.windowSizeOrSize * font.cellSize
+        size: layout.size * font.cellSize
       )
-      try body(id, frame, Double(layout.zIndex))
-
-      for (indexInParent, id) in gridsHierarchyNode.children.enumerated() {
-        queue.append((id, indexInParent))
-      }
+      try body(id, frame, Double(index))
     }
   }
 }

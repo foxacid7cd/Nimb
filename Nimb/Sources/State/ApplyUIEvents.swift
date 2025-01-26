@@ -241,12 +241,13 @@ public extension Actions {
               cursorUpdated(oldCursor: cursor)
             }
 
-            state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
-            updates.isGridsHierarchyUpdated = true
-
             updatedLayout(forGridWithID: gridID)
             apply(update: .resize(size), toGridWithID: gridID)
           }
+
+          let parent = state.gridsHierarchy.allNodes[gridID]?.parent ?? Grid.OuterID
+          state.gridsHierarchy.addNode(id: gridID, parent: parent)
+          updates.isGridsHierarchyUpdated = true
 
         case let .gridScroll(
           gridID,
@@ -282,6 +283,9 @@ public extension Actions {
             grid = nil
             updates.destroyedGridIDs.insert(gridID)
           }
+
+          state.gridsHierarchy.removeNode(id: gridID)
+          updates.isGridsHierarchyUpdated = true
 
         case let .gridCursorGoto(gridID, row, column):
           let oldCursor = state.cursor
@@ -379,6 +383,9 @@ public extension Actions {
 
           state.grids[gridID]?.isHidden = true
 
+          state.gridsHierarchy.removeNode(id: gridID)
+          updates.isGridsHierarchyUpdated = true
+
           updatedLayout(forGridWithID: gridID)
 
         case let .winClose(gridID):
@@ -389,7 +396,7 @@ public extension Actions {
           state.grids[gridID]?.associatedWindow = nil
 
           state.gridsHierarchy.removeNode(id: gridID)
-          updates.isGridsHierarchyUpdated = false
+          updates.isGridsHierarchyUpdated = true
 
           updatedLayout(forGridWithID: gridID)
 
