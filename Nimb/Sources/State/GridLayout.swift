@@ -45,61 +45,28 @@ public struct RowLayout: Sendable {
   public var parts: [RowPart]
 
   public init(rowCells: [Cell]) {
-    var chunks = [[Cell]]()
+    var parts = [RowPart]()
     for (index, rowCell) in rowCells.enumerated() {
+      let rowPartCell = RowPartCell(
+        character: rowCell.character,
+        isDoubleWidth: rowCell.isDoubleWidth
+      )
       let previousCell = index > 0 ? rowCells[index - 1] : nil
+      let previousOfPreviousCell = index > 1 ? rowCells[index - 2] : nil
 
       if
-        chunks
+        parts
           .isEmpty || (
-            previousCell?.highlightID != rowCell.highlightID && !chunks[chunks.count - 1].isEmpty
-          )
+            previousCell?.highlightID != rowCell.highlightID && !parts[parts.count - 1].cells.isEmpty
+          ) || rowCell.isDoubleWidth || previousOfPreviousCell?.isDoubleWidth == true
       {
-        chunks.append([])
+        parts
+          .append(
+            .init(highlightID: rowCell.highlightID, cells: [], originColumn: index)
+          )
       }
-      chunks[chunks.count - 1].append(rowCell)
-
-      let isPreviousCellDoubleWidth = index > 0 && rowCells[index - 1].isDoubleWidth
-      if isPreviousCellDoubleWidth, index != rowCells.count - 1 {
-        chunks.append([])
-      }
+      parts[parts.count - 1].cells.append(rowPartCell)
     }
-
-    var rowColumnsCount = 0
-    var parts = [RowPart]()
-
-    for cells in chunks {
-      parts.append(.init(highlightID: cells.first!.highlightID, cells: cells, columnsRange: rowColumnsCount ..< rowColumnsCount + cells.count))
-      rowColumnsCount += cells.count
-    }
-
-//    let attributedString = NSMutableAttributedString()
-//
-//    var string = ""
-//    var currentHighlightID: Highlight.ID?
-//    func appendAttributedString() {
-//      attributedString
-//        .append(
-//          .init(
-//            attributedString: .init(
-//              string: string,
-//              attributes: [.highlightID: currentHighlightID!]
-//            )
-//          )
-//        )
-//      string = ""
-//      currentHighlightID = nil
-//    }
-//    for cell in rowCells {
-//      if currentHighlightID == nil {
-//        currentHighlightID = cell.highlightID
-//      }
-//      if currentHighlightID != cell.highlightID {
-//        appendAttributedString()
-//      }
-//      string.append(cell.text)
-//    }
-//    appendAttributedString()
 
     self.init(
       parts: parts
@@ -108,12 +75,22 @@ public struct RowLayout: Sendable {
 }
 
 @PublicInit
+public struct RowPartCell: Sendable, Hashable {
+  public var character: Character
+  public var isDoubleWidth: Bool
+}
+
+@PublicInit
 public struct RowPart: Sendable, Hashable {
   public var highlightID: Highlight.ID
-  public var cells: [Cell]
-  public var columnsRange: Range<Int>
+  public var cells: [RowPartCell]
+  public var originColumn: Int
 
   public var columnsCount: Int {
-    columnsRange.count
+    cells.count
+  }
+
+  public var columnsRange: Range<Int> {
+    originColumn ..< originColumn + columnsCount
   }
 }

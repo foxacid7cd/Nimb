@@ -7,7 +7,6 @@ import OSLog
 import Overture
 
 public extension Actions {
-  @PublicInit
   struct ApplyUIEvents<S: Sequence>: Action where S.Element == UIEvent,
     S: Sendable
   {

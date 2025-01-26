@@ -2,6 +2,7 @@
 
 import AppKit
 import Collections
+import ConcurrencyExtras
 import CustomDump
 import SwiftUI
 
@@ -87,28 +88,9 @@ public struct GridDrawRuns: Sendable {
 }
 
 @PublicInit
-public struct DrawRunsCachingKey: Sendable, Hashable {
-  public var cells: [Cell]
-  public var highlightID: Highlight.ID
-  public var columnsCount: Int
-
-  public init(_ drawRun: DrawRun) {
-    cells = drawRun.rowPartCells
-    highlightID = drawRun.highlightID
-    columnsCount = drawRun.columnsRange.count
-  }
-
-  public init(_ rowPart: RowPart) {
-    cells = rowPart.cells
-    highlightID = rowPart.highlightID
-    columnsCount = rowPart.columnsCount
-  }
-}
-
-@PublicInit
 public struct RowDrawRun: Sendable {
   public var drawRuns: [DrawRun]
-  public var drawRunsCache: [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]
+  public var drawRunsCache: [[RowPartCell]: (index: Int, drawRun: DrawRun)]
 
   public init(
     row: Int,
@@ -118,7 +100,7 @@ public struct RowDrawRun: Sendable {
     old: RowDrawRun?
   ) {
     var drawRuns = [DrawRun]()
-    var drawRunsCache = [DrawRunsCachingKey: (index: Int, drawRun: DrawRun)]()
+    var drawRunsCache = [[RowPartCell]: (index: Int, drawRun: DrawRun)]()
     var previousReusedOldDrawRunIndex: Int?
     for part in layout.parts {
       var reusedDrawRun: DrawRun?
@@ -131,36 +113,22 @@ public struct RowDrawRun: Sendable {
         {
           reusedDrawRun = old.drawRuns[index]
           previousReusedOldDrawRunIndex = index
-        } else if let (index, drawRun) = old.drawRunsCache[.init(part)] {
+        } else if let (index, drawRun) = old.drawRunsCache[part.cells] {
           reusedDrawRun = drawRun
           previousReusedOldDrawRunIndex = index
-        } else {
-          for index in old.drawRuns.indices {
-            if
-              let previousReusedOldDrawRunIndex,
-              index == previousReusedOldDrawRunIndex + 1
-            {
-              continue
-            }
-            if old.drawRuns[index].shouldBeReused(for: part) {
-              reusedDrawRun = old.drawRuns[index]
-              previousReusedOldDrawRunIndex = index
-              break
-            }
-          }
         }
       }
 
-      var drawRun = reusedDrawRun ?? .init(
+      var drawRun = reusedDrawRun ?? DrawRun(
         rowPartCells: part.cells,
-        columnsRange: part.columnsRange,
+        originColumn: part.originColumn,
         highlightID: part.highlightID,
         font: font,
         appearance: appearance
       )
-      drawRun.columnsRange = part.columnsRange
+      drawRun.originColumn = part.originColumn
       drawRun.highlightID = part.highlightID
-      drawRunsCache[.init(drawRun)] = (
+      drawRunsCache[part.cells] = (
         index: drawRuns.count,
         drawRun: drawRun
       )
@@ -226,94 +194,118 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public var rowPartCells: [Cell]
+  public var rowPartCells: [RowPartCell]
   public var highlightID: Highlight.ID
-  public var columnsRange: Range<Int>
+  public var originColumn: Int
   public var glyphRuns: [GlyphRun]
 
+  public var columnsCount: Int {
+    rowPartCells.count
+  }
+
+  public var columnsRange: Range<Int> {
+    originColumn ..< originColumn + columnsCount
+  }
+
   public init(
-    rowPartCells: [Cell],
-    columnsRange: Range<Int>,
+    rowPartCells: [RowPartCell],
+    originColumn: Int,
     highlightID: Highlight.ID,
     font: Font,
     appearance: Appearance
   ) {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
-    let appKitFont = font.appKit(
+
+    let globalDrawRunsCacheKey = GlobalDrawRunsCache.Key(
+      cells: rowPartCells,
+      font: font,
       isBold: isBold,
       isItalic: isItalic
     )
+    let shouldUseGlobalDrawRunsCache = rowPartCells.count <= 6
+    if shouldUseGlobalDrawRunsCache, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(for: globalDrawRunsCacheKey) {
+      self = cachedDrawRun
+    } else {
+      let appKitFont = font.appKit(
+        isBold: isBold,
+        isItalic: isItalic
+      )
 
-    let attributedString = NSAttributedString(
-      string: .init(rowPartCells.map(\.character)),
-      attributes: [.font: appKitFont]
-    )
+      let attributedString = NSAttributedString(
+        string: .init(rowPartCells.map(\.character)),
+        attributes: [.font: appKitFont]
+      )
 
-    let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(
-      attributedString,
-      nil
-    )!
-    let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
+      let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(
+        attributedString,
+        nil
+      )!
+      let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
 
-    var ascent: CGFloat = 0
-    var descent: CGFloat = 0
-    var leading: CGFloat = 0
-    CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
-    let bounds = CTLineGetBoundsWithOptions(ctLine, [])
+      var ascent: CGFloat = 0
+      var descent: CGFloat = 0
+      var leading: CGFloat = 0
+      CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
+      let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-    let xOffset = (font.cellWidth - bounds.width / Double(columnsRange.count)) /
-      2
-    let yOffset = (font.cellHeight - bounds.height) / 2 + descent
-    let offset = CGPoint(x: xOffset, y: yOffset)
+      let xOffset = (font.cellWidth - bounds.width / Double(rowPartCells.count)) /
+        2
+      let yOffset = (font.cellHeight - bounds.height) / 2 + descent
+      let offset = CGPoint(x: xOffset, y: yOffset)
 
-    let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
+      let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
 
-    let glyphRuns = ctRuns
-      .map { ctRun -> GlyphRun in
-        let glyphCount = CTRunGetGlyphCount(ctRun)
+      let glyphRuns = ctRuns
+        .map { ctRun -> GlyphRun in
+          let glyphCount = CTRunGetGlyphCount(ctRun)
 
-        let glyphs =
-          [CGGlyph](unsafeUninitializedCapacity: glyphCount)
-        { buffer, initializedCount in
-          CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
+          let glyphs =
+            [CGGlyph](unsafeUninitializedCapacity: glyphCount)
+          { buffer, initializedCount in
+            CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
+
+          let positions =
+            [CGPoint](unsafeUninitializedCapacity: glyphCount)
+          { buffer, initializedCount in
+            CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
+          .map { $0 + offset }
+
+          let advances =
+            [CGSize](unsafeUninitializedCapacity: glyphCount)
+          { buffer, initializedCount in
+            CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
+            initializedCount = glyphCount
+          }
+
+          let attributes =
+            CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
+          let attributesFont = attributes[.font] as? NSFont
+
+          return .init(
+            appKitFont: attributesFont ?? appKitFont,
+            textMatrix: CTRunGetTextMatrix(ctRun),
+            glyphs: glyphs,
+            positions: positions,
+            advances: advances
+          )
         }
 
-        let positions =
-          [CGPoint](unsafeUninitializedCapacity: glyphCount)
-        { buffer, initializedCount in
-          CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
-        .map { $0 + offset }
-
-        let advances =
-          [CGSize](unsafeUninitializedCapacity: glyphCount)
-        { buffer, initializedCount in
-          CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
-          initializedCount = glyphCount
-        }
-
-        let attributes =
-          CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
-        let attributesFont = attributes[.font] as? NSFont
-
-        return .init(
-          appKitFont: attributesFont ?? appKitFont,
-          textMatrix: CTRunGetTextMatrix(ctRun),
-          glyphs: glyphs,
-          positions: positions,
-          advances: advances
-        )
+      let drawRun = DrawRun(
+        rowPartCells: rowPartCells,
+        highlightID: highlightID,
+        originColumn: originColumn,
+        glyphRuns: glyphRuns
+      )
+      if shouldUseGlobalDrawRunsCache {
+        GlobalDrawRunsCache.shared.store(drawRun, forKey: globalDrawRunsCacheKey)
       }
-
-    self = .init(
-      rowPartCells: rowPartCells,
-      highlightID: highlightID,
-      columnsRange: columnsRange,
-      glyphRuns: glyphRuns
-    )
+      self = drawRun
+    }
   }
 
   public func drawBackground(
@@ -325,7 +317,7 @@ public struct DrawRun: Sendable {
     let rect = CGRect(
       origin: origin,
       size: .init(
-        width: Double(columnsRange.count) * font.cellWidth,
+        width: Double(rowPartCells.count) * font.cellWidth,
         height: font.cellHeight
       )
     )
@@ -380,7 +372,7 @@ public struct DrawRun: Sendable {
       let widthDivider = 3
 
       let xStep = font.cellWidth / Double(widthDivider)
-      let pointsCount = columnsRange.count * widthDivider + 1
+      let pointsCount = rowPartCells.count * widthDivider + 1
 
       let oddUnderlineY = underlineY + 3
       let evenUnderlineY = underlineY
@@ -416,15 +408,7 @@ public struct DrawRun: Sendable {
   }
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {
-    guard rowPart.cells.count == rowPartCells.count else {
-      return false
-    }
-    for (rowPartCell, cell) in zip(rowPart.cells, rowPartCells) {
-      if rowPartCell.character != cell.character || rowPartCell.isDoubleWidth != cell.isDoubleWidth {
-        return false
-      }
-    }
-    return true
+    rowPart.cells == rowPartCells
   }
 }
 
@@ -458,7 +442,7 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
-  public init?(
+  init?(
     layout: GridLayout,
     rowDrawRuns: [RowDrawRun],
     origin: IntegerPoint,
@@ -478,7 +462,7 @@ public struct CursorDrawRun: Sendable {
     {
       if drawRun.columnsRange.contains(origin.column) {
         parentOrigin = .init(
-          column: drawRun.columnsRange.lowerBound,
+          column: drawRun.originColumn,
           row: origin.row
         )
         parentDrawRun = drawRun
@@ -531,13 +515,11 @@ public struct CursorDrawRun: Sendable {
   ) {
     var currentColumn = 0
     for drawRun in rowDrawRuns[origin.row].drawRuns {
-      let columnsRange = currentColumn ..< currentColumn + drawRun.columnsRange
-        .count
-      if columnsRange.contains(origin.column) {
+      if drawRun.columnsRange.contains(origin.column) {
         parentOrigin = .init(column: currentColumn, row: origin.row)
         parentDrawRun = drawRun
       }
-      currentColumn += drawRun.columnsRange.count
+      currentColumn += drawRun.rowPartCells.count
     }
   }
 
@@ -578,7 +560,7 @@ public struct CursorDrawRun: Sendable {
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
         size: .init(
-          columnsCount: parentDrawRun.columnsRange.count,
+          columnsCount: parentDrawRun.rowPartCells.count,
           rowsCount: 1
         )
       )
@@ -598,6 +580,36 @@ public struct CursorDrawRun: Sendable {
           glyphRun.glyphs.count,
           context
         )
+      }
+    }
+  }
+}
+
+public final class GlobalDrawRunsCache: @unchecked Sendable {
+  @PublicInit
+  public struct Key: Sendable, Hashable {
+    public var cells: [RowPartCell]
+    public var font: Font
+    public var isBold: Bool
+    public var isItalic: Bool
+  }
+
+  public static let shared = GlobalDrawRunsCache()
+
+  private var dictionary = LockIsolated(OrderedDictionary<Key, DrawRun>())
+
+  public func drawRun(for key: Key) -> DrawRun? {
+    dictionary.withValue { dictionary in
+      dictionary[key]
+    }
+  }
+
+  public func store(_ drawRun: DrawRun, forKey key: Key) {
+    dictionary.withValue { dictionary in
+      dictionary.updateValue(drawRun, forKey: key)
+
+      if dictionary.count > 500 {
+        dictionary.removeFirst()
       }
     }
   }
