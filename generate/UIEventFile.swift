@@ -15,9 +15,11 @@ public struct UIEventFile: GeneratableFile {
     get throws {
       try .init {
         try .init {
-          "" as DeclSyntax
-          "import CasePaths" as DeclSyntax
-          "" as DeclSyntax
+          """
+
+          import CasePaths
+
+          """ as DeclSyntax
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
@@ -25,20 +27,44 @@ public struct UIEventFile: GeneratableFile {
                 .camelCasedAssumingSnakeCased(capitalized: false)
 
               if !uiEvent.parameters.isEmpty {
-                let parametersSignature: String = uiEvent.parameters
-                  .map { parameter in
-                    let name = parameter.name.camelCasedAssumingSnakeCased(
-                      capitalized: false
-                    )
-                    let type = parameter.type.swift.signature
-                    return "\(name): \(type)"
-                  }
-                  .joined(separator: ", ")
+                let structName = uiEvent.name
+                  .camelCasedAssumingSnakeCased(capitalized: true)
 
-                "case \(raw: caseName)(\(raw: parametersSignature))" as DeclSyntax
+                """
+                case \(raw: caseName)([\(raw: structName)])
+
+                """ as DeclSyntax
 
               } else {
-                "case \(raw: caseName)" as DeclSyntax
+                """
+                case \(raw: caseName)
+
+                """ as DeclSyntax
+              }
+            }
+
+            for uiEvent in metadata.uiEvents where !uiEvent.parameters.isEmpty {
+              let caseName = uiEvent.name
+                .camelCasedAssumingSnakeCased(capitalized: false)
+
+              let structName = uiEvent.name
+                .camelCasedAssumingSnakeCased(capitalized: true)
+
+              try StructDeclSyntax("""
+              @PublicInit
+              public struct \(raw: structName): Sendable, Hashable
+              """) {
+                for parameter in uiEvent.parameters {
+                  let name = parameter.name
+                    .camelCasedAssumingSnakeCased(capitalized: false)
+
+                  let type = parameter.type.swift.signature
+
+                  """
+                  public var \(raw: name): \(raw: type)
+
+                  """ as DeclSyntax
+                }
               }
             }
           }
@@ -47,7 +73,10 @@ public struct UIEventFile: GeneratableFile {
             try InitializerDeclSyntax(
               "init(rawRedrawNotificationParameters: some Sequence<Value>) throws"
             ) {
-              "var accumulator = [UIEvent]()" as DeclSyntax
+              """
+              var accumulator = [UIEvent]()
+
+              """ as DeclSyntax
 
               try ForStmtSyntax(
                 "for rawParameter in rawRedrawNotificationParameters"
@@ -57,6 +86,7 @@ public struct UIEventFile: GeneratableFile {
                   guard case let .array(rawParameter) = rawParameter else {
                     throw Failure(rawRedrawNotificationParameters)
                   }
+
                   """
                 )
 
@@ -65,13 +95,24 @@ public struct UIEventFile: GeneratableFile {
                   guard case let .string(uiEventName) = rawParameter.first else {
                     throw Failure(rawRedrawNotificationParameters)
                   }
+
                   """
                 )
 
                 try SwitchExprSyntax("switch uiEventName") {
                   try SwitchCaseListSyntax {
                     for uiEvent in metadata.uiEvents {
+                      let structName = uiEvent.name
+                        .camelCasedAssumingSnakeCased(capitalized: true)
+
                       try SwitchCaseSyntax("case \(literal: uiEvent.name):") {
+                        if !uiEvent.parameters.isEmpty {
+                          """
+                          var localAccumulator = [UIEvent.\(raw: structName)]()
+
+                          """ as DeclSyntax
+                        }
+
                         let caseName = uiEvent.name
                           .camelCasedAssumingSnakeCased(capitalized: false)
 
@@ -83,6 +124,7 @@ public struct UIEventFile: GeneratableFile {
                             guard case let .array(rawUIEventParameters) = rawUIEvent else {
                               throw Failure(rawRedrawNotificationParameters)
                             }
+
                             """
                           )
 
@@ -119,15 +161,18 @@ public struct UIEventFile: GeneratableFile {
                             guard \(raw: guardConditions) else {
                               throw Failure(rawRedrawNotificationParameters)
                             }
+
                             """
                           )
 
                           for (index, parameter) in valueParameters {
                             let identifier = parameter.name
                               .camelCasedAssumingSnakeCased(capitalized: false)
-                            DeclSyntax(
-                              "let \(raw: identifier) = rawUIEventParameters[\(raw: index)]"
-                            )
+
+                            """
+                            let \(raw: identifier) = rawUIEventParameters[\(raw: index)]
+
+                            """ as DeclSyntax
                           }
 
                           if !uiEvent.parameters.isEmpty {
@@ -141,21 +186,26 @@ public struct UIEventFile: GeneratableFile {
                               }
                               .joined(separator: ", ")
 
-                            ExprSyntax(
-                              """
-                              accumulator.append(
-                                .\(raw: caseName)(\(
-                                  raw: associatedValuesSignature
-                                ))
-                              )
-                              """
+                            """
+                            localAccumulator.append(
+                              .init(\(raw: associatedValuesSignature))
                             )
 
+                            """ as ExprSyntax
+
                           } else {
-                            ExprSyntax(
-                              "accumulator.append(.\(raw: caseName))"
-                            )
+                            """
+                            accumulator.append(.\(raw: caseName))
+
+                            """ as ExprSyntax
                           }
+                        }
+
+                        if !uiEvent.parameters.isEmpty {
+                          """
+                          accumulator.append(.\(raw: caseName)(localAccumulator))
+
+                          """ as ExprSyntax
                         }
                       }
                     }
@@ -167,9 +217,10 @@ public struct UIEventFile: GeneratableFile {
                 }
               }
 
-              ExprSyntax(
-                "self = accumulator"
-              )
+              """
+              self = accumulator
+
+              """ as ExprSyntax
             }
           }
         }

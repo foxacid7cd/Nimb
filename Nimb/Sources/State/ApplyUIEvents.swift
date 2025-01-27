@@ -153,428 +153,439 @@ public extension Actions {
 
       for uiEvent in uiEvents {
         switch uiEvent {
-        case let .setTitle(title):
-          state.title = title
+        case let .setTitle(batch):
+          for params in batch {
+            state.title = params.title
+          }
           titleUpdated()
 
-        case let .modeInfoSet(enabled, cursorStyles):
+        case let .modeInfoSet(batch):
           do {
-            state.modeInfo = try ModeInfo(
-              enabled: enabled,
-              cursorStyles: cursorStyles
-                .map(CursorStyle.init(raw:))
-            )
-            cursorUpdated()
+            for params in batch {
+              state.modeInfo = try ModeInfo(
+                enabled: params.enabled,
+                cursorStyles: params.cursorStyles
+                  .map(CursorStyle.init(raw:))
+              )
+            }
           } catch {
             handleError(error)
           }
+          cursorUpdated()
 
-        case let .optionSet(name, value):
-          state.rawOptions.updateValue(
-            value,
-            forKey: name,
-            insertingAt: state.rawOptions.count
-          )
+        case let .optionSet(batch):
+          for params in batch {
+            state.rawOptions.updateValue(
+              params.value,
+              forKey: params.name,
+              insertingAt: state.rawOptions.count
+            )
+          }
           updates.isRawOptionsUpdated = true
 
-        case let .modeChange(name, cursorStyleIndex):
-          state.mode = .init(
-            name: name,
-            cursorStyleIndex: cursorStyleIndex
-          )
-
+        case let .modeChange(batch):
+          for params in batch {
+            state.mode = .init(
+              name: params.mode,
+              cursorStyleIndex: params.modeIDX
+            )
+          }
           modeUpdated()
 
           if state.cursor != nil {
             cursorUpdated()
           }
 
-        case let .defaultColorsSet(rgbFg, rgbBg, rgbSp, _, _):
-          state.appearance
-            .defaultForegroundColor = .init(rgb: rgbFg)
-          state.appearance
-            .defaultBackgroundColor = .init(rgb: rgbBg)
-          state.appearance.defaultSpecialColor = .init(rgb: rgbSp)
+        case let .defaultColorsSet(batch):
+          for params in batch {
+            state.appearance
+              .defaultForegroundColor = .init(rgb: params.rgbFg)
+            state.appearance
+              .defaultBackgroundColor = .init(rgb: params.rgbBg)
+            state.appearance.defaultSpecialColor = .init(rgb: params.rgbSp)
+          }
           state.flushDrawRuns()
-
           appearanceUpdated()
 
-        case let .gridResize(gridID, width, height):
-          let size = IntegerSize(
-            columnsCount: width,
-            rowsCount: height
-          )
-          if
-            state.grids[gridID]?.size != size
-          {
-            let font = state.font
-            let appearance = state.appearance
-            update(&state.grids[gridID]) { grid in
-              if grid == nil {
-                let cells = TwoDimensionalArray(
-                  size: size,
-                  repeatingElement: Cell.default
-                )
-                let layout = GridLayout(cells: cells)
-                grid = .init(
-                  id: gridID,
-                  layout: layout,
-                  drawRuns: .init(
+        case let .gridResize(batch):
+          for params in batch {
+            let size = IntegerSize(
+              columnsCount: params.width,
+              rowsCount: params.height
+            )
+            if
+              state.grids[params.grid]?.size != size
+            {
+              let font = state.font
+              let appearance = state.appearance
+              update(&state.grids[params.grid]) { grid in
+                if grid == nil {
+                  let cells = TwoDimensionalArray(
+                    size: size,
+                    repeatingElement: Cell.default
+                  )
+                  let layout = GridLayout(cells: cells)
+                  grid = .init(
+                    id: params.grid,
                     layout: layout,
-                    font: font,
-                    appearance: appearance
-                  ),
-                  associatedWindow: nil,
-                  isHidden: false
-                )
-              }
-            }
-
-            if
-              let cursor = state.cursor,
-              cursor.gridID == gridID,
-              cursor.position.column >= size.columnsCount,
-              cursor.position.row >= size.rowsCount
-            {
-              state.cursor = nil
-
-              cursorUpdated(oldCursor: cursor)
-            }
-
-            updatedLayout(forGridWithID: gridID)
-            apply(update: .resize(size), toGridWithID: gridID)
-          }
-
-          let parent = state.gridsHierarchy.allNodes[gridID]?.parent ?? Grid.OuterID
-          state.gridsHierarchy.addNode(id: gridID, parent: parent)
-          updates.isGridsHierarchyUpdated = true
-
-        case let .gridScroll(
-          gridID,
-          top,
-          bottom,
-          left,
-          right,
-          rowsCount,
-          columnsCount
-        ):
-          let rectangle = IntegerRectangle(
-            origin: .init(column: left, row: top),
-            size: .init(columnsCount: right - left, rowsCount: bottom - top)
-          )
-          let offset = IntegerSize(
-            columnsCount: columnsCount,
-            rowsCount: rowsCount
-          )
-
-          apply(
-            update: .scroll(rectangle: rectangle, offset: offset),
-            toGridWithID: gridID
-          )
-
-        case let .gridClear(gridID):
-          apply(update: .clear, toGridWithID: gridID)
-
-        case let .gridDestroy(gridID):
-          update(&state.grids[gridID]) { grid in
-            guard grid != nil else {
-              return
-            }
-            grid = nil
-            updates.destroyedGridIDs.insert(gridID)
-          }
-
-          state.gridsHierarchy.removeNode(id: gridID)
-          updates.isGridsHierarchyUpdated = true
-
-        case let .gridCursorGoto(gridID, row, column):
-          let oldCursor = state.cursor
-
-          let cursorPosition = IntegerPoint(
-            column: column,
-            row: row
-          )
-          state.cursor = .init(
-            gridID: gridID,
-            position: cursorPosition
-          )
-
-          cursorUpdated(oldCursor: oldCursor)
-
-        case let .winPos(
-          gridID,
-          windowID,
-          originRow,
-          originColumn,
-          columnsCount,
-          rowsCount
-        ):
-          let origin = IntegerPoint(column: originColumn, row: originRow)
-          let size = IntegerSize(
-            columnsCount: columnsCount,
-            rowsCount: rowsCount
-          )
-
-          guard
-            state
-              .grids[gridID] != nil
-          else {
-            logger.error("winPos UI event: Grid \(gridID) doesn't exist or destroyed")
-            break
-          }
-
-          state.grids[gridID]?.associatedWindow = .plain(
-            .init(
-              id: windowID,
-              origin: origin,
-              size: size
-            )
-          )
-          state.grids[gridID]?.isHidden = false
-
-          state.gridsHierarchy.addNode(id: gridID, parent: Grid.OuterID)
-          updates.isGridsHierarchyUpdated = true
-
-          updatedLayout(forGridWithID: gridID)
-
-        case let .winFloatPos(
-          gridID,
-          windowID,
-          rawAnchor,
-          anchorGridID,
-          anchorRow,
-          anchorColumn,
-          isFocusable,
-          zIndex
-        ):
-          let anchor = FloatingWindow.Anchor(rawValue: rawAnchor)!
-
-          guard
-            state
-              .grids[gridID] != nil
-          else {
-            logger.error("winFloatPos UI event: Grid \(gridID) doesn't exist or destroyed")
-            break
-          }
-
-          state.grids[gridID]?.associatedWindow = .floating(
-            .init(
-              id: windowID,
-              anchor: anchor,
-              anchorGridID: anchorGridID,
-              anchorRow: anchorRow,
-              anchorColumn: anchorColumn,
-              isFocusable: isFocusable,
-              zIndex: zIndex
-            )
-          )
-          state.grids[gridID]?.isHidden = false
-
-          state.gridsHierarchy.addNode(id: gridID, parent: anchorGridID)
-          updates.isGridsHierarchyUpdated = true
-
-          updatedLayout(forGridWithID: gridID)
-
-        case let .winHide(gridID):
-          if state.grids[gridID] == nil {
-            logger.error("winHide UI event: grid \(gridID) doesn't exist or destroyed")
-            break
-          }
-
-          state.grids[gridID]?.isHidden = true
-
-          state.gridsHierarchy.removeNode(id: gridID)
-          updates.isGridsHierarchyUpdated = true
-
-          updatedLayout(forGridWithID: gridID)
-
-        case let .winClose(gridID):
-          if state.grids[gridID] == nil {
-            logger.error("winClose UI event: Grid \(gridID) doesn't exist or destroyed")
-            break
-          }
-          state.grids[gridID]?.associatedWindow = nil
-
-          state.gridsHierarchy.removeNode(id: gridID)
-          updates.isGridsHierarchyUpdated = true
-
-          updatedLayout(forGridWithID: gridID)
-
-        case let .tablineUpdate(
-          currentTabpageID,
-          rawTabpages,
-          currentBufferID,
-          rawBuffers
-        ):
-          do {
-            let tabpages = try rawTabpages
-              .map { rawTabpage -> Tabpage in
-                guard
-                  case let .dictionary(rawTabpage) = rawTabpage,
-                  let rawID = rawTabpage["tab"]
-                    .flatMap({ $0[case: \.ext] }),
-                    let name = rawTabpage["name"]
-                      .flatMap({ $0[case: \.string] })
-                else {
-                  throw Failure("invalid tabline raw value", rawTabpage)
+                    drawRuns: .init(
+                      layout: layout,
+                      font: font,
+                      appearance: appearance
+                    ),
+                    associatedWindow: nil,
+                    isHidden: false
+                  )
                 }
-
-                return .init(
-                  id: .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!,
-                  name: name
-                )
               }
-            let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
-            if identifiedTabpages != state.tabline?.tabpages {
+
               if
-                identifiedTabpages.count == state.tabline?.tabpages
-                  .count
+                let cursor = state.cursor,
+                cursor.gridID == params.grid,
+                cursor.position.column >= size.columnsCount,
+                cursor.position.row >= size.rowsCount
               {
-                tablineTabpagesContentUpdated()
-              } else {
-                tablineTabpagesUpdated()
+                state.cursor = nil
+
+                cursorUpdated(oldCursor: cursor)
               }
+
+              updatedLayout(forGridWithID: params.grid)
+              apply(update: .resize(size), toGridWithID: params.grid)
             }
 
-            let buffers = try rawBuffers
-              .map { rawBuffer -> Buffer in
-                guard
-                  case let .dictionary(rawBuffer) = rawBuffer,
-                  let rawID = rawBuffer["buffer"]
-                    .flatMap({ $0[case: \.ext] }),
-                    let name = rawBuffer["name"]
-                      .flatMap({ $0[case: \.string] })
-                else {
-                  throw Failure("invalid raw buffer value", rawBuffer)
-                }
+            let parent = state.gridsHierarchy.allNodes[params.grid]?.parent ?? Grid.OuterID
+            state.gridsHierarchy.addNode(id: params.grid, parent: parent)
+          }
+          updates.isGridsHierarchyUpdated = true
 
-                return .init(
-                  id: .init(
-                    type: rawID.0,
-                    data: rawID.1
-                  )!,
-                  name: name
-                )
-              }
-            let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
-            if identifiedBuffers != state.tabline?.buffers {
-              tablineBuffersUpdated()
-            }
-
-            if
-              updates.tabline.isTabpagesUpdated || currentTabpageID != state.tabline?.currentTabpageID
-            {
-              tablineSelectedTabpageUpdated()
-            }
-
-            if
-              updates.tabline.isBuffersUpdated || currentBufferID != state.tabline?.currentBufferID
-            {
-              tablineSelectedBufferUpdated()
-            }
-
-            state.tabline = .init(
-              currentTabpageID: currentTabpageID,
-              tabpages: identifiedTabpages,
-              currentBufferID: currentBufferID,
-              buffers: identifiedBuffers
+        case let .gridScroll(batch):
+          for params in batch {
+            let rectangle = IntegerRectangle(
+              origin: .init(column: params.left, row: params.top),
+              size: .init(columnsCount: params.right - params.left, rowsCount: params.bot - params.top)
             )
-          } catch {
-            handleError(error)
+            let offset = IntegerSize(
+              columnsCount: params.cols,
+              rowsCount: params.rows
+            )
+
+            apply(
+              update: .scroll(rectangle: rectangle, offset: offset),
+              toGridWithID: params.grid
+            )
           }
 
-        case let .cmdlineShow(content, pos, firstc, prompt, indent, level):
-          do {
+        case let .gridClear(batch):
+          for params in batch {
+            apply(update: .clear, toGridWithID: params.grid)
+          }
+
+        case let .gridDestroy(batch):
+          for params in batch {
+            update(&state.grids[params.grid]) { grid in
+              guard grid != nil else {
+                return
+              }
+              grid = nil
+              updates.destroyedGridIDs.insert(params.grid)
+            }
+
+            state.gridsHierarchy.removeNode(id: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
+        case let .gridCursorGoto(batch):
+          for params in batch {
             let oldCursor = state.cursor
 
-            let cmdline = try Cmdline(
-              contentParts: content
-                .map { rawContentPart in
+            let cursorPosition = IntegerPoint(
+              column: params.col,
+              row: params.row
+            )
+            state.cursor = .init(
+              gridID: params.grid,
+              position: cursorPosition
+            )
+
+            cursorUpdated(oldCursor: oldCursor)
+          }
+
+        case let .winPos(batch):
+          for params in batch {
+            let origin = IntegerPoint(column: params.startcol, row: params.startrow)
+            let size = IntegerSize(
+              columnsCount: params.width,
+              rowsCount: params.height
+            )
+
+            guard
+              state
+                .grids[params.grid] != nil
+            else {
+              logger.error("winPos UI event: Grid \(params.grid) doesn't exist or destroyed")
+              break
+            }
+
+            state.grids[params.grid]?.associatedWindow = .plain(
+              .init(
+                id: params.windowID,
+                origin: origin,
+                size: size
+              )
+            )
+            state.grids[params.grid]?.isHidden = false
+
+            state.gridsHierarchy.addNode(id: params.grid, parent: Grid.OuterID)
+
+            updatedLayout(forGridWithID: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
+        case let .winFloatPos(batch):
+          for params in batch {
+            let anchor = FloatingWindow.Anchor(rawValue: params.anchor)!
+
+            guard
+              state
+                .grids[params.grid] != nil
+            else {
+              logger.error("winFloatPos UI event: Grid \(params.grid) doesn't exist or destroyed")
+              break
+            }
+
+            state.grids[params.grid]?.associatedWindow = .floating(
+              .init(
+                id: params.windowID,
+                anchor: anchor,
+                anchorGridID: params.anchorGrid,
+                anchorRow: params.anchorRow,
+                anchorColumn: params.anchorCol,
+                isFocusable: params.focusable,
+                zIndex: params.zindex
+              )
+            )
+            state.grids[params.grid]?.isHidden = false
+
+            state.gridsHierarchy.addNode(id: params.grid, parent: params.anchorGrid)
+
+            updatedLayout(forGridWithID: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
+        case let .winHide(batch):
+          for params in batch {
+            if state.grids[params.grid] == nil {
+              logger.error("winHide UI event: grid \(params.grid) doesn't exist or destroyed")
+              break
+            }
+
+            state.grids[params.grid]?.isHidden = true
+
+            state.gridsHierarchy.removeNode(id: params.grid)
+
+            updatedLayout(forGridWithID: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
+        case let .winClose(batch):
+          for params in batch {
+            if state.grids[params.grid] == nil {
+              logger.error("winClose UI event: Grid \(params.grid) doesn't exist or destroyed")
+              break
+            }
+            state.grids[params.grid]?.associatedWindow = nil
+
+            state.gridsHierarchy.removeNode(id: params.grid)
+
+            updatedLayout(forGridWithID: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
+        case let .tablineUpdate(batch):
+          for params in batch {
+            do {
+              let tabpages = try params.tabs
+                .map { rawTabpage -> Tabpage in
                   guard
-                    case let .array(rawContentPart) = rawContentPart,
-                    rawContentPart.count == 2,
-                    case let .integer(rawHighlightID) = rawContentPart[0],
-                    case let .string(text) = rawContentPart[1]
+                    case let .dictionary(rawTabpage) = rawTabpage,
+                    let rawID = rawTabpage["tab"]
+                      .flatMap({ $0[case: \.ext] }),
+                      let name = rawTabpage["name"]
+                        .flatMap({ $0[case: \.string] })
                   else {
-                    throw Failure(
-                      "invalid cmdline raw content part",
-                      rawContentPart
-                    )
+                    throw Failure("invalid tabline raw value", rawTabpage)
                   }
 
                   return .init(
-                    highlightID: .init(rawHighlightID),
-                    text: text
+                    id: .init(
+                      type: rawID.0,
+                      data: rawID.1
+                    )!,
+                    name: name
                   )
-                },
-              cursorPosition: pos,
-              firstCharacter: firstc,
-              prompt: prompt,
-              indent: indent,
-              level: level,
-              specialCharacter: "",
-              shiftAfterSpecialCharacter: false
-            )
-            let oldCmdline = state.cmdlines.dictionary[level]
+                }
+              let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
+              if identifiedTabpages != state.tabline?.tabpages {
+                if
+                  identifiedTabpages.count == state.tabline?.tabpages
+                    .count
+                {
+                  tablineTabpagesContentUpdated()
+                } else {
+                  tablineTabpagesUpdated()
+                }
+              }
 
-            state.cmdlines.lastCmdlineLevel = level
+              let buffers = try params.buffers
+                .map { rawBuffer -> Buffer in
+                  guard
+                    case let .dictionary(rawBuffer) = rawBuffer,
+                    let rawID = rawBuffer["buffer"]
+                      .flatMap({ $0[case: \.ext] }),
+                      let name = rawBuffer["name"]
+                        .flatMap({ $0[case: \.string] })
+                  else {
+                    throw Failure("invalid raw buffer value", rawBuffer)
+                  }
 
-            if cmdline != oldCmdline {
-              state.cmdlines.dictionary[level] = cmdline
-              cursorUpdated(oldCursor: oldCursor)
-              cmdlinesUpdated()
+                  return .init(
+                    id: .init(
+                      type: rawID.0,
+                      data: rawID.1
+                    )!,
+                    name: name
+                  )
+                }
+              let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
+              if identifiedBuffers != state.tabline?.buffers {
+                tablineBuffersUpdated()
+              }
+
+              if
+                updates.tabline.isTabpagesUpdated || params.tabpageID != state.tabline?.currentTabpageID
+              {
+                tablineSelectedTabpageUpdated()
+              }
+
+              if
+                updates.tabline.isBuffersUpdated || params.bufferID != state.tabline?.currentBufferID
+              {
+                tablineSelectedBufferUpdated()
+              }
+
+              state.tabline = .init(
+                currentTabpageID: params.tabpageID,
+                tabpages: identifiedTabpages,
+                currentBufferID: params.bufferID,
+                buffers: identifiedBuffers
+              )
+            } catch {
+              handleError(error)
             }
-          } catch {
-            handleError(error)
           }
 
-        case let .cmdlinePos(pos, level):
-          let oldCursor = state.cursor
+        case let .cmdlineShow(batch):
+          for params in batch {
+            do {
+              let oldCursor = state.cursor
 
-          update(&state.cmdlines.dictionary[level]) {
-            $0?.cursorPosition = pos
+              let cmdline = try Cmdline(
+                contentParts: params.content
+                  .map { rawContentPart in
+                    guard
+                      case let .array(rawContentPart) = rawContentPart,
+                      rawContentPart.count == 2,
+                      case let .integer(rawHighlightID) = rawContentPart[0],
+                      case let .string(text) = rawContentPart[1]
+                    else {
+                      throw Failure(
+                        "invalid cmdline raw content part",
+                        rawContentPart
+                      )
+                    }
+
+                    return .init(
+                      highlightID: .init(rawHighlightID),
+                      text: text
+                    )
+                  },
+                cursorPosition: params.pos,
+                firstCharacter: params.firstc,
+                prompt: params.prompt,
+                indent: params.indent,
+                level: params.level,
+                specialCharacter: "",
+                shiftAfterSpecialCharacter: false
+              )
+              let oldCmdline = state.cmdlines.dictionary[params.level]
+
+              state.cmdlines.lastCmdlineLevel = params.level
+
+              if cmdline != oldCmdline {
+                state.cmdlines.dictionary[params.level] = cmdline
+                cursorUpdated(oldCursor: oldCursor)
+                cmdlinesUpdated()
+              }
+            } catch {
+              handleError(error)
+            }
           }
 
-          cursorUpdated(oldCursor: oldCursor)
-          cmdlinesUpdated()
+        case let .cmdlinePos(batch):
+          for params in batch {
+            let oldCursor = state.cursor
 
-        case let .cmdlineSpecialChar(c, shift, level):
-          update(&state.cmdlines.dictionary[level]) {
-            $0?.specialCharacter = c
-            $0?.shiftAfterSpecialCharacter = shift
+            update(&state.cmdlines.dictionary[params.level]) {
+              $0?.cursorPosition = params.pos
+            }
+
+            cursorUpdated(oldCursor: oldCursor)
+            cmdlinesUpdated()
           }
 
-          cmdlinesUpdated()
-
-        case let .cmdlineHide(level):
-          state.cmdlines.dictionary.removeValue(forKey: level)
-
-          cursorUpdated()
-          cmdlinesUpdated()
-
-        case let .cmdlineBlockShow(rawLines):
-          do {
-            try state.cmdlines
-              .blockLines[state.cmdlines.lastCmdlineLevel!] = rawLines
-              .map(blockLine(fromRawLine:))
+        case let .cmdlineSpecialChar(batch):
+          for params in batch {
+            update(&state.cmdlines.dictionary[params.level]) {
+              $0?.specialCharacter = params.c
+              $0?.shiftAfterSpecialCharacter = params.shift
+            }
 
             cmdlinesUpdated()
-          } catch {
-            handleError(error)
           }
 
-        case let .cmdlineBlockAppend(rawLine):
-          do {
-            try state.cmdlines
-              .blockLines[state.cmdlines.lastCmdlineLevel!]?
-              .append(blockLine(fromRawLine: .array(rawLine)))
+        case let .cmdlineHide(batch):
+          for params in batch {
+            state.cmdlines.dictionary.removeValue(forKey: params.level)
 
+            cursorUpdated()
             cmdlinesUpdated()
-          } catch {
-            handleError(error)
+          }
+
+        case let .cmdlineBlockShow(batch):
+          for params in batch {
+            do {
+              try state.cmdlines
+                .blockLines[state.cmdlines.lastCmdlineLevel!] = params.lines
+                .map(blockLine(fromRawLine:))
+
+              cmdlinesUpdated()
+            } catch {
+              handleError(error)
+            }
+          }
+
+        case let .cmdlineBlockAppend(batch):
+          for params in batch {
+            do {
+              try state.cmdlines
+                .blockLines[state.cmdlines.lastCmdlineLevel!]?
+                .append(blockLine(fromRawLine: .array(params.lines)))
+
+              cmdlinesUpdated()
+            } catch {
+              handleError(error)
+            }
           }
 
         case .cmdlineBlockHide:
@@ -583,73 +594,79 @@ public extension Actions {
 
           cmdlinesUpdated()
 
-        case let .msgShow(rawKind, content, replaceLast):
-          do {
-            if replaceLast {
-              state.msgShows.removeLast()
-            }
-
-            let kind: MsgShow.Kind
-            if let decoded = MsgShow.Kind(rawValue: rawKind) {
-              kind = decoded
-            } else {
-              throw Failure("invalid raw msg_show kind", rawKind)
-            }
-
-            if !content.isEmpty {
-              try state.msgShows.append(.init(
-                index: state.msgShows.count,
-                kind: kind,
-                contentParts: content.map(MsgShow.ContentPart.init(raw:))
-              ))
-              if replaceLast {
-                updates.msgShowsUpdates
-                  .append(.reload(indexes: [state.msgShows.count - 1]))
-              } else {
-                updates.msgShowsUpdates.append(.added(count: 1))
+        case let .msgShow(batch):
+          for params in batch {
+            do {
+              if params.replaceLast {
+                state.msgShows.removeLast()
               }
-            } else if replaceLast {
-              throw Failure("replaceLast with empty content inconsistency")
+
+              let kind: MsgShow.Kind
+              if let decoded = MsgShow.Kind(rawValue: params.kind) {
+                kind = decoded
+              } else {
+                throw Failure("invalid raw msg_show kind", params.kind)
+              }
+
+              if !params.content.isEmpty {
+                try state.msgShows.append(.init(
+                  index: state.msgShows.count,
+                  kind: kind,
+                  contentParts: params.content.map(MsgShow.ContentPart.init(raw:))
+                ))
+                if params.replaceLast {
+                  updates.msgShowsUpdates
+                    .append(.reload(indexes: [state.msgShows.count - 1]))
+                } else {
+                  updates.msgShowsUpdates.append(.added(count: 1))
+                }
+              } else if params.replaceLast {
+                throw Failure("replaceLast with empty content inconsistency")
+              }
+            } catch {
+              handleError(error)
             }
-          } catch {
-            handleError(error)
           }
 
         case .msgClear:
           state.msgShows = []
           updates.msgShowsUpdates.append(.clear)
 
-        case let .popupmenuShow(rawItems, selected, row, col, gridID):
-          do {
-            let items = try rawItems
-              .map(PopupmenuItem.init(raw:))
+        case let .popupmenuShow(batch):
+          for params in batch {
+            do {
+              let items = try params.items
+                .map(PopupmenuItem.init(raw:))
 
-            let selectedItemIndex: Int? = selected >= 0 ? selected : nil
+              let selectedItemIndex: Int? = params.selected >= 0 ? params.selected : nil
 
-            let anchor: Popupmenu.Anchor =
-              switch gridID {
-              case -1:
-                .cmdline(location: col)
+              let anchor: Popupmenu.Anchor =
+                switch params.grid {
+                case -1:
+                  .cmdline(location: params.col)
 
-              default:
-                .grid(id: gridID, origin: .init(column: col, row: row))
-              }
+                default:
+                  .grid(id: params.grid, origin: .init(column: params.col, row: params.row))
+                }
 
-            state.popupmenu = .init(
-              items: items,
-              selectedItemIndex: selectedItemIndex,
-              anchor: anchor
-            )
-            popupmenuUpdated()
-          } catch {
-            handleError(error)
+              state.popupmenu = .init(
+                items: items,
+                selectedItemIndex: selectedItemIndex,
+                anchor: anchor
+              )
+              popupmenuUpdated()
+            } catch {
+              handleError(error)
+            }
           }
 
-        case let .popupmenuSelect(selected):
-          if state.popupmenu != nil {
-            state.popupmenu!
-              .selectedItemIndex = selected >= 0 ? selected : nil
-            popupmenuSelectionUpdated()
+        case let .popupmenuSelect(batch):
+          for params in batch {
+            if state.popupmenu != nil {
+              state.popupmenu!
+                .selectedItemIndex = params.selected >= 0 ? params.selected : nil
+              popupmenuSelectionUpdated()
+            }
           }
 
         case .popupmenuHide:
@@ -674,199 +691,208 @@ public extension Actions {
           state.isMouseOn = false
           updates.isMouseOnUpdated = true
 
-        case let .hlAttrDefine(id, rgbAttrs, _, info):
-          let noCombine = rgbAttrs["noCombine"]
-            .flatMap { $0[case: \.boolean] } ?? false
+        case let .hlAttrDefine(batch):
+          for params in batch {
+            let noCombine = params.rgbAttrs["noCombine"]
+              .flatMap { $0[case: \.boolean] } ?? false
 
-          var highlight = (
-            noCombine ? state.appearance
-              .highlights[id] : nil
-          ) ?? .init(id: id)
+            var highlight = (
+              noCombine ? state.appearance
+                .highlights[params.id] : nil
+            ) ?? .init(id: params.id)
 
-          for (key, value) in rgbAttrs {
-            guard case let .string(key) = key else {
-              continue
+            for (key, value) in params.rgbAttrs {
+              guard case let .string(key) = key else {
+                continue
+              }
+
+              switch key {
+              case "foreground":
+                if case let .integer(value) = value {
+                  highlight.foregroundColor = .init(rgb: value)
+                }
+
+              case "background":
+                if case let .integer(value) = value {
+                  highlight.backgroundColor = .init(rgb: value)
+                }
+
+              case "special":
+                if case let .integer(value) = value {
+                  highlight.specialColor = .init(rgb: value)
+                }
+
+              case "reverse":
+                if case let .boolean(value) = value {
+                  highlight.isReverse = value
+                }
+
+              case "italic":
+                if case let .boolean(value) = value {
+                  highlight.isItalic = value
+                }
+
+              case "bold":
+                if case let .boolean(value) = value {
+                  highlight.isBold = value
+                }
+
+              case "strikethrough":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isStrikethrough = value
+                }
+
+              case "underline":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isUnderline = value
+                }
+
+              case "undercurl":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isUndercurl = value
+                }
+
+              case "underdouble":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isUnderdouble = value
+                }
+
+              case "underdotted":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isUnderdotted = value
+                }
+
+              case "underdashed":
+                if case let .boolean(value) = value {
+                  highlight.decorations.isUnderdashed = value
+                }
+
+              case "blend":
+                if case let .integer(value) = value {
+                  highlight.blend = value
+                }
+
+              case "bg_indexed",
+                   "fg_indexed",
+                   "nocombine",
+                   "standout",
+                   "url":
+                continue
+
+              default:
+                handleError(Failure("Unknown hl attr define rgb attr key", key))
+              }
             }
 
-            switch key {
-            case "foreground":
-              if case let .integer(value) = value {
-                highlight.foregroundColor = .init(rgb: value)
-              }
+            state.appearance.highlights[params.id] = highlight
 
-            case "background":
-              if case let .integer(value) = value {
-                highlight.backgroundColor = .init(rgb: value)
-              }
-
-            case "special":
-              if case let .integer(value) = value {
-                highlight.specialColor = .init(rgb: value)
-              }
-
-            case "reverse":
-              if case let .boolean(value) = value {
-                highlight.isReverse = value
-              }
-
-            case "italic":
-              if case let .boolean(value) = value {
-                highlight.isItalic = value
-              }
-
-            case "bold":
-              if case let .boolean(value) = value {
-                highlight.isBold = value
-              }
-
-            case "strikethrough":
-              if case let .boolean(value) = value {
-                highlight.decorations.isStrikethrough = value
-              }
-
-            case "underline":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderline = value
-              }
-
-            case "undercurl":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUndercurl = value
-              }
-
-            case "underdouble":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdouble = value
-              }
-
-            case "underdotted":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdotted = value
-              }
-
-            case "underdashed":
-              if case let .boolean(value) = value {
-                highlight.decorations.isUnderdashed = value
-              }
-
-            case "blend":
-              if case let .integer(value) = value {
-                highlight.blend = value
-              }
-
-            case "bg_indexed",
-                 "fg_indexed",
-                 "nocombine",
-                 "standout",
-                 "url":
-              continue
-
-            default:
-              handleError(Failure("Unknown hl attr define rgb attr key", key))
-            }
-          }
-
-          state.appearance.highlights[id] = highlight
-
-          for rawInfoItem in info {
-            if
-              case let .dictionary(dict) = rawInfoItem,
-              case let .string(hiName) = dict["hi_name"],
-              let observedHighlightName = Appearance.ObservedHighlightName(
-                rawValue: hiName
-              )
-            {
-              state.appearance
-                .observedHighlights[observedHighlightName] = (
-                  dict["id"].flatMap(\.integer),
-                  dict["kind"].flatMap(\.string)
+            for rawInfoItem in params.info {
+              if
+                case let .dictionary(dict) = rawInfoItem,
+                case let .string(hiName) = dict["hi_name"],
+                let observedHighlightName = Appearance.ObservedHighlightName(
+                  rawValue: hiName
                 )
-              updates.updatedObservedHighlightNames
-                .insert(observedHighlightName)
+              {
+                state.appearance
+                  .observedHighlights[observedHighlightName] = (
+                    dict["id"].flatMap(\.integer),
+                    dict["kind"].flatMap(\.string)
+                  )
+                updates.updatedObservedHighlightNames
+                  .insert(observedHighlightName)
+              }
             }
           }
 
-        case let .gridLine(gridID, row, colStart, data, _):
-          var cells = [Cell]()
-          var highlightID = 0
+        case let .gridLine(batch):
+          for params in batch {
+            let gridID = params.grid
+            let row = params.row
+            let colStart = params.colStart
+            let data = params.data
 
-          for value in data {
-            guard
-              case let .array(arrayValue) = value,
-              !arrayValue.isEmpty,
-              case let .string(text) = arrayValue[0]
-            else {
-              handleError(Failure("invalid grid line cell value", value))
-              break
-            }
+            var cells = [Cell]()
+            var highlightID = 0
 
-            var repeatCount = 1
-
-            if arrayValue.count > 1 {
+            for value in data {
               guard
-                case let .integer(newHighlightID) = arrayValue[1]
+                case let .array(arrayValue) = value,
+                !arrayValue.isEmpty,
+                case let .string(text) = arrayValue[0]
               else {
-                handleError(Failure(
-                  "invalid grid line cell highlight value",
-                  arrayValue[1]
-                ))
+                handleError(Failure("invalid grid line cell value", value))
                 break
               }
 
-              highlightID = newHighlightID
+              var repeatCount = 1
 
-              if arrayValue.count > 2 {
+              if arrayValue.count > 1 {
                 guard
-                  case let .integer(newRepeatCount) = arrayValue[2]
+                  case let .integer(newHighlightID) = arrayValue[1]
                 else {
                   handleError(Failure(
-                    "invalid grid line cell repeat count value",
-                    arrayValue[2]
+                    "invalid grid line cell highlight value",
+                    arrayValue[1]
                   ))
                   break
                 }
 
-                repeatCount = newRepeatCount
+                highlightID = newHighlightID
+
+                if arrayValue.count > 2 {
+                  guard
+                    case let .integer(newRepeatCount) = arrayValue[2]
+                  else {
+                    handleError(Failure(
+                      "invalid grid line cell repeat count value",
+                      arrayValue[2]
+                    ))
+                    break
+                  }
+
+                  repeatCount = newRepeatCount
+                }
+              }
+
+              if text.count > 1 {
+                handleError(Failure("grid line cell text has more than one character", text))
+              } else if text.isEmpty, !cells.isEmpty {
+                cells[cells.count - 1].isDoubleWidth = true
+              }
+
+              let cell = Cell(
+                character: text.first ?? Cell.default.character,
+                isDoubleWidth: false,
+                highlightID: highlightID
+              )
+              for _ in 0 ..< repeatCount {
+                cells.append(cell)
               }
             }
 
-            if text.count > 1 {
-              handleError(Failure("grid line cell text has more than one character", text))
-            } else if text.isEmpty, !cells.isEmpty {
-              cells[cells.count - 1].isDoubleWidth = true
-            }
+            let dirtyRectangle = state
+              .grids[gridID]!
+              .applyLineUpdate(
+                originColumn: colStart,
+                cells: cells,
+                row: row,
+                font: state.font,
+                appearance: state.appearance
+              )
 
-            let cell = Cell(
-              character: text.first ?? Cell.default.character,
-              isDoubleWidth: false,
-              highlightID: highlightID
-            )
-            for _ in 0 ..< repeatCount {
-              cells.append(cell)
-            }
-          }
+            update(&updates.gridUpdates[gridID]) { updates in
+              switch updates {
+              case var .dirtyRectangles(accumulator):
+                accumulator.append(dirtyRectangle)
+                updates = .dirtyRectangles(accumulator)
 
-          let dirtyRectangle = state
-            .grids[gridID]!
-            .applyLineUpdate(
-              originColumn: colStart,
-              cells: cells,
-              row: row,
-              font: state.font,
-              appearance: state.appearance
-            )
+              case .none:
+                updates = .dirtyRectangles([dirtyRectangle])
 
-          update(&updates.gridUpdates[gridID]) { updates in
-            switch updates {
-            case var .dirtyRectangles(accumulator):
-              accumulator.append(dirtyRectangle)
-              updates = .dirtyRectangles(accumulator)
-
-            case .none:
-              updates = .dirtyRectangles([dirtyRectangle])
-
-            default:
-              break
+              default:
+                break
+              }
             }
           }
 

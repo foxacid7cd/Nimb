@@ -376,8 +376,6 @@ public struct State: Sendable {
       }
     }
 
-    customDump(layouts)
-
     for (index, keyValues) in layouts.enumerated() {
       let (id, layout) = keyValues
 

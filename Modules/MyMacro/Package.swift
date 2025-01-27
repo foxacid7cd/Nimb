@@ -20,6 +20,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "git@github.com:swiftlang/swift-syntax.git", from: "600.0.1"),
+        .package(
+          url: "git@github.com:stackotter/swift-macro-toolkit.git",
+          branch: "main"
+        )
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -29,7 +33,8 @@ let package = Package(
             name: "MyMacroMacros",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "MacroToolkit", package: "swift-macro-toolkit"),
             ]
         ),
 

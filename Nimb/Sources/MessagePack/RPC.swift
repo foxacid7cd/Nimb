@@ -7,6 +7,7 @@ import Combine
 import ConcurrencyExtras
 import CustomDump
 import Foundation
+import MessagePack
 import Queue
 
 public final class RPC<Target: Channel>: Sendable {

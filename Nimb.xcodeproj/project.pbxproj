@@ -11,6 +11,8 @@
 		68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
+		6808640B2D46E6210049FC97 /* DMMessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 6808640A2D46E6210049FC97 /* DMMessagePack */; };
+		6808640D2D46E6460049FC97 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 6808640C2D46E6460049FC97 /* Queue */; };
 		6808BE1F2D3CC0C900893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE1E2D3CC0C900893789 /* CustomDump */; };
 		6808BE212D3CC0CF00893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE202D3CC0CF00893789 /* CustomDump */; };
 		6808BE232D3CC0D400893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE222D3CC0D400893789 /* CustomDump */; };
@@ -387,7 +389,9 @@
 				681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */,
 				686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */,
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
+				6808640D2D46E6460049FC97 /* Queue in Frameworks */,
 				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
+				6808640B2D46E6210049FC97 /* DMMessagePack in Frameworks */,
 				68740B032C688D360080A967 /* ConcurrencyExtras in Frameworks */,
 				688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */,
 				6808BE1F2D3CC0C900893789 /* CustomDump in Frameworks */,
@@ -756,6 +760,8 @@
 				68740B022C688D360080A967 /* ConcurrencyExtras */,
 				688A76512C6B23F300B6B9C0 /* Algorithms */,
 				6808BE1E2D3CC0C900893789 /* CustomDump */,
+				6808640A2D46E6210049FC97 /* DMMessagePack */,
+				6808640C2D46E6460049FC97 /* Queue */,
 			);
 			productName = generate;
 			productReference = 681B52F32C5FE31A00AD6C68 /* generate */;
@@ -1607,6 +1613,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6808640A2D46E6210049FC97 /* DMMessagePack */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68FEB4CC2D46B09800219C83 /* XCRemoteSwiftPackageReference "msgpack-swift" */;
+			productName = DMMessagePack;
+		};
+		6808640C2D46E6460049FC97 /* Queue */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */;
+			productName = Queue;
+		};
 		6808BE1E2D3CC0C900893789 /* CustomDump */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
