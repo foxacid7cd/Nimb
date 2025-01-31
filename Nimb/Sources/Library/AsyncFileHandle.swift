@@ -11,7 +11,7 @@ extension FileHandle {
       readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
 
-        asyncQueue.addOperation {
+        asyncQueue.addOperation { @StateActor in
           if data.isEmpty {
             continuation.finish()
           } else {

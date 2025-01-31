@@ -139,9 +139,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-
     for gridID in updates.destroyedGridIDs {
       let layer = arrangedGridLayer(forGridWithID: gridID)
       layer.isHidden = true
@@ -196,13 +193,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       }
     }
 
-    renderChildren(
-      arrangedGridLayers.values
-        .lazy
-        .filter { !$0.isHidden }
-    )
-
-    CATransaction.commit()
+    renderChildren(arrangedGridLayers.values.map(\.self))
   }
 
   public func windowFrame(

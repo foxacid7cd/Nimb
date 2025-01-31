@@ -23,22 +23,19 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
 
   @MainActor
-  public var grid: Grid {
-    if let grid = state.grids[gridID] {
-      return grid
-    } else {
-      let gridID = gridID
-      logger
-        .fault(
-          "grid view trying to access not created or destroyed grid with id \(gridID)"
-        )
-      fatalError()
+  public var grid: Grid? {
+    guard isRendered else {
+      return nil
     }
+    return state.grids[gridID]
   }
 
   @MainActor
-  private var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
+  private var upsideDownTransform: CGAffineTransform? {
+    guard let grid else {
+      return nil
+    }
+    return .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
   }
 
@@ -74,7 +71,9 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   override public func draw(in ctx: CGContext) {
     MainActor.assumeIsolated {
-      let upsideDownTransform = self.upsideDownTransform
+      guard isRendered, let grid, let upsideDownTransform else {
+        return
+      }
 
       ctx.saveGState()
       defer { ctx.restoreGState() }
@@ -131,11 +130,12 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func callSetNeedsDisplayForUpdates() {
+    guard isRendered, let grid, let upsideDownTransform else {
+      return
+    }
     if updates.isFontUpdated || updates.isAppearanceUpdated {
       return setNeedsDisplay()
     }
-
-    let upsideDownTransform = upsideDownTransform
 
     var isCursorDrawRunRectangleIntersected = false
 
@@ -289,6 +289,9 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func point(for event: NSEvent) -> IntegerPoint {
+    guard let upsideDownTransform else {
+      return .init()
+    }
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(
@@ -299,6 +302,9 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
+    guard let upsideDownTransform else {
+      return .init()
+    }
     let viewFrame = (gridFrame * state.font.cellSize)
       .applying(upsideDownTransform)
     return convert(viewFrame, to: nil)
