@@ -22,12 +22,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   public func render() {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-
     renderChildren(mainMenuController!, msgShowsWindowController!, mainWindowController!)
-
-    CATransaction.commit()
   }
 
   public func applicationDidFinishLaunching(_: Notification) {

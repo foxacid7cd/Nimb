@@ -1,5 +1,5 @@
 {
-  "originHash" : "f838ca20495ddc830849102d5c192db9bbf5f6dc97e367092c90e23093995cc8",
+  "originHash" : "efc35aeb9d1e0b1e0eb12c65f7016fd6cf9693c7cc1b104246daccc3ff2f1bab",
   "pins" : [
     {
       "identity" : "coretextswift",
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:pointfreeco/swift-case-paths.git",
       "state" : {
-        "revision" : "e7039aaa4d9cf386fa8324a89f258c3f2c54d751",
-        "version" : "1.6.0"
+        "revision" : "19b7263bacb9751f151ec0c93ec816fe1ef67c7b",
+        "version" : "1.6.1"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:pointfreeco/swift-identified-collections.git",
       "state" : {
-        "revision" : "2f5ab6e091dd032b63dacbda052405756010dc3b",
-        "version" : "1.1.0"
+        "revision" : "322d9ffeeba85c9f7c4984b39422ec7cc3c56597",
+        "version" : "1.1.1"
       }
     },
     {
@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "a3f634d1a409c7979cabc0a71b3f26ffa9fc8af1",
-        "version" : "1.4.3"
+        "revision" : "b444594f79844b0d6d76d70fbfb3f7f71728f938",
+        "version" : "1.5.1"
       }
     }
   ],

@@ -58,6 +58,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     isOpaque = false
     masksToBounds = true
     drawsAsynchronously = true
+    needsDisplayOnBoundsChange = true
   }
 
   @available(*, unavailable)

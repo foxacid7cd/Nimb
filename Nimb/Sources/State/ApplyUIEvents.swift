@@ -209,6 +209,10 @@ public extension Actions {
 
         case let .gridResize(batch):
           for params in batch {
+            if state.debug.isStoreActionsLoggingEnabled {
+              logger.trace("UIEvent.gridResize: grid: \(params.grid)")
+            }
+
             let size = IntegerSize(
               columnsCount: params.width,
               rowsCount: params.height
@@ -313,6 +317,10 @@ public extension Actions {
 
         case let .winPos(batch):
           for params in batch {
+            if state.debug.isStoreActionsLoggingEnabled {
+              logger.trace("UIEvent.winPos: grid: \(params.grid)")
+            }
+
             let origin = IntegerPoint(column: params.startcol, row: params.startrow)
             let size = IntegerSize(
               columnsCount: params.width,
@@ -344,6 +352,10 @@ public extension Actions {
 
         case let .winFloatPos(batch):
           for params in batch {
+            if state.debug.isStoreActionsLoggingEnabled {
+              logger.trace("UIEvent.winFloatPos: grid: \(params.grid), anchorGrid: \(params.anchorGrid)")
+            }
+
             let anchor = FloatingWindow.Anchor(rawValue: params.anchor)!
 
             guard
@@ -807,6 +819,10 @@ public extension Actions {
 
         case let .gridLine(batch):
           for params in batch {
+            if state.debug.isStoreActionsLoggingEnabled {
+              logger.trace("UIEvent.gridLine: grid: \(params.grid), row: \(params.row), colStart: \(params.colStart)")
+            }
+
             let gridID = params.grid
             let row = params.row
             let colStart = params.colStart
