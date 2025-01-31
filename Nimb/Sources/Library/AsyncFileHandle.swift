@@ -15,17 +15,12 @@ extension FileHandle {
         }
       }
 
-      continuation.onTermination = { [weak self] termination in
+      continuation.onTermination = { [weak self] _ in
         guard let self else {
           return
         }
 
-        switch termination {
-        case .cancelled:
-          readabilityHandler = nil
-        default:
-          break
-        }
+        readabilityHandler = nil
       }
     }
   }

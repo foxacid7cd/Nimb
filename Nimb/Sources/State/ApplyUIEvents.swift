@@ -896,6 +896,12 @@ public extension Actions {
             }
           }
 
+        case let .errorExit(batch):
+          for params in batch {
+            state.errorExitStatus = params.status
+          }
+          updates.isErrorExitStatusUpdated = true
+
         default:
           break
         }

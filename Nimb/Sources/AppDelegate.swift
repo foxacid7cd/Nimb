@@ -125,6 +125,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             if updates.isDebugUpdated {
               UserDefaults.standard.debug = state.debug
             }
+            if updates.isErrorExitStatusUpdated {
+              logger.error("Neovim process emitted erorr exit UI event with status \(state.errorExitStatus ?? 0)")
+            }
             self.render(state: state, updates: updates)
           }
         }

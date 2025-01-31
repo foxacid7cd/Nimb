@@ -19,7 +19,7 @@ public final class RPC<Target: Channel>: Sendable {
   private let unpacker = LockIsolated<Unpacker>(.init())
   private let queue = AsyncQueue()
 
-  public init(_ target: Target, maximumConcurrentRequests: Int) {
+  public init(_ target: Target) {
     self.target = target
 
     let dataBatches = target.dataBatches

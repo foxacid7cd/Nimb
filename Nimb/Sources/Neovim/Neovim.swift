@@ -38,38 +38,19 @@ public final class Neovim: Sendable {
     process.executableURL = URL(filePath: shell)
 
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
-    if UserDefaults.standard.debug.isMessagePackInspectorEnabled {
-      let inspectorExecutablePath: String = Bundle.main
-        .path(forAuxiliaryExecutable: "msgpack-inspector")!
-
-      let temporaryFileURL = FileManager.default.temporaryDirectory
-        .appending(component: "captured_nvim_msgpack_output_\(UUID().uuidString).mpack")
-
-      Task { @MainActor in
-        logger.debug("Capturing nvim msgpack output to \(temporaryFileURL.path())")
-      }
-
-      process.arguments = [
-        "-l",
-        "-c",
-        "'\(inspectorExecutablePath)' --output \(temporaryFileURL.path()) \(nvimExecutablePath) --embed" +
-          vimrcArgument,
-      ]
-    } else {
-      process.arguments = [
-        "-l",
-        "-c",
-        "'\(nvimExecutablePath)' --embed" + vimrcArgument,
-      ]
-    }
+    process.arguments = [
+      "-l",
+      "-c",
+      "'\(nvimExecutablePath)' --embed" + vimrcArgument,
+    ]
 
     process.currentDirectoryURL = FileManager.default
       .homeDirectoryForCurrentUser
 
-    process.qualityOfService = .userInitiated
+    process.qualityOfService = .default
 
     let processChannel = ProcessChannel(process)
-    let rpc = RPC(processChannel, maximumConcurrentRequests: 1000)
+    let rpc = RPC(processChannel)
     api = .init(rpc)
   }
 
