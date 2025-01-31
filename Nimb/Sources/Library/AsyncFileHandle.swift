@@ -1,17 +1,22 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import Queue
 
 extension FileHandle {
   var dataBatches: AsyncStream<Data> {
     .init { continuation in
+      let asyncQueue = AsyncQueue()
+
       readabilityHandler = { fileHandle in
         let data = fileHandle.availableData
 
-        if data.isEmpty {
-          continuation.finish()
-        } else {
-          continuation.yield(data)
+        asyncQueue.addOperation {
+          if data.isEmpty {
+            continuation.finish()
+          } else {
+            continuation.yield(data)
+          }
         }
       }
 
