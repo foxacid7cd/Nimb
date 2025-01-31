@@ -32,6 +32,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   private var leftMouseInteractionTarget: GridLayer?
   private var rightMouseInteractionTarget: GridLayer?
   private var otherMouseInteractionTarget: GridLayer?
+  private var isInCATransaction = false
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
@@ -189,7 +190,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         if gridLayer.frame != newFrame {
           gridLayer.frame = newFrame
         }
-        if zPosition != gridLayer.zPosition {
+        if gridLayer.zPosition != zPosition {
           gridLayer.zPosition = zPosition
         }
       }

@@ -149,8 +149,6 @@ public extension Actions {
         return contentParts
       }
 
-      var isLastFlushEvent = false
-
       for uiEvent in uiEvents {
         switch uiEvent {
         case let .setTitle(batch):
@@ -918,18 +916,13 @@ public extension Actions {
           }
           updates.isErrorExitStatusUpdated = true
 
+        case .flush:
+          updates.needFlush = true
+
         default:
           break
         }
-
-        if case .flush = uiEvent {
-          isLastFlushEvent = true
-        } else {
-          isLastFlushEvent = false
-        }
       }
-
-      updates.needFlush = isLastFlushEvent
 
       return updates
     }

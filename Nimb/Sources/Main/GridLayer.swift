@@ -55,7 +55,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     self.gridID = gridID
     super.init()
 
-    isOpaque = false
     masksToBounds = true
     drawsAsynchronously = true
     needsDisplayOnBoundsChange = true
@@ -126,49 +125,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func render() {
-    callSetNeedsDisplayForUpdates()
-  }
-
-  @MainActor
-  public func callSetNeedsDisplayForUpdates() {
-    guard isRendered, let grid, let upsideDownTransform else {
-      return
-    }
-    if updates.isFontUpdated || updates.isAppearanceUpdated {
-      return setNeedsDisplay()
-    }
-
-    var isCursorDrawRunRectangleIntersected = false
-
-    if let gridUpdate = updates.gridUpdates[gridID] {
-      switch gridUpdate {
-      case let .dirtyRectangles(value):
-        for rectangle in value {
-          setNeedsDisplay(
-            (rectangle * state.font.cellSize)
-              .insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height / 2)
-              .applying(upsideDownTransform)
-          )
-          if let cursorDrawRun = grid.drawRuns.cursorDrawRun, rectangle.intersects(with: cursorDrawRun.rectangle) {
-            isCursorDrawRunRectangleIntersected = true
-          }
-        }
-
-      case .needsDisplay:
-        return setNeedsDisplay()
-      }
-    }
-
-    if
-      updates.isCursorBlinkingPhaseUpdated || updates
-        .isMouseUserInteractionEnabledUpdated,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        !isCursorDrawRunRectangleIntersected
-    {
-      setNeedsDisplay(
-        (cursorDrawRun.rectangle * state.font.cellSize)
-          .applying(upsideDownTransform)
-      )
+    if let dirtyRect = calculateDirtyRect() {
+      setNeedsDisplay(dirtyRect)
     }
   }
 
@@ -330,6 +288,44 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       row: point.row,
       col: point.column
     ))
+  }
+
+  @MainActor
+  private func calculateDirtyRect() -> CGRect? {
+    guard isRendered, let grid, let upsideDownTransform else {
+      return .zero
+    }
+    if updates.isFontUpdated || updates.isAppearanceUpdated {
+      return bounds
+    }
+
+    var dirtyRect: CGRect?
+
+    if let gridUpdate = updates.gridUpdates[gridID] {
+      switch gridUpdate {
+      case let .dirtyRectangles(value):
+        for rectangle in value {
+          let rect = (rectangle * state.font.cellSize)
+            .insetBy(dx: -state.font.cellSize.width, dy: 0)
+            .applying(upsideDownTransform)
+          dirtyRect = dirtyRect.map { $0.union(rect) } ?? rect
+        }
+
+      case .needsDisplay:
+        return bounds
+      }
+    }
+
+    if
+      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+      updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated
+    {
+      let rect = (cursorDrawRun.rectangle * state.font.cellSize)
+        .applying(upsideDownTransform)
+      dirtyRect = dirtyRect.map { $0.union(rect) } ?? rect
+    }
+
+    return dirtyRect
   }
 }
 
