@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CustomDump
 import Foundation
 
 public class Unpacker {

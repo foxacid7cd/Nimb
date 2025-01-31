@@ -141,6 +141,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   public func render() {
     CATransaction.begin()
     CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
 
     for gridID in updates.destroyedGridIDs {
       let layer = arrangedGridLayer(forGridWithID: gridID)
@@ -195,8 +196,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     }
 
     renderChildren(arrangedGridLayers.values.lazy.map(\.self))
-
-    CATransaction.commit()
   }
 
   public func windowFrame(
