@@ -59,11 +59,8 @@ public final class API<Target: Channel>: Sendable {
   public func fastCallsTransaction<S: Sequence>(
     with apiFunctions: S
   ) where S.Element == any APIFunction {
-    for apiFunction in apiFunctions {
-      rpc.fastCall(
-        method: type(of: apiFunction).method,
-        withParameters: apiFunction.parameters
-      )
-    }
+    rpc.fastCallsTransaction(with: apiFunctions.lazy.map {
+      (type(of: $0).method, $0.parameters)
+    })
   }
 }
