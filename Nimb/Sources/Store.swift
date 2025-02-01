@@ -136,11 +136,11 @@ public final class Store: Sendable {
                 alertsContinuation.yield(.init(error))
               }
               updates.formUnion(newUpdates)
-            }
 
-            if updates.needFlush {
-              continuation.yield((state, updates))
-              updates.needFlush = false
+              if updates.needFlush {
+                continuation.yield((state, updates))
+                updates = .init()
+              }
             }
           }
         } catch {
