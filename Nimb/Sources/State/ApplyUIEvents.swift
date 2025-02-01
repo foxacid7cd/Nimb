@@ -224,7 +224,7 @@ public extension Actions {
                 if grid == nil {
                   let cells = TwoDimensionalArray(
                     size: size,
-                    repeatingElement: Cell.default
+                    repeatingElement: Cell.whitespace
                   )
                   let layout = GridLayout(cells: cells)
                   grid = .init(
@@ -876,7 +876,7 @@ public extension Actions {
               }
 
               let cell = Cell(
-                character: text.first ?? Cell.default.character,
+                character: text.first,
                 isDoubleWidth: false,
                 highlightID: highlightID
               )

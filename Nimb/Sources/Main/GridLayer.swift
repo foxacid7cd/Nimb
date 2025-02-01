@@ -137,7 +137,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
         for rectangle in value {
           dirtyRects.append(
             (rectangle * state.font.cellSize)
-              .insetBy(dx: -state.font.cellSize.width, dy: 0)
+              .insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height * 0.5)
               .applying(upsideDownTransform)
           )
         }

@@ -90,7 +90,7 @@ public struct GridDrawRuns: Sendable {
 @PublicInit
 public struct RowDrawRun: Sendable {
   public var drawRuns: [DrawRun]
-  public var drawRunsCache: [[RowPartCell]: (index: Int, drawRun: DrawRun)]
+  public var drawRunsCache: [RowPartContent: (index: Int, drawRun: DrawRun)]
 
   public init(
     row: Int,
@@ -100,7 +100,7 @@ public struct RowDrawRun: Sendable {
     old: RowDrawRun?
   ) {
     var drawRuns = [DrawRun]()
-    var drawRunsCache = [[RowPartCell]: (index: Int, drawRun: DrawRun)]()
+    var drawRunsCache = [RowPartContent: (index: Int, drawRun: DrawRun)]()
     var previousReusedOldDrawRunIndex: Int?
     for part in layout.parts {
       var reusedDrawRun: DrawRun?
@@ -113,14 +113,14 @@ public struct RowDrawRun: Sendable {
         {
           reusedDrawRun = old.drawRuns[index]
           previousReusedOldDrawRunIndex = index
-        } else if let (index, drawRun) = old.drawRunsCache[part.cells] {
+        } else if let (index, drawRun) = old.drawRunsCache[part.content] {
           reusedDrawRun = drawRun
           previousReusedOldDrawRunIndex = index
         }
       }
 
       var drawRun = reusedDrawRun ?? DrawRun(
-        rowPartCells: part.cells,
+        rowPartContent: part.content,
         originColumn: part.originColumn,
         highlightID: part.highlightID,
         font: font,
@@ -128,7 +128,7 @@ public struct RowDrawRun: Sendable {
       )
       drawRun.originColumn = part.originColumn
       drawRun.highlightID = part.highlightID
-      drawRunsCache[part.cells] = (
+      drawRunsCache[part.content] = (
         index: drawRuns.count,
         drawRun: drawRun
       )
@@ -194,13 +194,13 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  public var rowPartCells: [RowPartCell]
+  public var rowPartContent: RowPartContent
   public var highlightID: Highlight.ID
   public var originColumn: Int
-  public var glyphRuns: [GlyphRun]
+  public var glyphRuns: [GlyphRun]?
 
   public var columnsCount: Int {
-    rowPartCells.count
+    rowPartContent.columnsCount
   }
 
   public var columnsRange: Range<Int> {
@@ -208,7 +208,7 @@ public struct DrawRun: Sendable {
   }
 
   public init(
-    rowPartCells: [RowPartCell],
+    rowPartContent: RowPartContent,
     originColumn: Int,
     highlightID: Highlight.ID,
     font: Font,
@@ -217,11 +217,16 @@ public struct DrawRun: Sendable {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
 
-    let shouldUseCache = rowPartCells.count <= 6
+    let shouldUseCache: Bool =
+      if case let .cells(array) = rowPartContent {
+        array.count < 6
+      } else {
+        false
+      }
     var cacheKey: Int?
     if shouldUseCache {
       var hasher = Hasher()
-      hasher.combine(rowPartCells)
+      hasher.combine(rowPartContent)
       hasher.combine(font)
       hasher.combine(isBold)
       hasher.combine(isItalic)
@@ -233,14 +238,14 @@ public struct DrawRun: Sendable {
       )
     {
       self = cachedDrawRun
-    } else {
+    } else if case let .cells(cells) = rowPartContent {
       let appKitFont = font.appKit(
         isBold: isBold,
         isItalic: isItalic
       )
 
       let attributedString = NSAttributedString(
-        string: .init(rowPartCells.map(\.character)),
+        string: .init(cells.map(\.character)),
         attributes: [.font: appKitFont]
       )
 
@@ -256,7 +261,7 @@ public struct DrawRun: Sendable {
       CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
       let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-      let xOffset = (font.cellWidth - bounds.width / Double(rowPartCells.count)) /
+      let xOffset = (font.cellWidth - bounds.width / Double(cells.count)) /
         2
       let yOffset = (font.cellHeight - bounds.height) / 2 + descent
       let offset = CGPoint(x: xOffset, y: yOffset)
@@ -303,7 +308,7 @@ public struct DrawRun: Sendable {
         }
 
       let drawRun = DrawRun(
-        rowPartCells: rowPartCells,
+        rowPartContent: rowPartContent,
         highlightID: highlightID,
         originColumn: originColumn,
         glyphRuns: glyphRuns
@@ -312,6 +317,8 @@ public struct DrawRun: Sendable {
         GlobalDrawRunsCache.shared.store(drawRun, forKey: cacheKey)
       }
       self = drawRun
+    } else {
+      self.init(rowPartContent: rowPartContent, highlightID: highlightID, originColumn: originColumn, glyphRuns: nil)
     }
   }
 
@@ -324,7 +331,7 @@ public struct DrawRun: Sendable {
     let rect = CGRect(
       origin: origin,
       size: .init(
-        width: Double(rowPartCells.count) * font.cellWidth,
+        width: Double(rowPartContent.columnsCount) * font.cellWidth,
         height: font.cellHeight
       )
     )
@@ -338,6 +345,10 @@ public struct DrawRun: Sendable {
     font: Font,
     appearance: Appearance
   ) {
+    guard case let .cells(cells) = rowPartContent, let glyphRuns else {
+      return
+    }
+
     let decorations = appearance.decorations(for: highlightID)
     let specialColor = appearance.specialColor(for: highlightID)
     let specialCGColor = specialColor.cg
@@ -379,7 +390,7 @@ public struct DrawRun: Sendable {
       let widthDivider = 3
 
       let xStep = font.cellWidth / Double(widthDivider)
-      let pointsCount = rowPartCells.count * widthDivider + 1
+      let pointsCount = cells.count * widthDivider + 1
 
       let oddUnderlineY = underlineY + 3
       let evenUnderlineY = underlineY
@@ -415,7 +426,7 @@ public struct DrawRun: Sendable {
   }
 
   public func shouldBeReused(for rowPart: RowPart) -> Bool {
-    rowPart.cells == rowPartCells
+    !rowPart.content.isWhitespace && rowPart.content == rowPartContent
   }
 }
 
@@ -473,22 +484,27 @@ public struct CursorDrawRun: Sendable {
           row: origin.row
         )
         parentDrawRun = drawRun
-        for (rowPartCellIndex, rowPartCell) in drawRun.rowPartCells.enumerated() {
-          let lowerBound = rowPartCellsCount + rowPartCellIndex
-          let upperBound = lowerBound + (rowPartCell.isDoubleWidth ? 2 : 1)
-          let range = lowerBound ..< upperBound
-          if range.contains(origin.column) {
-            cursorColumnsRange = range
-            break drawRunsLoop
+        switch drawRun.rowPartContent {
+        case let .cells(cells):
+          for (rowPartCellIndex, rowPartCell) in cells.enumerated() {
+            let lowerBound = rowPartCellsCount + rowPartCellIndex
+            let upperBound = lowerBound + (rowPartCell.isDoubleWidth ? 2 : 1)
+            let range = lowerBound ..< upperBound
+            if range.contains(origin.column) {
+              cursorColumnsRange = range
+              break drawRunsLoop
+            }
           }
+
+        case .whitespace:
+          cursorColumnsRange = origin.column ..< origin.column + 1
+          break drawRunsLoop
         }
-        Task { @MainActor in
-          logger.fault("inconsistency error")
-        }
+        logger.fault("inconsistency error")
         break
       }
 
-      rowPartCellsCount += drawRun.rowPartCells.count
+      rowPartCellsCount += drawRun.columnsCount
     }
     guard
       let parentOrigin,
@@ -526,7 +542,7 @@ public struct CursorDrawRun: Sendable {
         parentOrigin = .init(column: currentColumn, row: origin.row)
         parentDrawRun = drawRun
       }
-      currentColumn += drawRun.rowPartCells.count
+      currentColumn += drawRun.columnsCount
     }
   }
 
@@ -559,7 +575,7 @@ public struct CursorDrawRun: Sendable {
     context.setFillColor(cursorBackgroundColor.cg)
     context.fill([rect])
 
-    if shouldDrawParentText {
+    if shouldDrawParentText, let glyphRuns = parentDrawRun.glyphRuns {
       context.clip(to: [rect])
 
       context.setFillColor(cursorForegroundColor.cg)
@@ -567,7 +583,7 @@ public struct CursorDrawRun: Sendable {
       let parentRectangle = IntegerRectangle(
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
         size: .init(
-          columnsCount: parentDrawRun.rowPartCells.count,
+          columnsCount: parentDrawRun.columnsCount,
           rowsCount: 1
         )
       )
@@ -577,7 +593,7 @@ public struct CursorDrawRun: Sendable {
       context.setAllowsAntialiasing(true)
       context.setShouldAntialias(true)
 
-      for glyphRun in parentDrawRun.glyphRuns {
+      for glyphRun in glyphRuns {
         context.textMatrix = glyphRun.textMatrix
         context.textPosition = parentRect.origin
         CTFontDrawGlyphs(

@@ -101,7 +101,7 @@ public struct Grid: Sendable, Identifiable {
   ) {
     let layout = GridLayout(cells: .init(
       size: size,
-      repeatingElement: Cell.default
+      repeatingElement: Cell.whitespace
     ))
 
     self.id = id
@@ -129,7 +129,7 @@ public struct Grid: Sendable, Identifiable {
       let copyRowsCount = min(layout.rowsCount, integerSize.rowsCount)
       var cells = TwoDimensionalArray<Cell>(
         size: integerSize,
-        repeatingElement: .default
+        repeatingElement: .whitespace
       )
       for row in 0 ..< copyRowsCount {
         cells.rows[row].replaceSubrange(
@@ -212,7 +212,7 @@ public struct Grid: Sendable, Identifiable {
       return .dirtyRectangles([toRectangle])
 
     case .clear:
-      layout.cells = .init(size: layout.cells.size, repeatingElement: .default)
+      layout.cells = .init(size: layout.cells.size, repeatingElement: .whitespace)
       layout.rowLayouts = layout.cells.rows
         .map(RowLayout.init(rowCells:))
       drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
