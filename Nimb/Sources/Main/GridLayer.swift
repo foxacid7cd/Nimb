@@ -113,10 +113,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     for dirtyRect in calculateDirtyRects() {
       setNeedsDisplay(dirtyRect)
     }
-
-    if updates.needFlush {
-      displayIfNeeded()
-    }
+    displayIfNeeded()
   }
 
   @MainActor

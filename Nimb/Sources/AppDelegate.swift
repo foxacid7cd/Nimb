@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import ConcurrencyExtras
 import CustomDump
 import Queue
 
@@ -16,7 +17,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var store: Store?
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
-  @StateActor private var renderQueue = AsyncQueue()
+
+  private nonisolated let pendingStateAndUpdates = LockIsolated<(State, State.Updates)?>(nil)
 
   override public init() {
     super.init()
@@ -98,23 +100,41 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          renderQueue.addOperation { @MainActor [state, updates] in
-            guard !Task.isCancelled else {
-              return
+          let shouldCreateRenderTask = pendingStateAndUpdates.withValue { value in
+            defer {
+              if var (_, updatesAccumulator) = value {
+                updatesAccumulator.formUnion(updates)
+                value = (state, updatesAccumulator)
+              } else {
+                value = (state, updates)
+              }
             }
-            if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
-              UserDefaults.standard.outerGridSize = outerGrid.size
+            return value == nil
+          }
+
+          if shouldCreateRenderTask {
+            Task { @MainActor in
+              let stateAndUpdates = pendingStateAndUpdates.withValue { value in
+                defer { value = nil }
+                return value
+              }
+              guard let (state, updates) = stateAndUpdates else {
+                return
+              }
+              if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
+                UserDefaults.standard.outerGridSize = outerGrid.size
+              }
+              if updates.isFontUpdated {
+                UserDefaults.standard.appKitFont = state.font.appKit()
+              }
+              if updates.isDebugUpdated {
+                UserDefaults.standard.debug = state.debug
+              }
+              if updates.isErrorExitStatusUpdated {
+                logger.error("Neovim process emitted erorr exit UI event with status \(state.errorExitStatus ?? 0)")
+              }
+              self.render(state: state, updates: updates)
             }
-            if updates.isFontUpdated {
-              UserDefaults.standard.appKitFont = state.font.appKit()
-            }
-            if updates.isDebugUpdated {
-              UserDefaults.standard.debug = state.debug
-            }
-            if updates.isErrorExitStatusUpdated {
-              logger.error("Neovim process emitted erorr exit UI event with status \(state.errorExitStatus ?? 0)")
-            }
-            self.render(state: state, updates: updates)
           }
         }
         logger.debug("Store state updates loop ended")
