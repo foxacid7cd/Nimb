@@ -11,12 +11,6 @@ public class MainWindowController: NSWindowController, Rendering {
     override var canBecomeKey: Bool {
       true
     }
-
-    var keyPressed: ((KeyPress) -> Void)?
-
-    override func keyDown(with event: NSEvent) {
-      keyPressed?(.init(event: event))
-    }
   }
 
   private let store: Store
@@ -44,9 +38,6 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.isMovable = false
     customWindow.isOpaque = true
     customWindow.allowsConcurrentViewDrawing = true
-    customWindow.keyPressed = { keyPress in
-      store.api.keyPressed(keyPress)
-    }
     super.init(window: customWindow)
 
     customWindow.delegate = self
@@ -57,9 +48,16 @@ public class MainWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override public func keyDown(with event: NSEvent) {
+    store.api.keyPressed(.init(event: event))
+  }
+
   public func render() {
     if updates.isMouseUserInteractionEnabledUpdated {
       renderIsMouseUserInteractionEnabled()
+    }
+    if updates.isAppearanceUpdated {
+      customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
     }
 
     renderChildren(viewController)

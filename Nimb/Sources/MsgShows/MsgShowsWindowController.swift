@@ -11,12 +11,6 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     override var canBecomeKey: Bool {
       true
     }
-
-    var keyPressed: ((KeyPress) -> Void)?
-
-    override func keyDown(with event: NSEvent) {
-      keyPressed?(.init(event: event))
-    }
   }
 
   private let store: Store
@@ -39,9 +33,6 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     window.setAnchorAttribute(.left, for: .horizontal)
     window.hasShadow = true
     window.alphaValue = 0.9
-    window.keyPressed = { keyPress in
-      store.api.keyPressed(keyPress)
-    }
     super.init(window: window)
 
     window.delegate = self
@@ -52,6 +43,10 @@ class MsgShowsWindowController: NSWindowController, Rendering {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func keyDown(with event: NSEvent) {
+    store.api.keyPressed(.init(event: event))
   }
 
   public func render() {
@@ -65,7 +60,7 @@ class MsgShowsWindowController: NSWindowController, Rendering {
         }
         customWindow!.isFloatingPanel = state.hasModalMsgShows
         customWindow!.setIsVisible(true)
-        customWindow!.orderFrontRegardless()
+        customWindow!.orderFront(nil)
       } else {
         customWindow!.setIsVisible(false)
       }

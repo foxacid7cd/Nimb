@@ -32,7 +32,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   private var leftMouseInteractionTarget: GridLayer?
   private var rightMouseInteractionTarget: GridLayer?
   private var otherMouseInteractionTarget: GridLayer?
-  private var isInCATransaction = false
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
@@ -140,11 +139,8 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
-    if !isInCATransaction {
-      CATransaction.begin()
-      CATransaction.setDisableActions(true)
-      isInCATransaction = true
-    }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
 
     for gridID in updates.destroyedGridIDs {
       let layer = arrangedGridLayer(forGridWithID: gridID)
@@ -198,6 +194,8 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       }
     }
 
+    CATransaction.commit()
+
     renderChildren(arrangedGridLayers.values.lazy.map(\.self))
 
     if updates.needFlush {
@@ -205,9 +203,6 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         gridLayer.setNeedsDisplayAccumulatedDirtyRect()
         gridLayer.displayIfNeeded()
       }
-
-      CATransaction.commit()
-      isInCATransaction = false
     }
   }
 
