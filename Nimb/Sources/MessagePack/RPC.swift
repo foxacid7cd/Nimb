@@ -16,29 +16,29 @@ public final class RPC<Target: Channel>: Sendable {
   private let target: Target
   private let storage = LockIsolated<Storage>(.init())
   private let packer = LockIsolated<Packer>(.init())
-  private let unpacker = LockIsolated<Unpacker>(.init())
   private let queue = AsyncQueue()
 
   public init(_ target: Target) {
     self.target = target
 
-    let dataBatches = target.dataBatches
-
-    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [dataBatches, storage, unpacker] continuation in
-      let task = Task {
+    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [target, storage] continuation in
+      Task {
         var notifications = [Message.Notification]()
-        for try await data in dataBatches {
-          let messages = try unpacker.withValue {
-            try $0.unpack(data)
-              .map { try Message(value: $0) }
+
+        let unpacker = Unpacker()
+
+        for try await data in target.dataBatches {
+          guard !Task.isCancelled else {
+            break
           }
+
+          let messages = try unpacker.unpack(data)
+            .map { try Message(value: $0) }
 
           for message in messages {
             switch message {
             case let .request(request):
-              Task { @MainActor in
-                logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
-              }
+              logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
 
             case let .response(response):
               storage.withValue {
@@ -49,15 +49,14 @@ public final class RPC<Target: Channel>: Sendable {
               notifications.append(notification)
             }
           }
+
           if !notifications.isEmpty {
             continuation.yield(notifications)
             notifications.removeAll(keepingCapacity: true)
           }
         }
-      }
 
-      continuation.onTermination = { _ in
-        task.cancel()
+        continuation.finish()
       }
     }
   }

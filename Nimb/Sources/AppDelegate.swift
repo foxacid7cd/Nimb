@@ -42,27 +42,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     Task { @StateActor in
       setupBindings(store: store)
 
-      do {
-        try await neovim.bootstrap()
-      } catch {
-        logger.error("Neovim process boostrap error: \(String(customDumping: error))")
-        await showCriticalAlert(error: error)
-      }
+      let terminationStatus = await neovim.bootstrap()
+      logger.debug("Neovim process terminated with status \(terminationStatus)")
 
-      Task { @MainActor in
-        _ = await NotificationCenter.default
-          .notifications(
-            named: Process.didTerminateNotification,
-            object: neovim.process
-          )
-          .makeAsyncIterator()
-          .next()
-        let status = neovim.process.terminationStatus
-        let reason = neovim.process.terminationReason.rawValue
-        logger.debug("Neovim process terminated with status \(status) and reason \(reason)")
-
-        NSApplication.shared.terminate(nil)
-      }
+      await NSApplication.shared.terminate(nil)
     }
 
     logger.debug("Application did finish launching")

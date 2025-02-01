@@ -9,11 +9,7 @@ public final class Neovim: Sendable {
   public init() {
     process = Process()
 
-    var environment = ProcessInfo.processInfo.environment
-    environment.merge(
-      UserDefaults.standard.environmentOverlay,
-      uniquingKeysWith: { _, newValue in newValue }
-    )
+    var environment = UserDefaults.standard.environmentOverlay
     environment["VIMRUNTIME"] = Bundle.main.resourceURL!
       .appending(path: "nvim")
       .appending(path: "runtime")
@@ -34,7 +30,7 @@ public final class Neovim: Sendable {
         " -u '\(url.path())'"
       }
 
-    let shell = environment["SHELL"] ?? "/bin/zsh"
+    let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
 
     let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
@@ -47,18 +43,23 @@ public final class Neovim: Sendable {
     process.currentDirectoryURL = FileManager.default
       .homeDirectoryForCurrentUser
 
-    process.qualityOfService = .default
+    let standardErrorPipe = Pipe()
+    process.standardError = standardErrorPipe
+
+    standardErrorPipe.fileHandleForReading.readabilityHandler = { fileHandle in
+      _ = fileHandle.availableData
+    }
 
     let processChannel = ProcessChannel(process)
     let rpc = RPC(processChannel)
     api = .init(rpc)
   }
 
-  public func bootstrap() async throws {
-    try process.run()
+  public func bootstrap() async -> Int32 {
+    try! process.run()
 
     let version = Bundle.main.version ?? (0, 0, 0)
-    try await api.nvimSetClientInfo(
+    try! await api.nvimSetClientInfo(
       name: "Nimb",
       version: [
         "major": .integer(version.major),
@@ -72,7 +73,7 @@ public final class Neovim: Sendable {
       attributes: [:]
     )
 
-    let initLua = try String(
+    let initLua = try! String(
       data: Data(
         contentsOf: Bundle.main.resourceURL!
           .appending(path: "nvim")
@@ -80,9 +81,9 @@ public final class Neovim: Sendable {
       ),
       encoding: .utf8
     )!
-    try await api.nvimExecLua(code: initLua, args: [])
+    try! await api.nvimExecLua(code: initLua, args: [])
 
-    try await api.nvimSubscribe(event: "nvim_error_event")
+    try! await api.nvimSubscribe(event: "nvim_error_event")
 
     let uiOptions: UIOptions = [
       .extMultigrid,
@@ -94,10 +95,16 @@ public final class Neovim: Sendable {
       .extPopupmenu,
     ]
     let initialOuterGridSize = UserDefaults.standard.outerGridSize
-    try await api.nvimUIAttach(
+    try! await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
       height: initialOuterGridSize.rowsCount,
       options: uiOptions.nvimUIAttachOptions
     )
+
+    return await withUnsafeContinuation { continuation in
+      process.terminationHandler = { process in
+        continuation.resume(returning: process.terminationStatus)
+      }
+    }
   }
 }

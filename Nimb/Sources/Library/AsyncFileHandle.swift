@@ -6,26 +6,12 @@ import Queue
 extension FileHandle {
   var dataBatches: AsyncStream<Data> {
     .init { continuation in
-      let asyncQueue = AsyncQueue()
-
       readabilityHandler = { fileHandle in
-        let data = fileHandle.availableData
-
-        asyncQueue.addOperation {
-          if data.isEmpty {
-            continuation.finish()
-          } else {
-            continuation.yield(data)
-          }
-        }
+        continuation.yield(fileHandle.availableData)
       }
 
-      continuation.onTermination = { [weak self] _ in
-        guard let self else {
-          return
-        }
-
-        readabilityHandler = nil
+      continuation.onTermination = { _ in
+        self.readabilityHandler = nil
       }
     }
   }
