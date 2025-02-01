@@ -140,9 +140,11 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    defer { CATransaction.commit() }
+    if !isInCATransaction {
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      isInCATransaction = true
+    }
 
     for gridID in updates.destroyedGridIDs {
       let layer = arrangedGridLayer(forGridWithID: gridID)
@@ -196,7 +198,18 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       }
     }
 
+    if updates.needFlush {
+      CATransaction.commit()
+      isInCATransaction = false
+    }
+
     renderChildren(arrangedGridLayers.values.lazy.map(\.self))
+
+    if updates.needFlush {
+      for gridLayer in arrangedGridLayers.values {
+        gridLayer.displayIfNeeded()
+      }
+    }
   }
 
   public func windowFrame(
