@@ -48,10 +48,6 @@ public class MainWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override public func keyDown(with event: NSEvent) {
-    store.api.keyPressed(.init(event: event))
-  }
-
   public func render() {
     if updates.isMouseUserInteractionEnabledUpdated {
       renderIsMouseUserInteractionEnabled()

@@ -10,6 +10,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var msgShowsWindowController: MsgShowsWindowController?
   private var mainWindowController: MainWindowController?
   private var settingsWindowController: SettingsWindowController?
+  private var keyDownMonitor: Any?
 
   private var neovim: Neovim?
   private var store: Store?
@@ -38,6 +39,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     self.store = store
 
     setupInitialControllers(store: store)
+
+    setupKeyDownMonitor(store: store)
 
     Task { @StateActor in
       setupBindings(store: store)
@@ -141,6 +144,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     )
 
     msgShowsWindowController = MsgShowsWindowController(store: store)
+  }
+
+  private func setupKeyDownMonitor(store: Store) {
+    keyDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+      if event.modifierFlags.contains(.command) {
+        return event
+      }
+      store.api.keyPressed(.init(event: event))
+      return nil
+    }
   }
 
   private func showCriticalAlert(error: Error) async {

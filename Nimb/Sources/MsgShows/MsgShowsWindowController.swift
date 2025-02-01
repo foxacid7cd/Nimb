@@ -45,10 +45,6 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override func keyDown(with event: NSEvent) {
-    store.api.keyPressed(.init(event: event))
-  }
-
   public func render() {
     renderChildren(viewController)
 
