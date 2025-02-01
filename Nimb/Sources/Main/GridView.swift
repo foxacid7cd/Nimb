@@ -203,10 +203,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
         ].cycled(times: abs(verticalScrollCount))
       }
 
-      store.api
-        .fastCallsTransaction(
-          with: chain(horizontalScrollFunctions, verticalScrollFunctions)
-        )
+      for function in chain(horizontalScrollFunctions, verticalScrollFunctions) {
+        store.api.fastCall(function)
+      }
     }
   }
 
@@ -284,5 +283,3 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     ))
   }
 }
-
-extension CycledTimesCollection: @unchecked @retroactive Sendable where Base: Sendable { }
