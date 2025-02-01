@@ -120,35 +120,34 @@ public final class Store: Sendable {
     }
 
     updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
-      let task = Task {
+      Task {
         var state = initialState
-        continuation.yield((state, State.Updates()))
+        var updates = State.Updates()
+        continuation.yield((state, updates))
 
         do {
           for try await actions in allActions {
-            try Task.checkCancellation()
-
-            var updatesAccumulator = State.Updates()
-
-            for action in actions {
-              let updates = action.apply(to: &state) { error in
-                alertsContinuation.yield(.init(error))
-              }
-              updatesAccumulator.formUnion(updates)
+            guard !Task.isCancelled else {
+              return
             }
 
-            continuation.yield((state, updatesAccumulator))
+            for action in actions {
+              let newUpdates = action.apply(to: &state) { error in
+                alertsContinuation.yield(.init(error))
+              }
+              updates.formUnion(newUpdates)
+
+              if updates.needFlush {
+                continuation.yield((state, updates))
+                updates.needFlush = false
+              }
+            }
           }
-          continuation.finish()
-        } catch is CancellationError {
         } catch {
           alertsContinuation.yield(.init(error))
-          continuation.finish()
         }
-      }
 
-      continuation.onTermination = { _ in
-        task.cancel()
+        continuation.finish()
       }
     }
   }

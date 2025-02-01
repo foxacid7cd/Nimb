@@ -11,7 +11,6 @@
 		68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
-		6808640B2D46E6210049FC97 /* DMMessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 6808640A2D46E6210049FC97 /* DMMessagePack */; };
 		6808640D2D46E6460049FC97 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 6808640C2D46E6460049FC97 /* Queue */; };
 		6808BE1F2D3CC0C900893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE1E2D3CC0C900893789 /* CustomDump */; };
 		6808BE212D3CC0CF00893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE202D3CC0CF00893789 /* CustomDump */; };
@@ -175,7 +174,6 @@
 		68FB331E2C669ED7008A68CB /* MyMacro in Frameworks */ = {isa = PBXBuildFile; productRef = 68FB331D2C669ED7008A68CB /* MyMacro */; };
 		68FE5D882C68D1AD00FA9D01 /* libswiftObjectiveC.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 68FE5D872C68D15D00FA9D01 /* libswiftObjectiveC.tbd */; };
 		68FE5D8E2C69261200FA9D01 /* GridsHierarchy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FE5D8D2C6925E100FA9D01 /* GridsHierarchy.swift */; };
-		68FEB4CE2D46B09800219C83 /* DMMessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 68FEB4CD2D46B09800219C83 /* DMMessagePack */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -393,7 +391,6 @@
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
 				6808640D2D46E6460049FC97 /* Queue in Frameworks */,
 				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
-				6808640B2D46E6210049FC97 /* DMMessagePack in Frameworks */,
 				68740B032C688D360080A967 /* ConcurrencyExtras in Frameworks */,
 				688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */,
 				6808BE1F2D3CC0C900893789 /* CustomDump in Frameworks */,
@@ -418,7 +415,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				689F99822D3CF8EE0098ECEC /* Queue in Frameworks */,
-				68FEB4CE2D46B09800219C83 /* DMMessagePack in Frameworks */,
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
 				688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */,
@@ -763,7 +759,6 @@
 				68740B022C688D360080A967 /* ConcurrencyExtras */,
 				688A76512C6B23F300B6B9C0 /* Algorithms */,
 				6808BE1E2D3CC0C900893789 /* CustomDump */,
-				6808640A2D46E6210049FC97 /* DMMessagePack */,
 				6808640C2D46E6460049FC97 /* Queue */,
 			);
 			productName = generate;
@@ -825,7 +820,6 @@
 				6808BE242D3CC0E300893789 /* CustomDump */,
 				689F997E2D3CCF530098ECEC /* STTextView */,
 				689F99812D3CF8EE0098ECEC /* Queue */,
-				68FEB4CD2D46B09800219C83 /* DMMessagePack */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -881,7 +875,6 @@
 				68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */,
 				689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */,
 				689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */,
-				68FEB4CC2D46B09800219C83 /* XCRemoteSwiftPackageReference "msgpack-swift" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -1606,22 +1599,9 @@
 				minimumVersion = 1.3.3;
 			};
 		};
-		68FEB4CC2D46B09800219C83 /* XCRemoteSwiftPackageReference "msgpack-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:fumoboy007/msgpack-swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.6;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6808640A2D46E6210049FC97 /* DMMessagePack */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68FEB4CC2D46B09800219C83 /* XCRemoteSwiftPackageReference "msgpack-swift" */;
-			productName = DMMessagePack;
-		};
 		6808640C2D46E6460049FC97 /* Queue */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */;
@@ -1782,11 +1762,6 @@
 		68FB331D2C669ED7008A68CB /* MyMacro */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MyMacro;
-		};
-		68FEB4CD2D46B09800219C83 /* DMMessagePack */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68FEB4CC2D46B09800219C83 /* XCRemoteSwiftPackageReference "msgpack-swift" */;
-			productName = DMMessagePack;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
