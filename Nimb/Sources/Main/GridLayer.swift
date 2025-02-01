@@ -10,19 +10,6 @@ import Queue
 public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private let gridID: Grid.ID
   private let store: Store
-  @MainActor
-  private var isScrollingHorizontal: Bool?
-  @MainActor
-  private var xScrollingAccumulator: Double = 0
-  @MainActor
-  private var xScrollingReported: Double = 0
-  @MainActor
-  private var yScrollingAccumulator: Double = 0
-  @MainActor
-  private var yScrollingReported: Double = 0
-  private var previousMouseMove: (modifier: String, point: IntegerPoint)?
-  @MainActor
-  private var dirtyRect: CGRect?
 
   @MainActor
   public var grid: Grid? {
@@ -65,10 +52,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  override public func action(forKey event: String) -> (any CAAction)? {
-    NSNull()
   }
 
   override public func draw(in ctx: CGContext) {
@@ -127,203 +110,40 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func render() {
-    if let newDirtyRect = calculateDirtyRect() {
-      dirtyRect = dirtyRect.map { $0.union(newDirtyRect) } ?? newDirtyRect
+    for dirtyRect in calculateDirtyRects() {
+      setNeedsDisplay(dirtyRect)
+    }
+
+    if updates.needFlush {
+      displayIfNeeded()
     }
   }
 
   @MainActor
-  public func setNeedsDisplayAccumulatedDirtyRect() {
-    guard let dirtyRect else {
-      return
-    }
-    setNeedsDisplay(dirtyRect)
-    self.dirtyRect = nil
-  }
-
-  @MainActor
-  public func scrollWheel(with event: NSEvent) {
-    guard
-      state.isMouseUserInteractionEnabled,
-      state.cmdlines.dictionary.isEmpty
-    else {
-      return
-    }
-
-    let xThreshold = state.font.cellWidth * 12
-    let yThreshold = state.font.cellHeight * 1.25
-
-    if
-      event.phase == .began
-    {
-      isScrollingHorizontal = nil
-      xScrollingAccumulator = 0
-      xScrollingReported = -xThreshold / 2
-      yScrollingAccumulator = 0
-      yScrollingReported = -yThreshold / 2
-    }
-
-    let momentumPhaseScrollingSpeedMultiplier = event.momentumPhase
-      .rawValue == 0 ? 1 : 0.9
-    xScrollingAccumulator -= event
-      .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
-    yScrollingAccumulator -= event
-      .scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
-
-    let xScrollingDelta = xScrollingAccumulator - xScrollingReported
-    let yScrollingDelta = yScrollingAccumulator - yScrollingReported
-
-    var horizontalScrollCount = 0
-    var verticalScrollCount = 0
-
-    if
-      abs(xScrollingDelta) > xThreshold
-    {
-      horizontalScrollCount = Int(xScrollingDelta / xThreshold)
-      let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
-
-      xScrollingReported += xScrollingToBeReported
-    }
-    if abs(yScrollingDelta) > yThreshold {
-      verticalScrollCount = Int(
-        yScrollingDelta / yThreshold
-      )
-      let yScrollingToBeReported = yThreshold * Double(verticalScrollCount)
-
-      yScrollingReported += yScrollingToBeReported
-    }
-
-    if horizontalScrollCount != 0 || verticalScrollCount != 0 {
-      let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
-      let point = point(for: event)
-      var horizontalScrollFunctions = [any APIFunction]().cycled(times: 0)
-      if horizontalScrollCount != 0 {
-        horizontalScrollFunctions = [
-          APIFunctions.NvimInputMouse(
-            button: "wheel",
-            action: horizontalScrollCount < 0 ? "left" : "right",
-            modifier: modifier,
-            grid: gridID,
-            row: point.row,
-            col: point.column
-          ),
-        ].cycled(times: abs(horizontalScrollCount))
-      }
-
-      var verticalScrollFunctions = [any APIFunction]().cycled(times: 0)
-      if verticalScrollCount != 0 {
-        verticalScrollFunctions = [
-          APIFunctions.NvimInputMouse(
-            button: "wheel",
-            action: verticalScrollCount < 0 ? "up" : "down",
-            modifier: modifier,
-            grid: gridID,
-            row: point.row,
-            col: point.column
-          ),
-        ].cycled(times: abs(verticalScrollCount))
-      }
-
-      store.api
-        .fastCallsTransaction(
-          with: chain(horizontalScrollFunctions, verticalScrollFunctions)
-        )
-    }
-  }
-
-  @MainActor
-  public func reportMouseMove(for event: NSEvent) {
-    guard
-      state.isMouseUserInteractionEnabled,
-      state.cmdlines.dictionary.isEmpty
-    else {
-      return
-    }
-    let mouseMove = (
-      modifier: event.modifierFlags.makeModifiers(isSpecialKey: false).joined(),
-      point: point(for: event)
-    )
-    if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
-      return
-    }
-    store.api.fastCall(APIFunctions.NvimInputMouse(
-      button: "move",
-      action: "",
-      modifier: mouseMove.modifier,
-      grid: gridID,
-      row: mouseMove.point.row,
-      col: mouseMove.point.column
-    ))
-    previousMouseMove = mouseMove
-  }
-
-  @MainActor
-  public func point(for event: NSEvent) -> IntegerPoint {
-    guard let upsideDownTransform else {
-      return .init()
-    }
-    let upsideDownLocation = convert(event.locationInWindow, from: nil)
-      .applying(upsideDownTransform)
-    return .init(
-      column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight)
-    )
-  }
-
-  @MainActor
-  public func windowFrame(forGridFrame gridFrame: IntegerRectangle) -> CGRect {
-    guard let upsideDownTransform else {
-      return .init()
-    }
-    let viewFrame = (gridFrame * state.font.cellSize)
-      .applying(upsideDownTransform)
-    return convert(viewFrame, to: nil)
-  }
-
-  @MainActor
-  public func report(
-    mouseButton: String,
-    action: String,
-    with event: NSEvent
-  ) {
-    guard state.isMouseUserInteractionEnabled else {
-      return
-    }
-    let point = point(for: event)
-    let modifier = event.modifierFlags.makeModifiers(isSpecialKey: false).joined()
-    store.api.fastCall(APIFunctions.NvimInputMouse(
-      button: mouseButton,
-      action: action,
-      modifier: modifier,
-      grid: gridID,
-      row: point.row,
-      col: point.column
-    ))
-  }
-
-  @MainActor
-  private func calculateDirtyRect() -> CGRect? {
+  private func calculateDirtyRects() -> [CGRect] {
     guard isRendered, let grid, let upsideDownTransform else {
-      return .zero
-    }
-    if updates.isFontUpdated || updates.isAppearanceUpdated {
-      return bounds
+      return []
     }
 
-    var dirtyRect: CGRect?
+    if updates.isFontUpdated || updates.isAppearanceUpdated {
+      return [bounds]
+    }
+
+    var dirtyRects: [CGRect] = []
 
     if let gridUpdate = updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
-          let rect = (rectangle * state.font.cellSize)
-            .insetBy(dx: -state.font.cellSize.width, dy: 0)
-            .applying(upsideDownTransform)
-          dirtyRect = dirtyRect.map { $0.union(rect) } ?? rect
+          dirtyRects.append(
+            (rectangle * state.font.cellSize)
+              .insetBy(dx: -state.font.cellSize.width, dy: 0)
+              .applying(upsideDownTransform)
+          )
         }
 
       case .needsDisplay:
-        return bounds
+        return [bounds]
       }
     }
 
@@ -331,15 +151,14 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
       updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated
     {
-      let rect = (cursorDrawRun.rectangle * state.font.cellSize)
-        .applying(upsideDownTransform)
-      dirtyRect = dirtyRect.map { $0.union(rect) } ?? rect
+      dirtyRects.append(
+        (cursorDrawRun.rectangle * state.font.cellSize)
+          .applying(upsideDownTransform)
+      )
     }
 
-    return dirtyRect
+    return dirtyRects
   }
 }
-
-extension CycledTimesCollection: @unchecked @retroactive Sendable where Base: Sendable { }
 
 extension CGContext: @unchecked @retroactive Sendable { }

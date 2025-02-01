@@ -4,34 +4,19 @@ import AppKit
 import Collections
 import CustomDump
 
-public class GridsView: NSView, CALayerDelegate, Rendering {
-  private enum MouseButton: String, Sendable {
-    case left
-    case right
-    case middle
-  }
-
-  private enum MouseAction: String, Sendable {
-    case press
-    case drag
-    case release
-  }
-
+public class GridsView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {
-    guard isRendered else {
-      return .zero
-    }
-    guard let outerGrid = state.outerGrid else {
+    guard isRendered, let outerGrid = state.outerGrid else {
       return .zero
     }
     return outerGrid.size * state.font.cellSize
   }
 
   private var store: Store
-  private var arrangedGridLayers = IntKeyedDictionary<GridLayer>()
-  private var leftMouseInteractionTarget: GridLayer?
-  private var rightMouseInteractionTarget: GridLayer?
-  private var otherMouseInteractionTarget: GridLayer?
+  private var arrangedGridViews = IntKeyedDictionary<GridView>()
+  private var leftMouseInteractionTarget: GridView?
+  private var rightMouseInteractionTarget: GridView?
+  private var otherMouseInteractionTarget: GridView?
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
@@ -45,12 +30,7 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     self.store = store
     super.init(frame: .init())
 
-    wantsLayer = true
     canDrawConcurrently = true
-    layer!.isOpaque = true
-    layer!.masksToBounds = true
-    layer!.delegate = self
-    layer!.drawsAsynchronously = true
   }
 
   @available(*, unavailable)
@@ -58,93 +38,10 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override public func updateTrackingAreas() {
-    super.updateTrackingAreas()
-
-    for trackingArea in trackingAreas {
-      removeTrackingArea(trackingArea)
-    }
-
-    addTrackingArea(.init(
-      rect: bounds,
-      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
-      owner: self,
-      userInfo: nil
-    ))
-  }
-
-  override public func viewWillMove(toWindow newWindow: NSWindow?) {
-    super.viewWillMove(toWindow: newWindow)
-
-    if let newWindow {
-      let scale = newWindow.backingScaleFactor
-      layer!.contentsScale = scale
-
-      arrangedGridLayers.values.forEach { $0.contentsScale = scale }
-    }
-  }
-
-  override public func mouseMoved(with event: NSEvent) {
-    let location = layer!.convert(event.locationInWindow, from: nil)
-    if let gridLayer = layer!.hitTest(location) as? GridLayer {
-      gridLayer.reportMouseMove(for: event)
-    }
-  }
-
-  override public func mouseDown(with event: NSEvent) {
-    report(mouseButton: .left, action: .press, with: event)
-  }
-
-  override public func mouseDragged(with event: NSEvent) {
-    report(mouseButton: .left, action: .drag, with: event)
-  }
-
-  override public func mouseUp(with event: NSEvent) {
-    report(mouseButton: .left, action: .release, with: event)
-  }
-
-  override public func rightMouseDown(with event: NSEvent) {
-    report(mouseButton: .right, action: .press, with: event)
-  }
-
-  override public func rightMouseDragged(with event: NSEvent) {
-    report(mouseButton: .right, action: .drag, with: event)
-  }
-
-  override public func rightMouseUp(with event: NSEvent) {
-    report(mouseButton: .right, action: .release, with: event)
-  }
-
-  override public func otherMouseDown(with event: NSEvent) {
-    report(mouseButton: .middle, action: .press, with: event)
-  }
-
-  override public func otherMouseDragged(with event: NSEvent) {
-    report(mouseButton: .middle, action: .drag, with: event)
-  }
-
-  override public func otherMouseUp(with event: NSEvent) {
-    report(mouseButton: .middle, action: .release, with: event)
-  }
-
-  override public func scrollWheel(with event: NSEvent) {
-    let location = layer!.convert(event.locationInWindow, from: nil)
-    if let gridLayer = layer!.hitTest(location) as? GridLayer {
-      gridLayer.scrollWheel(with: event)
-    }
-  }
-
-  public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
-    NSNull()
-  }
-
   public func render() {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-
     for gridID in updates.destroyedGridIDs {
-      let layer = arrangedGridLayer(forGridWithID: gridID)
-      layer.isHidden = true
+      let view = arrangedGridView(forGridWithID: gridID)
+      view.isHidden = true
     }
 
     let updatedLayoutGridIDs =
@@ -160,15 +57,15 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
         continue
       }
 
-      let gridLayer = arrangedGridLayer(forGridWithID: gridID)
-      gridLayer.isHidden = grid.isHidden
+      let gridView = arrangedGridView(forGridWithID: gridID)
+      gridView.isHidden = grid.isHidden
 
       if gridID == Grid.OuterID {
         invalidateIntrinsicContentSize()
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
         case .external:
-          gridLayer.isHidden = true
+          gridView.isHidden = true
 
         default:
           break
@@ -179,31 +76,32 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
     if !updatedLayoutGridIDs.isEmpty || updates.isGridsHierarchyUpdated {
       let upsideDownTransform = upsideDownTransform
 
+      var zPositions = [ObjectIdentifier: Double]()
+
       state.walkingGridFrames { id, frame, zPosition in
-        guard let gridLayer = arrangedGridLayers[id] else {
-          logger.warning("walkingGridFrames: gridLayer with id \(id) not found")
+        guard let gridView = arrangedGridViews[id] else {
+          logger.warning("walkingGridFrames: gridView with id \(id) not found")
           return
         }
+
         let newFrame = frame.applying(upsideDownTransform)
-        if gridLayer.frame != newFrame {
-          gridLayer.frame = newFrame
+        if gridView.frame != newFrame {
+          gridView.frame = newFrame
         }
-        if gridLayer.zPosition != zPosition {
-          gridLayer.zPosition = zPosition
-        }
+
+        zPositions[ObjectIdentifier(gridView)] = zPosition
+      }
+
+      var zPositionsObject = zPositions as NSDictionary
+      withUnsafeMutablePointer(to: &zPositionsObject) { pointer in
+        sortSubviews(
+          subviewSortingFunction(firstView:secondView:context:),
+          context: UnsafeMutableRawPointer(pointer)
+        )
       }
     }
 
-    CATransaction.commit()
-
-    renderChildren(arrangedGridLayers.values.lazy.map(\.self))
-
-    if updates.needFlush {
-      for gridLayer in arrangedGridLayers.values {
-        gridLayer.setNeedsDisplayAccumulatedDirtyRect()
-        gridLayer.displayIfNeeded()
-      }
-    }
+    renderChildren(arrangedGridViews.values.lazy.map(\.self))
   }
 
   public func windowFrame(
@@ -212,81 +110,25 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
   )
     -> CGRect?
   {
-    arrangedGridLayers[gridID]?.windowFrame(forGridFrame: gridFrame)
+    arrangedGridViews[gridID]?.windowFrame(forGridFrame: gridFrame)
   }
 
-  public func arrangedGridLayer(forGridWithID id: Grid.ID) -> GridLayer {
-    if let layer = arrangedGridLayers[id] {
-      return layer
+  public func arrangedGridView(forGridWithID id: Grid.ID) -> GridView {
+    if let view = arrangedGridViews[id] {
+      return view
 
     } else {
-      let layer = GridLayer(
+      let view = GridView(
+        frame: .init(x: 0, y: 0, width: 200, height: 200),
         store: store,
         gridID: id
       )
-      layer.contentsScale = self.layer!.contentsScale
-      renderChildren(layer)
-      self.layer!.addSublayer(layer)
-      arrangedGridLayers[id] = layer
-      return layer
-    }
-  }
-
-  private func report(
-    mouseButton: MouseButton,
-    action: MouseAction,
-    with event: NSEvent
-  ) {
-    var gridLayer: GridLayer?
-
-    switch action {
-    case .press:
-      let location = layer!.convert(event.locationInWindow, from: nil)
-      gridLayer = layer!.hitTest(location) as? GridLayer
-      if let gridLayer {
-        switch mouseButton {
-        case .left:
-          leftMouseInteractionTarget = gridLayer
-        case .right:
-          rightMouseInteractionTarget = gridLayer
-        case .middle:
-          otherMouseInteractionTarget = gridLayer
-        }
-      }
-
-    case .drag:
-      gridLayer =
-        switch mouseButton {
-        case .left:
-          leftMouseInteractionTarget
-        case .right:
-          rightMouseInteractionTarget
-        case .middle:
-          otherMouseInteractionTarget
-        }
-
-    case .release:
-      switch mouseButton {
-      case .left:
-        gridLayer = leftMouseInteractionTarget
-        leftMouseInteractionTarget = nil
-
-      case .right:
-        gridLayer = rightMouseInteractionTarget
-        rightMouseInteractionTarget = nil
-
-      case .middle:
-        gridLayer = otherMouseInteractionTarget
-        otherMouseInteractionTarget = nil
-      }
-    }
-
-    if let gridLayer {
-      gridLayer.report(
-        mouseButton: mouseButton.rawValue,
-        action: action.rawValue,
-        with: event
-      )
+      renderChildren(view)
+      view.autoresizingMask = []
+      view.translatesAutoresizingMaskIntoConstraints = false
+      addSubview(view)
+      arrangedGridViews[id] = view
+      return view
     }
   }
 
@@ -298,4 +140,17 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       row: Int(upsideDownLocation.y / state.font.cellHeight)
     )
   }
+}
+
+private func subviewSortingFunction(firstView: NSView, secondView: NSView, context: UnsafeMutableRawPointer?) -> ComparisonResult {
+  guard
+    let zPositionsObject = context?.assumingMemoryBound(to: NSDictionary.self).pointee,
+    let zPositions = zPositionsObject as? [ObjectIdentifier: Double],
+    let firstZPosition = zPositions[ObjectIdentifier(firstView)],
+    let secondZPosition = zPositions[ObjectIdentifier(secondView)],
+    firstZPosition != secondZPosition
+  else {
+    return .orderedSame
+  }
+  return firstZPosition < secondZPosition ? .orderedAscending : .orderedDescending
 }
