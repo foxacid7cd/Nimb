@@ -198,17 +198,16 @@ public class GridsView: NSView, CALayerDelegate, Rendering {
       }
     }
 
-    if updates.needFlush {
-      CATransaction.commit()
-      isInCATransaction = false
-    }
-
     renderChildren(arrangedGridLayers.values.lazy.map(\.self))
 
     if updates.needFlush {
       for gridLayer in arrangedGridLayers.values {
+        gridLayer.setNeedsDisplayAccumulatedDirtyRect()
         gridLayer.displayIfNeeded()
       }
+
+      CATransaction.commit()
+      isInCATransaction = false
     }
   }
 

@@ -21,6 +21,8 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   @MainActor
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)?
+  @MainActor
+  private var dirtyRect: CGRect?
 
   @MainActor
   public var grid: Grid? {
@@ -125,9 +127,18 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func render() {
-    if let dirtyRect = calculateDirtyRect() {
-      setNeedsDisplay(dirtyRect)
+    if let newDirtyRect = calculateDirtyRect() {
+      dirtyRect = dirtyRect.map { $0.union(newDirtyRect) } ?? newDirtyRect
     }
+  }
+
+  @MainActor
+  public func setNeedsDisplayAccumulatedDirtyRect() {
+    guard let dirtyRect else {
+      return
+    }
+    setNeedsDisplay(dirtyRect)
+    self.dirtyRect = nil
   }
 
   @MainActor

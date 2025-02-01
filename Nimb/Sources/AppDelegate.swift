@@ -17,7 +17,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var updatesTask: Task<Void, Never>?
   @StateActor private var renderQueue = AsyncQueue()
 
-  override public init() {
+  override public nonisolated init() {
     super.init()
   }
 
