@@ -66,7 +66,7 @@ public final class Neovim: Sendable {
         "minor": .integer(version.minor),
         "patch": .integer(version.patch),
         "prerelease": "dev",
-      ],
+      ] as Value,
       type: "ui",
       methods: ["nimb_notify": .dictionary(["async": true,
                                             "nargs": .integer(3)])],
@@ -83,14 +83,14 @@ public final class Neovim: Sendable {
     )!
     try! await api.nvimExecLua(code: initLua, args: [])
 
-    try! await api.nvimSubscribe(event: "nvim_error_event")
+//    try! await api.nvimSubscribe(event: "nvim_error_event")
 
     let uiOptions: UIOptions = [
       .extMultigrid,
       .extHlstate,
       .extCmdline,
       .extTabline,
-      .extMessages,
+//      .extMessages,
 //      .extWildmenu,
 //      .extPopupmenu,
     ]
@@ -98,7 +98,7 @@ public final class Neovim: Sendable {
     try! await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
       height: initialOuterGridSize.rowsCount,
-      options: uiOptions.nvimUIAttachOptions
+      options: .dictionary(uiOptions.nvimUIAttachOptions)
     )
 
     return await withUnsafeContinuation { continuation in

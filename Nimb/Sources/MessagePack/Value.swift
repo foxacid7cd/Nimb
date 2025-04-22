@@ -7,7 +7,8 @@ import Foundation
 @dynamicMemberLookup
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   ExpressibleByBooleanLiteral,
-  ExpressibleByNilLiteral
+  ExpressibleByNilLiteral,
+  ExpressibleByDictionaryLiteral
 {
   case integer(Int)
   case float(Double)
@@ -24,6 +25,14 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   public init(booleanLiteral value: Bool) { self = .boolean(value) }
 
   public init(nilLiteral: ()) { self = .nil }
+
+  public init(dictionaryLiteral elements: (Value, Value)...) {
+    var dictionary = [Value: Value](minimumCapacity: elements.count)
+    for (key, value) in elements {
+      dictionary[key] = value
+    }
+    self = .dictionary(dictionary)
+  }
 
   init(
     _ object: msgpack_object

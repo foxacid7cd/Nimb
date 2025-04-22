@@ -373,7 +373,7 @@ public extension Actions {
                 anchorGridID: params.anchorGrid,
                 anchorRow: params.anchorRow,
                 anchorColumn: params.anchorCol,
-                isFocusable: params.focusable,
+                isFocusable: params.mouseEnabled,
                 zIndex: params.zindex
               )
             )
