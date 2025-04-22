@@ -7,7 +7,13 @@ extension FileHandle {
   var dataBatches: AsyncStream<Data> {
     .init { continuation in
       readabilityHandler = { fileHandle in
-        continuation.yield(fileHandle.availableData)
+        let availableData = fileHandle.availableData
+
+        if availableData.isEmpty {
+          continuation.finish()
+        } else {
+          continuation.yield(availableData)
+        }
       }
 
       continuation.onTermination = { _ in
