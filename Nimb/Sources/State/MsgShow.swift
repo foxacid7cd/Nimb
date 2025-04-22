@@ -33,8 +33,8 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
     public init(raw: Value) throws {
       guard
         case let .array(raw) = raw,
-        raw.count == 2,
-        case let .integer(highlightID) = raw[0],
+        raw.count == 3,
+        case let .integer(highlightID) = raw[2],
         case let .string(text) = raw[1]
       else {
         throw Failure("invalid raw content part", raw)

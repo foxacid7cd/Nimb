@@ -90,7 +90,7 @@ public final class Neovim: Sendable {
       .extHlstate,
       .extCmdline,
       .extTabline,
-//      .extMessages,
+      .extMessages,
 //      .extWildmenu,
 //      .extPopupmenu,
     ]
