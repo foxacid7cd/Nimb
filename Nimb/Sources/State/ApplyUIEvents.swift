@@ -609,7 +609,9 @@ public extension Actions {
         case let .msgShow(batch):
           for params in batch {
             do {
-              if params.replaceLast {
+              var replaceLast = false
+              if params.replaceLast, !state.msgShows.isEmpty {
+                replaceLast = true
                 state.msgShows.removeLast()
               }
 
@@ -617,7 +619,8 @@ public extension Actions {
               if let decoded = MsgShow.Kind(rawValue: params.kind) {
                 kind = decoded
               } else {
-                throw Failure("invalid raw msg_show kind", params.kind)
+                kind = .echo
+                logger.warning("Unknown msg_show kind: \(params.kind)")
               }
 
               if !params.content.isEmpty {
@@ -626,7 +629,7 @@ public extension Actions {
                   kind: kind,
                   contentParts: params.content.map(MsgShow.ContentPart.init(raw:))
                 ))
-                if params.replaceLast {
+                if replaceLast {
                   updates.msgShowsUpdates
                     .append(.reload(indexes: [state.msgShows.count - 1]))
                 } else {

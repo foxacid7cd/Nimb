@@ -16,6 +16,7 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
     case quickfix
     case searchCount = "search_count"
     case wmsg
+    case searchCmd = "search_cmd"
 
     public static let modal: Set<Kind> = [
       .confirm,
