@@ -68,8 +68,10 @@ public final class Neovim: Sendable {
         "prerelease": "dev",
       ] as Value,
       type: "ui",
-      methods: ["nimb_notify": .dictionary(["async": true,
-                                            "nargs": .integer(3)])],
+      methods: ["nimb_notify": .dictionary([
+        "async": true,
+        "nargs": .integer(3),
+      ])],
       attributes: [:]
     )
 

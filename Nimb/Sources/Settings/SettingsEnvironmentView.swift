@@ -3,7 +3,7 @@
 import AppKit
 
 public class SettingsEnvironmentView: NSView {
-  private struct Item: Sendable, Hashable {
+  private struct Item: Hashable {
     var name: String
     var value: String
   }

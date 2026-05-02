@@ -45,7 +45,7 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
+  func render() {
     renderChildren(viewController)
 
     if !updates.msgShowsUpdates.isEmpty {

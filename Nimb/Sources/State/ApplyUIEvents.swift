@@ -7,9 +7,7 @@ import OSLog
 import Overture
 
 public extension Actions {
-  struct ApplyUIEvents<S: Sequence>: Action where S.Element == UIEvent,
-    S: Sendable
-  {
+  struct ApplyUIEvents<S: Sequence & Sendable>: Action where S.Element == UIEvent {
     public var uiEvents: S
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {

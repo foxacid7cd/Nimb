@@ -20,11 +20,17 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   case ext(type: Int8, data: Data)
   case `nil`
 
-  public init(stringLiteral: String) { self = .string(stringLiteral) }
+  public init(stringLiteral: String) {
+    self = .string(stringLiteral)
+  }
 
-  public init(booleanLiteral value: Bool) { self = .boolean(value) }
+  public init(booleanLiteral value: Bool) {
+    self = .boolean(value)
+  }
 
-  public init(nilLiteral: ()) { self = .nil }
+  public init(nilLiteral: ()) {
+    self = .nil
+  }
 
   public init(dictionaryLiteral elements: (Value, Value)...) {
     var dictionary = [Value: Value](minimumCapacity: elements.count)

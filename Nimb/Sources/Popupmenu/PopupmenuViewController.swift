@@ -164,7 +164,7 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   }
 
   public func tableView(
-    _ tableView: NSTableView,
+    _: NSTableView,
     shouldSelectRow row: Int
   )
     -> Bool

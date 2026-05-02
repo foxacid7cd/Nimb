@@ -9,7 +9,9 @@ import SwiftSyntaxBuilder
 public struct UIEventFile: GeneratableFile {
   public var metadata: Metadata
 
-  public var name: String { "UIEvent" }
+  public var name: String {
+    "UIEvent"
+  }
 
   public var sourceFile: SourceFileSyntax {
     get throws {
@@ -228,5 +230,7 @@ public struct UIEventFile: GeneratableFile {
     }
   }
 
-  public init(metadata: Metadata) { self.metadata = metadata }
+  public init(metadata: Metadata) {
+    self.metadata = metadata
+  }
 }

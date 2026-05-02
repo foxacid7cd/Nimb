@@ -8,7 +8,9 @@ import SwiftSyntaxBuilder
 public struct APIErrorFile: GeneratableFile {
   public var metadata: Metadata
 
-  public var name: String { "APIError" }
+  public var name: String {
+    "APIError"
+  }
 
   public var sourceFile: SourceFileSyntax {
     get throws {
@@ -36,5 +38,7 @@ public struct APIErrorFile: GeneratableFile {
     }
   }
 
-  public init(metadata: Metadata) { self.metadata = metadata }
+  public init(metadata: Metadata) {
+    self.metadata = metadata
+  }
 }

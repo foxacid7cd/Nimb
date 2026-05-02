@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import AppKit
 import Collections
 import ConcurrencyExtras
 import CustomDump
+import QuartzCore
 import Queue
 
-public class GridLayer: CALayer, Rendering, @unchecked Sendable {
+@MainActor
+public class GridLayer: CALayer, Rendering {
+  private struct DrawSnapshot {
+    let grid: Grid
+    let upsideDownTransform: CGAffineTransform
+    let font: Font
+    let appearance: Appearance
+    let cursorBlinkingPhase: Bool
+    let isMouseUserInteractionEnabled: Bool
+  }
+
   private let gridID: Grid.ID
   private let store: Store
 
@@ -55,57 +65,68 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   }
 
   override public func draw(in ctx: CGContext) {
-    MainActor.assumeIsolated {
-      guard isRendered, let grid, let upsideDownTransform else {
-        return
-      }
-
-      ctx.saveGState()
-      defer { ctx.restoreGState() }
-
-      let boundingRect = IntegerRectangle(
-        frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
-        cellSize: state.font.cellSize
-      )
-
-      ctx.setAllowsAntialiasing(false)
-      ctx.setAllowsFontSmoothing(false)
-      ctx.setShouldAntialias(false)
-      ctx.setShouldSmoothFonts(false)
-      grid.drawRuns.drawBackground(
-        to: ctx,
-        boundingRect: boundingRect,
-        font: state.font,
-        appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform
-      )
-
-      ctx.setAllowsAntialiasing(true)
-      ctx.setAllowsFontSmoothing(true)
-      ctx.setShouldAntialias(true)
-      ctx.setShouldSmoothFonts(true)
-      grid.drawRuns.drawForeground(
-        to: ctx,
-        boundingRect: boundingRect,
-        font: state.font,
-        appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform
-      )
-
-      if
-        state.cursorBlinkingPhase,
-        state.isMouseUserInteractionEnabled,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        boundingRect.contains(cursorDrawRun.origin)
-      {
-        cursorDrawRun.draw(
-          to: ctx,
-          font: state.font,
-          appearance: state.appearance,
-          upsideDownTransform: upsideDownTransform
-        )
-      }
-    }
+//    guard let snapshot = MainActor.assumeIsolated({ () -> DrawSnapshot? in
+//      guard isRendered, let grid, let upsideDownTransform else {
+//        return nil
+//      }
+//
+//      return DrawSnapshot(
+//        grid: grid,
+//        upsideDownTransform: upsideDownTransform,
+//        font: state.font,
+//        appearance: state.appearance,
+//        cursorBlinkingPhase: state.cursorBlinkingPhase,
+//        isMouseUserInteractionEnabled: state.isMouseUserInteractionEnabled
+//      )
+//    }) else {
+//      return
+//    }
+//
+//    ctx.saveGState()
+//    defer { ctx.restoreGState() }
+//
+//    let boundingRect = IntegerRectangle(
+//      frame: ctx.boundingBoxOfClipPath.applying(snapshot.upsideDownTransform),
+//      cellSize: snapshot.font.cellSize
+//    )
+//
+//    ctx.setAllowsAntialiasing(false)
+//    ctx.setAllowsFontSmoothing(false)
+//    ctx.setShouldAntialias(false)
+//    ctx.setShouldSmoothFonts(false)
+//    snapshot.grid.drawRuns.drawBackground(
+//      to: ctx,
+//      boundingRect: boundingRect,
+//      font: snapshot.font,
+//      appearance: snapshot.appearance,
+//      upsideDownTransform: snapshot.upsideDownTransform
+//    )
+//
+//    ctx.setAllowsAntialiasing(true)
+//    ctx.setAllowsFontSmoothing(true)
+//    ctx.setShouldAntialias(true)
+//    ctx.setShouldSmoothFonts(true)
+//    snapshot.grid.drawRuns.drawForeground(
+//      to: ctx,
+//      boundingRect: boundingRect,
+//      font: snapshot.font,
+//      appearance: snapshot.appearance,
+//      upsideDownTransform: snapshot.upsideDownTransform
+//    )
+//
+//    if
+//      snapshot.cursorBlinkingPhase,
+//      snapshot.isMouseUserInteractionEnabled,
+//      let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
+//      boundingRect.contains(cursorDrawRun.origin)
+//    {
+//      cursorDrawRun.draw(
+//        to: ctx,
+//        font: snapshot.font,
+//        appearance: snapshot.appearance,
+//        upsideDownTransform: snapshot.upsideDownTransform
+//      )
+//    }
   }
 
   @MainActor
