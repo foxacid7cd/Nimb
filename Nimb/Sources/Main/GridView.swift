@@ -7,6 +7,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   override public var frame: NSRect {
     didSet {
       gridLayer.frame = bounds
+      gridLayer.updateDrawableSize()
     }
   }
 
@@ -49,6 +50,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     layer!.masksToBounds = true
 
     gridLayer.frame = bounds
+    gridLayer.updateDrawableSize()
     gridLayer.delegate = self
     layer!.addSublayer(gridLayer)
   }
@@ -68,6 +70,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     let scale = newWindow.backingScaleFactor
     layer!.contentsScale = scale
     gridLayer.contentsScale = scale
+    gridLayer.updateDrawableSize()
   }
 
   override public func updateTrackingAreas() {
