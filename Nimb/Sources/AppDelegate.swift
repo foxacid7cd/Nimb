@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import ConcurrencyExtras
+import Synchronization
 import CustomDump
 import Queue
 
@@ -18,7 +18,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
 
-  private nonisolated let pendingStateAndUpdates = LockIsolated<(State, State.Updates)?>(nil)
+  private nonisolated let pendingStateAndUpdates = Mutex<(State, State.Updates)?>(nil)
 
   override public init() {
     super.init()
@@ -100,7 +100,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
 
-          let shouldCreateRenderTask = pendingStateAndUpdates.withValue { value in
+          let shouldCreateRenderTask = pendingStateAndUpdates.withLock { value in
             defer {
               if var (_, updatesAccumulator) = value {
                 updatesAccumulator.formUnion(updates)
@@ -114,7 +114,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
           if shouldCreateRenderTask {
             Task { @MainActor in
-              let stateAndUpdates = pendingStateAndUpdates.withValue { value in
+              let stateAndUpdates = pendingStateAndUpdates.withLock { value in
                 defer { value = nil }
                 return value
               }
