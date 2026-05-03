@@ -156,7 +156,6 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     for dirtyRect in calculateDirtyRects() {
       setNeedsDisplay(dirtyRect)
     }
-    displayIfNeeded()
   }
 
   @MainActor
