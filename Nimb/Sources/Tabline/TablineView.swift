@@ -3,8 +3,7 @@
 import AppKit
 import TinyConstraints
 
-extension Notification: @unchecked @retroactive Sendable { }
-
+@MainActor
 final class TablineView: NSVisualEffectView, Rendering {
   override var isOpaque: Bool {
     true
@@ -303,12 +302,12 @@ final class TablineView: NSVisualEffectView, Rendering {
         var observation: NSKeyValueObservation?
         observation = itemView
           .observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
-//            Task { @MainActor in
-            if itemView.frame.size != .zero, observation != nil {
-              buffersScrollView.contentView.scrollToVisible(itemView.frame)
-              observation = nil
+            MainActor.assumeIsolated {
+              if itemView.frame.size != .zero, observation != nil {
+                buffersScrollView.contentView.scrollToVisible(itemView.frame)
+                observation = nil
+              }
             }
-//            }
           }
       }
       itemView.isLast = false
@@ -344,12 +343,12 @@ final class TablineView: NSVisualEffectView, Rendering {
         var observation: NSKeyValueObservation?
         observation = itemView
           .observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
-//            Task { @MainActor in
-            if itemView.frame.size != .zero, observation != nil {
-              tabsScrollView.contentView.scrollToVisible(itemView.frame)
-              observation = nil
+            MainActor.assumeIsolated {
+              if itemView.frame.size != .zero, observation != nil {
+                tabsScrollView.contentView.scrollToVisible(itemView.frame)
+                observation = nil
+              }
             }
-//            }
           }
       }
       itemView.isLast = tabpageIndex == tabline.tabpages.count - 1

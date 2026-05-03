@@ -2,7 +2,7 @@
 
 import AppKit
 import Collections
-import ConcurrencyExtras
+import Synchronization
 import CustomDump
 import SwiftUI
 
@@ -668,16 +668,16 @@ public struct CursorDrawRun: Sendable {
 public final class GlobalDrawRunsCache: @unchecked Sendable {
   public static let shared = GlobalDrawRunsCache()
 
-  private var dictionary = LockIsolated(OrderedDictionary<Int, DrawRun>())
+  private let dictionary = Mutex(OrderedDictionary<Int, DrawRun>())
 
   public func drawRun(for key: Int) -> DrawRun? {
-    dictionary.withValue { dictionary in
+    dictionary.withLock { dictionary in
       dictionary[key]
     }
   }
 
   public func store(_ drawRun: DrawRun, forKey key: Int) {
-    dictionary.withValue { dictionary in
+    dictionary.withLock { dictionary in
       dictionary.updateValue(drawRun, forKey: key)
 
       if dictionary.count > 500 {
