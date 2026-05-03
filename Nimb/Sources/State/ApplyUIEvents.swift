@@ -62,7 +62,7 @@ public extension Actions {
         {
           apply(
             update: .cursor(style: style, position: cursor.position),
-            toGridWithID: cursor.gridID
+            toGridWithID: cursor.gridID,
           )
         }
         updates.isCursorUpdated = true
@@ -82,7 +82,7 @@ public extension Actions {
               id: gridID,
               size: outerGrid!.size,
               font: font,
-              appearance: appearance
+              appearance: appearance,
             )
             grid!.isHidden = true
           }
@@ -90,7 +90,7 @@ public extension Actions {
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
-          appearance: appearance
+          appearance: appearance,
         )
         if let result {
           Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
@@ -132,15 +132,15 @@ public extension Actions {
           else {
             throw Failure(
               "invalid cmdline raw content part value",
-              rawContentPart
+              rawContentPart,
             )
           }
 
           contentParts.append(
             .init(
               highlightID: .init(rawHighlightID),
-              text: text
-            )
+              text: text,
+            ),
           )
         }
 
@@ -163,7 +163,7 @@ public extension Actions {
               state.modeInfo = try ModeInfo(
                 enabled: params.enabled,
                 cursorStyles: params.cursorStyles
-                  .map(CursorStyle.init(raw:))
+                  .map(CursorStyle.init(raw:)),
               )
             }
           } catch {
@@ -176,7 +176,7 @@ public extension Actions {
             state.rawOptions.updateValue(
               params.value,
               forKey: params.name,
-              insertingAt: state.rawOptions.count
+              insertingAt: state.rawOptions.count,
             )
           }
           updates.isRawOptionsUpdated = true
@@ -185,7 +185,7 @@ public extension Actions {
           for params in batch {
             state.mode = .init(
               name: params.mode,
-              cursorStyleIndex: params.modeIDX
+              cursorStyleIndex: params.modeIDX,
             )
           }
           modeUpdated()
@@ -213,7 +213,7 @@ public extension Actions {
 
             let size = IntegerSize(
               columnsCount: params.width,
-              rowsCount: params.height
+              rowsCount: params.height,
             )
             if
               state.grids[params.grid]?.size != size
@@ -224,7 +224,7 @@ public extension Actions {
                 if grid == nil {
                   let cells = TwoDimensionalArray(
                     size: size,
-                    repeatingElement: Cell.whitespace
+                    repeatingElement: Cell.whitespace,
                   )
                   let layout = GridLayout(cells: cells)
                   grid = .init(
@@ -233,10 +233,10 @@ public extension Actions {
                     drawRuns: .init(
                       layout: layout,
                       font: font,
-                      appearance: appearance
+                      appearance: appearance,
                     ),
                     associatedWindow: nil,
-                    isHidden: false
+                    isHidden: false,
                   )
                 }
               }
@@ -265,16 +265,16 @@ public extension Actions {
           for params in batch {
             let rectangle = IntegerRectangle(
               origin: .init(column: params.left, row: params.top),
-              size: .init(columnsCount: params.right - params.left, rowsCount: params.bot - params.top)
+              size: .init(columnsCount: params.right - params.left, rowsCount: params.bot - params.top),
             )
             let offset = IntegerSize(
               columnsCount: params.cols,
-              rowsCount: params.rows
+              rowsCount: params.rows,
             )
 
             apply(
               update: .scroll(rectangle: rectangle, offset: offset),
-              toGridWithID: params.grid
+              toGridWithID: params.grid,
             )
           }
 
@@ -303,11 +303,11 @@ public extension Actions {
 
             let cursorPosition = IntegerPoint(
               column: params.col,
-              row: params.row
+              row: params.row,
             )
             state.cursor = .init(
               gridID: params.grid,
-              position: cursorPosition
+              position: cursorPosition,
             )
 
             cursorUpdated(oldCursor: oldCursor)
@@ -322,7 +322,7 @@ public extension Actions {
             let origin = IntegerPoint(column: params.startcol, row: params.startrow)
             let size = IntegerSize(
               columnsCount: params.width,
-              rowsCount: params.height
+              rowsCount: params.height,
             )
 
             guard
@@ -337,8 +337,8 @@ public extension Actions {
               .init(
                 id: params.windowID,
                 origin: origin,
-                size: size
-              )
+                size: size,
+              ),
             )
             state.grids[params.grid]?.isHidden = false
 
@@ -372,8 +372,8 @@ public extension Actions {
                 anchorRow: params.anchorRow,
                 anchorColumn: params.anchorCol,
                 isFocusable: params.mouseEnabled,
-                zIndex: params.zindex
-              )
+                zIndex: params.zindex,
+              ),
             )
             state.grids[params.grid]?.isHidden = false
 
@@ -430,9 +430,9 @@ public extension Actions {
                   return .init(
                     id: .init(
                       type: rawID.0,
-                      data: rawID.1
+                      data: rawID.1,
                     )!,
-                    name: name
+                    name: name,
                   )
                 }
               let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
@@ -462,9 +462,9 @@ public extension Actions {
                   return .init(
                     id: .init(
                       type: rawID.0,
-                      data: rawID.1
+                      data: rawID.1,
                     )!,
-                    name: name
+                    name: name,
                   )
                 }
               let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
@@ -488,7 +488,7 @@ public extension Actions {
                 currentTabpageID: params.tabpageID,
                 tabpages: identifiedTabpages,
                 currentBufferID: params.bufferID,
-                buffers: identifiedBuffers
+                buffers: identifiedBuffers,
               )
             } catch {
               handleError(error)
@@ -511,13 +511,13 @@ public extension Actions {
                     else {
                       throw Failure(
                         "invalid cmdline raw content part",
-                        rawContentPart
+                        rawContentPart,
                       )
                     }
 
                     return .init(
                       highlightID: .init(rawHighlightID),
-                      text: text
+                      text: text,
                     )
                   },
                 cursorPosition: params.pos,
@@ -526,7 +526,7 @@ public extension Actions {
                 indent: params.indent,
                 level: params.level,
                 specialCharacter: "",
-                shiftAfterSpecialCharacter: false
+                shiftAfterSpecialCharacter: false,
               )
               let oldCmdline = state.cmdlines.dictionary[params.level]
 
@@ -625,7 +625,7 @@ public extension Actions {
                 try state.msgShows.append(.init(
                   index: state.msgShows.count,
                   kind: kind,
-                  contentParts: params.content.map(MsgShow.ContentPart.init(raw:))
+                  contentParts: params.content.map(MsgShow.ContentPart.init(raw:)),
                 ))
                 if replaceLast {
                   updates.msgShowsUpdates
@@ -665,7 +665,7 @@ public extension Actions {
               state.popupmenu = .init(
                 items: items,
                 selectedItemIndex: selectedItemIndex,
-                anchor: anchor
+                anchor: anchor,
               )
               popupmenuUpdated()
             } catch {
@@ -711,7 +711,7 @@ public extension Actions {
 
             var highlight = (
               noCombine ? state.appearance
-                .highlights[params.id] : nil
+                .highlights[params.id] : nil,
             ) ?? .init(id: params.id)
 
             for (key, value) in params.rgbAttrs {
@@ -804,13 +804,13 @@ public extension Actions {
                 case let .dictionary(dict) = rawInfoItem,
                 case let .string(hiName) = dict["hi_name"],
                 let observedHighlightName = Appearance.ObservedHighlightName(
-                  rawValue: hiName
+                  rawValue: hiName,
                 )
               {
                 state.appearance
                   .observedHighlights[observedHighlightName] = (
                     dict["id"].flatMap(\.integer),
-                    dict["kind"].flatMap(\.string)
+                    dict["kind"].flatMap(\.string),
                   )
                 updates.updatedObservedHighlightNames
                   .insert(observedHighlightName)
@@ -850,7 +850,7 @@ public extension Actions {
                 else {
                   handleError(Failure(
                     "invalid grid line cell highlight value",
-                    arrayValue[1]
+                    arrayValue[1],
                   ))
                   break
                 }
@@ -863,7 +863,7 @@ public extension Actions {
                   else {
                     handleError(Failure(
                       "invalid grid line cell repeat count value",
-                      arrayValue[2]
+                      arrayValue[2],
                     ))
                     break
                   }
@@ -881,7 +881,7 @@ public extension Actions {
               let cell = Cell(
                 character: text.first,
                 isDoubleWidth: false,
-                highlightID: highlightID
+                highlightID: highlightID,
               )
               for _ in 0 ..< repeatCount {
                 cells.append(cell)
@@ -895,7 +895,7 @@ public extension Actions {
                 cells: cells,
                 row: row,
                 font: state.font,
-                appearance: state.appearance
+                appearance: state.appearance,
               )
 
             update(&updates.gridUpdates[gridID]) { updates in

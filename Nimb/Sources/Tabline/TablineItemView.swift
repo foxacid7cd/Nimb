@@ -14,8 +14,8 @@ class TablineItemView: NSView, Rendering {
 
   var isSelected = false
   var isLast = false
-  var clicked: (() -> Void)?
-  var filledColor: NSColor?
+  var clicked: (() -> Void)? = nil
+  var filledColor: NSColor? = nil
 
   var text = "" {
     didSet {
@@ -31,7 +31,7 @@ class TablineItemView: NSView, Rendering {
   private let backgroundImageView = NSImageView()
   private let accentBackgroundImageView = NSImageView()
   private let textField = NSTextField(labelWithString: "")
-  private var trackingArea: NSTrackingArea?
+  private var trackingArea: NSTrackingArea? = nil
   private var isMouseInside = false
   private var shouldRedrawImageViews = false
   private var isAnimated = false
@@ -57,7 +57,7 @@ class TablineItemView: NSView, Rendering {
 
     let clickGestureRecognizer = NSClickGestureRecognizer(
       target: self,
-      action: #selector(handleClick)
+      action: #selector(handleClick),
     )
     clickGestureRecognizer.delaysPrimaryMouseButtonEvents = true
     addGestureRecognizer(clickGestureRecognizer)
@@ -79,7 +79,7 @@ class TablineItemView: NSView, Rendering {
       rect: bounds,
       options: [.inVisibleRect, .activeAlways, .mouseEnteredAndExited],
       owner: self,
-      userInfo: nil
+      userInfo: nil,
     )
     addTrackingArea(trackingArea!)
   }
@@ -117,28 +117,28 @@ class TablineItemView: NSView, Rendering {
     let color = NSColor(white: 0.1, alpha: 1)
     let fill = SlantedBackgroundFill.gradient(
       from: color.withAlphaComponent(0.65),
-      to: color.withAlphaComponent(0.4)
+      to: color.withAlphaComponent(0.4),
     )
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
-      fill: fill
+      fill: fill,
     )
     backgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
-      fill: fill
+      fill: fill,
     )
 
     let accentColor = filledColor ?? .white
     let accentFill = SlantedBackgroundFill.gradient(
       from: accentColor.withAlphaComponent(0.35),
-      to: accentColor.withAlphaComponent(0.6)
+      to: accentColor.withAlphaComponent(0.6),
     )
     accentBackgroundImageView.image = .makeSlantedBackground(
       isFlatRight: isLast,
       size: bounds.size,
-      fill: accentFill
+      fill: accentFill,
     )
   }
 
@@ -148,22 +148,22 @@ class TablineItemView: NSView, Rendering {
       attributes: [
         .font: NSFont.systemFont(
           ofSize: NSFont.systemFontSize * 0.92,
-          weight: .medium
+          weight: .medium,
         ),
         .foregroundColor: isSelected ? NSColor.labelColor : NSColor.secondaryLabelColor,
-      ]
+      ],
     )
   }
 
   private func makeFont(
     for highlightName: Appearance
-      .ObservedHighlightName
+      .ObservedHighlightName,
   )
     -> NSFont
   {
     var font = NSFont.systemFont(
       ofSize: NSFont.systemFontSize,
-      weight: state.appearance.isBold(for: highlightName) ? .heavy : .semibold
+      weight: state.appearance.isBold(for: highlightName) ? .heavy : .semibold,
     )
     if state.appearance.isItalic(for: highlightName) {
       font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)

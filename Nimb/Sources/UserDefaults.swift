@@ -111,7 +111,7 @@ public extension UserDefaults {
         let encoded = value(forKey: "environmentOverlay") as? Data,
         let value = try? JSONDecoder().decode(
           [String: String].self,
-          from: encoded
+          from: encoded,
         )
       else {
         return [:]

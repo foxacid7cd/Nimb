@@ -28,17 +28,17 @@ public enum CursorShape: String, Sendable {
 
 @PublicInit
 public struct CursorStyle: Sendable {
-  public var name: String?
-  public var shortName: String?
-  public var mouseShape: Int?
-  public var blinkOn: Int?
-  public var blinkOff: Int?
-  public var blinkWait: Int?
-  public var cellPercentage: Int?
-  public var cursorShape: CursorShape?
-  public var idLm: Int?
-  public var attrID: Highlight.ID?
-  public var attrIDLm: Int?
+  public var name: String? = nil
+  public var shortName: String? = nil
+  public var mouseShape: Int? = nil
+  public var blinkOn: Int? = nil
+  public var blinkOff: Int? = nil
+  public var blinkWait: Int? = nil
+  public var cellPercentage: Int? = nil
+  public var cursorShape: CursorShape? = nil
+  public var idLm: Int? = nil
+  public var attrID: Highlight.ID? = nil
+  public var attrIDLm: Int? = nil
 
   public var shouldDrawParentText: Bool {
     guard let cursorShape else {
@@ -85,7 +85,7 @@ public struct CursorStyle: Sendable {
       attrID: raw["attr_id"]
         .flatMap { $0[case: \.integer] },
       attrIDLm: raw["attr_id_lm"]
-        .flatMap { $0[case: \.integer] }
+        .flatMap { $0[case: \.integer] },
     )
   }
 
@@ -100,25 +100,25 @@ public struct CursorStyle: Sendable {
         origin: .init(),
         size: .init(
           width: font.cellWidth * Double(columnsCount),
-          height: font.cellHeight
-        )
+          height: font.cellHeight,
+        ),
       )
 
     case .horizontal:
       let size = CGSize(
         width: font.cellWidth * Double(columnsCount),
-        height: font.cellHeight / 100.0 * Double(cellPercentage ?? 25)
+        height: font.cellHeight / 100.0 * Double(cellPercentage ?? 25),
       )
       return .init(
         origin: .init(x: 0, y: font.cellHeight - size.height),
-        size: size
+        size: size,
       )
 
     case .vertical:
       let width = font.cellWidth / 100.0 * Double(cellPercentage ?? 25)
       return .init(
         origin: .init(),
-        size: .init(width: width, height: font.cellHeight)
+        size: .init(width: width, height: font.cellHeight),
       )
     }
   }

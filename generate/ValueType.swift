@@ -59,7 +59,7 @@ public struct ValueType: Sendable {
   }
 
   public var rawValue: String
-  public var custom: Custom?
+  public var custom: Custom? = nil
 
   public var swift: SwiftType {
     if let custom {

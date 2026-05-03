@@ -32,7 +32,7 @@ public enum Message: Sendable, Hashable {
       self.init(
         id: id,
         method: method,
-        parameters: parameters
+        parameters: parameters,
       )
     }
 
@@ -54,7 +54,7 @@ public enum Message: Sendable, Hashable {
 
       public func map<Success>(
         _ successBody: (Value) throws -> Success,
-        _ failureBody: (Value) -> any Error
+        _ failureBody: (Value) -> any Error,
       ) throws
         -> Success
       {
@@ -127,17 +127,17 @@ public enum Message: Sendable, Hashable {
     switch rawMessageType {
     case Request.rawMessageType:
       self = try .request(
-        Request(arrayValue: arrayValue)
+        Request(arrayValue: arrayValue),
       )
 
     case Response.rawMessageType:
       self = try .response(
-        Response(arrayValue: arrayValue)
+        Response(arrayValue: arrayValue),
       )
 
     case Notification.rawMessageType:
       self = try .notification(
-        Notification(arrayValue: arrayValue)
+        Notification(arrayValue: arrayValue),
       )
 
     default:

@@ -11,7 +11,7 @@ public func cd(_ value: some Any) -> String {
 public extension DefaultStringInterpolation {
   mutating func appendInterpolation(cd value: some Any) {
     appendInterpolation(
-      String(customDumping: value)
+      String(customDumping: value),
     )
   }
 }

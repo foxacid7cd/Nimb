@@ -53,7 +53,7 @@ public final class Store: Sendable {
 
     let applyUIEventsActions = api.neovimNotifications
       .compactMap { [
-        alertsContinuation
+        alertsContinuation,
       ] neovimNotificationsBatch in
         var actionsAccumulator = [Action]()
 
@@ -64,8 +64,8 @@ public final class Store: Sendable {
               .append(
                 Actions
                   .ApplyUIEvents(
-                    uiEvents: uiEvents
-                  )
+                    uiEvents: uiEvents,
+                  ),
               )
 
           case let .nvimErrorEvent(event):

@@ -17,10 +17,10 @@ public class SettingsVimrcView: NSView {
     image: .init(
       systemSymbolName: "folder.fill",
       variableValue: 0,
-      accessibilityDescription: nil
+      accessibilityDescription: nil,
     )!,
     target: self,
-    action: #selector(handleFolderButtonAction)
+    action: #selector(handleFolderButtonAction),
   )
   private var vimrc = Vimrc.default
 
@@ -72,7 +72,7 @@ public class SettingsVimrcView: NSView {
       top: 4,
       left: 4,
       bottom: 4,
-      right: 4
+      right: 4,
     ))
 
     reloadData()

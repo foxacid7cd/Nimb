@@ -14,12 +14,12 @@ public struct KeyPress: Sendable {
   }
 
   public init(
-    event: NSEvent
+    event: NSEvent,
   ) {
     self.init(
       keyCode: Int(event.keyCode),
       characters: event.charactersIgnoringModifiers?.lowercased() ?? "",
-      modifierFlags: event.modifierFlags
+      modifierFlags: event.modifierFlags,
     )
   }
 

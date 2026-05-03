@@ -72,16 +72,16 @@ public final class Neovim: Sendable {
         "async": true,
         "nargs": .integer(3),
       ])],
-      attributes: [:]
+      attributes: [:],
     )
 
     let initLua = try! String(
       data: Data(
         contentsOf: Bundle.main.resourceURL!
           .appending(path: "nvim")
-          .appending(path: "init.lua")
+          .appending(path: "init.lua"),
       ),
-      encoding: .utf8
+      encoding: .utf8,
     )!
     try! await api.nvimExecLua(code: initLua, args: [])
 
@@ -100,7 +100,7 @@ public final class Neovim: Sendable {
     try! await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
       height: initialOuterGridSize.rowsCount,
-      options: .dictionary(uiOptions.nvimUIAttachOptions)
+      options: .dictionary(uiOptions.nvimUIAttachOptions),
     )
 
     return await withUnsafeContinuation { continuation in

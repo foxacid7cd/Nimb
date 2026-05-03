@@ -107,7 +107,7 @@ final class FontBridge {
   init() {
     let systemFont = NSFont.monospacedSystemFont(
       ofSize: NSFont.systemFontSize,
-      weight: .regular
+      weight: .regular,
     )
     let wrapped = WrappedFont(index: 0, appKit: systemFont)
     array = [wrapped]

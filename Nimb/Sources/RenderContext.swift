@@ -43,7 +43,7 @@ public extension Rendering where Self: AnyObject {
       self,
       renderingContextAssociatedObjectKey,
       renderContext,
-      .OBJC_ASSOCIATION_RETAIN
+      .OBJC_ASSOCIATION_RETAIN,
     )
   }
 
@@ -59,5 +59,5 @@ public extension Rendering where Self: AnyObject {
   }
 }
 
-// Process-lifetime token used only for ObjC associated-object lookup.
-nonisolated(unsafe) private let renderingContextAssociatedObjectKey: UnsafeRawPointer = .init(malloc(1)!)
+/// Process-lifetime token used only for ObjC associated-object lookup.
+private nonisolated(unsafe) let renderingContextAssociatedObjectKey: UnsafeRawPointer = .init(malloc(1)!)

@@ -18,19 +18,19 @@ public class MainWindowController: NSWindowController, Rendering {
     contentRect: .init(),
     styleMask: [.titled, .miniaturizable, .fullSizeContentView],
     backing: .buffered,
-    defer: true
+    defer: true,
   )
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
 
   public init(
     store: Store,
-    minOuterGridSize: IntegerSize
+    minOuterGridSize: IntegerSize,
   ) {
     self.store = store
     viewController = .init(
       store: store,
-      minOuterGridSize: minOuterGridSize
+      minOuterGridSize: minOuterGridSize,
     )
     customWindow.contentViewController = viewController
     customWindow.titlebarAppearsTransparent = true

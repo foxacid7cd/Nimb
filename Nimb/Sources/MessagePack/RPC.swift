@@ -4,10 +4,10 @@ import Algorithms
 import CasePaths
 import Collections
 import Combine
-import Synchronization
 import CustomDump
 import Foundation
 import Queue
+import Synchronization
 
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
@@ -61,7 +61,7 @@ public final class RPC<Target: Channel>: Sendable {
   @discardableResult
   public func call(
     method: String,
-    withParameters parameters: [Value]
+    withParameters parameters: [Value],
   ) async
   -> Message.Response.Result {
     await withUnsafeContinuation { continuation in
@@ -71,7 +71,7 @@ public final class RPC<Target: Channel>: Sendable {
             continuation.resume(returning: $0.result)
           },
           method: method,
-          parameters: parameters
+          parameters: parameters,
         )
         send(request: request)
       }
@@ -80,26 +80,26 @@ public final class RPC<Target: Channel>: Sendable {
 
   public func fastCall(
     method: String,
-    withParameters parameters: [Value]
+    withParameters parameters: [Value],
   ) {
     send(
       request: .init(
         id: storage.announceRequest(),
         method: method,
-        parameters: parameters
-      )
+        parameters: parameters,
+      ),
     )
   }
 
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
-    parameters: [Value]
+    parameters: [Value],
   )> & Sendable) {
     let messages = calls.map { call in
       Message.Request(
         id: storage.announceRequest(),
         method: call.method,
-        parameters: call.parameters
+        parameters: call.parameters,
       )
     }
 
@@ -109,8 +109,8 @@ public final class RPC<Target: Channel>: Sendable {
       for message in messages {
         data.append(
           packer.pack(
-            message.makeValue()
-          )
+            message.makeValue(),
+          ),
         )
       }
 
@@ -140,7 +140,7 @@ private final class Storage: Sendable {
 
   func announceRequest(
     _ handler: (@Sendable (Message.Response) -> Void)? =
-      nil
+      nil,
   )
     -> Int
   {
@@ -160,7 +160,7 @@ private final class Storage: Sendable {
 
   func responseReceived(
     _ response: Message.Response,
-    forRequestWithID id: Int
+    forRequestWithID id: Int,
   ) {
     let handler = state.withLock { state in
       let handler = state.currentRequests[id]

@@ -6,7 +6,7 @@ import TinyConstraints
 public class CmdlinesViewController: NSViewController, Rendering {
   private static let observedHighlightName: Set<
     Appearance
-      .ObservedHighlightName
+      .ObservedHighlightName,
   > = [
     .normalFloat,
     .special,

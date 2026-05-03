@@ -43,7 +43,7 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
 
       self.init(
         highlightID: highlightID,
-        text: text
+        text: text,
       )
     }
   }

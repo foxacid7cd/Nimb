@@ -8,7 +8,7 @@ public struct Popupmenu: Sendable, Hashable {
   }
 
   public var items: [PopupmenuItem]
-  public var selectedItemIndex: Int?
+  public var selectedItemIndex: Int? = nil
   public var anchor: Anchor
 }
 

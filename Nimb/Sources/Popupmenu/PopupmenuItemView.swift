@@ -5,10 +5,10 @@ import TinyConstraints
 
 public class PopupmenuItemView: NSView, Rendering {
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
-    String(describing: PopupmenuItemView.self)
+    String(describing: PopupmenuItemView.self),
   )
 
-  public var item: PopupmenuItem?
+  public var item: PopupmenuItem? = nil
   public var isSelected = false
 
   private let store: Store
@@ -26,7 +26,7 @@ public class PopupmenuItemView: NSView, Rendering {
     wordTextField.setContentHuggingPriority(.defaultLow, for: .horizontal)
     wordTextField.setContentCompressionResistancePriority(
       .defaultLow,
-      for: .horizontal
+      for: .horizontal,
     )
     addSubview(wordTextField)
     wordTextField.leading(to: self, offset: 11)
@@ -36,7 +36,7 @@ public class PopupmenuItemView: NSView, Rendering {
     kindTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     kindTextField.setContentCompressionResistancePriority(
       .defaultHigh,
-      for: .horizontal
+      for: .horizontal,
     )
     addSubview(kindTextField)
     kindTextField.leadingToTrailing(of: wordTextField, offset: 5)
@@ -67,9 +67,9 @@ public class PopupmenuItemView: NSView, Rendering {
         .foregroundColor: NSColor.white,
         .font: font.appKit(
           isBold: appearance.isBold(for: wordHighlightName),
-          isItalic: appearance.isItalic(for: wordHighlightName)
+          isItalic: appearance.isItalic(for: wordHighlightName),
         ),
-      ]
+      ],
     )
 
     let kindHighlightName: Appearance
@@ -81,9 +81,9 @@ public class PopupmenuItemView: NSView, Rendering {
           .appKit,
         .font: font.appKit(
           isBold: appearance.isBold(for: kindHighlightName),
-          isItalic: appearance.isItalic(for: kindHighlightName)
+          isItalic: appearance.isItalic(for: kindHighlightName),
         ),
-      ]
+      ],
     )
     if !item.menu.isEmpty {
       let menuHighlightName: Appearance
@@ -96,9 +96,9 @@ public class PopupmenuItemView: NSView, Rendering {
             .appKit,
           .font: font.appKit(
             isBold: appearance.isBold(for: menuHighlightName),
-            isItalic: appearance.isItalic(for: menuHighlightName)
+            isItalic: appearance.isItalic(for: menuHighlightName),
           ),
-        ]
+        ],
       ))
     }
     kindTextField.attributedStringValue = kindAttributedString

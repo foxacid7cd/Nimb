@@ -18,10 +18,10 @@ public struct ReferencesFile: GeneratableFile {
         try EnumDeclSyntax("public enum References") {
           for type in metadata.types {
             try StructDeclSyntax(
-              "public struct \(raw: type.name): Sendable, Hashable"
+              "public struct \(raw: type.name): Sendable, Hashable",
             ) {
               DeclSyntax(
-                "public var data: Data"
+                "public var data: Data",
               )
 
               try InitializerDeclSyntax("public init(data: Data)") {
@@ -35,10 +35,10 @@ public struct ReferencesFile: GeneratableFile {
               }
 
               DeclSyntax(
-                "public static let type: Int8 = \(raw: type.id)"
+                "public static let type: Int8 = \(raw: type.id)",
               )
               DeclSyntax(
-                "public static let current = Self(data: .init([0]))"
+                "public static let current = Self(data: .init([0]))",
               )
             }
           }

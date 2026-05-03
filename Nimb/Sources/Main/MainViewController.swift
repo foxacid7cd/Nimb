@@ -11,10 +11,10 @@ public class MainViewController: NSViewController, Rendering {
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
-  private var preMaximizeWindowFrame: CGRect?
+  private var preMaximizeWindowFrame: CGRect? = nil
   private lazy var modalOverlayView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
-  private var reportOuterGridSizeChangedTask: Task<Void, Never>?
+  private var reportOuterGridSizeChangedTask: Task<Void, Never>? = nil
 
   init(store: Store, minOuterGridSize: IntegerSize) {
     self.store = store
@@ -25,12 +25,12 @@ public class MainViewController: NSViewController, Rendering {
       store: store,
       getCmdlinesView: { [cmdlinesViewController] in
         cmdlinesViewController.view
-      }
+      },
     )
     let reportOuterGridSizeChanged: AsyncStream<IntegerSize>
     (
       reportOuterGridSizeChanged,
-      reportOuterGridSizeChangedContinuation
+      reportOuterGridSizeChangedContinuation,
     ) = AsyncStream.makeStream()
     super.init(nibName: nil, bundle: nil)
 
@@ -45,8 +45,8 @@ public class MainViewController: NSViewController, Rendering {
               .NvimUITryResizeGrid(
                 grid: Grid.OuterID,
                 width: outerGridSize.columnsCount,
-                height: outerGridSize.rowsCount
-              )
+                height: outerGridSize.rowsCount,
+              ),
           )
       }
     }
@@ -77,7 +77,7 @@ public class MainViewController: NSViewController, Rendering {
 
     tablineView.setContentCompressionResistancePriority(
       .init(rawValue: 900),
-      for: .vertical
+      for: .vertical,
     )
     view.addSubview(tablineView)
     tablineView.topToSuperview()
@@ -86,7 +86,7 @@ public class MainViewController: NSViewController, Rendering {
 
     let tablineDoubleClickGestureRecognizer = NSClickGestureRecognizer(
       target: self,
-      action: #selector(handleTablineDoubleClick)
+      action: #selector(handleTablineDoubleClick),
     )
     tablineDoubleClickGestureRecognizer.delaysPrimaryMouseButtonEvents = false
     tablineDoubleClickGestureRecognizer.numberOfClicksRequired = 2
@@ -104,7 +104,7 @@ public class MainViewController: NSViewController, Rendering {
     view.addSubview(
       gridsContainerView,
       positioned: .below,
-      relativeTo: tablineView
+      relativeTo: tablineView,
     )
     gridsContainerView.translatesAutoresizingMaskIntoConstraints = false
     gridsContainerView.clipsToBounds = true
@@ -178,7 +178,7 @@ public class MainViewController: NSViewController, Rendering {
 
   public func windowFrame(
     forGridID gridID: Grid.ID,
-    gridFrame: IntegerRectangle
+    gridFrame: IntegerRectangle,
   )
     -> CGRect?
   {
@@ -188,7 +188,7 @@ public class MainViewController: NSViewController, Rendering {
   public func reportOuterGridSizeChanged() {
     let outerGridSizeNeeded = IntegerSize(
       columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
-      rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight)
+      rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight),
     )
     reportOuterGridSizeChangedContinuation
       .yield(outerGridSizeNeeded)
@@ -198,7 +198,7 @@ public class MainViewController: NSViewController, Rendering {
     let mainFrameSize = outerGridSize * state.font.cellSize
     return .init(
       width: mainFrameSize.width,
-      height: mainFrameSize.height + tablineView.intrinsicContentSize.height
+      height: mainFrameSize.height + tablineView.intrinsicContentSize.height,
     )
   }
 
@@ -215,7 +215,7 @@ public class MainViewController: NSViewController, Rendering {
         window.setFrame(
           screen.visibleFrame,
           display: true,
-          animate: true
+          animate: true,
         )
       }
 

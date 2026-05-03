@@ -10,7 +10,7 @@ public class SettingsWindowController: NSWindowController, Rendering {
     contentRect: .init(x: 0, y: 0, width: 400, height: 250),
     styleMask: [.closable, .titled],
     backing: .buffered,
-    defer: true
+    defer: true,
   )
   private let viewController: SettingsViewController
 

@@ -28,23 +28,6 @@ public struct Grid: Sendable, Identifiable {
       .dirtyRectangles(coalesce(dirtyRectangles))
     }
 
-    public mutating func formUnion(_ other: Self) {
-      switch (self, other) {
-      case (
-        .dirtyRectangles(var accumulator),
-        let .dirtyRectangles(dirtyRectangles)
-      ):
-        accumulator += dirtyRectangles
-        self = Self.coalesced(accumulator)
-
-      case (_, .needsDisplay):
-        self = .needsDisplay
-
-      default:
-        break
-      }
-    }
-
     private static func coalesce(_ dirtyRectangles: [IntegerRectangle]) -> [IntegerRectangle] {
       guard dirtyRectangles.count > 1 else {
         return dirtyRectangles
@@ -75,8 +58,9 @@ public struct Grid: Sendable, Identifiable {
 
     private static func shouldCoalesce(
       _ lhs: IntegerRectangle,
-      with rhs: IntegerRectangle
-    ) -> Bool {
+      with rhs: IntegerRectangle,
+    )
+    -> Bool {
       lhs.intersects(with: rhs)
         || (lhs.rows == rhs.rows && rangesTouchOrOverlap(lhs.columns, rhs.columns))
         || (lhs.columns == rhs.columns && rangesTouchOrOverlap(lhs.rows, rhs.rows))
@@ -84,8 +68,9 @@ public struct Grid: Sendable, Identifiable {
 
     private static func union(
       of lhs: IntegerRectangle,
-      and rhs: IntegerRectangle
-    ) -> IntegerRectangle {
+      and rhs: IntegerRectangle,
+    )
+    -> IntegerRectangle {
       let minColumn = min(lhs.minColumn, rhs.minColumn)
       let minRow = min(lhs.minRow, rhs.minRow)
       let maxColumn = max(lhs.maxColumn, rhs.maxColumn)
@@ -95,16 +80,34 @@ public struct Grid: Sendable, Identifiable {
         origin: .init(column: minColumn, row: minRow),
         size: .init(
           columnsCount: maxColumn - minColumn,
-          rowsCount: maxRow - minRow
-        )
+          rowsCount: maxRow - minRow,
+        ),
       )
     }
 
     private static func rangesTouchOrOverlap<T: Comparable>(
       _ lhs: Range<T>,
-      _ rhs: Range<T>
-    ) -> Bool {
+      _ rhs: Range<T>,
+    )
+    -> Bool {
       lhs.lowerBound <= rhs.upperBound && rhs.lowerBound <= lhs.upperBound
+    }
+
+    public mutating func formUnion(_ other: Self) {
+      switch (self, other) {
+      case (
+        .dirtyRectangles(var accumulator),
+        let .dirtyRectangles(dirtyRectangles),
+      ):
+        accumulator += dirtyRectangles
+        self = Self.coalesced(accumulator)
+
+      case (_, .needsDisplay):
+        self = .needsDisplay
+
+      default:
+        break
+      }
     }
   }
 
@@ -123,7 +126,7 @@ public struct Grid: Sendable, Identifiable {
   public var id: Int
   public var layout: GridLayout
   public var drawRuns: GridDrawRuns
-  public var associatedWindow: AssociatedWindow?
+  public var associatedWindow: AssociatedWindow? = nil
   public var isHidden: Bool
 
   public var size: IntegerSize {
@@ -163,11 +166,11 @@ public struct Grid: Sendable, Identifiable {
     id: Int,
     size: IntegerSize,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     let layout = GridLayout(cells: .init(
       size: size,
-      repeatingElement: Cell.whitespace
+      repeatingElement: Cell.whitespace,
     ))
 
     self.id = id
@@ -175,7 +178,7 @@ public struct Grid: Sendable, Identifiable {
     drawRuns = .init(
       layout: layout,
       font: font,
-      appearance: appearance
+      appearance: appearance,
     )
     associatedWindow = nil
     isHidden = false
@@ -184,7 +187,7 @@ public struct Grid: Sendable, Identifiable {
   public mutating func apply(
     update: Update,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   )
     -> UpdateResult?
   {
@@ -195,12 +198,12 @@ public struct Grid: Sendable, Identifiable {
       let copyRowsCount = min(layout.rowsCount, integerSize.rowsCount)
       var cells = TwoDimensionalArray<Cell>(
         size: integerSize,
-        repeatingElement: .whitespace
+        repeatingElement: .whitespace,
       )
       for row in 0 ..< copyRowsCount {
         cells.rows[row].replaceSubrange(
           copyColumnsRange,
-          with: layout.cells.rows[row][copyColumnsRange]
+          with: layout.cells.rows[row][copyColumnsRange],
         )
       }
       layout = .init(cells: cells)
@@ -209,7 +212,7 @@ public struct Grid: Sendable, Identifiable {
       drawRuns = .init(
         layout: layout,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
 
       if
@@ -247,7 +250,7 @@ public struct Grid: Sendable, Identifiable {
         } else {
           layout.cells.rows[toRow].replaceSubrange(
             rectangle.columns,
-            with: cellsCopy.rows[fromRow][rectangle.columns]
+            with: cellsCopy.rows[fromRow][rectangle.columns],
           )
           layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
           drawRuns.rowDrawRuns[toRow] = .init(
@@ -255,7 +258,7 @@ public struct Grid: Sendable, Identifiable {
             layout: layout.rowLayouts[toRow],
             font: font,
             appearance: appearance,
-            old: drawRuns.rowDrawRuns[toRow]
+            old: drawRuns.rowDrawRuns[toRow],
           )
         }
 
@@ -271,7 +274,7 @@ public struct Grid: Sendable, Identifiable {
       if shouldUpdateCursorDrawRun {
         drawRuns.cursorDrawRun!.updateParent(
           with: layout,
-          rowDrawRuns: drawRuns.rowDrawRuns
+          rowDrawRuns: drawRuns.rowDrawRuns,
         )
       }
 
@@ -298,15 +301,15 @@ public struct Grid: Sendable, Identifiable {
         columnsCount: columnsCount,
         style: style,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
       return .dirtyRectangles(
         [
           .init(
             origin: position,
-            size: .init(columnsCount: columnsCount, rowsCount: 1)
+            size: .init(columnsCount: columnsCount, rowsCount: 1),
           ),
-        ]
+        ],
       )
 
     case .clearCursor:
@@ -323,12 +326,12 @@ public struct Grid: Sendable, Identifiable {
     cells: [Cell],
     row: Int,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   )
   -> IntegerRectangle {
     layout.cells.rows[row].replaceSubrange(
       originColumn ..< originColumn + cells.count,
-      with: cells
+      with: cells,
     )
 
     layout.rowLayouts[row] = RowLayout(rowCells: layout.cells.rows[row])
@@ -337,12 +340,12 @@ public struct Grid: Sendable, Identifiable {
       layout: layout.rowLayouts[row],
       font: font,
       appearance: appearance,
-      old: drawRuns.rowDrawRuns[row]
+      old: drawRuns.rowDrawRuns[row],
     )
 
     return .init(
       origin: .init(column: originColumn, row: row),
-      size: .init(columnsCount: cells.count, rowsCount: 1)
+      size: .init(columnsCount: cells.count, rowsCount: 1),
     )
   }
 
@@ -359,7 +362,7 @@ public struct Grid: Sendable, Identifiable {
         columnsCount: cursorDrawRun.columnsCount,
         style: cursorDrawRun.style,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
     }
   }

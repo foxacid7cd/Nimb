@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import ConcurrencyExtras
 import Synchronization
 
 public extension AsyncSequence where Element: Sendable, Self: Sendable {

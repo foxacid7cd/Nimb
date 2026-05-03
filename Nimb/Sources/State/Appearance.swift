@@ -24,7 +24,7 @@ public struct Appearance: Sendable {
   public var highlights: IntKeyedDictionary<Highlight> = [:]
   public var observedHighlights: TreeDictionary<
     ObservedHighlightName,
-    (id: Int?, kind: String?)
+    (id: Int?, kind: String?),
   > =
     [:]
   public var defaultForegroundColor: Color = .black

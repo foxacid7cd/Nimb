@@ -41,7 +41,7 @@ public class Packer {
           _ = msgpack_pack_str_with_body(
             &self.pk,
             buffer.baseAddress!,
-            buffer.count
+            buffer.count,
           )
         }
 
@@ -68,7 +68,7 @@ public class Packer {
           &self.pk,
           buffer.baseAddress!,
           buffer.count,
-          type
+          type,
         )
       }
 
@@ -77,7 +77,7 @@ public class Packer {
         _ = msgpack_pack_bin_with_body(
           &self.pk,
           buffer.baseAddress!,
-          buffer.count
+          buffer.count,
         )
       }
 

@@ -87,7 +87,7 @@ public struct IntKeyedDictionary<Value> {
     public func index(
       _ i: Key,
       offsetBy distance: Int,
-      limitedBy limit: Key
+      limitedBy limit: Key,
     )
       -> Key?
     {
@@ -136,7 +136,7 @@ public struct IntKeyedDictionary<Value> {
       while key >= valuesBackingStore.count {
         valuesBackingStore += .init(
           repeating: nil,
-          count: Swift.max(1, valuesBackingStore.count)
+          count: Swift.max(1, valuesBackingStore.count),
         )
       }
 
@@ -174,7 +174,7 @@ extension IntKeyedDictionary: Sendable where Value: Sendable { }
 extension IntKeyedDictionary: Equatable where Value: Equatable {
   public static func == (
     lhs: IntKeyedDictionary<Value>,
-    rhs: IntKeyedDictionary<Value>
+    rhs: IntKeyedDictionary<Value>,
   )
     -> Bool
   {

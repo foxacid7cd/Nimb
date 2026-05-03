@@ -14,8 +14,8 @@ class MsgShowsWindowController: NSWindowController, Rendering {
   }
 
   private let store: Store
-  private var viewController: MsgShowsViewController!
-  private var customWindow: CustomWindow!
+  private var viewController: MsgShowsViewController! = nil
+  private var customWindow: CustomWindow! = nil
   private var isWindowInitiallyShown = false
 
   init(store: Store) {

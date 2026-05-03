@@ -25,7 +25,7 @@ public class Unpacker {
       msgpack_unpacker_buffer(&mpac)!
         .initialize(
           from: pointer.baseAddress!.assumingMemoryBound(to: CChar.self),
-          count: pointer.count
+          count: pointer.count,
         )
     }
     msgpack_unpacker_buffer_consumed(&mpac, data.count)

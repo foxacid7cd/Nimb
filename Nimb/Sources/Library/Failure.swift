@@ -22,7 +22,7 @@ public struct Failure: LocalizedError, Sendable {
     fileID: StaticString = #fileID,
     function: StaticString = #function,
     line: Int = #line,
-    _ context: Any...
+    _ context: Any...,
   ) {
     message = context
       .map { object in

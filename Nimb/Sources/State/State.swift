@@ -27,7 +27,7 @@ public struct State: Sendable {
     public var isAppearanceUpdated: Bool = false
     public var updatedObservedHighlightNames: Set<
       Appearance
-        .ObservedHighlightName
+        .ObservedHighlightName,
     > = []
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
@@ -273,10 +273,10 @@ public struct State: Sendable {
             positionInParent: .init(),
             depth: depth,
             indexInParent: indexInParent,
-            floatingZIndex: nil
+            floatingZIndex: nil,
           ),
           forKey: id,
-          insertingAt: 0
+          insertingAt: 0,
         )
 
       } else if let associatedWindow = grid.associatedWindow {
@@ -305,10 +305,10 @@ public struct State: Sendable {
               positionInParent: window.origin * font.cellSize,
               depth: depth,
               indexInParent: indexInParent,
-              floatingZIndex: nil
+              floatingZIndex: nil,
             ),
             forKey: id,
-            insertingAt: position ?? layouts.count
+            insertingAt: position ?? layouts.count,
           )
 
         case let .floating(floatingWindow):
@@ -358,14 +358,14 @@ public struct State: Sendable {
               size: gridSize,
               positionInParent: .init(
                 x: gridColumn * font.cellWidth,
-                y: gridRow * font.cellHeight
+                y: gridRow * font.cellHeight,
               ) + anchorLayout.positionInParent,
               depth: depth,
               indexInParent: indexInParent,
-              floatingZIndex: floatingWindow.zIndex
+              floatingZIndex: floatingWindow.zIndex,
             ),
             forKey: id,
-            insertingAt: position ?? layouts.count
+            insertingAt: position ?? layouts.count,
           )
 
         case .external:
@@ -384,7 +384,7 @@ public struct State: Sendable {
 
       let frame = CGRect(
         origin: layout.positionInParent,
-        size: layout.size * font.cellSize
+        size: layout.size * font.cellSize,
       )
       try body(id, frame, Double(index))
     }

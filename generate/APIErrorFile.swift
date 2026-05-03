@@ -22,7 +22,7 @@ public struct APIErrorFile: GeneratableFile {
           @CasePathable
           @dynamicMemberLookup
           public enum APIError: Int, Sendable, Hashable
-          """
+          """,
         ) {
           for errorType in metadata.errorTypes {
             let camelCasedTypeName = errorType.name
@@ -30,7 +30,7 @@ public struct APIErrorFile: GeneratableFile {
             DeclSyntax(
               """
               case \(raw: camelCasedTypeName) = \(literal: errorType.id)
-              """
+              """,
             )
           }
         }

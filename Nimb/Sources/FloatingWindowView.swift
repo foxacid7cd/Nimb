@@ -3,7 +3,7 @@
 import AppKit
 
 public class FloatingWindowView: NSVisualEffectView {
-  private var isToggledOn: Bool?
+  private var isToggledOn: Bool? = nil
 
   override public init(frame: CGRect) {
     super.init(frame: frame)

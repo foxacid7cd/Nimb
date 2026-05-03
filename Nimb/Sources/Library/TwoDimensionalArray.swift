@@ -10,7 +10,7 @@ public struct TwoDimensionalArray<Element> {
   public var size: IntegerSize {
     .init(
       columnsCount: columnsCount,
-      rowsCount: rows.count
+      rowsCount: rows.count,
     )
   }
 
@@ -22,19 +22,19 @@ public struct TwoDimensionalArray<Element> {
   @inlinable
   public init(
     size: IntegerSize,
-    repeatingElement: Element
+    repeatingElement: Element,
   ) {
     self.init(
       size: size,
       elementAtPoint: { _ in
         repeatingElement
-      }
+      },
     )
   }
 
   public init(
     size: IntegerSize,
-    elementAtPoint: (IntegerPoint) -> Element
+    elementAtPoint: (IntegerPoint) -> Element,
   ) {
     if size.columnsCount < 0 {
       preconditionFailure("size.columnsCount must be non negative")
@@ -48,7 +48,7 @@ public struct TwoDimensionalArray<Element> {
       var row = [Element]()
       for columnIndex in 0 ..< size.columnsCount {
         let element = elementAtPoint(
-          .init(column: columnIndex, row: rowIndex)
+          .init(column: columnIndex, row: rowIndex),
         )
         row.append(element)
       }

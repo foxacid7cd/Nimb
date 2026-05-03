@@ -12,14 +12,14 @@ public class CmdlineView: NSView, Rendering {
     leading: NSLayoutConstraint,
     trailing: NSLayoutConstraint,
     top: NSLayoutConstraint,
-    content: NSLayoutConstraint
-  )?
+    content: NSLayoutConstraint,
+  )? = nil
   private var contentConstraints: (
     leading: NSLayoutConstraint,
     trailing: NSLayoutConstraint,
     top: NSLayoutConstraint,
-    bottom: NSLayoutConstraint
-  )?
+    bottom: NSLayoutConstraint,
+  )? = nil
 
   public init(store: Store, level: Int) {
     self.level = level
@@ -33,7 +33,7 @@ public class CmdlineView: NSView, Rendering {
     contentTextView.translatesAutoresizingMaskIntoConstraints = false
     contentTextView.setContentHuggingPriority(
       .init(rawValue: 999),
-      for: .vertical
+      for: .vertical,
     )
     addSubview(contentTextView)
 
@@ -41,13 +41,13 @@ public class CmdlineView: NSView, Rendering {
       promptTextField.leading(to: self, priority: .defaultHigh),
       promptTextField.trailing(to: self, priority: .defaultHigh),
       promptTextField.top(to: self, priority: .defaultHigh),
-      promptTextField.bottomToTop(of: contentTextView, priority: .defaultHigh)
+      promptTextField.bottomToTop(of: contentTextView, priority: .defaultHigh),
     )
     contentConstraints = (
       contentTextView.leading(to: self, priority: .defaultHigh),
       contentTextView.trailing(to: self, priority: .defaultHigh),
       contentTextView.top(to: self, priority: .defaultHigh),
-      contentTextView.bottom(to: self, priority: .defaultHigh)
+      contentTextView.bottom(to: self, priority: .defaultHigh),
     )
   }
 
@@ -66,7 +66,7 @@ public class CmdlineView: NSView, Rendering {
         attributes: [
           .foregroundColor: NSColor.labelColor,
           .font: NSFont.systemFont(ofSize: NSFont.labelFontSize),
-        ]
+        ],
       )
 
       promptTextField.isHidden = false

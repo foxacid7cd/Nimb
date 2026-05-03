@@ -14,7 +14,7 @@ public struct Metadata: @unchecked Sendable {
     public var returnType: ValueType
     public var method: Bool
     public var since: Int
-    public var deprecatedSince: Int?
+    public var deprecatedSince: Int? = nil
 
     public var deprecationAttributeIfNeeded: String {
       if let deprecatedSince {
@@ -48,7 +48,7 @@ public struct Metadata: @unchecked Sendable {
           signature: "\(type.name).ID",
           valueEncoder: (
             ".ext(type: References.\(type.name).type, data: ",
-            ".data)"
+            ".data)",
           ),
           valueDecoder: { expr, name in
             var capitalizedName = name.first?.uppercased() ?? ""
@@ -64,7 +64,7 @@ public struct Metadata: @unchecked Sendable {
                 .name
             )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
             """
-          }
+          },
         )
       }
 
@@ -72,8 +72,8 @@ public struct Metadata: @unchecked Sendable {
         name: name,
         type: .init(
           rawValue: rawType,
-          custom: custom
-        )
+          custom: custom,
+        ),
       )
     }
   }
@@ -168,7 +168,7 @@ public struct Metadata: @unchecked Sendable {
           returnType: returnType,
           method: method,
           since: since,
-          deprecatedSince: dictionary["deprecated_since"].flatMap(\.integer)
+          deprecatedSince: dictionary["deprecated_since"].flatMap(\.integer),
         )
       },
 
@@ -184,7 +184,7 @@ public struct Metadata: @unchecked Sendable {
         return .init(
           name: name,
           parameters: rawParameters
-            .compactMap { Metadata.Parameter($0, types: types) }
+            .compactMap { Metadata.Parameter($0, types: types) },
         )
       },
 
@@ -194,7 +194,7 @@ public struct Metadata: @unchecked Sendable {
             throw Failure("ui_options array value is not string")
           }
           return string
-        }
+        },
     )
   }
 }

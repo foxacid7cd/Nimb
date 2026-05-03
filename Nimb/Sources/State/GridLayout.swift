@@ -32,10 +32,10 @@ public struct Cell: Sendable, Hashable {
   public static let whitespace = Self(
     character: " ",
     isDoubleWidth: false,
-    highlightID: .zero
+    highlightID: .zero,
   )
 
-  public var character: Character?
+  public var character: Character? = nil
   public var isDoubleWidth: Bool
   public var highlightID: Highlight.ID
 }
@@ -91,21 +91,21 @@ public struct RowLayout: Sendable {
             switch (lastPart.content, cellCharacterType) {
             case let (.whitespaceCharacters(count), .whitespace):
               internalParts[internalParts.count - 1].content = .whitespaceCharacters(
-                count: count + 1
+                count: count + 1,
               )
               return
 
             case (.doubleWidthCharacter(let character, false), .missing):
               internalParts[internalParts.count - 1].content = .doubleWidthCharacter(
                 character,
-                isWithSecondFillerCharacter: true
+                isWithSecondFillerCharacter: true,
               )
               return
 
             case (.singleWidthCharacters(var characters), .regular(let character, false)):
               characters.append(character)
               internalParts[internalParts.count - 1].content = .singleWidthCharacters(
-                characters
+                characters,
               )
               return
 
@@ -131,7 +131,7 @@ public struct RowLayout: Sendable {
             .whitespaceCharacters(count: 1)
           }
         internalParts.append(
-          .init(content: content, highlightID: cell.highlightID, originColumn: cellsCount)
+          .init(content: content, highlightID: cell.highlightID, originColumn: cellsCount),
         )
       }
 
@@ -161,7 +161,7 @@ public struct RowLayout: Sendable {
             return RowPart(
               content: content,
               highlightID: internalPart.highlightID,
-              originColumn: internalPart.originColumn
+              originColumn: internalPart.originColumn,
             )
           }
       }

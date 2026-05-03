@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Synchronization
 import CustomDump
 import Queue
+import Synchronization
 
 @MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
-  private var mainMenuController: MainMenuController?
-  private var msgShowsWindowController: MsgShowsWindowController?
-  private var mainWindowController: MainWindowController?
-  private var settingsWindowController: SettingsWindowController?
-  private var keyDownMonitor: Any?
+  private var mainMenuController: MainMenuController? = nil
+  private var msgShowsWindowController: MsgShowsWindowController? = nil
+  private var mainWindowController: MainWindowController? = nil
+  private var settingsWindowController: SettingsWindowController? = nil
+  private var keyDownMonitor: Any? = nil
 
-  private var neovim: Neovim?
-  private var store: Store?
+  private var neovim: Neovim? = nil
+  private var store: Store? = nil
   @StateActor private var alertsTask: Task<Void, Never>?
   @StateActor private var updatesTask: Task<Void, Never>?
 
@@ -31,7 +31,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   public func applicationDidFinishLaunching(_: Notification) {
     let initialState = State(
       debug: UserDefaults.standard.debug,
-      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init()
+      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
     )
 
     let neovim = Neovim()
@@ -160,7 +160,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
     mainWindowController = MainWindowController(
       store: store,
-      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24)
+      minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
     )
 
     msgShowsWindowController = MsgShowsWindowController(store: store)
@@ -186,13 +186,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     await withUnsafeContinuation { continuation in
       alert
         .beginSheetModal(
-          for: mainWindowController!.window!
+          for: mainWindowController!.window!,
         ) { response in
           switch response {
           case .alertFirstButtonReturn:
             let temporaryDirectoryURL = URL(
               fileURLWithPath: NSTemporaryDirectory(),
-              isDirectory: true
+              isDirectory: true,
             )
             let logFileName =
               "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
@@ -201,7 +201,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
             try! String(customDumping: error).data(using: .utf8)!.write(
               to: temporaryFileURL,
-              options: []
+              options: [],
             )
             NSWorkspace.shared.open(temporaryFileURL)
 

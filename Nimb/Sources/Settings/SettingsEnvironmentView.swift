@@ -10,7 +10,7 @@ public class SettingsEnvironmentView: NSView {
 
   private class ItemView: NSView, NSTextFieldDelegate {
     let textField = NSTextField()
-    var textChanged: ((String) -> Void)?
+    var textChanged: ((String) -> Void)? = nil
 
     override init(frame frameRect: NSRect) {
       super.init(frame: frameRect)
@@ -47,9 +47,9 @@ public class SettingsEnvironmentView: NSView {
     lazy var button = NSButton(
       title: "Button",
       target: self,
-      action: #selector(handleButtonAction)
+      action: #selector(handleButtonAction),
     )
-    var handleAction: (() -> Void)?
+    var handleAction: (() -> Void)? = nil
 
     override init(frame frameRect: NSRect) {
       super.init(frame: frameRect)
@@ -89,7 +89,7 @@ public class SettingsEnvironmentView: NSView {
   private lazy var addButton = NSButton(
     title: "Add",
     target: self,
-    action: #selector(handleAddButtonAction)
+    action: #selector(handleAddButtonAction),
   )
   private let statusTextField = NSTextField(labelWithString: "")
 
@@ -187,7 +187,7 @@ public class SettingsEnvironmentView: NSView {
     if hasDuplicates {
       statusTextField.attributedStringValue = .init(
         string: "Duplicate names!",
-        attributes: [.foregroundColor: NSColor.red]
+        attributes: [.foregroundColor: NSColor.red],
       )
     } else {
       statusTextField.attributedStringValue = .init()
@@ -216,7 +216,7 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
   public func tableView(
     _ tableView: NSTableView,
     viewFor tableColumn: NSTableColumn?,
-    row: Int
+    row: Int,
   )
     -> NSView?
   {
@@ -224,7 +224,7 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
     if tableColumn === nameTableColumn {
       var itemView = tableView.makeView(
         withIdentifier: nameTableColumn.identifier,
-        owner: self
+        owner: self,
       ) as? ItemView
       if itemView == nil {
         itemView = .init(frame: .zero)
@@ -243,7 +243,7 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
     } else if tableColumn === valueTableColumn {
       var itemView = tableView.makeView(
         withIdentifier: valueTableColumn.identifier,
-        owner: self
+        owner: self,
       ) as? ItemView
       if itemView == nil {
         itemView = .init(frame: .zero)
@@ -262,7 +262,7 @@ extension SettingsEnvironmentView: NSTableViewDelegate, NSTableViewDataSource {
     } else if tableColumn === deleteTableColumn {
       var buttonView = tableView.makeView(
         withIdentifier: deleteTableColumn.identifier,
-        owner: self
+        owner: self,
       ) as? ButtonView
       if buttonView == nil {
         buttonView = .init(frame: .zero)

@@ -10,7 +10,7 @@ import SwiftSyntaxBuilder
 struct Generate: AsyncParsableCommand {
   @Argument(
     help: "The path to the destination directory where the source files are to be generated",
-    completion: .directory
+    completion: .directory,
   )
   var generatedPath: String
 

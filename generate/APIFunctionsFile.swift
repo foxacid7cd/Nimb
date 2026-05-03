@@ -29,10 +29,10 @@ public struct APIFunctionsFile: GeneratableFile {
               \(raw: function.deprecationAttributeIfNeeded)
               @PublicInit
               public struct \(raw: camelCasedFunctionName): APIFunction
-              """
+              """,
             ) {
               DeclSyntax(
-                "public static let method = \(literal: function.name)"
+                "public static let method = \(literal: function.name)",
               )
 
               for parameter in function.parameters {
@@ -40,7 +40,7 @@ public struct APIFunctionsFile: GeneratableFile {
                   .camelCasedAssumingSnakeCased(capitalized: false)
 
                 DeclSyntax(
-                  "public var \(raw: camelCasedParameterName): \(raw: parameter.type.swift.signature)"
+                  "public var \(raw: camelCasedParameterName): \(raw: parameter.type.swift.signature)",
                 )
               }
 
@@ -55,26 +55,26 @@ public struct APIFunctionsFile: GeneratableFile {
 
               try VariableDeclSyntax("public var parameters: [Value]") {
                 StmtSyntax(
-                  "return [\(raw: parametersInArray)]"
+                  "return [\(raw: parametersInArray)]",
                 )
               }
 
               if function.returnType.swift[case: \.value] == nil {
                 try FunctionDeclSyntax(
-                  "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)"
+                  "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)",
                 ) {
                   StmtSyntax(
                     """
                     guard \(raw: function.returnType.wrapWithValueDecoder(
                       "raw",
-                      name: "value"
+                      name: "value",
                     )) else {
                       throw Failure("failed decoding success return value", raw)
                     }
-                    """
+                    """,
                   )
                   StmtSyntax(
-                    "return value"
+                    "return value",
                   )
                 }
               }
@@ -112,10 +112,10 @@ public struct APIFunctionsFile: GeneratableFile {
                 raw: function
                   .returnType.swift.signature
               )
-              """
+              """,
             ) {
               ExprSyntax(
-                "try await call(APIFunctions.\(raw: capitalizedCamelCasedFunctionName)(\(raw: initializingWithParameters)))"
+                "try await call(APIFunctions.\(raw: capitalizedCamelCasedFunctionName)(\(raw: initializingWithParameters)))",
               )
             }
           }

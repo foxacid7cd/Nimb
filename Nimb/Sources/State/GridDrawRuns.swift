@@ -2,28 +2,28 @@
 
 import AppKit
 import Collections
-import Synchronization
 import CustomDump
 import SwiftUI
+import Synchronization
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  struct VisibleDrawRun: Sendable {
+  struct VisibleDrawRun {
     let drawRun: DrawRun
     let rect: CGRect
   }
 
-  struct VisibleRowDrawRun: Sendable {
+  struct VisibleRowDrawRun {
     let drawRuns: [VisibleDrawRun]
   }
 
   public var rowDrawRuns: [RowDrawRun]
-  public var cursorDrawRun: CursorDrawRun?
+  public var cursorDrawRun: CursorDrawRun? = nil
 
   public init(
     layout: GridLayout,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     rowDrawRuns = []
     renderDrawRuns(for: layout, font: font, appearance: appearance)
@@ -32,7 +32,7 @@ public struct GridDrawRuns: Sendable {
   public mutating func renderDrawRuns(
     for layout: GridLayout,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
@@ -42,7 +42,7 @@ public struct GridDrawRuns: Sendable {
           layout: layout,
           font: font,
           appearance: appearance,
-          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil
+          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
         )
       }
   }
@@ -52,7 +52,7 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -66,7 +66,7 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform
+        upsideDownTransform: upsideDownTransform,
       )
     }
   }
@@ -76,7 +76,7 @@ public struct GridDrawRuns: Sendable {
     boundingRect: IntegerRectangle,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -90,7 +90,7 @@ public struct GridDrawRuns: Sendable {
         to: context,
         font: font,
         appearance: appearance,
-        upsideDownTransform: upsideDownTransform
+        upsideDownTransform: upsideDownTransform,
       )
     }
   }
@@ -98,8 +98,9 @@ public struct GridDrawRuns: Sendable {
   func visibleRowDrawRuns(
     boundingRect: IntegerRectangle,
     font: Font,
-    upsideDownTransform: CGAffineTransform
-  ) -> [VisibleRowDrawRun] {
+    upsideDownTransform: CGAffineTransform,
+  )
+  -> [VisibleRowDrawRun] {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
     guard fromRow < toRow else {
@@ -111,7 +112,7 @@ public struct GridDrawRuns: Sendable {
         columnsRange: boundingRect.columns,
         at: .init(x: 0, y: Double(row) * font.cellHeight),
         font: font,
-        upsideDownTransform: upsideDownTransform
+        upsideDownTransform: upsideDownTransform,
       )
       guard !drawRuns.isEmpty else {
         return nil
@@ -131,7 +132,7 @@ public struct RowDrawRun: Sendable {
     layout: RowLayout,
     font: Font,
     appearance: Appearance,
-    old: RowDrawRun?
+    old: RowDrawRun?,
   ) {
     var drawRuns = [DrawRun]()
     var drawRunsCache = [RowPartContent: (index: Int, drawRun: DrawRun)]()
@@ -158,13 +159,13 @@ public struct RowDrawRun: Sendable {
         originColumn: part.originColumn,
         highlightID: part.highlightID,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
       drawRun.originColumn = part.originColumn
       drawRun.highlightID = part.highlightID
       drawRunsCache[part.content] = (
         index: drawRuns.count,
-        drawRun: drawRun
+        drawRun: drawRun,
       )
       drawRuns.append(drawRun)
     }
@@ -179,14 +180,14 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
   ) {
     for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
         x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
         width: Double(drawRun.columnsRange.count) * font.cellWidth,
-        height: font.cellHeight
+        height: font.cellHeight,
       )
       .applying(upsideDownTransform)
 
@@ -194,7 +195,7 @@ public struct RowDrawRun: Sendable {
         to: context,
         at: rect.origin,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
     }
   }
@@ -205,14 +206,14 @@ public struct RowDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
   ) {
     for drawRun in drawRuns where drawRun.columnsRange.overlaps(columnsRange) {
       let rect = CGRect(
         x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
         width: Double(drawRun.columnsRange.count) * font.cellWidth,
-        height: font.cellHeight
+        height: font.cellHeight,
       )
       .applying(upsideDownTransform)
 
@@ -220,7 +221,7 @@ public struct RowDrawRun: Sendable {
         to: context,
         at: rect,
         font: font,
-        appearance: appearance
+        appearance: appearance,
       )
     }
   }
@@ -229,8 +230,9 @@ public struct RowDrawRun: Sendable {
     columnsRange: Range<Int>,
     at origin: CGPoint,
     font: Font,
-    upsideDownTransform: CGAffineTransform
-  ) -> [GridDrawRuns.VisibleDrawRun] {
+    upsideDownTransform: CGAffineTransform,
+  )
+  -> [GridDrawRuns.VisibleDrawRun] {
     drawRuns.compactMap { drawRun in
       guard drawRun.columnsRange.overlaps(columnsRange) else {
         return nil
@@ -240,7 +242,7 @@ public struct RowDrawRun: Sendable {
         x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
         y: origin.y,
         width: Double(drawRun.columnsRange.count) * font.cellWidth,
-        height: font.cellHeight
+        height: font.cellHeight,
       )
       .applying(upsideDownTransform)
 
@@ -254,7 +256,7 @@ public struct DrawRun: Sendable {
   public var rowPartContent: RowPartContent
   public var highlightID: Highlight.ID
   public var originColumn: Int
-  public var glyphRuns: [GlyphRun]?
+  public var glyphRuns: [GlyphRun]? = nil
 
   public var columnsCount: Int {
     rowPartContent.columnsCount
@@ -269,7 +271,7 @@ public struct DrawRun: Sendable {
     originColumn: Int,
     highlightID: Highlight.ID,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
@@ -291,24 +293,24 @@ public struct DrawRun: Sendable {
     }
     if
       let cacheKey, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(
-        for: cacheKey
+        for: cacheKey,
       )
     {
       self = cachedDrawRun
     } else if case let .cells(cells) = rowPartContent {
       let appKitFont = font.appKit(
         isBold: isBold,
-        isItalic: isItalic
+        isItalic: isItalic,
       )
 
       let attributedString = NSAttributedString(
         string: .init(cells.map(\.character)),
-        attributes: [.font: appKitFont]
+        attributes: [.font: appKitFont],
       )
 
       let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(
         attributedString,
-        nil
+        nil,
       )!
       let ctLine = CTTypesetterCreateLine(ctTypesetter, .init())
 
@@ -360,7 +362,7 @@ public struct DrawRun: Sendable {
             textMatrix: CTRunGetTextMatrix(ctRun),
             glyphs: glyphs,
             positions: positions,
-            advances: advances
+            advances: advances,
           )
         }
 
@@ -368,7 +370,7 @@ public struct DrawRun: Sendable {
         rowPartContent: rowPartContent,
         highlightID: highlightID,
         originColumn: originColumn,
-        glyphRuns: glyphRuns
+        glyphRuns: glyphRuns,
       )
       if let cacheKey {
         GlobalDrawRunsCache.shared.store(drawRun, forKey: cacheKey)
@@ -383,14 +385,14 @@ public struct DrawRun: Sendable {
     to context: CGContext,
     at origin: CGPoint,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     let rect = CGRect(
       origin: origin,
       size: .init(
         width: Double(rowPartContent.columnsCount) * font.cellWidth,
-        height: font.cellHeight
-      )
+        height: font.cellHeight,
+      ),
     )
     context.setFillColor(appearance.backgroundColor(for: highlightID).cg)
     context.fill([rect])
@@ -400,7 +402,7 @@ public struct DrawRun: Sendable {
     to context: CGContext,
     at rect: CGRect,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     guard case let .cells(cells) = rowPartContent, let glyphRuns else {
       return
@@ -459,8 +461,8 @@ public struct DrawRun: Sendable {
         context.addLine(
           to: .init(
             x: rect.minX + Double(index) * xStep,
-            y: isEven ? evenUnderlineY : oddUnderlineY
-          )
+            y: isEven ? evenUnderlineY : oddUnderlineY,
+          ),
         )
       }
       context.drawPath(using: .stroke)
@@ -477,7 +479,7 @@ public struct DrawRun: Sendable {
         glyphRun.glyphs,
         glyphRun.positions,
         glyphRun.glyphs.count,
-        context
+        context,
       )
     }
   }
@@ -512,8 +514,8 @@ public struct CursorDrawRun: Sendable {
       origin: origin,
       size: .init(
         columnsCount: columnsCount,
-        rowsCount: 1
-      )
+        rowsCount: 1,
+      ),
     )
   }
 
@@ -524,7 +526,7 @@ public struct CursorDrawRun: Sendable {
     columnsCount: Int,
     style: CursorStyle,
     font: Font,
-    appearance: Appearance
+    appearance: Appearance,
   ) {
     var parentOrigin: IntegerPoint?
     var parentDrawRun: DrawRun?
@@ -538,7 +540,7 @@ public struct CursorDrawRun: Sendable {
       if drawRun.columnsRange.contains(origin.column) {
         parentOrigin = .init(
           column: drawRun.originColumn,
-          row: origin.row
+          row: origin.row,
         )
         parentDrawRun = drawRun
         switch drawRun.rowPartContent {
@@ -569,7 +571,7 @@ public struct CursorDrawRun: Sendable {
       let cursorColumnsRange,
       let cellFrame = style.cellFrame(
         columnsCount: cursorColumnsRange.count,
-        font: font
+        font: font,
       )
     else {
       Task { @MainActor in
@@ -585,13 +587,13 @@ public struct CursorDrawRun: Sendable {
       highlightID: style.attrID ?? Highlight.defaultID,
       parentOrigin: parentOrigin,
       parentDrawRun: parentDrawRun,
-      shouldDrawParentText: style.shouldDrawParentText
+      shouldDrawParentText: style.shouldDrawParentText,
     )
   }
 
   public mutating func updateParent(
     with layout: GridLayout,
-    rowDrawRuns: [RowDrawRun]
+    rowDrawRuns: [RowDrawRun],
   ) {
     var currentColumn = 0
     for drawRun in rowDrawRuns[origin.row].drawRuns {
@@ -607,7 +609,7 @@ public struct CursorDrawRun: Sendable {
     to context: CGContext,
     font: Font,
     appearance: Appearance,
-    upsideDownTransform: CGAffineTransform
+    upsideDownTransform: CGAffineTransform,
   ) {
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
@@ -641,8 +643,8 @@ public struct CursorDrawRun: Sendable {
         origin: .init(column: parentOrigin.column, row: parentOrigin.row),
         size: .init(
           columnsCount: parentDrawRun.columnsCount,
-          rowsCount: 1
-        )
+          rowsCount: 1,
+        ),
       )
       let parentRect = (parentRectangle * font.cellSize)
         .applying(upsideDownTransform)
@@ -658,7 +660,7 @@ public struct CursorDrawRun: Sendable {
           glyphRun.glyphs,
           glyphRun.positions,
           glyphRun.glyphs.count,
-          context
+          context,
         )
       }
     }

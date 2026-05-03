@@ -9,13 +9,13 @@ import System
 @main
 struct MsgpackInspector: AsyncParsableCommand {
   @Option(name: .shortAndLong, completion: .file())
-  public var output: String? = nil
+  var output: String? = nil
 
   @Argument
-  public var executablePath: String
+  var executablePath: String
 
   @Argument(parsing: .captureForPassthrough)
-  public var passthroughArguments: [String] = []
+  var passthroughArguments: [String] = []
 
   func run() async throws {
     var fdMaster: Int32 = 0

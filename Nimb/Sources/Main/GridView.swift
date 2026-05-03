@@ -14,12 +14,12 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let store: Store
   private let gridID: Grid.ID
   private let gridLayer: GridLayer
-  private var isScrollingHorizontal: Bool?
+  private var isScrollingHorizontal: Bool? = nil
   private var xScrollingAccumulator: Double = 0
   private var xScrollingReported: Double = 0
   private var yScrollingAccumulator: Double = 0
   private var yScrollingReported: Double = 0
-  private var previousMouseMove: (modifier: String, point: IntegerPoint)?
+  private var previousMouseMove: (modifier: String, point: IntegerPoint)? = nil
 
   public var grid: Grid? {
     guard isRendered else {
@@ -84,7 +84,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       rect: bounds,
       options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
       owner: self,
-      userInfo: nil
+      userInfo: nil,
     ))
   }
 
@@ -168,7 +168,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     if abs(yScrollingDelta) > yThreshold {
       verticalScrollCount = Int(
-        yScrollingDelta / yThreshold
+        yScrollingDelta / yThreshold,
       )
       let yScrollingToBeReported = yThreshold * Double(verticalScrollCount)
 
@@ -187,7 +187,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
             modifier: modifier,
             grid: gridID,
             row: point.row,
-            col: point.column
+            col: point.column,
           ),
         ].cycled(times: abs(horizontalScrollCount))
       }
@@ -201,7 +201,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
             modifier: modifier,
             grid: gridID,
             row: point.row,
-            col: point.column
+            col: point.column,
           ),
         ].cycled(times: abs(verticalScrollCount))
       }
@@ -230,7 +230,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     let mouseMove = (
       modifier: event.modifierFlags.makeModifiers(isSpecialKey: false).joined(),
-      point: point(for: event)
+      point: point(for: event),
     )
     if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
       return
@@ -241,7 +241,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       modifier: mouseMove.modifier,
       grid: gridID,
       row: mouseMove.point.row,
-      col: mouseMove.point.column
+      col: mouseMove.point.column,
     ))
     previousMouseMove = mouseMove
   }
@@ -254,7 +254,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       .applying(upsideDownTransform)
     return .init(
       column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight)
+      row: Int(upsideDownLocation.y / state.font.cellHeight),
     )
   }
 
@@ -270,7 +270,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   public func report(
     mouseButton: String,
     action: String,
-    with event: NSEvent
+    with event: NSEvent,
   ) {
     guard state.isMouseUserInteractionEnabled else {
       return
@@ -283,7 +283,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       modifier: modifier,
       grid: gridID,
       row: point.row,
-      col: point.column
+      col: point.column,
     ))
   }
 }

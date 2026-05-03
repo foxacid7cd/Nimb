@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
+import AppKit
 import Collections
 import CoreText
 import CustomDump
-import AppKit
 import Metal
-import Queue
 import QuartzCore
+import Queue
 import Synchronization
 
 public class GridLayer: CAMetalLayer, @unchecked Sendable {
@@ -47,99 +47,6 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   }
 
   private final class MetalRenderer: @unchecked Sendable {
-    let device: MTLDevice
-    let commandQueue: MTLCommandQueue
-    let quadPipelineState: MTLRenderPipelineState
-    let glyphPipelineState: MTLRenderPipelineState
-    let glyphSamplerState: MTLSamplerState
-
-    init?(device: MTLDevice? = MTLCreateSystemDefaultDevice()) {
-      guard
-        let device,
-        let commandQueue = device.makeCommandQueue()
-      else {
-        return nil
-      }
-
-      let library: MTLLibrary
-      do {
-        library = try device.makeLibrary(source: Self.shaderSource, options: nil)
-      } catch {
-        logger.error("Metal shader compilation failed: \(error.localizedDescription)")
-        return nil
-      }
-
-      guard
-        let quadVertex = library.makeFunction(name: "quadVertex"),
-        let quadFragment = library.makeFunction(name: "quadFragment"),
-        let glyphVertex = library.makeFunction(name: "glyphVertex"),
-        let glyphFragment = library.makeFunction(name: "glyphFragment")
-      else {
-        logger.error("Metal shader entry points missing")
-        return nil
-      }
-
-      let quadPipelineState: MTLRenderPipelineState
-      do {
-        quadPipelineState = try Self.makePipelineState(
-          device: device,
-          vertexFunction: quadVertex,
-          fragmentFunction: quadFragment
-        )
-      } catch {
-        logger.error("Metal quad pipeline creation failed: \(error.localizedDescription)")
-        return nil
-      }
-
-      let glyphPipelineState: MTLRenderPipelineState
-      do {
-        glyphPipelineState = try Self.makePipelineState(
-          device: device,
-          vertexFunction: glyphVertex,
-          fragmentFunction: glyphFragment
-        )
-      } catch {
-        logger.error("Metal glyph pipeline creation failed: \(error.localizedDescription)")
-        return nil
-      }
-
-      let samplerDescriptor = MTLSamplerDescriptor()
-      samplerDescriptor.minFilter = .linear
-      samplerDescriptor.magFilter = .linear
-      samplerDescriptor.sAddressMode = .clampToEdge
-      samplerDescriptor.tAddressMode = .clampToEdge
-
-      guard let glyphSamplerState = device.makeSamplerState(descriptor: samplerDescriptor) else {
-        logger.error("Metal sampler creation failed")
-        return nil
-      }
-
-      self.device = device
-      self.commandQueue = commandQueue
-      self.quadPipelineState = quadPipelineState
-      self.glyphPipelineState = glyphPipelineState
-      self.glyphSamplerState = glyphSamplerState
-    }
-
-    private static func makePipelineState(
-      device: MTLDevice,
-      vertexFunction: MTLFunction,
-      fragmentFunction: MTLFunction
-    ) throws -> MTLRenderPipelineState {
-      let descriptor = MTLRenderPipelineDescriptor()
-      descriptor.vertexFunction = vertexFunction
-      descriptor.fragmentFunction = fragmentFunction
-      descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-      descriptor.colorAttachments[0].isBlendingEnabled = true
-      descriptor.colorAttachments[0].rgbBlendOperation = .add
-      descriptor.colorAttachments[0].alphaBlendOperation = .add
-      descriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-      descriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-      descriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-      descriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-      return try device.makeRenderPipelineState(descriptor: descriptor)
-    }
-
     private static let shaderSource = #"""
     #include <metal_stdlib>
     using namespace metal;
@@ -237,6 +144,100 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       return float4(in.color.rgb, in.color.a * alpha);
     }
     """#
+
+    let device: MTLDevice
+    let commandQueue: MTLCommandQueue
+    let quadPipelineState: MTLRenderPipelineState
+    let glyphPipelineState: MTLRenderPipelineState
+    let glyphSamplerState: MTLSamplerState
+
+    init?(device: MTLDevice? = MTLCreateSystemDefaultDevice()) {
+      guard
+        let device,
+        let commandQueue = device.makeCommandQueue()
+      else {
+        return nil
+      }
+
+      let library: MTLLibrary
+      do {
+        library = try device.makeLibrary(source: Self.shaderSource, options: nil)
+      } catch {
+        logger.error("Metal shader compilation failed: \(error.localizedDescription)")
+        return nil
+      }
+
+      guard
+        let quadVertex = library.makeFunction(name: "quadVertex"),
+        let quadFragment = library.makeFunction(name: "quadFragment"),
+        let glyphVertex = library.makeFunction(name: "glyphVertex"),
+        let glyphFragment = library.makeFunction(name: "glyphFragment")
+      else {
+        logger.error("Metal shader entry points missing")
+        return nil
+      }
+
+      let quadPipelineState: MTLRenderPipelineState
+      do {
+        quadPipelineState = try Self.makePipelineState(
+          device: device,
+          vertexFunction: quadVertex,
+          fragmentFunction: quadFragment,
+        )
+      } catch {
+        logger.error("Metal quad pipeline creation failed: \(error.localizedDescription)")
+        return nil
+      }
+
+      let glyphPipelineState: MTLRenderPipelineState
+      do {
+        glyphPipelineState = try Self.makePipelineState(
+          device: device,
+          vertexFunction: glyphVertex,
+          fragmentFunction: glyphFragment,
+        )
+      } catch {
+        logger.error("Metal glyph pipeline creation failed: \(error.localizedDescription)")
+        return nil
+      }
+
+      let samplerDescriptor = MTLSamplerDescriptor()
+      samplerDescriptor.minFilter = .linear
+      samplerDescriptor.magFilter = .linear
+      samplerDescriptor.sAddressMode = .clampToEdge
+      samplerDescriptor.tAddressMode = .clampToEdge
+
+      guard let glyphSamplerState = device.makeSamplerState(descriptor: samplerDescriptor) else {
+        logger.error("Metal sampler creation failed")
+        return nil
+      }
+
+      self.device = device
+      self.commandQueue = commandQueue
+      self.quadPipelineState = quadPipelineState
+      self.glyphPipelineState = glyphPipelineState
+      self.glyphSamplerState = glyphSamplerState
+    }
+
+    private static func makePipelineState(
+      device: MTLDevice,
+      vertexFunction: MTLFunction,
+      fragmentFunction: MTLFunction,
+    ) throws
+    -> MTLRenderPipelineState {
+      let descriptor = MTLRenderPipelineDescriptor()
+      descriptor.vertexFunction = vertexFunction
+      descriptor.fragmentFunction = fragmentFunction
+      descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+      descriptor.colorAttachments[0].isBlendingEnabled = true
+      descriptor.colorAttachments[0].rgbBlendOperation = .add
+      descriptor.colorAttachments[0].alphaBlendOperation = .add
+      descriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+      descriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+      descriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+      descriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+      return try device.makeRenderPipelineState(descriptor: descriptor)
+    }
   }
 
   private final class MetalGlyphAtlas: @unchecked Sendable {
@@ -254,6 +255,14 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       let uvSize: SIMD2<Float>
     }
 
+    private struct RasterizedGlyph {
+      let bytes: [UInt8]
+      let width: Int
+      let height: Int
+      let origin: SIMD2<Float>
+      let size: SIMD2<Float>
+    }
+
     let texture: MTLTexture
     let scale: CGFloat
 
@@ -267,7 +276,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         pixelFormat: .r8Unorm,
         width: size,
         height: size,
-        mipmapped: false
+        mipmapped: false,
       )
       descriptor.usage = [.shaderRead]
       descriptor.storageMode = renderer.device.hasUnifiedMemory ? .shared : .managed
@@ -284,20 +293,21 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         region: .init(origin: .init(x: 0, y: 0, z: 0), size: .init(width: size, height: size, depth: 1)),
         mipmapLevel: 0,
         withBytes: zero,
-        bytesPerRow: size
+        bytesPerRow: size,
       )
     }
 
     func entry(
       for glyph: CGGlyph,
       font: NSFont,
-      renderer: MetalRenderer
-    ) -> GlyphEntry? {
+      renderer: MetalRenderer,
+    )
+    -> GlyphEntry? {
       let key = GlyphKey(
         fontName: font.fontName,
         pointSize: font.pointSize,
         glyph: glyph,
-        scaleMillipoints: Int((scale * 1000).rounded())
+        scaleMillipoints: Int((scale * 1000).rounded()),
       )
       if let entry = entries[key] {
         return entry
@@ -308,14 +318,6 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       }
 
       return place(rasterizedGlyph: rasterizedGlyph, for: key)
-    }
-
-    private struct RasterizedGlyph {
-      let bytes: [UInt8]
-      let width: Int
-      let height: Int
-      let origin: SIMD2<Float>
-      let size: SIMD2<Float>
     }
 
     private func rasterizeGlyph(glyph: CGGlyph, font: NSFont) -> RasterizedGlyph? {
@@ -341,7 +343,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
           bitsPerComponent: 8,
           bytesPerRow: pixelWidth,
           space: CGColorSpaceCreateDeviceGray(),
-          bitmapInfo: CGImageAlphaInfo.none.rawValue
+          bitmapInfo: CGImageAlphaInfo.none.rawValue,
         )
       else {
         return nil
@@ -362,14 +364,15 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         width: pixelWidth,
         height: pixelHeight,
         origin: .init(Float(paddedBounds.minX), Float(paddedBounds.minY)),
-        size: .init(Float(CGFloat(pixelWidth) / scale), Float(CGFloat(pixelHeight) / scale))
+        size: .init(Float(CGFloat(pixelWidth) / scale), Float(CGFloat(pixelHeight) / scale)),
       )
     }
 
     private func place(
       rasterizedGlyph: RasterizedGlyph,
-      for key: GlyphKey
-    ) -> GlyphEntry? {
+      for key: GlyphKey,
+    )
+    -> GlyphEntry? {
       if rasterizedGlyph.width > texture.width || rasterizedGlyph.height > texture.height {
         return nil
       }
@@ -391,11 +394,11 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       texture.replace(
         region: .init(
           origin: .init(x: nextX, y: nextY, z: 0),
-          size: .init(width: rasterizedGlyph.width, height: rasterizedGlyph.height, depth: 1)
+          size: .init(width: rasterizedGlyph.width, height: rasterizedGlyph.height, depth: 1),
         ),
         mipmapLevel: 0,
         withBytes: rasterizedGlyph.bytes,
-        bytesPerRow: rasterizedGlyph.width
+        bytesPerRow: rasterizedGlyph.width,
       )
 
       let entry = GlyphEntry(
@@ -403,12 +406,12 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         size: rasterizedGlyph.size,
         uvOrigin: .init(
           Float(nextX) / Float(texture.width),
-          Float(nextY) / Float(texture.height)
+          Float(nextY) / Float(texture.height),
         ),
         uvSize: .init(
           Float(rasterizedGlyph.width) / Float(texture.width),
-          Float(rasterizedGlyph.height) / Float(texture.height)
-        )
+          Float(rasterizedGlyph.height) / Float(texture.height),
+        ),
       )
       entries[key] = entry
 
@@ -429,7 +432,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         region: .init(origin: .init(x: 0, y: 0, z: 0), size: .init(width: texture.width, height: texture.height, depth: 1)),
         mipmapLevel: 0,
         withBytes: zero,
-        bytesPerRow: texture.width
+        bytesPerRow: texture.width,
       )
     }
   }
@@ -494,12 +497,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   private let gridID: Grid.ID
   private let store: Store
   private nonisolated let isolatedRenderContext = Mutex<RenderContext?>(nil)
-  private var metalGlyphAtlas: MetalGlyphAtlas?
-  private var metalBufferCache: MetalBufferCache?
-
-  public nonisolated func update(renderContext: RenderContext) {
-    isolatedRenderContext.withLock { $0 = renderContext }
-  }
+  private var metalGlyphAtlas: MetalGlyphAtlas? = nil
+  private var metalBufferCache: MetalBufferCache? = nil
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
@@ -513,7 +512,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   @MainActor
   init(
     store: Store,
-    gridID: Grid.ID
+    gridID: Grid.ID,
   ) {
     self.store = store
     self.gridID = gridID
@@ -529,26 +528,6 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
-  }
-
-  func updateDrawableSize() {
-    let scale = max(contentsScale, 1)
-    drawableSize = .init(
-      width: ceil(bounds.width * scale),
-      height: ceil(bounds.height * scale)
-    )
-  }
-
-  private func configureMetalLayer() {
-    guard let metalRenderer = Self.metalRenderer else {
-      return
-    }
-
-    device = metalRenderer.device
-    pixelFormat = .bgra8Unorm
-    framebufferOnly = false
-    colorspace = Self.colorSpace
-    isOpaque = false
   }
 
   override public func display() {
@@ -570,12 +549,46 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     draw(
       snapshot: snapshot,
       in: ctx,
-      clipRect: ctx.boundingBoxOfClipPath
+      clipRect: ctx.boundingBoxOfClipPath,
     )
   }
 
+  public nonisolated func update(renderContext: RenderContext) {
+    isolatedRenderContext.withLock { $0 = renderContext }
+  }
+
+  public func render() {
+    for dirtyRect in calculateDirtyRects() {
+      let clippedDirtyRect = dirtyRect.intersection(bounds)
+      guard !clippedDirtyRect.isNull, !clippedDirtyRect.isEmpty else {
+        continue
+      }
+      setNeedsDisplay(clippedDirtyRect)
+    }
+  }
+
+  func updateDrawableSize() {
+    let scale = max(contentsScale, 1)
+    drawableSize = .init(
+      width: ceil(bounds.width * scale),
+      height: ceil(bounds.height * scale),
+    )
+  }
+
+  private func configureMetalLayer() {
+    guard let metalRenderer = Self.metalRenderer else {
+      return
+    }
+
+    device = metalRenderer.device
+    pixelFormat = .bgra8Unorm
+    framebufferOnly = false
+    colorspace = Self.colorSpace
+    isOpaque = false
+  }
+
   private func makeDrawSnapshot() -> DrawSnapshot? {
-    isolatedRenderContext.withLock({ renderContext in
+    isolatedRenderContext.withLock { renderContext in
       guard
         let renderContext,
         let grid = renderContext.state.grids[gridID]
@@ -592,15 +605,16 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         font: renderContext.state.font,
         appearance: renderContext.state.appearance,
         cursorBlinkingPhase: renderContext.state.cursorBlinkingPhase,
-        isMouseUserInteractionEnabled: renderContext.state.isMouseUserInteractionEnabled
+        isMouseUserInteractionEnabled: renderContext.state.isMouseUserInteractionEnabled,
       )
-    })
+    }
   }
 
   private func renderWithMetal(
     snapshot: DrawSnapshot,
-    renderer: MetalRenderer
-  ) -> Bool {
+    renderer: MetalRenderer,
+  )
+  -> Bool {
     guard
       let drawable = nextDrawable(),
       let commandBuffer = renderer.commandQueue.makeCommandBuffer()
@@ -616,7 +630,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     let scene = buildMetalScene(
       snapshot: snapshot,
       renderer: renderer,
-      glyphAtlas: glyphAtlas
+      glyphAtlas: glyphAtlas,
     )
 
     let renderPassDescriptor = MTLRenderPassDescriptor()
@@ -630,7 +644,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     }
 
     let uniforms = MetalUniforms(
-      viewportSize: .init(Float(bounds.width), Float(bounds.height))
+      viewportSize: .init(Float(bounds.width), Float(bounds.height)),
     )
     let bufferCache = prepareBufferCache(renderer: renderer)
 
@@ -649,8 +663,9 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
 
   private func prepareGlyphAtlas(
     renderer: MetalRenderer,
-    scale: CGFloat
-  ) -> MetalGlyphAtlas? {
+    scale: CGFloat,
+  )
+  -> MetalGlyphAtlas? {
     if let metalGlyphAtlas, abs(metalGlyphAtlas.scale - scale) < 0.001 {
       return metalGlyphAtlas
     }
@@ -673,18 +688,19 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   private func buildMetalScene(
     snapshot: DrawSnapshot,
     renderer: MetalRenderer,
-    glyphAtlas: MetalGlyphAtlas
-  ) -> MetalScene {
+    glyphAtlas: MetalGlyphAtlas,
+  )
+  -> MetalScene {
     var scene = MetalScene()
 
     let boundingRect = IntegerRectangle(
       frame: bounds.applying(snapshot.upsideDownTransform),
-      cellSize: snapshot.font.cellSize
+      cellSize: snapshot.font.cellSize,
     )
     let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
       boundingRect: boundingRect,
       font: snapshot.font,
-      upsideDownTransform: snapshot.upsideDownTransform
+      upsideDownTransform: snapshot.upsideDownTransform,
     )
 
     for rowDrawRuns in visibleRowDrawRuns {
@@ -694,8 +710,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         scene.backgroundQuads.append(
           quadInstance(
             rect: rect,
-            color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal
-          )
+            color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
+          ),
         )
 
         appendDecorationInstances(
@@ -704,7 +720,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
           font: snapshot.font,
           appearance: snapshot.appearance,
           scale: max(contentsScale, 1),
-          to: &scene.decorationQuads
+          to: &scene.decorationQuads,
         )
 
         if let glyphRuns = drawRun.glyphRuns {
@@ -714,7 +730,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
             color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
             renderer: renderer,
             glyphAtlas: glyphAtlas,
-            to: &scene.glyphInstances
+            to: &scene.glyphInstances,
           )
         }
       }
@@ -731,7 +747,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         snapshot: snapshot,
         renderer: renderer,
         glyphAtlas: glyphAtlas,
-        to: &scene
+        to: &scene,
       )
     }
 
@@ -745,15 +761,17 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     renderer: MetalRenderer,
     glyphAtlas: MetalGlyphAtlas,
     clipRect: CGRect? = nil,
-    to glyphInstances: inout [MetalGlyphInstance]
+    to glyphInstances: inout [MetalGlyphInstance],
   ) {
     for glyphRun in glyphRuns {
       for index in glyphRun.glyphs.indices {
-        guard let entry = glyphAtlas.entry(
-          for: glyphRun.glyphs[index],
-          font: glyphRun.appKitFont,
-          renderer: renderer
-        ) else {
+        guard
+          let entry = glyphAtlas.entry(
+            for: glyphRun.glyphs[index],
+            font: glyphRun.appKitFont,
+            renderer: renderer,
+          )
+        else {
           continue
         }
 
@@ -761,17 +779,18 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
           x: rect.origin.x + glyphRun.positions[index].x + CGFloat(entry.origin.x),
           y: rect.origin.y + glyphRun.positions[index].y + CGFloat(entry.origin.y),
           width: CGFloat(entry.size.x),
-          height: CGFloat(entry.size.y)
+          height: CGFloat(entry.size.y),
         )
 
-        if let clipRect,
-           let clippedInstance = clippedGlyphInstance(
-             rect: glyphRect,
-             uvOrigin: entry.uvOrigin,
-             uvSize: entry.uvSize,
-             color: color,
-             clipRect: clipRect
-           )
+        if
+          let clipRect,
+          let clippedInstance = clippedGlyphInstance(
+            rect: glyphRect,
+            uvOrigin: entry.uvOrigin,
+            uvSize: entry.uvSize,
+            color: color,
+            clipRect: clipRect,
+          )
         {
           glyphInstances.append(clippedInstance)
         } else if clipRect == nil {
@@ -781,8 +800,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
               size: .init(Float(glyphRect.width), Float(glyphRect.height)),
               uvOrigin: entry.uvOrigin,
               uvSize: entry.uvSize,
-              color: color
-            )
+              color: color,
+            ),
           )
         }
       }
@@ -794,7 +813,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     snapshot: DrawSnapshot,
     renderer: MetalRenderer,
     glyphAtlas: MetalGlyphAtlas,
-    to scene: inout MetalScene
+    to scene: inout MetalScene,
   ) {
     let cursorForegroundColor: Color
     let cursorBackgroundColor: Color
@@ -813,15 +832,16 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       .applying(snapshot.upsideDownTransform)
 
     scene.cursorQuads.append(
-      quadInstance(rect: cursorRect, color: cursorBackgroundColor.metal)
+      quadInstance(rect: cursorRect, color: cursorBackgroundColor.metal),
     )
 
-    if cursorDrawRun.shouldDrawParentText,
-       let glyphRuns = cursorDrawRun.parentDrawRun.glyphRuns
+    if
+      cursorDrawRun.shouldDrawParentText,
+      let glyphRuns = cursorDrawRun.parentDrawRun.glyphRuns
     {
       let parentRectangle = IntegerRectangle(
         origin: .init(column: cursorDrawRun.parentOrigin.column, row: cursorDrawRun.parentOrigin.row),
-        size: .init(columnsCount: cursorDrawRun.parentDrawRun.columnsCount, rowsCount: 1)
+        size: .init(columnsCount: cursorDrawRun.parentDrawRun.columnsCount, rowsCount: 1),
       )
       let parentRect = (parentRectangle * snapshot.font.cellSize)
         .applying(snapshot.upsideDownTransform)
@@ -833,7 +853,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         renderer: renderer,
         glyphAtlas: glyphAtlas,
         clipRect: cursorRect,
-        to: &scene.cursorGlyphInstances
+        to: &scene.cursorGlyphInstances,
       )
     }
   }
@@ -844,7 +864,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     font: Font,
     appearance: Appearance,
     scale: CGFloat,
-    to quads: inout [MetalQuadInstance]
+    to quads: inout [MetalQuadInstance],
   ) {
     guard case let .cells(cells) = drawRun.rowPartContent else {
       return
@@ -863,8 +883,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       quads.append(
         quadInstance(
           rect: .init(x: rect.minX, y: rect.midY - thickness / 2, width: rect.width, height: thickness),
-          color: color
-        )
+          color: color,
+        ),
       )
     }
 
@@ -872,8 +892,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       quads.append(
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
-          color: color
-        )
+          color: color,
+        ),
       )
     } else if decorations.isUnderdashed {
       appendPatternedLineQuads(
@@ -884,7 +904,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         gapWidth: 2,
         thickness: thickness,
         color: color,
-        to: &quads
+        to: &quads,
       )
     } else if decorations.isUnderdotted {
       appendPatternedLineQuads(
@@ -895,20 +915,20 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         gapWidth: 1,
         thickness: thickness,
         color: color,
-        to: &quads
+        to: &quads,
       )
     } else if decorations.isUnderdouble {
       quads.append(
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
-          color: color
-        )
+          color: color,
+        ),
       )
       quads.append(
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY + 3, width: rect.width, height: thickness),
-          color: color
-        )
+          color: color,
+        ),
       )
     } else if decorations.isUndercurl {
       let widthDivider = 3
@@ -924,8 +944,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         quads.append(
           quadInstance(
             rect: .init(x: x, y: y, width: thickness, height: thickness),
-            color: color
-          )
+            color: color,
+          ),
         )
       }
     }
@@ -939,7 +959,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     gapWidth: CGFloat,
     thickness: CGFloat,
     color: SIMD4<Float>,
-    to quads: inout [MetalQuadInstance]
+    to quads: inout [MetalQuadInstance],
   ) {
     var currentX = fromX
     while currentX < toX {
@@ -947,8 +967,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       quads.append(
         quadInstance(
           rect: .init(x: currentX, y: y, width: width, height: thickness),
-          color: color
-        )
+          color: color,
+        ),
       )
       currentX += segmentWidth + gapWidth
     }
@@ -956,12 +976,13 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
 
   private func quadInstance(
     rect: CGRect,
-    color: SIMD4<Float>
-  ) -> MetalQuadInstance {
+    color: SIMD4<Float>,
+  )
+  -> MetalQuadInstance {
     .init(
       origin: .init(Float(rect.origin.x), Float(rect.origin.y)),
       size: .init(Float(rect.width), Float(rect.height)),
-      color: color
+      color: color,
     )
   }
 
@@ -970,8 +991,9 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     uvOrigin: SIMD2<Float>,
     uvSize: SIMD2<Float>,
     color: SIMD4<Float>,
-    clipRect: CGRect
-  ) -> MetalGlyphInstance? {
+    clipRect: CGRect,
+  )
+  -> MetalGlyphInstance? {
     let intersection = rect.intersection(clipRect)
     guard !intersection.isNull, !intersection.isEmpty, rect.width > 0, rect.height > 0 else {
       return nil
@@ -987,13 +1009,13 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       size: .init(Float(intersection.width), Float(intersection.height)),
       uvOrigin: .init(
         uvOrigin.x + uvSize.x * left,
-        uvOrigin.y + uvSize.y * top
+        uvOrigin.y + uvSize.y * top,
       ),
       uvSize: .init(
         uvSize.x * max(0, 1 - left - right),
-        uvSize.y * max(0, 1 - top - bottom)
+        uvSize.y * max(0, 1 - top - bottom),
       ),
-      color: color
+      color: color,
     )
   }
 
@@ -1003,7 +1025,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     uniforms: MetalUniforms,
     renderer: MetalRenderer,
     bufferCache: MetalBufferCache,
-    encoder: MTLRenderCommandEncoder
+    encoder: MTLRenderCommandEncoder,
   ) {
     guard
       !instances.isEmpty,
@@ -1026,7 +1048,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     renderer: MetalRenderer,
     bufferCache: MetalBufferCache,
     atlasTexture: MTLTexture,
-    encoder: MTLRenderCommandEncoder
+    encoder: MTLRenderCommandEncoder,
   ) {
     guard
       !instances.isEmpty,
@@ -1047,19 +1069,19 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   private func draw(
     snapshot: DrawSnapshot,
     in ctx: CGContext,
-    clipRect: CGRect
+    clipRect: CGRect,
   ) {
     ctx.saveGState()
     defer { ctx.restoreGState() }
 
     let boundingRect = IntegerRectangle(
       frame: clipRect.applying(snapshot.upsideDownTransform),
-      cellSize: snapshot.font.cellSize
+      cellSize: snapshot.font.cellSize,
     )
     let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
       boundingRect: boundingRect,
       font: snapshot.font,
-      upsideDownTransform: snapshot.upsideDownTransform
+      upsideDownTransform: snapshot.upsideDownTransform,
     )
 
     ctx.setAllowsAntialiasing(false)
@@ -1072,7 +1094,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
           to: ctx,
           at: visibleDrawRun.rect.origin,
           font: snapshot.font,
-          appearance: snapshot.appearance
+          appearance: snapshot.appearance,
         )
       }
     }
@@ -1087,7 +1109,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
           to: ctx,
           at: visibleDrawRun.rect,
           font: snapshot.font,
-          appearance: snapshot.appearance
+          appearance: snapshot.appearance,
         )
       }
     }
@@ -1102,18 +1124,8 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
         to: ctx,
         font: snapshot.font,
         appearance: snapshot.appearance,
-        upsideDownTransform: snapshot.upsideDownTransform
+        upsideDownTransform: snapshot.upsideDownTransform,
       )
-    }
-  }
-
-  public func render() {
-    for dirtyRect in calculateDirtyRects() {
-      let clippedDirtyRect = dirtyRect.intersection(bounds)
-      guard !clippedDirtyRect.isNull, !clippedDirtyRect.isEmpty else {
-        continue
-      }
-      setNeedsDisplay(clippedDirtyRect)
     }
   }
 
@@ -1143,9 +1155,9 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
             (rectangle * renderContext.state.font.cellSize)
               .insetBy(
                 dx: -renderContext.state.font.cellSize.width,
-                dy: -renderContext.state.font.cellSize.height * 0.5
+                dy: -renderContext.state.font.cellSize.height * 0.5,
               )
-              .applying(upsideDownTransform)
+              .applying(upsideDownTransform),
           )
         }
 
@@ -1160,7 +1172,7 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     {
       dirtyRects.append(
         (cursorDrawRun.rectangle * renderContext.state.font.cellSize)
-          .applying(upsideDownTransform)
+          .applying(upsideDownTransform),
       )
     }
 
@@ -1177,7 +1189,7 @@ private extension Color {
       Float(color.redComponent),
       Float(color.greenComponent),
       Float(color.blueComponent),
-      Float(color.alphaComponent)
+      Float(color.alphaComponent),
     )
   }
 
@@ -1187,7 +1199,7 @@ private extension Color {
       red: Double(metal.x),
       green: Double(metal.y),
       blue: Double(metal.z),
-      alpha: Double(metal.w)
+      alpha: Double(metal.w),
     )
   }
 }

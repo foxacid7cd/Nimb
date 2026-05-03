@@ -95,13 +95,13 @@ public class MsgShowsViewController: NSViewController, Rendering {
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
     zip(
       0 ..< msgShow.contentParts.count,
-      msgShow.contentParts
+      msgShow.contentParts,
     )
     .map { index, part in
       var attributes: [NSAttributedString.Key: Any] = [
         .font: state.font.appKit(
           isBold: state.appearance.isBold(for: part.highlightID),
-          isItalic: state.appearance.isItalic(for: part.highlightID)
+          isItalic: state.appearance.isItalic(for: part.highlightID),
         ),
         .foregroundColor: state.appearance.foregroundColor(for: part.highlightID).appKit,
       ]

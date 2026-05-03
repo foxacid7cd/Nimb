@@ -41,18 +41,18 @@ public struct IntegerRectangle: Sendable, Hashable {
   public init(frame: CGRect, cellSize: CGSize) {
     let origin = IntegerPoint(
       column: Int(frame.minX / cellSize.width),
-      row: Int(frame.minY / cellSize.height)
+      row: Int(frame.minY / cellSize.height),
     )
     let farthestPoint = IntegerPoint(
       column: Int((frame.maxX / cellSize.width).rounded(.up)),
-      row: Int((frame.maxY / cellSize.height).rounded(.up))
+      row: Int((frame.maxY / cellSize.height).rounded(.up)),
     )
     self.init(
       origin: origin,
       size: .init(
         columnsCount: farthestPoint.column - origin.column,
-        rowsCount: farthestPoint.row - origin.row
-      )
+        rowsCount: farthestPoint.row - origin.row,
+      ),
     )
   }
 
@@ -62,11 +62,11 @@ public struct IntegerRectangle: Sendable, Hashable {
   {
     let origin = IntegerPoint(
       column: max(minColumn, rectangle.minColumn),
-      row: max(minRow, rectangle.minRow)
+      row: max(minRow, rectangle.minRow),
     )
     let size = IntegerSize(
       columnsCount: max(0, min(maxColumn, rectangle.maxColumn) - origin.column),
-      rowsCount: max(0, min(maxRow, rectangle.maxRow) - origin.row)
+      rowsCount: max(0, min(maxRow, rectangle.maxRow) - origin.row),
     )
     return .init(origin: origin, size: size)
   }
@@ -101,7 +101,7 @@ public func * (first: IntegerRectangle, second: CGSize) -> CGRect {
 @inlinable
 public func + (
   first: IntegerRectangle,
-  second: IntegerPoint
+  second: IntegerPoint,
 )
   -> IntegerRectangle
 {
@@ -153,7 +153,7 @@ public prefix func - (point: CGPoint) -> CGPoint {
 public func * (first: IntegerPoint, second: CGSize) -> CGPoint {
   .init(
     x: Double(first.column) * second.width,
-    y: Double(first.row) * second.height
+    y: Double(first.row) * second.height,
   )
 }
 
@@ -167,7 +167,7 @@ public struct IntegerSize: Sendable, Hashable {
 public func * (first: IntegerSize, second: CGSize) -> CGSize {
   .init(
     width: Double(first.columnsCount) * second.width,
-    height: Double(first.rowsCount) * second.height
+    height: Double(first.rowsCount) * second.height,
   )
 }
 

@@ -17,7 +17,7 @@ public actor Generator {
   private let metadataTask: Task<Metadata, Error>
 
   public init<S: AsyncSequence & Sendable>(
-    _ dataBatches: S
+    _ dataBatches: S,
   ) where S.Element == Data {
     metadataTask = Task<Metadata, Error> {
       var accumulator = [Value]()
@@ -48,7 +48,7 @@ public actor Generator {
   public func writeFiles(to directoryURL: URL) async throws {
     try? FileManager.default.createDirectory(
       at: directoryURL,
-      withIntermediateDirectories: true
+      withIntermediateDirectories: true,
     )
 
     let metadata = try await metadataTask.value
@@ -58,7 +58,7 @@ public actor Generator {
 
       let fileURL = directoryURL.appending(
         path: "\(file.name).swift",
-        directoryHint: .notDirectory
+        directoryHint: .notDirectory,
       )
 
       do {

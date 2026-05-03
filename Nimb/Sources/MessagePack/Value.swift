@@ -41,7 +41,7 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   }
 
   init(
-    _ object: msgpack_object
+    _ object: msgpack_object,
   ) {
     switch object.type {
     case MSGPACK_OBJECT_NEGATIVE_INTEGER,
@@ -62,10 +62,10 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
           memcpy(
             buffer.baseAddress!,
             str.ptr,
-            size
+            size,
           )
           return size
-        }
+        },
       )
       self = .string(string)
 
@@ -108,13 +108,13 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
 
       self = .ext(
         type: ext.type,
-        data: .init(bytes: UnsafeRawPointer(ext.ptr), count: Int(ext.size))
+        data: .init(bytes: UnsafeRawPointer(ext.ptr), count: Int(ext.size)),
       )
 
     case MSGPACK_OBJECT_NIL: self = .nil
 
     default: preconditionFailure(
-        "Not implemented behavior for type \(object.type)"
+        "Not implemented behavior for type \(object.type)",
       )
     }
   }

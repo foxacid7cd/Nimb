@@ -7,7 +7,7 @@ public extension API {
   func nimb(method: String, parameters: [Value] = []) async throws -> Value? {
     let rawResult = try await nvimExecLua(
       code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
-      args: parameters
+      args: parameters,
     )
     switch rawResult {
     case let .dictionary(dictionary):
@@ -16,7 +16,7 @@ public extension API {
         case let .array(rawErrorMessages) = rawFailure
       {
         throw NimbNeovimError(
-          errorMessages: rawErrorMessages.compactMap(\.string)
+          errorMessages: rawErrorMessages.compactMap(\.string),
         )
       } else if let rawSuccess = dictionary["success"] {
         return rawSuccess
@@ -31,7 +31,7 @@ public extension API {
   func nimbFast(method: String, parameters: [Value] = []) {
     fastCall(APIFunctions.NvimExecLua(
       code: "return require('nimb-gui').\(method)(\(parameters.isEmpty ? "" : "..."))",
-      args: parameters
+      args: parameters,
     ))
   }
 

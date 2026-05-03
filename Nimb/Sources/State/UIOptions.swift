@@ -7,7 +7,7 @@ public extension UIOptions {
     .init(
       uniqueKeysWithValues: map {
         (key: .string($0.rawValue), value: .boolean(true))
-      }
+      },
     )
   }
 }

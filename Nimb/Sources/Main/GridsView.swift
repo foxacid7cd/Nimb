@@ -14,15 +14,15 @@ public class GridsView: NSView, Rendering {
 
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<GridView>()
-  private var leftMouseInteractionTarget: GridView?
-  private var rightMouseInteractionTarget: GridView?
-  private var otherMouseInteractionTarget: GridView?
+  private var leftMouseInteractionTarget: GridView? = nil
+  private var rightMouseInteractionTarget: GridView? = nil
+  private var otherMouseInteractionTarget: GridView? = nil
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(
         x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight,
       )
   }
 
@@ -96,7 +96,7 @@ public class GridsView: NSView, Rendering {
       withUnsafeMutablePointer(to: &zPositionsObject) { pointer in
         sortSubviews(
           subviewSortingFunction(firstView:secondView:context:),
-          context: UnsafeMutableRawPointer(pointer)
+          context: UnsafeMutableRawPointer(pointer),
         )
       }
     }
@@ -106,7 +106,7 @@ public class GridsView: NSView, Rendering {
 
   public func windowFrame(
     forGridID gridID: Grid.ID,
-    gridFrame: IntegerRectangle
+    gridFrame: IntegerRectangle,
   )
     -> CGRect?
   {
@@ -121,7 +121,7 @@ public class GridsView: NSView, Rendering {
       let view = GridView(
         frame: .init(x: 0, y: 0, width: 200, height: 200),
         store: store,
-        gridID: id
+        gridID: id,
       )
       renderChildren(view)
       view.autoresizingMask = []
@@ -137,7 +137,7 @@ public class GridsView: NSView, Rendering {
       .applying(upsideDownTransform)
     return .init(
       column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight)
+      row: Int(upsideDownLocation.y / state.font.cellHeight),
     )
   }
 }

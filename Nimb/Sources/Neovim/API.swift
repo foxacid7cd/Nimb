@@ -16,14 +16,14 @@ public final class API<Target: Channel>: Sendable {
             let uiEvents =
               try [UIEvent](
                 rawRedrawNotificationParameters: notification
-                  .parameters
+                  .parameters,
               )
             return .redraw(uiEvents)
 
           case "nvim_error_event":
             let nvimErrorEvent = try NeovimErrorEvent(
               parameters: notification
-                .parameters
+                .parameters,
             )
             return .nvimErrorEvent(nvimErrorEvent)
 
@@ -44,7 +44,7 @@ public final class API<Target: Channel>: Sendable {
   public func call<T: APIFunction>(_ apiFunction: T) async throws -> T.Success {
     try await rpc.call(
       method: T.method,
-      withParameters: apiFunction.parameters
+      withParameters: apiFunction.parameters,
     )
     .map(T.decodeSuccess(from:), NeovimError.init(raw:))
   }
@@ -52,12 +52,12 @@ public final class API<Target: Channel>: Sendable {
   public func fastCall<T: APIFunction>(_ apiFunction: T) {
     rpc.fastCall(
       method: T.method,
-      withParameters: apiFunction.parameters
+      withParameters: apiFunction.parameters,
     )
   }
 
   public func fastCallsTransaction<S: Sequence>(
-    with apiFunctions: S
+    with apiFunctions: S,
   ) where S.Element == any APIFunction {
     rpc.fastCallsTransaction(with: apiFunctions.lazy.map {
       (type(of: $0).method, $0.parameters)

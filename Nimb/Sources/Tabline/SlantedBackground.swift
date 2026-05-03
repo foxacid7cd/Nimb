@@ -17,13 +17,13 @@ extension NSImage {
     isFlatLeft: Bool = false,
     isFlatRight: Bool = false,
     size: CGSize,
-    fill: SlantedBackgroundFill
+    fill: SlantedBackgroundFill,
   )
     -> NSImage
   {
     .init(
       size: .init(width: size.width + 24, height: size.height),
-      flipped: false
+      flipped: false,
     ) { _ in
       guard let graphicsContext = NSGraphicsContext.current else {
         return false
@@ -36,7 +36,7 @@ extension NSImage {
       cgContext.addLine(to: .init(x: size.width + 24, y: size.height))
       cgContext.addLine(to: .init(
         x: isFlatRight ? size.width + 24 : size.width + 12,
-        y: 0
+        y: 0,
       ))
       cgContext.closePath()
 
@@ -47,13 +47,13 @@ extension NSImage {
         let gradient = CGGradient(
           colorsSpace: .init(name: CGColorSpace.genericRGBLinear),
           colors: [from.cgColor, to.cgColor] as CFArray,
-          locations: [0, 1]
+          locations: [0, 1],
         )!
         cgContext.drawLinearGradient(
           gradient,
           start: .init(),
           end: .init(x: 0, y: size.height),
-          options: []
+          options: [],
         )
 
       case let .color(color):

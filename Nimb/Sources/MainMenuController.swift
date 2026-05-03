@@ -7,53 +7,53 @@ import CustomDump
 final class MainMenuController: NSObject, Rendering {
   let menu = NSMenu()
 
-  var settingsClicked: (@MainActor () -> Void)?
+  var settingsClicked: (@MainActor () -> Void)? = nil
 
   private let store: Store
   private let settingsMenuItem = NSMenuItem(
     title: "Settings...",
     action: #selector(handleSettings),
-    keyEquivalent: ""
+    keyEquivalent: "",
   )
   private let quitMenuItem = NSMenuItem(
     title: "Quit Nimb",
     action: #selector(handleQuit),
-    keyEquivalent: "q"
+    keyEquivalent: "q",
   )
   private let openMenuItem = NSMenuItem(
     title: "Open",
     action: #selector(handleOpen),
-    keyEquivalent: "o"
+    keyEquivalent: "o",
   )
   private let saveMenuItem = NSMenuItem(
     title: "Save",
     action: #selector(handleSave),
-    keyEquivalent: "s"
+    keyEquivalent: "s",
   )
   private let saveAsMenuItem = NSMenuItem(
     title: "Save As",
     action: #selector(handleSaveAs),
-    keyEquivalent: "s"
+    keyEquivalent: "s",
   )
   private let closeWindowMenuItem = NSMenuItem(
     title: "Close Window",
     action: #selector(handleCloseWindow),
-    keyEquivalent: "w"
+    keyEquivalent: "w",
   )
   private let editMenu = NSMenu(title: "Edit")
   private let copyItem = NSMenuItem(
     title: "Copy",
     action: #selector(handleCopy),
-    keyEquivalent: "c"
+    keyEquivalent: "c",
   )
   private let pasteItem = NSMenuItem(
     title: "Paste",
     action: #selector(handlePaste),
-    keyEquivalent: "v"
+    keyEquivalent: "v",
   )
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
-  private var actionTask: Task<Void, Never>?
+  private var actionTask: Task<Void, Never>? = nil
 
   init(store: Store) {
     self.store = store
@@ -163,7 +163,7 @@ final class MainMenuController: NSObject, Rendering {
       let name = try? await store.api.nvimBufGetName(bufferID: .current),
       let rawBuftype = try? await store.api.nvimGetOptionValue(
         name: "buftype",
-        opts: ["buf": .integer(0)]
+        opts: ["buf": .integer(0)],
       ),
       case let .string(buftype) = rawBuftype
     else {
@@ -172,7 +172,7 @@ final class MainMenuController: NSObject, Rendering {
 
     return (
       name: name,
-      type: buftype
+      type: buftype,
     )
   }
 
@@ -211,7 +211,7 @@ final class MainMenuController: NSObject, Rendering {
     }
     let newFont = NSFontManager.shared.convert(
       currentFont,
-      toSize: newFontSize
+      toSize: newFontSize,
     )
     store.dispatch(Actions.SetFont(value: Font(newFont)))
   }
@@ -266,7 +266,7 @@ final class MainMenuController: NSObject, Rendering {
         .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")
       FileManager.default.createFile(
         atPath: temporaryFileURL.path(),
-        contents: nil
+        contents: nil,
       )
 
       do {
@@ -278,7 +278,7 @@ final class MainMenuController: NSObject, Rendering {
       } catch {
         logger
           .error(
-            "could not create or write file handle to temporary file with error \(error)"
+            "could not create or write file handle to temporary file with error \(error)",
           )
       }
     }
@@ -356,7 +356,7 @@ extension MainMenuController: NSMenuDelegate {
           return makeItem(
             "Select Font",
             action: #selector(handleFont),
-            keyEquivalent: "t"
+            keyEquivalent: "t",
           )
 
         case .separator:
@@ -366,14 +366,14 @@ extension MainMenuController: NSMenuDelegate {
           return makeItem(
             "Increase Font Size",
             action: #selector(handleIncreaseFontSize),
-            keyEquivalent: "+"
+            keyEquivalent: "+",
           )
 
         case .decreaseSize:
           return makeItem(
             "Decrease Font Size",
             action: #selector(handleDecreaseFontSize),
-            keyEquivalent: "-"
+            keyEquivalent: "-",
           )
 
         case .resetSize:
@@ -381,7 +381,7 @@ extension MainMenuController: NSMenuDelegate {
             "Reset Font Size",
             action: #selector(handleResetFontSize),
             keyEquivalent: "o",
-            keyEquivalentModifierMask: [.control, .command]
+            keyEquivalentModifierMask: [.control, .command],
           )
         }
       }
@@ -392,14 +392,14 @@ extension MainMenuController: NSMenuDelegate {
           .isUIEventsLoggingEnabled ? "Disable UI events logging" :
           "Enable UI events logging",
         action: #selector(handleToggleUIEventsLogging),
-        keyEquivalent: ""
+        keyEquivalent: "",
       )
       toggleUIEventsLoggingMenuItem.target = self
 
       let logStateMenuItem = NSMenuItem(
         title: "Dump current application state",
         action: #selector(handleLogState),
-        keyEquivalent: ""
+        keyEquivalent: "",
       )
       logStateMenuItem.target = self
 
@@ -408,7 +408,7 @@ extension MainMenuController: NSMenuDelegate {
           .isMessagePackInspectorEnabled ? "Disable msgpack data capturing" :
           "Enable msgpack data capturing",
         action: #selector(handleToggleMessagePackInspector),
-        keyEquivalent: ""
+        keyEquivalent: "",
       )
       toggleMessagePackInspector.target = self
 
@@ -417,7 +417,7 @@ extension MainMenuController: NSMenuDelegate {
           .isStoreActionsLoggingEnabled ? "Disable store actions logging" :
           "Enable store actions logging",
         action: #selector(handleToggleStoreActionsLogging),
-        keyEquivalent: ""
+        keyEquivalent: "",
       )
       toggleStoreActionsLoggingMenuItem.target = self
 
@@ -438,13 +438,13 @@ extension MainMenuController: NSMenuDelegate {
     _ title: String,
     action: Selector? = nil,
     keyEquivalent: String = "",
-    keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command]
+    keyEquivalentModifierMask: NSEvent.ModifierFlags = [.command],
   )
   -> NSMenuItem {
     let item = NSMenuItem(
       title: title,
       action: action,
-      keyEquivalent: keyEquivalent
+      keyEquivalent: keyEquivalent,
     )
     item.target = self
     item.keyEquivalentModifierMask = keyEquivalentModifierMask
