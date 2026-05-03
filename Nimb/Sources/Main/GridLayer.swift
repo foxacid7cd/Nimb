@@ -164,7 +164,7 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
   @MainActor
   public func render() {
-    for dirtyRect in calculateDirtyRects() {
+    for dirtyRect in coalesceDirtyRects(calculateDirtyRects()) {
       setNeedsDisplay(dirtyRect)
     }
   }
@@ -208,6 +208,37 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     }
 
     return dirtyRects
+  }
+
+  @MainActor
+  private func coalesceDirtyRects(_ dirtyRects: [CGRect]) -> [CGRect] {
+    guard dirtyRects.count > 1 else {
+      return dirtyRects
+    }
+
+    let padding = CGSize(width: state.font.cellWidth, height: state.font.cellHeight * 0.5)
+    var coalescedRects: [CGRect] = []
+
+    for dirtyRect in dirtyRects {
+      var mergedRect = dirtyRect.intersection(bounds)
+      guard !mergedRect.isNull, !mergedRect.isEmpty else {
+        continue
+      }
+
+      var index = 0
+      while index < coalescedRects.count {
+        let expandedCoalescedRect = coalescedRects[index].insetBy(dx: -padding.width, dy: -padding.height)
+        if expandedCoalescedRect.intersects(mergedRect) {
+          mergedRect = mergedRect.union(coalescedRects.remove(at: index))
+        } else {
+          index += 1
+        }
+      }
+
+      coalescedRects.append(mergedRect)
+    }
+
+    return coalescedRects
   }
 }
 
