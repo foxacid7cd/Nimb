@@ -72,33 +72,41 @@ public extension Actions {
         updates.updatedLayoutGridIDs.insert(gridID)
       }
 
+      func mergeGridUpdate(_ gridUpdate: Grid.UpdateResult, forGridWithID gridID: Grid.ID) {
+        if let existingUpdate = updates.gridUpdates[gridID] {
+          var mergedUpdate = existingUpdate
+          mergedUpdate.formUnion(gridUpdate)
+          updates.gridUpdates[gridID] = mergedUpdate
+        } else {
+          updates.gridUpdates[gridID] = gridUpdate
+        }
+      }
+
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
         let font = state.font
         let appearance = state.appearance
         let outerGrid = state.outerGrid
-        Overture.update(&state.grids[gridID]) { grid in
-          if grid == nil {
-            grid = Grid(
-              id: gridID,
-              size: outerGrid!.size,
-              font: font,
-              appearance: appearance,
-            )
-            grid!.isHidden = true
-          }
+        if state.grids[gridID] == nil {
+          var grid = Grid(
+            id: gridID,
+            size: outerGrid!.size,
+            font: font,
+            appearance: appearance,
+          )
+          grid.isHidden = true
+          state.grids[gridID] = grid
         }
-        let result = state.grids[gridID]!.apply(
+
+        var grid = state.grids[gridID]!
+        let result = grid.apply(
           update: update,
           font: font,
           appearance: appearance,
         )
+        state.grids[gridID] = grid
+
         if let result {
-          Overture.update(&updates.gridUpdates[gridID]) { gridUpdate in
-            if gridUpdate == nil {
-              gridUpdate = .dirtyRectangles([])
-            }
-            gridUpdate!.formUnion(result)
-          }
+          mergeGridUpdate(result, forGridWithID: gridID)
         }
       }
 
@@ -829,7 +837,14 @@ public extension Actions {
             let colStart = params.colStart
             let data = params.data
 
+            guard var grid = state.grids[gridID] else {
+              handleError(Failure("grid line event: Grid doesn't exist or destroyed", gridID))
+              break
+            }
+
             var cells = [Cell]()
+            let remainingColumns = grid.columnsCount - colStart
+            cells.reserveCapacity(max(data.count, remainingColumns))
             var highlightID = 0
 
             for value in data {
@@ -888,8 +903,7 @@ public extension Actions {
               }
             }
 
-            let dirtyRectangle = state
-              .grids[gridID]!
+            let dirtyRectangle = grid
               .applyLineUpdate(
                 originColumn: colStart,
                 cells: cells,
@@ -897,21 +911,9 @@ public extension Actions {
                 font: state.font,
                 appearance: state.appearance,
               )
+            state.grids[gridID] = grid
 
-            update(&updates.gridUpdates[gridID]) { updates in
-              switch updates {
-              case let .dirtyRectangles(accumulator):
-                var updateResult = Grid.UpdateResult.dirtyRectangles(accumulator)
-                updateResult.formUnion(.dirtyRectangles([dirtyRectangle]))
-                updates = updateResult
-
-              case .none:
-                updates = .dirtyRectangles([dirtyRectangle])
-
-              default:
-                break
-              }
-            }
+            mergeGridUpdate(.dirtyRectangles([dirtyRectangle]), forGridWithID: gridID)
           }
 
         case let .errorExit(batch):

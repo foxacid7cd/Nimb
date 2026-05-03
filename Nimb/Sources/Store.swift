@@ -6,6 +6,44 @@ import CustomDump
 import Foundation
 
 public final class Store: Sendable {
+  private enum PendingActions: Sendable {
+    case single(any Action)
+    case batch([any Action])
+    case failure(any Error)
+  }
+
+  private actor PendingActionsState {
+    private var remainingProducers: Int
+    private var isFinished = false
+
+    init(remainingProducers: Int) {
+      self.remainingProducers = remainingProducers
+    }
+
+    func producerDidFinish() -> Bool {
+      guard !isFinished else {
+        return false
+      }
+
+      remainingProducers -= 1
+      if remainingProducers == 0 {
+        isFinished = true
+        return true
+      }
+
+      return false
+    }
+
+    func finishOnFailure() -> Bool {
+      guard !isFinished else {
+        return false
+      }
+
+      isFinished = true
+      return true
+    }
+  }
+
   public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
   public let api: API<ProcessChannel>
@@ -51,99 +89,117 @@ public final class Store: Sendable {
 
     (alerts, alertsContinuation) = AsyncStream.makeStream()
 
-    let applyUIEventsActions = api.neovimNotifications
-      .compactMap { [
-        alertsContinuation,
-      ] neovimNotificationsBatch in
-        var actionsAccumulator = [Action]()
+    let pendingActionsStream: AsyncStream<PendingActions>
+    let pendingActionsContinuation: AsyncStream<PendingActions>.Continuation
+    (pendingActionsStream, pendingActionsContinuation) = AsyncStream.makeStream()
+    let pendingActionsState = PendingActionsState(remainingProducers: 2)
 
-        for notification in neovimNotificationsBatch {
-          switch notification {
-          case let .redraw(uiEvents):
-            actionsAccumulator
-              .append(
-                Actions
-                  .ApplyUIEvents(
-                    uiEvents: uiEvents,
-                  ),
-              )
-
-          case let .nvimErrorEvent(event):
-            alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
-
-          case let .nimbNotify(value):
-            alertsContinuation.yield("nimbNotify received \(cd: value)")
-          }
+    let actionsTask = Task {
+      for await action in actions {
+        guard !Task.isCancelled else {
+          return
         }
-
-        return actionsAccumulator.isEmpty ? nil : actionsAccumulator
+        pendingActionsContinuation.yield(.single(action))
       }
 
-    let allActions = AsyncThrowingStream<[Action], any Error> { continuation in
-      let task = Task {
-        await withTaskGroup(of: (any Error)?.self) { group in
-          group.addTask {
-            for await action in actions {
-              guard !Task.isCancelled else {
-                return nil
-              }
-              continuation.yield([action])
-            }
-            return nil
-          }
-          group.addTask {
-            do {
-              for try await action in applyUIEventsActions {
-                guard !Task.isCancelled else {
-                  return nil
-                }
-                continuation.yield(action)
-              }
-              return nil
-            } catch {
-              return error
-            }
-          }
-          for await error in group {
-            if let error {
-              continuation.finish(throwing: error)
-              return
-            }
-          }
-          continuation.finish()
-        }
-      }
-      continuation.onTermination = { _ in
-        task.cancel()
+      if await pendingActionsState.producerDidFinish() {
+        pendingActionsContinuation.finish()
       }
     }
 
+    let neovimNotificationsTask = Task { [alertsContinuation] in
+      do {
+        for try await neovimNotificationsBatch in api.neovimNotifications {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          var redrawActions = [any Action]()
+          redrawActions.reserveCapacity(neovimNotificationsBatch.count)
+
+          for notification in neovimNotificationsBatch {
+            switch notification {
+            case let .redraw(uiEvents):
+              redrawActions.append(
+                Actions.ApplyUIEvents(
+                  uiEvents: uiEvents,
+                ),
+              )
+
+            case let .nvimErrorEvent(event):
+              alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
+
+            case let .nimbNotify(value):
+              alertsContinuation.yield("nimbNotify received \(cd: value)")
+            }
+          }
+
+          switch redrawActions.count {
+          case 0:
+            break
+
+          case 1:
+            pendingActionsContinuation.yield(.single(redrawActions[0]))
+
+          default:
+            pendingActionsContinuation.yield(.batch(redrawActions))
+          }
+        }
+      } catch {
+        if await pendingActionsState.finishOnFailure() {
+          pendingActionsContinuation.yield(.failure(error))
+          pendingActionsContinuation.finish()
+        }
+        return
+      }
+
+      if await pendingActionsState.producerDidFinish() {
+        pendingActionsContinuation.finish()
+      }
+    }
+
+    pendingActionsContinuation.onTermination = { _ in
+      actionsTask.cancel()
+      neovimNotificationsTask.cancel()
+    }
+
     updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
-      Task {
+      Task { @StateActor in
         var state = initialState
         var updates = State.Updates()
         continuation.yield((state, updates))
 
-        do {
-          for try await actions in allActions {
-            guard !Task.isCancelled else {
-              return
-            }
-
-            for action in actions {
-              let newUpdates = action.apply(to: &state) { error in
-                alertsContinuation.yield(.init(error))
-              }
-              updates.formUnion(newUpdates)
-
-              if updates.needFlush {
-                continuation.yield((state, updates))
-                updates = .init()
-              }
-            }
+        func apply(_ action: any Action) {
+          let newUpdates = action.apply(to: &state) { error in
+            alertsContinuation.yield(.init(error))
           }
-        } catch {
-          alertsContinuation.yield(.init(error))
+          updates.formUnion(newUpdates)
+
+          if updates.needFlush {
+            continuation.yield((state, updates))
+            updates = .init()
+          }
+        }
+
+        for await pendingActions in pendingActionsStream {
+          guard !Task.isCancelled else {
+            return
+          }
+
+          switch pendingActions {
+          case let .single(action):
+            apply(action)
+
+          case let .batch(batch):
+            for action in batch {
+              apply(action)
+            }
+
+          case let .failure(error):
+            alertsContinuation.yield(.init(error))
+            continuation.finish()
+            return
+          }
         }
 
         continuation.finish()
