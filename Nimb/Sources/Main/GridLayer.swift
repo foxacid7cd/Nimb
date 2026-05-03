@@ -222,7 +222,7 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
       out.position = float4(ndc, 0.0, 1.0);
       out.uv = instance.uvOrigin + float2(
         corner.x * instance.uvSize.x,
-        (1.0 - corner.y) * instance.uvSize.y
+        corner.y * instance.uvSize.y
       );
       out.color = instance.color;
       return out;
