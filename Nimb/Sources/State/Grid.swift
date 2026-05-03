@@ -24,6 +24,10 @@ public struct Grid: Sendable, Identifiable {
     case dirtyRectangles([IntegerRectangle])
     case needsDisplay
 
+    public static func coalesced(_ dirtyRectangles: [IntegerRectangle]) -> Self {
+      .dirtyRectangles(coalesce(dirtyRectangles))
+    }
+
     public mutating func formUnion(_ other: Self) {
       switch (self, other) {
       case (
@@ -31,7 +35,7 @@ public struct Grid: Sendable, Identifiable {
         let .dirtyRectangles(dirtyRectangles)
       ):
         accumulator += dirtyRectangles
-        self = .dirtyRectangles(accumulator)
+        self = Self.coalesced(accumulator)
 
       case (_, .needsDisplay):
         self = .needsDisplay
@@ -39,6 +43,68 @@ public struct Grid: Sendable, Identifiable {
       default:
         break
       }
+    }
+
+    private static func coalesce(_ dirtyRectangles: [IntegerRectangle]) -> [IntegerRectangle] {
+      guard dirtyRectangles.count > 1 else {
+        return dirtyRectangles
+      }
+
+      var coalescedRectangles: [IntegerRectangle] = []
+
+      for dirtyRectangle in dirtyRectangles {
+        guard dirtyRectangle.size.columnsCount > 0, dirtyRectangle.size.rowsCount > 0 else {
+          continue
+        }
+
+        var mergedRectangle = dirtyRectangle
+        var index = 0
+        while index < coalescedRectangles.count {
+          if shouldCoalesce(coalescedRectangles[index], with: mergedRectangle) {
+            mergedRectangle = union(of: mergedRectangle, and: coalescedRectangles.remove(at: index))
+          } else {
+            index += 1
+          }
+        }
+
+        coalescedRectangles.append(mergedRectangle)
+      }
+
+      return coalescedRectangles
+    }
+
+    private static func shouldCoalesce(
+      _ lhs: IntegerRectangle,
+      with rhs: IntegerRectangle
+    ) -> Bool {
+      lhs.intersects(with: rhs)
+        || (lhs.rows == rhs.rows && rangesTouchOrOverlap(lhs.columns, rhs.columns))
+        || (lhs.columns == rhs.columns && rangesTouchOrOverlap(lhs.rows, rhs.rows))
+    }
+
+    private static func union(
+      of lhs: IntegerRectangle,
+      and rhs: IntegerRectangle
+    ) -> IntegerRectangle {
+      let minColumn = min(lhs.minColumn, rhs.minColumn)
+      let minRow = min(lhs.minRow, rhs.minRow)
+      let maxColumn = max(lhs.maxColumn, rhs.maxColumn)
+      let maxRow = max(lhs.maxRow, rhs.maxRow)
+
+      return .init(
+        origin: .init(column: minColumn, row: minRow),
+        size: .init(
+          columnsCount: maxColumn - minColumn,
+          rowsCount: maxRow - minRow
+        )
+      )
+    }
+
+    private static func rangesTouchOrOverlap<T: Comparable>(
+      _ lhs: Range<T>,
+      _ rhs: Range<T>
+    ) -> Bool {
+      lhs.lowerBound <= rhs.upperBound && rhs.lowerBound <= lhs.upperBound
     }
   }
 

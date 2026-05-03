@@ -901,8 +901,9 @@ public extension Actions {
             update(&updates.gridUpdates[gridID]) { updates in
               switch updates {
               case var .dirtyRectangles(accumulator):
-                accumulator.append(dirtyRectangle)
-                updates = .dirtyRectangles(accumulator)
+                var updateResult = Grid.UpdateResult.dirtyRectangles(accumulator)
+                updateResult.formUnion(.dirtyRectangles([dirtyRectangle]))
+                updates = updateResult
 
               case .none:
                 updates = .dirtyRectangles([dirtyRectangle])
