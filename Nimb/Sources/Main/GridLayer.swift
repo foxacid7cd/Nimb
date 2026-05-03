@@ -41,6 +41,7 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
 
   private struct MetalScene {
     var backgroundQuads: [MetalQuadInstance] = []
+    var decorationQuads: [MetalQuadInstance] = []
     var glyphInstances: [MetalGlyphInstance] = []
     var cursorQuads: [MetalQuadInstance] = []
     var cursorGlyphInstances: [MetalGlyphInstance] = []
@@ -575,10 +576,6 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     snapshot: DrawSnapshot,
     renderer: MetalRenderer
   ) -> Bool {
-    guard !hasUnsupportedDecorations(snapshot: snapshot) else {
-      return false
-    }
-
     guard
       let drawable = nextDrawable(),
       let commandBuffer = renderer.commandQueue.makeCommandBuffer()
@@ -612,6 +609,7 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     )
 
     encodeQuadInstances(scene.backgroundQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
+    encodeQuadInstances(scene.decorationQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
     encodeGlyphInstances(scene.glyphInstances, uniforms: uniforms, renderer: renderer, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
     encodeQuadInstances(scene.cursorQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
     encodeGlyphInstances(scene.cursorGlyphInstances, uniforms: uniforms, renderer: renderer, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
@@ -621,29 +619,6 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     commandBuffer.commit()
 
     return true
-  }
-
-  private func hasUnsupportedDecorations(snapshot: DrawSnapshot) -> Bool {
-    let boundingRect = IntegerRectangle(
-      frame: bounds.applying(snapshot.upsideDownTransform),
-      cellSize: snapshot.font.cellSize
-    )
-    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
-      boundingRect: boundingRect,
-      font: snapshot.font,
-      upsideDownTransform: snapshot.upsideDownTransform
-    )
-
-    for rowDrawRuns in visibleRowDrawRuns {
-      for visibleDrawRun in rowDrawRuns.drawRuns {
-        let decorations = snapshot.appearance.decorations(for: visibleDrawRun.drawRun.highlightID)
-        if decorations != .init() {
-          return true
-        }
-      }
-    }
-
-    return false
   }
 
   private func prepareGlyphAtlas(
@@ -686,6 +661,15 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
             rect: rect,
             color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal
           )
+        )
+
+        appendDecorationInstances(
+          for: drawRun,
+          rect: rect,
+          font: snapshot.font,
+          appearance: snapshot.appearance,
+          scale: max(contentsScale, 1),
+          to: &scene.decorationQuads
         )
 
         if let glyphRuns = drawRun.glyphRuns {
@@ -816,6 +800,122 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
         clipRect: cursorRect,
         to: &scene.cursorGlyphInstances
       )
+    }
+  }
+
+  private func appendDecorationInstances(
+    for drawRun: DrawRun,
+    rect: CGRect,
+    font: Font,
+    appearance: Appearance,
+    scale: CGFloat,
+    to quads: inout [MetalQuadInstance]
+  ) {
+    guard case let .cells(cells) = drawRun.rowPartContent else {
+      return
+    }
+
+    let decorations = appearance.decorations(for: drawRun.highlightID)
+    guard decorations != .init() else {
+      return
+    }
+
+    let color = appearance.specialColor(for: drawRun.highlightID).metal
+    let thickness = max(1 / max(scale, 1), 0.5)
+    let underlineY = rect.origin.y + 0.5
+
+    if decorations.isStrikethrough {
+      quads.append(
+        quadInstance(
+          rect: .init(x: rect.minX, y: rect.midY - thickness / 2, width: rect.width, height: thickness),
+          color: color
+        )
+      )
+    }
+
+    if decorations.isUnderline {
+      quads.append(
+        quadInstance(
+          rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
+          color: color
+        )
+      )
+    } else if decorations.isUnderdashed {
+      appendPatternedLineQuads(
+        fromX: rect.minX,
+        toX: rect.maxX,
+        y: underlineY,
+        segmentWidth: 2,
+        gapWidth: 2,
+        thickness: thickness,
+        color: color,
+        to: &quads
+      )
+    } else if decorations.isUnderdotted {
+      appendPatternedLineQuads(
+        fromX: rect.minX,
+        toX: rect.maxX,
+        y: underlineY,
+        segmentWidth: 1,
+        gapWidth: 1,
+        thickness: thickness,
+        color: color,
+        to: &quads
+      )
+    } else if decorations.isUnderdouble {
+      quads.append(
+        quadInstance(
+          rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
+          color: color
+        )
+      )
+      quads.append(
+        quadInstance(
+          rect: .init(x: rect.minX, y: underlineY + 3, width: rect.width, height: thickness),
+          color: color
+        )
+      )
+    } else if decorations.isUndercurl {
+      let widthDivider = 3
+      let xStep = font.cellWidth / Double(widthDivider)
+      let pointsCount = cells.count * widthDivider + 1
+      let oddUnderlineY = underlineY + 3
+      let evenUnderlineY = underlineY
+
+      for index in 0 ..< pointsCount {
+        let isEven = index.isMultiple(of: 2)
+        let x = rect.minX + Double(index) * xStep
+        let y = isEven ? evenUnderlineY : oddUnderlineY
+        quads.append(
+          quadInstance(
+            rect: .init(x: x, y: y, width: thickness, height: thickness),
+            color: color
+          )
+        )
+      }
+    }
+  }
+
+  private func appendPatternedLineQuads(
+    fromX: CGFloat,
+    toX: CGFloat,
+    y: CGFloat,
+    segmentWidth: CGFloat,
+    gapWidth: CGFloat,
+    thickness: CGFloat,
+    color: SIMD4<Float>,
+    to quads: inout [MetalQuadInstance]
+  ) {
+    var currentX = fromX
+    while currentX < toX {
+      let width = min(segmentWidth, toX - currentX)
+      quads.append(
+        quadInstance(
+          rect: .init(x: currentX, y: y, width: width, height: thickness),
+          color: color
+        )
+      )
+      currentX += segmentWidth + gapWidth
     }
   }
 
