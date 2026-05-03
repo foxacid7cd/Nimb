@@ -8,6 +8,7 @@ import CustomDump
 import Foundation
 import Queue
 import Synchronization
+import ConcurrencyExtras
 
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
@@ -40,7 +41,7 @@ public final class RPC<Target: Channel>: Sendable {
               logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
 
             case let .response(response):
-              storage.responseReceived(response, forRequestWithID: response.id)
+              await storage.responseReceived(response, forRequestWithID: response.id)
 
             case let .notification(notification):
               notifications.append(notification)
@@ -67,7 +68,7 @@ public final class RPC<Target: Channel>: Sendable {
     await withUnsafeContinuation { continuation in
       Task {
         let request = Message.Request(
-          id: storage.announceRequest {
+          id: await storage.announceRequest {
             continuation.resume(returning: $0.result)
           },
           method: method,
@@ -82,42 +83,51 @@ public final class RPC<Target: Channel>: Sendable {
     method: String,
     withParameters parameters: [Value],
   ) {
-    send(
-      request: .init(
-        id: storage.announceRequest(),
-        method: method,
-        parameters: parameters,
-      ),
-    )
+    Task {
+      send(
+        request: .init(
+          id: await storage.announceRequest(),
+          method: method,
+          parameters: parameters,
+        ),
+      )
+    }
   }
 
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value],
   )> & Sendable) {
-    let messages = calls.map { call in
-      Message.Request(
-        id: storage.announceRequest(),
-        method: call.method,
-        parameters: call.parameters,
-      )
-    }
+    Task {
+      var messages = [Message.Request]()
+      messages.reserveCapacity(calls.underestimatedCount)
 
-    let data = packer.withLock { packer in
-      var data = Data()
-
-      for message in messages {
-        data.append(
-          packer.pack(
-            message.makeValue(),
+      for call in calls {
+        messages.append(
+          .init(
+            id: await storage.announceRequest(),
+            method: call.method,
+            parameters: call.parameters,
           ),
         )
       }
 
-      return data
-    }
+      let data = packer.withLock { packer in
+        var data = Data()
 
-    try? target.write(data)
+        for message in messages {
+          data.append(
+            packer.pack(
+              message.makeValue(),
+            ),
+          )
+        }
+
+        return data
+      }
+
+      try? target.write(data)
+    }
   }
 
   public func send(request: Message.Request) {
@@ -129,44 +139,36 @@ public final class RPC<Target: Channel>: Sendable {
   }
 }
 
+@MainActor
 private final class Storage: Sendable {
-  private struct State {
-    let maximumConcurrentRequests = Int.max
-    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
-    var announcedRequestsCount = 0
-  }
-
-  private let state = Mutex<State>(.init())
+  private let maximumConcurrentRequests = Int.max
+  private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+  private var announcedRequestsCount = 0
 
   func announceRequest(
     _ handler: (@Sendable (Message.Response) -> Void)? =
-      nil,
+    nil,
   )
-    -> Int
+  -> Int
   {
-    state.withLock { state in
-      let id = state.announcedRequestsCount
+    let id = announcedRequestsCount
 
-      (state.announcedRequestsCount, _) = (state.announcedRequestsCount + 1)
-        .remainderReportingOverflow(dividingBy: state.maximumConcurrentRequests)
+    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
+      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
 
-      if let handler {
-        state.currentRequests[id] = handler
-      }
-
-      return id
+    if let handler {
+      currentRequests[id] = handler
     }
+
+    return id
   }
 
   func responseReceived(
     _ response: Message.Response,
     forRequestWithID id: Int,
   ) {
-    let handler = state.withLock { state in
-      let handler = state.currentRequests[id]
-      state.currentRequests[id] = nil
-      return handler
-    }
+    let handler = currentRequests[id]
+    currentRequests[id] = nil
 
     guard let handler else {
       return
