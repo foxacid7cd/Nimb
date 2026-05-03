@@ -4,7 +4,7 @@ import Algorithms
 import CasePaths
 import Collections
 import Combine
-import ConcurrencyExtras
+import Synchronization
 import CustomDump
 import Foundation
 import Queue
@@ -13,8 +13,8 @@ public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   private let target: Target
-  private let storage = LockIsolated<Storage>(.init())
-  private let packer = LockIsolated<Packer>(.init())
+  private let storage = Storage()
+  private let packer = Mutex<Packer>(.init())
   private let queue = AsyncQueue()
 
   public init(_ target: Target) {
@@ -40,9 +40,7 @@ public final class RPC<Target: Channel>: Sendable {
               logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
 
             case let .response(response):
-              storage.withValue {
-                $0.responseReceived(response, forRequestWithID: response.id)
-              }
+              storage.responseReceived(response, forRequestWithID: response.id)
 
             case let .notification(notification):
               notifications.append(notification)
@@ -69,10 +67,8 @@ public final class RPC<Target: Channel>: Sendable {
     await withUnsafeContinuation { continuation in
       Task {
         let request = Message.Request(
-          id: storage.withValue {
-            $0.announceRequest {
-              continuation.resume(returning: $0.result)
-            }
+          id: storage.announceRequest {
+            continuation.resume(returning: $0.result)
           },
           method: method,
           parameters: parameters
@@ -88,7 +84,7 @@ public final class RPC<Target: Channel>: Sendable {
   ) {
     send(
       request: .init(
-        id: storage.withValue { $0.announceRequest() },
+        id: storage.announceRequest(),
         method: method,
         parameters: parameters
       )
@@ -99,17 +95,15 @@ public final class RPC<Target: Channel>: Sendable {
     method: String,
     parameters: [Value]
   )> & Sendable) {
-    let messages = storage.withValue { storage in
-      calls.map { call in
-        Message.Request(
-          id: storage.announceRequest(),
-          method: call.method,
-          parameters: call.parameters
-        )
-      }
+    let messages = calls.map { call in
+      Message.Request(
+        id: storage.announceRequest(),
+        method: call.method,
+        parameters: call.parameters
+      )
     }
 
-    let data = packer.withValue { packer in
+    let data = packer.withLock { packer in
       var data = Data()
 
       for message in messages {
@@ -127,7 +121,7 @@ public final class RPC<Target: Channel>: Sendable {
   }
 
   public func send(request: Message.Request) {
-    let data = packer.withValue {
+    let data = packer.withLock {
       $0.pack(request.makeValue())
     }
 
@@ -135,10 +129,14 @@ public final class RPC<Target: Channel>: Sendable {
   }
 }
 
-private final class Storage {
-  private let maximumConcurrentRequests = Int.max
-  private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
-  private var announcedRequestsCount = 0
+private final class Storage: Sendable {
+  private struct State {
+    let maximumConcurrentRequests = Int.max
+    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+    var announcedRequestsCount = 0
+  }
+
+  private let state = Mutex<State>(.init())
 
   func announceRequest(
     _ handler: (@Sendable (Message.Response) -> Void)? =
@@ -146,26 +144,34 @@ private final class Storage {
   )
     -> Int
   {
-    let id = announcedRequestsCount
+    state.withLock { state in
+      let id = state.announcedRequestsCount
 
-    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
-      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
+      (state.announcedRequestsCount, _) = (state.announcedRequestsCount + 1)
+        .remainderReportingOverflow(dividingBy: state.maximumConcurrentRequests)
 
-    if let handler {
-      currentRequests[id] = handler
+      if let handler {
+        state.currentRequests[id] = handler
+      }
+
+      return id
     }
-
-    return id
   }
 
   func responseReceived(
     _ response: Message.Response,
     forRequestWithID id: Int
   ) {
-    guard let handler = currentRequests[id] else {
+    let handler = state.withLock { state in
+      let handler = state.currentRequests[id]
+      state.currentRequests[id] = nil
+      return handler
+    }
+
+    guard let handler else {
       return
     }
-    currentRequests[id] = nil
+
     handler(response)
   }
 }
