@@ -111,30 +111,41 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
       frame: ctx.boundingBoxOfClipPath.applying(snapshot.upsideDownTransform),
       cellSize: snapshot.font.cellSize
     )
+    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
+      boundingRect: boundingRect,
+      font: snapshot.font,
+      upsideDownTransform: snapshot.upsideDownTransform
+    )
 
     ctx.setAllowsAntialiasing(false)
     ctx.setAllowsFontSmoothing(false)
     ctx.setShouldAntialias(false)
     ctx.setShouldSmoothFonts(false)
-    snapshot.grid.drawRuns.drawBackground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: snapshot.font,
-      appearance: snapshot.appearance,
-      upsideDownTransform: snapshot.upsideDownTransform
-    )
+    for rowDrawRuns in visibleRowDrawRuns {
+      for visibleDrawRun in rowDrawRuns.drawRuns {
+        visibleDrawRun.drawRun.drawBackground(
+          to: ctx,
+          at: visibleDrawRun.rect.origin,
+          font: snapshot.font,
+          appearance: snapshot.appearance
+        )
+      }
+    }
 
     ctx.setAllowsAntialiasing(true)
     ctx.setAllowsFontSmoothing(true)
     ctx.setShouldAntialias(true)
     ctx.setShouldSmoothFonts(true)
-    snapshot.grid.drawRuns.drawForeground(
-      to: ctx,
-      boundingRect: boundingRect,
-      font: snapshot.font,
-      appearance: snapshot.appearance,
-      upsideDownTransform: snapshot.upsideDownTransform
-    )
+    for rowDrawRuns in visibleRowDrawRuns {
+      for visibleDrawRun in rowDrawRuns.drawRuns {
+        visibleDrawRun.drawRun.drawForeground(
+          to: ctx,
+          at: visibleDrawRun.rect,
+          font: snapshot.font,
+          appearance: snapshot.appearance
+        )
+      }
+    }
 
     if
       snapshot.cursorBlinkingPhase,

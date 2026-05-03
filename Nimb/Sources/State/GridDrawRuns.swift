@@ -8,6 +8,15 @@ import SwiftUI
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
+  struct VisibleDrawRun: Sendable {
+    let drawRun: DrawRun
+    let rect: CGRect
+  }
+
+  struct VisibleRowDrawRun: Sendable {
+    let drawRuns: [VisibleDrawRun]
+  }
+
   public var rowDrawRuns: [RowDrawRun]
   public var cursorDrawRun: CursorDrawRun?
 
@@ -83,6 +92,31 @@ public struct GridDrawRuns: Sendable {
         appearance: appearance,
         upsideDownTransform: upsideDownTransform
       )
+    }
+  }
+
+  func visibleRowDrawRuns(
+    boundingRect: IntegerRectangle,
+    font: Font,
+    upsideDownTransform: CGAffineTransform
+  ) -> [VisibleRowDrawRun] {
+    let fromRow = max(boundingRect.minRow, 0)
+    let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
+    guard fromRow < toRow else {
+      return []
+    }
+
+    return (fromRow ..< toRow).compactMap { row in
+      let drawRuns = rowDrawRuns[row].visibleDrawRuns(
+        columnsRange: boundingRect.columns,
+        at: .init(x: 0, y: Double(row) * font.cellHeight),
+        font: font,
+        upsideDownTransform: upsideDownTransform
+      )
+      guard !drawRuns.isEmpty else {
+        return nil
+      }
+      return VisibleRowDrawRun(drawRuns: drawRuns)
     }
   }
 }
@@ -188,6 +222,29 @@ public struct RowDrawRun: Sendable {
         font: font,
         appearance: appearance
       )
+    }
+  }
+
+  func visibleDrawRuns(
+    columnsRange: Range<Int>,
+    at origin: CGPoint,
+    font: Font,
+    upsideDownTransform: CGAffineTransform
+  ) -> [GridDrawRuns.VisibleDrawRun] {
+    drawRuns.compactMap { drawRun in
+      guard drawRun.columnsRange.overlaps(columnsRange) else {
+        return nil
+      }
+
+      let rect = CGRect(
+        x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
+        y: origin.y,
+        width: Double(drawRun.columnsRange.count) * font.cellWidth,
+        height: font.cellHeight
+      )
+      .applying(upsideDownTransform)
+
+      return .init(drawRun: drawRun, rect: rect)
     }
   }
 }
