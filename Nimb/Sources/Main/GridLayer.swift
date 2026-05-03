@@ -435,6 +435,60 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     }
   }
 
+  private final class MetalBufferCache: @unchecked Sendable {
+    enum Kind {
+      case backgroundQuads
+      case decorationQuads
+      case glyphs
+      case cursorQuads
+      case cursorGlyphs
+    }
+
+    private struct Entry {
+      let buffer: MTLBuffer
+      let capacity: Int
+    }
+
+    private let device: MTLDevice
+    private var entries: [Kind: Entry] = [:]
+
+    init(device: MTLDevice) {
+      self.device = device
+    }
+
+    func buffer<T>(for values: [T], kind: Kind) -> MTLBuffer? {
+      let length = MemoryLayout<T>.stride * values.count
+      guard length > 0 else {
+        return nil
+      }
+
+      if entries[kind]?.capacity ?? 0 < length {
+        var capacity = max(4 * 1024, MemoryLayout<T>.stride)
+        while capacity < length {
+          capacity *= 2
+        }
+
+        guard let buffer = device.makeBuffer(length: capacity, options: .storageModeShared) else {
+          return nil
+        }
+        entries[kind] = Entry(buffer: buffer, capacity: capacity)
+      }
+
+      guard let entry = entries[kind] else {
+        return nil
+      }
+
+      values.withUnsafeBytes { bytes in
+        guard let baseAddress = bytes.baseAddress else {
+          return
+        }
+        memcpy(entry.buffer.contents(), baseAddress, length)
+      }
+
+      return entry.buffer
+    }
+  }
+
   private static let metalRenderer = MetalRenderer()
   private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
 
@@ -442,6 +496,7 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
   private let store: Store
   private nonisolated let isolatedRenderContext = Mutex<RenderContext?>(nil)
   private nonisolated let metalGlyphAtlas = Mutex<MetalGlyphAtlas?>(nil)
+  private nonisolated let metalBufferCache = Mutex<MetalBufferCache?>(nil)
 
   @MainActor
   public var isRendered: Bool {
@@ -607,12 +662,13 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     let uniforms = MetalUniforms(
       viewportSize: .init(Float(bounds.width), Float(bounds.height))
     )
+    let bufferCache = prepareBufferCache(renderer: renderer)
 
-    encodeQuadInstances(scene.backgroundQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
-    encodeQuadInstances(scene.decorationQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
-    encodeGlyphInstances(scene.glyphInstances, uniforms: uniforms, renderer: renderer, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
-    encodeQuadInstances(scene.cursorQuads, uniforms: uniforms, renderer: renderer, encoder: renderEncoder)
-    encodeGlyphInstances(scene.cursorGlyphInstances, uniforms: uniforms, renderer: renderer, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
+    encodeQuadInstances(scene.backgroundQuads, kind: .backgroundQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeQuadInstances(scene.decorationQuads, kind: .decorationQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeGlyphInstances(scene.glyphInstances, kind: .glyphs, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
+    encodeQuadInstances(scene.cursorQuads, kind: .cursorQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeGlyphInstances(scene.cursorGlyphInstances, kind: .cursorGlyphs, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, atlasTexture: glyphAtlas.texture, encoder: renderEncoder)
     renderEncoder.endEncoding()
 
     commandBuffer.present(drawable)
@@ -632,6 +688,18 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
 
       glyphAtlas = MetalGlyphAtlas(renderer: renderer, scale: scale)
       return glyphAtlas
+    }
+  }
+
+  private func prepareBufferCache(renderer: MetalRenderer) -> MetalBufferCache {
+    metalBufferCache.withLock { bufferCache in
+      if let bufferCache {
+        return bufferCache
+      }
+
+      let newBufferCache = MetalBufferCache(device: renderer.device)
+      bufferCache = newBufferCache
+      return newBufferCache
     }
   }
 
@@ -964,13 +1032,15 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
 
   private func encodeQuadInstances(
     _ instances: [MetalQuadInstance],
+    kind: MetalBufferCache.Kind,
     uniforms: MetalUniforms,
     renderer: MetalRenderer,
+    bufferCache: MetalBufferCache,
     encoder: MTLRenderCommandEncoder
   ) {
     guard
       !instances.isEmpty,
-      let buffer = instances.makeBuffer(device: renderer.device)
+      let buffer = bufferCache.buffer(for: instances, kind: kind)
     else {
       return
     }
@@ -984,14 +1054,16 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
 
   private func encodeGlyphInstances(
     _ instances: [MetalGlyphInstance],
+    kind: MetalBufferCache.Kind,
     uniforms: MetalUniforms,
     renderer: MetalRenderer,
+    bufferCache: MetalBufferCache,
     atlasTexture: MTLTexture,
     encoder: MTLRenderCommandEncoder
   ) {
     guard
       !instances.isEmpty,
-      let buffer = instances.makeBuffer(device: renderer.device)
+      let buffer = bufferCache.buffer(for: instances, kind: kind)
     else {
       return
     }
@@ -1142,16 +1214,5 @@ private extension Color {
       blue: Double(metal.z),
       alpha: Double(metal.w)
     )
-  }
-}
-
-private extension Array {
-  func makeBuffer(device: MTLDevice) -> MTLBuffer? {
-    withUnsafeBytes { bytes in
-      guard let baseAddress = bytes.baseAddress, !bytes.isEmpty else {
-        return nil
-      }
-      return device.makeBuffer(bytes: baseAddress, length: bytes.count)
-    }
   }
 }
