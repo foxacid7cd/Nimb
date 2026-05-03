@@ -11,7 +11,7 @@ import Queue
 import QuartzCore
 import Synchronization
 
-public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
+public class GridLayer: CAMetalLayer, @unchecked Sendable {
   private struct DrawSnapshot {
     let grid: Grid
     let upsideDownTransform: CGAffineTransform
@@ -495,39 +495,11 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
   private let gridID: Grid.ID
   private let store: Store
   private nonisolated let isolatedRenderContext = Mutex<RenderContext?>(nil)
-  private nonisolated let metalGlyphAtlas = Mutex<MetalGlyphAtlas?>(nil)
-  private nonisolated let metalBufferCache = Mutex<MetalBufferCache?>(nil)
+  private var metalGlyphAtlas: MetalGlyphAtlas?
+  private var metalBufferCache: MetalBufferCache?
 
-  @MainActor
-  public var isRendered: Bool {
-    isolatedRenderContext.withLock { $0 != nil }
-  }
-
-  @MainActor
-  public var renderContext: RenderContext {
-    isolatedRenderContext.withLock { $0! }
-  }
-
-  @MainActor
-  public func update(renderContext: RenderContext) {
+  public nonisolated func update(renderContext: RenderContext) {
     isolatedRenderContext.withLock { $0 = renderContext }
-  }
-
-  @MainActor
-  public var grid: Grid? {
-    guard isRendered else {
-      return nil
-    }
-    return state.grids[gridID]
-  }
-
-  @MainActor
-  private var upsideDownTransform: CGAffineTransform? {
-    guard let grid else {
-      return nil
-    }
-    return .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
   }
 
   override public init(layer: Any) {
@@ -560,7 +532,6 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     fatalError("init(coder:) has not been implemented")
   }
 
-  @MainActor
   func updateDrawableSize() {
     let scale = max(contentsScale, 1)
     drawableSize = .init(
@@ -681,26 +652,23 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     renderer: MetalRenderer,
     scale: CGFloat
   ) -> MetalGlyphAtlas? {
-    metalGlyphAtlas.withLock { glyphAtlas in
-      if let glyphAtlas, abs(glyphAtlas.scale - scale) < 0.001 {
-        return glyphAtlas
-      }
-
-      glyphAtlas = MetalGlyphAtlas(renderer: renderer, scale: scale)
-      return glyphAtlas
+    if let metalGlyphAtlas, abs(metalGlyphAtlas.scale - scale) < 0.001 {
+      return metalGlyphAtlas
     }
+
+    let glyphAtlas = MetalGlyphAtlas(renderer: renderer, scale: scale)
+    metalGlyphAtlas = glyphAtlas
+    return glyphAtlas
   }
 
   private func prepareBufferCache(renderer: MetalRenderer) -> MetalBufferCache {
-    metalBufferCache.withLock { bufferCache in
-      if let bufferCache {
-        return bufferCache
-      }
-
-      let newBufferCache = MetalBufferCache(device: renderer.device)
-      bufferCache = newBufferCache
-      return newBufferCache
+    if let metalBufferCache {
+      return metalBufferCache
     }
+
+    let bufferCache = MetalBufferCache(device: renderer.device)
+    metalBufferCache = bufferCache
+    return bufferCache
   }
 
   private func buildMetalScene(
@@ -1140,7 +1108,6 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     }
   }
 
-  @MainActor
   public func render() {
     for dirtyRect in calculateDirtyRects() {
       let clippedDirtyRect = dirtyRect.intersection(bounds)
@@ -1151,25 +1118,34 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
     }
   }
 
-  @MainActor
   private func calculateDirtyRects() -> [CGRect] {
-    guard isRendered, let grid, let upsideDownTransform else {
+    guard let renderContext = isolatedRenderContext.withLock({ $0 }) else {
       return []
     }
 
-    if updates.isFontUpdated || updates.isAppearanceUpdated {
+    guard let grid = renderContext.state.grids[gridID] else {
+      return []
+    }
+
+    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * renderContext.state.font.cellHeight)
+
+    if renderContext.updates.isFontUpdated || renderContext.updates.isAppearanceUpdated {
       return [bounds]
     }
 
     var dirtyRects: [CGRect] = []
 
-    if let gridUpdate = updates.gridUpdates[gridID] {
+    if let gridUpdate = renderContext.updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
           dirtyRects.append(
-            (rectangle * state.font.cellSize)
-              .insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height * 0.5)
+            (rectangle * renderContext.state.font.cellSize)
+              .insetBy(
+                dx: -renderContext.state.font.cellSize.width,
+                dy: -renderContext.state.font.cellSize.height * 0.5
+              )
               .applying(upsideDownTransform)
           )
         }
@@ -1181,10 +1157,10 @@ public class GridLayer: CAMetalLayer, Rendering, @unchecked Sendable {
 
     if
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated
+      renderContext.updates.isCursorBlinkingPhaseUpdated || renderContext.updates.isMouseUserInteractionEnabledUpdated
     {
       dirtyRects.append(
-        (cursorDrawRun.rectangle * state.font.cellSize)
+        (cursorDrawRun.rectangle * renderContext.state.font.cellSize)
           .applying(upsideDownTransform)
       )
     }

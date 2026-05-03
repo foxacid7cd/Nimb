@@ -217,7 +217,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
-    renderChildren(gridLayer)
+    gridLayer.update(renderContext: renderContext)
+    gridLayer.render()
   }
 
   public func reportMouseMove(for event: NSEvent) {
