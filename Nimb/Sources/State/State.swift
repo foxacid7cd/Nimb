@@ -131,24 +131,24 @@ public struct State: Sendable {
 
   public var debug: Debug = .init()
   public var rawOptions: OrderedDictionary<String, Value> = [:]
-  public var title: String?
+  public var title: String? = nil
   public var font: Font
   public var appearance: Appearance = .init()
-  public var modeInfo: ModeInfo?
-  public var mode: Mode?
-  public var cursor: Cursor?
-  public var tabline: Tabline?
+  public var modeInfo: ModeInfo? = nil
+  public var mode: Mode? = nil
+  public var cursor: Cursor? = nil
+  public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var gridsHierarchy: GridsHierarchy = .init()
-  public var popupmenu: Popupmenu?
+  public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
   public var nimbNotifies: [NimbNotify] = []
   public var isApplicationActive: Bool = false
-  public var errorExitStatus: Int?
+  public var errorExitStatus: Int? = nil
 
   public var outerGrid: Grid? {
     get {

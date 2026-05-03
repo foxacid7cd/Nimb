@@ -4,7 +4,7 @@
 public struct Cmdlines: Sendable {
   public var dictionary: IntKeyedDictionary<Cmdline> = [:]
   public var blockLines: IntKeyedDictionary<[[Cmdline.ContentPart]]> = [:]
-  public var lastCmdlineLevel: Int?
+  public var lastCmdlineLevel: Int? = nil
 }
 
 @PublicInit

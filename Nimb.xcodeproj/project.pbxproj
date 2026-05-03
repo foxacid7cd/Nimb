@@ -794,7 +794,6 @@
 			buildConfigurationList = 68BFEF4E2934CF6200564FE2 /* Build configuration list for PBXNativeTarget "Nimb" */;
 			buildPhases = (
 				68BFEF3D2934CF6100564FE2 /* Sources */,
-				68F379F0294C814B00A9E7FE /* Run swiftformat */,
 				68BFEF3E2934CF6100564FE2 /* Frameworks */,
 				68BFEF3F2934CF6100564FE2 /* Resources */,
 				684385182934D225000C4A1D /* Embed XPC Services */,
@@ -918,25 +917,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
 			shellScript = "() {\n  local PACKAGE_DIR=\"$PROJECT_DIR/.build/package\"\n  \n  if [[ ! -d $PACKAGE_DIR ]]; then\n    >&2 echo \"Fatal: $PACKAGE_DIR not found\"\n    exit 1\n  fi\n  \n  local DESTINATION_DIR=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Resources/nvim\"\n  rm -rf \"$DESTINATION_DIR\"\n  mkdir \"$DESTINATION_DIR\"\n  \n  local RUNTIME_DIR=\"$DESTINATION_DIR/runtime\"\n  mkdir \"$RUNTIME_DIR\"\n\n  cp -R \"$PACKAGE_DIR/share/nvim/runtime/\" \"$RUNTIME_DIR\"\n  cp -R \"$PACKAGE_DIR/lib/nvim/\" \"$RUNTIME_DIR\"\n  cp -R \"$PROJECT_DIR/NeovimRuntime/src/nimb-gui\" \"$RUNTIME_DIR/lua\"\n  cp \"$PROJECT_DIR/NeovimRuntime/src/init.lua\" \"$DESTINATION_DIR\"\n}\n";
-		};
-		68F379F0294C814B00A9E7FE /* Run swiftformat */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Run swiftformat";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "EXECUTABLE_FILE=\"/opt/homebrew/bin/swiftformat\"\n\nif [ ! -x \"${EXECUTABLE_FILE}\" ]; then\n  >&2 echo \"warning: ${EXECUTABLE_FILE} could not be found\"\n  exit\nfi\n\n\"${EXECUTABLE_FILE}\" --config \"${PROJECT_DIR}/.swiftformat\" \"${PROJECT_DIR}/Nimb\" \"${PROJECT_DIR}/generate\" \"${PROJECT_DIR}/speed-tuner\"\n\nunset EXECUTABLE_FILE\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

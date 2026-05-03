@@ -8,7 +8,7 @@ import QuartzCore
 import Queue
 
 @MainActor
-public class GridLayer: CALayer, Rendering {
+public class GridLayer: CALayer, Rendering, @unchecked Sendable {
   private struct DrawSnapshot {
     let grid: Grid
     let upsideDownTransform: CGAffineTransform
