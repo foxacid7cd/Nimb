@@ -31,32 +31,20 @@ public extension Rendering {
 
 public extension Rendering where Self: AnyObject {
   @MainActor var isRendered: Bool {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_getAssociatedObject(self, keyPointer) != nil
-    }
+    objc_getAssociatedObject(self, renderingContextAssociatedObjectKey) != nil
   }
 
   @MainActor var renderContext: RenderContext {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_getAssociatedObject(self, keyPointer) as! RenderContext
-    }
+    objc_getAssociatedObject(self, renderingContextAssociatedObjectKey) as! RenderContext
   }
 
   @MainActor func update(renderContext: RenderContext) {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_setAssociatedObject(
-        self,
-        keyPointer,
-        renderContext,
-        .OBJC_ASSOCIATION_RETAIN
-      )
-    }
+    objc_setAssociatedObject(
+      self,
+      renderingContextAssociatedObjectKey,
+      renderContext,
+      .OBJC_ASSOCIATION_RETAIN
+    )
   }
 
   @MainActor func renderChildren(_ children: any Sequence<Rendering>) {
@@ -71,4 +59,6 @@ public extension Rendering where Self: AnyObject {
   }
 }
 
-@MainActor private var renderingContextAssociatedObjectKey: String = "renderingContextAssociatedObjectKey"
+// Process-lifetime token used only for ObjC associated-object lookup.
+@MainActor
+private let renderingContextAssociatedObjectKey: UnsafeRawPointer = .init(malloc(1)!)
