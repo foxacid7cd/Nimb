@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
@@ -15,10 +14,6 @@ public struct APIFunctionsFile: GeneratableFile {
   public var sourceFile: SourceFileSyntax {
     get throws {
       try .init {
-        "import CasePaths" as DeclSyntax
-        "" as DeclSyntax
-        "" as DeclSyntax
-
         try EnumDeclSyntax("public enum APIFunctions") {
           for function in metadata.functions {
             let camelCasedFunctionName = function.name

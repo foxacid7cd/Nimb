@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import CasePaths
 import Collections
 import Combine
 import CustomDump
 import Foundation
-import Queue
 import Synchronization
 import ConcurrencyExtras
 
@@ -16,7 +14,6 @@ public final class RPC<Target: Channel>: Sendable {
   private let target: Target
   private let storage = Storage()
   private let packer = Mutex<Packer>(.init())
-  private let queue = AsyncQueue()
 
   public init(_ target: Target) {
     self.target = target
@@ -140,7 +137,7 @@ public final class RPC<Target: Channel>: Sendable {
 }
 
 @MainActor
-private final class Storage: Sendable {
+private final class Storage {
   private let maximumConcurrentRequests = Int.max
   private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
   private var announcedRequestsCount = 0

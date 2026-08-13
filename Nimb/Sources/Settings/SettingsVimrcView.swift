@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CasePaths
 
 public class SettingsVimrcView: NSView {
   private enum Item: String, CaseIterable {

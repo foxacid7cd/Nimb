@@ -11,7 +11,6 @@
 		68007B612C61B6B8001AD1D0 /* MsgShowsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68007B602C61B6B8001AD1D0 /* MsgShowsWindowController.swift */; };
 		68008C0C2AEB4FBC00BE596A /* PopupmenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0B2AEB4FBC00BE596A /* PopupmenuViewController.swift */; };
 		68008C0E2AEB4FDD00BE596A /* PopupmenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68008C0D2AEB4FDD00BE596A /* PopupmenuItemView.swift */; };
-		6808640D2D46E6460049FC97 /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 6808640C2D46E6460049FC97 /* Queue */; };
 		6808BE1F2D3CC0C900893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE1E2D3CC0C900893789 /* CustomDump */; };
 		6808BE212D3CC0CF00893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE202D3CC0CF00893789 /* CustomDump */; };
 		6808BE232D3CC0D400893789 /* CustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = 6808BE222D3CC0D400893789 /* CustomDump */; };
@@ -87,7 +86,6 @@
 		687905F52B58C0FD00F124F0 /* SettingsVimrcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687905F42B58C0FD00F124F0 /* SettingsVimrcView.swift */; };
 		6880800D2C603B3000BD32FA /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800C2C603B3000BD32FA /* ArgumentParser */; };
 		6880800E2C603B6800BD32FA /* MsgpackInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6814C12B2C5E166900FF3968 /* MsgpackInspector.swift */; };
-		688080102C603BDC00BD32FA /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 6880800F2C603BDC00BD32FA /* SystemPackage */; };
 		688080112C60407600BD32FA /* AsyncFileHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B530F2C5FE47600AD6C68 /* AsyncFileHandle.swift */; };
 		688080152C60713600BD32FA /* data.mpack in CopyFiles */ = {isa = PBXBuildFile; fileRef = 688080142C6070E500BD32FA /* data.mpack */; };
 		688080162C60D68D00BD32FA /* Unpacker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B532C2C5FE4A100AD6C68 /* Unpacker.swift */; };
@@ -121,7 +119,6 @@
 		689ECE5F2AC4FEEB008D6A02 /* CmdlinesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE5E2AC4FEEB008D6A02 /* CmdlinesViewController.swift */; };
 		689ECE612AC4FF20008D6A02 /* CmdlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689ECE602AC4FF20008D6A02 /* CmdlineView.swift */; };
 		689F997F2D3CCF530098ECEC /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 689F997E2D3CCF530098ECEC /* STTextView */; };
-		689F99822D3CF8EE0098ECEC /* Queue in Frameworks */ = {isa = PBXBuildFile; productRef = 689F99812D3CF8EE0098ECEC /* Queue */; };
 		68A4101D2C5D46F20092050B /* TablineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A4101C2C5D46F20092050B /* TablineView.swift */; };
 		68A8FF4F2AD29F660017C28D /* Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF392AD29F650017C28D /* Windows.swift */; };
 		68A8FF502AD29F660017C28D /* MsgShow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A8FF3A2AD29F650017C28D /* MsgShow.swift */; };
@@ -150,14 +147,12 @@
 		68C1292A2C64078200E5A513 /* StateActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C129262C64078200E5A513 /* StateActor.swift */; };
 		68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA52C5F7E4900844461 /* ArgumentParser */; };
 		68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCAB2C5F7E7600844461 /* Collections */; };
-		68C9BCAF2C5F7E9900844461 /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCAE2C5F7E9900844461 /* SystemPackage */; };
 		68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB22C5F7EFE00844461 /* IdentifiedCollections */; };
 		68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB52C5F7F0F00844461 /* CasePaths */; };
 		68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB82C5F7F3F00844461 /* Overture */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4090F2C62D0F800B33091 /* Bundle+Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4090E2C62D0F800B33091 /* Bundle+Version.swift */; };
 		68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D409102C62D61A00B33091 /* NimbNotify.swift */; };
-		68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 68DC65B12C6681A3009FBEDE /* SystemPackage */; };
 		68E2290F2C602D7B00D8D72B /* nvim in Copy nvim Executable */ = {isa = PBXBuildFile; fileRef = 68E2290D2C602D6700D8D72B /* nvim */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		68EF609129B2B6D20056E48D /* GridLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609029B2B6D20056E48D /* GridLayer.swift */; };
 		68EF609329B2B7270056E48D /* GridDrawRuns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EF609229B2B7270056E48D /* GridDrawRuns.swift */; };
@@ -372,7 +367,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				688080232C60D7F500BD32FA /* CasePaths in Frameworks */,
-				68C9BCAF2C5F7E9900844461 /* SystemPackage in Frameworks */,
 				68740B052C688D420080A967 /* ConcurrencyExtras in Frameworks */,
 				6808BE212D3CC0CF00893789 /* CustomDump in Frameworks */,
 				68FB331A2C669ED0008A68CB /* MyMacro in Frameworks */,
@@ -391,7 +385,6 @@
 				681B53532C5FE67B00AD6C68 /* SwiftSyntax in Frameworks */,
 				686AC82B2C5FE91F00AC1E62 /* CasePaths in Frameworks */,
 				686AC8292C5FE88C00AC1E62 /* SwiftSyntaxBuilder in Frameworks */,
-				6808640D2D46E6460049FC97 /* Queue in Frameworks */,
 				68FB331C2C669ED3008A68CB /* MyMacro in Frameworks */,
 				68740B032C688D360080A967 /* ConcurrencyExtras in Frameworks */,
 				688A76522C6B23F300B6B9C0 /* Algorithms in Frameworks */,
@@ -406,7 +399,6 @@
 				6880800D2C603B3000BD32FA /* ArgumentParser in Frameworks */,
 				6808BE232D3CC0D400893789 /* CustomDump in Frameworks */,
 				68740B072C688D480080A967 /* ConcurrencyExtras in Frameworks */,
-				688080102C603BDC00BD32FA /* SystemPackage in Frameworks */,
 				68FB331E2C669ED7008A68CB /* MyMacro in Frameworks */,
 				68220E742C668FA0004529E3 /* libmsgpack-c.a in Frameworks */,
 			);
@@ -416,7 +408,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				689F99822D3CF8EE0098ECEC /* Queue in Frameworks */,
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				68C9BCB32C5F7EFE00844461 /* IdentifiedCollections in Frameworks */,
 				688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */,
@@ -429,7 +420,6 @@
 				689F997F2D3CCF530098ECEC /* STTextView in Frameworks */,
 				68FE5D882C68D1AD00FA9D01 /* libswiftObjectiveC.tbd in Frameworks */,
 				6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */,
-				68DC65B22C6681A3009FBEDE /* SystemPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -728,7 +718,6 @@
 			name = "speed-tuner";
 			packageProductDependencies = (
 				68C9BCA52C5F7E4900844461 /* ArgumentParser */,
-				68C9BCAE2C5F7E9900844461 /* SystemPackage */,
 				688080222C60D7F500BD32FA /* CasePaths */,
 				68FB33192C669ED0008A68CB /* MyMacro */,
 				68740B042C688D420080A967 /* ConcurrencyExtras */,
@@ -762,7 +751,6 @@
 				68740B022C688D360080A967 /* ConcurrencyExtras */,
 				688A76512C6B23F300B6B9C0 /* Algorithms */,
 				6808BE1E2D3CC0C900893789 /* CustomDump */,
-				6808640C2D46E6460049FC97 /* Queue */,
 			);
 			productName = generate;
 			productReference = 681B52F32C5FE31A00AD6C68 /* generate */;
@@ -783,7 +771,6 @@
 			name = "msgpack-inspector";
 			packageProductDependencies = (
 				6880800C2C603B3000BD32FA /* ArgumentParser */,
-				6880800F2C603BDC00BD32FA /* SystemPackage */,
 				68FB331D2C669ED7008A68CB /* MyMacro */,
 				68740B062C688D480080A967 /* ConcurrencyExtras */,
 				6808BE222D3CC0D400893789 /* CustomDump */,
@@ -815,13 +802,11 @@
 				68C9BCB22C5F7EFE00844461 /* IdentifiedCollections */,
 				68C9BCB52C5F7F0F00844461 /* CasePaths */,
 				68C9BCB82C5F7F3F00844461 /* Overture */,
-				68DC65B12C6681A3009FBEDE /* SystemPackage */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
 				6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */,
 				688A764F2C6B1E4F00B6B9C0 /* Algorithms */,
 				6808BE242D3CC0E300893789 /* CustomDump */,
 				689F997E2D3CCF530098ECEC /* STTextView */,
-				689F99812D3CF8EE0098ECEC /* Queue */,
 			);
 			productName = Nims;
 			productReference = 68BFEF412934CF6100564FE2 /* Nimb.app */;
@@ -867,7 +852,6 @@
 				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
 				68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */,
-				68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */,
 				68C9BCB12C5F7EFE00844461 /* XCRemoteSwiftPackageReference "swift-identified-collections" */,
 				68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */,
 				68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */,
@@ -876,7 +860,6 @@
 				688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
 				68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */,
 				689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */,
-				689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */,
 			);
 			productRefGroup = 68BFEF422934CF6100564FE2 /* Products */;
 			projectDirPath = "";
@@ -1291,7 +1274,6 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -1351,7 +1333,6 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -1531,14 +1512,6 @@
 				version = "2.0.0-beta5";
 			};
 		};
-		689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:mattmassicotte/Queue.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.2.0;
-			};
-		};
 		68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:apple/swift-argument-parser.git";
@@ -1553,14 +1526,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.1.4;
-			};
-		};
-		68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:apple/swift-system.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.0;
 			};
 		};
 		68C9BCB12C5F7EFE00844461 /* XCRemoteSwiftPackageReference "swift-identified-collections" */ = {
@@ -1598,11 +1563,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6808640C2D46E6460049FC97 /* Queue */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */;
-			productName = Queue;
-		};
 		6808BE1E2D3CC0C900893789 /* CustomDump */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */;
@@ -1668,11 +1628,6 @@
 			package = 68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
 		};
-		6880800F2C603BDC00BD32FA /* SystemPackage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */;
-			productName = SystemPackage;
-		};
 		688080222C60D7F500BD32FA /* CasePaths */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */;
@@ -1703,11 +1658,6 @@
 			package = 689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */;
 			productName = STTextView;
 		};
-		689F99812D3CF8EE0098ECEC /* Queue */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 689F99802D3CF8EE0098ECEC /* XCRemoteSwiftPackageReference "Queue" */;
-			productName = Queue;
-		};
 		68C9BCA52C5F7E4900844461 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
@@ -1717,11 +1667,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */;
 			productName = Collections;
-		};
-		68C9BCAE2C5F7E9900844461 /* SystemPackage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */;
-			productName = SystemPackage;
 		};
 		68C9BCB22C5F7EFE00844461 /* IdentifiedCollections */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1737,11 +1682,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */;
 			productName = Overture;
-		};
-		68DC65B12C6681A3009FBEDE /* SystemPackage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCAD2C5F7E9900844461 /* XCRemoteSwiftPackageReference "swift-system" */;
-			productName = SystemPackage;
 		};
 		68FB33172C669ECA008A68CB /* MyMacro */ = {
 			isa = XCSwiftPackageProductDependency;

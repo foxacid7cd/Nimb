@@ -2,7 +2,6 @@
 
 import Algorithms
 import Collections
-import CustomDump
 import Foundation
 
 public final class Store: Sendable {
@@ -49,34 +48,6 @@ public final class Store: Sendable {
   public let api: API<ProcessChannel>
 
   public let alerts: AsyncStream<Alert>
-
-  //    private func startCursorBlinkingTask() {
-  //      guard let cursorStyle = _state.currentCursorStyle else {
-  //        return
-  //      }
-  //      if
-  //        let blinkWait = cursorStyle.blinkWait,
-  //        blinkWait > 0,
-  //        let blinkOff = cursorStyle.blinkOff,
-  //        blinkOff > 0,
-  //        let blinkOn = cursorStyle.blinkOn,
-  //        blinkOn > 0
-  //      {
-  //        cursorBlinkingTask = Task {
-  //          do {
-  //            try await Task.sleep(for: .milliseconds(blinkWait))
-  //
-  //            while true {
-  //              dispatch(Actions.SetCursorBlinkingPhase(value: false))
-  //              try await Task.sleep(for: .milliseconds(blinkOff))
-  //
-  //              dispatch(Actions.SetCursorBlinkingPhase(value: true))
-  //              try await Task.sleep(for: .milliseconds(blinkOn))
-  //            }
-  //          } catch { }
-  //        }
-  //      }
-  //    }
 
   private let actionsContinuation: AsyncStream<Action>.Continuation
   private let alertsContinuation: AsyncStream<Alert>.Continuation

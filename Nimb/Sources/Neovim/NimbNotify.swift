@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+import CasePaths
 import Foundation
 
 @PublicInit

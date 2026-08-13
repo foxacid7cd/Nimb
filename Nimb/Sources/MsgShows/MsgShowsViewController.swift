@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CustomDump
 import STTextViewAppKit
 
 public class MsgShowsViewController: NSViewController, Rendering {

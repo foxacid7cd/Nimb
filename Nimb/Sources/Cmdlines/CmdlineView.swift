@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CustomDump
 
 public class CmdlineView: NSView, Rendering {
   private let store: Store

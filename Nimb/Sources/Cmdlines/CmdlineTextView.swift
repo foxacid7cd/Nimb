@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CustomDump
 
 public class CmdlineTextView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {

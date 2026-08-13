@@ -6,7 +6,6 @@ import Collections
 import CustomDump
 import Metal
 import QuartzCore
-import Queue
 import Synchronization
 
 struct GridDrawSnapshot: Sendable {

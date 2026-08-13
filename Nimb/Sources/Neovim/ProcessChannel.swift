@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Queue
 
 public struct ProcessChannel: Channel {
   private let standardOutput = Pipe()

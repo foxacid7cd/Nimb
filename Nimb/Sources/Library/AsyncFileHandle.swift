@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import Queue
 
 extension FileHandle {
   var dataBatches: AsyncStream<Data> {

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import CasePaths
 import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
@@ -17,12 +16,6 @@ public struct UIEventFile: GeneratableFile {
     get throws {
       try .init {
         try .init {
-          """
-
-          import CasePaths
-
-          """ as DeclSyntax
-
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
               let caseName = uiEvent.name

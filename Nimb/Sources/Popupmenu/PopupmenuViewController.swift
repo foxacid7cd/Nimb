@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CasePaths
 
 public class PopupmenuViewController: NSViewController, Rendering {
   public var anchorConstraints = [NSLayoutConstraint]()

@@ -2,7 +2,6 @@
 
 import AppKit
 import ArgumentParser
-import CustomDump
 import Foundation
 import System
 

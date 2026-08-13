@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
-
 public extension API {
   @discardableResult
   func nimb(method: String, parameters: [Value] = []) async throws -> Value? {

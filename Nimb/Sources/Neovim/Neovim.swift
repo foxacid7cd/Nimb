@@ -85,16 +85,12 @@ public final class Neovim: Sendable {
     )!
     try! await api.nvimExecLua(code: initLua, args: [])
 
-//    try! await api.nvimSubscribe(event: "nvim_error_event")
-
     let uiOptions: UIOptions = [
       .extMultigrid,
       .extHlstate,
       .extCmdline,
       .extTabline,
       .extMessages,
-//      .extWildmenu,
-//      .extPopupmenu,
     ]
     let initialOuterGridSize = UserDefaults.standard.outerGridSize
     try! await api.nvimUIAttach(

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import CasePaths
 import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
