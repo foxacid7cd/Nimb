@@ -48,12 +48,12 @@ public class MainWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
+  public nonisolated func render() {
     if updates.isMouseUserInteractionEnabledUpdated {
-      renderIsMouseUserInteractionEnabled()
+//      renderIsMouseUserInteractionEnabled()
     }
     if updates.isAppearanceUpdated {
-      customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
+//      customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
     }
 
     renderChildren(viewController)
@@ -61,11 +61,13 @@ public class MainWindowController: NSWindowController, Rendering {
     if !isWindowInitiallyShown, let outerGrid = state.outerGrid {
       isWindowInitiallyShown = true
 
-      let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
-        .estimatedContentSize(outerGridSize: outerGrid.size)
-      customWindow.setContentSize(contentSize)
-      customWindow.makeMain()
-      customWindow.makeKeyAndOrderFront(nil)
+      Task { @MainActor in
+        let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
+          .estimatedContentSize(outerGridSize: outerGrid.size)
+        customWindow.setContentSize(contentSize)
+        customWindow.makeMain()
+        customWindow.makeKeyAndOrderFront(nil)
+      }
     }
   }
 

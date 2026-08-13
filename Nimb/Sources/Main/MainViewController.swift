@@ -156,24 +156,28 @@ public class MainViewController: NSViewController, Rendering {
     }
   }
 
-  public func render() {
-    if updates.isFontUpdated {
-      reportOuterGridSizeChanged()
+  public nonisolated func render() {
+    Task { @MainActor in
+      if updates.isFontUpdated {
+        reportOuterGridSizeChanged()
+      }
+
+      if updates.isAppearanceUpdated {
+        renderBackground()
+      }
+
+      //    renderChildren(gridsView, tablineView)
+
+      if updates.isCmdlinesUpdated {
+        modalOverlayView.isHidden = state
+          .cmdlines.dictionary
+          .isEmpty
+      }
     }
 
-    if updates.isAppearanceUpdated {
-      renderBackground()
-    }
+    renderChildren(gridsView)
 
-    renderChildren(gridsView, tablineView)
-
-    if updates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = state
-        .cmdlines.dictionary
-        .isEmpty
-    }
-
-    renderChildren(cmdlinesViewController, popupmenuViewController)
+//    renderChildren(cmdlinesViewController, popupmenuViewController)
   }
 
   public func windowFrame(

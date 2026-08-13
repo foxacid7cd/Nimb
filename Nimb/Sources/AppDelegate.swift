@@ -68,10 +68,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
-  @MainActor
-  public func render(state: State, updates: State.Updates) {
-    update(renderContext: .init(state: state, updates: updates))
-    render()
+  public nonisolated func render(state: State, updates: State.Updates) {
+    Task { @MainActor in
+      update(renderContext: .init(state: state, updates: updates))
+      render()
+    }
   }
 
   @StateActor
@@ -85,7 +86,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         }
       } catch { }
     }
-    updatesTask = Task {
+    updatesTask = Task { @StateActor in
       do {
         var presentedNimbNotifiesCount = 0
 
@@ -95,7 +96,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
           if updates.isNimbNotifiesUpdated {
             for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
               let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-              await self.showNimbNotify(notification)
+              self.showNimbNotify(notification)
             }
             presentedNimbNotifiesCount = state.nimbNotifies.count
           }
@@ -195,7 +196,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
               isDirectory: true,
             )
             let logFileName =
-              "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
+            "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
             let temporaryFileURL = temporaryDirectoryURL
               .appending(component: logFileName)
 
@@ -214,15 +215,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  private func show(alert: Alert) {
+  private func show(alert: Alert) async {
     let appKitAlert = NSAlert()
     appKitAlert.alertStyle = .warning
     appKitAlert.messageText = alert.message
     appKitAlert.addButton(withTitle: "Close")
-    appKitAlert.beginSheetModal(for: mainWindowController!.window!)
+    await appKitAlert.beginSheetModal(for: mainWindowController!.window!)
   }
 
-  private func showNimbNotify(_ notify: NimbNotify) {
+  private nonisolated func showNimbNotify(_ notify: NimbNotify) {
     logger.debug("AppDelegate.showNimbNotify: \(String(customDumping: notify))")
 
     let process = Process()

@@ -69,6 +69,7 @@
 		684134502B4B5DC00046C4F4 /* UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */; };
 		68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */; };
 		6861FA6229B462B8002C3C0B /* Font.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6861FA6129B462B8002C3C0B /* Font.swift */; };
+		6863045B2FA7AED900099357 /* GridMetalRendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6863045A2FA7AED900099357 /* GridMetalRendering.swift */; };
 		6867D7FF2C658BA200585FE4 /* RenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6867D7FE2C658BA200585FE4 /* RenderContext.swift */; };
 		68698B242C6651260084BB74 /* CmdlineTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68698B232C6651260084BB74 /* CmdlineTextView.swift */; };
 		6869ACA72C61FF8700830537 /* libmsgpack-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869ACA62C61FF8700830537 /* libmsgpack-c.a */; };
@@ -282,6 +283,7 @@
 		6841344F2B4B5DC00046C4F4 /* UserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaults.swift; sourceTree = "<group>"; };
 		68554AFD2AFAACE1006488CD /* MsgShowsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MsgShowsViewController.swift; sourceTree = "<group>"; };
 		6861FA6129B462B8002C3C0B /* Font.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Font.swift; sourceTree = "<group>"; };
+		6863045A2FA7AED900099357 /* GridMetalRendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridMetalRendering.swift; sourceTree = "<group>"; };
 		6867D7FE2C658BA200585FE4 /* RenderContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderContext.swift; sourceTree = "<group>"; };
 		68698B232C6651260084BB74 /* CmdlineTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CmdlineTextView.swift; sourceTree = "<group>"; };
 		6869ACA62C61FF8700830537 /* libmsgpack-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libmsgpack-c.a"; path = "Third-Party/msgpack-c/libmsgpack-c.a"; sourceTree = "<group>"; };
@@ -570,6 +572,7 @@
 				689D9E2A29B4FBA700345713 /* MainViewController.swift */,
 				689D9E2C29B50BF400345713 /* GridsView.swift */,
 				68BE8EEB2D4E02A000C15408 /* GridView.swift */,
+				6863045A2FA7AED900099357 /* GridMetalRendering.swift */,
 				68EF609029B2B6D20056E48D /* GridLayer.swift */,
 			);
 			path = Main;
@@ -999,6 +1002,7 @@
 				681B53172C5FE47600AD6C68 /* ArrayExtensions.swift in Sources */,
 				681B531F2C5FE47600AD6C68 /* IntKeyedDictionary.swift in Sources */,
 				681B53372C5FE4A100AD6C68 /* RPC.swift in Sources */,
+				6863045B2FA7AED900099357 /* GridMetalRendering.swift in Sources */,
 				68A8FF6E2AD2ACCB0017C28D /* UIOption.swift in Sources */,
 				68FAC3F52AF68DB800490F09 /* ApplyUIEvents.swift in Sources */,
 				6837091829B41C6400E02348 /* AppDelegate.swift in Sources */,

@@ -38,13 +38,14 @@ public class GridsView: NSView, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
-    for gridID in updates.destroyedGridIDs {
-      let view = arrangedGridView(forGridWithID: gridID)
-      view.isHidden = true
-    }
+  public nonisolated func render() {
+    Task { @MainActor in
+      for gridID in updates.destroyedGridIDs {
+        let view = arrangedGridView(forGridWithID: gridID)
+        view.isHidden = true
+      }
 
-    let updatedLayoutGridIDs =
+      let updatedLayoutGridIDs =
       if updates.isFontUpdated {
         Set(state.grids.keys)
 
@@ -52,52 +53,53 @@ public class GridsView: NSView, Rendering {
         updates.updatedLayoutGridIDs
       }
 
-    for gridID in updatedLayoutGridIDs {
-      guard let grid = state.grids[gridID] else {
-        continue
-      }
-
-      let gridView = arrangedGridView(forGridWithID: gridID)
-      gridView.isHidden = grid.isHidden
-
-      if gridID == Grid.OuterID {
-        invalidateIntrinsicContentSize()
-      } else if let associatedWindow = grid.associatedWindow {
-        switch associatedWindow {
-        case .external:
-          gridView.isHidden = true
-
-        default:
-          break
-        }
-      }
-    }
-
-    if !updatedLayoutGridIDs.isEmpty || updates.isGridsHierarchyUpdated {
-      let upsideDownTransform = upsideDownTransform
-
-      var zPositions = [ObjectIdentifier: Double]()
-
-      state.walkingGridFrames { id, frame, zPosition in
-        guard let gridView = arrangedGridViews[id] else {
-          logger.warning("walkingGridFrames: gridView with id \(id) not found")
-          return
+      for gridID in updatedLayoutGridIDs {
+        guard let grid = state.grids[gridID] else {
+          continue
         }
 
-        let newFrame = frame.applying(upsideDownTransform)
-        if gridView.frame != newFrame {
-          gridView.frame = newFrame
-        }
+        let gridView = arrangedGridView(forGridWithID: gridID)
+        gridView.isHidden = grid.isHidden
 
-        zPositions[ObjectIdentifier(gridView)] = zPosition
+        if gridID == Grid.OuterID {
+          invalidateIntrinsicContentSize()
+        } else if let associatedWindow = grid.associatedWindow {
+          switch associatedWindow {
+          case .external:
+            gridView.isHidden = true
+
+          default:
+            break
+          }
+        }
       }
 
-      var zPositionsObject = zPositions as NSDictionary
-      withUnsafeMutablePointer(to: &zPositionsObject) { pointer in
-        sortSubviews(
-          subviewSortingFunction(firstView:secondView:context:),
-          context: UnsafeMutableRawPointer(pointer),
-        )
+      if !updatedLayoutGridIDs.isEmpty || updates.isGridsHierarchyUpdated {
+        let upsideDownTransform = upsideDownTransform
+
+        var zPositions = [ObjectIdentifier: Double]()
+
+        state.walkingGridFrames { id, frame, zPosition in
+          guard let gridView = arrangedGridViews[id] else {
+            logger.warning("walkingGridFrames: gridView with id \(id) not found")
+            return
+          }
+
+          let newFrame = frame.applying(upsideDownTransform)
+          if gridView.frame != newFrame {
+            gridView.frame = newFrame
+          }
+
+          zPositions[ObjectIdentifier(gridView)] = zPosition
+        }
+
+        var zPositionsObject = zPositions as NSDictionary
+        //      withUnsafeMutablePointer(to: &zPositionsObject) { pointer in
+        //        sortSubviews(
+        //          subviewSortingFunction(firstView:secondView:context:),
+        //          context: UnsafeMutableRawPointer(pointer),
+        //        )
+        //      }
       }
     }
 
