@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import ArgumentParser
-import CoreLocation
 import Darwin
 import Foundation
 import System
@@ -81,7 +80,9 @@ struct MsgpackInspector: AsyncParsableCommand {
   }
 }
 
-var orig_termios = termios()
+/// Saved terminal state, touched only from the main thread during setup and
+/// from the `atexit` handler installed below.
+nonisolated(unsafe) var orig_termios = termios()
 func reset_terminal_mode() {
   tcsetattr(0, TCSANOW, &orig_termios)
 }
