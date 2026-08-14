@@ -253,6 +253,11 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
+  /// Runs longer than this are shaped every time. Long runs are both less
+  /// likely to recur verbatim and more expensive to keep, so they are not
+  /// worth a cache slot.
+  private static let maxCachedCellsCount = 64
+
   public var rowPartContent: RowPartContent
   public var highlightID: Highlight.ID
   public var originColumn: Int
@@ -276,26 +281,20 @@ public struct DrawRun: Sendable {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
 
-    let shouldUseCache: Bool =
-      if case let .cells(array) = rowPartContent {
-        array.count < 6
+    // Cache any run that fits. The miss path below builds an NSAttributedString
+    // and runs CoreText typesetting, which profiling put at 12% of the app's
+    // CPU under load. The previous limit of six cells excluded most real
+    // tokens -- "return" and "context" reshaped on every single occurrence,
+    // even though a code buffer repeats the same identifiers constantly.
+    let cacheKey: GlobalDrawRunsCache.Key? =
+      if case let .cells(cells) = rowPartContent, cells.count <= Self.maxCachedCellsCount {
+        .init(content: rowPartContent, font: font, isBold: isBold, isItalic: isItalic)
       } else {
-        false
+        nil
       }
-    var cacheKey: Int?
-    if shouldUseCache {
-      var hasher = Hasher()
-      hasher.combine(rowPartContent)
-      hasher.combine(font)
-      hasher.combine(isBold)
-      hasher.combine(isItalic)
-      cacheKey = hasher.finalize()
-    }
-    if
-      let cacheKey, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(
-        for: cacheKey,
-      )
-    {
+    if let cacheKey, let cachedDrawRun = GlobalDrawRunsCache.shared.drawRun(for: cacheKey) {
+      // originColumn and highlightID are overwritten by the caller, and the
+      // glyphs depend only on what the key covers, so sharing is safe.
       self = cachedDrawRun
     } else if case let .cells(cells) = rowPartContent {
       let appKitFont = font.appKit(
@@ -671,23 +670,64 @@ public struct CursorDrawRun: Sendable {
 }
 
 public final class GlobalDrawRunsCache: Sendable {
-  public static let shared = GlobalDrawRunsCache()
+  /// The full identity of a shaped run. This used to be a bare Hasher output,
+  /// so two different runs sharing a hash would silently render each other's
+  /// glyphs; letting Dictionary compare real keys removes that failure mode,
+  /// which matters more now that the cache holds far more entries.
+  public struct Key: Hashable, Sendable {
+    public var content: RowPartContent
+    public var font: Font
+    public var isBold: Bool
+    public var isItalic: Bool
 
-  private let dictionary = Mutex(OrderedDictionary<Int, DrawRun>())
-
-  public func drawRun(for key: Int) -> DrawRun? {
-    dictionary.withLock { dictionary in
-      dictionary[key]
+    public init(content: RowPartContent, font: Font, isBold: Bool, isItalic: Bool) {
+      self.content = content
+      self.font = font
+      self.isBold = isBold
+      self.isItalic = isItalic
     }
   }
 
-  public func store(_ drawRun: DrawRun, forKey key: Int) {
-    dictionary.withLock { dictionary in
-      dictionary.updateValue(drawRun, forKey: key)
+  /// Two generations rather than a true LRU: insertion, lookup and eviction
+  /// are all O(1), where evicting the oldest entry of an ordered dictionary
+  /// shifts every element that follows it. Anything used during the current
+  /// generation is promoted into it and so survives the next rollover.
+  private struct Storage {
+    var current: [Key: DrawRun] = [:]
+    var previous: [Key: DrawRun] = [:]
 
-      if dictionary.count > 500 {
-        dictionary.removeFirst()
+    mutating func insert(_ drawRun: DrawRun, forKey key: Key) {
+      current[key] = drawRun
+      if current.count > GlobalDrawRunsCache.capacity {
+        previous = current
+        current = [:]
       }
+    }
+  }
+
+  public static let shared = GlobalDrawRunsCache()
+
+  /// Per generation, so the resident set is at most twice this.
+  private static let capacity = 4096
+
+  private let storage = Mutex(Storage())
+
+  public func drawRun(for key: Key) -> DrawRun? {
+    storage.withLock { storage in
+      if let drawRun = storage.current[key] {
+        return drawRun
+      }
+      guard let drawRun = storage.previous[key] else {
+        return nil
+      }
+      storage.insert(drawRun, forKey: key)
+      return drawRun
+    }
+  }
+
+  public func store(_ drawRun: DrawRun, forKey key: Key) {
+    storage.withLock { storage in
+      storage.insert(drawRun, forKey: key)
     }
   }
 }
