@@ -21,39 +21,62 @@ public final class RPC<Target: Channel>: Sendable {
 
     notifications = AsyncThrowingStream<[Message.Notification], any Error> { [target, storage] continuation in
       Task {
-        var notifications = [Message.Notification]()
+        await Self.read(from: target, into: storage, yieldingTo: continuation)
+      }
+    }
+  }
 
-        let unpacker = Unpacker()
+  /// The msgpack reader loop.
+  ///
+  /// @concurrent rather than a bare `Task { }` body: an unstructured task
+  /// inherits the isolation of the context that created it, and RPC.init is
+  /// reached from applicationDidFinishLaunching on the main actor. This module
+  /// happens to default to nonisolated, so today the loop already runs off the
+  /// main thread — but that is an accident of a build setting, and the app
+  /// target hit exactly this trap when it moved to a MainActor default. Being
+  /// explicit also makes the Unpacker's confinement to a single task a fact
+  /// the compiler checks rather than something the reader has to infer.
+  @concurrent
+  private static func read(
+    from target: Target,
+    into storage: Storage,
+    yieldingTo continuation: AsyncThrowingStream<[Message.Notification], any Error>.Continuation,
+  ) async {
+    do {
+      var notifications = [Message.Notification]()
 
-        for try await data in target.dataBatches {
-          guard !Task.isCancelled else {
-            break
-          }
+      let unpacker = Unpacker()
 
-          let messages = try unpacker.unpack(data)
-            .map { try Message(value: $0) }
+      for try await data in target.dataBatches {
+        guard !Task.isCancelled else {
+          break
+        }
 
-          for message in messages {
-            switch message {
-            case let .request(request):
-              logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
+        let messages = try unpacker.unpack(data)
+          .map { try Message(value: $0) }
 
-            case let .response(response):
-              await storage.responseReceived(response, forRequestWithID: response.id)
+        for message in messages {
+          switch message {
+          case let .request(request):
+            logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
 
-            case let .notification(notification):
-              notifications.append(notification)
-            }
-          }
+          case let .response(response):
+            await storage.responseReceived(response, forRequestWithID: response.id)
 
-          if !notifications.isEmpty {
-            continuation.yield(notifications)
-            notifications.removeAll(keepingCapacity: true)
+          case let .notification(notification):
+            notifications.append(notification)
           }
         }
 
-        continuation.finish()
+        if !notifications.isEmpty {
+          continuation.yield(notifications)
+          notifications.removeAll(keepingCapacity: true)
+        }
       }
+
+      continuation.finish()
+    } catch {
+      continuation.finish(throwing: error)
     }
   }
 
