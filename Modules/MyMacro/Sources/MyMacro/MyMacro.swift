@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 // This target intentionally declares no macros of its own.
 //
 // The `@PublicInit` macro is declared in the app sources

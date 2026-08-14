@@ -1,58 +1,69 @@
-NAME := Nimb
-BUILD_DIR := .build
-NEOVIM_DIR := Third-Party/neovim
-GENERATED_DIR := Nimb/Sources/generated
-DERIVED_DATA_DIR := $(BUILD_DIR)/DerivedData
-EXPORT_OPTIONS_PLIST := ExportOptions.plist
-INSTALL_DIR := /Applications
-SWIFTFORMAT := /opt/homebrew/bin/swiftformat
+NAME            := Nimb
+BUILD_DIR       := $(CURDIR)/.build
+PACKAGE_DIR     := $(BUILD_DIR)/package
+DERIVED_DATA    := $(BUILD_DIR)/DerivedData
+NEOVIM_DIR      := $(CURDIR)/Third-Party/neovim
+GENERATED_DIR   := $(CURDIR)/Nimb/Sources/generated
+EXPORT_OPTIONS  := $(CURDIR)/ExportOptions.plist
+INSTALL_DIR     := /Applications
 
-# CMake Configuration
-export CMAKE_GENERATOR := Ninja
-export CMAKE_BUILD_TYPE := Release
-export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
+MISE            := mise
+TUIST           := $(MISE) exec -- tuist
+SWIFTFORMAT     := $(MISE) exec -- swiftformat
 
-# Targets
-.PHONY: all test clean neovim generate format app install
+# CMake configuration for the Neovim submodule build.
+export CMAKE_GENERATOR   := Ninja
+export CMAKE_BUILD_TYPE  := Release
+export CMAKE_EXTRA_FLAGS := -DCMAKE_OSX_DEPLOYMENT_TARGET=15.6
 
-# macOS App
-app:
-	xcodebuild archive -workspace Nimb.xcworkspace \
-		-scheme Nimb -configuration Release -archivePath $(BUILD_DIR)/Nimb.xcarchive && \
-	xcodebuild -exportArchive -archivePath $(BUILD_DIR)/Nimb.xcarchive \
-		-exportOptionsPlist $(EXPORT_OPTIONS_PLIST) -exportPath $(INSTALL_DIR)
+.PHONY: all bootstrap project neovim generate format app install clean clean-neovim
 
-# Neovim
-neovim: 
+all: install
+
+## Install the pinned toolchain (tuist, swiftformat).
+bootstrap:
+	$(MISE) install
+
+## Generate Nimb.xcodeproj / Nimb.xcworkspace from Project.swift.
+project: bootstrap
+	$(TUIST) generate --no-open
+
+## Build Neovim and install it into .build/package.
+neovim:
 	@echo "Building Neovim..."
-	mkdir -p $(BUILD_DIR) && rm -rf $(BUILD_DIR)/package && mkdir -p $(BUILD_DIR)/package && \
-	pushd $(NEOVIM_DIR) > /dev/null && \
-		make CMAKE_INSTALL_PREFIX=$PWD/../../../.build/package install && \
-	popd > /dev/null
+	rm -rf "$(PACKAGE_DIR)"
+	mkdir -p "$(PACKAGE_DIR)"
+	$(MAKE) -C "$(NEOVIM_DIR)" CMAKE_INSTALL_PREFIX="$(PACKAGE_DIR)" install
 
-# Clean Neovim
-clean_neovim:
-	@echo "Cleaning Neovim build..."
-	pushd $(NEOVIM_DIR) > /dev/null && \
-		make distclean && \
-	popd > /dev/null
+## Regenerate the Swift Neovim API bindings from `nvim --api-info`.
+generate: project
+	@echo "Generating Swift Neovim API code..."
+	@test -x "$(PACKAGE_DIR)/bin/nvim" || { echo "Run 'make neovim' first."; exit 1; }
+	mkdir -p "$(GENERATED_DIR)"
+	xcodebuild -workspace "$(NAME).xcworkspace" -scheme generate \
+		-configuration Debug -destination "platform=macOS,arch=arm64" \
+		-derivedDataPath "$(DERIVED_DATA)" build
+	"$(PACKAGE_DIR)/bin/nvim" --api-info | \
+		"$(DERIVED_DATA)/Build/Products/Debug/generate" "$(GENERATED_DIR)"
 
-# Clean Build
-clean: clean_neovim
-	@echo "Cleaning build directory..."
-	rm -rf $(BUILD_DIR)
-
-# Format
 format:
 	@echo "Formatting Swift files..."
-	$(SWIFTFORMAT) --config .swiftformat Nimb/ generate/ msgpack-inspector/ speed-tuner/
+	@# Tuist manifests are deliberately excluded: the acronyms rule rewrites
+	@# API labels such as bundleId: into bundleID:, which does not compile.
+	$(SWIFTFORMAT) --config .swiftformat \
+		Nimb/ generate/ msgpack-inspector/ speed-tuner/ Modules/
 
-# Generate
-generate:
-	@echo "Generating Swift Neovim API code..."
-	xcodebuild -workspace Nimb.xcworkspace -scheme generate -configuration Debug \
-		-destination "platform=macOS,arch=arm64" -derivedDataPath $(DERIVED_DATA_DIR) && \
-		$(BUILD_DIR)/package/bin/nvim --api-info | $(DERIVED_DATA_DIR)/Build/Products/Debug/generate $(GENERATED_DIR)
+app: project
+	xcodebuild archive -workspace "$(NAME).xcworkspace" -scheme "$(NAME)" \
+		-configuration Release -archivePath "$(BUILD_DIR)/$(NAME).xcarchive"
+	xcodebuild -exportArchive -archivePath "$(BUILD_DIR)/$(NAME).xcarchive" \
+		-exportOptionsPlist "$(EXPORT_OPTIONS)" -exportPath "$(INSTALL_DIR)"
 
-# Install
 install: neovim generate format app
+
+clean-neovim:
+	$(MAKE) -C "$(NEOVIM_DIR)" distclean
+
+clean: clean-neovim
+	$(TUIST) clean
+	rm -rf "$(BUILD_DIR)" Derived "$(NAME).xcodeproj" "$(NAME).xcworkspace"

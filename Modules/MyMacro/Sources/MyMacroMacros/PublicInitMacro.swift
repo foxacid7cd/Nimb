@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
-import SwiftDiagnostics
 
 public struct PublicInitMacro: MemberMacro {
   enum Error: String, Swift.Error, DiagnosticMessage {
@@ -14,7 +14,10 @@ public struct PublicInitMacro: MemberMacro {
       .init(domain: "PublicInitMacro", id: rawValue)
     }
 
-    var severity: DiagnosticSeverity { .error }
+    var severity: DiagnosticSeverity {
+      .error
+    }
+
     var message: String {
       switch self {
       case .notAStruct: "@PublicInit can only be applied to structs"
@@ -26,7 +29,7 @@ public struct PublicInitMacro: MemberMacro {
     of node: AttributeSyntax,
     providingMembersOf declaration: some DeclGroupSyntax,
     conformingTo protocols: [TypeSyntax],
-    in context: some MacroExpansionContext
+    in context: some MacroExpansionContext,
   ) throws
   -> [DeclSyntax] {
     guard let structDecl = declaration.as(StructDeclSyntax.self) else {

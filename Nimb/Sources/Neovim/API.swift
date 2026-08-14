@@ -13,7 +13,7 @@ public final class API<Target: Channel>: Sendable {
       let task = Task {
         do {
           for try await batch in notifications {
-            continuation.yield(try Self.neovimNotifications(from: batch))
+            try continuation.yield(Self.neovimNotifications(from: batch))
           }
           continuation.finish()
         } catch {
