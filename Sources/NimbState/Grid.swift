@@ -353,10 +353,11 @@ public struct Grid: Sendable, Identifiable {
   }
 
   public mutating func flushDrawRuns(font: Font, appearance: Appearance) {
-    for index in drawRuns.rowDrawRuns.indices {
-      drawRuns.rowDrawRuns[index].drawRunsCache.removeAll(keepingCapacity: true)
-    }
-    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
+    // Emptying each row's cache used to be how this forced a reshape, and it
+    // worked only indirectly: positional reuse could not start without a
+    // dictionary hit, so clearing the dictionary disabled reuse as a whole.
+    // Say so directly instead.
+    drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, reusingOld: false)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
       drawRuns.cursorDrawRun = .init(
         layout: layout,

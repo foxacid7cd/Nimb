@@ -29,10 +29,14 @@ public struct GridDrawRuns: Sendable {
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
 
+  /// Set reusingOld to false to reshape everything from scratch. Reuse checks
+  /// content and the bold/italic traits but not the font, so a font change has
+  /// to bypass it wholesale.
   public mutating func renderDrawRuns(
     for layout: GridLayout,
     font: Font,
     appearance: Appearance,
+    reusingOld: Bool = true,
   ) {
     rowDrawRuns = layout.rowLayouts
       .enumerated()
@@ -42,7 +46,7 @@ public struct GridDrawRuns: Sendable {
           layout: layout,
           font: font,
           appearance: appearance,
-          old: row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
+          old: reusingOld && row < rowDrawRuns.count ? rowDrawRuns[row] : nil,
         )
       }
   }
@@ -125,7 +129,6 @@ public struct GridDrawRuns: Sendable {
 @PublicInit
 public struct RowDrawRun: Sendable {
   public var drawRuns: [DrawRun]
-  public var drawRunsCache: [RowPartContent: (index: Int, drawRun: DrawRun)]
 
   public init(
     row: Int,
@@ -135,43 +138,39 @@ public struct RowDrawRun: Sendable {
     old: RowDrawRun?,
   ) {
     var drawRuns = [DrawRun]()
-    var drawRunsCache = [RowPartContent: (index: Int, drawRun: DrawRun)]()
-    var previousReusedOldDrawRunIndex: Int?
-    for part in layout.parts {
-      var reusedDrawRun: DrawRun?
+    drawRuns.reserveCapacity(layout.parts.count)
 
-      if let old {
+    for (index, part) in layout.parts.enumerated() {
+      // Reuse is index-aligned against the previous version of this row, which
+      // covers the case that matters: the row did not change.
+      //
+      // There used to be a per-row dictionary keyed by content as well, which
+      // meant hashing every part's characters twice per update -- once to look
+      // it up, once to insert -- and hashing a run of Characters goes through
+      // String hashing, so it was not cheap. GlobalDrawRunsCache now covers
+      // content reuse across the whole grid rather than within a single row,
+      // so the per-row copy earned nothing.
+      var drawRun: DrawRun =
         if
-          let index = previousReusedOldDrawRunIndex.map({ $0 + 1 }),
-          index < old.drawRuns.endIndex,
-          old.drawRuns[index].shouldBeReused(for: part)
+          let old, index < old.drawRuns.endIndex,
+          old.drawRuns[index].shouldBeReused(for: part, appearance: appearance)
         {
-          reusedDrawRun = old.drawRuns[index]
-          previousReusedOldDrawRunIndex = index
-        } else if let (index, drawRun) = old.drawRunsCache[part.content] {
-          reusedDrawRun = drawRun
-          previousReusedOldDrawRunIndex = index
+          old.drawRuns[index]
+        } else {
+          DrawRun(
+            rowPartContent: part.content,
+            originColumn: part.originColumn,
+            highlightID: part.highlightID,
+            font: font,
+            appearance: appearance,
+          )
         }
-      }
-
-      var drawRun = reusedDrawRun ?? DrawRun(
-        rowPartContent: part.content,
-        originColumn: part.originColumn,
-        highlightID: part.highlightID,
-        font: font,
-        appearance: appearance,
-      )
       drawRun.originColumn = part.originColumn
       drawRun.highlightID = part.highlightID
-      drawRunsCache[part.content] = (
-        index: drawRuns.count,
-        drawRun: drawRun,
-      )
       drawRuns.append(drawRun)
     }
 
     self.drawRuns = drawRuns
-    self.drawRunsCache = drawRunsCache
   }
 
   public func drawBackground(
@@ -262,6 +261,10 @@ public struct DrawRun: Sendable {
   public var highlightID: Highlight.ID
   public var originColumn: Int
   public var glyphRuns: [GlyphRun]? = nil
+  /// What the glyphs were shaped for, so reuse can tell whether they still
+  /// apply. Defaulted because the whitespace case draws no glyphs at all.
+  public var isBold: Bool = false
+  public var isItalic: Bool = false
 
   public var columnsCount: Int {
     rowPartContent.columnsCount
@@ -370,13 +373,22 @@ public struct DrawRun: Sendable {
         highlightID: highlightID,
         originColumn: originColumn,
         glyphRuns: glyphRuns,
+        isBold: isBold,
+        isItalic: isItalic,
       )
       if let cacheKey {
         GlobalDrawRunsCache.shared.store(drawRun, forKey: cacheKey)
       }
       self = drawRun
     } else {
-      self.init(rowPartContent: rowPartContent, highlightID: highlightID, originColumn: originColumn, glyphRuns: nil)
+      self.init(
+        rowPartContent: rowPartContent,
+        highlightID: highlightID,
+        originColumn: originColumn,
+        glyphRuns: nil,
+        isBold: isBold,
+        isItalic: isItalic,
+      )
     }
   }
 
@@ -483,8 +495,16 @@ public struct DrawRun: Sendable {
     }
   }
 
-  public func shouldBeReused(for rowPart: RowPart) -> Bool {
-    !rowPart.content.isWhitespace && rowPart.content == rowPartContent
+  public func shouldBeReused(for rowPart: RowPart, appearance: Appearance) -> Bool {
+    guard !rowPart.content.isWhitespace, rowPart.content == rowPartContent else {
+      return false
+    }
+    // Glyphs are shaped for a specific weight and slant, so a part whose text
+    // is unchanged still has to be reshaped when its highlight turns bold or
+    // italic. This used to compare content alone; a row keeping its text while
+    // changing highlight -- entering visual mode, say -- kept the old glyphs.
+    return isBold == appearance.isBold(for: rowPart.highlightID)
+      && isItalic == appearance.isItalic(for: rowPart.highlightID)
   }
 }
 
