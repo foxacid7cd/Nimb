@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class MsgShowsViewController: NSViewController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   private let store: Store
   private lazy var scrollView = NSScrollView()
   private lazy var textView = NSTextView()

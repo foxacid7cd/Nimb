@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class CmdlineView: NSView, Rendering {
+  public var renderContext: RenderContext! = nil
+
   private let store: Store
   private let level: Int
   private let promptTextField = NSTextField(labelWithString: "")

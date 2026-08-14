@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class PopupmenuViewController: NSViewController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   public var anchorConstraints = [NSLayoutConstraint]()
 
   public var willShowPopupmenu: (() -> Void)? = nil

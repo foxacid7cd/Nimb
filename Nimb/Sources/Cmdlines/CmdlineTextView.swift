@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class CmdlineTextView: NSView, Rendering {
+  public var renderContext: RenderContext! = nil
+
   override public var intrinsicContentSize: NSSize {
     guard isRendered else {
       return .zero

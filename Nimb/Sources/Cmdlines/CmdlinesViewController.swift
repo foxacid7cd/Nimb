@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class CmdlinesViewController: NSViewController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   private static let observedHighlightName: Set<
     Appearance
       .ObservedHighlightName,

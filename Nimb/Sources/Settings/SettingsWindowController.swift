@@ -3,6 +3,8 @@
 import AppKit
 
 public class SettingsWindowController: NSWindowController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   private class CustomWindow: NSPanel { }
 
   private let store: Store

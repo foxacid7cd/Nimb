@@ -6,6 +6,8 @@ import NimbCore
 import NimbState
 
 public class GridsView: NSView, Rendering {
+  public var renderContext: RenderContext! = nil
+
   override public var intrinsicContentSize: NSSize {
     guard isRendered, let outerGrid = state.outerGrid else {
       return .zero

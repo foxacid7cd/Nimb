@@ -8,6 +8,8 @@ import NimbState
 import Synchronization
 
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
+  public var renderContext: RenderContext! = nil
+
   private var mainMenuController: MainMenuController? = nil
   private var msgShowsWindowController: MsgShowsWindowController? = nil
   private var mainWindowController: MainWindowController? = nil

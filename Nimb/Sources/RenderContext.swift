@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
 import NimbState
-import ObjectiveC
 
 public final class RenderContext: Sendable {
   public let state: State
@@ -20,10 +18,14 @@ public final class RenderContext: Sendable {
 /// actor itself, so a single frame fanned out into a set of unstructured tasks
 /// whose relative order was unspecified — frame N+1 could interleave with
 /// frame N.
+///
+/// Conformers store the context themselves. It used to be smuggled through an
+/// ObjC associated object so the protocol could provide it without a stored
+/// property, which cost a force-cast on every read and a deliberately leaked
+/// key.
 @MainActor
-public protocol Rendering {
-  var renderContext: RenderContext { get }
-  func update(renderContext: RenderContext)
+public protocol Rendering: AnyObject {
+  var renderContext: RenderContext! { get set }
   func render()
 }
 
@@ -35,24 +37,13 @@ public extension Rendering {
   var updates: State.Updates {
     renderContext.updates
   }
-}
 
-public extension Rendering where Self: AnyObject {
   var isRendered: Bool {
-    objc_getAssociatedObject(self, renderingContextAssociatedObjectKey) != nil
-  }
-
-  var renderContext: RenderContext {
-    objc_getAssociatedObject(self, renderingContextAssociatedObjectKey) as! RenderContext
+    renderContext != nil
   }
 
   func update(renderContext: RenderContext) {
-    objc_setAssociatedObject(
-      self,
-      renderingContextAssociatedObjectKey,
-      renderContext,
-      .OBJC_ASSOCIATION_RETAIN,
-    )
+    self.renderContext = renderContext
   }
 
   func renderChildren(_ children: any Sequence<Rendering>) {
@@ -66,6 +57,3 @@ public extension Rendering where Self: AnyObject {
     renderChildren(children)
   }
 }
-
-/// Process-lifetime token used only for ObjC associated-object lookup.
-private nonisolated(unsafe) let renderingContextAssociatedObjectKey: UnsafeRawPointer = .init(malloc(1)!)

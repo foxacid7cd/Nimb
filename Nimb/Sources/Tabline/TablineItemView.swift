@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 class TablineItemView: NSView, Rendering {
+  public var renderContext: RenderContext! = nil
+
   override var frame: NSRect {
     didSet {
       if frame != oldValue {

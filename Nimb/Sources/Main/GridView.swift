@@ -7,6 +7,8 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
+  public var renderContext: RenderContext! = nil
+
   override public var frame: NSRect {
     didSet {
       gridLayer.frame = bounds

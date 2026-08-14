@@ -5,6 +5,8 @@ import NimbCore
 import NimbState
 
 public class PopupmenuItemView: NSView, Rendering {
+  public var renderContext: RenderContext! = nil
+
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
     String(describing: PopupmenuItemView.self),
   )

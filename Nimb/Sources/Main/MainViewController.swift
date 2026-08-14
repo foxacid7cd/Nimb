@@ -6,6 +6,8 @@ import NimbNeovim
 import NimbState
 
 public class MainViewController: NSViewController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   let gridsView: GridsView
 
   private let store: Store
