@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct MsgShow: Identifiable, Sendable, Hashable {
   public enum Kind: String, Sendable {

@@ -2,6 +2,7 @@
 
 import ArgumentParser
 import Foundation
+import NimbCore
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

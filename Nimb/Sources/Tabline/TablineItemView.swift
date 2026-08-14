@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 class TablineItemView: NSView, Rendering {
   override var frame: NSRect {

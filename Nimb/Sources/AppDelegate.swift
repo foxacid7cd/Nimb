@@ -2,6 +2,7 @@
 
 import AppKit
 import CustomDump
+import NimbCore
 import Synchronization
 
 @MainActor

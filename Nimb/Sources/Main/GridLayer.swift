@@ -5,6 +5,7 @@ import AppKit
 import Collections
 import CustomDump
 import Metal
+import NimbCore
 import QuartzCore
 import Synchronization
 

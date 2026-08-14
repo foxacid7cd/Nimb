@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import NimbCore
 
 public enum Actions {
   public struct ToggleDebugUIEventsLogging: Action {

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct Tabline: Sendable, Hashable {
   public var currentTabpageID: Tabpage.ID

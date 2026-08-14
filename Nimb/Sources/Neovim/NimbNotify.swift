@@ -2,6 +2,7 @@
 
 import CasePaths
 import Foundation
+import NimbCore
 
 @PublicInit
 public struct NimbNotify: Hashable, Sendable {

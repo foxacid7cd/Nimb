@@ -3,6 +3,7 @@
 import AppKit
 import CoreText
 import Metal
+import NimbCore
 
 struct GridPreparedMetalFrame: @unchecked Sendable {
   let scene: GridMetalScene

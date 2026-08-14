@@ -5,6 +5,7 @@ import Collections
 import Combine
 import CustomDump
 import Foundation
+import NimbCore
 import Synchronization
 
 public final class RPC<Target: Channel>: Sendable {

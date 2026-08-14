@@ -2,6 +2,7 @@
 
 import CasePaths
 import Foundation
+import NimbCore
 
 @CasePathable
 public enum Message: Sendable, Hashable {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class SettingsEnvironmentView: NSView {
   private struct Item: Hashable {

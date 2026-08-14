@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class CmdlinesViewController: NSViewController, Rendering {
   private static let observedHighlightName: Set<

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class CmdlineTextView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {

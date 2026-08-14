@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 @MainActor
 final class TablineView: NSVisualEffectView, Rendering {

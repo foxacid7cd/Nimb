@@ -2,6 +2,7 @@
 
 import Algorithms
 import AppKit
+import NimbCore
 
 public class GridView: NSView, CALayerDelegate, Rendering {
   override public var frame: NSRect {

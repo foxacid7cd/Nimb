@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import NimbCore
 import SwiftSyntax
 import SwiftSyntaxBuilder
 

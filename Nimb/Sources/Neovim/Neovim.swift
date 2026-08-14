@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import NimbCore
 
 public final class Neovim: Sendable {
   public let process: Process

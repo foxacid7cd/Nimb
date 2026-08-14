@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct Window: Sendable, Identifiable {
   public var id: References.Window

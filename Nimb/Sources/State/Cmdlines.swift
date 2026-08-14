@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct Cmdlines: Sendable {
   public var dictionary: IntKeyedDictionary<Cmdline> = [:]

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct Alert: Sendable, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {
   public var message: String

@@ -2,9 +2,9 @@
 
 import OSLog
 
-let logger = Logger()
+public let logger = Logger()
 
-func lastLogEntries() async throws -> String {
+public func lastLogEntries() async throws -> String {
   let store = try OSLogStore(scope: .currentProcessIdentifier)
   let position = store.position(
     date: Date.now.addingTimeInterval(-5.0 * 60.0),

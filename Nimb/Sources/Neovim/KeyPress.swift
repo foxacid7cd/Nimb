@@ -2,6 +2,7 @@
 
 import AppKit
 import Carbon
+import NimbCore
 
 @PublicInit
 public struct KeyPress: Sendable {

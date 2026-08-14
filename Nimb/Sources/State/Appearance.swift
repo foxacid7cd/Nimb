@@ -2,6 +2,7 @@
 
 import Collections
 import HashTreeCollections
+import NimbCore
 
 @PublicInit
 public struct Appearance: Sendable {

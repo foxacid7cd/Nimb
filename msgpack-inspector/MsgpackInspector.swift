@@ -3,6 +3,7 @@
 import ArgumentParser
 import Darwin
 import Foundation
+import NimbCore
 import System
 
 @main

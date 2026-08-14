@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class MsgShowsViewController: NSViewController, Rendering {
   private let store: Store

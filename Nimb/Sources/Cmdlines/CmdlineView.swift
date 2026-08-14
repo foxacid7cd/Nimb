@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class CmdlineView: NSView, Rendering {
   private let store: Store

@@ -2,6 +2,7 @@
 
 import AppKit
 import CustomDump
+import NimbCore
 
 @MainActor
 final class MainMenuController: NSObject, Rendering {

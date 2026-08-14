@@ -2,6 +2,7 @@
 
 import AppKit
 import Collections
+import NimbCore
 import SwiftUI
 import Synchronization
 

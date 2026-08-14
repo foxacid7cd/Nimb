@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public struct Font: Sendable, Hashable {
   private var wrapped: FontBridge.WrappedFont

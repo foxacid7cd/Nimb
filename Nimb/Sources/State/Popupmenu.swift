@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct Popupmenu: Sendable, Hashable {
   public enum Anchor: Sendable, Hashable {

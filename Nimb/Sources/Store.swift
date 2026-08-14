@@ -3,6 +3,7 @@
 import Algorithms
 import Collections
 import Foundation
+import NimbCore
 
 public final class Store: Sendable {
   private enum PendingActions: Sendable {

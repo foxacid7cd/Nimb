@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import NimbCore
 
 public struct ProcessChannel: Channel {
   /// Installed once, in `init`. `FileHandle.dataBatches` sets the handle's

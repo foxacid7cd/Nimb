@@ -2,6 +2,7 @@
 
 import AppKit
 import CasePaths
+import NimbCore
 
 public extension UserDefaults {
   var outerGridSize: IntegerSize {

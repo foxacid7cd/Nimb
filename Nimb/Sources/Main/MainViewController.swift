@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class MainViewController: NSViewController, Rendering {
   let gridsView: GridsView

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 @PublicInit
 public struct NeovimErrorEvent: Sendable, Equatable {
   public var error: APIError

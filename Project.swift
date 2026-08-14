@@ -48,6 +48,25 @@ let project = Project(
       settings: Nimb.settings(base: ["SKIP_INSTALL": "YES"]),
     ),
 
+    // ── Shared utilities ────────────────────────────────────────────────
+    .target(
+      name: "NimbCore",
+      destinations: Nimb.destinations,
+      product: .staticFramework,
+      bundleId: "foxacid7cd.NimbCore",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: ["Sources/NimbCore/**"],
+      dependencies: [
+        .macro(name: "NimbMacros"),
+        .package(product: "Algorithms"),
+        .package(product: "CasePaths"),
+        .package(product: "Collections"),
+        .package(product: "CustomDump"),
+      ],
+      settings: Nimb.settings(),
+    ),
+
     // ── The app ─────────────────────────────────────────────────────────
     .target(
       name: "Nimb",
@@ -86,7 +105,7 @@ let project = Project(
       ],
       dependencies: [
         Nimb.msgpack,
-        .macro(name: "NimbMacros"),
+        .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "CasePaths"),
         .package(product: "Collections"),
@@ -134,11 +153,10 @@ let project = Project(
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: .sourceFilesList(globs: ["generate/**"]
-        + (Nimb.sharedWithTools + Nimb.sharedMessagePack + Nimb.sharedWithGenerate)
-        .map { SourceFileGlob.glob(.path($0)) }),
+        + Nimb.sharedMessagePack.map { SourceFileGlob.glob(.path($0)) }),
       dependencies: [
         Nimb.msgpack,
-        .macro(name: "NimbMacros"),
+        .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "ArgumentParser"),
         .package(product: "CasePaths"),
@@ -161,11 +179,10 @@ let project = Project(
       bundleId: "foxacid7cd.msgpack-inspector",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
-      sources: .sourceFilesList(globs: ["msgpack-inspector/**"]
-        + Nimb.sharedWithTools.map { SourceFileGlob.glob(.path($0)) }),
+      sources: ["msgpack-inspector/**"],
       dependencies: [
         Nimb.msgpack,
-        .macro(name: "NimbMacros"),
+        .target(name: "NimbCore"),
         .package(product: "ArgumentParser"),
         .package(product: "CustomDump"),
       ],
@@ -181,8 +198,7 @@ let project = Project(
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: .sourceFilesList(globs: ["speed-tuner/**"]
-        + (Nimb.sharedWithTools + Nimb.sharedMessagePack)
-        .map { SourceFileGlob.glob(.path($0)) }),
+        + Nimb.sharedMessagePack.map { SourceFileGlob.glob(.path($0)) }),
       copyFiles: [
         .productsDirectory(
           name: "Copy speed-tuner assets",
@@ -192,7 +208,7 @@ let project = Project(
       ],
       dependencies: [
         Nimb.msgpack,
-        .macro(name: "NimbMacros"),
+        .target(name: "NimbCore"),
         .package(product: "ArgumentParser"),
         .package(product: "CasePaths"),
         .package(product: "CustomDump"),

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 public extension API {
   @discardableResult
   func nimb(method: String, parameters: [Value] = []) async throws -> Value? {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
+import NimbCore
 
 @PublicInit
 public struct Grid: Sendable, Identifiable {

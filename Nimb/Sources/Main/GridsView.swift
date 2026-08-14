@@ -2,6 +2,7 @@
 
 import AppKit
 import Collections
+import NimbCore
 
 public class GridsView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {

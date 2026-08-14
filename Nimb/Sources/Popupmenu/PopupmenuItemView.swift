@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 
 public class PopupmenuItemView: NSView, Rendering {
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(

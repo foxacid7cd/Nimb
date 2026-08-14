@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Collections
+import NimbCore
 
 @PublicInit
 public struct GridsHierarchy: Sendable {
