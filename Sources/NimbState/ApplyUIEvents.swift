@@ -109,6 +109,12 @@ public extension Actions {
         }
       }
 
+      func reindexMsgShows() {
+        for index in state.msgShows.indices {
+          state.msgShows[index].index = index
+        }
+      }
+
       func popupmenuUpdated() {
         updates.isPopupmenuUpdated = true
       }
@@ -131,11 +137,13 @@ public extension Actions {
         var contentParts = [Cmdline.ContentPart]()
 
         for rawContentPart in rawLine {
+          // [attrs, text, hl_id] — the highlight is the third element. It
+          // used to be a two element [attr_id, text].
           guard
             case let .array(rawContentPart) = rawContentPart,
-            rawContentPart.count == 2,
-            case let .integer(rawHighlightID) = rawContentPart[0],
-            case let .string(text) = rawContentPart[1]
+            rawContentPart.count == 3,
+            case let .string(text) = rawContentPart[1],
+            case let .integer(rawHighlightID) = rawContentPart[2]
           else {
             throw Failure(
               "invalid cmdline raw content part value",
@@ -502,11 +510,12 @@ public extension Actions {
               let cmdline = try Cmdline(
                 contentParts: params.content
                   .map { rawContentPart in
+                    // [attrs, text, hl_id], as in cmdline_block_show.
                     guard
                       case let .array(rawContentPart) = rawContentPart,
-                      rawContentPart.count == 2,
-                      case let .integer(rawHighlightID) = rawContentPart[0],
-                      case let .string(text) = rawContentPart[1]
+                      rawContentPart.count == 3,
+                      case let .string(text) = rawContentPart[1],
+                      case let .integer(rawHighlightID) = rawContentPart[2]
                     else {
                       throw Failure(
                         "invalid cmdline raw content part",
@@ -605,34 +614,65 @@ public extension Actions {
         case let .msgShow(batch):
           for params in batch {
             do {
-              var replaceLast = false
+              // Unknown kinds are treated as `unknown`; the API contract says
+              // new ones may be added at any time.
+              let kind = MsgShow.Kind(rawValue: params.kind) ?? .unknown
+              let contentParts = try params.content
+                .map(MsgShow.ContentPart.init(raw:))
+              let messageID: Value? = params.id.isNil ? nil : params.id
+
+              // `append` is :echon — the message continues the previous one
+              // inline rather than starting a new line.
+              if params.append, let lastIndex = state.msgShows.indices.last {
+                state.msgShows[lastIndex].contentParts += contentParts
+                updates.msgShowsUpdates.append(.reload(indexes: [lastIndex]))
+                continue
+              }
+
+              guard !contentParts.isEmpty else {
+                // Empty content replacing the previous message means Neovim
+                // is taking that message back down.
+                if params.replaceLast, !state.msgShows.isEmpty {
+                  state.msgShows.removeLast()
+                  reindexMsgShows()
+                  // Two updates, because removal shifts every later index and
+                  // the incremental reload path cannot express that. The view
+                  // rebuilds when it sees more than one update.
+                  updates.msgShowsUpdates.append(.clear)
+                  updates.msgShowsUpdates
+                    .append(.added(count: state.msgShows.count))
+                }
+                continue
+              }
+
+              // A visible message carrying the same id is replaced in place.
+              if
+                let messageID,
+                let index = state.msgShows
+                  .firstIndex(where: { $0.messageID == messageID })
+              {
+                state.msgShows[index].kind = kind
+                state.msgShows[index].contentParts = contentParts
+                updates.msgShowsUpdates.append(.reload(indexes: [index]))
+                continue
+              }
+
               if params.replaceLast, !state.msgShows.isEmpty {
-                replaceLast = true
                 state.msgShows.removeLast()
               }
 
-              let kind: MsgShow.Kind
-              if let decoded = MsgShow.Kind(rawValue: params.kind) {
-                kind = decoded
-              } else {
-                kind = .echo
-                logger.warning("Unknown msg_show kind: \(params.kind)")
-              }
+              state.msgShows.append(.init(
+                index: state.msgShows.count,
+                kind: kind,
+                contentParts: contentParts,
+                messageID: messageID,
+              ))
 
-              if !params.content.isEmpty {
-                try state.msgShows.append(.init(
-                  index: state.msgShows.count,
-                  kind: kind,
-                  contentParts: params.content.map(MsgShow.ContentPart.init(raw:)),
-                ))
-                if replaceLast {
-                  updates.msgShowsUpdates
-                    .append(.reload(indexes: [state.msgShows.count - 1]))
-                } else {
-                  updates.msgShowsUpdates.append(.added(count: 1))
-                }
-              } else if params.replaceLast {
-                throw Failure("replaceLast with empty content inconsistency")
+              if params.replaceLast {
+                updates.msgShowsUpdates
+                  .append(.reload(indexes: [state.msgShows.count - 1]))
+              } else {
+                updates.msgShowsUpdates.append(.added(count: 1))
               }
             } catch {
               handleError(error)
