@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import ConcurrencyExtras
 import Synchronization
 
 public extension AsyncSequence where Element: Sendable, Self: Sendable {
@@ -72,6 +71,5 @@ public extension AsyncSequence where Element: Sendable, Self: Sendable {
         task.cancel()
       }
     }
-    .eraseToStream()
   }
 }

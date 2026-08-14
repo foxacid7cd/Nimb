@@ -8,36 +8,56 @@ public final class API<Target: Channel>: Sendable {
   public init(_ rpc: RPC<Target>) {
     self.rpc = rpc
 
-    neovimNotifications = rpc.notifications
-      .map { notifications -> [NeovimNotification] in
-        try notifications.compactMap { notification in
-          switch notification.method {
-          case "redraw":
-            let uiEvents =
-              try [UIEvent](
-                rawRedrawNotificationParameters: notification
-                  .parameters,
-              )
-            return .redraw(uiEvents)
-
-          case "nvim_error_event":
-            let nvimErrorEvent = try NeovimErrorEvent(
-              parameters: notification
-                .parameters,
-            )
-            return .nvimErrorEvent(nvimErrorEvent)
-
-          case "nimb_notify":
-            let notifies = try notification.parameters
-              .map { try NimbNotify($0) }
-            return .nimbNotify(notifies)
-
-          default:
-            return nil
+    let notifications = rpc.notifications
+    neovimNotifications = AsyncThrowingStream { continuation in
+      let task = Task {
+        do {
+          for try await batch in notifications {
+            continuation.yield(try Self.neovimNotifications(from: batch))
           }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
         }
       }
-      .eraseToThrowingStream()
+
+      continuation.onTermination = { _ in
+        task.cancel()
+      }
+    }
+  }
+
+  private static func neovimNotifications(
+    from notifications: [Message.Notification],
+  ) throws
+    -> [NeovimNotification]
+  {
+    try notifications.compactMap { notification in
+      switch notification.method {
+      case "redraw":
+        let uiEvents =
+          try [UIEvent](
+            rawRedrawNotificationParameters: notification
+              .parameters,
+          )
+        return .redraw(uiEvents)
+
+      case "nvim_error_event":
+        let nvimErrorEvent = try NeovimErrorEvent(
+          parameters: notification
+            .parameters,
+        )
+        return .nvimErrorEvent(nvimErrorEvent)
+
+      case "nimb_notify":
+        let notifies = try notification.parameters
+          .map { try NimbNotify($0) }
+        return .nimbNotify(notifies)
+
+      default:
+        return nil
+      }
+    }
   }
 
   @discardableResult
