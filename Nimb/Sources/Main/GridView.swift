@@ -7,13 +7,24 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
+  /// Most wheel events one NSEvent may turn into. A single event can carry a
+  /// large delta, and each wheel event costs Neovim a redraw, so an uncapped
+  /// burst becomes a backlog it spends seconds draining while the screen sits
+  /// still. Past the cap the remainder is dropped rather than queued: falling
+  /// behind the fingers is better than freezing.
+  static let maxWheelEventsPerReport = 4
+
   /// Neovim's `mousescroll` defaults. Nimb does not read the option back, so
   /// changing it makes wheel tracking proportionally off.
   /// Lines of content per cell of finger travel. Tuned by feel: 1.0 tracks the
   /// fingers exactly but reads as sluggish, and the 2.4 this code effectively
   /// used before reads as slightly overshooting.
   private static let scrollLinesPerCell = 2.0
-  /// Neovim's `mousescroll` default, used while the fingers are down.
+  /// Used while the fingers are down. Nimb owns `mousescroll` rather than
+  /// reading it: the thresholds below are derived from it, so a value Nimb did
+  /// not choose makes scroll speed wrong by that factor. AstroNvim sets
+  /// ver:1,hor:2, for instance, which would put an event on the wire every
+  /// half cell.
   private static let fineScrollLines = 3
   /// Used while the gesture coasts. Neovim redraws once per wheel event and
   /// runs its Lua decoration providers each time, so a scroll costs roughly
@@ -24,7 +35,23 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   /// Coasting is where the events pile up and where precision does not
   /// matter, so each one carries four times the distance there.
   private static let coarseScrollLines = 12
-  private static let scrollColumnsPerWheelEvent = 6.0
+
+  /// Columns of content per cell of finger travel. One to one, as before.
+  private static let scrollColumnsPerCell = 1.0
+  /// Twelve, not Neovim's default six: a horizontal wheel event costs a full
+  /// viewport redraw, so halving the event count matters more than fine
+  /// stepping. Paired with a twelve cell threshold this keeps the event rate
+  /// the original code had while moving twice the distance per event.
+  private static let fineScrollColumns = 12
+  /// Horizontal scrolling changes every visible row rather than exposing a
+  /// few new lines, so Neovim redraws the whole viewport and re-runs its decor
+  /// providers over all of it. Measured on a heavily highlighted 190x50 view,
+  /// one wheel event cost Neovim 62ms whether it moved 1 column or 30 -- the
+  /// cost is per event, not per column, so it pinned a core at 15 columns a
+  /// second. Thirty columns an event covers 355 columns a second for 26% more
+  /// work per event. Coarse steps matter far more here than they do
+  /// vertically.
+  private static let coarseScrollColumns = 36
 
   override public var frame: NSRect {
     didSet {
@@ -48,7 +75,13 @@ public class GridView: NSView, CALayerDelegate, Rendering {
 
   /// Mirrors what `mousescroll` was last set to, so the option is only pushed
   /// when it actually changes rather than on every wheel event.
-  private var scrollLinesPerEvent = GridView.fineScrollLines
+  ///
+  /// Starts at zero rather than the fine values so the first wheel event
+  /// always pushes them. Assuming Neovim already agreed left the mirror wrong
+  /// whenever the config set `mousescroll` itself, and scroll speed was off by
+  /// that ratio until the first momentum flick happened to correct it.
+  private var scrollLinesPerEvent = 0
+  private var scrollColumnsPerEvent = 0
 
   public var grid: Grid? {
     guard isRendered else {
@@ -169,21 +202,20 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     let momentum = event.momentumPhase
     let isCoasting = momentum.contains(.began) || momentum.contains(.changed)
     let linesPerEvent = isCoasting ? Self.coarseScrollLines : Self.fineScrollLines
-    if linesPerEvent != scrollLinesPerEvent {
+    let columnsPerEvent = isCoasting ? Self.coarseScrollColumns : Self.fineScrollColumns
+    if linesPerEvent != scrollLinesPerEvent || columnsPerEvent != scrollColumnsPerEvent {
       scrollLinesPerEvent = linesPerEvent
+      scrollColumnsPerEvent = columnsPerEvent
       // Ordered on the same channel as the wheel events below, so Neovim has
       // applied it before the events it applies to arrive.
       store.api.fastCall(APIFunctions.NvimSetOptionValue(
         name: "mousescroll",
-        value: .string("ver:\(linesPerEvent),hor:\(Int(Self.scrollColumnsPerWheelEvent))"),
+        value: .string("ver:\(linesPerEvent),hor:\(columnsPerEvent)"),
         opts: .dictionary([:]),
       ))
     }
 
-    // Horizontal is left alone: it is rare enough not to flood anything, and
-    // one event per six columns already tracks one to one. It previously
-    // reported one event per twelve columns, so it ran at half speed.
-    let xThreshold = state.font.cellWidth * Self.scrollColumnsPerWheelEvent
+    let xThreshold = state.font.cellWidth * Double(columnsPerEvent) / Self.scrollColumnsPerCell
     let yThreshold = state.font.cellHeight * Double(linesPerEvent) / Self.scrollLinesPerCell
 
     if
@@ -209,21 +241,24 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     var horizontalScrollCount = 0
     var verticalScrollCount = 0
 
-    if
-      abs(xScrollingDelta) > xThreshold
-    {
-      horizontalScrollCount = Int(xScrollingDelta / xThreshold)
-      let xScrollingToBeReported = xThreshold * Double(horizontalScrollCount)
-
-      xScrollingReported += xScrollingToBeReported
+    if abs(xScrollingDelta) > xThreshold {
+      let uncapped = Int(xScrollingDelta / xThreshold)
+      horizontalScrollCount = uncapped.clampedToWheelBurst()
+      if horizontalScrollCount == uncapped {
+        xScrollingReported += xThreshold * Double(uncapped)
+      } else {
+        // Remainder dropped, so it cannot come back as a backlog.
+        xScrollingReported = xScrollingAccumulator
+      }
     }
     if abs(yScrollingDelta) > yThreshold {
-      verticalScrollCount = Int(
-        yScrollingDelta / yThreshold,
-      )
-      let yScrollingToBeReported = yThreshold * Double(verticalScrollCount)
-
-      yScrollingReported += yScrollingToBeReported
+      let uncapped = Int(yScrollingDelta / yThreshold)
+      verticalScrollCount = uncapped.clampedToWheelBurst()
+      if verticalScrollCount == uncapped {
+        yScrollingReported += yThreshold * Double(uncapped)
+      } else {
+        yScrollingReported = yScrollingAccumulator
+      }
     }
 
     if horizontalScrollCount != 0 || verticalScrollCount != 0 {
@@ -375,5 +410,11 @@ public class GridView: NSView, CALayerDelegate, Rendering {
         scale: max(gridLayer.contentsScale, 1),
       ),
     )
+  }
+}
+
+private extension Int {
+  func clampedToWheelBurst() -> Int {
+    Swift.max(-GridView.maxWheelEventsPerReport, Swift.min(GridView.maxWheelEventsPerReport, self))
   }
 }
