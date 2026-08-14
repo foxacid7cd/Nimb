@@ -11,9 +11,7 @@ public extension Bundle {
       .components(separatedBy: ".")
       .compactMap { Int($0) }
     guard numbers.count == 3 else {
-      Task { @MainActor in
-        logger.fault("Invalid CFBundleShortVersionString: \(version)")
-      }
+      logger.fault("Invalid CFBundleShortVersionString: \(version)")
       return nil
     }
     return (numbers[0], numbers[1], numbers[2])

@@ -34,9 +34,7 @@ public extension AsyncSequence where Element: Sendable, Self: Sendable {
                 let yieldResult = continuation.yield(accumulator ?? element)
                 switch yieldResult {
                 case .dropped:
-                  Task { @MainActor in
-                    logger.error("AsyncSequence+Throttle: dropped element because buffer was full")
-                  }
+                  logger.error("AsyncSequence+Throttle: dropped element because buffer was full")
 
                 default:
                   break
@@ -60,9 +58,7 @@ public extension AsyncSequence where Element: Sendable, Self: Sendable {
           }
         } catch is CancellationError {
         } catch {
-          Task { @MainActor in
-            logger.error("AsyncSequence+Throttle: caught unexpected error: \(error)")
-          }
+          logger.error("AsyncSequence+Throttle: caught unexpected error: \(error)")
         }
         continuation.finish()
       }

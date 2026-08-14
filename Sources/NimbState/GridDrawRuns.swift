@@ -596,9 +596,7 @@ public struct CursorDrawRun: Sendable {
         font: font,
       )
     else {
-      Task { @MainActor in
-        logger.fault("inconsistency error")
-      }
+      logger.fault("inconsistency error")
       return nil
     }
     self = .init(

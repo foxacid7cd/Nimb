@@ -71,11 +71,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
-  public nonisolated func render(state: State, updates: State.Updates) {
-    Task { @MainActor in
-      update(renderContext: .init(state: state, updates: updates))
-      render()
-    }
+  /// Called from the main actor already, so it renders inline.
+  ///
+  /// This used to be nonisolated and wrap its body in `Task { @MainActor in }`,
+  /// which cost a second hop on every frame and, worse, deferred the render to
+  /// a later turn: two frames in flight were two unstructured tasks with no
+  /// ordering between them, so frame N+1 could paint before frame N.
+  private func render(state: State, updates: State.Updates) {
+    update(renderContext: .init(state: state, updates: updates))
+    render()
   }
 
   private func setupBindings(store: Store) {
