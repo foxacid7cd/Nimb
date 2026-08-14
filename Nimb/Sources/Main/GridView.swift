@@ -7,6 +7,25 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
+  /// Neovim's `mousescroll` defaults. Nimb does not read the option back, so
+  /// changing it makes wheel tracking proportionally off.
+  /// Lines of content per cell of finger travel. Tuned by feel: 1.0 tracks the
+  /// fingers exactly but reads as sluggish, and the 2.4 this code effectively
+  /// used before reads as slightly overshooting.
+  private static let scrollLinesPerCell = 2.0
+  /// Neovim's `mousescroll` default, used while the fingers are down.
+  private static let fineScrollLines = 3
+  /// Used while the gesture coasts. Neovim redraws once per wheel event and
+  /// runs its Lua decoration providers each time, so a scroll costs roughly
+  /// what its event count costs, almost regardless of how far each event
+  /// moves. Sampling a fast flick across every process put Neovim at 72% of a
+  /// core inside decor_provider_invoke -> nlua_call_ref_ctx -> lua_pcall
+  /// while Nimb sat at 12%, and the screen froze for up to 1.3s at a time.
+  /// Coasting is where the events pile up and where precision does not
+  /// matter, so each one carries four times the distance there.
+  private static let coarseScrollLines = 12
+  private static let scrollColumnsPerWheelEvent = 6.0
+
   override public var frame: NSRect {
     didSet {
       gridLayer.frame = bounds
@@ -26,6 +45,10 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private var yScrollingAccumulator: Double = 0
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)? = nil
+
+  /// Mirrors what `mousescroll` was last set to, so the option is only pushed
+  /// when it actually changes rather than on every wheel event.
+  private var scrollLinesPerEvent = GridView.fineScrollLines
 
   public var grid: Grid? {
     guard isRendered else {
@@ -139,8 +162,29 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       return
     }
 
-    let xThreshold = state.font.cellWidth * 12
-    let yThreshold = state.font.cellHeight * 1.25
+    // Coast on coarse steps, track finely while the fingers are down. Both
+    // divide by the same lines-per-cell, so the scroll speed is identical
+    // either way and only the granularity -- and so the number of redraws
+    // Neovim has to run -- changes.
+    let momentum = event.momentumPhase
+    let isCoasting = momentum.contains(.began) || momentum.contains(.changed)
+    let linesPerEvent = isCoasting ? Self.coarseScrollLines : Self.fineScrollLines
+    if linesPerEvent != scrollLinesPerEvent {
+      scrollLinesPerEvent = linesPerEvent
+      // Ordered on the same channel as the wheel events below, so Neovim has
+      // applied it before the events it applies to arrive.
+      store.api.fastCall(APIFunctions.NvimSetOptionValue(
+        name: "mousescroll",
+        value: .string("ver:\(linesPerEvent),hor:\(Int(Self.scrollColumnsPerWheelEvent))"),
+        opts: .dictionary([:]),
+      ))
+    }
+
+    // Horizontal is left alone: it is rare enough not to flood anything, and
+    // one event per six columns already tracks one to one. It previously
+    // reported one event per twelve columns, so it ran at half speed.
+    let xThreshold = state.font.cellWidth * Self.scrollColumnsPerWheelEvent
+    let yThreshold = state.font.cellHeight * Double(linesPerEvent) / Self.scrollLinesPerCell
 
     if
       event.phase == .began
