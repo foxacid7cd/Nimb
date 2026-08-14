@@ -55,7 +55,7 @@ DerivedData/
 build/
 .build/
 
-/Nimb/Sources/generated/
+/Sources/NimbNeovim/Generated/
 
 ### Tuist
 # Nimb.xcodeproj and Nimb.xcworkspace are generated from Project.swift.

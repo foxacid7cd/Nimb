@@ -3,6 +3,7 @@
 import AppKit
 import CustomDump
 import NimbCore
+import NimbNeovim
 
 @MainActor
 final class MainMenuController: NSObject, Rendering {

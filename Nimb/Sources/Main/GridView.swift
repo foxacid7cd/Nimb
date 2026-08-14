@@ -3,6 +3,7 @@
 import Algorithms
 import AppKit
 import NimbCore
+import NimbNeovim
 
 public class GridView: NSView, CALayerDelegate, Rendering {
   override public var frame: NSRect {

@@ -3,7 +3,7 @@ BUILD_DIR       := $(CURDIR)/.build
 PACKAGE_DIR     := $(BUILD_DIR)/package
 DERIVED_DATA    := $(BUILD_DIR)/DerivedData
 NEOVIM_DIR      := $(CURDIR)/Third-Party/neovim
-GENERATED_DIR   := $(CURDIR)/Nimb/Sources/generated
+GENERATED_DIR   := $(CURDIR)/Sources/NimbNeovim/Generated
 EXPORT_OPTIONS  := $(CURDIR)/ExportOptions.plist
 INSTALL_DIR     := /Applications
 

@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import NimbCore
-
-@PublicInit
-public struct Window: Sendable, Identifiable {
-  public var id: References.Window
-  public var origin: IntegerPoint
-  public var size: IntegerSize
-}
+import NimbNeovim
 
 @PublicInit
 public struct FloatingWindow: Sendable, Identifiable {

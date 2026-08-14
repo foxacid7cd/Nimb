@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import NimbCore
+import NimbNeovim
 
 @PublicInit
 public struct Alert: Sendable, ExpressibleByStringLiteral, ExpressibleByStringInterpolation {

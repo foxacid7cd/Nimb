@@ -2,6 +2,7 @@
 
 import Algorithms
 import NimbCore
+import NimbNeovim
 
 @PublicInit
 public struct Grid: Sendable, Identifiable {

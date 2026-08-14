@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbNeovim
 
 public class SettingsVimrcView: NSView {
   private enum Item: String, CaseIterable {

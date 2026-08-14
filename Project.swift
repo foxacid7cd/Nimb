@@ -68,6 +68,32 @@ let project = Project(
       settings: Nimb.settings(),
     ),
 
+    // ── Neovim RPC API and generated bindings ───────────────────────────
+    .target(
+      name: "NimbNeovim",
+      destinations: Nimb.destinations,
+      product: .staticFramework,
+      bundleId: "foxacid7cd.NimbNeovim",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: .sourceFilesList(
+        globs: [.glob("Sources/NimbNeovim/*.swift")] + Nimb.generatedSources,
+      ),
+      scripts: [
+        .pre(
+          path: "Scripts/require-generated-sources.sh",
+          name: "Require generated Neovim bindings",
+          basedOnDependencyAnalysis: false,
+          shellPath: "/bin/zsh",
+        ),
+      ],
+      dependencies: [
+        .target(name: "NimbCore"),
+        .package(product: "CasePaths"),
+      ],
+      settings: Nimb.settings(),
+    ),
+
     // ── The app ─────────────────────────────────────────────────────────
     .target(
       name: "Nimb",
@@ -91,10 +117,7 @@ let project = Project(
         "NSPrincipalClass": "NSApplication",
         "NSHumanReadableCopyright": "Copyright © 2022 foxacid7cd. All rights reserved.",
       ]),
-      sources: .sourceFilesList(
-        globs: [.glob("Nimb/Sources/**", excluding: ["Nimb/Sources/generated/**"])]
-          + Nimb.generatedSources,
-      ),
+      sources: ["Nimb/Sources/**"],
       resources: ["Nimb/Assets.xcassets"],
       scripts: [
         .post(
@@ -105,6 +128,7 @@ let project = Project(
         ),
       ],
       dependencies: [
+        .target(name: "NimbNeovim"),
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "CasePaths"),

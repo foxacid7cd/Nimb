@@ -3,6 +3,7 @@
 import AppKit
 import CustomDump
 import NimbCore
+import NimbNeovim
 import Synchronization
 
 @MainActor

@@ -4,6 +4,7 @@ import Algorithms
 import Collections
 import Foundation
 import NimbCore
+import NimbNeovim
 
 public final class Store: Sendable {
   private enum PendingActions: Sendable {

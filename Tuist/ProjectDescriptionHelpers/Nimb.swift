@@ -26,48 +26,15 @@ public enum Nimb {
     swiftModuleMap: "Third-Party/msgpack-c/include/module.modulemap",
   )
 
-  /// Files under Nimb/Sources that the command line tools compile into
-  /// themselves. In the old project these were duplicate PBXBuildFile entries;
-  /// they are reproduced verbatim here and go away when the code is split into
-  /// real modules.
-  public static let sharedWithTools: [String] = [
-    "Nimb/Sources/Library/AsyncFileHandle.swift",
-    "Nimb/Sources/OSLog.swift",
-    "Nimb/Sources/StateActor.swift",
-  ]
-
-  /// Additionally compiled into `generate` and `speed-tuner`.
-  public static let sharedMessagePack: [String] = [
-    "Nimb/Sources/Library/Failure.swift",
-    "Nimb/Sources/Library/Macros.swift",
-    "Nimb/Sources/MessagePack/Message.swift",
-    "Nimb/Sources/MessagePack/Packer.swift",
-    "Nimb/Sources/MessagePack/Unpacker.swift",
-    "Nimb/Sources/MessagePack/Value.swift",
-  ]
-
-  /// Additionally compiled into `generate` only.
-  public static let sharedWithGenerate: [String] = [
-    "Nimb/Sources/Library/ArrayExtensions.swift",
-    "Nimb/Sources/Library/AsyncSequence+Throttle.swift",
-    "Nimb/Sources/Library/CustomDumpHelpers.swift",
-    "Nimb/Sources/Library/IntKeyedDictionary.swift",
-    "Nimb/Sources/Library/IntegerGeometry.swift",
-    "Nimb/Sources/Library/NSFontCellSize.swift",
-    "Nimb/Sources/Library/TwoDimensionalArray.swift",
-    "Nimb/Sources/MessagePack/Channel.swift",
-    "Nimb/Sources/MessagePack/RPC.swift",
-  ]
-
   /// The Neovim API bindings, produced by `make generate` and git-ignored.
   /// Declared as generated so the project references them even on a clean
   /// checkout where they do not exist yet.
   public static let generatedSources: [SourceFileGlob] = [
-    .generated("Nimb/Sources/generated/APIError.swift"),
-    .generated("Nimb/Sources/generated/APIFunctions.swift"),
-    .generated("Nimb/Sources/generated/References.swift"),
-    .generated("Nimb/Sources/generated/UIEvent.swift"),
-    .generated("Nimb/Sources/generated/UIOption.swift"),
+    .generated("Sources/NimbNeovim/Generated/APIError.swift"),
+    .generated("Sources/NimbNeovim/Generated/APIFunctions.swift"),
+    .generated("Sources/NimbNeovim/Generated/References.swift"),
+    .generated("Sources/NimbNeovim/Generated/UIEvent.swift"),
+    .generated("Sources/NimbNeovim/Generated/UIOption.swift"),
   ]
 
   private static let base: SettingsDictionary = [

@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbNeovim
 
 @MainActor
 final class TablineView: NSVisualEffectView, Rendering {

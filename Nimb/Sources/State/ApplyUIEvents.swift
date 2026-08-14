@@ -2,6 +2,7 @@
 
 import CasePaths
 import NimbCore
+import NimbNeovim
 import OSLog
 
 public extension Actions {

@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbNeovim
 
 public class SettingsEnvironmentView: NSView {
   private struct Item: Hashable {

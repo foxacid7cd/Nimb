@@ -3,6 +3,7 @@
 import Collections
 import Foundation
 import NimbCore
+import NimbNeovim
 import OrderedCollections
 
 @PublicInit

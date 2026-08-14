@@ -2,6 +2,7 @@
 
 import Foundation
 import NimbCore
+import NimbNeovim
 
 public enum Actions {
   public struct ToggleDebugUIEventsLogging: Action {
