@@ -181,7 +181,11 @@ public nonisolated class GridLayer: CAMetalLayer {
 
     device = metalRenderer.device
     pixelFormat = .bgra8Unorm
-    framebufferOnly = false
+    // The drawable is only ever a render target -- nothing samples, blits or
+    // reads it back -- so it can stay framebuffer-only and keep lossless
+    // compression. Every grid is its own CAMetalLayer, so the saved
+    // compositor bandwidth multiplies.
+    framebufferOnly = true
     colorspace = Self.colorSpace
     isOpaque = false
   }
