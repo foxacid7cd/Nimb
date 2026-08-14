@@ -1474,10 +1474,10 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:swiftlang/swift-syntax.git";
+			repositoryURL = "https://github.com/swiftlang/swift-syntax.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 600.0.1;
+				minimumVersion = 603.0.2;
 			};
 		};
 		688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {

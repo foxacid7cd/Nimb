@@ -1,5 +1,5 @@
 {
-  "originHash" : "060681455ee7d2ab99ecf0f6800c199c33d75b4385ba3d1e5577b8e25d052fbb",
+  "originHash" : "c7a316838d0851745501a7b3ee39a43f17cc91ac9230ad91088c9fa036c990a6",
   "pins" : [
     {
       "identity" : "coretextswift",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:pointfreeco/swift-case-paths.git",
       "state" : {
-        "revision" : "19b7263bacb9751f151ec0c93ec816fe1ef67c7b",
-        "version" : "1.6.1"
+        "revision" : "794f4b0a9cf32042592388d014f6a1ea987d323a",
+        "version" : "1.9.1"
       }
     },
     {
@@ -112,10 +112,10 @@
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "git@github.com:swiftlang/swift-syntax.git",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
       "state" : {
-        "revision" : "0687f71944021d616d34d922343dcef086855920",
-        "version" : "600.0.1"
+        "revision" : "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
+        "version" : "603.0.2"
       }
     },
     {
