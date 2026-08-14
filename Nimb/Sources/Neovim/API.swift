@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 public final class API<Target: Channel>: Sendable {
   public let neovimNotifications: AsyncThrowingStream<[NeovimNotification], any Error>
 

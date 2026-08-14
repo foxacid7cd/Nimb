@@ -2,6 +2,7 @@
 
 import CasePaths
 import Foundation
+import msgpack_c
 
 @CasePathable
 @dynamicMemberLookup

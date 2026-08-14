@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import msgpack_c
 
 public class Packer {
   private var sbuf = msgpack_sbuffer()

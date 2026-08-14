@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 public typealias UIOptions = Set<UIOption>
 
 public extension UIOptions {

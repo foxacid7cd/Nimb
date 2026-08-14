@@ -51,7 +51,7 @@ format:
 	@# Tuist manifests are deliberately excluded: the acronyms rule rewrites
 	@# API labels such as bundleId: into bundleID:, which does not compile.
 	$(SWIFTFORMAT) --config .swiftformat \
-		Nimb/ generate/ msgpack-inspector/ speed-tuner/ Modules/
+		Nimb/ Sources/ generate/ msgpack-inspector/ speed-tuner/
 
 app: project
 	xcodebuild archive -workspace "$(NAME).xcworkspace" -scheme "$(NAME)" \

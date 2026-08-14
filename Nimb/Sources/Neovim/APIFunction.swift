@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 public protocol APIFunction: Sendable {
   associatedtype Success
   static var method: String { get }

@@ -1,0 +1,10 @@
+// Exposes the prebuilt msgpack-c archive to Swift as a Clang module, replacing
+// the three identical bridging headers the targets used to carry.
+//
+// `header`, not `umbrella header`: msgpack.h includes the msgpack/ directory
+// itself, and an umbrella declaration would warn about every header in there
+// that it does not name.
+module msgpack_c {
+  header "msgpack.h"
+  export *
+}

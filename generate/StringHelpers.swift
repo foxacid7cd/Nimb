@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+import NimbCore
+
 private let acronyms: Set<String> = ["ID", "IDX", "RPC", "UI", "URL", "UUID"]
 
 public extension StringProtocol {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
+import NimbCore
 
 public struct ValueType: Sendable {
   public struct Custom: Sendable {

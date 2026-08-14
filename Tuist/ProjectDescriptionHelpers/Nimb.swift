@@ -17,13 +17,13 @@ public enum Nimb {
   /// LIBRARY_SEARCH_PATHS for the archive's directory, which together replace
   /// the hand-written search paths in the old project.
   ///
-  /// `swiftModuleMap` is deliberately nil for now: the three bridging headers
-  /// are still in place, and swapping them for a module map is a separate,
-  /// riskier step.
+  /// The module map's directory lands on SWIFT_INCLUDE_PATHS, which is what
+  /// lets `import msgpack_c` resolve. It replaces the three bridging headers
+  /// the targets used to carry.
   public static let msgpack: TargetDependency = .library(
     path: "Third-Party/msgpack-c/libmsgpack-c.a",
     publicHeaders: "Third-Party/msgpack-c/include",
-    swiftModuleMap: nil,
+    swiftModuleMap: "Third-Party/msgpack-c/include/module.modulemap",
   )
 
   /// Files under Nimb/Sources that the command line tools compile into

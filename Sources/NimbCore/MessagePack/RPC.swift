@@ -5,6 +5,7 @@ import Collections
 import Combine
 import CustomDump
 import Foundation
+import msgpack_c
 import NimbCore
 import Synchronization
 

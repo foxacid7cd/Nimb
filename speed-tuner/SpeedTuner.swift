@@ -3,6 +3,7 @@
 import AppKit
 import ArgumentParser
 import Foundation
+import NimbCore
 import System
 
 @main

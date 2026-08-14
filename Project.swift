@@ -59,6 +59,7 @@ let project = Project(
       sources: ["Sources/NimbCore/**"],
       dependencies: [
         .macro(name: "NimbMacros"),
+        Nimb.msgpack,
         .package(product: "Algorithms"),
         .package(product: "CasePaths"),
         .package(product: "Collections"),
@@ -104,7 +105,6 @@ let project = Project(
         ),
       ],
       dependencies: [
-        Nimb.msgpack,
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "CasePaths"),
@@ -118,8 +118,7 @@ let project = Project(
         base: [
           "MARKETING_VERSION": "0.0.1",
           "CURRENT_PROJECT_VERSION": "1",
-          "SWIFT_OBJC_BRIDGING_HEADER": "Nimb/Sources/Nimb-Bridging-Header.h",
-          "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+            "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
           "ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS": "NO",
           "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS": "YES",
           "CODE_SIGN_IDENTITY[sdk=macosx*]": "-",
@@ -152,10 +151,8 @@ let project = Project(
       bundleId: "foxacid7cd.generate",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
-      sources: .sourceFilesList(globs: ["generate/**"]
-        + Nimb.sharedMessagePack.map { SourceFileGlob.glob(.path($0)) }),
+      sources: ["generate/**"],
       dependencies: [
-        Nimb.msgpack,
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "ArgumentParser"),
@@ -165,10 +162,7 @@ let project = Project(
         .package(product: "SwiftSyntax"),
         .package(product: "SwiftSyntaxBuilder"),
       ],
-      settings: Nimb.settings(base: [
-        "SWIFT_OBJC_BRIDGING_HEADER": "generate/generate-Bridging-Header.h",
-        "SKIP_INSTALL": "YES",
-      ]),
+      settings: Nimb.settings(base: ["SKIP_INSTALL": "YES"]),
     ),
 
     // ── msgpack stream inspector ────────────────────────────────────────
@@ -181,7 +175,6 @@ let project = Project(
       infoPlist: .default,
       sources: ["msgpack-inspector/**"],
       dependencies: [
-        Nimb.msgpack,
         .target(name: "NimbCore"),
         .package(product: "ArgumentParser"),
         .package(product: "CustomDump"),
@@ -197,8 +190,7 @@ let project = Project(
       bundleId: "foxacid7cd.speed-tuner",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
-      sources: .sourceFilesList(globs: ["speed-tuner/**"]
-        + Nimb.sharedMessagePack.map { SourceFileGlob.glob(.path($0)) }),
+      sources: ["speed-tuner/**"],
       copyFiles: [
         .productsDirectory(
           name: "Copy speed-tuner assets",
@@ -207,14 +199,12 @@ let project = Project(
         ),
       ],
       dependencies: [
-        Nimb.msgpack,
         .target(name: "NimbCore"),
         .package(product: "ArgumentParser"),
         .package(product: "CasePaths"),
         .package(product: "CustomDump"),
       ],
       settings: Nimb.settings(base: [
-        "SWIFT_OBJC_BRIDGING_HEADER": "speed-tuner/speed-tuner-Bridging-Header.h",
         "CODE_SIGN_IDENTITY[sdk=macosx*]": "-",
         "SKIP_INSTALL": "YES",
       ]),

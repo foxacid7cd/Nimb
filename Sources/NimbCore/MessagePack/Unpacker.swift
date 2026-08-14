@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import msgpack_c
 import NimbCore
 
 public class Unpacker {
