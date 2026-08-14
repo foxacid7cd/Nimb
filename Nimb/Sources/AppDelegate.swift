@@ -7,7 +7,6 @@ import NimbNeovim
 import NimbState
 import Synchronization
 
-@MainActor
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var mainMenuController: MainMenuController? = nil
   private var msgShowsWindowController: MsgShowsWindowController? = nil

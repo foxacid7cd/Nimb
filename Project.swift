@@ -175,6 +175,12 @@ let project = Project(
           // Metal shaders are inline MSL strings compiled at runtime, so the
           // app needs no Metal build phase.
           "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
+          // The app target is AppKit end to end. The reducer and the RPC layer
+          // live in NimbState and NimbNeovim, which stay nonisolated, so this
+          // only affects view code. Possible only after the module split:
+          // this setting is per-module, and Action.apply mutates State from
+          // @StateActor, which would not compile against a MainActor State.
+          "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
         ],
         debug: [
           "NIMB_BUNDLE_ID_SUFFIX": "Debug",

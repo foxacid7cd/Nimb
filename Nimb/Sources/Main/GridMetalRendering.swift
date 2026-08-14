@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT
 
+// The types here are driven from GridLayer, which stays off the main actor
+// because CALayer's overrides are nonisolated. They are explicitly
+// nonisolated so the app target's MainActor default does not reach them.
+
 import AppKit
 import CoreText
 import Metal
 import NimbCore
 import NimbState
 
-struct GridPreparedMetalFrame: @unchecked Sendable {
+nonisolated struct GridPreparedMetalFrame: @unchecked Sendable {
   let scene: GridMetalScene
   let atlasTexture: MTLTexture
   let clearColor: MTLClearColor
@@ -34,7 +38,7 @@ struct GridMetalScene {
   var cursorGlyphInstances: [GridMetalGlyphInstance] = []
 }
 
-final class GridMetalRenderer: @unchecked Sendable {
+nonisolated final class GridMetalRenderer: @unchecked Sendable {
   static let shared = GridMetalRenderer()
 
   private static let shaderSource = #"""
@@ -230,7 +234,7 @@ final class GridMetalRenderer: @unchecked Sendable {
   }
 }
 
-private final class GridMetalGlyphAtlas: @unchecked Sendable {
+private nonisolated final class GridMetalGlyphAtlas: @unchecked Sendable {
   struct GlyphKey: Hashable {
     let fontName: String
     let pointSize: CGFloat
@@ -422,7 +426,7 @@ private final class GridMetalGlyphAtlas: @unchecked Sendable {
   }
 }
 
-final class GridMetalSceneBuilder: @unchecked Sendable {
+nonisolated final class GridMetalSceneBuilder: @unchecked Sendable {
   private let renderer: GridMetalRenderer
   private var glyphAtlas: GridMetalGlyphAtlas? = nil
 
@@ -782,7 +786,7 @@ final class GridMetalSceneBuilder: @unchecked Sendable {
   }
 }
 
-extension Color {
+nonisolated extension Color {
   var metal: SIMD4<Float> {
     let color = appKit.usingColorSpace(.deviceRGB) ?? appKit
     return .init(

@@ -7,7 +7,11 @@ import NimbCore
 import NimbNeovim
 import NimbState
 
-public final class Store: Sendable {
+/// Nonisolated by design: dispatch and show are called from key monitors,
+/// gesture handlers and the off-main updates loop alike, and the store owns no
+/// mutable state of its own — the reducer's State lives as a local inside the
+/// single task that drives it.
+public nonisolated final class Store: Sendable {
   private enum PendingActions: Sendable {
     case single(any Action)
     case batch([any Action])

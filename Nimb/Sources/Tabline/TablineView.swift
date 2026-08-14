@@ -4,7 +4,6 @@ import AppKit
 import NimbCore
 import NimbNeovim
 
-@MainActor
 final class TablineView: NSVisualEffectView, Rendering {
   override var isOpaque: Bool {
     true

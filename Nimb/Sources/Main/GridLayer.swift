@@ -25,7 +25,10 @@ struct GridRenderInput: Sendable {
   let metalFrame: GridPreparedMetalFrame?
 }
 
-public class GridLayer: CAMetalLayer, @unchecked Sendable {
+/// Stays off the main actor even though the rest of the app target defaults
+/// to it: CALayer's initialisers and draw(in:) are nonisolated in the SDK, so
+/// an isolated subclass cannot override them.
+public nonisolated class GridLayer: CAMetalLayer, @unchecked Sendable {
   private struct MetalUniforms {
     var viewportSize: SIMD2<Float>
   }

@@ -6,7 +6,6 @@ import NimbCore
 import NimbNeovim
 import NimbState
 
-@MainActor
 final class MainMenuController: NSObject, Rendering {
   let menu = NSMenu()
 
