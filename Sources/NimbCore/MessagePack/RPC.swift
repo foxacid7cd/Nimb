@@ -61,7 +61,7 @@ public final class RPC<Target: Channel>: Sendable {
             logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
 
           case let .response(response):
-            await storage.responseReceived(response, forRequestWithID: response.id)
+            storage.responseReceived(response, forRequestWithID: response.id)
 
           case let .notification(notification):
             notifications.append(notification)
@@ -87,68 +87,55 @@ public final class RPC<Target: Channel>: Sendable {
   ) async
   -> Message.Response.Result {
     await withCheckedContinuation { continuation in
-      Task {
-        let request = await Message.Request(
-          id: storage.announceRequest {
-            continuation.resume(returning: $0.result)
-          },
-          method: method,
-          parameters: parameters,
-        )
-        send(request: request)
-      }
+      send(request: .init(
+        id: storage.announceRequest {
+          continuation.resume(returning: $0.result)
+        },
+        method: method,
+        parameters: parameters,
+      ))
     }
   }
 
+  /// Sends on the caller's thread, in call order.
+  ///
+  /// This used to hand the send to an unstructured Task. Neovim applies input
+  /// in the order it arrives, so racing those tasks meant a burst of keystrokes
+  /// or wheel events could reach it transposed -- a replica of the pattern
+  /// reordered 7 to 33 messages out of every 200 sent back to back. The write
+  /// is a single blocking syscall on a pipe, so there was nothing to gain by
+  /// deferring it either.
   public func fastCall(
     method: String,
     withParameters parameters: [Value],
   ) {
-    Task {
-      await send(
-        request: .init(
-          id: storage.announceRequest(),
-          method: method,
-          parameters: parameters,
-        ),
-      )
-    }
+    send(request: .init(
+      id: storage.announceRequest(),
+      method: method,
+      parameters: parameters,
+    ))
   }
 
+  /// Packs several calls into one write. Ordering is already guaranteed by
+  /// fastCall, so this exists only to spend one syscall instead of N.
   public func fastCallsTransaction(with calls: some Sequence<(
     method: String,
     parameters: [Value],
   )> & Sendable) {
-    Task {
-      var messages = [Message.Request]()
-      messages.reserveCapacity(calls.underestimatedCount)
-
+    let data = packer.withLock { packer in
+      var data = Data()
       for call in calls {
-        await messages.append(
-          .init(
-            id: storage.announceRequest(),
-            method: call.method,
-            parameters: call.parameters,
-          ),
+        let message = Message.Request(
+          id: storage.announceRequest(),
+          method: call.method,
+          parameters: call.parameters,
         )
+        data.append(packer.pack(message.makeValue()))
       }
-
-      let data = packer.withLock { packer in
-        var data = Data()
-
-        for message in messages {
-          data.append(
-            packer.pack(
-              message.makeValue(),
-            ),
-          )
-        }
-
-        return data
-      }
-
-      try? target.write(data)
+      return data
     }
+
+    try? target.write(data)
   }
 
   public func send(request: Message.Request) {
@@ -160,41 +147,45 @@ public final class RPC<Target: Channel>: Sendable {
   }
 }
 
-@MainActor
-private final class Storage {
-  private let maximumConcurrentRequests = Int.max
-  private var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
-  private var announcedRequestsCount = 0
+/// Lock rather than actor isolation, so allocating a request id is a plain
+/// synchronous call. It used to be @MainActor, which forced every send through
+/// an unstructured Task just to reach it -- and that is what made sends
+/// unordered, since those tasks then raced each other to the pipe.
+private final class Storage: Sendable {
+  private struct State {
+    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+    var announcedRequestsCount = 0
+  }
+
+  private let state = Mutex(State())
 
   func announceRequest(
-    _ handler: (@Sendable (Message.Response) -> Void)? =
-      nil,
+    _ handler: (@Sendable (Message.Response) -> Void)? = nil,
   )
     -> Int
   {
-    let id = announcedRequestsCount
-
-    (announcedRequestsCount, _) = (announcedRequestsCount + 1)
-      .remainderReportingOverflow(dividingBy: maximumConcurrentRequests)
-
-    if let handler {
-      currentRequests[id] = handler
+    state.withLock { state in
+      let id = state.announcedRequestsCount
+      state.announcedRequestsCount &+= 1
+      if let handler {
+        state.currentRequests[id] = handler
+      }
+      return id
     }
-
-    return id
   }
 
   func responseReceived(
     _ response: Message.Response,
     forRequestWithID id: Int,
   ) {
-    let handler = currentRequests[id]
-    currentRequests[id] = nil
-
-    guard let handler else {
-      return
+    // Taken under the lock, invoked outside it: the handler resumes a
+    // continuation, and whatever that wakes must not run while the lock is
+    // held.
+    let handler = state.withLock { state -> (@Sendable (Message.Response) -> Void)? in
+      let handler = state.currentRequests[id]
+      state.currentRequests[id] = nil
+      return handler
     }
-
-    handler(response)
+    handler?(response)
   }
 }
