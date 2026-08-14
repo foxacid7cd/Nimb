@@ -2,7 +2,6 @@
 
 import CasePaths
 import OSLog
-import Overture
 
 public extension Actions {
   struct ApplyUIEvents<S: Sequence & Sendable>: Action where S.Element == UIEvent {
@@ -226,25 +225,23 @@ public extension Actions {
             {
               let font = state.font
               let appearance = state.appearance
-              update(&state.grids[params.grid]) { grid in
-                if grid == nil {
-                  let cells = TwoDimensionalArray(
-                    size: size,
-                    repeatingElement: Cell.whitespace,
-                  )
-                  let layout = GridLayout(cells: cells)
-                  grid = .init(
-                    id: params.grid,
+              if state.grids[params.grid] == nil {
+                let cells = TwoDimensionalArray(
+                  size: size,
+                  repeatingElement: Cell.whitespace,
+                )
+                let layout = GridLayout(cells: cells)
+                state.grids[params.grid] = .init(
+                  id: params.grid,
+                  layout: layout,
+                  drawRuns: .init(
                     layout: layout,
-                    drawRuns: .init(
-                      layout: layout,
-                      font: font,
-                      appearance: appearance,
-                    ),
-                    associatedWindow: nil,
-                    isHidden: false,
-                  )
-                }
+                    font: font,
+                    appearance: appearance,
+                  ),
+                  associatedWindow: nil,
+                  isHidden: false,
+                )
               }
 
               if
@@ -291,11 +288,7 @@ public extension Actions {
 
         case let .gridDestroy(batch):
           for params in batch {
-            update(&state.grids[params.grid]) { grid in
-              guard grid != nil else {
-                return
-              }
-              grid = nil
+            if state.grids.removeValue(forKey: params.grid) != nil {
               updates.destroyedGridIDs.insert(params.grid)
             }
 
@@ -550,9 +543,7 @@ public extension Actions {
           for params in batch {
             let oldCursor = state.cursor
 
-            update(&state.cmdlines.dictionary[params.level]) {
-              $0?.cursorPosition = params.pos
-            }
+            state.cmdlines.dictionary[params.level]?.cursorPosition = params.pos
 
             cursorUpdated(oldCursor: oldCursor)
             cmdlinesUpdated()
@@ -560,9 +551,10 @@ public extension Actions {
 
         case let .cmdlineSpecialChar(batch):
           for params in batch {
-            update(&state.cmdlines.dictionary[params.level]) {
-              $0?.specialCharacter = params.c
-              $0?.shiftAfterSpecialCharacter = params.shift
+            if var cmdline = state.cmdlines.dictionary[params.level] {
+              cmdline.specialCharacter = params.c
+              cmdline.shiftAfterSpecialCharacter = params.shift
+              state.cmdlines.dictionary[params.level] = cmdline
             }
 
             cmdlinesUpdated()

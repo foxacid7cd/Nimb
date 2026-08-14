@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import Overture
 
 @PublicInit
 public struct Grid: Sendable, Identifiable {

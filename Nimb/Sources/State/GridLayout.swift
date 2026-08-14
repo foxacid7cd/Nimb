@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import Overture
 
 @PublicInit
 public struct GridLayout: Sendable {

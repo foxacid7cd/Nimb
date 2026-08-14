@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Collections
-import Overture
 
 @PublicInit
 public struct GridsHierarchy: Sendable {
@@ -18,12 +17,7 @@ public struct GridsHierarchy: Sendable {
     guard let node = allNodes.removeValue(forKey: id) else {
       return
     }
-    update(&allNodes[node.parent]) { parentNode in
-      guard parentNode != nil else {
-        return
-      }
-      parentNode!.children.remove(id)
-    }
+    allNodes[node.parent]?.children.remove(id)
   }
 
   public mutating func addNode(id: Grid.ID, parent: Grid.ID) {
@@ -47,19 +41,19 @@ public struct GridsHierarchy: Sendable {
     guard id != Grid.OuterID, let node = allNodes[id] else {
       return false
     }
+    guard var parentNode = allNodes[node.parent] else {
+      return false
+    }
     var orderChanged = false
-    update(&allNodes[node.parent]) { parentNode in
-      guard parentNode != nil else {
-        return
-      }
-      update(&parentNode!.children) { children in
-        let lastElementIndex = children.index(before: children.last!)
-        if let index = children.firstIndex(of: id), index != lastElementIndex {
-          children.remove(at: index)
-          children.append(id)
-          orderChanged = true
-        }
-      }
+    let lastElementIndex = parentNode.children.index(before: parentNode.children.last!)
+    if
+      let index = parentNode.children.firstIndex(of: id),
+      index != lastElementIndex
+    {
+      parentNode.children.remove(at: index)
+      parentNode.children.append(id)
+      allNodes[node.parent] = parentNode
+      orderChanged = true
     }
     return orderChanged
   }

@@ -148,7 +148,6 @@
 		68C9BCA62C5F7E4900844461 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCA52C5F7E4900844461 /* ArgumentParser */; };
 		68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCAB2C5F7E7600844461 /* Collections */; };
 		68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB52C5F7F0F00844461 /* CasePaths */; };
-		68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */ = {isa = PBXBuildFile; productRef = 68C9BCB82C5F7F3F00844461 /* Overture */; };
 		68D1803629AA4A9000732402 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68D1803529AA4A9000732402 /* Assets.xcassets */; };
 		68D4090F2C62D0F800B33091 /* Bundle+Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D4090E2C62D0F800B33091 /* Bundle+Version.swift */; };
 		68D409112C62D61A00B33091 /* NimbNotify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D409102C62D61A00B33091 /* NimbNotify.swift */; };
@@ -412,7 +411,6 @@
 				68FB33182C669ECA008A68CB /* MyMacro in Frameworks */,
 				6896CE402C68249E001F3C85 /* ConcurrencyExtras in Frameworks */,
 				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
-				68C9BCB92C5F7F3F00844461 /* Overture in Frameworks */,
 				6808BE252D3CC0E300893789 /* CustomDump in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
 				689F997F2D3CCF530098ECEC /* STTextView in Frameworks */,
@@ -798,7 +796,6 @@
 				689738F22C480AF7002159BD /* TinyConstraints */,
 				68C9BCAB2C5F7E7600844461 /* Collections */,
 				68C9BCB52C5F7F0F00844461 /* CasePaths */,
-				68C9BCB82C5F7F3F00844461 /* Overture */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
 				6896CE3F2C68249E001F3C85 /* ConcurrencyExtras */,
 				688A764F2C6B1E4F00B6B9C0 /* Algorithms */,
@@ -850,7 +847,6 @@
 				68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */,
-				68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */,
 				681B53512C5FE67B00AD6C68 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */,
 				688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
@@ -1532,14 +1528,6 @@
 				minimumVersion = 1.9.1;
 			};
 		};
-		68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:pointfreeco/swift-overture.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.5.0;
-			};
-		};
 		68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-custom-dump.git";
@@ -1660,11 +1648,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */;
 			productName = CasePaths;
-		};
-		68C9BCB82C5F7F3F00844461 /* Overture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */;
-			productName = Overture;
 		};
 		68FB33172C669ECA008A68CB /* MyMacro */ = {
 			isa = XCSwiftPackageProductDependency;

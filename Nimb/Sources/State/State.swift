@@ -3,7 +3,6 @@
 import Collections
 import Foundation
 import OrderedCollections
-import Overture
 
 @PublicInit
 public struct State: Sendable {
@@ -75,12 +74,11 @@ public struct State: Sendable {
         updatedLayoutGridIDs.insert(gridID)
       }
       for (gridID, gridUpdate) in updates.gridUpdates {
-        update(&gridUpdates[gridID]) { accumulator in
-          if accumulator == nil {
-            accumulator = gridUpdate
-          } else {
-            accumulator!.formUnion(gridUpdate)
-          }
+        if var accumulator = gridUpdates[gridID] {
+          accumulator.formUnion(gridUpdate)
+          gridUpdates[gridID] = accumulator
+        } else {
+          gridUpdates[gridID] = gridUpdate
         }
       }
       isGridsHierarchyUpdated = isGridsHierarchyUpdated || updates.isGridsHierarchyUpdated
