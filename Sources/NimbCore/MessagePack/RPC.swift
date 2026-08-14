@@ -63,7 +63,7 @@ public final class RPC<Target: Channel>: Sendable {
     withParameters parameters: [Value],
   ) async
   -> Message.Response.Result {
-    await withUnsafeContinuation { continuation in
+    await withCheckedContinuation { continuation in
       Task {
         let request = await Message.Request(
           id: storage.announceRequest {

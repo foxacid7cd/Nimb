@@ -6,6 +6,7 @@ import Foundation
 import NimbCore
 import NimbNeovim
 import NimbState
+import Synchronization
 
 /// Nonisolated by design: dispatch and show are called from key monitors,
 /// gesture handlers and the off-main updates loop alike, and the store owns no
@@ -18,35 +19,46 @@ public nonisolated final class Store: Sendable {
     case failure(any Error)
   }
 
-  private actor PendingActionsState {
-    private var remainingProducers: Int
-    private var isFinished = false
+  /// Counts the two producers down so whichever finishes last closes the
+  /// stream. Previously an actor, which cost two suspensions per completion
+  /// for what is a two-bit state machine.
+  private final class PendingActionsState: Sendable {
+    private struct Storage {
+      var remainingProducers: Int
+      var isFinished = false
+    }
+
+    private let storage: Mutex<Storage>
 
     init(remainingProducers: Int) {
-      self.remainingProducers = remainingProducers
+      storage = .init(.init(remainingProducers: remainingProducers))
     }
 
     func producerDidFinish() -> Bool {
-      guard !isFinished else {
+      storage.withLock { storage in
+        guard !storage.isFinished else {
+          return false
+        }
+
+        storage.remainingProducers -= 1
+        if storage.remainingProducers == 0 {
+          storage.isFinished = true
+          return true
+        }
+
         return false
       }
-
-      remainingProducers -= 1
-      if remainingProducers == 0 {
-        isFinished = true
-        return true
-      }
-
-      return false
     }
 
     func finishOnFailure() -> Bool {
-      guard !isFinished else {
-        return false
-      }
+      storage.withLock { storage in
+        guard !storage.isFinished else {
+          return false
+        }
 
-      isFinished = true
-      return true
+        storage.isFinished = true
+        return true
+      }
     }
   }
 
@@ -80,7 +92,7 @@ public nonisolated final class Store: Sendable {
         pendingActionsContinuation.yield(.single(action))
       }
 
-      if await pendingActionsState.producerDidFinish() {
+      if pendingActionsState.producerDidFinish() {
         pendingActionsContinuation.finish()
       }
     }
@@ -124,14 +136,14 @@ public nonisolated final class Store: Sendable {
           }
         }
       } catch {
-        if await pendingActionsState.finishOnFailure() {
+        if pendingActionsState.finishOnFailure() {
           pendingActionsContinuation.yield(.failure(error))
           pendingActionsContinuation.finish()
         }
         return
       }
 
-      if await pendingActionsState.producerDidFinish() {
+      if pendingActionsState.producerDidFinish() {
         pendingActionsContinuation.finish()
       }
     }
@@ -142,7 +154,7 @@ public nonisolated final class Store: Sendable {
     }
 
     updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
-      Task { @StateActor in
+      Task {
         var state = initialState
         var updates = State.Updates()
         continuation.yield((state, updates))

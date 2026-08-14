@@ -100,7 +100,7 @@ public final class Neovim: Sendable {
       options: .dictionary(uiOptions.nvimUIAttachOptions),
     )
 
-    return await withUnsafeContinuation { continuation in
+    return await withCheckedContinuation { continuation in
       process.terminationHandler = { process in
         continuation.resume(returning: process.terminationStatus)
       }
