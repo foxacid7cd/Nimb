@@ -1,33 +1,6 @@
 {
-  "originHash" : "5d78a69c205b69f0f82c6a1fb7448e01fcd2ca32f6e14d40d50aa955dd0739b5",
+  "originHash" : "d5bb4481dd53b2d85f55a5dcb065a3574301a2bcfa29637900a8317671a6cffa",
   "pins" : [
-    {
-      "identity" : "coretextswift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/CoreTextSwift",
-      "state" : {
-        "revision" : "833177201d6421e6322296f39fce6ff6ae52618a",
-        "version" : "0.2.0"
-      }
-    },
-    {
-      "identity" : "sttextkitplus",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/STTextKitPlus",
-      "state" : {
-        "revision" : "446d6d431b163840ac5cc844ca5cf4704886c30e",
-        "version" : "0.1.8"
-      }
-    },
-    {
-      "identity" : "sttextview",
-      "kind" : "remoteSourceControl",
-      "location" : "git@github.com:krzyzanowskim/STTextView.git",
-      "state" : {
-        "revision" : "9b25347cb1b3628379f1b825b4fd591239f28f9c",
-        "version" : "2.0.0-beta5"
-      }
-    },
     {
       "identity" : "swift-algorithms",
       "kind" : "remoteSourceControl",

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import STTextViewAppKit
 
 public class MsgShowsViewController: NSViewController, Rendering {
   private let store: Store
   private lazy var scrollView = NSScrollView()
-  private lazy var textView = STTextView()
+  private lazy var textView = NSTextView()
   private var renderedMsgShows = [(MsgShow, NSAttributedString)]()
 
   public init(store: Store) {
@@ -35,9 +34,38 @@ public class MsgShowsViewController: NSViewController, Rendering {
     textView.isEditable = false
     textView.isSelectable = true
     textView.usesFontPanel = false
-    textView.widthTracksTextView = true
-    textView.heightTracksTextView = true
-    textView.isHorizontalContentSizeConstraintActive = true
+    textView.allowsUndo = false
+
+    // The panel behind this is translucent (window alphaValue 0.9, isOpaque
+    // false) and the scroll view paints the themed background at alpha 0.8.
+    // NSTextView otherwise fills itself with an opaque textBackgroundColor and
+    // the whole window turns into a solid slab.
+    textView.drawsBackground = false
+
+    // STTextView insets by nothing; NSTextView defaults to a 5pt line fragment
+    // padding, which would shift the text right.
+    textView.textContainerInset = .zero
+    textView.textContainer?.lineFragmentPadding = 0
+
+    // documentView of an NSScrollView is driven by autoresizing, not
+    // constraints. Width tracks the scroll view, height grows with content so
+    // the scroll view has something to scroll.
+    textView.translatesAutoresizingMaskIntoConstraints = true
+    textView.autoresizingMask = [.width]
+    textView.minSize = .zero
+    textView.maxSize = .init(
+      width: CGFloat.greatestFiniteMagnitude,
+      height: CGFloat.greatestFiniteMagnitude,
+    )
+    textView.isVerticallyResizable = true
+    textView.isHorizontallyResizable = false
+    textView.textContainer?.widthTracksTextView = true
+    textView.textContainer?.heightTracksTextView = false
+    textView.textContainer?.size = .init(
+      width: 0,
+      height: CGFloat.greatestFiniteMagnitude,
+    )
+
     scrollView.documentView = textView
 
     self.view = view
@@ -88,7 +116,9 @@ public class MsgShowsViewController: NSViewController, Rendering {
   }
 
   public func renderText() {
-    textView.attributedText = renderedMsgShows.map(\.1).joined(separator: .init(string: "\n"))
+    let attributedString = renderedMsgShows.map(\.1)
+      .joined(separator: .init(string: "\n"))
+    textView.textStorage?.setAttributedString(attributedString)
   }
 
   private func makeAttributedString(for msgShow: MsgShow) -> NSAttributedString {
