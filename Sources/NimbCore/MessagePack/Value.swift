@@ -70,14 +70,18 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
     case MSGPACK_OBJECT_ARRAY:
       let cArray = object.via.array
 
+      // The count is known up front, so the buffer is allocated once and
+      // written in place: appending grew it by doubling, and going through map
+      // still costs a uniqueness check per element. Every redraw batch from
+      // Neovim is a nested array, making this one of the hottest allocations
+      // in the app. The MAP case below already reserved.
       let count = Int(cArray.size)
-      var accumulator = [Value]()
-
-      for index in 0 ..< count {
-        accumulator.append(Value(cArray.ptr.advanced(by: index).pointee))
-      }
-
-      self = .array(accumulator)
+      self = .array([Value](unsafeUninitializedCapacity: count) { buffer, initialized in
+        for index in 0 ..< count {
+          buffer.initializeElement(at: index, to: Value(cArray.ptr.advanced(by: index).pointee))
+        }
+        initialized = count
+      })
 
     case MSGPACK_OBJECT_MAP:
       let map = object.via.map
