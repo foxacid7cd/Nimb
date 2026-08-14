@@ -310,26 +310,13 @@ public struct State: Sendable {
           )
 
         case let .floating(floatingWindow):
-          let anchorGrid = grids[floatingWindow.anchorGridID] ?? grids[Grid.OuterID]!
-          let anchorLayout = layouts[anchorGrid.id]!
-
-          var gridColumn: Double = floatingWindow.anchorColumn
-          var gridRow: Double = floatingWindow.anchorRow
+          // Positioned from screen_row/screen_col rather than worked out from
+          // the anchor. Neovim has already resolved the anchor corner and
+          // clamped the result to the screen, which the manual route would
+          // make our job.
           let gridSize = grid.size
-          switch floatingWindow.anchor {
-          case .northWest:
-            break
-
-          case .northEast:
-            gridColumn -= Double(gridSize.columnsCount)
-
-          case .southWest:
-            gridRow -= Double(gridSize.rowsCount)
-
-          case .southEast:
-            gridColumn -= Double(gridSize.columnsCount)
-            gridRow -= Double(gridSize.rowsCount)
-          }
+          let gridColumn = Double(floatingWindow.screenColumn)
+          let gridRow = Double(floatingWindow.screenRow)
 
           var position: Int?
           for (index, layout) in layouts.values.enumerated() {
@@ -355,10 +342,12 @@ public struct State: Sendable {
           layouts.updateValue(
             (
               size: gridSize,
+              // Already screen absolute, so unlike the plain-window case
+              // there is no parent offset to add.
               positionInParent: .init(
                 x: gridColumn * font.cellWidth,
                 y: gridRow * font.cellHeight,
-              ) + anchorLayout.positionInParent,
+              ),
               depth: depth,
               indexInParent: indexInParent,
               floatingZIndex: floatingWindow.compositingIndex,

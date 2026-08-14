@@ -363,8 +363,6 @@ public extension Actions {
               logger.trace("UIEvent.winFloatPos: grid: \(params.grid), anchorGrid: \(params.anchorGrid)")
             }
 
-            let anchor = FloatingWindow.Anchor(rawValue: params.anchor)!
-
             guard
               state
                 .grids[params.grid] != nil
@@ -376,10 +374,9 @@ public extension Actions {
             state.grids[params.grid]?.associatedWindow = .floating(
               .init(
                 id: params.windowID,
-                anchor: anchor,
                 anchorGridID: params.anchorGrid,
-                anchorRow: params.anchorRow,
-                anchorColumn: params.anchorCol,
+                screenRow: params.screenRow,
+                screenColumn: params.screenCol,
                 isFocusable: params.mouseEnabled,
                 zIndex: params.zindex,
                 compositingIndex: params.compindex,
