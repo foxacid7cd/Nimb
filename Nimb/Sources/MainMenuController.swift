@@ -321,16 +321,6 @@ final class MainMenuController: NSObject, Rendering {
   }
 }
 
-extension OutputStream: @retroactive TextOutputStream {
-  public func write(_ string: String) {
-    var string = string
-
-    string.withUTF8 { buffer in
-      _ = write(buffer.baseAddress!, maxLength: buffer.count)
-    }
-  }
-}
-
 extension MainMenuController: NSFontChanging {
   func changeFont(_ sender: NSFontManager?) {
     guard let sender else {

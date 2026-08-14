@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import NimbCore
 import NimbState
 
 class TablineItemView: NSView, Rendering {

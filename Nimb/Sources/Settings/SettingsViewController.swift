@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import NimbCore
-import NimbNeovim
 
 public class SettingsViewController: NSViewController {
   private lazy var environmentView = SettingsEnvironmentView()

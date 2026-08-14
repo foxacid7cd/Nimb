@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import NimbCore
 import NimbState
 
 public class CmdlineTextView: NSView, Rendering {

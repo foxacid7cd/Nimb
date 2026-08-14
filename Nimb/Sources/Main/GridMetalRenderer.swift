@@ -8,7 +8,6 @@ import AppKit
 import CoreText
 import Metal
 import NimbCore
-import NimbState
 
 final nonisolated class GridMetalRenderer: @unchecked Sendable {
   static let shared = GridMetalRenderer()

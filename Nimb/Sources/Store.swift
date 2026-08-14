@@ -3,7 +3,6 @@
 import Algorithms
 import Collections
 import Foundation
-import NimbCore
 import NimbNeovim
 import NimbState
 import Synchronization

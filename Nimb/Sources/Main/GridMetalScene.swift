@@ -7,8 +7,6 @@
 import AppKit
 import CoreText
 import Metal
-import NimbCore
-import NimbState
 
 /// Unchecked because MTLTexture is an unannotated SDK protocol. The frame is
 /// built on one thread and consumed on another, and Metal objects are

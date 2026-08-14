@@ -2,7 +2,6 @@
 
 import AppKit
 import NimbCore
-import NimbNeovim
 
 public class MainWindowController: NSWindowController, Rendering {
   private class CustomWindow: NSWindow {

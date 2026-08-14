@@ -7,8 +7,6 @@
 import AppKit
 import CoreText
 import Metal
-import NimbCore
-import NimbState
 
 final nonisolated class GridMetalGlyphAtlas {
   struct GlyphKey: Hashable {
