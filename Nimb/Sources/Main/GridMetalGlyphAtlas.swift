@@ -10,10 +10,8 @@ import Metal
 
 final nonisolated class GridMetalGlyphAtlas {
   struct GlyphKey: Hashable {
-    let fontName: String
-    let pointSize: CGFloat
+    let fontID: Int
     let glyph: CGGlyph
-    let scaleMillipoints: Int
   }
 
   struct GlyphEntry {
@@ -21,6 +19,13 @@ final nonisolated class GridMetalGlyphAtlas {
     let size: SIMD2<Float>
     let uvOrigin: SIMD2<Float>
     let uvSize: SIMD2<Float>
+  }
+
+  /// Identifies a font the way the atlas cares about it. Only consulted the
+  /// first time a given NSFont instance is seen.
+  private struct FontDescriptor: Hashable {
+    let name: String
+    let pointSize: CGFloat
   }
 
   private struct RasterizedGlyph {
@@ -35,6 +40,21 @@ final nonisolated class GridMetalGlyphAtlas {
   let scale: CGFloat
 
   private var entries: [GlyphKey: GlyphEntry] = [:]
+
+  /// Fonts are interned to a small Int so the per-glyph lookup key holds no
+  /// String. The key used to carry font.fontName, which bridged an NSString
+  /// out of AppKit and hashed it once per glyph per frame.
+  ///
+  /// Identity is the fast path; the descriptor map behind it is what keeps two
+  /// distinct NSFont instances describing the same font sharing atlas entries,
+  /// so interning cannot silently duplicate rasterizations. Both maps are
+  /// bounded by the number of live NSFont instances, which FontBridge holds
+  /// fixed at four per configured font.
+  private var fontIDsByIdentity: [ObjectIdentifier: Int] = [:]
+  private var fontIDsByDescriptor: [FontDescriptor: Int] = [:]
+  /// Retains every interned font: ObjectIdentifier is only meaningful while
+  /// the object it came from is alive, and an address can be reused.
+  private var internedFonts: [NSFont] = []
   private var nextX = 0
   private var nextY = 0
   private var rowHeight = 0
@@ -66,12 +86,7 @@ final nonisolated class GridMetalGlyphAtlas {
   }
 
   func entry(for glyph: CGGlyph, font: NSFont) -> GlyphEntry? {
-    let key = GlyphKey(
-      fontName: font.fontName,
-      pointSize: font.pointSize,
-      glyph: glyph,
-      scaleMillipoints: Int((scale * 1000).rounded()),
-    )
+    let key = GlyphKey(fontID: fontID(for: font), glyph: glyph)
     if let entry = entries[key] {
       return entry
     }
@@ -81,6 +96,26 @@ final nonisolated class GridMetalGlyphAtlas {
     }
 
     return place(rasterizedGlyph: rasterizedGlyph, for: key)
+  }
+
+  private func fontID(for font: NSFont) -> Int {
+    let identity = ObjectIdentifier(font)
+    if let fontID = fontIDsByIdentity[identity] {
+      return fontID
+    }
+
+    let descriptor = FontDescriptor(name: font.fontName, pointSize: font.pointSize)
+    let fontID: Int
+    if let existing = fontIDsByDescriptor[descriptor] {
+      fontID = existing
+    } else {
+      fontID = fontIDsByDescriptor.count
+      fontIDsByDescriptor[descriptor] = fontID
+    }
+
+    internedFonts.append(font)
+    fontIDsByIdentity[identity] = fontID
+    return fontID
   }
 
   private func rasterizeGlyph(glyph: CGGlyph, font: NSFont) -> RasterizedGlyph? {
