@@ -14,6 +14,13 @@ public final class RenderContext: Sendable {
   }
 }
 
+/// Isolated to the main actor: every conformer is an AppKit object, and the
+/// render tree is walked synchronously from the top. Before this was isolated,
+/// each conformer satisfied a nonisolated requirement by hopping to the main
+/// actor itself, so a single frame fanned out into a set of unstructured tasks
+/// whose relative order was unspecified — frame N+1 could interleave with
+/// frame N.
+@MainActor
 public protocol Rendering {
   var renderContext: RenderContext { get }
   func update(renderContext: RenderContext)

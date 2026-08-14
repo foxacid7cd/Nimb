@@ -50,14 +50,12 @@ public class MainWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public nonisolated func render() {
-    Task { @MainActor in
-      if updates.isMouseUserInteractionEnabledUpdated {
-        renderIsMouseUserInteractionEnabled()
-      }
-      if updates.isAppearanceUpdated {
-        customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
-      }
+  public func render() {
+    if updates.isMouseUserInteractionEnabledUpdated {
+      renderIsMouseUserInteractionEnabled()
+    }
+    if updates.isAppearanceUpdated {
+      customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
     }
 
     renderChildren(viewController)

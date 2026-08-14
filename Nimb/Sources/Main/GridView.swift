@@ -221,12 +221,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     NSNull()
   }
 
-  public nonisolated func render() {
-    let renderInput = makeRenderInput()
-    Task { @MainActor in
-      gridLayer.update(renderInput: prepareRenderInput(renderInput))
-      gridLayer.render()
-    }
+  public func render() {
+    gridLayer.update(renderInput: prepareRenderInput(makeRenderInput()))
+    gridLayer.render()
   }
 
   public func reportMouseMove(for event: NSEvent) {

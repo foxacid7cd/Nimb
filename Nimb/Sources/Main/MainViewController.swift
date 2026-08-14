@@ -159,30 +159,24 @@ public class MainViewController: NSViewController, Rendering {
     }
   }
 
-  public nonisolated func render() {
-    Task { @MainActor in
-      if updates.isFontUpdated {
-        reportOuterGridSizeChanged()
-      }
-
-      if updates.isAppearanceUpdated {
-        renderBackground()
-      }
-
-      renderChildren(tablineView)
-
-      if updates.isCmdlinesUpdated {
-        modalOverlayView.isHidden = state
-          .cmdlines.dictionary
-          .isEmpty
-      }
-
-      renderChildren(cmdlinesViewController, popupmenuViewController)
+  public func render() {
+    if updates.isFontUpdated {
+      reportOuterGridSizeChanged()
     }
 
-    // Kept off the main actor: GridView.render builds its Metal render input
-    // before hopping, which is the whole point of the nonisolated path.
-    renderChildren(gridsView)
+    if updates.isAppearanceUpdated {
+      renderBackground()
+    }
+
+    renderChildren(tablineView)
+
+    if updates.isCmdlinesUpdated {
+      modalOverlayView.isHidden = state
+        .cmdlines.dictionary
+        .isEmpty
+    }
+
+    renderChildren(gridsView, cmdlinesViewController, popupmenuViewController)
   }
 
   public func windowFrame(
