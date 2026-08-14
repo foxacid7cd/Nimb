@@ -6,7 +6,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 @PublicInit
-public struct Metadata: @unchecked Sendable {
+public struct Metadata: Sendable {
   @PublicInit
   public struct Function: Sendable {
     public var name: String

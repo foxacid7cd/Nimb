@@ -10,6 +10,9 @@ import Metal
 import NimbCore
 import NimbState
 
+/// Unchecked because MTLTexture is an unannotated SDK protocol. The frame is
+/// built on one thread and consumed on another, and Metal objects are
+/// documented as safe for this.
 nonisolated struct GridPreparedMetalFrame: @unchecked Sendable {
   let scene: GridMetalScene
   let atlasTexture: MTLTexture
@@ -38,6 +41,8 @@ struct GridMetalScene {
   var cursorGlyphInstances: [GridMetalGlyphInstance] = []
 }
 
+/// Unchecked because MTLDevice and the pipeline states are unannotated SDK
+/// protocols. Everything here is immutable after init.
 nonisolated final class GridMetalRenderer: @unchecked Sendable {
   static let shared = GridMetalRenderer()
 
@@ -234,7 +239,7 @@ nonisolated final class GridMetalRenderer: @unchecked Sendable {
   }
 }
 
-private nonisolated final class GridMetalGlyphAtlas: @unchecked Sendable {
+private nonisolated final class GridMetalGlyphAtlas {
   struct GlyphKey: Hashable {
     let fontName: String
     let pointSize: CGFloat
@@ -426,7 +431,7 @@ private nonisolated final class GridMetalGlyphAtlas: @unchecked Sendable {
   }
 }
 
-nonisolated final class GridMetalSceneBuilder: @unchecked Sendable {
+nonisolated final class GridMetalSceneBuilder {
   private let renderer: GridMetalRenderer
   private var glyphAtlas: GridMetalGlyphAtlas? = nil
 

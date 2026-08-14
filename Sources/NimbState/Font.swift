@@ -55,6 +55,8 @@ public struct Font: Sendable, Hashable {
 
 @MainActor
 final class FontBridge {
+  /// Unchecked for the same reason as GlyphRun: it holds NSFont values,
+  /// which are immutable but unannotated.
   struct WrappedFont: @unchecked Sendable {
     var index: Int
     var regular: NSFont

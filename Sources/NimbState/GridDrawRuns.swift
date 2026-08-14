@@ -490,6 +490,9 @@ public struct DrawRun: Sendable {
 }
 
 @PublicInit
+/// Unchecked only because of `appKitFont: NSFont`, which is immutable and
+/// documented as thread safe but is not annotated Sendable. Everything else
+/// here is a value type.
 public struct GlyphRun: @unchecked Sendable {
   public var appKitFont: NSFont
   public var textMatrix: CGAffineTransform
@@ -667,7 +670,7 @@ public struct CursorDrawRun: Sendable {
   }
 }
 
-public final class GlobalDrawRunsCache: @unchecked Sendable {
+public final class GlobalDrawRunsCache: Sendable {
   public static let shared = GlobalDrawRunsCache()
 
   private let dictionary = Mutex(OrderedDictionary<Int, DrawRun>())
