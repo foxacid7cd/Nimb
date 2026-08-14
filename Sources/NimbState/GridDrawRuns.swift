@@ -489,10 +489,10 @@ public struct DrawRun: Sendable {
   }
 }
 
-@PublicInit
 /// Unchecked only because of `appKitFont: NSFont`, which is immutable and
 /// documented as thread safe but is not annotated Sendable. Everything else
 /// here is a value type.
+@PublicInit
 public struct GlyphRun: @unchecked Sendable {
   public var appKitFont: NSFont
   public var textMatrix: CGAffineTransform

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
 import NimbCore
 
@@ -75,7 +74,6 @@ public extension UserDefaults {
   }
 }
 
-@CasePathable
 public enum Vimrc {
   case `default`
   case norc

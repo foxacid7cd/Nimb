@@ -24,7 +24,6 @@ let project = Project(
     .remote(url: "https://github.com/apple/swift-algorithms.git", requirement: .upToNextMajor(from: "1.2.1")),
     .remote(url: "https://github.com/apple/swift-argument-parser.git", requirement: .upToNextMajor(from: "1.8.2")),
     .remote(url: "https://github.com/swiftlang/swift-syntax.git", requirement: .upToNextMajor(from: "603.0.2")),
-    .remote(url: "https://github.com/pointfreeco/swift-case-paths.git", requirement: .upToNextMajor(from: "1.9.1")),
     .remote(url: "https://github.com/pointfreeco/swift-custom-dump.git", requirement: .upToNextMajor(from: "1.7.0")),
   ],
   settings: .settings(
@@ -61,7 +60,6 @@ let project = Project(
         .macro(name: "NimbMacros"),
         Nimb.msgpack,
         .package(product: "Algorithms"),
-        .package(product: "CasePaths"),
         .package(product: "Collections"),
         .package(product: "CustomDump"),
       ],
@@ -89,7 +87,6 @@ let project = Project(
       ],
       dependencies: [
         .target(name: "NimbCore"),
-        .package(product: "CasePaths"),
       ],
       settings: Nimb.settings(),
     ),
@@ -106,7 +103,6 @@ let project = Project(
       dependencies: [
         .target(name: "NimbNeovim"),
         .package(product: "Algorithms"),
-        .package(product: "CasePaths"),
         .package(product: "Collections"),
         .package(product: "CustomDump"),
       ],
@@ -151,7 +147,6 @@ let project = Project(
         .target(name: "NimbNeovim"),
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),
-        .package(product: "CasePaths"),
         .package(product: "Collections"),
         .package(product: "CustomDump"),
         // libswiftObjectiveC.tbd. `.swiftLibrary` already prefixes "swift",
@@ -206,7 +201,6 @@ let project = Project(
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),
         .package(product: "ArgumentParser"),
-        .package(product: "CasePaths"),
         .package(product: "Collections"),
         .package(product: "CustomDump"),
         .package(product: "SwiftSyntax"),
@@ -251,7 +245,6 @@ let project = Project(
       dependencies: [
         .target(name: "NimbCore"),
         .package(product: "ArgumentParser"),
-        .package(product: "CasePaths"),
         .package(product: "CustomDump"),
       ],
       settings: Nimb.settings(base: [

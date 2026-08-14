@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import NimbCore
 import NimbNeovim
 import OSLog
@@ -422,9 +421,9 @@ public extension Actions {
                   guard
                     case let .dictionary(rawTabpage) = rawTabpage,
                     let rawID = rawTabpage["tab"]
-                      .flatMap({ $0[case: \.ext] }),
+                      .flatMap(\.ext),
                       let name = rawTabpage["name"]
-                        .flatMap({ $0[case: \.string] })
+                        .flatMap(\.string)
                   else {
                     throw Failure("invalid tabline raw value", rawTabpage)
                   }
@@ -453,9 +452,9 @@ public extension Actions {
                   guard
                     case let .dictionary(rawBuffer) = rawBuffer,
                     let rawID = rawBuffer["buffer"]
-                      .flatMap({ $0[case: \.ext] }),
+                      .flatMap(\.ext),
                       let name = rawBuffer["name"]
-                        .flatMap({ $0[case: \.string] })
+                        .flatMap(\.string)
                   else {
                     throw Failure("invalid raw buffer value", rawBuffer)
                   }
@@ -706,7 +705,7 @@ public extension Actions {
         case let .hlAttrDefine(batch):
           for params in batch {
             let noCombine = params.rgbAttrs["noCombine"]
-              .flatMap { $0[case: \.boolean] } ?? false
+              .flatMap(\.boolean) ?? false
 
             var highlight = (
               noCombine ? state.appearance

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CasePaths
 import NimbCore
 import NimbState
 

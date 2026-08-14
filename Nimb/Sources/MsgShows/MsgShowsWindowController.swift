@@ -4,8 +4,6 @@ import AppKit
 import NimbState
 
 class MsgShowsWindowController: NSWindowController, Rendering {
-  public var renderContext: RenderContext! = nil
-
   private class CustomWindow: NSPanel {
     override var canBecomeMain: Bool {
       false
@@ -15,6 +13,8 @@ class MsgShowsWindowController: NSWindowController, Rendering {
       true
     }
   }
+
+  var renderContext: RenderContext! = nil
 
   private let store: Store
   private var viewController: MsgShowsViewController! = nil

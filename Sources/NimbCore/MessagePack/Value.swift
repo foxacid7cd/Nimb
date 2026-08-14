@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
 import msgpack_c
 
-@CasePathable
-@dynamicMemberLookup
 public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   ExpressibleByBooleanLiteral,
   ExpressibleByNilLiteral,
@@ -117,6 +114,85 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
     default: preconditionFailure(
         "Not implemented behavior for type \(object.type)",
       )
+    }
+  }
+}
+
+/// Optional accessors for the payload of each case.
+///
+/// These replace @CasePathable. `value.string` and `values.flatMap(\.integer)`
+/// read the same as before; the `.string` subscript form is gone.
+public extension Value {
+  var integer: Int? {
+    if case let .integer(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var float: Double? {
+    if case let .float(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var boolean: Bool? {
+    if case let .boolean(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var string: String? {
+    if case let .string(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var array: [Value]? {
+    if case let .array(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var dictionary: [Value: Value]? {
+    if case let .dictionary(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var binary: Data? {
+    if case let .binary(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var ext: (type: Int8, data: Data)? {
+    if case let .ext(type, data) = self {
+      (type: type, data: data)
+    } else {
+      nil
+    }
+  }
+
+  /// Not named `nil`, which is not a valid property name.
+  var isNil: Bool {
+    if case .nil = self {
+      true
+    } else {
+      false
     }
   }
 }

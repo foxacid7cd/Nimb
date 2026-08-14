@@ -6,14 +6,14 @@ import NimbCore
 import NimbState
 
 public class GridsView: NSView, Rendering {
-  public var renderContext: RenderContext! = nil
-
   override public var intrinsicContentSize: NSSize {
     guard isRendered, let outerGrid = state.outerGrid else {
       return .zero
     }
     return outerGrid.size * state.font.cellSize
   }
+
+  public var renderContext: RenderContext! = nil
 
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<GridView>()

@@ -41,5 +41,5 @@ struct GridMetalScene {
   var cursorGlyphInstances: [GridMetalGlyphInstance] = []
 }
 
-/// Unchecked because MTLDevice and the pipeline states are unannotated SDK
-/// protocols. Everything here is immutable after init.
+// Unchecked because MTLDevice and the pipeline states are unannotated SDK
+// protocols. Everything here is immutable after init.

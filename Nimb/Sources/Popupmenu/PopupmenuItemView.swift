@@ -5,11 +5,11 @@ import NimbCore
 import NimbState
 
 public class PopupmenuItemView: NSView, Rendering {
-  public var renderContext: RenderContext! = nil
-
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(
     String(describing: PopupmenuItemView.self),
   )
+
+  public var renderContext: RenderContext! = nil
 
   public var item: PopupmenuItem? = nil
   public var isSelected = false

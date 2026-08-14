@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import NimbCore
 
 public struct ValueType: Sendable {
@@ -11,7 +10,6 @@ public struct ValueType: Sendable {
       -> String
   }
 
-  @CasePathable
   public enum SwiftType {
     case unsignedInteger
     case integer
@@ -23,6 +21,15 @@ public struct ValueType: Sendable {
     case binary
     case custom(Custom)
     case value
+
+    /// Replaces `.value`, the only case path taken on this type.
+    public var isValue: Bool {
+      if case .value = self {
+        true
+      } else {
+        false
+      }
+    }
 
     public var signature: String {
       switch self {

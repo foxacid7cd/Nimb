@@ -14,12 +14,8 @@ public struct APIErrorFile: GeneratableFile {
   public var sourceFile: SourceFileSyntax {
     get throws {
       try .init {
-        "import CasePaths" as DeclSyntax
-
         try EnumDeclSyntax(
           """
-          @CasePathable
-          @dynamicMemberLookup
           public enum APIError: Int, Sendable, Hashable
           """,
         ) {

@@ -5,8 +5,6 @@ import NimbCore
 import NimbNeovim
 
 public class MainWindowController: NSWindowController, Rendering {
-  public var renderContext: RenderContext! = nil
-
   private class CustomWindow: NSWindow {
     override var canBecomeMain: Bool {
       true
@@ -16,6 +14,8 @@ public class MainWindowController: NSWindowController, Rendering {
       true
     }
   }
+
+  public var renderContext: RenderContext! = nil
 
   private let store: Store
   private let customWindow = CustomWindow(

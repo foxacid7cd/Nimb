@@ -58,7 +58,7 @@ public struct APIFunctionsFile: GeneratableFile {
                 )
               }
 
-              if function.returnType.swift[case: \.value] == nil {
+              if function.returnType.swift.isValue == false {
                 try FunctionDeclSyntax(
                   "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)",
                 ) {

@@ -10,7 +10,7 @@ import Metal
 import NimbCore
 import NimbState
 
-nonisolated final class GridMetalSceneBuilder {
+final nonisolated class GridMetalSceneBuilder {
   private let renderer: GridMetalRenderer
   private var glyphAtlas: GridMetalGlyphAtlas? = nil
 

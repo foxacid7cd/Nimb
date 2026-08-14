@@ -7,7 +7,7 @@ import NimbNeovim
 import NimbState
 
 final class MainMenuController: NSObject, Rendering {
-  public var renderContext: RenderContext! = nil
+  var renderContext: RenderContext! = nil
 
   let menu = NSMenu()
 

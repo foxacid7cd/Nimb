@@ -175,6 +175,14 @@ public struct IntKeyedDictionary<Value> {
     }
   }
 
+  @inlinable
+  @discardableResult
+  public mutating func removeValue(forKey key: Key) -> Value? {
+    let value = self[key]
+    self[key] = nil
+    return value
+  }
+
   private mutating func growStorageIfNeeded(for key: Key) {
     while key >= valuesBackingStore.count {
       valuesBackingStore += .init(
@@ -182,14 +190,6 @@ public struct IntKeyedDictionary<Value> {
         count: Swift.max(1, valuesBackingStore.count),
       )
     }
-  }
-
-  @inlinable
-  @discardableResult
-  public mutating func removeValue(forKey key: Key) -> Value? {
-    let value = self[key]
-    self[key] = nil
-    return value
   }
 }
 

@@ -5,8 +5,6 @@ import NimbCore
 import NimbNeovim
 
 final class TablineView: NSVisualEffectView, Rendering {
-  public var renderContext: RenderContext! = nil
-
   override var isOpaque: Bool {
     true
   }
@@ -14,6 +12,8 @@ final class TablineView: NSVisualEffectView, Rendering {
   override var intrinsicContentSize: NSSize {
     .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
   }
+
+  var renderContext: RenderContext! = nil
 
   var preferredViewHeight: CGFloat = 0 {
     didSet {

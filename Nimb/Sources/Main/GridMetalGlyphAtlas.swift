@@ -10,7 +10,7 @@ import Metal
 import NimbCore
 import NimbState
 
-nonisolated final class GridMetalGlyphAtlas {
+final nonisolated class GridMetalGlyphAtlas {
   struct GlyphKey: Hashable {
     let fontName: String
     let pointSize: CGFloat

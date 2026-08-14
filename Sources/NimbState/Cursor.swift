@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
 import NimbCore
 
@@ -66,28 +65,28 @@ public struct CursorStyle: Sendable {
 
     self.init(
       name: raw["name"]
-        .flatMap { $0[case: \.string] },
+        .flatMap(\.string),
       shortName: raw["short_name"]
-        .flatMap { $0[case: \.string] },
+        .flatMap(\.string),
       mouseShape: raw["mouse_shape"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       blinkOn: raw["blinkon"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       blinkOff: raw["blinkoff"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       blinkWait: raw["blinkwait"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       cellPercentage: raw["cell_percentage"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       cursorShape: raw["cursor_shape"]
-        .flatMap { $0[case: \.string] }
+        .flatMap(\.string)
         .flatMap(CursorShape.init(rawValue:)),
       idLm: raw["id_lm"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       attrID: raw["attr_id"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
       attrIDLm: raw["attr_id_lm"]
-        .flatMap { $0[case: \.integer] },
+        .flatMap(\.integer),
     )
   }
 

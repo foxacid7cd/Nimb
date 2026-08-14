@@ -12,7 +12,7 @@ import Synchronization
 /// gesture handlers and the off-main updates loop alike, and the store owns no
 /// mutable state of its own — the reducer's State lives as a local inside the
 /// single task that drives it.
-public nonisolated final class Store: Sendable {
+public final nonisolated class Store: Sendable {
   private enum PendingActions: Sendable {
     case single(any Action)
     case batch([any Action])

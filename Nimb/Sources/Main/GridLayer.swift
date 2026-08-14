@@ -415,4 +415,3 @@ public nonisolated class GridLayer: CAMetalLayer {
     return dirtyRects
   }
 }
-

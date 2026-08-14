@@ -133,7 +133,7 @@ public struct UIEventFile: GeneratableFile {
                             .parameters
                             .enumerated()
                             .partitioned(by: {
-                              $0.element.type.swift[case: \.value] == nil
+                              $0.element.type.swift.isValue == false
                             })
 
                           let parameterTypeConditions = otherParameters

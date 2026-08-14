@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
 import NimbCore
 
@@ -11,7 +10,7 @@ public struct NimbNotify: Hashable, Sendable {
   public var options: Value
 
   public var title: String? {
-    options[case: \.dictionary]?["title"]?[case: \.string]
+    options.dictionary?["title"]?.string
   }
 
   public init(_ value: Value) throws {

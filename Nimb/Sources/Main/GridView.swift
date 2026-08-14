@@ -7,14 +7,14 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
-  public var renderContext: RenderContext! = nil
-
   override public var frame: NSRect {
     didSet {
       gridLayer.frame = bounds
       gridLayer.updateDrawableSize()
     }
   }
+
+  public var renderContext: RenderContext! = nil
 
   private let store: Store
   private let gridID: Grid.ID

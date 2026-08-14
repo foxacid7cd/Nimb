@@ -10,7 +10,7 @@ import Metal
 import NimbCore
 import NimbState
 
-nonisolated final class GridMetalRenderer: @unchecked Sendable {
+final nonisolated class GridMetalRenderer: @unchecked Sendable {
   static let shared = GridMetalRenderer()
 
   private static let shaderSource = #"""

@@ -5,8 +5,6 @@ import NimbCore
 import NimbState
 
 public class CmdlinesViewController: NSViewController, Rendering {
-  public var renderContext: RenderContext! = nil
-
   private static let observedHighlightName: Set<
     Appearance
       .ObservedHighlightName,
@@ -14,6 +12,8 @@ public class CmdlinesViewController: NSViewController, Rendering {
     .normalFloat,
     .special,
   ]
+
+  public var renderContext: RenderContext! = nil
 
   private let store: Store
   private lazy var customView = FloatingWindowView()
