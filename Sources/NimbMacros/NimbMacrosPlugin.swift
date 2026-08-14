@@ -4,7 +4,7 @@ import SwiftCompilerPlugin
 import SwiftSyntaxMacros
 
 @main
-struct MyMacroPlugin: CompilerPlugin {
+struct NimbMacrosPlugin: CompilerPlugin {
   let providingMacros: [Macro.Type] = [
     PublicInitMacro.self,
   ]

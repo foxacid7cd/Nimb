@@ -20,7 +20,6 @@ let project = Project(
     // Tuist's own XcodeProj-based integration is not used here because it does
     // not pass -package-name, so packages that use the `package` access level
     // across their modules (swift-collections, swift-syntax) fail to build.
-    .local(path: "Modules/MyMacro"),
     .remote(url: "https://github.com/apple/swift-collections.git", requirement: .upToNextMajor(from: "1.6.0")),
     .remote(url: "https://github.com/apple/swift-algorithms.git", requirement: .upToNextMajor(from: "1.2.1")),
     .remote(url: "https://github.com/apple/swift-argument-parser.git", requirement: .upToNextMajor(from: "1.8.2")),
@@ -33,6 +32,22 @@ let project = Project(
     defaultSettings: .recommended,
   ),
   targets: [
+    // ── Macro plugin ────────────────────────────────────────────────────
+    .target(
+      name: "NimbMacros",
+      destinations: Nimb.destinations,
+      product: .macro,
+      bundleId: "foxacid7cd.NimbMacros",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: ["Sources/NimbMacros/**"],
+      dependencies: [
+        .package(product: "SwiftSyntaxMacros"),
+        .package(product: "SwiftCompilerPlugin"),
+      ],
+      settings: Nimb.settings(base: ["SKIP_INSTALL": "YES"]),
+    ),
+
     // ── The app ─────────────────────────────────────────────────────────
     .target(
       name: "Nimb",
@@ -71,7 +86,7 @@ let project = Project(
       ],
       dependencies: [
         Nimb.msgpack,
-        .package(product: "MyMacro"),
+        .macro(name: "NimbMacros"),
         .package(product: "Algorithms"),
         .package(product: "CasePaths"),
         .package(product: "Collections"),
@@ -123,7 +138,7 @@ let project = Project(
         .map { SourceFileGlob.glob(.path($0)) }),
       dependencies: [
         Nimb.msgpack,
-        .package(product: "MyMacro"),
+        .macro(name: "NimbMacros"),
         .package(product: "Algorithms"),
         .package(product: "ArgumentParser"),
         .package(product: "CasePaths"),
@@ -150,7 +165,7 @@ let project = Project(
         + Nimb.sharedWithTools.map { SourceFileGlob.glob(.path($0)) }),
       dependencies: [
         Nimb.msgpack,
-        .package(product: "MyMacro"),
+        .macro(name: "NimbMacros"),
         .package(product: "ArgumentParser"),
         .package(product: "CustomDump"),
       ],
@@ -177,7 +192,7 @@ let project = Project(
       ],
       dependencies: [
         Nimb.msgpack,
-        .package(product: "MyMacro"),
+        .macro(name: "NimbMacros"),
         .package(product: "ArgumentParser"),
         .package(product: "CasePaths"),
         .package(product: "CustomDump"),
