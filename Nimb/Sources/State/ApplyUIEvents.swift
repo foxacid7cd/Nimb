@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import CasePaths
-import IdentifiedCollections
 import OSLog
 import Overture
 
@@ -442,10 +441,9 @@ public extension Actions {
                     name: name,
                   )
                 }
-              let identifiedTabpages = IdentifiedArray(uniqueElements: tabpages)
-              if identifiedTabpages != state.tabline?.tabpages {
+              if tabpages != state.tabline?.tabpages {
                 if
-                  identifiedTabpages.count == state.tabline?.tabpages
+                  tabpages.count == state.tabline?.tabpages
                     .count
                 {
                   tablineTabpagesContentUpdated()
@@ -474,8 +472,7 @@ public extension Actions {
                     name: name,
                   )
                 }
-              let identifiedBuffers = IdentifiedArray(uniqueElements: buffers)
-              if identifiedBuffers != state.tabline?.buffers {
+              if buffers != state.tabline?.buffers {
                 tablineBuffersUpdated()
               }
 
@@ -493,9 +490,9 @@ public extension Actions {
 
               state.tabline = .init(
                 currentTabpageID: params.tabpageID,
-                tabpages: identifiedTabpages,
+                tabpages: tabpages,
                 currentBufferID: params.bufferID,
-                buffers: identifiedBuffers,
+                buffers: buffers,
               )
             } catch {
               handleError(error)
