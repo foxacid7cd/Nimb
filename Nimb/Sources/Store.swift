@@ -5,6 +5,7 @@ import Collections
 import Foundation
 import NimbCore
 import NimbNeovim
+import NimbState
 
 public final class Store: Sendable {
   private enum PendingActions: Sendable {

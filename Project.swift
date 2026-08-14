@@ -94,6 +94,25 @@ let project = Project(
       settings: Nimb.settings(),
     ),
 
+    // ── Application state and reducers ──────────────────────────────────
+    .target(
+      name: "NimbState",
+      destinations: Nimb.destinations,
+      product: .staticFramework,
+      bundleId: "foxacid7cd.NimbState",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: ["Sources/NimbState/**"],
+      dependencies: [
+        .target(name: "NimbNeovim"),
+        .package(product: "Algorithms"),
+        .package(product: "CasePaths"),
+        .package(product: "Collections"),
+        .package(product: "CustomDump"),
+      ],
+      settings: Nimb.settings(),
+    ),
+
     // ── The app ─────────────────────────────────────────────────────────
     .target(
       name: "Nimb",
@@ -128,6 +147,7 @@ let project = Project(
         ),
       ],
       dependencies: [
+        .target(name: "NimbState"),
         .target(name: "NimbNeovim"),
         .target(name: "NimbCore"),
         .package(product: "Algorithms"),

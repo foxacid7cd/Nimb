@@ -6,6 +6,8 @@ import NimbNeovim
 
 public enum Actions {
   public struct ToggleDebugUIEventsLogging: Action {
+    public init() { }
+
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       state.debug.isUIEventsLoggingEnabled.toggle()
       return .init(needFlush: true, isDebugUpdated: true)
@@ -13,6 +15,8 @@ public enum Actions {
   }
 
   public struct ToggleDebugMessagePackInspector: Action {
+    public init() { }
+
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       state.debug.isMessagePackInspectorEnabled.toggle()
       return .init(needFlush: true, isDebugUpdated: true)
@@ -20,6 +24,8 @@ public enum Actions {
   }
 
   public struct ToggleStoreActionsLogging: Action {
+    public init() { }
+
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       state.debug.isStoreActionsLoggingEnabled.toggle()
       return .init(needFlush: true, isDebugUpdated: true)

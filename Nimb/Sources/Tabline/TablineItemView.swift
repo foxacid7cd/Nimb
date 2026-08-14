@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 class TablineItemView: NSView, Rendering {
   override var frame: NSRect {

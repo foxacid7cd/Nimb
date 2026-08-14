@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbState
 
 class MsgShowsWindowController: NSWindowController, Rendering {
   private class CustomWindow: NSPanel {

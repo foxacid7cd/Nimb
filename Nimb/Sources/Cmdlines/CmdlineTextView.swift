@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class CmdlineTextView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {

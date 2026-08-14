@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class PopupmenuItemView: NSView, Rendering {
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(

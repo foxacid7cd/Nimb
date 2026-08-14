@@ -3,6 +3,7 @@
 import AppKit
 import CasePaths
 import NimbCore
+import NimbState
 
 public extension UserDefaults {
   var lastWindowSize: CGSize? {

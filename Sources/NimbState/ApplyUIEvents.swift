@@ -6,6 +6,7 @@ import NimbNeovim
 import OSLog
 
 public extension Actions {
+  @PublicInit
   struct ApplyUIEvents<S: Sequence & Sendable>: Action where S.Element == UIEvent {
     public var uiEvents: S
 

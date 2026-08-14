@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class MsgShowsViewController: NSViewController, Rendering {
   private let store: Store

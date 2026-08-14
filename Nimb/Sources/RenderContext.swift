@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
+import NimbState
 import ObjectiveC
 
 public final class RenderContext: Sendable {

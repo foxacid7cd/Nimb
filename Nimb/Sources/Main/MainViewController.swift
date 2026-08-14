@@ -3,6 +3,7 @@
 import AppKit
 import NimbCore
 import NimbNeovim
+import NimbState
 
 public class MainViewController: NSViewController, Rendering {
   let gridsView: GridsView

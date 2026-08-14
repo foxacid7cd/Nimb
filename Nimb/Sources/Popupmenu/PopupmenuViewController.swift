@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class PopupmenuViewController: NSViewController, Rendering {
   public var anchorConstraints = [NSLayoutConstraint]()

@@ -4,6 +4,7 @@ import Algorithms
 import AppKit
 import NimbCore
 import NimbNeovim
+import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
   override public var frame: NSRect {

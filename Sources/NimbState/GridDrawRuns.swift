@@ -8,13 +8,13 @@ import Synchronization
 
 @PublicInit
 public struct GridDrawRuns: Sendable {
-  struct VisibleDrawRun {
-    let drawRun: DrawRun
-    let rect: CGRect
+  public struct VisibleDrawRun {
+    public let drawRun: DrawRun
+    public let rect: CGRect
   }
 
-  struct VisibleRowDrawRun {
-    let drawRuns: [VisibleDrawRun]
+  public struct VisibleRowDrawRun {
+    public let drawRuns: [VisibleDrawRun]
   }
 
   public var rowDrawRuns: [RowDrawRun]
@@ -95,7 +95,7 @@ public struct GridDrawRuns: Sendable {
     }
   }
 
-  func visibleRowDrawRuns(
+  public func visibleRowDrawRuns(
     boundingRect: IntegerRectangle,
     font: Font,
     upsideDownTransform: CGAffineTransform,

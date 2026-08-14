@@ -6,6 +6,7 @@ import Collections
 import CustomDump
 import Metal
 import NimbCore
+import NimbState
 import QuartzCore
 import Synchronization
 

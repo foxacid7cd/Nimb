@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class CmdlinesViewController: NSViewController, Rendering {
   private static let observedHighlightName: Set<
