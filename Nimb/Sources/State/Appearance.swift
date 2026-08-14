@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import Collections
+import HashTreeCollections
 
 @PublicInit
 public struct Appearance: Sendable {
