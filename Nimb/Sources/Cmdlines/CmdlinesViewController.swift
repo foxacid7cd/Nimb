@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import TinyConstraints
 
 public class CmdlinesViewController: NSViewController, Rendering {
   private static let observedHighlightName: Set<

@@ -1,5 +1,5 @@
 {
-  "originHash" : "439a37b546611ff3bafba953953abf271a60a1d76f542780f40f8dd40bcc781b",
+  "originHash" : "5d78a69c205b69f0f82c6a1fb7448e01fcd2ca32f6e14d40d50aa955dd0739b5",
   "pins" : [
     {
       "identity" : "coretextswift",
@@ -89,15 +89,6 @@
       "state" : {
         "revision" : "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
         "version" : "603.0.2"
-      }
-    },
-    {
-      "identity" : "tinyconstraints",
-      "kind" : "remoteSourceControl",
-      "location" : "git@github.com:roberthein/TinyConstraints.git",
-      "state" : {
-        "revision" : "3262e5c591d4ab6272255df2087a01bbebd138dc",
-        "version" : "4.0.2"
       }
     },
     {

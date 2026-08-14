@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import TinyConstraints
 
 public class PopupmenuItemView: NSView, Rendering {
   public static let reuseIdentifier = NSUserInterfaceItemIdentifier(

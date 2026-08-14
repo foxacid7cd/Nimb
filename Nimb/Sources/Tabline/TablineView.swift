@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import TinyConstraints
 
 @MainActor
 final class TablineView: NSVisualEffectView, Rendering {

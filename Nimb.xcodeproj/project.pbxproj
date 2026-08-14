@@ -42,6 +42,7 @@
 		681B53212C5FE47600AD6C68 /* Macros.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53132C5FE47600AD6C68 /* Macros.swift */; };
 		681B53222C5FE47600AD6C68 /* Macros.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53132C5FE47600AD6C68 /* Macros.swift */; };
 		681B53232C5FE47600AD6C68 /* NSFontCellSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */; };
+		68AA00010000000000000002 /* NSView+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68AA00010000000000000001 /* NSView+Constraints.swift */; };
 		681B53242C5FE47600AD6C68 /* NSFontCellSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */; };
 		681B53252C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */; };
 		681B53262C5FE47600AD6C68 /* TwoDimensionalArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */; };
@@ -105,7 +106,6 @@
 		6896CE472C68410D001F3C85 /* AsyncSequence+Throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE462C6840F2001F3C85 /* AsyncSequence+Throttle.swift */; };
 		6896CE482C68410D001F3C85 /* AsyncSequence+Throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE462C6840F2001F3C85 /* AsyncSequence+Throttle.swift */; };
 		6896CE4A2C6860E8001F3C85 /* Neovim.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896CE492C686096001F3C85 /* Neovim.swift */; };
-		689738F32C480AF8002159BD /* TinyConstraints in Frameworks */ = {isa = PBXBuildFile; productRef = 689738F22C480AF7002159BD /* TinyConstraints */; };
 		6897398B2C65F14B00891467 /* Store+withAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6897398A2C65F14B00891467 /* Store+withAPI.swift */; };
 		689870A92AF80D1B00C4F2FD /* NeovimError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689870A82AF80D1B00C4F2FD /* NeovimError.swift */; };
 		689D9E2929B4FAF900345713 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689D9E2829B4FAF900345713 /* MainWindowController.swift */; };
@@ -257,6 +257,7 @@
 		681B53122C5FE47600AD6C68 /* IntKeyedDictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntKeyedDictionary.swift; sourceTree = "<group>"; };
 		681B53132C5FE47600AD6C68 /* Macros.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Macros.swift; sourceTree = "<group>"; };
 		681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSFontCellSize.swift; sourceTree = "<group>"; };
+		68AA00010000000000000001 /* NSView+Constraints.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSView+Constraints.swift"; sourceTree = "<group>"; };
 		681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwoDimensionalArray.swift; sourceTree = "<group>"; };
 		681B53282C5FE4A100AD6C68 /* Channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Channel.swift; sourceTree = "<group>"; };
 		681B53292C5FE4A100AD6C68 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
@@ -402,7 +403,6 @@
 				68C9BCAC2C5F7E7600844461 /* Collections in Frameworks */,
 				688A76502C6B1E4F00B6B9C0 /* Algorithms in Frameworks */,
 				68FB33182C669ECA008A68CB /* MyMacro in Frameworks */,
-				689738F32C480AF8002159BD /* TinyConstraints in Frameworks */,
 				6808BE252D3CC0E300893789 /* CustomDump in Frameworks */,
 				68C9BCB62C5F7F0F00844461 /* CasePaths in Frameworks */,
 				689F997F2D3CCF530098ECEC /* STTextView in Frameworks */,
@@ -446,6 +446,7 @@
 				681B53122C5FE47600AD6C68 /* IntKeyedDictionary.swift */,
 				681B53132C5FE47600AD6C68 /* Macros.swift */,
 				681B53142C5FE47600AD6C68 /* NSFontCellSize.swift */,
+				68AA00010000000000000001 /* NSView+Constraints.swift */,
 				681B53152C5FE47600AD6C68 /* TwoDimensionalArray.swift */,
 				680BF3462C65A8E900C15CB6 /* CasePaths+Sendable.swift */,
 			);
@@ -782,7 +783,6 @@
 			);
 			name = Nimb;
 			packageProductDependencies = (
-				689738F22C480AF7002159BD /* TinyConstraints */,
 				68C9BCAB2C5F7E7600844461 /* Collections */,
 				68C9BCB52C5F7F0F00844461 /* CasePaths */,
 				68FB33172C669ECA008A68CB /* MyMacro */,
@@ -831,7 +831,6 @@
 			);
 			mainGroup = 68BFEF382934CF6100564FE2;
 			packageReferences = (
-				689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */,
 				68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */,
@@ -1038,6 +1037,7 @@
 				6878932D2AF7F2B300005A8E /* APIFunction.swift in Sources */,
 				681B53192C5FE47600AD6C68 /* AsyncFileHandle.swift in Sources */,
 				68554AFE2AFAACE1006488CD /* MsgShowsViewController.swift in Sources */,
+				68AA00010000000000000002 /* NSView+Constraints.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1467,14 +1467,6 @@
 				minimumVersion = 1.2.1;
 			};
 		};
-		689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:roberthein/TinyConstraints.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.0.2;
-			};
-		};
 		689F997D2D3CCF530098ECEC /* XCRemoteSwiftPackageReference "STTextView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "git@github.com:krzyzanowskim/STTextView.git";
@@ -1582,11 +1574,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */;
 			productName = Algorithms;
-		};
-		689738F22C480AF7002159BD /* TinyConstraints */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 689738F12C480AF7002159BD /* XCRemoteSwiftPackageReference "TinyConstraints" */;
-			productName = TinyConstraints;
 		};
 		689F997E2D3CCF530098ECEC /* STTextView */ = {
 			isa = XCSwiftPackageProductDependency;
