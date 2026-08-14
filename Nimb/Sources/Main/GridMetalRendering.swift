@@ -33,6 +33,8 @@ struct GridMetalScene {
 }
 
 final class GridMetalRenderer: @unchecked Sendable {
+  static let shared = GridMetalRenderer()
+
   private static let shaderSource = #"""
   #include <metal_stdlib>
   using namespace metal;
@@ -130,8 +132,6 @@ final class GridMetalRenderer: @unchecked Sendable {
     return float4(in.color.rgb, in.color.a * alpha);
   }
   """#
-
-  static let shared = GridMetalRenderer()
 
   let device: MTLDevice
   let commandQueue: MTLCommandQueue
@@ -354,7 +354,8 @@ private final class GridMetalGlyphAtlas: @unchecked Sendable {
   private func place(
     rasterizedGlyph: RasterizedGlyph,
     for key: GlyphKey,
-  ) -> GlyphEntry? {
+  )
+  -> GlyphEntry? {
     if rasterizedGlyph.width > texture.width || rasterizedGlyph.height > texture.height {
       return nil
     }
@@ -431,7 +432,8 @@ final class GridMetalSceneBuilder: @unchecked Sendable {
     snapshot: GridDrawSnapshot,
     bounds: CGRect,
     scale: CGFloat,
-  ) -> GridPreparedMetalFrame? {
+  )
+  -> GridPreparedMetalFrame? {
     guard let glyphAtlas = prepareGlyphAtlas(scale: scale) else {
       return nil
     }
@@ -458,7 +460,8 @@ final class GridMetalSceneBuilder: @unchecked Sendable {
     bounds: CGRect,
     glyphAtlas: GridMetalGlyphAtlas,
     scale: CGFloat,
-  ) -> GridMetalScene {
+  )
+  -> GridMetalScene {
     var scene = GridMetalScene()
 
     let boundingRect = IntegerRectangle(
@@ -734,7 +737,8 @@ final class GridMetalSceneBuilder: @unchecked Sendable {
   private func quadInstance(
     rect: CGRect,
     color: SIMD4<Float>,
-  ) -> GridMetalQuadInstance {
+  )
+  -> GridMetalQuadInstance {
     .init(
       origin: .init(Float(rect.origin.x), Float(rect.origin.y)),
       size: .init(Float(rect.width), Float(rect.height)),
@@ -748,7 +752,8 @@ final class GridMetalSceneBuilder: @unchecked Sendable {
     uvSize: SIMD2<Float>,
     color: SIMD4<Float>,
     clipRect: CGRect,
-  ) -> GridMetalGlyphInstance? {
+  )
+  -> GridMetalGlyphInstance? {
     let intersection = rect.intersection(clipRect)
     guard !intersection.isNull, !intersection.isEmpty, rect.width > 0, rect.height > 0 else {
       return nil

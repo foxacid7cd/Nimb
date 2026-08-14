@@ -195,7 +195,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
               isDirectory: true,
             )
             let logFileName =
-            "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
+              "Nimb-error-log-\(ProcessInfo().globallyUniqueString).txt"
             let temporaryFileURL = temporaryDirectoryURL
               .appending(component: logFileName)
 

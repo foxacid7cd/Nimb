@@ -45,12 +45,12 @@ public class GridsView: NSView, Rendering {
       }
 
       let updatedLayoutGridIDs =
-      if updates.isFontUpdated {
-        Set(state.grids.keys)
+        if updates.isFontUpdated {
+          Set(state.grids.keys)
 
-      } else {
-        updates.updatedLayoutGridIDs
-      }
+        } else {
+          updates.updatedLayoutGridIDs
+        }
 
       for gridID in updatedLayoutGridIDs {
         guard let grid = state.grids[gridID] else {

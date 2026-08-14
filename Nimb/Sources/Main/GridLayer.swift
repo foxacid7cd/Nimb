@@ -143,10 +143,6 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
     )
   }
 
-  nonisolated func update(renderInput: GridRenderInput?) {
-    isolatedRenderInput.withLock { $0 = renderInput }
-  }
-
   public nonisolated func render() {
     guard let renderInput = isolatedRenderInput.withLock({ $0 }) else {
       return
@@ -159,6 +155,10 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
       }
       setNeedsDisplay(clippedDirtyRect)
     }
+  }
+
+  nonisolated func update(renderInput: GridRenderInput?) {
+    isolatedRenderInput.withLock { $0 = renderInput }
   }
 
   func updateDrawableSize() {
@@ -219,9 +219,25 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
 
     encodeQuadInstances(metalFrame.scene.backgroundQuads, kind: .backgroundQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
     encodeQuadInstances(metalFrame.scene.decorationQuads, kind: .decorationQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
-    encodeGlyphInstances(metalFrame.scene.glyphInstances, kind: .glyphs, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, atlasTexture: metalFrame.atlasTexture, encoder: renderEncoder)
+    encodeGlyphInstances(
+      metalFrame.scene.glyphInstances,
+      kind: .glyphs,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      atlasTexture: metalFrame.atlasTexture,
+      encoder: renderEncoder,
+    )
     encodeQuadInstances(metalFrame.scene.cursorQuads, kind: .cursorQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
-    encodeGlyphInstances(metalFrame.scene.cursorGlyphInstances, kind: .cursorGlyphs, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, atlasTexture: metalFrame.atlasTexture, encoder: renderEncoder)
+    encodeGlyphInstances(
+      metalFrame.scene.cursorGlyphInstances,
+      kind: .cursorGlyphs,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      atlasTexture: metalFrame.atlasTexture,
+      encoder: renderEncoder,
+    )
     renderEncoder.endEncoding()
 
     commandBuffer.present(drawable)
@@ -241,10 +257,10 @@ public class GridLayer: CAMetalLayer, @unchecked Sendable {
   }
 
   private func encodeQuadInstances(
-        _ instances: [GridMetalQuadInstance],
+    _ instances: [GridMetalQuadInstance],
     kind: MetalBufferCache.Kind,
     uniforms: MetalUniforms,
-        renderer: GridMetalRenderer,
+    renderer: GridMetalRenderer,
     bufferCache: MetalBufferCache,
     encoder: MTLRenderCommandEncoder,
   ) {

@@ -226,45 +226,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
   }
 
-  private func makeRenderInput() -> GridRenderInput? {
-    guard let grid = renderContext.state.grids[gridID] else {
-      return nil
-    }
-
-    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * renderContext.state.font.cellHeight)
-
-    return GridRenderInput(
-      snapshot: .init(
-        grid: grid,
-        upsideDownTransform: upsideDownTransform,
-        font: renderContext.state.font,
-        appearance: renderContext.state.appearance,
-        cursorBlinkingPhase: renderContext.state.cursorBlinkingPhase,
-        isMouseUserInteractionEnabled: renderContext.state.isMouseUserInteractionEnabled,
-      ),
-      updates: renderContext.updates,
-      metalFrame: nil,
-    )
-  }
-
-  @MainActor
-  private func prepareRenderInput(_ renderInput: GridRenderInput?) -> GridRenderInput? {
-    guard let renderInput else {
-      return nil
-    }
-
-    return .init(
-      snapshot: renderInput.snapshot,
-      updates: renderInput.updates,
-      metalFrame: metalSceneBuilder?.makeFrame(
-        snapshot: renderInput.snapshot,
-        bounds: bounds,
-        scale: max(gridLayer.contentsScale, 1),
-      ),
-    )
-  }
-
   public func reportMouseMove(for event: NSEvent) {
     guard
       state.isMouseUserInteractionEnabled,
@@ -329,5 +290,44 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       row: point.row,
       col: point.column,
     ))
+  }
+
+  private func makeRenderInput() -> GridRenderInput? {
+    guard let grid = renderContext.state.grids[gridID] else {
+      return nil
+    }
+
+    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * renderContext.state.font.cellHeight)
+
+    return GridRenderInput(
+      snapshot: .init(
+        grid: grid,
+        upsideDownTransform: upsideDownTransform,
+        font: renderContext.state.font,
+        appearance: renderContext.state.appearance,
+        cursorBlinkingPhase: renderContext.state.cursorBlinkingPhase,
+        isMouseUserInteractionEnabled: renderContext.state.isMouseUserInteractionEnabled,
+      ),
+      updates: renderContext.updates,
+      metalFrame: nil,
+    )
+  }
+
+  @MainActor
+  private func prepareRenderInput(_ renderInput: GridRenderInput?) -> GridRenderInput? {
+    guard let renderInput else {
+      return nil
+    }
+
+    return .init(
+      snapshot: renderInput.snapshot,
+      updates: renderInput.updates,
+      metalFrame: metalSceneBuilder?.makeFrame(
+        snapshot: renderInput.snapshot,
+        bounds: bounds,
+        scale: max(gridLayer.contentsScale, 1),
+      ),
+    )
   }
 }

@@ -3,10 +3,10 @@
 import Algorithms
 import Collections
 import Combine
+import ConcurrencyExtras
 import CustomDump
 import Foundation
 import Synchronization
-import ConcurrencyExtras
 
 public final class RPC<Target: Channel>: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
@@ -64,8 +64,8 @@ public final class RPC<Target: Channel>: Sendable {
   -> Message.Response.Result {
     await withUnsafeContinuation { continuation in
       Task {
-        let request = Message.Request(
-          id: await storage.announceRequest {
+        let request = await Message.Request(
+          id: storage.announceRequest {
             continuation.resume(returning: $0.result)
           },
           method: method,
@@ -81,9 +81,9 @@ public final class RPC<Target: Channel>: Sendable {
     withParameters parameters: [Value],
   ) {
     Task {
-      send(
+      await send(
         request: .init(
-          id: await storage.announceRequest(),
+          id: storage.announceRequest(),
           method: method,
           parameters: parameters,
         ),
@@ -100,9 +100,9 @@ public final class RPC<Target: Channel>: Sendable {
       messages.reserveCapacity(calls.underestimatedCount)
 
       for call in calls {
-        messages.append(
+        await messages.append(
           .init(
-            id: await storage.announceRequest(),
+            id: storage.announceRequest(),
             method: call.method,
             parameters: call.parameters,
           ),
@@ -144,9 +144,9 @@ private final class Storage {
 
   func announceRequest(
     _ handler: (@Sendable (Message.Response) -> Void)? =
-    nil,
+      nil,
   )
-  -> Int
+    -> Int
   {
     let id = announcedRequestsCount
 
