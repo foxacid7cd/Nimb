@@ -133,12 +133,7 @@ public struct IntKeyedDictionary<Value> {
     }
 
     set(newValue) {
-      while key >= valuesBackingStore.count {
-        valuesBackingStore += .init(
-          repeating: nil,
-          count: Swift.max(1, valuesBackingStore.count),
-        )
-      }
+      growStorageIfNeeded(for: key)
 
       keysBackingStore.remove(key)
       if newValue != nil {
@@ -146,6 +141,46 @@ public struct IntKeyedDictionary<Value> {
       }
 
       valuesBackingStore[key] = newValue
+    }
+
+    // Without this, `dictionary[key]?.field = x` goes through get and set,
+    // copying the whole Value out and back. The values here are Grids, which
+    // own their cell array and draw runs, so that copy is the hottest write in
+    // the application. Yielding into the slot mutates it in place.
+    _modify {
+      if key >= valuesBackingStore.count {
+        // Out of range, so there is no slot to yield into. Hand over a
+        // temporary and only touch the storage if something was actually
+        // assigned — growing here unconditionally would make
+        // `dictionary[absentKey]?.field = x`, which is a no-op, allocate.
+        var value: Value? = nil
+        yield &value
+        if value != nil {
+          self[key] = value
+        }
+        return
+      }
+
+      let wasPresent = valuesBackingStore[key] != nil
+      yield &valuesBackingStore[key]
+      let isPresent = valuesBackingStore[key] != nil
+
+      if wasPresent != isPresent {
+        if isPresent {
+          keysBackingStore.updateOrAppend(key)
+        } else {
+          keysBackingStore.remove(key)
+        }
+      }
+    }
+  }
+
+  private mutating func growStorageIfNeeded(for key: Key) {
+    while key >= valuesBackingStore.count {
+      valuesBackingStore += .init(
+        repeating: nil,
+        count: Swift.max(1, valuesBackingStore.count),
+      )
     }
   }
 
