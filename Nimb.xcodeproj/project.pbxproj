@@ -1482,10 +1482,10 @@
 		};
 		688A764E2C6B1E4F00B6B9C0 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:apple/swift-algorithms.git";
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
+				minimumVersion = 1.2.1;
 			};
 		};
 		6896CE3E2C68249E001F3C85 /* XCRemoteSwiftPackageReference "swift-concurrency-extras" */ = {
@@ -1514,10 +1514,10 @@
 		};
 		68C9BCA42C5F7E4900844461 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:apple/swift-argument-parser.git";
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
+				minimumVersion = 1.8.2;
 			};
 		};
 		68C9BCAA2C5F7E7600844461 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
@@ -1538,10 +1538,10 @@
 		};
 		68C9BCB42C5F7F0F00844461 /* XCRemoteSwiftPackageReference "swift-case-paths" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:pointfreeco/swift-case-paths.git";
+			repositoryURL = "https://github.com/pointfreeco/swift-case-paths.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.6;
+				minimumVersion = 1.9.1;
 			};
 		};
 		68C9BCB72C5F7F3F00844461 /* XCRemoteSwiftPackageReference "swift-overture" */ = {
@@ -1554,10 +1554,10 @@
 		};
 		68E98EF92D3CBF2B00E32038 /* XCRemoteSwiftPackageReference "swift-custom-dump" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:pointfreeco/swift-custom-dump.git";
+			repositoryURL = "https://github.com/pointfreeco/swift-custom-dump.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.3.3;
+				minimumVersion = 1.7.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
