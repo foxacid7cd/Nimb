@@ -2,7 +2,6 @@
 
 import Collections
 import Foundation
-import MyMacro
 import Overture
 
 @PublicInit
