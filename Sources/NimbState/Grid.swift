@@ -201,9 +201,10 @@ public struct Grid: Sendable, Identifiable {
         repeatingElement: .whitespace,
       )
       for row in 0 ..< copyRowsCount {
-        cells.rows[row].replaceSubrange(
-          copyColumnsRange,
-          with: layout.cells.rows[row][copyColumnsRange],
+        cells.replaceRow(
+          row,
+          columns: copyColumnsRange,
+          with: layout.cells.rowSlice(row, columns: copyColumnsRange),
         )
       }
       layout = .init(cells: cells)
@@ -244,15 +245,16 @@ public struct Grid: Sendable, Identifiable {
         let fromRow = toRow + offset.rowsCount
 
         if rectangle.size.columnsCount == size.columnsCount {
-          layout.cells.rows[toRow] = cellsCopy.rows[fromRow]
+          layout.cells.copyRow(fromRow, from: cellsCopy, to: toRow)
           layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
           drawRuns.rowDrawRuns[toRow] = rowDrawRunsCopy[fromRow]
         } else {
-          layout.cells.rows[toRow].replaceSubrange(
-            rectangle.columns,
-            with: cellsCopy.rows[fromRow][rectangle.columns],
+          layout.cells.replaceRow(
+            toRow,
+            columns: rectangle.columns,
+            with: cellsCopy.rowSlice(fromRow, columns: rectangle.columns),
           )
-          layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rows[toRow])
+          layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rowSlice(toRow))
           drawRuns.rowDrawRuns[toRow] = .init(
             row: toRow,
             layout: layout.rowLayouts[toRow],
@@ -282,7 +284,7 @@ public struct Grid: Sendable, Identifiable {
 
     case .clear:
       layout.cells = .init(size: layout.cells.size, repeatingElement: .whitespace)
-      layout.rowLayouts = layout.cells.rows
+      layout.rowLayouts = layout.cells.rowSlices
         .map(RowLayout.init(rowCells:))
       drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
       return .needsDisplay
@@ -290,7 +292,7 @@ public struct Grid: Sendable, Identifiable {
     case let .cursor(style, position):
       let columnsCount =
         if position.row < layout.rowsCount, position.column < layout.columnsCount {
-          layout.cells.rows[position.row][position.column].isDoubleWidth ? 2 : 1
+          layout.cells[position].isDoubleWidth ? 2 : 1
         } else {
           1
         }
@@ -329,12 +331,13 @@ public struct Grid: Sendable, Identifiable {
     appearance: Appearance,
   )
   -> IntegerRectangle {
-    layout.cells.rows[row].replaceSubrange(
-      originColumn ..< originColumn + cells.count,
+    layout.cells.replaceRow(
+      row,
+      columns: originColumn ..< originColumn + cells.count,
       with: cells,
     )
 
-    layout.rowLayouts[row] = RowLayout(rowCells: layout.cells.rows[row])
+    layout.rowLayouts[row] = RowLayout(rowCells: layout.cells.rowSlice(row))
     drawRuns.rowDrawRuns[row] = RowDrawRun(
       row: row,
       layout: layout.rowLayouts[row],

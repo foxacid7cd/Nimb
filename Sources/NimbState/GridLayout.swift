@@ -22,7 +22,7 @@ public struct GridLayout: Sendable {
 
   init(cells: TwoDimensionalArray<Cell>) {
     self.cells = cells
-    rowLayouts = cells.rows
+    rowLayouts = cells.rowSlices
       .map(RowLayout.init(rowCells:))
   }
 }
@@ -44,7 +44,7 @@ public struct Cell: Sendable, Hashable {
 public struct RowLayout: Sendable {
   public var parts: [RowPart]
 
-  public init(rowCells: [Cell]) {
+  public init(rowCells: ArraySlice<Cell>) {
     var accumulator = RowPartsAccumulator()
     for cell in rowCells {
       accumulator.append(cell)
