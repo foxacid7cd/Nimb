@@ -86,28 +86,42 @@ public struct RowLayout: Sendable {
             .missing
           }
 
-        if let lastPart = internalParts.last {
-          if lastPart.highlightID == cell.highlightID {
-            switch (lastPart.content, cellCharacterType) {
-            case let (.whitespaceCharacters(count), .whitespace):
-              internalParts[internalParts.count - 1].content = .whitespaceCharacters(
-                count: count + 1,
-              )
-              return
+        // Deliberately indexed rather than going through internalParts.last:
+        // that binds a copy, which leaves the character array in
+        // singleWidthCharacters referenced twice, so appending to it triggers
+        // copy-on-write of the whole run. For a row of plain text that is a
+        // copy per character, quadratic in the run length.
+        if !internalParts.isEmpty {
+          let lastIndex = internalParts.index(before: internalParts.endIndex)
+          if internalParts[lastIndex].highlightID == cell.highlightID {
+            switch cellCharacterType {
+            case .whitespace:
+              if case let .whitespaceCharacters(count) = internalParts[lastIndex].content {
+                internalParts[lastIndex].content = .whitespaceCharacters(count: count + 1)
+                return
+              }
 
-            case (.doubleWidthCharacter(let character, false), .missing):
-              internalParts[internalParts.count - 1].content = .doubleWidthCharacter(
-                character,
-                isWithSecondFillerCharacter: true,
-              )
-              return
+            case .missing:
+              if
+                case let .doubleWidthCharacter(character, false) = internalParts[lastIndex]
+                  .content
+              {
+                internalParts[lastIndex].content = .doubleWidthCharacter(
+                  character,
+                  isWithSecondFillerCharacter: true,
+                )
+                return
+              }
 
-            case (.singleWidthCharacters(var characters), .regular(let character, false)):
-              characters.append(character)
-              internalParts[internalParts.count - 1].content = .singleWidthCharacters(
-                characters,
-              )
-              return
+            case let .regular(character, false):
+              if case var .singleWidthCharacters(characters) = internalParts[lastIndex].content {
+                // Drop the enum's reference before appending so the array is
+                // uniquely referenced and grows in place.
+                internalParts[lastIndex].content = .whitespaceCharacters(count: 0)
+                characters.append(character)
+                internalParts[lastIndex].content = .singleWidthCharacters(characters)
+                return
+              }
 
             default:
               break
