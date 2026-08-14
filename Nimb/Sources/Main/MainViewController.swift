@@ -166,18 +166,20 @@ public class MainViewController: NSViewController, Rendering {
         renderBackground()
       }
 
-      //    renderChildren(gridsView, tablineView)
+      renderChildren(tablineView)
 
       if updates.isCmdlinesUpdated {
         modalOverlayView.isHidden = state
           .cmdlines.dictionary
           .isEmpty
       }
+
+      renderChildren(cmdlinesViewController, popupmenuViewController)
     }
 
+    // Kept off the main actor: GridView.render builds its Metal render input
+    // before hopping, which is the whole point of the nonisolated path.
     renderChildren(gridsView)
-
-//    renderChildren(cmdlinesViewController, popupmenuViewController)
   }
 
   public func windowFrame(

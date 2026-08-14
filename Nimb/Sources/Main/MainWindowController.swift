@@ -49,11 +49,13 @@ public class MainWindowController: NSWindowController, Rendering {
   }
 
   public nonisolated func render() {
-    if updates.isMouseUserInteractionEnabledUpdated {
-//      renderIsMouseUserInteractionEnabled()
-    }
-    if updates.isAppearanceUpdated {
-//      customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
+    Task { @MainActor in
+      if updates.isMouseUserInteractionEnabledUpdated {
+        renderIsMouseUserInteractionEnabled()
+      }
+      if updates.isAppearanceUpdated {
+        customWindow.backgroundColor = state.appearance.defaultBackgroundColor.appKit
+      }
     }
 
     renderChildren(viewController)
