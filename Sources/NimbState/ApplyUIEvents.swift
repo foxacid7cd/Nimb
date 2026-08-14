@@ -531,6 +531,7 @@ public extension Actions {
                 cursorPosition: params.pos,
                 firstCharacter: params.firstc,
                 prompt: params.prompt,
+                promptHighlightID: .init(params.hlID),
                 indent: params.indent,
                 level: params.level,
                 specialCharacter: "",

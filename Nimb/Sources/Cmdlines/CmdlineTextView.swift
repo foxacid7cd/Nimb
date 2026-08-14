@@ -166,10 +166,7 @@ public class CmdlineTextView: NSView, Rendering {
         lineAttributedString.append(.init(
           string: contentPart.text
             .replacingOccurrences(of: "\r", with: "↲"),
-          attributes: .init([
-            .font: state.font.appKit(),
-            .foregroundColor: NSColor.labelColor,
-          ]),
+          attributes: attributes(forHighlightID: contentPart.highlightID),
         ))
       }
 
@@ -211,19 +208,12 @@ public class CmdlineTextView: NSView, Rendering {
 
     let cursorPosition = indent + cmdline.cursorPosition
 
-    var location = 0
     for contentPart in cmdline.contentParts {
-      let attributes: [NSAttributedString.Key: Any] = [
-        .font: state.font.appKit(),
-        .foregroundColor: NSColor.labelColor,
-      ]
-
       cmdlineAttributedString.append(.init(
         string: contentPart.text
           .replacingOccurrences(of: "\r", with: "↲"),
-        attributes: attributes,
+        attributes: attributes(forHighlightID: contentPart.highlightID),
       ))
-      location += contentPart.text.count
     }
     cmdlineAttributedString.append(.init(
       string: " ",
@@ -311,5 +301,29 @@ public class CmdlineTextView: NSView, Rendering {
 
     invalidateIntrinsicContentSize()
     setNeedsDisplay(bounds)
+  }
+
+  /// Attributes for a cmdline content chunk, from its highlight group.
+  ///
+  /// Mirrors what MsgShowsViewController does for message chunks. Before
+  /// Neovim 0.12 the chunk carried an attr id we never resolved; it now
+  /// carries a highlight id, so this actually means something.
+  private func attributes(
+    forHighlightID highlightID: Highlight.ID,
+  )
+    -> [NSAttributedString.Key: Any]
+  {
+    var attributes: [NSAttributedString.Key: Any] = [
+      .font: state.font.appKit(
+        isBold: state.appearance.isBold(for: highlightID),
+        isItalic: state.appearance.isItalic(for: highlightID),
+      ),
+      .foregroundColor: state.appearance.foregroundColor(for: highlightID).appKit,
+    ]
+    let backgroundColor = state.appearance.backgroundColor(for: highlightID)
+    if backgroundColor != state.appearance.defaultBackgroundColor {
+      attributes[.backgroundColor] = backgroundColor.appKit
+    }
+    return attributes
   }
 }

@@ -21,6 +21,9 @@ public struct Cmdline: Identifiable, Sendable, Equatable, Hashable {
   public var cursorPosition: Int
   public var firstCharacter: String
   public var prompt: String
+
+  /// Highlight for `prompt`, added to cmdline_show in Neovim 0.12.
+  public var promptHighlightID: Highlight.ID = .zero
   public var indent: Int
   public var level: Int
   public var specialCharacter: String

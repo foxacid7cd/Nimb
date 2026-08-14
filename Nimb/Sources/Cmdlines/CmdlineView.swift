@@ -62,11 +62,17 @@ public class CmdlineView: NSView, Rendering {
     let blockLines = state.cmdlines.blockLines[level] ?? []
 
     if !cmdline.prompt.isEmpty {
+      // 0.12 highlights the input() prompt via cmdline_show's hl_id.
       promptTextField.attributedStringValue = .init(
         string: cmdline.prompt,
         attributes: [
-          .foregroundColor: NSColor.labelColor,
-          .font: NSFont.systemFont(ofSize: NSFont.labelFontSize),
+          .foregroundColor: state.appearance
+            .foregroundColor(for: cmdline.promptHighlightID).appKit,
+          .font: NSFont.systemFont(
+            ofSize: NSFont.labelFontSize,
+            weight: state.appearance.isBold(for: cmdline.promptHighlightID)
+              ? .bold : .regular,
+          ),
         ],
       )
 
