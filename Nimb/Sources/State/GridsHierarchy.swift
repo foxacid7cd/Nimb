@@ -45,7 +45,7 @@ public struct GridsHierarchy: Sendable {
       return false
     }
     var orderChanged = false
-    let lastElementIndex = parentNode.children.index(before: parentNode.children.last!)
+    let lastElementIndex = parentNode.children.index(before: parentNode.children.endIndex)
     if
       let index = parentNode.children.firstIndex(of: id),
       index != lastElementIndex
