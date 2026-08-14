@@ -371,14 +371,16 @@ final nonisolated class GridMetalSceneBuilder {
 }
 
 nonisolated extension Color {
+  /// Built straight from the stored components.
+  ///
+  /// This used to go Color -> NSColor(deviceRed:) -> usingColorSpace(.deviceRGB)
+  /// -> read the components back, which allocated two NSColors and ran a
+  /// colour space conversion to recover the numbers it started from — the
+  /// first NSColor is already deviceRGB, so the conversion was a no-op. It is
+  /// called for every quad and every glyph instance, and showed up in a Time
+  /// Profiler trace as the single most expensive Nimb-owned frame.
   var metal: SIMD4<Float> {
-    let color = appKit.usingColorSpace(.deviceRGB) ?? appKit
-    return .init(
-      Float(color.redComponent),
-      Float(color.greenComponent),
-      Float(color.blueComponent),
-      Float(color.alphaComponent),
-    )
+    .init(Float(red), Float(green), Float(blue), Float(alpha))
   }
 
   var metalClearColor: MTLClearColor {

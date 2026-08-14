@@ -23,15 +23,15 @@ public struct Color: Sendable, Hashable {
     appKit.cgColor
   }
 
-  private var red: Double {
+  public var red: Double {
     Double((rgb >> 16) & 0xFF) / 255
   }
 
-  private var green: Double {
+  public var green: Double {
     Double((rgb >> 8) & 0xFF) / 255
   }
 
-  private var blue: Double {
+  public var blue: Double {
     Double(rgb & 0xFF) / 255
   }
 
