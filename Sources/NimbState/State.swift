@@ -337,11 +337,12 @@ public struct State: Sendable {
               position = index
               break
             } else if depth == layout.depth {
+              // compindex is the order nvim itself renders these in.
               if let layoutFloatingZIndex = layout.floatingZIndex {
-                if floatingWindow.zIndex < layoutFloatingZIndex {
+                if floatingWindow.compositingIndex < layoutFloatingZIndex {
                   position = index
                   break
-                } else if floatingWindow.zIndex == layoutFloatingZIndex {
+                } else if floatingWindow.compositingIndex == layoutFloatingZIndex {
                   if indexInParent < layout.indexInParent {
                     position = index
                     break
@@ -360,7 +361,7 @@ public struct State: Sendable {
               ) + anchorLayout.positionInParent,
               depth: depth,
               indexInParent: indexInParent,
-              floatingZIndex: floatingWindow.zIndex,
+              floatingZIndex: floatingWindow.compositingIndex,
             ),
             forKey: id,
             insertingAt: position ?? layouts.count,

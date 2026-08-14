@@ -382,6 +382,7 @@ public extension Actions {
                 anchorColumn: params.anchorCol,
                 isFocusable: params.mouseEnabled,
                 zIndex: params.zindex,
+                compositingIndex: params.compindex,
               ),
             )
             state.grids[params.grid]?.isHidden = false
