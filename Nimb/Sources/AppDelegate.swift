@@ -37,6 +37,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
     )
 
+    // Applied here rather than only from isDebugUpdated: the flag is restored
+    // into the initial state rather than toggled into it, so no update ever
+    // carries it and a run started with it on would collect nothing.
+    renderStats.isEnabled = initialState.debug.isFrameStatsLoggingEnabled
+
     let neovim = Neovim()
     self.neovim = neovim
 
@@ -78,8 +83,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   /// a later turn: two frames in flight were two unstructured tasks with no
   /// ordering between them, so frame N+1 could paint before frame N.
   private func render(state: State, updates: State.Updates) {
-    update(renderContext: .init(state: state, updates: updates))
-    render()
+    measuringRenderStage("frame hop", .frameHop) {
+      update(renderContext: .init(state: state, updates: updates))
+      render()
+    }
+    renderStats.frameCompleted()
   }
 
   private func setupBindings(store: Store) {
@@ -150,6 +158,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             }
             if updates.isDebugUpdated {
               UserDefaults.standard.debug = state.debug
+              renderStats.isEnabled = state.debug.isFrameStatsLoggingEnabled
             }
             if updates.isErrorExitStatusUpdated {
               logger.error("Neovim process emitted erorr exit UI event with status \(state.errorExitStatus ?? 0)")

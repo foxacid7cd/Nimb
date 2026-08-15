@@ -3,6 +3,7 @@
 import Algorithms
 import Collections
 import Foundation
+import NimbCore
 import NimbNeovim
 import NimbState
 import Synchronization
@@ -159,8 +160,10 @@ public final nonisolated class Store: Sendable {
         continuation.yield((state, updates))
 
         func apply(_ action: any Action) {
-          let newUpdates = action.apply(to: &state) { error in
-            alertsContinuation.yield(.init(error))
+          let newUpdates = measuringRenderStage("reduce", .reduce) {
+            action.apply(to: &state) { error in
+              alertsContinuation.yield(.init(error))
+            }
           }
           updates.formUnion(newUpdates)
 

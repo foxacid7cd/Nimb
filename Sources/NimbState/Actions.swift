@@ -32,6 +32,15 @@ public enum Actions {
     }
   }
 
+  public struct ToggleFrameStatsLogging: Action {
+    public init() { }
+
+    public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      state.debug.isFrameStatsLoggingEnabled.toggle()
+      return .init(needFlush: true, isDebugUpdated: true)
+    }
+  }
+
   public struct ToggleStoreActionsLogging: Action {
     public init() { }
 

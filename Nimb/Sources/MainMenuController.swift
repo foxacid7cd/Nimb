@@ -258,6 +258,10 @@ final class MainMenuController: NSObject, Rendering {
     store.dispatch(Actions.ToggleCoreGraphicsRendering())
   }
 
+  @objc private func handleToggleFrameStatsLogging() {
+    store.dispatch(Actions.ToggleFrameStatsLogging())
+  }
+
   @objc private func handleLogState() {
     Task {
       var dump = ""
@@ -428,6 +432,15 @@ extension MainMenuController: NSMenuDelegate {
       )
       toggleCoreGraphicsRenderingMenuItem.target = self
 
+      let toggleFrameStatsLoggingMenuItem = NSMenuItem(
+        title: state.debug
+          .isFrameStatsLoggingEnabled ? "Disable frame stats logging" :
+          "Enable frame stats logging",
+        action: #selector(handleToggleFrameStatsLogging),
+        keyEquivalent: "",
+      )
+      toggleFrameStatsLoggingMenuItem.target = self
+
       menu.items = [
         logStateMenuItem,
         NSMenuItem.separator(),
@@ -436,6 +449,7 @@ extension MainMenuController: NSMenuDelegate {
         toggleStoreActionsLoggingMenuItem,
         NSMenuItem.separator(),
         toggleCoreGraphicsRenderingMenuItem,
+        toggleFrameStatsLoggingMenuItem,
       ]
 
     default:

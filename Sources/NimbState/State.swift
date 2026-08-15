@@ -16,6 +16,10 @@ public struct State: Sendable {
     /// Draw with CoreGraphics/CoreText instead of Metal, so the two can be
     /// compared on the same workload.
     public var isCoreGraphicsRenderingEnabled: Bool = false
+    /// Accumulate per-stage render timings and log a summary every 120 frames.
+    /// Signposts are always emitted; this only turns on the clock reads and the
+    /// aggregation behind them, so a regression is visible without Instruments.
+    public var isFrameStatsLoggingEnabled: Bool = false
   }
 
   @PublicInit
