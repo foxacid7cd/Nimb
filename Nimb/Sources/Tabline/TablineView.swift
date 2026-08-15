@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import TinyConstraints
-
-extension Notification: @unchecked @retroactive Sendable { }
+import NimbNeovim
 
 final class TablineView: NSVisualEffectView, Rendering {
-  override public var isOpaque: Bool {
+  override var isOpaque: Bool {
     true
   }
 
   override var intrinsicContentSize: NSSize {
     .init(width: NSView.noIntrinsicMetric, height: preferredViewHeight)
   }
+
+  var renderContext: RenderContext! = nil
 
   var preferredViewHeight: CGFloat = 0 {
     didSet {
@@ -26,11 +26,11 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let buffersScrollView = NSScrollView()
   private let buffersStackView = NSStackView(views: [])
   private let buffersMaskLayer = CALayer()
-  private var buffersScrollViewFrameObservation: NSKeyValueObservation?
+  private var buffersScrollViewFrameObservation: NSKeyValueObservation? = nil
   private let tabsScrollView = NSScrollView()
   private let tabsStackView = NSStackView(views: [])
   private let tabsMaskLayer = CALayer()
-  private var tabsScrollViewFrameObservation: NSKeyValueObservation?
+  private var tabsScrollViewFrameObservation: NSKeyValueObservation? = nil
   private let titleTextField = NSTextField(labelWithString: "")
 
   private lazy var titleParagraphStyle: NSParagraphStyle = {
@@ -54,7 +54,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       top: 0,
       left: 12,
       bottom: 0,
-      right: 12
+      right: 12,
     )
     buffersScrollView.horizontalScrollElasticity = .none
     buffersScrollView.verticalScrollElasticity = .none
@@ -69,7 +69,7 @@ final class TablineView: NSVisualEffectView, Rendering {
           self?.buffersMaskLayer.frame = .init(origin: .init(), size: size)
           self?.buffersMaskLayer.contents = NSImage.makeSlantedBackground(
             size: size,
-            fill: .color(.black)
+            fill: .color(.black),
           )
         }
       }
@@ -80,12 +80,12 @@ final class TablineView: NSVisualEffectView, Rendering {
     buffersScrollView.widthToSuperview(
       nil,
       multiplier: 0.5,
-      relation: .equalOrLess
+      relation: .equalOrLess,
     )
     buffersScrollView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     buffersScrollView.setContentCompressionResistancePriority(
       .defaultHigh,
-      for: .horizontal
+      for: .horizontal,
     )
 
     buffersStackView.orientation = .horizontal
@@ -98,7 +98,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       to: buffersStackView,
       offset: buffersScrollView.contentInsets.left + buffersScrollView
         .contentInsets.right,
-      priority: .init(rawValue: 500)
+      priority: .init(rawValue: 500),
     )
 
     tabsScrollView.automaticallyAdjustsContentInsets = false
@@ -117,7 +117,7 @@ final class TablineView: NSVisualEffectView, Rendering {
           self?.tabsMaskLayer.contents = NSImage.makeSlantedBackground(
             isFlatRight: true,
             size: size,
-            fill: .color(.black)
+            fill: .color(.black),
           )
         }
       }
@@ -129,7 +129,7 @@ final class TablineView: NSVisualEffectView, Rendering {
     tabsScrollView.widthToSuperview(
       nil,
       multiplier: 0.3,
-      relation: .equalOrLess
+      relation: .equalOrLess,
     )
 
     tabsStackView.orientation = .horizontal
@@ -142,7 +142,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       to: tabsStackView,
       offset: tabsScrollView.contentInsets.left + tabsScrollView.contentInsets
         .right,
-      priority: .init(rawValue: 500)
+      priority: .init(rawValue: 500),
     )
 
     addSubview(titleTextField)
@@ -151,20 +151,20 @@ final class TablineView: NSVisualEffectView, Rendering {
     titleTextField.leadingToTrailing(
       of: buffersScrollView,
       offset: 10,
-      relation: .equalOrGreater
+      relation: .equalOrGreater,
     )
     titleTextField.trailingToLeading(
       of: tabsScrollView,
       offset: -10,
-      relation: .equalOrLess
+      relation: .equalOrLess,
     )
     titleTextField.setContentHuggingPriority(
       .init(rawValue: 100),
-      for: .horizontal
+      for: .horizontal,
     )
     titleTextField.setContentCompressionResistancePriority(
       .defaultLow,
-      for: .horizontal
+      for: .horizontal,
     )
   }
 
@@ -199,7 +199,7 @@ final class TablineView: NSVisualEffectView, Rendering {
             NSColor.secondaryLabelColor,
           .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
           .paragraphStyle: titleParagraphStyle,
-        ]
+        ],
       )
     }
 
@@ -216,7 +216,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       } else {
         let monochromeFilter = CIFilter(
           name: "CIColorControls",
-          parameters: [kCIInputSaturationKey: 0]
+          parameters: [kCIInputSaturationKey: 0],
         )!
         buffersScrollView.layer!.filters = [monochromeFilter]
         tabsScrollView.layer!.filters = [monochromeFilter]
@@ -303,7 +303,7 @@ final class TablineView: NSVisualEffectView, Rendering {
         var observation: NSKeyValueObservation?
         observation = itemView
           .observe(\.frame, options: .new) { [buffersScrollView] itemView, _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
               if itemView.frame.size != .zero, observation != nil {
                 buffersScrollView.contentView.scrollToVisible(itemView.frame)
                 observation = nil
@@ -321,7 +321,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       itemView.heightToSuperview()
       itemView.setContentCompressionResistancePriority(
         .init(rawValue: 800),
-        for: .horizontal
+        for: .horizontal,
       )
     }
   }
@@ -344,7 +344,7 @@ final class TablineView: NSVisualEffectView, Rendering {
         var observation: NSKeyValueObservation?
         observation = itemView
           .observe(\.frame, options: .new) { [tabsScrollView] itemView, _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
               if itemView.frame.size != .zero, observation != nil {
                 tabsScrollView.contentView.scrollToVisible(itemView.frame)
                 observation = nil
@@ -362,7 +362,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       itemView.heightToSuperview()
       itemView.setContentCompressionResistancePriority(
         .init(rawValue: 800),
-        for: .horizontal
+        for: .horizontal,
       )
     }
   }

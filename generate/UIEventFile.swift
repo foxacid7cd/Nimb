@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: MIT
 
 import Algorithms
-import CasePaths
 import Foundation
+import NimbCore
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct UIEventFile: GeneratableFile {
   public var metadata: Metadata
 
-  public var name: String { "UIEvent" }
+  public var name: String {
+    "UIEvent"
+  }
 
   public var sourceFile: SourceFileSyntax {
     get throws {
       try .init {
         try .init {
-          """
-
-          import CasePaths
-
-          """ as DeclSyntax
+          "import NimbCore" as DeclSyntax
+          "" as DeclSyntax
 
           try EnumDeclSyntax("public enum UIEvent: Sendable, Equatable") {
             for uiEvent in metadata.uiEvents {
@@ -71,7 +70,7 @@ public struct UIEventFile: GeneratableFile {
 
           try ExtensionDeclSyntax("public extension Array<UIEvent>") {
             try InitializerDeclSyntax(
-              "init(rawRedrawNotificationParameters: some Sequence<Value>) throws"
+              "init(rawRedrawNotificationParameters: some Sequence<Value>) throws",
             ) {
               """
               var accumulator = [UIEvent]()
@@ -79,7 +78,7 @@ public struct UIEventFile: GeneratableFile {
               """ as DeclSyntax
 
               try ForStmtSyntax(
-                "for rawParameter in rawRedrawNotificationParameters"
+                "for rawParameter in rawRedrawNotificationParameters",
               ) {
                 StmtSyntax(
                   """
@@ -87,7 +86,7 @@ public struct UIEventFile: GeneratableFile {
                     throw Failure(rawRedrawNotificationParameters)
                   }
 
-                  """
+                  """,
                 )
 
                 StmtSyntax(
@@ -96,7 +95,7 @@ public struct UIEventFile: GeneratableFile {
                     throw Failure(rawRedrawNotificationParameters)
                   }
 
-                  """
+                  """,
                 )
 
                 try SwitchExprSyntax("switch uiEventName") {
@@ -117,7 +116,7 @@ public struct UIEventFile: GeneratableFile {
                           .camelCasedAssumingSnakeCased(capitalized: false)
 
                         try ForStmtSyntax(
-                          "for rawUIEvent in rawParameter.dropFirst()"
+                          "for rawUIEvent in rawParameter.dropFirst()",
                         ) {
                           StmtSyntax(
                             """
@@ -125,7 +124,7 @@ public struct UIEventFile: GeneratableFile {
                               throw Failure(rawRedrawNotificationParameters)
                             }
 
-                            """
+                            """,
                           )
 
                           let parametersCountCondition =
@@ -134,18 +133,18 @@ public struct UIEventFile: GeneratableFile {
                             .parameters
                             .enumerated()
                             .partitioned(by: {
-                              $0.element.type.swift[case: \.value] == nil
+                              $0.element.type.swift.isValue == false
                             })
 
                           let parameterTypeConditions = otherParameters
                             .map { index, parameter -> String in
                               let identifier = parameter.name
                                 .camelCasedAssumingSnakeCased(
-                                  capitalized: false
+                                  capitalized: false,
                                 )
                               return parameter.type.wrapWithValueDecoder(
                                 "rawUIEventParameters[\(index)]",
-                                name: identifier
+                                name: identifier,
                               )
                             }
 
@@ -162,7 +161,7 @@ public struct UIEventFile: GeneratableFile {
                               throw Failure(rawRedrawNotificationParameters)
                             }
 
-                            """
+                            """,
                           )
 
                           for (index, parameter) in valueParameters {
@@ -180,7 +179,7 @@ public struct UIEventFile: GeneratableFile {
                               .map { parameter in
                                 let name = parameter.name
                                   .camelCasedAssumingSnakeCased(
-                                    capitalized: false
+                                    capitalized: false,
                                   )
                                 return "\(name): \(name)"
                               }
@@ -228,5 +227,7 @@ public struct UIEventFile: GeneratableFile {
     }
   }
 
-  public init(metadata: Metadata) { self.metadata = metadata }
+  public init(metadata: Metadata) {
+    self.metadata = metadata
+  }
 }

@@ -3,46 +3,117 @@
 import Algorithms
 import AppKit
 import Collections
-import ConcurrencyExtras
 import CustomDump
-import Queue
+import Metal
+import NimbCore
+import NimbState
+import QuartzCore
+import Synchronization
 
-public class GridLayer: CALayer, Rendering, @unchecked Sendable {
+struct GridDrawSnapshot: Sendable {
+  let grid: Grid
+  let upsideDownTransform: CGAffineTransform
+  let font: Font
+  let appearance: Appearance
+  let cursorBlinkingPhase: Bool
+  let isMouseUserInteractionEnabled: Bool
+}
+
+struct GridRenderInput: Sendable {
+  let snapshot: GridDrawSnapshot
+  let updates: State.Updates
+  let metalFrame: GridPreparedMetalFrame?
+}
+
+/// Stays off the main actor even though the rest of the app target defaults
+/// to it: CALayer's initialisers and draw(in:) are nonisolated in the SDK, so
+/// an isolated subclass cannot override them.
+public nonisolated class GridLayer: CAMetalLayer {
+  private struct MetalUniforms {
+    var viewportSize: SIMD2<Float>
+  }
+
+  private final class MetalBufferCache {
+    enum Kind {
+      case backgroundQuads
+      case decorationQuads
+      case glyphs
+      case cursorQuads
+      case cursorGlyphs
+    }
+
+    private struct Entry {
+      let buffer: MTLBuffer
+      let capacity: Int
+    }
+
+    private let device: MTLDevice
+    private var entries: [Kind: Entry] = [:]
+
+    init(device: MTLDevice) {
+      self.device = device
+    }
+
+    func buffer<T>(for values: [T], kind: Kind) -> MTLBuffer? {
+      let length = MemoryLayout<T>.stride * values.count
+      guard length > 0 else {
+        return nil
+      }
+
+      if entries[kind]?.capacity ?? 0 < length {
+        var capacity = max(4 * 1024, MemoryLayout<T>.stride)
+        while capacity < length {
+          capacity *= 2
+        }
+
+        guard let buffer = device.makeBuffer(length: capacity, options: .storageModeShared) else {
+          return nil
+        }
+        entries[kind] = Entry(buffer: buffer, capacity: capacity)
+      }
+
+      guard let entry = entries[kind] else {
+        return nil
+      }
+
+      values.withUnsafeBytes { bytes in
+        guard let baseAddress = bytes.baseAddress else {
+          return
+        }
+        memcpy(entry.buffer.contents(), baseAddress, length)
+      }
+
+      return entry.buffer
+    }
+  }
+
+  private static let metalRenderer = GridMetalRenderer.shared
+  private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+
   private let gridID: Grid.ID
   private let store: Store
-
-  @MainActor
-  public var grid: Grid? {
-    guard isRendered else {
-      return nil
-    }
-    return state.grids[gridID]
-  }
-
-  @MainActor
-  private var upsideDownTransform: CGAffineTransform? {
-    guard let grid else {
-      return nil
-    }
-    return .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
-  }
+  private nonisolated let isolatedRenderInput = Mutex<GridRenderInput?>(nil)
+  private var metalBufferCache: MetalBufferCache? = nil
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
     gridID = gridLayer.gridID
     store = gridLayer.store
     super.init(layer: layer)
+
+    configureMetalLayer()
   }
 
   @MainActor
   init(
     store: Store,
-    gridID: Grid.ID
+    gridID: Grid.ID,
   ) {
     self.store = store
     self.gridID = gridID
     super.init()
+
+    configureMetalLayer()
 
     masksToBounds = true
     drawsAsynchronously = true
@@ -54,88 +125,279 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override public func display() {
+    guard
+      let metalRenderer = Self.metalRenderer,
+      let renderInput = currentRenderInput(),
+      renderWithMetal(renderInput: renderInput, renderer: metalRenderer)
+    else {
+      super.display()
+      return
+    }
+  }
+
   override public func draw(in ctx: CGContext) {
-    MainActor.assumeIsolated {
-      guard isRendered, let grid, let upsideDownTransform else {
-        return
+    guard let snapshot = makeDrawSnapshot() else {
+      return
+    }
+
+    draw(
+      snapshot: snapshot,
+      in: ctx,
+      clipRect: ctx.boundingBoxOfClipPath,
+    )
+  }
+
+  public nonisolated func render() {
+    guard let renderInput = isolatedRenderInput.withLock({ $0 }) else {
+      return
+    }
+
+    for dirtyRect in calculateDirtyRects(renderInput: renderInput) {
+      let clippedDirtyRect = dirtyRect.intersection(bounds)
+      guard !clippedDirtyRect.isNull, !clippedDirtyRect.isEmpty else {
+        continue
       }
+      setNeedsDisplay(clippedDirtyRect)
+    }
+  }
 
-      ctx.saveGState()
-      defer { ctx.restoreGState() }
+  nonisolated func update(renderInput: GridRenderInput?) {
+    isolatedRenderInput.withLock { $0 = renderInput }
+  }
 
-      let boundingRect = IntegerRectangle(
-        frame: ctx.boundingBoxOfClipPath.applying(upsideDownTransform),
-        cellSize: state.font.cellSize
-      )
+  func updateDrawableSize() {
+    let scale = max(contentsScale, 1)
+    drawableSize = .init(
+      width: ceil(bounds.width * scale),
+      height: ceil(bounds.height * scale),
+    )
+  }
 
-      ctx.setAllowsAntialiasing(false)
-      ctx.setAllowsFontSmoothing(false)
-      ctx.setShouldAntialias(false)
-      ctx.setShouldSmoothFonts(false)
-      grid.drawRuns.drawBackground(
-        to: ctx,
-        boundingRect: boundingRect,
-        font: state.font,
-        appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform
-      )
+  private func configureMetalLayer() {
+    guard let metalRenderer = Self.metalRenderer else {
+      return
+    }
 
-      ctx.setAllowsAntialiasing(true)
-      ctx.setAllowsFontSmoothing(true)
-      ctx.setShouldAntialias(true)
-      ctx.setShouldSmoothFonts(true)
-      grid.drawRuns.drawForeground(
-        to: ctx,
-        boundingRect: boundingRect,
-        font: state.font,
-        appearance: state.appearance,
-        upsideDownTransform: upsideDownTransform
-      )
+    device = metalRenderer.device
+    pixelFormat = .bgra8Unorm
+    // The drawable is only ever a render target -- nothing samples, blits or
+    // reads it back -- so it can stay framebuffer-only and keep lossless
+    // compression. Every grid is its own CAMetalLayer, so the saved
+    // compositor bandwidth multiplies.
+    framebufferOnly = true
+    colorspace = Self.colorSpace
+    isOpaque = false
+  }
 
-      if
-        state.cursorBlinkingPhase,
-        state.isMouseUserInteractionEnabled,
-        let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-        boundingRect.contains(cursorDrawRun.origin)
-      {
-        cursorDrawRun.draw(
+  private func makeDrawSnapshot() -> GridDrawSnapshot? {
+    isolatedRenderInput.withLock { $0?.snapshot }
+  }
+
+  private func currentRenderInput() -> GridRenderInput? {
+    isolatedRenderInput.withLock { $0 }
+  }
+
+  private func renderWithMetal(
+    renderInput: GridRenderInput,
+    renderer: GridMetalRenderer,
+  )
+  -> Bool {
+    guard
+      let metalFrame = renderInput.metalFrame,
+      let drawable = nextDrawable(),
+      let commandBuffer = renderer.commandQueue.makeCommandBuffer()
+    else {
+      return false
+    }
+
+    let renderPassDescriptor = MTLRenderPassDescriptor()
+    renderPassDescriptor.colorAttachments[0].texture = drawable.texture
+    renderPassDescriptor.colorAttachments[0].loadAction = .clear
+    renderPassDescriptor.colorAttachments[0].storeAction = .store
+    renderPassDescriptor.colorAttachments[0].clearColor = metalFrame.clearColor
+
+    guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+      return false
+    }
+
+    let uniforms = MetalUniforms(
+      viewportSize: .init(Float(bounds.width), Float(bounds.height)),
+    )
+    let bufferCache = prepareBufferCache(renderer: renderer)
+
+    encodeQuadInstances(metalFrame.scene.backgroundQuads, kind: .backgroundQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeQuadInstances(metalFrame.scene.decorationQuads, kind: .decorationQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeGlyphInstances(
+      metalFrame.scene.glyphInstances,
+      kind: .glyphs,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      atlasTexture: metalFrame.atlasTexture,
+      encoder: renderEncoder,
+    )
+    encodeQuadInstances(metalFrame.scene.cursorQuads, kind: .cursorQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeGlyphInstances(
+      metalFrame.scene.cursorGlyphInstances,
+      kind: .cursorGlyphs,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      atlasTexture: metalFrame.atlasTexture,
+      encoder: renderEncoder,
+    )
+    renderEncoder.endEncoding()
+
+    commandBuffer.present(drawable)
+    commandBuffer.commit()
+
+    return true
+  }
+
+  private func prepareBufferCache(renderer: GridMetalRenderer) -> MetalBufferCache {
+    if let metalBufferCache {
+      return metalBufferCache
+    }
+
+    let bufferCache = MetalBufferCache(device: renderer.device)
+    metalBufferCache = bufferCache
+    return bufferCache
+  }
+
+  private func encodeQuadInstances(
+    _ instances: [GridMetalQuadInstance],
+    kind: MetalBufferCache.Kind,
+    uniforms: MetalUniforms,
+    renderer: GridMetalRenderer,
+    bufferCache: MetalBufferCache,
+    encoder: MTLRenderCommandEncoder,
+  ) {
+    guard
+      !instances.isEmpty,
+      let buffer = bufferCache.buffer(for: instances, kind: kind)
+    else {
+      return
+    }
+
+    var uniforms = uniforms
+    encoder.setRenderPipelineState(renderer.quadPipelineState)
+    encoder.setVertexBuffer(buffer, offset: 0, index: 0)
+    encoder.setVertexBytes(&uniforms, length: MemoryLayout<MetalUniforms>.stride, index: 1)
+    encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: instances.count)
+  }
+
+  private func encodeGlyphInstances(
+    _ instances: [GridMetalGlyphInstance],
+    kind: MetalBufferCache.Kind,
+    uniforms: MetalUniforms,
+    renderer: GridMetalRenderer,
+    bufferCache: MetalBufferCache,
+    atlasTexture: MTLTexture,
+    encoder: MTLRenderCommandEncoder,
+  ) {
+    guard
+      !instances.isEmpty,
+      let buffer = bufferCache.buffer(for: instances, kind: kind)
+    else {
+      return
+    }
+
+    var uniforms = uniforms
+    encoder.setRenderPipelineState(renderer.glyphPipelineState)
+    encoder.setVertexBuffer(buffer, offset: 0, index: 0)
+    encoder.setVertexBytes(&uniforms, length: MemoryLayout<MetalUniforms>.stride, index: 1)
+    encoder.setFragmentTexture(atlasTexture, index: 0)
+    encoder.setFragmentSamplerState(renderer.glyphSamplerState, index: 0)
+    encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: instances.count)
+  }
+
+  private func draw(
+    snapshot: GridDrawSnapshot,
+    in ctx: CGContext,
+    clipRect: CGRect,
+  ) {
+    ctx.saveGState()
+    defer { ctx.restoreGState() }
+
+    let boundingRect = IntegerRectangle(
+      frame: clipRect.applying(snapshot.upsideDownTransform),
+      cellSize: snapshot.font.cellSize,
+    )
+    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
+      boundingRect: boundingRect,
+      font: snapshot.font,
+      upsideDownTransform: snapshot.upsideDownTransform,
+    )
+
+    ctx.setAllowsAntialiasing(false)
+    ctx.setAllowsFontSmoothing(false)
+    ctx.setShouldAntialias(false)
+    ctx.setShouldSmoothFonts(false)
+    for rowDrawRuns in visibleRowDrawRuns {
+      for visibleDrawRun in rowDrawRuns.drawRuns {
+        visibleDrawRun.drawRun.drawBackground(
           to: ctx,
-          font: state.font,
-          appearance: state.appearance,
-          upsideDownTransform: upsideDownTransform
+          at: visibleDrawRun.rect.origin,
+          font: snapshot.font,
+          appearance: snapshot.appearance,
         )
       }
     }
+
+    ctx.setAllowsAntialiasing(true)
+    ctx.setAllowsFontSmoothing(true)
+    ctx.setShouldAntialias(true)
+    ctx.setShouldSmoothFonts(true)
+    for rowDrawRuns in visibleRowDrawRuns {
+      for visibleDrawRun in rowDrawRuns.drawRuns {
+        visibleDrawRun.drawRun.drawForeground(
+          to: ctx,
+          at: visibleDrawRun.rect,
+          font: snapshot.font,
+          appearance: snapshot.appearance,
+        )
+      }
+    }
+
+    if
+      snapshot.cursorBlinkingPhase,
+      snapshot.isMouseUserInteractionEnabled,
+      let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
+      boundingRect.contains(cursorDrawRun.origin)
+    {
+      cursorDrawRun.draw(
+        to: ctx,
+        font: snapshot.font,
+        appearance: snapshot.appearance,
+        upsideDownTransform: snapshot.upsideDownTransform,
+      )
+    }
   }
 
-  @MainActor
-  public func render() {
-    for dirtyRect in calculateDirtyRects() {
-      setNeedsDisplay(dirtyRect)
-    }
-    displayIfNeeded()
-  }
+  private func calculateDirtyRects(renderInput: GridRenderInput) -> [CGRect] {
+    let snapshot = renderInput.snapshot
+    let grid = snapshot.grid
+    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
+      .translatedBy(x: 0, y: -Double(grid.rowsCount) * snapshot.font.cellHeight)
 
-  @MainActor
-  private func calculateDirtyRects() -> [CGRect] {
-    guard isRendered, let grid, let upsideDownTransform else {
-      return []
-    }
-
-    if updates.isFontUpdated || updates.isAppearanceUpdated {
+    if renderInput.updates.isFontUpdated || renderInput.updates.isAppearanceUpdated {
       return [bounds]
     }
 
     var dirtyRects: [CGRect] = []
 
-    if let gridUpdate = updates.gridUpdates[gridID] {
+    if let gridUpdate = renderInput.updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
           dirtyRects.append(
-            (rectangle * state.font.cellSize)
-              .insetBy(dx: -state.font.cellSize.width, dy: -state.font.cellSize.height * 0.5)
-              .applying(upsideDownTransform)
+            (rectangle * snapshot.font.cellSize)
+              .insetBy(
+                dx: -snapshot.font.cellSize.width,
+                dy: -snapshot.font.cellSize.height * 0.5,
+              )
+              .applying(upsideDownTransform),
           )
         }
 
@@ -146,16 +408,14 @@ public class GridLayer: CALayer, Rendering, @unchecked Sendable {
 
     if
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated
+      renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isMouseUserInteractionEnabledUpdated
     {
       dirtyRects.append(
-        (cursorDrawRun.rectangle * state.font.cellSize)
-          .applying(upsideDownTransform)
+        (cursorDrawRun.rectangle * snapshot.font.cellSize)
+          .applying(upsideDownTransform),
       )
     }
 
     return dirtyRects
   }
 }
-
-extension CGContext: @unchecked @retroactive Sendable { }

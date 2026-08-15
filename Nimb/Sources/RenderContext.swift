@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import Foundation
-import ObjectiveC
+import NimbState
 
 public final class RenderContext: Sendable {
   public let state: State
@@ -13,62 +12,48 @@ public final class RenderContext: Sendable {
   }
 }
 
-public protocol Rendering {
-  @MainActor var renderContext: RenderContext { get }
-  @MainActor func update(renderContext: RenderContext)
-  @MainActor func render()
+/// Isolated to the main actor: every conformer is an AppKit object, and the
+/// render tree is walked synchronously from the top. Before this was isolated,
+/// each conformer satisfied a nonisolated requirement by hopping to the main
+/// actor itself, so a single frame fanned out into a set of unstructured tasks
+/// whose relative order was unspecified — frame N+1 could interleave with
+/// frame N.
+///
+/// Conformers store the context themselves. It used to be smuggled through an
+/// ObjC associated object so the protocol could provide it without a stored
+/// property, which cost a force-cast on every read and a deliberately leaked
+/// key.
+@MainActor
+public protocol Rendering: AnyObject {
+  var renderContext: RenderContext! { get set }
+  func render()
 }
 
 public extension Rendering {
-  @MainActor var state: State {
+  var state: State {
     renderContext.state
   }
 
-  @MainActor var updates: State.Updates {
+  var updates: State.Updates {
     renderContext.updates
   }
-}
 
-public extension Rendering where Self: AnyObject {
-  @MainActor var isRendered: Bool {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_getAssociatedObject(self, keyPointer) != nil
-    }
+  var isRendered: Bool {
+    renderContext != nil
   }
 
-  @MainActor var renderContext: RenderContext {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_getAssociatedObject(self, keyPointer) as! RenderContext
-    }
+  func update(renderContext: RenderContext) {
+    self.renderContext = renderContext
   }
 
-  @MainActor func update(renderContext: RenderContext) {
-    withUnsafePointer(
-      to: &renderingContextAssociatedObjectKey
-    ) { keyPointer in
-      objc_setAssociatedObject(
-        self,
-        keyPointer,
-        renderContext,
-        .OBJC_ASSOCIATION_RETAIN
-      )
-    }
-  }
-
-  @MainActor func renderChildren(_ children: any Sequence<Rendering>) {
+  func renderChildren(_ children: any Sequence<Rendering>) {
     for child in children {
       child.update(renderContext: renderContext)
       child.render()
     }
   }
 
-  @MainActor func renderChildren(_ children: (any Rendering)...) {
+  func renderChildren(_ children: (any Rendering)...) {
     renderChildren(children)
   }
 }
-
-@MainActor private var renderingContextAssociatedObjectKey: String = "renderingContextAssociatedObjectKey"

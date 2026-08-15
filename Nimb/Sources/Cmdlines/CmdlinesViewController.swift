@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import TinyConstraints
+import NimbCore
+import NimbState
 
 public class CmdlinesViewController: NSViewController, Rendering {
   private static let observedHighlightName: Set<
     Appearance
-      .ObservedHighlightName
+      .ObservedHighlightName,
   > = [
     .normalFloat,
     .special,
   ]
+
+  public var renderContext: RenderContext! = nil
 
   private let store: Store
   private lazy var customView = FloatingWindowView()

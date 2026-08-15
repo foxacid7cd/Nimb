@@ -51,16 +51,26 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 
-### Xcode Patch ###
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcworkspace/contents.xcworkspacedata
-
-/Targets/**/Generated
 
 build/
 .build/
 
-/Legacy/
-generated/
+/Sources/NimbNeovim/Generated/
+
+### Tuist
+# Nimb.xcodeproj and Nimb.xcworkspace are generated from Project.swift.
+*.xcodeproj
+*.xcworkspace
+Derived/
+# ...but keep the SPM lockfile, which Xcode only reads from inside the
+# generated workspace. Without this the dependency versions would drift on
+# every fresh resolve.
+!Nimb.xcworkspace/
+Nimb.xcworkspace/*
+!Nimb.xcworkspace/xcshareddata/
+Nimb.xcworkspace/xcshareddata/*
+!Nimb.xcworkspace/xcshareddata/swiftpm/
+Nimb.xcworkspace/xcshareddata/swiftpm/*
+!Nimb.xcworkspace/xcshareddata/swiftpm/Package.resolved
+.tuist/
+Tuist/.build/

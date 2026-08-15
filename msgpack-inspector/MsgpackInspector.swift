@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 
 import ArgumentParser
-import CoreLocation
 import Darwin
 import Foundation
+import NimbCore
 import System
 
 @main
 struct MsgpackInspector: AsyncParsableCommand {
   @Option(name: .shortAndLong, completion: .file())
-  public var output: String? = nil
+  var output: String? = nil
 
   @Argument
-  public var executablePath: String
+  var executablePath: String
 
   @Argument(parsing: .captureForPassthrough)
-  public var passthroughArguments: [String] = []
+  var passthroughArguments: [String] = []
 
   func run() async throws {
     var fdMaster: Int32 = 0
@@ -81,7 +81,9 @@ struct MsgpackInspector: AsyncParsableCommand {
   }
 }
 
-var orig_termios = termios()
+/// Saved terminal state, touched only from the main thread during setup and
+/// from the `atexit` handler installed below.
+nonisolated(unsafe) var orig_termios = termios()
 func reset_terminal_mode() {
   tcsetattr(0, TCSANOW, &orig_termios)
 }

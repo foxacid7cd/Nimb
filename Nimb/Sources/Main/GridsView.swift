@@ -2,7 +2,8 @@
 
 import AppKit
 import Collections
-import CustomDump
+import NimbCore
+import NimbState
 
 public class GridsView: NSView, Rendering {
   override public var intrinsicContentSize: NSSize {
@@ -12,17 +13,19 @@ public class GridsView: NSView, Rendering {
     return outerGrid.size * state.font.cellSize
   }
 
+  public var renderContext: RenderContext! = nil
+
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<GridView>()
-  private var leftMouseInteractionTarget: GridView?
-  private var rightMouseInteractionTarget: GridView?
-  private var otherMouseInteractionTarget: GridView?
+  private var leftMouseInteractionTarget: GridView? = nil
+  private var rightMouseInteractionTarget: GridView? = nil
+  private var otherMouseInteractionTarget: GridView? = nil
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
       .translatedBy(
         x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight
+        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight,
       )
   }
 
@@ -76,9 +79,10 @@ public class GridsView: NSView, Rendering {
     if !updatedLayoutGridIDs.isEmpty || updates.isGridsHierarchyUpdated {
       let upsideDownTransform = upsideDownTransform
 
-      var zPositions = [ObjectIdentifier: Double]()
+      // walkingGridFrames yields back to front, so this is the stacking order.
+      var orderedGridViews = [NSView]()
 
-      state.walkingGridFrames { id, frame, zPosition in
+      state.walkingGridFrames { id, frame, _ in
         guard let gridView = arrangedGridViews[id] else {
           logger.warning("walkingGridFrames: gridView with id \(id) not found")
           return
@@ -89,15 +93,17 @@ public class GridsView: NSView, Rendering {
           gridView.frame = newFrame
         }
 
-        zPositions[ObjectIdentifier(gridView)] = zPosition
+        orderedGridViews.append(gridView)
       }
 
-      var zPositionsObject = zPositions as NSDictionary
-      withUnsafeMutablePointer(to: &zPositionsObject) { pointer in
-        sortSubviews(
-          subviewSortingFunction(firstView:secondView:context:),
-          context: UnsafeMutableRawPointer(pointer)
-        )
+      // Apply it. subviews[0] is the backmost view in AppKit, which matches
+      // the order above. Anything walkingGridFrames did not visit — hidden or
+      // external grids — keeps its relative position underneath.
+      let ordered = Set(orderedGridViews.map(ObjectIdentifier.init))
+      let unvisited = subviews.filter { !ordered.contains(ObjectIdentifier($0)) }
+      let newSubviews = unvisited + orderedGridViews
+      if subviews != newSubviews {
+        subviews = newSubviews
       }
     }
 
@@ -106,7 +112,7 @@ public class GridsView: NSView, Rendering {
 
   public func windowFrame(
     forGridID gridID: Grid.ID,
-    gridFrame: IntegerRectangle
+    gridFrame: IntegerRectangle,
   )
     -> CGRect?
   {
@@ -121,7 +127,7 @@ public class GridsView: NSView, Rendering {
       let view = GridView(
         frame: .init(x: 0, y: 0, width: 200, height: 200),
         store: store,
-        gridID: id
+        gridID: id,
       )
       renderChildren(view)
       view.autoresizingMask = []
@@ -137,20 +143,7 @@ public class GridsView: NSView, Rendering {
       .applying(upsideDownTransform)
     return .init(
       column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight)
+      row: Int(upsideDownLocation.y / state.font.cellHeight),
     )
   }
-}
-
-private func subviewSortingFunction(firstView: NSView, secondView: NSView, context: UnsafeMutableRawPointer?) -> ComparisonResult {
-  guard
-    let zPositionsObject = context?.assumingMemoryBound(to: NSDictionary.self).pointee,
-    let zPositions = zPositionsObject as? [ObjectIdentifier: Double],
-    let firstZPosition = zPositions[ObjectIdentifier(firstView)],
-    let secondZPosition = zPositions[ObjectIdentifier(secondView)],
-    firstZPosition != secondZPosition
-  else {
-    return .orderedSame
-  }
-  return firstZPosition < secondZPosition ? .orderedAscending : .orderedDescending
 }

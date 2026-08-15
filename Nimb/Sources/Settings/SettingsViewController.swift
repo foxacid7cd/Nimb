@@ -23,7 +23,7 @@ public class SettingsViewController: NSViewController {
       top: 16,
       left: 16,
       bottom: 16,
-      right: 16
+      right: 16,
     ))
 
     stackView.setCustomSpacing(16, after: environmentView)
@@ -41,7 +41,7 @@ public class SettingsViewController: NSViewController {
       top: 0,
       left: 8,
       bottom: 4,
-      right: 8
+      right: 8,
     ))
 
     return headerView

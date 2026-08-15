@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
-import CasePaths
+import NimbState
 
 public class PopupmenuViewController: NSViewController, Rendering {
+  public var renderContext: RenderContext! = nil
+
   public var anchorConstraints = [NSLayoutConstraint]()
 
-  public var willShowPopupmenu: (() -> Void)?
+  public var willShowPopupmenu: (() -> Void)? = nil
 
   private let store: Store
   private let getCmdlinesView: () -> NSView
   private lazy var customView = FloatingWindowView()
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
-  private var previousSelectedItemIndex: Int?
+  private var previousSelectedItemIndex: Int? = nil
 
   public init(store: Store, getCmdlinesView: @escaping () -> NSView) {
     self.store = store
@@ -40,7 +42,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
     tableView.delegate = self
     tableView.backgroundColor = .clear
     tableView.addTableColumn(
-      .init(identifier: PopupmenuItemView.reuseIdentifier)
+      .init(identifier: PopupmenuItemView.reuseIdentifier),
     )
     tableView.rowHeight = 28
     tableView.style = .fullWidth
@@ -98,7 +100,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
         {
           tableView.reloadData(
             forRowIndexes: [previousSelectedItemIndex, selectedItemIndex],
-            columnIndexes: [0]
+            columnIndexes: [0],
           )
         } else {
           tableView.reloadData()
@@ -116,7 +118,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
       if on, isSuccess {
         scrollView.contentView.scroll(to: .init(
           x: -scrollView.contentInsets.left,
-          y: -scrollView.contentInsets.top
+          y: -scrollView.contentInsets.top,
         ))
       }
     }
@@ -143,13 +145,13 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   public func tableView(
     _ tableView: NSTableView,
     viewFor tableColumn: NSTableColumn?,
-    row: Int
+    row: Int,
   )
     -> NSView?
   {
     var itemView = tableView.makeView(
       withIdentifier: PopupmenuItemView.reuseIdentifier,
-      owner: self
+      owner: self,
     ) as? PopupmenuItemView
     if itemView == nil {
       itemView = .init(store: store)
@@ -164,8 +166,8 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   }
 
   public func tableView(
-    _ tableView: NSTableView,
-    shouldSelectRow row: Int
+    _: NSTableView,
+    shouldSelectRow row: Int,
   )
     -> Bool
   {

@@ -13,9 +13,11 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     }
   }
 
+  var renderContext: RenderContext! = nil
+
   private let store: Store
-  private var viewController: MsgShowsViewController!
-  private var customWindow: CustomWindow!
+  private var viewController: MsgShowsViewController! = nil
+  private var customWindow: CustomWindow! = nil
   private var isWindowInitiallyShown = false
 
   init(store: Store) {
@@ -45,7 +47,7 @@ class MsgShowsWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() {
+  func render() {
     renderChildren(viewController)
 
     if !updates.msgShowsUpdates.isEmpty {

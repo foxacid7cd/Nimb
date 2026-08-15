@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: MIT
+
+import Foundation
+import msgpack_c
+
+public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
+  ExpressibleByBooleanLiteral,
+  ExpressibleByNilLiteral,
+  ExpressibleByDictionaryLiteral
+{
+  case integer(Int)
+  case float(Double)
+  case boolean(Bool)
+  case string(String)
+  case array([Value])
+  case dictionary([Value: Value])
+  case binary(Data)
+  case ext(type: Int8, data: Data)
+  case `nil`
+
+  public init(stringLiteral: String) {
+    self = .string(stringLiteral)
+  }
+
+  public init(booleanLiteral value: Bool) {
+    self = .boolean(value)
+  }
+
+  public init(nilLiteral: ()) {
+    self = .nil
+  }
+
+  public init(dictionaryLiteral elements: (Value, Value)...) {
+    var dictionary = [Value: Value](minimumCapacity: elements.count)
+    for (key, value) in elements {
+      dictionary[key] = value
+    }
+    self = .dictionary(dictionary)
+  }
+
+  init(
+    _ object: msgpack_object,
+  ) {
+    switch object.type {
+    case MSGPACK_OBJECT_NEGATIVE_INTEGER,
+         MSGPACK_OBJECT_POSITIVE_INTEGER: self = .integer(Int(object.via.i64))
+
+    case MSGPACK_OBJECT_FLOAT,
+         MSGPACK_OBJECT_FLOAT32: self = .float(object.via.f64)
+
+    case MSGPACK_OBJECT_BOOLEAN: self = .boolean(object.via.boolean)
+
+    case MSGPACK_OBJECT_STR:
+      let str = object.via.str
+      let size = Int(str.size)
+
+      let string = String(
+        unsafeUninitializedCapacity: size,
+        initializingUTF8With: { buffer in
+          memcpy(
+            buffer.baseAddress!,
+            str.ptr,
+            size,
+          )
+          return size
+        },
+      )
+      self = .string(string)
+
+    case MSGPACK_OBJECT_ARRAY:
+      let cArray = object.via.array
+
+      // The count is known up front, so the buffer is allocated once and
+      // written in place: appending grew it by doubling, and going through map
+      // still costs a uniqueness check per element. Every redraw batch from
+      // Neovim is a nested array, making this one of the hottest allocations
+      // in the app. The MAP case below already reserved.
+      let count = Int(cArray.size)
+      self = .array([Value](unsafeUninitializedCapacity: count) { buffer, initialized in
+        for index in 0 ..< count {
+          buffer.initializeElement(at: index, to: Value(cArray.ptr.advanced(by: index).pointee))
+        }
+        initialized = count
+      })
+
+    case MSGPACK_OBJECT_MAP:
+      let map = object.via.map
+
+      let count = Int(map.size)
+      var dictionary = [Value: Value](minimumCapacity: count)
+
+      for index in 0 ..< count {
+        let kv = map.ptr.advanced(by: index).pointee
+
+        let key = Value(kv.key)
+        let value = Value(kv.val)
+        dictionary[key] = value
+      }
+
+      self = .dictionary(dictionary)
+
+    case MSGPACK_OBJECT_BIN:
+      let bin = object.via.bin
+
+      let data = Data(bytes: UnsafeRawPointer(bin.ptr), count: Int(bin.size))
+      self = .binary(data)
+
+    case MSGPACK_OBJECT_EXT:
+      let ext = object.via.ext
+
+      self = .ext(
+        type: ext.type,
+        data: .init(bytes: UnsafeRawPointer(ext.ptr), count: Int(ext.size)),
+      )
+
+    case MSGPACK_OBJECT_NIL: self = .nil
+
+    default: preconditionFailure(
+        "Not implemented behavior for type \(object.type)",
+      )
+    }
+  }
+}
+
+/// Optional accessors for the payload of each case.
+///
+/// These replace @CasePathable. `value.string` and `values.flatMap(\.integer)`
+/// read the same as before; the `.string` subscript form is gone.
+public extension Value {
+  var integer: Int? {
+    if case let .integer(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var float: Double? {
+    if case let .float(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var boolean: Bool? {
+    if case let .boolean(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var string: String? {
+    if case let .string(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var array: [Value]? {
+    if case let .array(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var dictionary: [Value: Value]? {
+    if case let .dictionary(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var binary: Data? {
+    if case let .binary(value) = self {
+      value
+    } else {
+      nil
+    }
+  }
+
+  var ext: (type: Int8, data: Data)? {
+    if case let .ext(type, data) = self {
+      (type: type, data: data)
+    } else {
+      nil
+    }
+  }
+
+  /// Not named `nil`, which is not a valid property name.
+  var isNil: Bool {
+    if case .nil = self {
+      true
+    } else {
+      false
+    }
+  }
+}

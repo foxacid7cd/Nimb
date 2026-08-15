@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: MIT
+
+import Algorithms
+import Collections
+import Combine
+import CustomDump
+import Foundation
+import msgpack_c
+import NimbCore
+import Synchronization
+
+public final class RPC<Target: Channel>: Sendable {
+  public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
+
+  private let target: Target
+  private let storage = Storage()
+  private let packer = Mutex<Packer>(.init())
+
+  public init(_ target: Target) {
+    self.target = target
+
+    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [target, storage] continuation in
+      Task {
+        await Self.read(from: target, into: storage, yieldingTo: continuation)
+      }
+    }
+  }
+
+  /// The msgpack reader loop.
+  ///
+  /// @concurrent rather than a bare `Task { }` body: an unstructured task
+  /// inherits the isolation of the context that created it, and RPC.init is
+  /// reached from applicationDidFinishLaunching on the main actor. This module
+  /// happens to default to nonisolated, so today the loop already runs off the
+  /// main thread — but that is an accident of a build setting, and the app
+  /// target hit exactly this trap when it moved to a MainActor default. Being
+  /// explicit also makes the Unpacker's confinement to a single task a fact
+  /// the compiler checks rather than something the reader has to infer.
+  @concurrent
+  private static func read(
+    from target: Target,
+    into storage: Storage,
+    yieldingTo continuation: AsyncThrowingStream<[Message.Notification], any Error>.Continuation,
+  ) async {
+    do {
+      var notifications = [Message.Notification]()
+
+      let unpacker = Unpacker()
+
+      for try await data in target.dataBatches {
+        guard !Task.isCancelled else {
+          break
+        }
+
+        let messages = try unpacker.unpack(data)
+          .map { try Message(value: $0) }
+
+        for message in messages {
+          switch message {
+          case let .request(request):
+            logger.warning("Unexpected msgpack request received: \(String(customDumping: request))")
+
+          case let .response(response):
+            storage.responseReceived(response, forRequestWithID: response.id)
+
+          case let .notification(notification):
+            notifications.append(notification)
+          }
+        }
+
+        if !notifications.isEmpty {
+          continuation.yield(notifications)
+          notifications.removeAll(keepingCapacity: true)
+        }
+      }
+
+      continuation.finish()
+    } catch {
+      continuation.finish(throwing: error)
+    }
+  }
+
+  @discardableResult
+  public func call(
+    method: String,
+    withParameters parameters: [Value],
+  ) async
+  -> Message.Response.Result {
+    await withCheckedContinuation { continuation in
+      send(request: .init(
+        id: storage.announceRequest {
+          continuation.resume(returning: $0.result)
+        },
+        method: method,
+        parameters: parameters,
+      ))
+    }
+  }
+
+  /// Sends on the caller's thread, in call order.
+  ///
+  /// This used to hand the send to an unstructured Task. Neovim applies input
+  /// in the order it arrives, so racing those tasks meant a burst of keystrokes
+  /// or wheel events could reach it transposed -- a replica of the pattern
+  /// reordered 7 to 33 messages out of every 200 sent back to back. The write
+  /// is a single blocking syscall on a pipe, so there was nothing to gain by
+  /// deferring it either.
+  public func fastCall(
+    method: String,
+    withParameters parameters: [Value],
+  ) {
+    send(request: .init(
+      id: storage.announceRequest(),
+      method: method,
+      parameters: parameters,
+    ))
+  }
+
+  /// Packs several calls into one write. Ordering is already guaranteed by
+  /// fastCall, so this exists only to spend one syscall instead of N.
+  public func fastCallsTransaction(with calls: some Sequence<(
+    method: String,
+    parameters: [Value],
+  )> & Sendable) {
+    let data = packer.withLock { packer in
+      var data = Data()
+      for call in calls {
+        let message = Message.Request(
+          id: storage.announceRequest(),
+          method: call.method,
+          parameters: call.parameters,
+        )
+        data.append(packer.pack(message.makeValue()))
+      }
+      return data
+    }
+
+    try? target.write(data)
+  }
+
+  public func send(request: Message.Request) {
+    let data = packer.withLock {
+      $0.pack(request.makeValue())
+    }
+
+    try? target.write(data)
+  }
+}
+
+/// Lock rather than actor isolation, so allocating a request id is a plain
+/// synchronous call. It used to be @MainActor, which forced every send through
+/// an unstructured Task just to reach it -- and that is what made sends
+/// unordered, since those tasks then raced each other to the pipe.
+private final class Storage: Sendable {
+  private struct State {
+    var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
+    var announcedRequestsCount = 0
+  }
+
+  private let state = Mutex(State())
+
+  func announceRequest(
+    _ handler: (@Sendable (Message.Response) -> Void)? = nil,
+  )
+    -> Int
+  {
+    state.withLock { state in
+      let id = state.announcedRequestsCount
+      state.announcedRequestsCount &+= 1
+      if let handler {
+        state.currentRequests[id] = handler
+      }
+      return id
+    }
+  }
+
+  func responseReceived(
+    _ response: Message.Response,
+    forRequestWithID id: Int,
+  ) {
+    // Taken under the lock, invoked outside it: the handler resumes a
+    // continuation, and whatever that wakes must not run while the lock is
+    // held.
+    let handler = state.withLock { state -> (@Sendable (Message.Response) -> Void)? in
+      let handler = state.currentRequests[id]
+      state.currentRequests[id] = nil
+      return handler
+    }
+    handler?(response)
+  }
+}

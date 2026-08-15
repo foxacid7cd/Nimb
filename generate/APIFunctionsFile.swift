@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 
-import CasePaths
 import Foundation
+import NimbCore
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
 public struct APIFunctionsFile: GeneratableFile {
   public var metadata: Metadata
 
-  public var name: String { "APIFunctions" }
+  public var name: String {
+    "APIFunctions"
+  }
 
   public var sourceFile: SourceFileSyntax {
     get throws {
       try .init {
-        "import CasePaths" as DeclSyntax
-        "" as DeclSyntax
+        "import NimbCore" as DeclSyntax
         "" as DeclSyntax
 
         try EnumDeclSyntax("public enum APIFunctions") {
@@ -27,10 +28,10 @@ public struct APIFunctionsFile: GeneratableFile {
               \(raw: function.deprecationAttributeIfNeeded)
               @PublicInit
               public struct \(raw: camelCasedFunctionName): APIFunction
-              """
+              """,
             ) {
               DeclSyntax(
-                "public static let method = \(literal: function.name)"
+                "public static let method = \(literal: function.name)",
               )
 
               for parameter in function.parameters {
@@ -38,7 +39,7 @@ public struct APIFunctionsFile: GeneratableFile {
                   .camelCasedAssumingSnakeCased(capitalized: false)
 
                 DeclSyntax(
-                  "public var \(raw: camelCasedParameterName): \(raw: parameter.type.swift.signature)"
+                  "public var \(raw: camelCasedParameterName): \(raw: parameter.type.swift.signature)",
                 )
               }
 
@@ -53,26 +54,26 @@ public struct APIFunctionsFile: GeneratableFile {
 
               try VariableDeclSyntax("public var parameters: [Value]") {
                 StmtSyntax(
-                  "return [\(raw: parametersInArray)]"
+                  "return [\(raw: parametersInArray)]",
                 )
               }
 
-              if function.returnType.swift[case: \.value] == nil {
+              if function.returnType.swift.isValue == false {
                 try FunctionDeclSyntax(
-                  "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)"
+                  "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)",
                 ) {
                   StmtSyntax(
                     """
                     guard \(raw: function.returnType.wrapWithValueDecoder(
                       "raw",
-                      name: "value"
+                      name: "value",
                     )) else {
                       throw Failure("failed decoding success return value", raw)
                     }
-                    """
+                    """,
                   )
                   StmtSyntax(
-                    "return value"
+                    "return value",
                   )
                 }
               }
@@ -110,10 +111,10 @@ public struct APIFunctionsFile: GeneratableFile {
                 raw: function
                   .returnType.swift.signature
               )
-              """
+              """,
             ) {
               ExprSyntax(
-                "try await call(APIFunctions.\(raw: capitalizedCamelCasedFunctionName)(\(raw: initializingWithParameters)))"
+                "try await call(APIFunctions.\(raw: capitalizedCamelCasedFunctionName)(\(raw: initializingWithParameters)))",
               )
             }
           }
@@ -122,5 +123,7 @@ public struct APIFunctionsFile: GeneratableFile {
     }
   }
 
-  public init(metadata: Metadata) { self.metadata = metadata }
+  public init(metadata: Metadata) {
+    self.metadata = metadata
+  }
 }
