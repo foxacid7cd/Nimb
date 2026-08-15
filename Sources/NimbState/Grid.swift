@@ -209,19 +209,27 @@ public struct Grid: Sendable, Identifiable {
       }
       layout = .init(cells: cells)
 
-      let cursorDrawRun = drawRuns.cursorDrawRun
-      drawRuns = .init(
-        layout: layout,
-        font: font,
-        appearance: appearance,
-      )
+      // Reshape in place rather than build a fresh GridDrawRuns.
+      //
+      // Constructing one starts from an empty rowDrawRuns, so its reuse never
+      // had anything to reuse and every row was typeset again -- during a live
+      // resize, once per throttled step. Rows keep their index across a
+      // resize, which is exactly what index-aligned reuse needs: a row whose
+      // content survived keeps its runs outright, and a row whose width
+      // changed still keeps the parts that did not. Reuse compares content and
+      // the bold/italic traits but not the font, and a resize does not change
+      // the font, so it is safe here in a way it is not for SetFont.
+      drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
 
+      // Kept rather than cleared-and-restored, which is what building a fresh
+      // GridDrawRuns forced. Same outcome: dropped only when the new size no
+      // longer contains it.
       if
-        let cursorDrawRun,
-        cursorDrawRun.origin.column < integerSize.columnsCount,
-        cursorDrawRun.origin.row < integerSize.rowsCount
+        let cursorDrawRun = drawRuns.cursorDrawRun,
+        cursorDrawRun.origin.column >= integerSize.columnsCount
+        || cursorDrawRun.origin.row >= integerSize.rowsCount
       {
-        drawRuns.cursorDrawRun = cursorDrawRun
+        drawRuns.cursorDrawRun = nil
       }
 
       return .needsDisplay
