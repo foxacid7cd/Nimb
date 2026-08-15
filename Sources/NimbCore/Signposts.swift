@@ -50,6 +50,23 @@ public enum RenderStage: Int, CaseIterable, Sendable {
   }
 }
 
+/// Things worth counting per frame rather than timing.
+public enum RenderCounter: Int, CaseIterable, Sendable {
+  /// Grids the render walk visited.
+  case gridsVisited
+  /// Grids that visit decided actually needed a new scene. The ratio of the
+  /// two is the whole point of skipping clean grids: with six splits and one
+  /// changed line it should read six visited, one built.
+  case gridsBuilt
+
+  public var name: String {
+    switch self {
+    case .gridsVisited: "visited"
+    case .gridsBuilt: "built"
+    }
+  }
+}
+
 /// Rolling per-stage timings, summarised to the log every `framesPerSummary`
 /// frames. Instruments gives a better picture, but this makes a regression
 /// visible from a plain run with no tooling attached.
@@ -64,6 +81,7 @@ public final class RenderStats: Sendable {
     var isEnabled = false
     var frameCount = 0
     var buckets = [Bucket](repeating: .init(), count: RenderStage.allCases.count)
+    var counters = [Int](repeating: 0, count: RenderCounter.allCases.count)
   }
 
   /// About a second of sustained redraw at 60Hz. Short enough that a scroll
@@ -108,6 +126,15 @@ public final class RenderStats: Sendable {
     }
   }
 
+  public func count(_ counter: RenderCounter) {
+    storage.withLock { state in
+      guard state.isEnabled else {
+        return
+      }
+      state.counters[counter.rawValue] += 1
+    }
+  }
+
   /// Called once per presented frame. Emits a summary and starts a new window
   /// every `framesPerSummary` frames.
   public func frameCompleted() {
@@ -140,12 +167,23 @@ public final class RenderStats: Sendable {
         }
         .joined(separator: "  ")
 
+      let counters = RenderCounter.allCases
+        .map { counter -> String in
+          String(
+            format: "%@ %.1f",
+            counter.name,
+            Double(state.counters[counter.rawValue]) / Double(frameCount),
+          )
+        }
+        .joined(separator: "/")
+
       state.frameCount = 0
       state.buckets = .init(
         repeating: .init(),
         count: RenderStage.allCases.count,
       )
-      return "frame stats over \(frameCount) frames (mean/peak per call, calls per frame): \(description)"
+      state.counters = .init(repeating: 0, count: RenderCounter.allCases.count)
+      return "frame stats over \(frameCount) frames (mean/peak per call, calls per frame): \(description)  |  grids/frame \(counters)"
     }
 
     if let summary {

@@ -350,6 +350,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
+    renderStats.count(.gridsVisited)
     let isCoreGraphics = state.debug.isCoreGraphicsRenderingEnabled
 
     // Compared against the mode actually in effect rather than against
@@ -382,6 +383,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     guard didSwitchRenderingMode || isAffectedByCurrentUpdates else {
       return
     }
+    renderStats.count(.gridsBuilt)
     builtBounds = bounds
 
     // The CoreGraphics path stays synchronous. It shapes nothing up front --
