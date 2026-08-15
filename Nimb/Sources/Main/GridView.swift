@@ -175,12 +175,24 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     guard let newWindow else {
       return
     }
+    apply(backingScale: newWindow.backingScaleFactor)
+  }
 
-    let scale = newWindow.backingScaleFactor
-    layer!.contentsScale = scale
-    gridLayer.contentsScale = scale
-    gridLayer.updateDrawableSize()
-    coreGraphicsLayer.contentsScale = scale
+  /// Backing scale can change without the view changing window: dragging
+  /// between a Retina and a non-Retina display, or changing a display's scaled
+  /// resolution. Tracking it only in viewWillMove left contentsScale stale,
+  /// and the Metal path takes that value as gospel -- it is the scale glyphs
+  /// are rasterised at and the multiplier the drawable is sized by, so a stale
+  /// one means every glyph bitmap is built for the wrong pixel density and
+  /// then resampled. The CoreGraphics path never noticed, because it draws
+  /// through CoreText afresh every time.
+  override public func viewDidChangeBackingProperties() {
+    super.viewDidChangeBackingProperties()
+
+    guard let scale = window?.backingScaleFactor else {
+      return
+    }
+    apply(backingScale: scale)
   }
 
   override public func updateTrackingAreas() {
@@ -479,6 +491,23 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       row: point.row,
       col: point.column,
     ))
+  }
+
+  private func apply(backingScale scale: CGFloat) {
+    guard gridLayer.contentsScale != scale else {
+      return
+    }
+
+    layer!.contentsScale = scale
+    gridLayer.contentsScale = scale
+    gridLayer.updateDrawableSize()
+    coreGraphicsLayer.contentsScale = scale
+
+    // The atlas is keyed by scale, so the next build picks up a correctly
+    // rasterised one -- but only if something asks for a rebuild, and a scale
+    // change produces no grid update of its own.
+    builtBounds = nil
+    setNeedsDisplay(bounds)
   }
 
   private func makeRenderInput() -> GridRenderInput? {
