@@ -13,6 +13,9 @@ public struct State: Sendable {
     public var isUIEventsLoggingEnabled: Bool = false
     public var isMessagePackInspectorEnabled: Bool = false
     public var isStoreActionsLoggingEnabled: Bool = false
+    /// Draw with CoreGraphics/CoreText instead of Metal, so the two can be
+    /// compared on the same workload.
+    public var isCoreGraphicsRenderingEnabled: Bool = false
   }
 
   @PublicInit

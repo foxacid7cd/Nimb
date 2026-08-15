@@ -9,11 +9,6 @@ import CoreText
 import Metal
 
 final nonisolated class GridMetalGlyphAtlas {
-  struct GlyphKey: Hashable {
-    let fontID: Int
-    let glyph: CGGlyph
-  }
-
   struct GlyphEntry {
     let origin: SIMD2<Float>
     let size: SIMD2<Float>
@@ -39,7 +34,17 @@ final nonisolated class GridMetalGlyphAtlas {
   let texture: MTLTexture
   let scale: CGFloat
 
-  private var entries: [GlyphKey: GlyphEntry] = [:]
+  /// Entries indexed by (fontID << 16 | glyph) rather than held in a
+  /// Dictionary. This lookup runs once per glyph per frame -- tens of thousands
+  /// of times a second -- and profiling the Metal path found hashing that key
+  /// to be the single largest cost inside scene building, larger than encoding
+  /// the draw calls. Both halves of the key are small and dense, so a flat
+  /// table removes the hash and the probe entirely.
+  ///
+  /// UInt32.max marks an empty slot. A slot per glyph id costs 256KB per font,
+  /// and FontBridge holds four fonts per configured font.
+  private var entryIndices: [UInt32] = []
+  private var entries: [GlyphEntry] = []
 
   /// Fonts are interned to a small Int so the per-glyph lookup key holds no
   /// String. The key used to carry font.fontName, which bridged an NSString
@@ -86,16 +91,17 @@ final nonisolated class GridMetalGlyphAtlas {
   }
 
   func entry(for glyph: CGGlyph, font: NSFont) -> GlyphEntry? {
-    let key = GlyphKey(fontID: fontID(for: font), glyph: glyph)
-    if let entry = entries[key] {
-      return entry
+    let slot = fontID(for: font) << 16 | Int(glyph)
+    let index = entryIndices[slot]
+    if index != .max {
+      return entries[Int(index)]
     }
 
     guard let rasterizedGlyph = rasterizeGlyph(glyph: glyph, font: font) else {
       return nil
     }
 
-    return place(rasterizedGlyph: rasterizedGlyph, for: key)
+    return place(rasterizedGlyph: rasterizedGlyph, at: slot)
   }
 
   private func fontID(for font: NSFont) -> Int {
@@ -115,6 +121,14 @@ final nonisolated class GridMetalGlyphAtlas {
 
     internedFonts.append(font)
     fontIDsByIdentity[identity] = fontID
+
+    let required = (fontID + 1) << 16
+    if entryIndices.count < required {
+      entryIndices.append(
+        contentsOf: repeatElement(.max, count: required - entryIndices.count),
+      )
+    }
+
     return fontID
   }
 
@@ -127,7 +141,9 @@ final nonisolated class GridMetalGlyphAtlas {
       bounds = .zero
     }
 
-    let paddingPoints = 1 / max(scale, 1)
+    // Two pixels rather than one: smoothing dilates the stems, and a glyph
+    // that touches the edge of its rasterisation would lose that dilation.
+    let paddingPoints = 2 / max(scale, 1)
     let paddedBounds = bounds.insetBy(dx: -paddingPoints, dy: -paddingPoints)
     let pixelWidth = max(1, Int(ceil(paddedBounds.width * scale)))
     let pixelHeight = max(1, Int(ceil(paddedBounds.height * scale)))
@@ -147,15 +163,27 @@ final nonisolated class GridMetalGlyphAtlas {
       return nil
     }
 
+    // Draw the glyph rather than filling its outline.
+    //
+    // This used to take CTFontCreatePathForGlyph and fillPath, which is not
+    // text rendering: a path fill gets none of the font smoothing CoreGraphics
+    // applies to glyphs, so every stem came out thinner than the CoreGraphics
+    // renderer's, which draws through CTFontDrawGlyphs with smoothing on. The
+    // atlas now asks for the same treatment, so both paths shape the same
+    // pixels.
+    context.setShouldAntialias(true)
+    context.setAllowsAntialiasing(true)
+    context.setShouldSmoothFonts(true)
+    context.setAllowsFontSmoothing(true)
     context.setFillColor(gray: 1, alpha: 1)
+    context.setTextDrawingMode(.fill)
+
     context.translateBy(x: 0, y: CGFloat(pixelHeight))
     context.scaleBy(x: scale, y: -scale)
     context.translateBy(x: -paddedBounds.minX, y: -paddedBounds.minY)
 
-    if let path = CTFontCreatePathForGlyph(ctFont, glyph, nil) {
-      context.addPath(path)
-      context.fillPath()
-    }
+    var position = CGPoint.zero
+    CTFontDrawGlyphs(ctFont, &glyph, &position, 1, context)
 
     return .init(
       bytes: bytes,
@@ -168,7 +196,7 @@ final nonisolated class GridMetalGlyphAtlas {
 
   private func place(
     rasterizedGlyph: RasterizedGlyph,
-    for key: GlyphKey,
+    at slot: Int,
   )
   -> GlyphEntry? {
     if rasterizedGlyph.width > texture.width || rasterizedGlyph.height > texture.height {
@@ -211,7 +239,8 @@ final nonisolated class GridMetalGlyphAtlas {
         Float(rasterizedGlyph.height) / Float(texture.height),
       ),
     )
-    entries[key] = entry
+    entryIndices[slot] = UInt32(entries.count)
+    entries.append(entry)
 
     nextX += rasterizedGlyph.width + 1
     rowHeight = max(rowHeight, rasterizedGlyph.height + 1)
@@ -221,6 +250,9 @@ final nonisolated class GridMetalGlyphAtlas {
 
   private func reset() {
     entries.removeAll(keepingCapacity: true)
+    for index in entryIndices.indices {
+      entryIndices[index] = .max
+    }
     nextX = 0
     nextY = 0
     rowHeight = 0
