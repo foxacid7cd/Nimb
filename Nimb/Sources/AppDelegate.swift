@@ -83,6 +83,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   /// a later turn: two frames in flight were two unstructured tasks with no
   /// ordering between them, so frame N+1 could paint before frame N.
   private func render(state: State, updates: State.Updates) {
+    if updates.isAppearanceUpdated {
+      renderStats.count(.appearanceUpdatedFrames)
+    }
     measuringRenderStage("frame hop", .frameHop) {
       update(renderContext: .init(state: state, updates: updates))
       render()

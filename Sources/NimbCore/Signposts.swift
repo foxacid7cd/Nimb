@@ -58,11 +58,16 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
   /// two is the whole point of skipping clean grids: with six splits and one
   /// changed line it should read six visited, one built.
   case gridsBuilt
+  /// Frames carrying isAppearanceUpdated. That flag forces every grid to
+  /// rebuild and every tabline and message view to be reconstructed, so if it
+  /// approaches one per frame, none of the per-grid skipping can fire.
+  case appearanceUpdatedFrames
 
   public var name: String {
     switch self {
     case .gridsVisited: "visited"
     case .gridsBuilt: "built"
+    case .appearanceUpdatedFrames: "appearance"
     }
   }
 }

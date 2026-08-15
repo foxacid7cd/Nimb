@@ -210,15 +210,40 @@ public extension Actions {
           }
 
         case let .defaultColorsSet(batch):
+          // Acted on only when the colours actually differ.
+          //
+          // Neovim re-emits default_colors_set as part of ordinary redraw
+          // cycles, carrying the same values it sent last time, and this used
+          // to take every one of them at face value: flushDrawRuns reshapes
+          // every row of every grid from scratch, and isAppearanceUpdated
+          // makes every grid rebuild its scene while the tabline, the message
+          // list, the cmdlines and the popupmenu all reconstruct their views.
+          // Counting the flag showed it set on half of all frames during a
+          // workload that never changed a colour.
+          var didChangeDefaultColors = false
           for params in batch {
-            state.appearance
-              .defaultForegroundColor = .init(rgb: params.rgbFg)
-            state.appearance
-              .defaultBackgroundColor = .init(rgb: params.rgbBg)
-            state.appearance.defaultSpecialColor = .init(rgb: params.rgbSp)
+            let foregroundColor = Color(rgb: params.rgbFg)
+            let backgroundColor = Color(rgb: params.rgbBg)
+            let specialColor = Color(rgb: params.rgbSp)
+
+            guard
+              foregroundColor != state.appearance.defaultForegroundColor
+              || backgroundColor != state.appearance.defaultBackgroundColor
+              || specialColor != state.appearance.defaultSpecialColor
+            else {
+              continue
+            }
+
+            state.appearance.defaultForegroundColor = foregroundColor
+            state.appearance.defaultBackgroundColor = backgroundColor
+            state.appearance.defaultSpecialColor = specialColor
+            didChangeDefaultColors = true
           }
-          state.flushDrawRuns()
-          appearanceUpdated()
+
+          if didChangeDefaultColors {
+            state.flushDrawRuns()
+            appearanceUpdated()
+          }
 
         case let .gridResize(batch):
           for params in batch {
