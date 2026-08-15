@@ -607,6 +607,19 @@ public struct CursorDrawRun: Sendable {
     font: Font,
     appearance: Appearance,
   ) {
+    // Neovim can place the cursor on a row this grid does not have yet: a
+    // cursor_goto for a grid that a resize is about to enlarge, or one that
+    // arrives for a grid the reducer had to create implicitly. Grid.apply
+    // already bounds-checks the position, but only to decide the cursor's
+    // width, and then called this anyway -- so splitting a window could trap
+    // on the subscript below.
+    //
+    // Failing here rather than trapping means no cursor is drawn for that one
+    // frame; the next cursor_goto puts it back.
+    guard rowDrawRuns.indices.contains(origin.row) else {
+      return nil
+    }
+
     var parentOrigin: IntegerPoint?
     var parentDrawRun: DrawRun?
     var cursorColumnsRange: Range<Int>?
@@ -672,6 +685,12 @@ public struct CursorDrawRun: Sendable {
     with layout: GridLayout,
     rowDrawRuns: [RowDrawRun],
   ) {
+    // Same trap as in init: this is reached from a scroll, whose rectangle can
+    // name rows the grid no longer has.
+    guard rowDrawRuns.indices.contains(origin.row) else {
+      return
+    }
+
     var currentColumn = 0
     for drawRun in rowDrawRuns[origin.row].drawRuns {
       if drawRun.columnsRange.contains(origin.column) {
