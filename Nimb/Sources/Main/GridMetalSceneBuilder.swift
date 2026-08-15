@@ -12,7 +12,16 @@ import NimbState
 
 final nonisolated class GridMetalSceneBuilder {
   private let renderer: GridMetalRenderer
-  private var glyphAtlas: GridMetalGlyphAtlas? = nil
+  /// Instance counts from the previous frame, used to size this frame's arrays
+  /// up front. A full-screen grid produces roughly ten thousand instances, so
+  /// growing from empty cost about fourteen reallocate-and-copy rounds per
+  /// array per frame.
+  ///
+  /// The arrays cannot simply be reused in place: the finished scene is handed
+  /// to the layer, which holds it until the next frame replaces it, so
+  /// mutating them would trigger a copy-on-write anyway. Phase 3 removes the
+  /// intermediate arrays entirely by writing straight into the MTLBuffer ring.
+  private var previousSceneCounts = GridMetalSceneCounts()
 
   init(renderer: GridMetalRenderer) {
     self.renderer = renderer
@@ -24,25 +33,19 @@ final nonisolated class GridMetalSceneBuilder {
     scale: CGFloat,
   )
   -> GridPreparedMetalFrame? {
-    guard let glyphAtlas = prepareGlyphAtlas(scale: scale) else {
+    guard let glyphAtlas = renderer.glyphAtlas(scale: scale) else {
       return nil
     }
 
+    let scene = measuringRenderStage("scene build", .sceneBuild) {
+      buildScene(snapshot: snapshot, bounds: bounds, glyphAtlas: glyphAtlas, scale: scale)
+    }
+
     return .init(
-      scene: buildScene(snapshot: snapshot, bounds: bounds, glyphAtlas: glyphAtlas, scale: scale),
+      scene: scene,
       atlasTexture: glyphAtlas.texture,
       clearColor: snapshot.appearance.defaultBackgroundColor.metalClearColor,
     )
-  }
-
-  private func prepareGlyphAtlas(scale: CGFloat) -> GridMetalGlyphAtlas? {
-    if let glyphAtlas, abs(glyphAtlas.scale - scale) < 0.001 {
-      return glyphAtlas
-    }
-
-    let glyphAtlas = GridMetalGlyphAtlas(renderer: renderer, scale: scale)
-    self.glyphAtlas = glyphAtlas
-    return glyphAtlas
   }
 
   private func buildScene(
@@ -53,46 +56,47 @@ final nonisolated class GridMetalSceneBuilder {
   )
   -> GridMetalScene {
     var scene = GridMetalScene()
+    previousSceneCounts.reserve(in: &scene)
 
     let boundingRect = IntegerRectangle(
       frame: bounds.applying(snapshot.upsideDownTransform),
       cellSize: snapshot.font.cellSize,
     )
-    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
+
+    // Walked through a closure rather than through visibleRowDrawRuns, which
+    // materialises an array of rows each holding an array of draw runs. Those
+    // two levels of allocation were rebuilt every frame purely to be iterated
+    // once and thrown away. The CoreGraphics renderer still uses the array
+    // form, which is what keeps the two paths comparable.
+    snapshot.grid.drawRuns.forEachVisibleDrawRun(
       boundingRect: boundingRect,
       font: snapshot.font,
       upsideDownTransform: snapshot.upsideDownTransform,
-    )
-
-    for rowDrawRuns in visibleRowDrawRuns {
-      for visibleDrawRun in rowDrawRuns.drawRuns {
-        let drawRun = visibleDrawRun.drawRun
-        let rect = visibleDrawRun.rect
-        scene.backgroundQuads.append(
-          quadInstance(
-            rect: rect,
-            color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
-          ),
-        )
-
-        appendDecorationInstances(
-          for: drawRun,
+    ) { drawRun, rect in
+      scene.backgroundQuads.append(
+        quadInstance(
           rect: rect,
-          font: snapshot.font,
-          appearance: snapshot.appearance,
-          scale: scale,
-          to: &scene.decorationQuads,
-        )
+          color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
+        ),
+      )
 
-        if let glyphRuns = drawRun.glyphRuns {
-          appendGlyphInstances(
-            glyphRuns,
-            in: rect,
-            color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
-            glyphAtlas: glyphAtlas,
-            to: &scene.glyphInstances,
-          )
-        }
+      appendDecorationInstances(
+        for: drawRun,
+        rect: rect,
+        font: snapshot.font,
+        appearance: snapshot.appearance,
+        scale: scale,
+        to: &scene.decorationQuads,
+      )
+
+      if let glyphRuns = drawRun.glyphRuns {
+        appendGlyphInstances(
+          glyphRuns,
+          in: rect,
+          color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
+          glyphAtlas: glyphAtlas,
+          to: &scene.glyphInstances,
+        )
       }
     }
 
@@ -110,6 +114,7 @@ final nonisolated class GridMetalSceneBuilder {
       )
     }
 
+    previousSceneCounts = .init(scene: scene)
     return scene
   }
 

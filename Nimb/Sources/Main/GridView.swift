@@ -69,6 +69,10 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
+  /// The bounds the last frame was built for. A resize changes every rect in
+  /// the scene without producing a grid update, so it has to be tracked here
+  /// rather than inferred from State.Updates. nil means nothing has been built.
+  private var builtBounds: CGRect? = nil
   private let metalSceneBuilder: GridMetalSceneBuilder?
   private var isScrollingHorizontal: Bool? = nil
   private var xScrollingAccumulator: Double = 0
@@ -100,6 +104,38 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     return .init(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
+  }
+
+  /// Whether this frame can change what this grid looks like.
+  ///
+  /// GridsView renders every grid view every frame, and a grid used to rebuild
+  /// its whole Metal scene each time regardless of whether anything in it
+  /// moved -- so a window with six splits paid six full scene builds to show
+  /// one changed line. Both layers keep what they last drew (the Metal one
+  /// keeps its last presented drawable, the CoreGraphics one its backing
+  /// store), so returning false here leaves the correct pixels on screen.
+  private var isAffectedByCurrentUpdates: Bool {
+    if builtBounds != bounds {
+      return true
+    }
+    // Font and appearance reshape or recolour every run in every grid.
+    if updates.isFontUpdated || updates.isAppearanceUpdated {
+      return true
+    }
+    // The cursor is drawn from the snapshot rather than from a grid update, so
+    // anything that gates it has to invalidate on its own.
+    if updates.isMouseUserInteractionEnabledUpdated || updates.isCursorBlinkingPhaseUpdated {
+      return true
+    }
+    // Content, scroll, clear and both halves of a cursor move all arrive here,
+    // the last two because ApplyUIEvents issues .clearCursor to the old grid
+    // and .cursor to the new one.
+    if updates.gridUpdates[gridID] != nil {
+      return true
+    }
+    // Size or visibility changed; the frame may not have been applied yet, so
+    // builtBounds alone would not catch it.
+    return updates.updatedLayoutGridIDs.contains(gridID)
   }
 
   public init(frame frameRect: NSRect, store: Store, gridID: Grid.ID) {
@@ -321,7 +357,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     // restored into the initial state rather than toggled into it, so keying
     // off the update left both layers in their constructed visibility and the
     // grid blank.
-    if renderingMode != isCoreGraphics {
+    let didSwitchRenderingMode = renderingMode != isCoreGraphics
+    if didSwitchRenderingMode {
       renderingMode = isCoreGraphics
       // Each layer keeps whatever it last drew, so the one being switched away
       // from would otherwise stay on screen. Hide it and make the incoming one
@@ -335,14 +372,45 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       }
     }
 
-    let renderInput = prepareRenderInput(makeRenderInput())
-    if isCoreGraphics {
+    guard let renderInput = makeRenderInput() else {
+      builtBounds = nil
+      gridLayer.update(renderInput: nil)
+      coreGraphicsLayer.update(renderInput: nil)
+      return
+    }
+
+    guard didSwitchRenderingMode || isAffectedByCurrentUpdates else {
+      return
+    }
+    builtBounds = bounds
+
+    // The CoreGraphics path stays synchronous. It shapes nothing up front --
+    // all its work happens inside draw(in:), which CoreAnimation already calls
+    // off the render loop -- and it is the control the Metal path is measured
+    // against, so moving it would make the comparison meaningless.
+    guard !isCoreGraphics else {
       coreGraphicsLayer.update(renderInput: renderInput)
       coreGraphicsLayer.render()
-    } else {
+      return
+    }
+
+    guard let metalSceneBuilder else {
+      // No Metal at all. Hand the snapshot over so GridLayer.display falls
+      // through to draw(in:).
       gridLayer.update(renderInput: renderInput)
       gridLayer.render()
+      return
     }
+
+    GridSceneBuildQueue.shared.submit(
+      gridID: gridID,
+      target: gridLayer,
+      builder: metalSceneBuilder,
+      snapshot: renderInput.snapshot,
+      updates: renderInput.updates,
+      bounds: bounds,
+      scale: max(gridLayer.contentsScale, 1),
+    )
   }
 
   public func reportMouseMove(for event: NSEvent) {
@@ -430,34 +498,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       ),
       updates: renderContext.updates,
       metalFrame: nil,
-    )
-  }
-
-  @MainActor
-  private func prepareRenderInput(_ renderInput: GridRenderInput?) -> GridRenderInput? {
-    guard let renderInput else {
-      return nil
-    }
-
-    // No frame means GridLayer.display falls through to draw(in:), which is
-    // the CoreGraphics path. Skipping the build is also what makes the two
-    // comparable: scene construction is Metal's cost and should not be charged
-    // to a frame that never uses it.
-    let metalFrame: GridPreparedMetalFrame? =
-      if renderContext.state.debug.isCoreGraphicsRenderingEnabled {
-        nil
-      } else {
-        metalSceneBuilder?.makeFrame(
-          snapshot: renderInput.snapshot,
-          bounds: bounds,
-          scale: max(gridLayer.contentsScale, 1),
-        )
-      }
-
-    return .init(
-      snapshot: renderInput.snapshot,
-      updates: renderInput.updates,
-      metalFrame: metalFrame,
     )
   }
 }

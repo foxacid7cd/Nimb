@@ -7,6 +7,7 @@
 import AppKit
 import CoreText
 import Metal
+import NimbCore
 
 final nonisolated class GridMetalGlyphAtlas {
   struct GlyphEntry {
@@ -31,8 +32,13 @@ final nonisolated class GridMetalGlyphAtlas {
     let size: SIMD2<Float>
   }
 
-  let texture: MTLTexture
+  /// Replaced wholesale rather than cleared when the atlas fills up, so any
+  /// frame still in flight keeps sampling the texture it was built against.
+  private(set) var texture: MTLTexture
   let scale: CGFloat
+
+  private let device: MTLDevice
+  private let textureSize: Int
 
   /// Entries indexed by (fontID << 16 | glyph) rather than held in a
   /// Dictionary. This lookup runs once per glyph per frame -- tens of thousands
@@ -65,6 +71,17 @@ final nonisolated class GridMetalGlyphAtlas {
   private var rowHeight = 0
 
   init?(renderer: GridMetalRenderer, scale: CGFloat, size: Int = 4096) {
+    guard let texture = Self.makeTexture(device: renderer.device, size: size) else {
+      return nil
+    }
+
+    device = renderer.device
+    textureSize = size
+    self.texture = texture
+    self.scale = scale
+  }
+
+  private static func makeTexture(device: MTLDevice, size: Int) -> MTLTexture? {
     let descriptor = MTLTextureDescriptor.texture2DDescriptor(
       pixelFormat: .r8Unorm,
       width: size,
@@ -72,15 +89,14 @@ final nonisolated class GridMetalGlyphAtlas {
       mipmapped: false,
     )
     descriptor.usage = [.shaderRead]
-    descriptor.storageMode = renderer.device.hasUnifiedMemory ? .shared : .managed
+    descriptor.storageMode = device.hasUnifiedMemory ? .shared : .managed
 
-    guard let texture = renderer.device.makeTexture(descriptor: descriptor) else {
+    guard let texture = device.makeTexture(descriptor: descriptor) else {
       return nil
     }
 
-    self.texture = texture
-    self.scale = scale
-
+    // Metal makes no promise about the initial contents, and anything sampled
+    // outside a placed glyph has to read as fully transparent.
     let zero = [UInt8](repeating: 0, count: size * size)
     texture.replace(
       region: .init(origin: .init(x: 0, y: 0, z: 0), size: .init(width: size, height: size, depth: 1)),
@@ -88,6 +104,7 @@ final nonisolated class GridMetalGlyphAtlas {
       withBytes: zero,
       bytesPerRow: size,
     )
+    return texture
   }
 
   func entry(for glyph: CGGlyph, font: NSFont) -> GlyphEntry? {
@@ -133,6 +150,12 @@ final nonisolated class GridMetalGlyphAtlas {
   }
 
   private func rasterizeGlyph(glyph: CGGlyph, font: NSFont) -> RasterizedGlyph? {
+    measuringRenderStage("glyph raster", .glyphRasterize) {
+      rasterizeGlyphUncounted(glyph: glyph, font: font)
+    }
+  }
+
+  private func rasterizeGlyphUncounted(glyph: CGGlyph, font: NSFont) -> RasterizedGlyph? {
     let ctFont = font as CTFont
     var glyph = glyph
     var bounds = CTFontGetBoundingRectsForGlyphs(ctFont, .default, &glyph, nil, 1)
@@ -209,8 +232,8 @@ final nonisolated class GridMetalGlyphAtlas {
       rowHeight = 0
     }
 
-    if nextY + rasterizedGlyph.height > texture.height {
-      reset()
+    if nextY + rasterizedGlyph.height > texture.height, !reset() {
+      return nil
     }
 
     if nextX + rasterizedGlyph.width > texture.width || nextY + rasterizedGlyph.height > texture.height {
@@ -248,7 +271,20 @@ final nonisolated class GridMetalGlyphAtlas {
     return entry
   }
 
-  private func reset() {
+  /// Starts over in a brand new texture.
+  ///
+  /// This used to zero the existing one in place, which is both a 16MB write
+  /// and unsound now that scene building runs off the main thread: a command
+  /// buffer encoded for the previous frame may still be sampling the atlas,
+  /// and every glyph it reads would come back blank. Frames hold their atlas
+  /// texture by reference, so handing new frames a different one leaves the
+  /// old contents intact for exactly as long as something is still using them.
+  private func reset() -> Bool {
+    guard let texture = Self.makeTexture(device: device, size: textureSize) else {
+      return false
+    }
+
+    self.texture = texture
     entries.removeAll(keepingCapacity: true)
     for index in entryIndices.indices {
       entryIndices[index] = .max
@@ -256,13 +292,6 @@ final nonisolated class GridMetalGlyphAtlas {
     nextX = 0
     nextY = 0
     rowHeight = 0
-
-    let zero = [UInt8](repeating: 0, count: texture.width * texture.height)
-    texture.replace(
-      region: .init(origin: .init(x: 0, y: 0, z: 0), size: .init(width: texture.width, height: texture.height, depth: 1)),
-      mipmapLevel: 0,
-      withBytes: zero,
-      bytesPerRow: texture.width,
-    )
+    return true
   }
 }

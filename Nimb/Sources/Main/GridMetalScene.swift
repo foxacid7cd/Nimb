@@ -39,5 +39,33 @@ struct GridMetalScene {
   var cursorGlyphInstances: [GridMetalGlyphInstance] = []
 }
 
+/// How large each of a scene's arrays turned out to be. Carried from one frame
+/// to the next so the arrays can be sized once instead of grown by doubling.
+nonisolated struct GridMetalSceneCounts {
+  var backgroundQuads = 0
+  var decorationQuads = 0
+  var glyphInstances = 0
+  var cursorQuads = 0
+  var cursorGlyphInstances = 0
+
+  init() { }
+
+  init(scene: GridMetalScene) {
+    backgroundQuads = scene.backgroundQuads.count
+    decorationQuads = scene.decorationQuads.count
+    glyphInstances = scene.glyphInstances.count
+    cursorQuads = scene.cursorQuads.count
+    cursorGlyphInstances = scene.cursorGlyphInstances.count
+  }
+
+  func reserve(in scene: inout GridMetalScene) {
+    scene.backgroundQuads.reserveCapacity(backgroundQuads)
+    scene.decorationQuads.reserveCapacity(decorationQuads)
+    scene.glyphInstances.reserveCapacity(glyphInstances)
+    scene.cursorQuads.reserveCapacity(cursorQuads)
+    scene.cursorGlyphInstances.reserveCapacity(cursorGlyphInstances)
+  }
+}
+
 // Unchecked because MTLDevice and the pipeline states are unannotated SDK
 // protocols. Everything here is immutable after init.

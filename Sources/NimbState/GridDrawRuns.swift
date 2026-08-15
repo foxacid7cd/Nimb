@@ -99,6 +99,36 @@ public struct GridDrawRuns: Sendable {
     }
   }
 
+  /// Visits every draw run overlapping `boundingRect`, top row first, with the
+  /// view rect it occupies.
+  ///
+  /// The array-returning `visibleRowDrawRuns` below builds two levels of array
+  /// per call — one of rows, each holding one of draw runs — which the Metal
+  /// scene builder rebuilt every frame only to iterate once. This is the same
+  /// walk without the intermediates.
+  public func forEachVisibleDrawRun(
+    boundingRect: IntegerRectangle,
+    font: Font,
+    upsideDownTransform: CGAffineTransform,
+    _ body: (DrawRun, CGRect) -> Void,
+  ) {
+    let fromRow = max(boundingRect.minRow, 0)
+    let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
+    guard fromRow < toRow else {
+      return
+    }
+
+    for row in fromRow ..< toRow {
+      rowDrawRuns[row].forEachVisibleDrawRun(
+        columnsRange: boundingRect.columns,
+        at: .init(x: 0, y: Double(row) * font.cellHeight),
+        font: font,
+        upsideDownTransform: upsideDownTransform,
+        body,
+      )
+    }
+  }
+
   public func visibleRowDrawRuns(
     boundingRect: IntegerRectangle,
     font: Font,
@@ -225,6 +255,22 @@ public struct RowDrawRun: Sendable {
     }
   }
 
+  func forEachVisibleDrawRun(
+    columnsRange: Range<Int>,
+    at origin: CGPoint,
+    font: Font,
+    upsideDownTransform: CGAffineTransform,
+    _ body: (DrawRun, CGRect) -> Void,
+  ) {
+    for index in drawRuns.indices {
+      let drawRun = drawRuns[index]
+      guard drawRun.columnsRange.overlaps(columnsRange) else {
+        continue
+      }
+      body(drawRun, drawRun.rect(at: origin, font: font, upsideDownTransform: upsideDownTransform))
+    }
+  }
+
   func visibleDrawRuns(
     columnsRange: Range<Int>,
     at origin: CGPoint,
@@ -237,15 +283,10 @@ public struct RowDrawRun: Sendable {
         return nil
       }
 
-      let rect = CGRect(
-        x: Double(drawRun.columnsRange.lowerBound) * font.cellWidth + origin.x,
-        y: origin.y,
-        width: Double(drawRun.columnsRange.count) * font.cellWidth,
-        height: font.cellHeight,
+      return .init(
+        drawRun: drawRun,
+        rect: drawRun.rect(at: origin, font: font, upsideDownTransform: upsideDownTransform),
       )
-      .applying(upsideDownTransform)
-
-      return .init(drawRun: drawRun, rect: rect)
     }
   }
 }
@@ -390,6 +431,22 @@ public struct DrawRun: Sendable {
         isItalic: isItalic,
       )
     }
+  }
+
+  /// The view rect this run occupies, given the origin of its row.
+  public func rect(
+    at origin: CGPoint,
+    font: Font,
+    upsideDownTransform: CGAffineTransform,
+  )
+  -> CGRect {
+    CGRect(
+      x: Double(columnsRange.lowerBound) * font.cellWidth + origin.x,
+      y: origin.y,
+      width: Double(columnsRange.count) * font.cellWidth,
+      height: font.cellHeight,
+    )
+    .applying(upsideDownTransform)
   }
 
   public func drawBackground(

@@ -8,6 +8,7 @@ import AppKit
 import CoreText
 import Metal
 import NimbCore
+import Synchronization
 
 final nonisolated class GridMetalRenderer: @unchecked Sendable {
   static let shared = GridMetalRenderer()
@@ -116,6 +117,15 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
   let glyphPipelineState: MTLRenderPipelineState
   let glyphSamplerState: MTLSamplerState
 
+  /// One atlas per backing scale, shared by every grid.
+  ///
+  /// Each atlas is a 4096x4096 r8Unorm texture, so 16MB. They used to be owned
+  /// by GridMetalSceneBuilder, one per GridView, which meant a window with
+  /// eight splits held eight of them and rasterized every glyph eight times.
+  /// The contents are identical by construction — the key is (font, glyph) and
+  /// nothing about it is per-grid — so there was never a reason to duplicate.
+  private let glyphAtlases = Mutex<[Int: GridMetalGlyphAtlas]>([:])
+
   init?(device: MTLDevice? = MTLCreateSystemDefaultDevice()) {
     guard
       let device,
@@ -202,5 +212,28 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     descriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
     descriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
     return try device.makeRenderPipelineState(descriptor: descriptor)
+  }
+
+  /// The atlas for `scale`, created on first use.
+  ///
+  /// The atlas itself is not internally synchronised: its entry table and shelf
+  /// packer are plain stored properties. Every caller reaches it from scene
+  /// building, which runs on one thread at a time, so the lock here only
+  /// guards the lookup.
+  func glyphAtlas(scale: CGFloat) -> GridMetalGlyphAtlas? {
+    // Quantised so float noise in backingScaleFactor cannot mint a second
+    // 16MB atlas for what is really the same scale.
+    let key = Int((max(scale, 1) * 1000).rounded())
+
+    return glyphAtlases.withLock { atlases in
+      if let existing = atlases[key] {
+        return existing
+      }
+      guard let atlas = GridMetalGlyphAtlas(renderer: self, scale: scale) else {
+        return nil
+      }
+      atlases[key] = atlas
+      return atlas
+    }
   }
 }
