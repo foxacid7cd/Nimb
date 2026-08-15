@@ -79,24 +79,24 @@ nonisolated enum GridCoreGraphicsRenderer {
   }
 
   static func dirtyRects(
-    renderInput: GridRenderInput,
+    snapshot: GridDrawSnapshot,
+    updates: State.Updates,
     gridID: Grid.ID,
     bounds: CGRect,
   )
     -> [CGRect]
   {
-    let snapshot = renderInput.snapshot
     let grid = snapshot.grid
     let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * snapshot.font.cellHeight)
 
-    if renderInput.updates.isFontUpdated || renderInput.updates.isAppearanceUpdated {
+    if updates.isFontUpdated || updates.isAppearanceUpdated {
       return [bounds]
     }
 
     var dirtyRects: [CGRect] = []
 
-    if let gridUpdate = renderInput.updates.gridUpdates[gridID] {
+    if let gridUpdate = updates.gridUpdates[gridID] {
       switch gridUpdate {
       case let .dirtyRectangles(value):
         for rectangle in value {
@@ -117,7 +117,7 @@ nonisolated enum GridCoreGraphicsRenderer {
 
     if
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isMouseUserInteractionEnabledUpdated
+      updates.isCursorBlinkingPhaseUpdated || updates.isMouseUserInteractionEnabledUpdated
     {
       dirtyRects.append(
         (cursorDrawRun.rectangle * snapshot.font.cellSize)

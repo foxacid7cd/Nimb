@@ -27,25 +27,24 @@ final nonisolated class GridMetalSceneBuilder {
     self.renderer = renderer
   }
 
-  func makeFrame(
+  /// One grid's instances, in that grid's own coordinates.
+  ///
+  /// Left grid-local deliberately: the combined frame places it with a
+  /// per-draw uniform, so a grid that only moved keeps the scene it already
+  /// had instead of rebuilding every instance at a new offset.
+  func makeScene(
     snapshot: GridDrawSnapshot,
     bounds: CGRect,
     scale: CGFloat,
   )
-  -> GridPreparedMetalFrame? {
+  -> GridMetalScene? {
     guard let glyphAtlas = renderer.glyphAtlas(scale: scale) else {
       return nil
     }
 
-    let scene = measuringRenderStage("scene build", .sceneBuild) {
+    return measuringRenderStage("scene build", .sceneBuild) {
       buildScene(snapshot: snapshot, bounds: bounds, glyphAtlas: glyphAtlas, scale: scale)
     }
-
-    return .init(
-      scene: scene,
-      atlasTexture: glyphAtlas.texture,
-      clearColor: snapshot.appearance.defaultBackgroundColor.metalClearColor,
-    )
   }
 
   private func buildScene(

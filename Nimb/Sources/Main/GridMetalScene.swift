@@ -7,12 +7,43 @@
 import AppKit
 import CoreText
 import Metal
+import NimbState
+
+/// Everything drawing one grid needs, captured as values on the main actor so
+/// the drawing itself can happen anywhere.
+struct GridDrawSnapshot: Sendable {
+  let grid: Grid
+  let upsideDownTransform: CGAffineTransform
+  let font: Font
+  let appearance: Appearance
+  let cursorBlinkingPhase: Bool
+  let isMouseUserInteractionEnabled: Bool
+}
+
+/// One grid's slice of a combined scene: where its instances live in the shared
+/// arrays, where it sits in the shared layer, and what it may paint over.
+///
+/// The five ranges have to be drawn grid by grid rather than kind by kind
+/// across all grids. Batching by kind would put a grid behind another grid's
+/// glyphs on top of the front grid's background.
+nonisolated struct GridMetalDraw {
+  var origin: SIMD2<Float>
+  var scissorRect: MTLScissorRect
+  var backgroundQuads: Range<Int> = 0 ..< 0
+  var decorationQuads: Range<Int> = 0 ..< 0
+  var glyphInstances: Range<Int> = 0 ..< 0
+  var cursorQuads: Range<Int> = 0 ..< 0
+  var cursorGlyphInstances: Range<Int> = 0 ..< 0
+}
 
 /// Unchecked because MTLTexture is an unannotated SDK protocol. The frame is
 /// built on one thread and consumed on another, and Metal objects are
 /// documented as safe for this.
-nonisolated struct GridPreparedMetalFrame: @unchecked Sendable {
+nonisolated struct GridsPreparedMetalFrame: @unchecked Sendable {
+  /// Every visible grid's instances, concatenated.
   let scene: GridMetalScene
+  /// Back to front, matching the order walkingGridFrames yields.
+  let draws: [GridMetalDraw]
   let atlasTexture: MTLTexture
   let clearColor: MTLClearColor
 }
