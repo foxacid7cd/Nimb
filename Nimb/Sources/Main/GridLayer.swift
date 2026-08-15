@@ -33,8 +33,18 @@ public nonisolated class GridLayer: CAMetalLayer {
     var viewportSize: SIMD2<Float>
   }
 
+  /// One buffer per (kind, in-flight frame).
+  ///
+  /// There used to be a single buffer per kind, refilled by memcpy at the top
+  /// of every display(). Nothing stopped the GPU from still reading it for a
+  /// frame that had been presented but not yet finished, so a fast enough
+  /// sequence of frames could rewrite instance data out from under a draw
+  /// call. Cycling matches the number of drawables the layer is allowed to
+  /// have outstanding, which is what bounds how many frames can be reading at
+  /// once -- nextDrawable blocks past that, so the ring can never wrap onto a
+  /// buffer that is still live.
   private final class MetalBufferCache {
-    enum Kind {
+    enum Kind: Int, CaseIterable {
       case backgroundQuads
       case decorationQuads
       case glyphs
@@ -48,10 +58,21 @@ public nonisolated class GridLayer: CAMetalLayer {
     }
 
     private let device: MTLDevice
-    private var entries: [Kind: Entry] = [:]
+    private let depth: Int
+    private var frameIndex = 0
+    /// Indexed by `kind.rawValue * depth + frameIndex`.
+    private var entries: [Entry?]
 
-    init(device: MTLDevice) {
+    init(device: MTLDevice, depth: Int) {
       self.device = device
+      self.depth = depth
+      entries = .init(repeating: nil, count: Kind.allCases.count * depth)
+    }
+
+    /// Moves to the next set of buffers. Call once per frame, before writing
+    /// anything.
+    func advance() {
+      frameIndex = (frameIndex + 1) % depth
     }
 
     func buffer<T>(for values: [T], kind: Kind) -> MTLBuffer? {
@@ -60,7 +81,8 @@ public nonisolated class GridLayer: CAMetalLayer {
         return nil
       }
 
-      if entries[kind]?.capacity ?? 0 < length {
+      let slot = kind.rawValue * depth + frameIndex
+      if entries[slot]?.capacity ?? 0 < length {
         var capacity = max(4 * 1024, MemoryLayout<T>.stride)
         while capacity < length {
           capacity *= 2
@@ -69,10 +91,10 @@ public nonisolated class GridLayer: CAMetalLayer {
         guard let buffer = device.makeBuffer(length: capacity, options: .storageModeShared) else {
           return nil
         }
-        entries[kind] = Entry(buffer: buffer, capacity: capacity)
+        entries[slot] = Entry(buffer: buffer, capacity: capacity)
       }
 
-      guard let entry = entries[kind] else {
+      guard let entry = entries[slot] else {
         return nil
       }
 
@@ -89,6 +111,10 @@ public nonisolated class GridLayer: CAMetalLayer {
 
   private static let metalRenderer = GridMetalRenderer.shared
   private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+  /// Also the depth of the instance buffer ring, and the two have to agree:
+  /// the drawable pool is what bounds the number of frames the GPU can be
+  /// reading instance data for.
+  private static let maximumFramesInFlight = 3
 
   private let gridID: Grid.ID
   private let store: Store
@@ -126,13 +152,18 @@ public nonisolated class GridLayer: CAMetalLayer {
   }
 
   override public func display() {
-    guard
-      let metalRenderer = Self.metalRenderer,
-      let renderInput = currentRenderInput(),
-      renderWithMetal(renderInput: renderInput, renderer: metalRenderer)
-    else {
+    let didRenderWithMetal = measuringRenderStage("display", .display) {
+      guard
+        let metalRenderer = Self.metalRenderer,
+        let renderInput = currentRenderInput()
+      else {
+        return false
+      }
+      return renderWithMetal(renderInput: renderInput, renderer: metalRenderer)
+    }
+
+    if !didRenderWithMetal {
       super.display()
-      return
     }
   }
 
@@ -185,6 +216,9 @@ public nonisolated class GridLayer: CAMetalLayer {
 
     device = metalRenderer.device
     pixelFormat = .bgra8Unorm
+    // Stated rather than left to the default, because the buffer ring below is
+    // sized to match it.
+    maximumDrawableCount = Self.maximumFramesInFlight
     // The drawable is only ever a render target -- nothing samples, blits or
     // reads it back -- so it can stay framebuffer-only and keep lossless
     // compression. Every grid is its own CAMetalLayer, so the saved
@@ -229,6 +263,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       viewportSize: .init(Float(bounds.width), Float(bounds.height)),
     )
     let bufferCache = prepareBufferCache(renderer: renderer)
+    bufferCache.advance()
 
     encodeQuadInstances(metalFrame.scene.backgroundQuads, kind: .backgroundQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
     encodeQuadInstances(metalFrame.scene.decorationQuads, kind: .decorationQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
@@ -264,7 +299,10 @@ public nonisolated class GridLayer: CAMetalLayer {
       return metalBufferCache
     }
 
-    let bufferCache = MetalBufferCache(device: renderer.device)
+    let bufferCache = MetalBufferCache(
+      device: renderer.device,
+      depth: Self.maximumFramesInFlight,
+    )
     metalBufferCache = bufferCache
     return bufferCache
   }
