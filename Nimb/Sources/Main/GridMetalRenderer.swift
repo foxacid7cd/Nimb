@@ -33,10 +33,6 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
 
   struct Uniforms {
     float2 viewportSize;
-    // Where the grid this draw belongs to sits inside the shared layer.
-    // Instances are built in grid-local coordinates so a grid that only moved
-    // does not have to be rebuilt.
-    float2 gridOrigin;
   };
 
   struct QuadOut {
@@ -57,19 +53,15 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     float2(1.0, 1.0)
   };
 
-  // device rather than constant: the combined scene holds every grid's
-  // instances in one buffer, which exceeds the 64KB a constant buffer is
-  // allowed, and device address space also drops the 256 byte offset alignment
-  // that per-grid rebasing would otherwise need.
   vertex QuadOut quadVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
-    device const QuadInstance *instances [[buffer(0)]],
+    constant QuadInstance *instances [[buffer(0)]],
     constant Uniforms &uniforms [[buffer(1)]]
   ) {
     QuadInstance instance = instances[instanceID];
     float2 corner = quadCorners[vertexID];
-    float2 point = uniforms.gridOrigin + instance.origin + corner * instance.size;
+    float2 point = instance.origin + corner * instance.size;
     float2 ndc = float2(
       (point.x / uniforms.viewportSize.x) * 2.0 - 1.0,
       (point.y / uniforms.viewportSize.y) * 2.0 - 1.0
@@ -88,12 +80,12 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
   vertex GlyphOut glyphVertex(
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
-    device const GlyphInstance *instances [[buffer(0)]],
+    constant GlyphInstance *instances [[buffer(0)]],
     constant Uniforms &uniforms [[buffer(1)]]
   ) {
     GlyphInstance instance = instances[instanceID];
     float2 corner = quadCorners[vertexID];
-    float2 point = uniforms.gridOrigin + instance.origin + corner * instance.size;
+    float2 point = instance.origin + corner * instance.size;
     float2 ndc = float2(
       (point.x / uniforms.viewportSize.x) * 2.0 - 1.0,
       (point.y / uniforms.viewportSize.y) * 2.0 - 1.0
