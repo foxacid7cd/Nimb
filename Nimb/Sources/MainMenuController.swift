@@ -254,6 +254,10 @@ final class MainMenuController: NSObject, Rendering {
     store.dispatch(Actions.ToggleStoreActionsLogging())
   }
 
+  @objc private func handleToggleCoreGraphicsRendering() {
+    store.dispatch(Actions.ToggleCoreGraphicsRendering())
+  }
+
   @objc private func handleLogState() {
     Task {
       var dump = ""
@@ -415,12 +419,23 @@ extension MainMenuController: NSMenuDelegate {
       )
       toggleStoreActionsLoggingMenuItem.target = self
 
+      let toggleCoreGraphicsRenderingMenuItem = NSMenuItem(
+        title: state.debug
+          .isCoreGraphicsRenderingEnabled ? "Render with Metal" :
+          "Render with CoreGraphics",
+        action: #selector(handleToggleCoreGraphicsRendering),
+        keyEquivalent: "",
+      )
+      toggleCoreGraphicsRenderingMenuItem.target = self
+
       menu.items = [
         logStateMenuItem,
         NSMenuItem.separator(),
         toggleUIEventsLoggingMenuItem,
         toggleMessagePackInspector,
         toggleStoreActionsLoggingMenuItem,
+        NSMenuItem.separator(),
+        toggleCoreGraphicsRenderingMenuItem,
       ]
 
     default:

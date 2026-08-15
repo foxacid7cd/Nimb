@@ -57,6 +57,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     didSet {
       gridLayer.frame = bounds
       gridLayer.updateDrawableSize()
+      coreGraphicsLayer.frame = bounds
     }
   }
 
@@ -65,6 +66,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let store: Store
   private let gridID: Grid.ID
   private let gridLayer: GridLayer
+  private let coreGraphicsLayer: GridCoreGraphicsLayer
+  /// nil until the first render, so the first pass always applies visibility.
+  private var renderingMode: Bool? = nil
   private let metalSceneBuilder: GridMetalSceneBuilder?
   private var isScrollingHorizontal: Bool? = nil
   private var xScrollingAccumulator: Double = 0
@@ -103,6 +107,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     self.gridID = gridID
     metalSceneBuilder = GridMetalRenderer.shared.map(GridMetalSceneBuilder.init(renderer:))
     gridLayer = .init(store: store, gridID: gridID)
+    coreGraphicsLayer = .init(gridID: gridID)
     super.init(frame: frameRect)
 
     wantsLayer = true
@@ -116,6 +121,11 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     gridLayer.updateDrawableSize()
     gridLayer.delegate = self
     layer!.addSublayer(gridLayer)
+
+    coreGraphicsLayer.frame = bounds
+    coreGraphicsLayer.delegate = self
+    coreGraphicsLayer.isHidden = true
+    layer!.addSublayer(coreGraphicsLayer)
   }
 
   @available(*, unavailable)
@@ -134,6 +144,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     layer!.contentsScale = scale
     gridLayer.contentsScale = scale
     gridLayer.updateDrawableSize()
+    coreGraphicsLayer.contentsScale = scale
   }
 
   override public func updateTrackingAreas() {
@@ -303,8 +314,35 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   public func render() {
-    gridLayer.update(renderInput: prepareRenderInput(makeRenderInput()))
-    gridLayer.render()
+    let isCoreGraphics = state.debug.isCoreGraphicsRenderingEnabled
+
+    // Compared against the mode actually in effect rather than against
+    // updates.isDebugUpdated, which is false on the first render: the flag is
+    // restored into the initial state rather than toggled into it, so keying
+    // off the update left both layers in their constructed visibility and the
+    // grid blank.
+    if renderingMode != isCoreGraphics {
+      renderingMode = isCoreGraphics
+      // Each layer keeps whatever it last drew, so the one being switched away
+      // from would otherwise stay on screen. Hide it and make the incoming one
+      // repaint from scratch.
+      gridLayer.isHidden = isCoreGraphics
+      coreGraphicsLayer.isHidden = !isCoreGraphics
+      if isCoreGraphics {
+        coreGraphicsLayer.setNeedsDisplay()
+      } else {
+        gridLayer.setNeedsDisplay()
+      }
+    }
+
+    let renderInput = prepareRenderInput(makeRenderInput())
+    if isCoreGraphics {
+      coreGraphicsLayer.update(renderInput: renderInput)
+      coreGraphicsLayer.render()
+    } else {
+      gridLayer.update(renderInput: renderInput)
+      gridLayer.render()
+    }
   }
 
   public func reportMouseMove(for event: NSEvent) {
@@ -401,14 +439,25 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       return nil
     }
 
+    // No frame means GridLayer.display falls through to draw(in:), which is
+    // the CoreGraphics path. Skipping the build is also what makes the two
+    // comparable: scene construction is Metal's cost and should not be charged
+    // to a frame that never uses it.
+    let metalFrame: GridPreparedMetalFrame? =
+      if renderContext.state.debug.isCoreGraphicsRenderingEnabled {
+        nil
+      } else {
+        metalSceneBuilder?.makeFrame(
+          snapshot: renderInput.snapshot,
+          bounds: bounds,
+          scale: max(gridLayer.contentsScale, 1),
+        )
+      }
+
     return .init(
       snapshot: renderInput.snapshot,
       updates: renderInput.updates,
-      metalFrame: metalSceneBuilder?.makeFrame(
-        snapshot: renderInput.snapshot,
-        bounds: bounds,
-        scale: max(gridLayer.contentsScale, 1),
-      ),
+      metalFrame: metalFrame,
     )
   }
 }

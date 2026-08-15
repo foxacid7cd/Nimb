@@ -141,7 +141,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       return
     }
 
-    draw(
+    GridCoreGraphicsRenderer.draw(
       snapshot: snapshot,
       in: ctx,
       clipRect: ctx.boundingBoxOfClipPath,
@@ -153,7 +153,11 @@ public nonisolated class GridLayer: CAMetalLayer {
       return
     }
 
-    for dirtyRect in calculateDirtyRects(renderInput: renderInput) {
+    for dirtyRect in GridCoreGraphicsRenderer.dirtyRects(
+      renderInput: renderInput,
+      gridID: gridID,
+      bounds: bounds,
+    ) {
       let clippedDirtyRect = dirtyRect.intersection(bounds)
       guard !clippedDirtyRect.isNull, !clippedDirtyRect.isEmpty else {
         continue
@@ -310,112 +314,5 @@ public nonisolated class GridLayer: CAMetalLayer {
     encoder.setFragmentTexture(atlasTexture, index: 0)
     encoder.setFragmentSamplerState(renderer.glyphSamplerState, index: 0)
     encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: instances.count)
-  }
-
-  private func draw(
-    snapshot: GridDrawSnapshot,
-    in ctx: CGContext,
-    clipRect: CGRect,
-  ) {
-    ctx.saveGState()
-    defer { ctx.restoreGState() }
-
-    let boundingRect = IntegerRectangle(
-      frame: clipRect.applying(snapshot.upsideDownTransform),
-      cellSize: snapshot.font.cellSize,
-    )
-    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
-      boundingRect: boundingRect,
-      font: snapshot.font,
-      upsideDownTransform: snapshot.upsideDownTransform,
-    )
-
-    ctx.setAllowsAntialiasing(false)
-    ctx.setAllowsFontSmoothing(false)
-    ctx.setShouldAntialias(false)
-    ctx.setShouldSmoothFonts(false)
-    for rowDrawRuns in visibleRowDrawRuns {
-      for visibleDrawRun in rowDrawRuns.drawRuns {
-        visibleDrawRun.drawRun.drawBackground(
-          to: ctx,
-          at: visibleDrawRun.rect.origin,
-          font: snapshot.font,
-          appearance: snapshot.appearance,
-        )
-      }
-    }
-
-    ctx.setAllowsAntialiasing(true)
-    ctx.setAllowsFontSmoothing(true)
-    ctx.setShouldAntialias(true)
-    ctx.setShouldSmoothFonts(true)
-    for rowDrawRuns in visibleRowDrawRuns {
-      for visibleDrawRun in rowDrawRuns.drawRuns {
-        visibleDrawRun.drawRun.drawForeground(
-          to: ctx,
-          at: visibleDrawRun.rect,
-          font: snapshot.font,
-          appearance: snapshot.appearance,
-        )
-      }
-    }
-
-    if
-      snapshot.cursorBlinkingPhase,
-      snapshot.isMouseUserInteractionEnabled,
-      let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
-      boundingRect.contains(cursorDrawRun.origin)
-    {
-      cursorDrawRun.draw(
-        to: ctx,
-        font: snapshot.font,
-        appearance: snapshot.appearance,
-        upsideDownTransform: snapshot.upsideDownTransform,
-      )
-    }
-  }
-
-  private func calculateDirtyRects(renderInput: GridRenderInput) -> [CGRect] {
-    let snapshot = renderInput.snapshot
-    let grid = snapshot.grid
-    let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * snapshot.font.cellHeight)
-
-    if renderInput.updates.isFontUpdated || renderInput.updates.isAppearanceUpdated {
-      return [bounds]
-    }
-
-    var dirtyRects: [CGRect] = []
-
-    if let gridUpdate = renderInput.updates.gridUpdates[gridID] {
-      switch gridUpdate {
-      case let .dirtyRectangles(value):
-        for rectangle in value {
-          dirtyRects.append(
-            (rectangle * snapshot.font.cellSize)
-              .insetBy(
-                dx: -snapshot.font.cellSize.width,
-                dy: -snapshot.font.cellSize.height * 0.5,
-              )
-              .applying(upsideDownTransform),
-          )
-        }
-
-      case .needsDisplay:
-        return [bounds]
-      }
-    }
-
-    if
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isMouseUserInteractionEnabledUpdated
-    {
-      dirtyRects.append(
-        (cursorDrawRun.rectangle * snapshot.font.cellSize)
-          .applying(upsideDownTransform),
-      )
-    }
-
-    return dirtyRects
   }
 }
