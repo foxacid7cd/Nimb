@@ -168,8 +168,24 @@ final nonisolated class GridMetalGlyphAtlas {
     // that touches the edge of its rasterisation would lose that dilation.
     let paddingPoints = 2 / max(scale, 1)
     let paddedBounds = bounds.insetBy(dx: -paddingPoints, dy: -paddingPoints)
-    let pixelWidth = max(1, Int(ceil(paddedBounds.width * scale)))
-    let pixelHeight = max(1, Int(ceil(paddedBounds.height * scale)))
+
+    // Snapped down to a whole device pixel before rasterising.
+    //
+    // The glyph's bounding box starts at an arbitrary fraction of a pixel, and
+    // that fraction differs per glyph. Rasterising from it put every glyph at
+    // its own subpixel phase inside its bitmap, and since the quad is then
+    // placed at that same fractional offset, the texels never lined up with
+    // the destination pixels -- so the sampler resampled each glyph by a
+    // different amount. Measured against the CoreGraphics renderer on real
+    // code, glyphs on one line landed anywhere from 0.5px above to 1.0px below
+    // where CoreText puts them. That is the jitter.
+    //
+    // Anchoring to the pixel grid here, and snapping the destination in the
+    // scene builder, makes the mapping exactly one texel per pixel.
+    let originX = (paddedBounds.minX * scale).rounded(.down) / scale
+    let originY = (paddedBounds.minY * scale).rounded(.down) / scale
+    let pixelWidth = max(1, Int(ceil((paddedBounds.maxX - originX) * scale)))
+    let pixelHeight = max(1, Int(ceil((paddedBounds.maxY - originY) * scale)))
     var bytes = [UInt8](repeating: 0, count: pixelWidth * pixelHeight)
 
     guard
@@ -203,7 +219,7 @@ final nonisolated class GridMetalGlyphAtlas {
 
     context.translateBy(x: 0, y: CGFloat(pixelHeight))
     context.scaleBy(x: scale, y: -scale)
-    context.translateBy(x: -paddedBounds.minX, y: -paddedBounds.minY)
+    context.translateBy(x: -originX, y: -originY)
 
     var position = CGPoint.zero
     CTFontDrawGlyphs(ctFont, &glyph, &position, 1, context)
@@ -212,7 +228,7 @@ final nonisolated class GridMetalGlyphAtlas {
       bytes: bytes,
       width: pixelWidth,
       height: pixelHeight,
-      origin: .init(Float(paddedBounds.minX), Float(paddedBounds.minY)),
+      origin: .init(Float(originX), Float(originY)),
       size: .init(Float(CGFloat(pixelWidth) / scale), Float(CGFloat(pixelHeight) / scale)),
     )
   }

@@ -95,6 +95,7 @@ final nonisolated class GridMetalSceneBuilder {
           in: rect,
           color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
           glyphAtlas: glyphAtlas,
+          scale: scale,
           to: &scene.glyphInstances,
         )
       }
@@ -110,6 +111,7 @@ final nonisolated class GridMetalSceneBuilder {
         cursorDrawRun,
         snapshot: snapshot,
         glyphAtlas: glyphAtlas,
+        scale: scale,
         to: &scene,
       )
     }
@@ -123,6 +125,7 @@ final nonisolated class GridMetalSceneBuilder {
     in rect: CGRect,
     color: SIMD4<Float>,
     glyphAtlas: GridMetalGlyphAtlas,
+    scale: CGFloat,
     clipRect: CGRect? = nil,
     to glyphInstances: inout [GridMetalGlyphInstance],
   ) {
@@ -132,9 +135,19 @@ final nonisolated class GridMetalSceneBuilder {
           continue
         }
 
+        // Snapped to whole device pixels.
+        //
+        // The atlas anchors each glyph to the pixel grid, so its size is
+        // already a whole number of pixels; landing the origin on the grid too
+        // is what makes the quad cover exactly as many pixels as the bitmap
+        // has texels. Without it the sampler resamples every glyph by whatever
+        // fraction its cell happened to fall on -- and with a cell width of
+        // 7.44pt, no two columns share a fraction.
         let glyphRect = CGRect(
-          x: rect.origin.x + glyphRun.positions[index].x + CGFloat(entry.origin.x),
-          y: rect.origin.y + glyphRun.positions[index].y + CGFloat(entry.origin.y),
+          x: ((rect.origin.x + glyphRun.positions[index].x + CGFloat(entry.origin.x)) * scale)
+            .rounded() / scale,
+          y: ((rect.origin.y + glyphRun.positions[index].y + CGFloat(entry.origin.y)) * scale)
+            .rounded() / scale,
           width: CGFloat(entry.size.x),
           height: CGFloat(entry.size.y),
         )
@@ -169,6 +182,7 @@ final nonisolated class GridMetalSceneBuilder {
     _ cursorDrawRun: CursorDrawRun,
     snapshot: GridDrawSnapshot,
     glyphAtlas: GridMetalGlyphAtlas,
+    scale: CGFloat,
     to scene: inout GridMetalScene,
   ) {
     let cursorForegroundColor: Color
@@ -207,6 +221,7 @@ final nonisolated class GridMetalSceneBuilder {
         in: parentRect,
         color: cursorForegroundColor.metal,
         glyphAtlas: glyphAtlas,
+        scale: scale,
         clipRect: cursorRect,
         to: &scene.cursorGlyphInstances,
       )
