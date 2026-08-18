@@ -84,11 +84,14 @@ public extension Actions {
       func apply(update: Grid.Update, toGridWithID gridID: Grid.ID) {
         let font = state.font
         let appearance = state.appearance
-        let outerGrid = state.outerGrid
         if state.grids[gridID] == nil {
+          // Read inline rather than hoisted above the branch: binding the
+          // outer grid to a local keeps a second reference to its cells alive
+          // for the rest of this function, which is exactly what makes the
+          // mutation below copy.
           var grid = Grid(
             id: gridID,
-            size: outerGrid!.size,
+            size: state.outerGrid!.size,
             font: font,
             appearance: appearance,
           )
@@ -96,13 +99,15 @@ public extension Actions {
           state.grids[gridID] = grid
         }
 
-        var grid = state.grids[gridID]!
-        let result = grid.apply(
+        // Mutated in place through the dictionary's _modify accessor. Copying
+        // the grid into a local, mutating it and assigning it back leaves the
+        // dictionary holding the original, so the first write inside `apply`
+        // copies the whole cell buffer and the write-back then releases it.
+        let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
           appearance: appearance,
         )
-        state.grids[gridID] = grid
 
         if let result {
           mergeGridUpdate(result, forGridWithID: gridID)
@@ -891,13 +896,19 @@ public extension Actions {
             let colStart = params.colStart
             let data = params.data
 
-            guard var grid = state.grids[gridID] else {
+            // Only the column count is read out. Binding the grid itself to a
+            // local, as this used to, holds a second reference to its cells
+            // for as long as the local lives, which turns the row replacement
+            // below into a copy of the entire buffer plus a release of the
+            // old one -- together the single most expensive thing the reducer
+            // did while scrolling.
+            guard let columnsCount = state.grids[gridID]?.columnsCount else {
               handleError(Failure("grid line event: Grid doesn't exist or destroyed", gridID))
               break
             }
 
             var cells = [Cell]()
-            let remainingColumns = grid.columnsCount - colStart
+            let remainingColumns = columnsCount - colStart
             cells.reserveCapacity(max(data.count, remainingColumns))
             var highlightID = 0
 
@@ -957,15 +968,19 @@ public extension Actions {
               }
             }
 
-            let dirtyRectangle = grid
+            // Hoisted so neither is read from `state` while the grid slot is
+            // being mutated through it.
+            let font = state.font
+            let appearance = state.appearance
+
+            let dirtyRectangle = state.grids[gridID]!
               .applyLineUpdate(
                 originColumn: colStart,
                 cells: cells,
                 row: row,
-                font: state.font,
-                appearance: state.appearance,
+                font: font,
+                appearance: appearance,
               )
-            state.grids[gridID] = grid
 
             mergeGridUpdate(.dirtyRectangles([dirtyRectangle]), forGridWithID: gridID)
           }
