@@ -11,6 +11,30 @@ import NimbCore
 import NimbState
 
 final nonisolated class GridMetalSceneBuilder {
+  /// One row's geometry, in the coordinates it was built at.
+  ///
+  /// Kept whole rather than merged into the scene arrays so a row that has not
+  /// changed can be copied out again next frame instead of being rebuilt, and
+  /// so a row that only moved can be re-based with one add per instance.
+  private struct CachedRow {
+    var originY: CGFloat
+    var backgroundQuads: [GridMetalQuadInstance] = []
+    var decorationQuads: [GridMetalQuadInstance] = []
+    var glyphInstances: [GridMetalGlyphInstance] = []
+  }
+
+  /// Everything a cached row depends on other than its own content. A change
+  /// to any of it invalidates every row at once.
+  ///
+  /// Colours are the reason this is needed at all: a draw run stores a
+  /// highlight id and resolves the colour when it is drawn, but a cached row
+  /// has the colour already baked into its vertices.
+  private struct CacheContext: Equatable {
+    var fontID: Int
+    var scale: CGFloat
+    var columns: Range<Int>
+  }
+
   private let renderer: GridMetalRenderer
   /// Instance counts from the previous frame, used to size this frame's arrays
   /// up front. A full-screen grid produces roughly ten thousand instances, so
@@ -23,12 +47,20 @@ final nonisolated class GridMetalSceneBuilder {
   /// intermediate arrays entirely by writing straight into the MTLBuffer ring.
   private var previousSceneCounts = GridMetalSceneCounts()
 
+  /// This frame's rows, keyed by row id. `carriedRows` holds last frame's and
+  /// is taken from as the walk goes; whatever is left in it belonged to rows
+  /// that scrolled off or were rebuilt, and is dropped.
+  private var cachedRows: [RowDrawRun.ID: CachedRow] = [:]
+  private var carriedRows: [RowDrawRun.ID: CachedRow] = [:]
+  private var cacheContext: CacheContext? = nil
+
   init(renderer: GridMetalRenderer) {
     self.renderer = renderer
   }
 
   func makeFrame(
     snapshot: GridDrawSnapshot,
+    updates: State.Updates,
     bounds: CGRect,
     scale: CGFloat,
   )
@@ -38,7 +70,13 @@ final nonisolated class GridMetalSceneBuilder {
     }
 
     let scene = measuringRenderStage("scene build", .sceneBuild) {
-      buildScene(snapshot: snapshot, bounds: bounds, glyphAtlas: glyphAtlas, scale: scale)
+      buildScene(
+        snapshot: snapshot,
+        updates: updates,
+        bounds: bounds,
+        glyphAtlas: glyphAtlas,
+        scale: scale,
+      )
     }
 
     return .init(
@@ -50,6 +88,7 @@ final nonisolated class GridMetalSceneBuilder {
 
   private func buildScene(
     snapshot: GridDrawSnapshot,
+    updates: State.Updates,
     bounds: CGRect,
     glyphAtlas: GridMetalGlyphAtlas,
     scale: CGFloat,
@@ -63,42 +102,63 @@ final nonisolated class GridMetalSceneBuilder {
       cellSize: snapshot.font.cellSize,
     )
 
-    // Walked through a closure rather than through visibleRowDrawRuns, which
-    // materialises an array of rows each holding an array of draw runs. Those
-    // two levels of allocation were rebuilt every frame purely to be iterated
-    // once and thrown away. The CoreGraphics renderer still uses the array
-    // form, which is what keeps the two paths comparable.
-    snapshot.grid.drawRuns.forEachVisibleDrawRun(
+    let context = CacheContext(
+      fontID: snapshot.font.id,
+      scale: scale,
+      columns: boundingRect.columns,
+    )
+    if cacheContext != context || updates.isAppearanceUpdated || updates.isHighlightsUpdated {
+      cachedRows.removeAll(keepingCapacity: true)
+      cacheContext = context
+    }
+
+    swap(&cachedRows, &carriedRows)
+    cachedRows.removeAll(keepingCapacity: true)
+
+    // Walked a row at a time rather than a draw run at a time, which is what
+    // makes the cache possible: a row carries an id that a scroll moves along
+    // with its contents, so an unchanged row is recognisable even though its
+    // index changed.
+    snapshot.grid.drawRuns.forEachVisibleRow(
       boundingRect: boundingRect,
       font: snapshot.font,
-      upsideDownTransform: snapshot.upsideDownTransform,
-    ) { drawRun, rect in
-      scene.backgroundQuads.append(
-        quadInstance(
-          rect: rect,
-          color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
-        ),
+    ) { rowDrawRun, rowOrigin in
+      let rowOriginY = CGRect(
+        x: 0,
+        y: rowOrigin.y,
+        width: 0,
+        height: snapshot.font.cellHeight,
       )
+      .applying(snapshot.upsideDownTransform)
+      .origin.y
 
-      appendDecorationInstances(
-        for: drawRun,
-        rect: rect,
-        font: snapshot.font,
-        appearance: snapshot.appearance,
-        scale: scale,
-        to: &scene.decorationQuads,
-      )
-
-      if let glyphRuns = drawRun.glyphRuns {
-        appendGlyphInstances(
-          glyphRuns,
-          in: rect,
-          color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
-          glyphAtlas: glyphAtlas,
-          scale: scale,
-          to: &scene.glyphInstances,
-        )
+      if let carried = carriedRows.removeValue(forKey: rowDrawRun.id) {
+        let delta = rowOriginY - carried.originY
+        // Glyph origins in a cached row were snapped to whole device pixels at
+        // the y it was built at, so the row can only be shifted by a whole
+        // number of device pixels without landing on different snapping.
+        // Cell height is a whole number of points, so every vertical scroll
+        // satisfies this and the rebuild below is only reached when something
+        // other than scrolling moved the row.
+        let deltaPixels = delta * scale
+        if (deltaPixels.rounded() - deltaPixels).magnitude < 1e-6 {
+          append(carried, deltaY: Float(delta), to: &scene)
+          cachedRows[rowDrawRun.id] = carried
+          return
+        }
       }
+
+      let built = buildRow(
+        rowDrawRun: rowDrawRun,
+        rowOrigin: rowOrigin,
+        rowOriginY: rowOriginY,
+        columns: boundingRect.columns,
+        snapshot: snapshot,
+        glyphAtlas: glyphAtlas,
+        scale: scale,
+      )
+      append(built, deltaY: 0, to: &scene)
+      cachedRows[rowDrawRun.id] = built
     }
 
     if
@@ -118,6 +178,89 @@ final nonisolated class GridMetalSceneBuilder {
 
     previousSceneCounts = .init(scene: scene)
     return scene
+  }
+
+  /// Turns one row into instances, in the coordinates given by `rowOrigin`.
+  ///
+  /// This is the work the cache exists to skip: an atlas lookup and a rounded
+  /// rect per glyph, plus a colour conversion per draw run.
+  private func buildRow(
+    rowDrawRun: RowDrawRun,
+    rowOrigin: CGPoint,
+    rowOriginY: CGFloat,
+    columns: Range<Int>,
+    snapshot: GridDrawSnapshot,
+    glyphAtlas: GridMetalGlyphAtlas,
+    scale: CGFloat,
+  )
+  -> CachedRow {
+    var row = CachedRow(originY: rowOriginY)
+
+    rowDrawRun.forEachVisibleDrawRun(
+      columnsRange: columns,
+      at: rowOrigin,
+      font: snapshot.font,
+      upsideDownTransform: snapshot.upsideDownTransform,
+    ) { drawRun, rect in
+      row.backgroundQuads.append(
+        quadInstance(
+          rect: rect,
+          color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
+        ),
+      )
+
+      appendDecorationInstances(
+        for: drawRun,
+        rect: rect,
+        font: snapshot.font,
+        appearance: snapshot.appearance,
+        scale: scale,
+        to: &row.decorationQuads,
+      )
+
+      if let glyphRuns = drawRun.glyphRuns {
+        appendGlyphInstances(
+          glyphRuns,
+          in: rect,
+          color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
+          glyphAtlas: glyphAtlas,
+          scale: scale,
+          to: &row.glyphInstances,
+        )
+      }
+    }
+
+    return row
+  }
+
+  /// Copies a row's instances into the scene, shifted by `deltaY`.
+  ///
+  /// The zero case is the common one for a row that did not move, and skips
+  /// the per-instance add entirely.
+  private func append(
+    _ row: CachedRow,
+    deltaY: Float,
+    to scene: inout GridMetalScene,
+  ) {
+    guard deltaY != 0 else {
+      scene.backgroundQuads.append(contentsOf: row.backgroundQuads)
+      scene.decorationQuads.append(contentsOf: row.decorationQuads)
+      scene.glyphInstances.append(contentsOf: row.glyphInstances)
+      return
+    }
+
+    for var quad in row.backgroundQuads {
+      quad.origin.y += deltaY
+      scene.backgroundQuads.append(quad)
+    }
+    for var quad in row.decorationQuads {
+      quad.origin.y += deltaY
+      scene.decorationQuads.append(quad)
+    }
+    for var glyph in row.glyphInstances {
+      glyph.origin.y += deltaY
+      scene.glyphInstances.append(glyph)
+    }
   }
 
   private func appendGlyphInstances(

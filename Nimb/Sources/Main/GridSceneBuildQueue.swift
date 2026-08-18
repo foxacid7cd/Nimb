@@ -100,6 +100,7 @@ final nonisolated class GridSceneBuildQueue: Sendable {
       for request in batch {
         let metalFrame = request.builder.makeFrame(
           snapshot: request.snapshot,
+          updates: request.updates,
           bounds: request.bounds,
           scale: request.scale,
         )

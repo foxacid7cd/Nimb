@@ -99,18 +99,23 @@ public struct GridDrawRuns: Sendable {
     }
   }
 
-  /// Visits every draw run overlapping `boundingRect`, top row first, with the
-  /// view rect it occupies.
+  /// Visits every row overlapping `boundingRect`, top row first, with the
+  /// origin its draw runs are laid out from.
+  ///
+  /// Handing over rows rather than individual draw runs is what lets a caller
+  /// cache per row: the row carries an id that survives scrolling, and the
+  /// origin is what a cached row has to be re-based onto. Callers that want
+  /// the draw runs go on to `RowDrawRun.forEachVisibleDrawRun` with the same
+  /// origin.
   ///
   /// The array-returning `visibleRowDrawRuns` below builds two levels of array
   /// per call — one of rows, each holding one of draw runs — which the Metal
   /// scene builder rebuilt every frame only to iterate once. This is the same
   /// walk without the intermediates.
-  public func forEachVisibleDrawRun(
+  public func forEachVisibleRow(
     boundingRect: IntegerRectangle,
     font: Font,
-    upsideDownTransform: CGAffineTransform,
-    _ body: (DrawRun, CGRect) -> Void,
+    _ body: (RowDrawRun, CGPoint) -> Void,
   ) {
     let fromRow = max(boundingRect.minRow, 0)
     let toRow = min(boundingRect.maxRow, rowDrawRuns.count)
@@ -119,13 +124,7 @@ public struct GridDrawRuns: Sendable {
     }
 
     for row in fromRow ..< toRow {
-      rowDrawRuns[row].forEachVisibleDrawRun(
-        columnsRange: boundingRect.columns,
-        at: .init(x: 0, y: Double(row) * font.cellHeight),
-        font: font,
-        upsideDownTransform: upsideDownTransform,
-        body,
-      )
+      body(rowDrawRuns[row], .init(x: 0, y: Double(row) * font.cellHeight))
     }
   }
 
@@ -158,6 +157,23 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
+  /// Identifies one shaped row.
+  ///
+  /// A renderer that turns rows into geometry needs to tell "the same row I
+  /// already have" from "this row was rebuilt", and the row index cannot say
+  /// it: a scroll moves RowDrawRun values between slots, so the content at row
+  /// three this frame was at row twelve last frame. Moving the value carries
+  /// the id with it, so keying on the id follows the content.
+  public struct ID: Hashable, Sendable {
+    fileprivate var rawValue: UInt64
+  }
+
+  private static let nextRawID = Atomic<UInt64>(1)
+
+  /// Fresh on every construction, preserved by assignment. Rows are rebuilt
+  /// only when their content changes, so an unchanged id means unchanged
+  /// geometry.
+  public var id: ID = RowDrawRun.makeID()
   public var drawRuns: [DrawRun]
 
   public init(
@@ -201,6 +217,10 @@ public struct RowDrawRun: Sendable {
     }
 
     self.drawRuns = drawRuns
+  }
+
+  public static func makeID() -> ID {
+    .init(rawValue: nextRawID.wrappingAdd(1, ordering: .relaxed).oldValue)
   }
 
   public func drawBackground(
@@ -255,7 +275,7 @@ public struct RowDrawRun: Sendable {
     }
   }
 
-  func forEachVisibleDrawRun(
+  public func forEachVisibleDrawRun(
     columnsRange: Range<Int>,
     at origin: CGPoint,
     font: Font,

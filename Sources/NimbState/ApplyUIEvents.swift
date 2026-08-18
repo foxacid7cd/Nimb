@@ -865,6 +865,7 @@ public extension Actions {
             }
 
             state.appearance.highlights[params.id] = highlight
+            updates.isHighlightsUpdated = true
 
             for rawInfoItem in params.info {
               if

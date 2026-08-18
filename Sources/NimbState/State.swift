@@ -31,6 +31,14 @@ public struct State: Sendable {
     public var isTitleUpdated: Bool = false
     public var isFontUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
+    /// A highlight definition changed.
+    ///
+    /// Weaker than isAppearanceUpdated, which forces every row of every grid
+    /// to reshape and every view to be reconstructed — far too much for a
+    /// colour change, since draw runs hold highlight ids and resolve colours
+    /// when they are drawn. Renderers that instead bake colours into geometry
+    /// ahead of time need to know, and this is what tells them.
+    public var isHighlightsUpdated: Bool = false
     public var updatedObservedHighlightNames: Set<
       Appearance
         .ObservedHighlightName,
@@ -68,6 +76,7 @@ public struct State: Sendable {
       isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
       isFontUpdated = isFontUpdated || updates.isFontUpdated
       isAppearanceUpdated = isAppearanceUpdated || updates.isAppearanceUpdated
+      isHighlightsUpdated = isHighlightsUpdated || updates.isHighlightsUpdated
       updatedObservedHighlightNames
         .formUnion(updates.updatedObservedHighlightNames)
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
