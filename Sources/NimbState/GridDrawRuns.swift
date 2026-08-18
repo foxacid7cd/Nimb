@@ -346,10 +346,24 @@ public struct DrawRun: Sendable {
         isItalic: isItalic,
       )
 
-      let attributedString = NSAttributedString(
-        string: .init(cells.map(\.character)),
-        attributes: [.font: appKitFont],
-      )
+      // Built character by character rather than via `String(cells.map(...))`,
+      // which materialises an intermediate [Character] for every shaped run.
+      var text = ""
+      text.reserveCapacity(cells.count)
+      for cell in cells {
+        text.append(cell.character)
+      }
+
+      // CFAttributedString with a prebuilt attribute dictionary, rather than
+      // NSAttributedString with a Swift dictionary literal: the literal is
+      // bridged to an NSDictionary on every call, and this path runs for most
+      // shaped runs because the draw run cache misses roughly two times in
+      // three on real text.
+      let attributedString = CFAttributedStringCreate(
+        nil,
+        text as CFString,
+        font.attributes(isBold: isBold, isItalic: isItalic),
+      )!
 
       let ctTypesetter = CTTypesetterCreateWithAttributedStringAndOptions(
         attributedString,
@@ -368,46 +382,69 @@ public struct DrawRun: Sendable {
       let yOffset = (font.cellHeight - bounds.height) / 2 + descent
       let offset = CGPoint(x: xOffset, y: yOffset)
 
-      let ctRuns = CTLineGetGlyphRuns(ctLine) as! [CTRun]
+      // Walked as a CFArray rather than bridged with `as! [CTRun]`, which
+      // allocates a Swift array and dynamic-casts every element.
+      let ctRuns = CTLineGetGlyphRuns(ctLine)
+      let ctRunsCount = CFArrayGetCount(ctRuns)
 
-      let glyphRuns = ctRuns
-        .map { ctRun -> GlyphRun in
-          let glyphCount = CTRunGetGlyphCount(ctRun)
+      var glyphRuns = [GlyphRun]()
+      glyphRuns.reserveCapacity(ctRunsCount)
 
-          let glyphs =
-            [CGGlyph](unsafeUninitializedCapacity: glyphCount)
-          { buffer, initializedCount in
-            CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
+      for ctRunIndex in 0 ..< ctRunsCount {
+        let ctRun = unsafeBitCast(
+          CFArrayGetValueAtIndex(ctRuns, ctRunIndex),
+          to: CTRun.self,
+        )
+        let glyphCount = CTRunGetGlyphCount(ctRun)
+
+        let glyphs =
+          [CGGlyph](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetGlyphs(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
+
+        // Offset in place. Reading the positions and then mapping over them
+        // built a second array per run.
+        let positions =
+          [CGPoint](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
+          for index in 0 ..< glyphCount {
+            buffer[index] = buffer[index] + offset
           }
+          initializedCount = glyphCount
+        }
 
-          let positions =
-            [CGPoint](unsafeUninitializedCapacity: glyphCount)
-          { buffer, initializedCount in
-            CTRunGetPositions(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
-          }
-          .map { $0 + offset }
+        let advances =
+          [CGSize](unsafeUninitializedCapacity: glyphCount)
+        { buffer, initializedCount in
+          CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
+          initializedCount = glyphCount
+        }
 
-          let advances =
-            [CGSize](unsafeUninitializedCapacity: glyphCount)
-          { buffer, initializedCount in
-            CTRunGetAdvances(ctRun, .init(), buffer.baseAddress!)
-            initializedCount = glyphCount
-          }
+        // Read straight out of the CFDictionary. Casting it to
+        // [NSAttributedString.Key: Any] bridged the whole dictionary --
+        // allocating a native one and dynamic-casting each key and value --
+        // to look up a single entry. The run only carries a font different
+        // from the one asked for when CoreText substituted for a missing
+        // glyph, but the lookup ran on every run regardless.
+        let attributesFont = CFDictionaryGetValue(
+          CTRunGetAttributes(ctRun),
+          Unmanaged.passUnretained(kCTFontAttributeName).toOpaque(),
+        )
+        .map { Unmanaged<NSFont>.fromOpaque($0).takeUnretainedValue() }
 
-          let attributes =
-            CTRunGetAttributes(ctRun) as! [NSAttributedString.Key: Any]
-          let attributesFont = attributes[.font] as? NSFont
-
-          return .init(
+        glyphRuns.append(
+          .init(
             appKitFont: attributesFont ?? appKitFont,
             textMatrix: CTRunGetTextMatrix(ctRun),
             glyphs: glyphs,
             positions: positions,
             advances: advances,
-          )
-        }
+          ),
+        )
+      }
 
       let drawRun = DrawRun(
         rowPartContent: rowPartContent,

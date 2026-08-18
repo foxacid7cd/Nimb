@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import CoreText
 import NimbCore
 
 public struct Font: Sendable, Hashable {
@@ -51,6 +52,17 @@ public struct Font: Sendable, Hashable {
       wrapped.regular
     }
   }
+
+  /// The CoreText attribute dictionary for one trait combination, built once
+  /// per font rather than per shaped run.
+  ///
+  /// DrawRun used to hand `[.font: nsFont]` to NSAttributedString, which
+  /// bridges a fresh Swift Dictionary into an NSDictionary on every miss of
+  /// the draw run cache — and most shaped runs are misses, averaging under
+  /// four cells each.
+  public func attributes(isBold: Bool = false, isItalic: Bool = false) -> CFDictionary {
+    wrapped.attributes[FontBridge.WrappedFont.variantIndex(isBold: isBold, isItalic: isItalic)]
+  }
 }
 
 @MainActor
@@ -65,6 +77,9 @@ final class FontBridge {
     var boldItalic: NSFont
     var cellWidth: Double
     var cellHeight: Double
+    /// Indexed by `variantIndex`, so the four trait combinations line up with
+    /// the four fonts above.
+    var attributes: [CFDictionary]
 
     init(index: Int, appKit: NSFont) {
       self.index = index
@@ -85,6 +100,14 @@ final class FontBridge {
 
       cellWidth = appKit.makeCellWidth()
       cellHeight = appKit.makeCellHeight()
+
+      attributes = [regular, bold, italic, boldItalic].map { font in
+        [kCTFontAttributeName as String: font] as CFDictionary
+      }
+    }
+
+    static func variantIndex(isBold: Bool, isItalic: Bool) -> Int {
+      (isBold ? 1 : 0) | (isItalic ? 2 : 0)
     }
   }
 
