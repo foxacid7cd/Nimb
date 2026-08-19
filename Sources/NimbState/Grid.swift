@@ -146,7 +146,7 @@ public struct Grid: Sendable, Identifiable {
   }
 
   public var columnsCount: Int {
-    size.rowsCount
+    size.columnsCount
   }
 
   public var isFocusable: Bool {
