@@ -359,7 +359,11 @@ public struct Grid: Sendable, Identifiable {
       with: cells,
     )
 
-    layout.rowLayouts[row] = RowLayout(rowCells: layout.cells.rowSlice(row))
+    layout.rowLayouts[row].replaceCells(
+      columns: originColumn ..< originColumn + cells.count,
+      rowCells: layout.cells.rowSlice(row),
+    )
+
     drawRuns.rowDrawRuns[row] = RowDrawRun(
       row: row,
       layout: layout.rowLayouts[row],
