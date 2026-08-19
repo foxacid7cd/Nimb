@@ -249,11 +249,25 @@ public struct Grid: Sendable, Identifiable {
         .applying(offset: -offset)
         .intersection(with: rectangle)
 
+      let isFullWidth = rectangle.size.columnsCount == size.columnsCount
+
+      // Moved as one block. Whole rows are contiguous in the cell buffer, and
+      // a full-width scroll moves a contiguous run of them, so the row-by-row
+      // form below was paying the slice and replaceSubrange plumbing once per
+      // row for what is a single copy.
+      if isFullWidth {
+        layout.cells.copyRows(
+          toRectangle.rows.lowerBound + offset.rowsCount
+            ..< toRectangle.rows.upperBound + offset.rowsCount,
+          from: cellsCopy,
+          to: toRectangle.rows.lowerBound,
+        )
+      }
+
       for toRow in toRectangle.rows {
         let fromRow = toRow + offset.rowsCount
 
-        if rectangle.size.columnsCount == size.columnsCount {
-          layout.cells.copyRow(fromRow, from: cellsCopy, to: toRow)
+        if isFullWidth {
           layout.rowLayouts[toRow] = rowLayoutsCopy[fromRow]
           drawRuns.rowDrawRuns[toRow] = rowDrawRunsCopy[fromRow]
         } else {

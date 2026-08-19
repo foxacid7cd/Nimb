@@ -126,6 +126,31 @@ public struct TwoDimensionalArray<Element> {
       with: source.rowSlice(sourceRow),
     )
   }
+
+  /// Copies a run of whole rows out of `source`, starting at `destinationRow`.
+  ///
+  /// Whole rows are contiguous in storage, so a run of them is one
+  /// replaceSubrange rather than one per row. Scrolling moves most of the
+  /// screen this way, and doing it a row at a time paid the slice and
+  /// contiguous-storage plumbing sixty times a frame — sampling put that
+  /// overhead above the copy it was wrapping.
+  @inlinable
+  public mutating func copyRows(
+    _ sourceRows: Range<Int>,
+    from source: Self,
+    to destinationRow: Int,
+  ) {
+    guard !sourceRows.isEmpty else {
+      return
+    }
+    let count = sourceRows.count * columnsCount
+    let sourceStart = sourceRows.lowerBound * columnsCount
+    let destinationStart = destinationRow * columnsCount
+    storage.replaceSubrange(
+      destinationStart ..< destinationStart + count,
+      with: source.storage[sourceStart ..< sourceStart + count],
+    )
+  }
 }
 
 extension TwoDimensionalArray: Sendable where Element: Sendable { }
