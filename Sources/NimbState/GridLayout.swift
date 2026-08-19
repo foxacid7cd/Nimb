@@ -77,7 +77,11 @@ public struct RowLayout: Sendable {
         }
         let cellCharacterType: CellCharacterType =
           if let character = cell.character {
-            if character.isWhitespace {
+            // Space is checked first because almost every whitespace cell in a
+            // terminal grid is one. Character.isWhitespace resolves a Unicode
+            // binary property, which sampling put at 4.4% of the reducer while
+            // scrolling -- paid once per cell of every row rebuilt.
+            if character == " " || character.isWhitespace {
               .whitespace
             } else {
               .regular(character, isDoubleWidth: cell.isDoubleWidth)
