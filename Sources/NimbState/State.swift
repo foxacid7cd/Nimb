@@ -20,6 +20,15 @@ public struct State: Sendable {
     /// Signposts are always emitted; this only turns on the clock reads and the
     /// aggregation behind them, so a regression is visible without Instruments.
     public var isFrameStatsLoggingEnabled: Bool = false
+    /// Drive the reducer on the main actor instead of the cooperative pool.
+    ///
+    /// Only useful for measurement. The reducer and the render walk normally
+    /// run on different threads, so their costs overlap and neither timing
+    /// includes waiting for the other; putting them on the same thread makes
+    /// the two add up into one number, and makes any contention between them
+    /// show up as time rather than hiding in a stall. Read once when the store
+    /// is built, so it takes effect on the next launch.
+    public var isReducingOnMainThreadEnabled: Bool = false
   }
 
   @PublicInit

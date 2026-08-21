@@ -153,50 +153,88 @@ public final nonisolated class Store: Sendable {
       neovimNotificationsTask.cancel()
     }
 
+    // The reducer normally runs off the main actor, which is the point: it is
+    // the longest stage of a frame and nothing about it needs the main thread.
+    // The debug flag puts it back on main so the reducer and the render walk
+    // can be timed as one serialised number instead of two overlapping ones.
+    let isReducingOnMainThread = initialState.debug.isReducingOnMainThreadEnabled
+
     updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
-      Task {
-        var state = initialState
-        var updates = State.Updates()
-        continuation.yield((state, updates))
-
-        func apply(_ action: any Action) {
-          let newUpdates = measuringRenderStage("reduce", .reduce) {
-            action.apply(to: &state) { error in
-              alertsContinuation.yield(.init(error))
-            }
-          }
-          updates.formUnion(newUpdates)
-
-          if updates.needFlush {
-            continuation.yield((state, updates))
-            updates = .init()
-          }
+      if isReducingOnMainThread {
+        Task { @MainActor in
+          await Self.runReducer(
+            initialState: initialState,
+            pendingActions: pendingActionsStream,
+            continuation: continuation,
+            alertsContinuation: alertsContinuation,
+          )
         }
-
-        for await pendingActions in pendingActionsStream {
-          guard !Task.isCancelled else {
-            return
-          }
-
-          switch pendingActions {
-          case let .single(action):
-            apply(action)
-
-          case let .batch(batch):
-            for action in batch {
-              apply(action)
-            }
-
-          case let .failure(error):
-            alertsContinuation.yield(.init(error))
-            continuation.finish()
-            return
-          }
+      } else {
+        Task {
+          await Self.runReducer(
+            initialState: initialState,
+            pendingActions: pendingActionsStream,
+            continuation: continuation,
+            alertsContinuation: alertsContinuation,
+          )
         }
-
-        continuation.finish()
       }
     }
+  }
+
+  /// Applies actions to State until the action stream ends.
+  ///
+  /// The `isolation` parameter is what lets one body serve both cases: it
+  /// makes the function adopt whatever actor the caller is on, so spawning it
+  /// from `Task { @MainActor in }` runs the whole loop on the main actor and
+  /// spawning it from a plain `Task` leaves it on the cooperative pool.
+  private static func runReducer(
+    isolation: isolated (any Actor)? = #isolation,
+    initialState: State,
+    pendingActions: AsyncStream<PendingActions>,
+    continuation: AsyncStream<(state: State, updates: State.Updates)>.Continuation,
+    alertsContinuation: AsyncStream<Alert>.Continuation,
+  ) async {
+    var state = initialState
+    var updates = State.Updates()
+    continuation.yield((state, updates))
+
+    func apply(_ action: any Action) {
+      let newUpdates = measuringRenderStage("reduce", .reduce) {
+        action.apply(to: &state) { error in
+          alertsContinuation.yield(.init(error))
+        }
+      }
+      updates.formUnion(newUpdates)
+
+      if updates.needFlush {
+        continuation.yield((state, updates))
+        updates = .init()
+      }
+    }
+
+    for await pendingActions in pendingActions {
+      guard !Task.isCancelled else {
+        return
+      }
+
+      switch pendingActions {
+      case let .single(action):
+        apply(action)
+
+      case let .batch(batch):
+        for action in batch {
+          apply(action)
+        }
+
+      case let .failure(error):
+        alertsContinuation.yield(.init(error))
+        continuation.finish()
+        return
+      }
+    }
+
+    continuation.finish()
   }
 
   public nonisolated func dispatch(_ action: Action) {

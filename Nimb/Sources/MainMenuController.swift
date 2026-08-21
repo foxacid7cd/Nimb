@@ -262,6 +262,10 @@ final class MainMenuController: NSObject, Rendering {
     store.dispatch(Actions.ToggleFrameStatsLogging())
   }
 
+  @objc private func handleToggleReducingOnMainThread() {
+    store.dispatch(Actions.ToggleReducingOnMainThread())
+  }
+
   @objc private func handleLogState() {
     Task {
       var dump = ""
@@ -441,6 +445,17 @@ extension MainMenuController: NSMenuDelegate {
       )
       toggleFrameStatsLoggingMenuItem.target = self
 
+      // Read when the store is built, so the label says what a toggle now
+      // actually does rather than pretending it took effect.
+      let toggleReducingOnMainThreadMenuItem = NSMenuItem(
+        title: state.debug
+          .isReducingOnMainThreadEnabled ? "Reduce off main thread after restart" :
+          "Reduce on main thread after restart",
+        action: #selector(handleToggleReducingOnMainThread),
+        keyEquivalent: "",
+      )
+      toggleReducingOnMainThreadMenuItem.target = self
+
       menu.items = [
         logStateMenuItem,
         NSMenuItem.separator(),
@@ -450,6 +465,7 @@ extension MainMenuController: NSMenuDelegate {
         NSMenuItem.separator(),
         toggleCoreGraphicsRenderingMenuItem,
         toggleFrameStatsLoggingMenuItem,
+        toggleReducingOnMainThreadMenuItem,
       ]
 
     default:
