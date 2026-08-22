@@ -39,7 +39,7 @@ public class Unpacker {
       switch result {
       case MSGPACK_UNPACK_EXTRA_BYTES,
            MSGPACK_UNPACK_SUCCESS:
-        accumulator.append(.init(unpacked.data))
+        accumulator.append(.init(message: unpacked.data))
 
       case MSGPACK_UNPACK_CONTINUE:
         return accumulator

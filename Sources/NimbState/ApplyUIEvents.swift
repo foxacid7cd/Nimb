@@ -910,61 +910,31 @@ public extension Actions {
 
             var cells = [Cell]()
             let remainingColumns = columnsCount - colStart
-            cells.reserveCapacity(max(data.count, remainingColumns))
+            cells.reserveCapacity(max(data.runs.count, remainingColumns))
             var highlightID = 0
 
-            for value in data {
-              guard
-                case let .array(arrayValue) = value,
-                !arrayValue.isEmpty,
-                case let .string(text) = arrayValue[0]
-              else {
-                handleError(Failure("invalid grid line cell value", value))
-                break
+            // The runs arrive already decoded -- the shape checking that used
+            // to happen here now happens once, off the msgpack objects, so
+            // this is only the expansion into cells.
+            for run in data.runs {
+              if let runHighlightID = run.highlightID {
+                highlightID = runHighlightID
               }
 
-              var repeatCount = 1
-
-              if arrayValue.count > 1 {
-                guard
-                  case let .integer(newHighlightID) = arrayValue[1]
-                else {
-                  handleError(Failure(
-                    "invalid grid line cell highlight value",
-                    arrayValue[1],
-                  ))
-                  break
-                }
-
-                highlightID = newHighlightID
-
-                if arrayValue.count > 2 {
-                  guard
-                    case let .integer(newRepeatCount) = arrayValue[2]
-                  else {
-                    handleError(Failure(
-                      "invalid grid line cell repeat count value",
-                      arrayValue[2],
-                    ))
-                    break
-                  }
-
-                  repeatCount = newRepeatCount
-                }
-              }
-
-              if text.count > 1 {
-                handleError(Failure("grid line cell text has more than one character", text))
-              } else if text.isEmpty, !cells.isEmpty {
+              if run.text.count > 1 {
+                handleError(
+                  Failure("grid line cell text has more than one character", run.text),
+                )
+              } else if run.text.isEmpty, !cells.isEmpty {
                 cells[cells.count - 1].isDoubleWidth = true
               }
 
               let cell = Cell(
-                character: text.first,
+                character: run.text.first,
                 isDoubleWidth: false,
                 highlightID: highlightID,
               )
-              for _ in 0 ..< repeatCount {
+              for _ in 0 ..< (run.repeatCount ?? 1) {
                 cells.append(cell)
               }
             }

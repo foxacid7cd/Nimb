@@ -25,6 +25,28 @@ public class Packer {
 
   private func process(_ value: Value) {
     switch value {
+    case let .cellRuns(runs):
+      // Inbound only -- Neovim sends grid_line, nothing here ever replies with
+      // one. Packed back to its wire shape anyway so the type stays honest.
+      msgpack_pack_array(&pk, runs.count)
+      for run in runs {
+        var fieldsCount = 1
+        if run.highlightID != nil {
+          fieldsCount = 2
+        }
+        if run.repeatCount != nil {
+          fieldsCount = 3
+        }
+        msgpack_pack_array(&pk, fieldsCount)
+        process(.string(run.text))
+        if let highlightID = run.highlightID {
+          process(.integer(highlightID))
+        }
+        if let repeatCount = run.repeatCount {
+          process(.integer(repeatCount))
+        }
+      }
+
     case let .boolean(boolean):
       if boolean {
         msgpack_pack_true(&pk)

@@ -76,6 +76,23 @@ public struct Metadata: Sendable {
         ),
       )
     }
+
+    /// grid_line's cell array, retyped so it is decoded once off the wire
+    /// rather than built into a tree of Values and walked again. Applied by
+    /// name because the api-info metadata says only "Array".
+    public mutating func applyGridLineCellsTypeIfNeeded(uiEventName: String) {
+      guard uiEventName == "grid_line", name == "data" else {
+        return
+      }
+      type = .init(
+        rawValue: type.rawValue,
+        custom: .init(
+          signature: "RawCellRuns",
+          valueEncoder: (".array(", ".asValues)"),
+          valueDecoder: { expr, name in "let \(name) = RawCellRuns(\(expr))" },
+        ),
+      )
+    }
   }
 
   @PublicInit
@@ -184,7 +201,13 @@ public struct Metadata: Sendable {
         return .init(
           name: name,
           parameters: rawParameters
-            .compactMap { Metadata.Parameter($0, types: types) },
+            .compactMap { rawParameter -> Metadata.Parameter? in
+              guard var parameter = Metadata.Parameter(rawParameter, types: types) else {
+                return nil
+              }
+              parameter.applyGridLineCellsTypeIfNeeded(uiEventName: name)
+              return parameter
+            },
         )
       },
 
