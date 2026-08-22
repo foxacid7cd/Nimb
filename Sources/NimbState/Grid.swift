@@ -24,6 +24,21 @@ public struct Grid: Sendable, Identifiable {
     case dirtyRectangles([IntegerRectangle])
     case needsDisplay
 
+    /// The rectangles, merged. Coalescing happens here rather than in
+    /// `formUnion` because only one caller ever looks at the list, and
+    /// merging eagerly meant re-coalescing everything accumulated so far on
+    /// every single line update. A sideways scroll resends every visible row,
+    /// so that was sixty passes over a growing array per frame to produce a
+    /// list nothing had asked for yet -- 8% of the reducer.
+    public var coalescedRectangles: [IntegerRectangle] {
+      switch self {
+      case let .dirtyRectangles(dirtyRectangles):
+        Self.coalesce(dirtyRectangles)
+      case .needsDisplay:
+        []
+      }
+    }
+
     public static func coalesced(_ dirtyRectangles: [IntegerRectangle]) -> Self {
       .dirtyRectangles(coalesce(dirtyRectangles))
     }
@@ -100,7 +115,7 @@ public struct Grid: Sendable, Identifiable {
         let .dirtyRectangles(dirtyRectangles),
       ):
         accumulator += dirtyRectangles
-        self = Self.coalesced(accumulator)
+        self = .dirtyRectangles(accumulator)
 
       case (_, .needsDisplay):
         self = .needsDisplay

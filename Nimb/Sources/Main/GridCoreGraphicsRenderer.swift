@@ -98,8 +98,8 @@ nonisolated enum GridCoreGraphicsRenderer {
 
     if let gridUpdate = renderInput.updates.gridUpdates[gridID] {
       switch gridUpdate {
-      case let .dirtyRectangles(value):
-        for rectangle in value {
+      case .dirtyRectangles:
+        for rectangle in gridUpdate.coalescedRectangles {
           dirtyRects.append(
             (rectangle * snapshot.font.cellSize)
               .insetBy(

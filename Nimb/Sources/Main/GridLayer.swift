@@ -181,21 +181,21 @@ public nonisolated class GridLayer: CAMetalLayer {
   }
 
   public nonisolated func render() {
-    guard let renderInput = isolatedRenderInput.withLock({ $0 }) else {
+    guard isolatedRenderInput.withLock({ $0 }) != nil else {
       return
     }
 
-    for dirtyRect in GridCoreGraphicsRenderer.dirtyRects(
-      renderInput: renderInput,
-      gridID: gridID,
-      bounds: bounds,
-    ) {
-      let clippedDirtyRect = dirtyRect.intersection(bounds)
-      guard !clippedDirtyRect.isNull, !clippedDirtyRect.isEmpty else {
-        continue
-      }
-      setNeedsDisplay(clippedDirtyRect)
-    }
+    // Whole layer, not the dirty rectangles. display() below re-encodes the
+    // entire scene whatever is marked, so working out which rectangles
+    // changed only to hand them to a path that ignores them was wasted --
+    // and it was not cheap, since coalescing them is quadratic in their
+    // count and a sideways scroll dirties every visible row. The
+    // CoreGraphics layer keeps its own render(), where the rectangles do
+    // decide what gets repainted.
+    //
+    // Unconditional because reaching here already means this grid changed:
+    // GridView only submits a build when the frame can affect it.
+    setNeedsDisplay()
   }
 
   nonisolated func update(renderInput: GridRenderInput?) {
