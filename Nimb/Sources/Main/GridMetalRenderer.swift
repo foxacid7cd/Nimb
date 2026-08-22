@@ -21,6 +21,7 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     float2 origin;
     float2 size;
     float4 color;
+    float rowSlot;
   };
 
   struct GlyphInstance {
@@ -29,6 +30,7 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     float2 uvOrigin;
     float2 uvSize;
     float4 color;
+    float rowSlot;
   };
 
   struct Uniforms {
@@ -57,11 +59,16 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
     constant QuadInstance *instances [[buffer(0)]],
-    constant Uniforms &uniforms [[buffer(1)]]
+    constant Uniforms &uniforms [[buffer(1)]],
+    constant float *rowOffsets [[buffer(2)]]
   ) {
     QuadInstance instance = instances[instanceID];
     float2 corner = quadCorners[vertexID];
-    float2 point = instance.origin + corner * instance.size;
+    float2 origin = float2(
+      instance.origin.x,
+      instance.origin.y + rowOffsets[uint(instance.rowSlot)]
+    );
+    float2 point = origin + corner * instance.size;
     float2 ndc = float2(
       (point.x / uniforms.viewportSize.x) * 2.0 - 1.0,
       (point.y / uniforms.viewportSize.y) * 2.0 - 1.0
@@ -81,11 +88,16 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     uint vertexID [[vertex_id]],
     uint instanceID [[instance_id]],
     constant GlyphInstance *instances [[buffer(0)]],
-    constant Uniforms &uniforms [[buffer(1)]]
+    constant Uniforms &uniforms [[buffer(1)]],
+    constant float *rowOffsets [[buffer(2)]]
   ) {
     GlyphInstance instance = instances[instanceID];
     float2 corner = quadCorners[vertexID];
-    float2 point = instance.origin + corner * instance.size;
+    float2 origin = float2(
+      instance.origin.x,
+      instance.origin.y + rowOffsets[uint(instance.rowSlot)]
+    );
+    float2 point = origin + corner * instance.size;
     float2 ndc = float2(
       (point.x / uniforms.viewportSize.x) * 2.0 - 1.0,
       (point.y / uniforms.viewportSize.y) * 2.0 - 1.0

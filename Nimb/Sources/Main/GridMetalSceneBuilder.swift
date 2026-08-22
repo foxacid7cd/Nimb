@@ -14,9 +14,11 @@ final nonisolated class GridMetalSceneBuilder {
   /// One row's geometry, in the coordinates it was built at.
   ///
   /// Kept whole rather than merged into the scene arrays so a row that has not
-  /// changed can be copied out again next frame instead of being rebuilt, and
-  /// so a row that only moved can be re-based with one add per instance.
+  /// changed can be copied out again next frame instead of being rebuilt. A
+  /// row that only moved is re-based by its slot's offset, so its instances
+  /// are never touched at all.
   private struct CachedRow {
+    var slot: Int
     var originY: CGFloat
     var backgroundQuads: [GridMetalQuadInstance] = []
     var decorationQuads: [GridMetalQuadInstance] = []
@@ -54,6 +56,14 @@ final nonisolated class GridMetalSceneBuilder {
   private var carriedRows: [RowDrawRun.ID: CachedRow] = [:]
   private var cacheContext: CacheContext? = nil
 
+  /// Row slots handed out to cached rows, and the ones going spare.
+  ///
+  /// A slot is baked into every instance the row owns, so it has to outlive
+  /// scrolling -- that is the whole point. Slot zero is reserved for
+  /// instances belonging to no row.
+  private var nextSlot = 1
+  private var freeSlots: [Int] = []
+
   init(renderer: GridMetalRenderer) {
     self.renderer = renderer
   }
@@ -86,6 +96,20 @@ final nonisolated class GridMetalSceneBuilder {
     )
   }
 
+  private func takeSlot() -> Int {
+    if let slot = freeSlots.popLast() {
+      return slot
+    }
+    defer { nextSlot += 1 }
+    return nextSlot
+  }
+
+  private func releaseSlots(of rows: some Sequence<CachedRow>) {
+    for row in rows {
+      freeSlots.append(row.slot)
+    }
+  }
+
   private func buildScene(
     snapshot: GridDrawSnapshot,
     updates: State.Updates,
@@ -108,11 +132,15 @@ final nonisolated class GridMetalSceneBuilder {
       columns: boundingRect.columns,
     )
     if cacheContext != context || updates.isAppearanceUpdated || updates.isHighlightsUpdated {
+      releaseSlots(of: cachedRows.values)
       cachedRows.removeAll(keepingCapacity: true)
       cacheContext = context
     }
 
     swap(&cachedRows, &carriedRows)
+    // Whatever is still in cachedRows belonged to rows dropped a frame ago;
+    // their slots go back on the free list before this frame hands any out.
+    releaseSlots(of: cachedRows.values)
     cachedRows.removeAll(keepingCapacity: true)
 
     // Walked a row at a time rather than a draw run at a time, which is what
@@ -132,7 +160,12 @@ final nonisolated class GridMetalSceneBuilder {
       .applying(snapshot.upsideDownTransform)
       .origin.y
 
-      if let carried = carriedRows.removeValue(forKey: rowDrawRun.id) {
+      // Taken out once, so the slot is still in hand if the reuse check below
+      // declines and the row has to be rebuilt -- otherwise that path would
+      // allocate a fresh slot and strand the old one.
+      let carried = carriedRows.removeValue(forKey: rowDrawRun.id)
+
+      if let carried {
         let delta = rowOriginY - carried.originY
         // Glyph origins in a cached row were snapped to whole device pixels at
         // the y it was built at, so the row can only be shifted by a whole
@@ -142,7 +175,8 @@ final nonisolated class GridMetalSceneBuilder {
         // other than scrolling moved the row.
         let deltaPixels = delta * scale
         if (deltaPixels.rounded() - deltaPixels).magnitude < 1e-6 {
-          append(carried, deltaY: Float(delta), to: &scene)
+          setRowOffset(Float(delta), forSlot: carried.slot, in: &scene)
+          append(carried, to: &scene)
           cachedRows[rowDrawRun.id] = carried
           return
         }
@@ -152,12 +186,14 @@ final nonisolated class GridMetalSceneBuilder {
         rowDrawRun: rowDrawRun,
         rowOrigin: rowOrigin,
         rowOriginY: rowOriginY,
+        slot: carried?.slot ?? takeSlot(),
         columns: boundingRect.columns,
         snapshot: snapshot,
         glyphAtlas: glyphAtlas,
         scale: scale,
       )
-      append(built, deltaY: 0, to: &scene)
+      setRowOffset(0, forSlot: built.slot, in: &scene)
+      append(built, to: &scene)
       cachedRows[rowDrawRun.id] = built
     }
 
@@ -188,13 +224,14 @@ final nonisolated class GridMetalSceneBuilder {
     rowDrawRun: RowDrawRun,
     rowOrigin: CGPoint,
     rowOriginY: CGFloat,
+    slot: Int,
     columns: Range<Int>,
     snapshot: GridDrawSnapshot,
     glyphAtlas: GridMetalGlyphAtlas,
     scale: CGFloat,
   )
   -> CachedRow {
-    var row = CachedRow(originY: rowOriginY)
+    var row = CachedRow(slot: slot, originY: rowOriginY)
 
     rowDrawRun.forEachVisibleDrawRun(
       columnsRange: columns,
@@ -206,6 +243,7 @@ final nonisolated class GridMetalSceneBuilder {
         quadInstance(
           rect: rect,
           color: snapshot.appearance.backgroundColor(for: drawRun.highlightID).metal,
+          rowSlot: slot,
         ),
       )
 
@@ -215,6 +253,7 @@ final nonisolated class GridMetalSceneBuilder {
         font: snapshot.font,
         appearance: snapshot.appearance,
         scale: scale,
+        rowSlot: slot,
         to: &row.decorationQuads,
       )
 
@@ -225,6 +264,7 @@ final nonisolated class GridMetalSceneBuilder {
           color: snapshot.appearance.foregroundColor(for: drawRun.highlightID).metal,
           glyphAtlas: glyphAtlas,
           scale: scale,
+          rowSlot: slot,
           to: &row.glyphInstances,
         )
       }
@@ -233,34 +273,24 @@ final nonisolated class GridMetalSceneBuilder {
     return row
   }
 
-  /// Copies a row's instances into the scene, shifted by `deltaY`.
+  /// Copies a row's instances into the scene.
   ///
-  /// The zero case is the common one for a row that did not move, and skips
-  /// the per-instance add entirely.
-  private func append(
-    _ row: CachedRow,
-    deltaY: Float,
-    to scene: inout GridMetalScene,
-  ) {
-    guard deltaY != 0 else {
-      scene.backgroundQuads.append(contentsOf: row.backgroundQuads)
-      scene.decorationQuads.append(contentsOf: row.decorationQuads)
-      scene.glyphInstances.append(contentsOf: row.glyphInstances)
-      return
-    }
+  /// Always a bulk append: a row that moved is handled by its offset, not by
+  /// rewriting its instances, so this never touches one. That is the whole
+  /// point of the row slot -- the previous version added the delta to every
+  /// instance of every scrolled row, which on a full-screen scroll meant
+  /// reading and rewriting the entire scene each frame.
+  private func append(_ row: CachedRow, to scene: inout GridMetalScene) {
+    scene.backgroundQuads.append(contentsOf: row.backgroundQuads)
+    scene.decorationQuads.append(contentsOf: row.decorationQuads)
+    scene.glyphInstances.append(contentsOf: row.glyphInstances)
+  }
 
-    for var quad in row.backgroundQuads {
-      quad.origin.y += deltaY
-      scene.backgroundQuads.append(quad)
+  private func setRowOffset(_ offset: Float, forSlot slot: Int, in scene: inout GridMetalScene) {
+    if scene.rowOffsets.count <= slot {
+      scene.rowOffsets.append(contentsOf: repeatElement(0, count: slot + 1 - scene.rowOffsets.count))
     }
-    for var quad in row.decorationQuads {
-      quad.origin.y += deltaY
-      scene.decorationQuads.append(quad)
-    }
-    for var glyph in row.glyphInstances {
-      glyph.origin.y += deltaY
-      scene.glyphInstances.append(glyph)
-    }
+    scene.rowOffsets[slot] = offset
   }
 
   private func appendGlyphInstances(
@@ -269,6 +299,7 @@ final nonisolated class GridMetalSceneBuilder {
     color: SIMD4<Float>,
     glyphAtlas: GridMetalGlyphAtlas,
     scale: CGFloat,
+    rowSlot: Int,
     clipRect: CGRect? = nil,
     to glyphInstances: inout [GridMetalGlyphInstance],
   ) {
@@ -302,6 +333,7 @@ final nonisolated class GridMetalSceneBuilder {
             uvOrigin: entry.uvOrigin,
             uvSize: entry.uvSize,
             color: color,
+            rowSlot: rowSlot,
             clipRect: clipRect,
           )
         {
@@ -314,6 +346,7 @@ final nonisolated class GridMetalSceneBuilder {
               uvOrigin: entry.uvOrigin,
               uvSize: entry.uvSize,
               color: color,
+              rowSlot: Float(rowSlot),
             ),
           )
         }
@@ -344,8 +377,9 @@ final nonisolated class GridMetalSceneBuilder {
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(snapshot.upsideDownTransform)
 
+    // Slot zero: the cursor belongs to no row and never needs re-basing.
     scene.cursorQuads.append(
-      quadInstance(rect: cursorRect, color: cursorBackgroundColor.metal),
+      quadInstance(rect: cursorRect, color: cursorBackgroundColor.metal, rowSlot: 0),
     )
 
     if
@@ -365,6 +399,7 @@ final nonisolated class GridMetalSceneBuilder {
         color: cursorForegroundColor.metal,
         glyphAtlas: glyphAtlas,
         scale: scale,
+        rowSlot: 0,
         clipRect: cursorRect,
         to: &scene.cursorGlyphInstances,
       )
@@ -377,6 +412,7 @@ final nonisolated class GridMetalSceneBuilder {
     font: Font,
     appearance: Appearance,
     scale: CGFloat,
+    rowSlot: Int,
     to quads: inout [GridMetalQuadInstance],
   ) {
     guard case let .cells(cells) = drawRun.rowPartContent else {
@@ -397,6 +433,7 @@ final nonisolated class GridMetalSceneBuilder {
         quadInstance(
           rect: .init(x: rect.minX, y: rect.midY - thickness / 2, width: rect.width, height: thickness),
           color: color,
+          rowSlot: rowSlot,
         ),
       )
     }
@@ -406,6 +443,7 @@ final nonisolated class GridMetalSceneBuilder {
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
           color: color,
+          rowSlot: rowSlot,
         ),
       )
     } else if decorations.isUnderdashed {
@@ -417,6 +455,7 @@ final nonisolated class GridMetalSceneBuilder {
         gapWidth: 2,
         thickness: thickness,
         color: color,
+        rowSlot: rowSlot,
         to: &quads,
       )
     } else if decorations.isUnderdotted {
@@ -428,6 +467,7 @@ final nonisolated class GridMetalSceneBuilder {
         gapWidth: 1,
         thickness: thickness,
         color: color,
+        rowSlot: rowSlot,
         to: &quads,
       )
     } else if decorations.isUnderdouble {
@@ -435,12 +475,14 @@ final nonisolated class GridMetalSceneBuilder {
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY, width: rect.width, height: thickness),
           color: color,
+          rowSlot: rowSlot,
         ),
       )
       quads.append(
         quadInstance(
           rect: .init(x: rect.minX, y: underlineY + 3, width: rect.width, height: thickness),
           color: color,
+          rowSlot: rowSlot,
         ),
       )
     } else if decorations.isUndercurl {
@@ -458,6 +500,7 @@ final nonisolated class GridMetalSceneBuilder {
           quadInstance(
             rect: .init(x: x, y: y, width: thickness, height: thickness),
             color: color,
+            rowSlot: rowSlot,
           ),
         )
       }
@@ -472,6 +515,7 @@ final nonisolated class GridMetalSceneBuilder {
     gapWidth: CGFloat,
     thickness: CGFloat,
     color: SIMD4<Float>,
+    rowSlot: Int,
     to quads: inout [GridMetalQuadInstance],
   ) {
     var currentX = fromX
@@ -481,6 +525,7 @@ final nonisolated class GridMetalSceneBuilder {
         quadInstance(
           rect: .init(x: currentX, y: y, width: width, height: thickness),
           color: color,
+          rowSlot: rowSlot,
         ),
       )
       currentX += segmentWidth + gapWidth
@@ -490,12 +535,14 @@ final nonisolated class GridMetalSceneBuilder {
   private func quadInstance(
     rect: CGRect,
     color: SIMD4<Float>,
+    rowSlot: Int,
   )
   -> GridMetalQuadInstance {
     .init(
       origin: .init(Float(rect.origin.x), Float(rect.origin.y)),
       size: .init(Float(rect.width), Float(rect.height)),
       color: color,
+      rowSlot: Float(rowSlot),
     )
   }
 
@@ -504,6 +551,7 @@ final nonisolated class GridMetalSceneBuilder {
     uvOrigin: SIMD2<Float>,
     uvSize: SIMD2<Float>,
     color: SIMD4<Float>,
+    rowSlot: Int,
     clipRect: CGRect,
   )
   -> GridMetalGlyphInstance? {
@@ -529,6 +577,7 @@ final nonisolated class GridMetalSceneBuilder {
         uvSize.y * max(0, 1 - top - bottom),
       ),
       color: color,
+      rowSlot: Float(rowSlot),
     )
   }
 }

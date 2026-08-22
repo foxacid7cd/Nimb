@@ -21,6 +21,9 @@ struct GridMetalQuadInstance {
   var origin: SIMD2<Float>
   var size: SIMD2<Float>
   var color: SIMD4<Float>
+  /// Index into the scene's row offsets. Stable for the life of a cached row,
+  /// so a row that scrolls never has its instances rewritten.
+  var rowSlot: Float
 }
 
 struct GridMetalGlyphInstance {
@@ -29,9 +32,17 @@ struct GridMetalGlyphInstance {
   var uvOrigin: SIMD2<Float>
   var uvSize: SIMD2<Float>
   var color: SIMD4<Float>
+  var rowSlot: Float
 }
 
 struct GridMetalScene {
+  /// How far each row slot has moved since its instances were built, in
+  /// points. The shader adds it, so scrolling a row costs one float here
+  /// rather than a rewrite of every instance the row owns.
+  ///
+  /// Slot zero is reserved and always zero, for instances that belong to no
+  /// row -- the cursor.
+  var rowOffsets: [Float] = [0]
   var backgroundQuads: [GridMetalQuadInstance] = []
   var decorationQuads: [GridMetalQuadInstance] = []
   var glyphInstances: [GridMetalGlyphInstance] = []

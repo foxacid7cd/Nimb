@@ -50,6 +50,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       case glyphs
       case cursorQuads
       case cursorGlyphs
+      case rowOffsets
     }
 
     private struct Entry {
@@ -265,24 +266,50 @@ public nonisolated class GridLayer: CAMetalLayer {
     let bufferCache = prepareBufferCache(renderer: renderer)
     bufferCache.advance()
 
-    encodeQuadInstances(metalFrame.scene.backgroundQuads, kind: .backgroundQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
-    encodeQuadInstances(metalFrame.scene.decorationQuads, kind: .decorationQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    // One float per row slot, which is what lets a scrolled row keep the
+    // instances it already had: the shader adds this to every instance
+    // carrying the slot.
+    let rowOffsetsBuffer = bufferCache.buffer(
+      for: metalFrame.scene.rowOffsets,
+      kind: .rowOffsets,
+    )
+
+    encodeQuadInstances(
+      metalFrame.scene.backgroundQuads,
+      kind: .backgroundQuads,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      rowOffsetsBuffer: rowOffsetsBuffer,
+      encoder: renderEncoder,
+    )
+    encodeQuadInstances(
+      metalFrame.scene.decorationQuads,
+      kind: .decorationQuads,
+      uniforms: uniforms,
+      renderer: renderer,
+      bufferCache: bufferCache,
+      rowOffsetsBuffer: rowOffsetsBuffer,
+      encoder: renderEncoder,
+    )
     encodeGlyphInstances(
       metalFrame.scene.glyphInstances,
       kind: .glyphs,
       uniforms: uniforms,
       renderer: renderer,
       bufferCache: bufferCache,
+      rowOffsetsBuffer: rowOffsetsBuffer,
       atlasTexture: metalFrame.atlasTexture,
       encoder: renderEncoder,
     )
-    encodeQuadInstances(metalFrame.scene.cursorQuads, kind: .cursorQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, encoder: renderEncoder)
+    encodeQuadInstances(metalFrame.scene.cursorQuads, kind: .cursorQuads, uniforms: uniforms, renderer: renderer, bufferCache: bufferCache, rowOffsetsBuffer: rowOffsetsBuffer, encoder: renderEncoder)
     encodeGlyphInstances(
       metalFrame.scene.cursorGlyphInstances,
       kind: .cursorGlyphs,
       uniforms: uniforms,
       renderer: renderer,
       bufferCache: bufferCache,
+      rowOffsetsBuffer: rowOffsetsBuffer,
       atlasTexture: metalFrame.atlasTexture,
       encoder: renderEncoder,
     )
@@ -313,10 +340,12 @@ public nonisolated class GridLayer: CAMetalLayer {
     uniforms: MetalUniforms,
     renderer: GridMetalRenderer,
     bufferCache: MetalBufferCache,
+    rowOffsetsBuffer: MTLBuffer?,
     encoder: MTLRenderCommandEncoder,
   ) {
     guard
       !instances.isEmpty,
+      let rowOffsetsBuffer,
       let buffer = bufferCache.buffer(for: instances, kind: kind)
     else {
       return
@@ -326,6 +355,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     encoder.setRenderPipelineState(renderer.quadPipelineState)
     encoder.setVertexBuffer(buffer, offset: 0, index: 0)
     encoder.setVertexBytes(&uniforms, length: MemoryLayout<MetalUniforms>.stride, index: 1)
+    encoder.setVertexBuffer(rowOffsetsBuffer, offset: 0, index: 2)
     encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: instances.count)
   }
 
@@ -335,11 +365,13 @@ public nonisolated class GridLayer: CAMetalLayer {
     uniforms: MetalUniforms,
     renderer: GridMetalRenderer,
     bufferCache: MetalBufferCache,
+    rowOffsetsBuffer: MTLBuffer?,
     atlasTexture: MTLTexture,
     encoder: MTLRenderCommandEncoder,
   ) {
     guard
       !instances.isEmpty,
+      let rowOffsetsBuffer,
       let buffer = bufferCache.buffer(for: instances, kind: kind)
     else {
       return
@@ -349,6 +381,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     encoder.setRenderPipelineState(renderer.glyphPipelineState)
     encoder.setVertexBuffer(buffer, offset: 0, index: 0)
     encoder.setVertexBytes(&uniforms, length: MemoryLayout<MetalUniforms>.stride, index: 1)
+    encoder.setVertexBuffer(rowOffsetsBuffer, offset: 0, index: 2)
     encoder.setFragmentTexture(atlasTexture, index: 0)
     encoder.setFragmentSamplerState(renderer.glyphSamplerState, index: 0)
     encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: instances.count)
