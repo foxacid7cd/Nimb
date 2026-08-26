@@ -76,7 +76,8 @@ public struct ValueType: Sendable {
       case let .arrayOf(element): ".array($0.map { \(element.swift.elementEncoder) })"
       case .binary: ".binary($0)"
       case let .custom(custom): custom.elementEncoder
-      case .void, .value: "$0"
+      case .value,
+           .void: "$0"
       }
     }
 
@@ -94,28 +95,14 @@ public struct ValueType: Sendable {
         "Value.decodeArray($0, { \(element.swift.elementDecoder) })"
       case .binary: "$0.binary"
       case let .custom(custom): custom.elementDecoder
-      case .void, .value: "$0"
+      case .value,
+           .void: "$0"
       }
     }
   }
 
   public var rawValue: String
   public var custom: Custom? = nil
-
-  /// The element of `ArrayOf(T)` / `ArrayOf(T, N)`, if this is one.
-  ///
-  /// The fixed length some of them carry is dropped: expressing it would mean
-  /// a tuple, which cannot be a stored property of a `@PublicInit` struct
-  /// without losing Hashable, and the count is already implied by the API.
-  var arrayElementRawValue: String? {
-    guard rawValue.hasPrefix("ArrayOf(") , rawValue.hasSuffix(")") else {
-      return nil
-    }
-    let inner = rawValue.dropFirst("ArrayOf(".count).dropLast()
-    return inner.split(separator: ",").first.map {
-      $0.trimmingCharacters(in: .whitespaces)
-    }
-  }
 
   public var swift: SwiftType {
     if let custom {
@@ -154,6 +141,21 @@ public struct ValueType: Sendable {
     }
   }
 
+  /// The element of `ArrayOf(T)` / `ArrayOf(T, N)`, if this is one.
+  ///
+  /// The fixed length some of them carry is dropped: expressing it would mean
+  /// a tuple, which cannot be a stored property of a `@PublicInit` struct
+  /// without losing Hashable, and the count is already implied by the API.
+  var arrayElementRawValue: String? {
+    guard rawValue.hasPrefix("ArrayOf("), rawValue.hasSuffix(")") else {
+      return nil
+    }
+    let inner = rawValue.dropFirst("ArrayOf(".count).dropLast()
+    return inner.split(separator: ",").first.map {
+      $0.trimmingCharacters(in: .whitespaces)
+    }
+  }
+
   /// Element types inside an ArrayOf still need the ext handling that a bare
   /// parameter of the same type gets, and the metadata does not repeat it.
   static func customForExtType(_ name: String) -> Custom? {
@@ -188,7 +190,8 @@ public struct ValueType: Sendable {
     case .binary: ".binary(\(expr))"
     case let .custom(custom):
       custom.valueEncoder.prefix + expr + custom.valueEncoder.suffix
-    case .void, .value: expr
+    case .value,
+         .void: expr
     }
   }
 
@@ -205,7 +208,8 @@ public struct ValueType: Sendable {
       "let \(name) = Value.decodeArray(\(expr), { \(element.swift.elementDecoder) })"
     case .binary: "case let .binary(\(name)) = \(expr)"
     case let .custom(custom): custom.valueDecoder(expr, name)
-    case .void, .value: expr
+    case .value,
+         .void: expr
     }
   }
 }
