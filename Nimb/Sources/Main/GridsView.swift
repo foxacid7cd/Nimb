@@ -44,7 +44,7 @@ public class GridsView: NSView, Rendering {
   public func render() {
     for gridID in updates.destroyedGridIDs {
       let view = arrangedGridView(forGridWithID: gridID)
-      view.isHidden = true
+      view.setHiddenByState(true)
     }
 
     let updatedLayoutGridIDs =
@@ -61,14 +61,14 @@ public class GridsView: NSView, Rendering {
       }
 
       let gridView = arrangedGridView(forGridWithID: gridID)
-      gridView.isHidden = grid.isHidden
+      gridView.setHiddenByState(grid.isHidden)
 
       if gridID == Grid.OuterID {
         invalidateIntrinsicContentSize()
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
         case .external:
-          gridView.isHidden = true
+          gridView.setHiddenByState(true)
 
         default:
           break

@@ -41,6 +41,18 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   /// rather than inferred from State.Updates. nil means nothing has been built.
   private var builtBounds: CGRect? = nil
   private let metalSceneBuilder: GridMetalSceneBuilder?
+  /// What the state says about this grid's visibility, kept apart from
+  /// whether the view has anything to show yet.
+  private var isHiddenByState = false
+  /// Whether the Metal layer has presented at least one frame.
+  ///
+  /// A CAMetalLayer has no drawable until it presents, and scene building is
+  /// asynchronous, so a newly created grid is composited before its first
+  /// frame exists -- which is a hole, not a background, since the layer is not
+  /// opaque. Showing a new grid only once it has drawn costs it one frame and
+  /// removes the flash.
+  private var hasPresentedFrame = false
+
   private var isScrollingHorizontal: Bool? = nil
   private var xScrollingAccumulator: Double = 0
   private var xScrollingReported: Double = 0
@@ -123,7 +135,14 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     gridLayer.frame = bounds
     gridLayer.updateDrawableSize()
     gridLayer.delegate = self
+    gridLayer.onFirstPresentedFrame = { [weak self] in
+      self?.markPresented()
+    }
     layer!.addSublayer(gridLayer)
+
+    // Hidden until the first frame lands. Without this a new grid is on screen
+    // for at least one compositor pass with no drawable behind it.
+    isHidden = true
 
     coreGraphicsLayer.frame = bounds
     coreGraphicsLayer.delegate = self
@@ -312,6 +331,13 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     store.api.fastCallsTransaction(with: calls)
   }
 
+  /// Set by GridsView from the state. The view stays hidden until it has also
+  /// drawn once.
+  public func setHiddenByState(_ isHidden: Bool) {
+    isHiddenByState = isHidden
+    updateVisibility()
+  }
+
   public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
     NSNull()
   }
@@ -319,6 +345,22 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   public func render() {
     renderStats.count(.gridsVisited)
     let isCoreGraphics = state.debug.isCoreGraphicsRenderingEnabled
+
+    // Kept in step with the editor background so that any moment the drawable
+    // does not cover -- before the first frame, or a gap during a resize --
+    // shows the right colour instead of nothing.
+    if updates.isAppearanceUpdated || !hasPresentedFrame {
+      gridLayer.setBackground(state.appearance.defaultBackgroundColor)
+    }
+
+    // The readiness gate only applies to the Metal layer, which is the one
+    // that has nothing to show until it presents. The CoreGraphics layer
+    // draws inside display(), so it is never blank -- and without this the
+    // view would wait for a Metal frame that is never coming and stay hidden
+    // for good.
+    if isCoreGraphics || metalSceneBuilder == nil {
+      markPresented()
+    }
 
     // Compared against the mode actually in effect rather than against
     // updates.isDebugUpdated, which is false on the first render: the flag is
@@ -446,6 +488,18 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       row: point.row,
       col: point.column,
     ))
+  }
+
+  private func updateVisibility() {
+    isHidden = isHiddenByState || !hasPresentedFrame
+  }
+
+  private func markPresented() {
+    guard !hasPresentedFrame else {
+      return
+    }
+    hasPresentedFrame = true
+    updateVisibility()
   }
 
   private func apply(backingScale scale: CGFloat) {

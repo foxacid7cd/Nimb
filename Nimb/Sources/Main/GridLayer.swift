@@ -117,10 +117,15 @@ public nonisolated class GridLayer: CAMetalLayer {
   /// reading instance data for.
   private static let maximumFramesInFlight = 3
 
+  /// Called on the main actor the first time a frame reaches the screen, so
+  /// the view above can stop hiding itself.
+  nonisolated(unsafe) var onFirstPresentedFrame: (@MainActor () -> Void)? = nil
+
   private let gridID: Grid.ID
   private let store: Store
   private nonisolated let isolatedRenderInput = Mutex<GridRenderInput?>(nil)
   private var metalBufferCache: MetalBufferCache? = nil
+  private let hasPresentedFrame = Mutex(false)
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
@@ -208,6 +213,13 @@ public nonisolated class GridLayer: CAMetalLayer {
       width: ceil(bounds.width * scale),
       height: ceil(bounds.height * scale),
     )
+  }
+
+  /// Painted behind the drawable. Every frame clears the whole layer, so this
+  /// is only ever visible before the first frame and in any gap during a
+  /// resize -- which is exactly where a transparent layer read as a flash.
+  func setBackground(_ color: Color) {
+    backgroundColor = color.appKit.cgColor
   }
 
   private func configureMetalLayer() {
@@ -317,6 +329,17 @@ public nonisolated class GridLayer: CAMetalLayer {
 
     commandBuffer.present(drawable)
     commandBuffer.commit()
+
+    let isFirst = hasPresentedFrame.withLock { presented -> Bool in
+      guard !presented else {
+        return false
+      }
+      presented = true
+      return true
+    }
+    if isFirst, let onFirstPresentedFrame {
+      Task { @MainActor in onFirstPresentedFrame() }
+    }
 
     return true
   }
