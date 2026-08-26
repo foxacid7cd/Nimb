@@ -11,34 +11,49 @@ public final class Neovim: Sendable {
     process = Process()
 
     var environment = UserDefaults.standard.environmentOverlay
+    // percentEncoded: false, because this is a filesystem path and not a URL
+    // component. URL.path() encodes by default, so a bundle living anywhere
+    // with a space in its path -- an app in "~/My Applications", say -- handed
+    // Neovim a VIMRUNTIME containing %20 and it silently found no runtime.
     environment["VIMRUNTIME"] = Bundle.main.resourceURL!
       .appending(path: "nvim")
       .appending(path: "runtime")
       .absoluteURL
-      .path()
+      .path(percentEncoded: false)
       .replacing(/\/$/, with: "")
-    process.environment = environment
+    // Paths travel in the environment rather than interpolated into the
+    // command, so a space or a quote in one cannot rewrite the command. The
+    // login shell is what picks up the user's PATH, and exec keeps it from
+    // lingering as a parent process.
+    guard let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim") else {
+      preconditionFailure(
+        "nvim is missing from the app bundle; run 'make neovim' and rebuild",
+      )
+    }
+    environment["NIMB_NVIM_EXECUTABLE"] = nvimExecutablePath
 
-    let vimrcArgument: String =
-      switch UserDefaults.standard.vimrc {
-      case .default:
-        ""
-      case .norc:
-        " -u NORC"
-      case .none:
-        " -u NONE"
-      case let .custom(url):
-        " -u '\(url.path())'"
-      }
+    var vimrcArgument = ""
+    switch UserDefaults.standard.vimrc {
+    case .default:
+      break
+    case .norc:
+      vimrcArgument = " -u NORC"
+    case .none:
+      vimrcArgument = " -u NONE"
+    case let .custom(url):
+      // Same reason as above: the path is passed through, not spliced in.
+      environment["NIMB_NVIM_VIMRC"] = url.path(percentEncoded: false)
+      vimrcArgument = " -u \"$NIMB_NVIM_VIMRC\""
+    }
+
+    process.environment = environment
 
     let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
     process.executableURL = URL(filePath: shell)
-
-    let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim")!
     process.arguments = [
       "-l",
       "-c",
-      "'\(nvimExecutablePath)' --embed" + vimrcArgument,
+      "exec \"$NIMB_NVIM_EXECUTABLE\" --embed" + vimrcArgument,
     ]
 
     process.currentDirectoryURL = FileManager.default

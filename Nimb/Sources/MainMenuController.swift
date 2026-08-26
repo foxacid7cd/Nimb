@@ -126,7 +126,7 @@ final class MainMenuController: NSObject, Rendering {
     switch panel.runModal() {
     case .OK:
       if let url = panel.url {
-        store.api.nimbFast(method: "edit", parameters: [.string(url.path())])
+        store.api.nimbFast(method: "edit", parameters: [.string(url.path(percentEncoded: false))])
       }
 
     default:
@@ -157,7 +157,7 @@ final class MainMenuController: NSObject, Rendering {
         let url = URL(filePath: "panel")
         panel.directoryURL = url.deletingLastPathComponent()
         panel.nameFieldStringValue = url.lastPathComponent
-        store.api.nimbFast(method: "save_as", parameters: [.string(url.path())])
+        store.api.nimbFast(method: "save_as", parameters: [.string(url.path(percentEncoded: false))])
       }
     }
   }
@@ -281,7 +281,7 @@ final class MainMenuController: NSObject, Rendering {
       let temporaryFileURL = FileManager.default.temporaryDirectory
         .appending(path: "Nimb_state_dump_\(UUID().uuidString).txt")
       FileManager.default.createFile(
-        atPath: temporaryFileURL.path(),
+        atPath: temporaryFileURL.path(percentEncoded: false),
         contents: nil,
       )
 

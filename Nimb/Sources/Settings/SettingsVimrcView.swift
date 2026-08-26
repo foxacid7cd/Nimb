@@ -108,12 +108,12 @@ public class SettingsVimrcView: NSView {
          .norc:
       pathTextField.alphaValue = 0.3
       pathTextField.stringValue = FileManager.default
-        .homeDirectoryForCurrentUser.path()
+        .homeDirectoryForCurrentUser.path(percentEncoded: false)
       folderButton.isEnabled = false
 
     case let .custom(url):
       pathTextField.alphaValue = 1
-      pathTextField.stringValue = url.path()
+      pathTextField.stringValue = url.path(percentEncoded: false)
       folderButton.isEnabled = true
     }
   }

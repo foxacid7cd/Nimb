@@ -67,7 +67,7 @@ public extension UserDefaults {
         case .none:
           "none"
         case let .custom(url):
-          url.standardizedFileURL.path()
+          url.standardizedFileURL.path(percentEncoded: false)
         }
       setValue(encoded, forKey: "vimrc")
     }
