@@ -117,15 +117,22 @@ public nonisolated class GridLayer: CAMetalLayer {
   /// reading instance data for.
   private static let maximumFramesInFlight = 3
 
-  /// Called on the main actor the first time a frame reaches the screen, so
-  /// the view above can stop hiding itself.
-  nonisolated(unsafe) var onFirstPresentedFrame: (@MainActor () -> Void)? = nil
+  /// Called the first time this layer has a frame to draw, so the view above
+  /// can stop hiding itself.
+  ///
+  /// Fired when the frame is handed over rather than after it is presented.
+  /// Presenting happens inside display(), so signalling from there needed a
+  /// hop back to the main actor and the view unhid a transaction later than
+  /// the content it was waiting for -- a new grid appeared one frame late.
+  /// Both callers of render() are already on the main actor, so marking the
+  /// layer dirty and revealing the view now happen in the same pass.
+  nonisolated(unsafe) var onFirstFrameReady: (@MainActor () -> Void)? = nil
 
   private let gridID: Grid.ID
   private let store: Store
   private nonisolated let isolatedRenderInput = Mutex<GridRenderInput?>(nil)
   private var metalBufferCache: MetalBufferCache? = nil
-  private let hasPresentedFrame = Mutex(false)
+  private let hasSignalledFirstFrame = Mutex(false)
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
@@ -186,7 +193,13 @@ public nonisolated class GridLayer: CAMetalLayer {
   }
 
   public nonisolated func render() {
-    guard isolatedRenderInput.withLock({ $0 }) != nil else {
+    let hasFrame = isolatedRenderInput.withLock { renderInput -> Bool? in
+      guard let renderInput else {
+        return nil
+      }
+      return renderInput.metalFrame != nil
+    }
+    guard let hasFrame else {
       return
     }
 
@@ -201,6 +214,10 @@ public nonisolated class GridLayer: CAMetalLayer {
     // Unconditional because reaching here already means this grid changed:
     // GridView only submits a build when the frame can affect it.
     setNeedsDisplay()
+
+    if hasFrame {
+      signalFirstFrameIfNeeded()
+    }
   }
 
   nonisolated func update(renderInput: GridRenderInput?) {
@@ -220,6 +237,23 @@ public nonisolated class GridLayer: CAMetalLayer {
   /// resize -- which is exactly where a transparent layer read as a flash.
   func setBackground(_ color: Color) {
     backgroundColor = color.appKit.cgColor
+  }
+
+  /// Both call sites -- the scene build queue's hop to the main actor, and
+  /// GridView's own render -- are on the main actor, which is what makes
+  /// assuming it here sound.
+  private nonisolated func signalFirstFrameIfNeeded() {
+    let shouldSignal = hasSignalledFirstFrame.withLock { signalled -> Bool in
+      guard !signalled else {
+        return false
+      }
+      signalled = true
+      return true
+    }
+    guard shouldSignal, let onFirstFrameReady else {
+      return
+    }
+    MainActor.assumeIsolated { onFirstFrameReady() }
   }
 
   private func configureMetalLayer() {
@@ -329,17 +363,6 @@ public nonisolated class GridLayer: CAMetalLayer {
 
     commandBuffer.present(drawable)
     commandBuffer.commit()
-
-    let isFirst = hasPresentedFrame.withLock { presented -> Bool in
-      guard !presented else {
-        return false
-      }
-      presented = true
-      return true
-    }
-    if isFirst, let onFirstPresentedFrame {
-      Task { @MainActor in onFirstPresentedFrame() }
-    }
 
     return true
   }

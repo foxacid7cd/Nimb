@@ -44,7 +44,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   /// What the state says about this grid's visibility, kept apart from
   /// whether the view has anything to show yet.
   private var isHiddenByState = false
-  /// Whether the Metal layer has presented at least one frame.
+  /// Whether the Metal layer has a frame to draw yet.
   ///
   /// A CAMetalLayer has no drawable until it presents, and scene building is
   /// asynchronous, so a newly created grid is composited before its first
@@ -135,7 +135,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     gridLayer.frame = bounds
     gridLayer.updateDrawableSize()
     gridLayer.delegate = self
-    gridLayer.onFirstPresentedFrame = { [weak self] in
+    gridLayer.onFirstFrameReady = { [weak self] in
       self?.markPresented()
     }
     layer!.addSublayer(gridLayer)
