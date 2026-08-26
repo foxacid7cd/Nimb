@@ -58,7 +58,17 @@ public struct APIFunctionsFile: GeneratableFile {
                 )
               }
 
-              if function.returnType.swift.isValue == false {
+              if function.returnType.swift.isVoid {
+                // Nothing comes back, so there is nothing to decode -- but the
+                // conformance still needs the method, and Success is Void
+                // rather than Value so callers are not handed a nil to check.
+                try FunctionDeclSyntax(
+                  "public static func decodeSuccess(from _: Value) throws -> Void",
+                ) {
+                  StmtSyntax("return")
+                }
+
+              } else if function.returnType.swift.isValue == false {
                 try FunctionDeclSyntax(
                   "public static func decodeSuccess(from raw: Value) throws -> \(raw: function.returnType.swift.signature)",
                 ) {

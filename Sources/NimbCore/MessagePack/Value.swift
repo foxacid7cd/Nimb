@@ -346,6 +346,33 @@ public struct RawCellRuns: Sendable, Hashable {
   }
 }
 
+public extension Value {
+  /// Decodes a homogeneous array, failing as a whole if any element does.
+  ///
+  /// The API metadata describes several parameters and returns as
+  /// `ArrayOf(String)`, `ArrayOf(Window)` and so on. Without this they all
+  /// arrived as `[Value]` and every caller unpacked them by hand.
+  static func decodeArray<Element>(
+    _ value: Value,
+    _ decodeElement: (Value) -> Element?,
+  )
+    -> [Element]?
+  {
+    guard case let .array(values) = value else {
+      return nil
+    }
+    var result = [Element]()
+    result.reserveCapacity(values.count)
+    for value in values {
+      guard let element = decodeElement(value) else {
+        return nil
+      }
+      result.append(element)
+    }
+    return result
+  }
+}
+
 /// Optional accessors for the payload of each case.
 ///
 /// These replace @CasePathable. `value.string` and `values.flatMap(\.integer)`

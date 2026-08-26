@@ -67,7 +67,7 @@ public final class Neovim: Sendable {
         "minor": .integer(version.minor),
         "patch": .integer(version.patch),
         "prerelease": "dev",
-      ] as Value,
+      ],
       type: "ui",
       methods: ["nimb_notify": .dictionary([
         "async": true,
@@ -97,7 +97,7 @@ public final class Neovim: Sendable {
     try! await api.nvimUIAttach(
       width: initialOuterGridSize.columnsCount,
       height: initialOuterGridSize.rowsCount,
-      options: .dictionary(uiOptions.nvimUIAttachOptions),
+      options: uiOptions.nvimUIAttachOptions,
     )
 
     return await withCheckedContinuation { continuation in

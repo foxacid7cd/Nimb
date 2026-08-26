@@ -65,6 +65,8 @@ public struct Metadata: Sendable {
             )(type: \(rawTypeIdentifier), data: \(rawDataIdentifier))
             """
           },
+          elementEncoder: ".ext(type: References.\(type.name).type, data: $0.data)",
+          elementDecoder: "$0.ext.flatMap { References.\(type.name)(type: $0.type, data: $0.data) }",
         )
       }
 
@@ -90,6 +92,8 @@ public struct Metadata: Sendable {
           signature: "RawCellRuns",
           valueEncoder: (".array(", ".asValues)"),
           valueDecoder: { expr, name in "let \(name) = RawCellRuns(\(expr))" },
+          elementEncoder: "$0",
+          elementDecoder: "$0",
         ),
       )
     }

@@ -303,7 +303,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       calls.append(APIFunctions.NvimSetOptionValue(
         name: "mousescroll",
         value: .string("ver:\(verticalDistance),hor:\(horizontalDistance)"),
-        opts: .dictionary([:]),
+        opts: [:],
       ))
     }
 
