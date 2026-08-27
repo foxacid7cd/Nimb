@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbNeovim
+import NimbState
 
 final class TablineView: NSVisualEffectView, Rendering {
   override var isOpaque: Bool {
@@ -32,6 +33,11 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let tabsMaskLayer = CALayer()
   private var tabsScrollViewFrameObservation: NSKeyValueObservation? = nil
   private let titleTextField = NSTextField(labelWithString: "")
+  /// 'showmode' and 'showcmd', which Neovim stops drawing in the grid once
+  /// ext_messages is on and sends as events instead. They live here rather
+  /// than over the grid because the tabline is chrome already, so nothing
+  /// covers editor text.
+  private let statusTextField = NSTextField(labelWithString: "")
 
   private lazy var titleParagraphStyle: NSParagraphStyle = {
     let paragraphStyle = NSMutableParagraphStyle()
@@ -166,6 +172,24 @@ final class TablineView: NSVisualEffectView, Rendering {
       .defaultLow,
       for: .horizontal,
     )
+
+    // Between the title and the tabs, so it sits at the trailing end without
+    // fighting the tabs for room. Hugs its text and resists being squeezed,
+    // since it is short and the title truncates gracefully.
+    addSubview(statusTextField)
+    statusTextField.isHidden = true
+    statusTextField.centerY(to: self)
+    statusTextField.trailingToLeading(of: tabsScrollView, offset: -10)
+    statusTextField.leadingToTrailing(
+      of: titleTextField,
+      offset: 10,
+      relation: .equalOrGreater,
+    )
+    statusTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    statusTextField.setContentCompressionResistancePriority(
+      .defaultHigh,
+      for: .horizontal,
+    )
   }
 
   @available(*, unavailable)
@@ -201,6 +225,13 @@ final class TablineView: NSVisualEffectView, Rendering {
           .paragraphStyle: titleParagraphStyle,
         ],
       )
+    }
+
+    if
+      updates.isMsgShowmodeUpdated || updates.isMsgShowcmdUpdated ||
+      updates.isAppearanceUpdated || updates.isApplicationActiveUpdated
+    {
+      renderStatus()
     }
 
     if updates.isApplicationActiveUpdated {
@@ -276,6 +307,45 @@ final class TablineView: NSVisualEffectView, Rendering {
         }
       }
     }
+  }
+
+  /// Draws 'showmode' and 'showcmd' side by side, in that order, the way a
+  /// terminal shows them at opposite ends of the last line. Either can be
+  /// empty on its own: Neovim clears one by sending it with no content.
+  private func renderStatus() {
+    let showmode = state.msgShowmode
+    let showcmd = state.msgShowcmd
+    guard !showmode.isEmpty || !showcmd.isEmpty else {
+      statusTextField.attributedStringValue = .init()
+      statusTextField.isHidden = true
+      return
+    }
+
+    let font = NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium)
+    let result = NSMutableAttributedString()
+    // A terminal puts these at opposite ends of the last line, so nothing
+    // separates them there. Sharing one field here, they need a gap or
+    // "-- VISUAL --" and a selection size of 3 read as "-- VISUAL --3".
+    let separator: [MsgShow.ContentPart] =
+      showmode.isEmpty || showcmd.isEmpty
+        ? []
+        : [.init(highlightID: 0, text: "   ")]
+    for part in showmode + separator + showcmd {
+      // Both carry highlight ids, so `recording @q` keeps whatever colour the
+      // colourscheme gives it rather than being flattened to the label colour.
+      result.append(.init(
+        string: part.text,
+        attributes: [
+          .font: font,
+          .foregroundColor: state.appearance
+            .foregroundColor(for: part.highlightID).appKit,
+        ],
+      ))
+    }
+
+    statusTextField.attributedStringValue = result
+    statusTextField.isHidden = false
+    statusTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
   }
 
   private func reloadBuffers() {

@@ -736,6 +736,30 @@ public extension Actions {
             }
           }
 
+        case let .msgShowmode(batch):
+          // Neovim replaces the whole indicator each time and sends empty
+          // content to take it down, so only the last event of a batch counts.
+          if let params = batch.last {
+            do {
+              state.msgShowmode = try params.content
+                .map(MsgShow.ContentPart.init(raw:))
+              updates.isMsgShowmodeUpdated = true
+            } catch {
+              handleError(error)
+            }
+          }
+
+        case let .msgShowcmd(batch):
+          if let params = batch.last {
+            do {
+              state.msgShowcmd = try params.content
+                .map(MsgShow.ContentPart.init(raw:))
+              updates.isMsgShowcmdUpdated = true
+            } catch {
+              handleError(error)
+            }
+          }
+
         case .msgClear:
           state.msgShows = []
           updates.msgShowsUpdates.append(.clear)

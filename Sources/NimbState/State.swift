@@ -84,6 +84,8 @@ public struct State: Sendable {
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
     public var msgShowsUpdates: [MsgShowsUpdate] = []
+    public var isMsgShowmodeUpdated: Bool = false
+    public var isMsgShowcmdUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
@@ -121,6 +123,8 @@ public struct State: Sendable {
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
       msgShowsUpdates.append(contentsOf: updates.msgShowsUpdates)
+      isMsgShowmodeUpdated = isMsgShowmodeUpdated || updates.isMsgShowmodeUpdated
+      isMsgShowcmdUpdated = isMsgShowcmdUpdated || updates.isMsgShowcmdUpdated
       for gridID in updates.destroyedGridIDs {
         updatedLayoutGridIDs.remove(gridID)
         gridUpdates.removeValue(forKey: gridID)
@@ -192,6 +196,18 @@ public struct State: Sendable {
   public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
+
+  /// 'showmode' and |recording| text: "-- INSERT --", "recording @q".
+  ///
+  /// Its own field rather than an entry in `msgShows`, because it is a status
+  /// indicator rather than a message: Neovim replaces it wholesale and sends
+  /// it empty to take it down, and it must not be swept away by the message
+  /// area clearing at the start of a batch.
+  public var msgShowmode: [MsgShow.ContentPart] = []
+
+  /// 'showcmd' text: the partially typed command, "2d", or the size of a
+  /// visual selection. Same handling as `msgShowmode`.
+  public var msgShowcmd: [MsgShow.ContentPart] = []
 
   /// Whether a msg_show has already arrived since the last flush.
   ///
