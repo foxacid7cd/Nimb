@@ -503,6 +503,10 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   private func renderScrollbar() {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
+
     guard
       gridID != Grid.OuterID,
       let grid = state.grids[gridID],
