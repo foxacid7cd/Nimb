@@ -202,49 +202,6 @@ let project = Project(
       settings: Nimb.settings(base: ["SKIP_INSTALL": "YES"]),
     ),
 
-    // ── msgpack stream inspector ────────────────────────────────────────
-    .target(
-      name: "msgpack-inspector",
-      destinations: Nimb.destinations,
-      product: .commandLineTool,
-      bundleId: "foxacid7cd.msgpack-inspector",
-      deploymentTargets: Nimb.deploymentTargets,
-      infoPlist: .default,
-      sources: ["msgpack-inspector/**"],
-      dependencies: [
-        .target(name: "NimbCore"),
-        .package(product: "ArgumentParser"),
-        .package(product: "CustomDump"),
-      ],
-      settings: Nimb.settings(base: ["SKIP_INSTALL": "YES"]),
-    ),
-
-    // ── decode throughput harness ───────────────────────────────────────
-    .target(
-      name: "speed-tuner",
-      destinations: Nimb.destinations,
-      product: .commandLineTool,
-      bundleId: "foxacid7cd.speed-tuner",
-      deploymentTargets: Nimb.deploymentTargets,
-      infoPlist: .default,
-      sources: ["speed-tuner/**"],
-      copyFiles: [
-        .productsDirectory(
-          name: "Copy speed-tuner assets",
-          subpath: "speed-tuner-assets",
-          files: ["speed-tuner/data.mpack"],
-        ),
-      ],
-      dependencies: [
-        .target(name: "NimbCore"),
-        .package(product: "ArgumentParser"),
-        .package(product: "CustomDump"),
-      ],
-      settings: Nimb.settings(base: [
-        "CODE_SIGN_IDENTITY[sdk=macosx*]": "-",
-        "SKIP_INSTALL": "YES",
-      ]),
-    ),
   ],
   schemes: [
     .scheme(
