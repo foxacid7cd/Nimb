@@ -7,10 +7,37 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
+  /// Which way the current gesture has committed to, if it has.
+  ///
+  /// AppKit scroll views pin a gesture to one axis once it is clearly going
+  /// that way, which is why a slightly crooked swipe in Safari scrolls
+  /// straight down rather than drifting sideways. Fingers are not precise
+  /// enough to keep a long vertical swipe perfectly vertical, and without
+  /// this the sideways component accumulates until it is worth a column and
+  /// the view slides.
+  private enum ScrollAxis {
+    /// Not enough travel yet to tell.
+    case undecided
+    case vertical
+    case horizontal
+    /// Deliberately diagonal, so neither axis is suppressed.
+    case free
+  }
+
   /// Most lines or columns one wheel event may ask Neovim to scroll. Past
   /// this the remainder is dropped rather than queued, so a hard flick cannot
   /// commit the screen to a redraw that takes seconds.
   static let maxScrollStep = 15
+
+  /// How far a gesture must travel before it is pinned to an axis. Small
+  /// enough that the decision is made early in the swipe, large enough that
+  /// the very first event -- which is mostly noise -- does not decide it.
+  private static let scrollAxisLockThreshold = 6.0
+
+  /// How much one axis must lead the other to pin the gesture. A crooked
+  /// vertical swipe runs about ten to one, so this only lets a genuinely
+  /// diagonal gesture through unpinned.
+  private static let scrollAxisLockRatio = 2.0
 
   /// Lines of content per cell of finger travel. Tuned by feel: 1.0 tracks the
   /// fingers exactly but reads as sluggish, and the 2.4 this code effectively
@@ -53,7 +80,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   /// removes the flash.
   private var hasPresentedFrame = false
 
-  private var isScrollingHorizontal: Bool? = nil
+  private var scrollAxis: ScrollAxis = .undecided
   private var xScrollingAccumulator: Double = 0
   private var xScrollingReported: Double = 0
   private var yScrollingAccumulator: Double = 0
@@ -254,7 +281,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     let columnPoints = state.font.cellWidth / Self.scrollColumnsPerCell
 
     if event.phase == .began {
-      isScrollingHorizontal = nil
+      scrollAxis = .undecided
       xScrollingAccumulator = 0
       xScrollingReported = 0
       yScrollingAccumulator = 0
@@ -267,6 +294,35 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       .scrollingDeltaX * momentumPhaseScrollingSpeedMultiplier
     yScrollingAccumulator -= event
       .scrollingDeltaY * momentumPhaseScrollingSpeedMultiplier
+
+    // Only trackpads get pinned. A mouse wheel reports no gesture phases, so
+    // there is nothing to scope a lock to, and its axes are discrete anyway.
+    if event.hasPreciseScrollingDeltas, scrollAxis == .undecided {
+      let travelledX = abs(xScrollingAccumulator)
+      let travelledY = abs(yScrollingAccumulator)
+
+      if max(travelledX, travelledY) >= Self.scrollAxisLockThreshold {
+        if travelledY >= travelledX * Self.scrollAxisLockRatio {
+          scrollAxis = .vertical
+        } else if travelledX >= travelledY * Self.scrollAxisLockRatio {
+          scrollAxis = .horizontal
+        } else {
+          scrollAxis = .free
+        }
+      }
+    }
+
+    // Whatever the pinned axis discards is marked as reported, so it cannot
+    // accumulate quietly and lurch the moment the next gesture begins.
+    switch scrollAxis {
+    case .vertical:
+      xScrollingReported = xScrollingAccumulator
+    case .horizontal:
+      yScrollingReported = yScrollingAccumulator
+    case .free,
+         .undecided:
+      break
+    }
 
     let xScrollingDelta = xScrollingAccumulator - xScrollingReported
     let yScrollingDelta = yScrollingAccumulator - yScrollingReported
