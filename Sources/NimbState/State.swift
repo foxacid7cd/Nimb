@@ -29,6 +29,26 @@ public struct State: Sendable {
     /// show up as time rather than hiding in a stall. Read once when the store
     /// is built, so it takes effect on the next launch.
     public var isReducingOnMainThreadEnabled: Bool = false
+
+    /// Decoded field by field, treating anything absent as its default.
+    ///
+    /// The synthesised decoding throws on a missing key even where the
+    /// property has a default, and the caller stores these as one JSON blob
+    /// and swallows the error -- so adding a flag here silently reset every
+    /// debug setting the user had turned on, because the blob written before
+    /// the flag existed no longer decoded at all.
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      func flag(_ key: CodingKeys) throws -> Bool {
+        try container.decodeIfPresent(Bool.self, forKey: key) ?? false
+      }
+      isUIEventsLoggingEnabled = try flag(.isUIEventsLoggingEnabled)
+      isMessagePackInspectorEnabled = try flag(.isMessagePackInspectorEnabled)
+      isStoreActionsLoggingEnabled = try flag(.isStoreActionsLoggingEnabled)
+      isCoreGraphicsRenderingEnabled = try flag(.isCoreGraphicsRenderingEnabled)
+      isFrameStatsLoggingEnabled = try flag(.isFrameStatsLoggingEnabled)
+      isReducingOnMainThreadEnabled = try flag(.isReducingOnMainThreadEnabled)
+    }
   }
 
   @PublicInit
