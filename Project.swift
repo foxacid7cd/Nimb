@@ -59,7 +59,7 @@ let project = Project(
         .package(product: "Collections"),
         .package(product: "CustomDump"),
       ],
-      settings: Nimb.settings(),
+      settings: Nimb.settings(base: ["ENABLE_MODULE_VERIFIER": "YES"]),
     ),
 
     // ── Neovim RPC API and generated bindings ───────────────────────────
@@ -84,7 +84,7 @@ let project = Project(
       dependencies: [
         .target(name: "NimbCore"),
       ],
-      settings: Nimb.settings(),
+      settings: Nimb.settings(base: ["ENABLE_MODULE_VERIFIER": "YES"]),
     ),
 
     // ── Application state and reducers ──────────────────────────────────
@@ -102,7 +102,7 @@ let project = Project(
         .package(product: "Collections"),
         .package(product: "CustomDump"),
       ],
-      settings: Nimb.settings(),
+      settings: Nimb.settings(base: ["ENABLE_MODULE_VERIFIER": "YES"]),
     ),
 
     // ── The app ─────────────────────────────────────────────────────────
