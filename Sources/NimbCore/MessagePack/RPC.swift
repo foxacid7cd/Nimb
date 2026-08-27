@@ -6,7 +6,6 @@ import Combine
 import CustomDump
 import Foundation
 import msgpack_c
-import NimbCore
 import Synchronization
 
 public final class RPC<Target: Channel>: Sendable {

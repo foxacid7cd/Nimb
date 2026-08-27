@@ -209,7 +209,7 @@ private struct RowPartsAccumulator {
           }
 
         case let .regular(character, false):
-          if case var .singleWidthCharacters(text, count) = internalParts[lastIndex].content {
+          if case .singleWidthCharacters(var text, let count) = internalParts[lastIndex].content {
             // Drop the enum's reference before appending so the storage is
             // uniquely referenced and grows in place.
             internalParts[lastIndex].content = .whitespaceCharacters(count: 0)

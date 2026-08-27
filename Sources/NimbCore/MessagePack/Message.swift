@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import Foundation
-import NimbCore
 
 public enum Message: Sendable, Hashable {
   case request(Request)
