@@ -38,6 +38,7 @@ final class TablineView: NSVisualEffectView, Rendering {
   /// than over the grid because the tabline is chrome already, so nothing
   /// covers editor text.
   private let statusTextField = NSTextField(labelWithString: "")
+  private let modeView = TablineModeView()
 
   private lazy var titleParagraphStyle: NSParagraphStyle = {
     let paragraphStyle = NSMutableParagraphStyle()
@@ -79,8 +80,16 @@ final class TablineView: NSVisualEffectView, Rendering {
           )
         }
       }
+    // Under the traffic lights, ending exactly where the buffers used to
+    // start, so adding it moves nothing.
+    addSubview(modeView)
+    modeView.leading(to: self)
+    modeView.top(to: self)
+    modeView.bottom(to: self)
+    modeView.width(TablineModeView.trafficLightsWidth)
+
     addSubview(buffersScrollView)
-    buffersScrollView.leading(to: self, offset: 68)
+    buffersScrollView.leadingToTrailing(of: modeView)
     buffersScrollView.top(to: self)
     buffersScrollView.bottom(to: self)
     buffersScrollView.widthToSuperview(
@@ -234,7 +243,12 @@ final class TablineView: NSVisualEffectView, Rendering {
       renderStatus()
     }
 
+    if updates.isModeUpdated {
+      modeView.mode = state.mode?.name
+    }
+
     if updates.isApplicationActiveUpdated {
+      modeView.isApplicationActive = state.isApplicationActive
       titleTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
 
       let sublayersOpacity: Double = state.isApplicationActive ? 1 : 0.7
