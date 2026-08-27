@@ -110,10 +110,13 @@ public struct APIFunctionsFile: GeneratableFile {
               .camelCasedAssumingSnakeCased(capitalized: false)
             let capitalizedCamelCasedFunctionName = function.name
               .camelCasedAssumingSnakeCased(capitalized: true)
+            let discardableResultAttribute = function.returnType.swift.isVoid
+              ? ""
+              : "@discardableResult\n"
             try FunctionDeclSyntax(
               """
               \(raw: function.deprecationAttributeIfNeeded)
-              @discardableResult
+              \(raw: discardableResultAttribute)
               func \(raw: camelCasedFunctionName)(\(
                 raw: parametersInSignature
               )) async throws -> \(
