@@ -218,6 +218,31 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
+  /// Draws 'showmode' and 'showcmd' side by side, in that order, the way a
+  /// terminal shows them at opposite ends of the last line. Either can be
+  /// empty on its own: Neovim clears one by sending it with no content.
+  /// Drops the mode part of a 'showmode' message, keeping whatever Neovim
+  /// appended to it.
+  ///
+  /// The colour panel at the leading end of the tabline already says which
+  /// mode this is, so spelling it out again here is noise. What is worth
+  /// keeping is the rest: recording a macro in insert mode arrives as
+  /// "-- INSERT --recording @q", one chunk under one highlight, with no
+  /// separator. So the mode has to be cut out of the string rather than
+  /// filtered out as a chunk of its own.
+  private static func strippingMode(_ text: String) -> String {
+    guard text.hasPrefix("--") else {
+      return text
+    }
+    let afterOpening = text.index(text.startIndex, offsetBy: 2)
+    guard
+      let closing = text.range(of: "--", range: afterOpening ..< text.endIndex)
+    else {
+      return text
+    }
+    return String(text[closing.upperBound...])
+  }
+
   func render() {
     guard isRendered else {
       return
@@ -323,11 +348,15 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
-  /// Draws 'showmode' and 'showcmd' side by side, in that order, the way a
-  /// terminal shows them at opposite ends of the last line. Either can be
-  /// empty on its own: Neovim clears one by sending it with no content.
   private func renderStatus() {
     let showmode = state.msgShowmode
+      .map { part in
+        MsgShow.ContentPart(
+          highlightID: part.highlightID,
+          text: Self.strippingMode(part.text),
+        )
+      }
+      .filter { !$0.text.isEmpty }
     let showcmd = state.msgShowcmd
     guard !showmode.isEmpty || !showcmd.isEmpty else {
       statusTextField.attributedStringValue = .init()
