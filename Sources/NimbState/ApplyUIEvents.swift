@@ -997,6 +997,8 @@ public extension Actions {
         lastUIEvent = uiEvent
       }
 
+      updates.isFromRedrawBatch = true
+
       if case .flush = lastUIEvent {
         updates.needFlush = true
       }

@@ -54,6 +54,14 @@ public struct State: Sendable {
   @PublicInit
   public struct Updates: Sendable {
     public var needFlush: Bool = false
+
+    /// Set by every redraw batch, whether or not it ended in flush.
+    ///
+    /// Neovim splits one frame across several redraw notifications and only
+    /// the last one carries flush, so a batch without it leaves the state half
+    /// applied. Read together with `needFlush`, this says whether the frame a
+    /// batch belongs to is complete.
+    public var isFromRedrawBatch: Bool = false
     public var isRawOptionsUpdated: Bool = false
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
@@ -99,6 +107,7 @@ public struct State: Sendable {
 
     public mutating func formUnion(_ updates: Updates) {
       needFlush = updates.needFlush
+      isFromRedrawBatch = updates.isFromRedrawBatch
       isRawOptionsUpdated = isRawOptionsUpdated || updates.isRawOptionsUpdated
       isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
       isModeUpdated = isModeUpdated || updates.isModeUpdated

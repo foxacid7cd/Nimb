@@ -199,6 +199,10 @@ public final nonisolated class Store: Sendable {
     var updates = State.Updates()
     continuation.yield((state, updates))
 
+    // Whether Neovim is part way through sending a frame. Only the redraw
+    // batch carrying flush completes one.
+    var isRedrawFrameIncomplete = false
+
     func apply(_ action: any Action) {
       let newUpdates = measuringRenderStage("reduce", .reduce) {
         action.apply(to: &state) { error in
@@ -207,10 +211,19 @@ public final nonisolated class Store: Sendable {
       }
       updates.formUnion(newUpdates)
 
-      if updates.needFlush {
-        continuation.yield((state, updates))
-        updates = .init()
+      if newUpdates.isFromRedrawBatch {
+        isRedrawFrameIncomplete = !newUpdates.needFlush
       }
+
+      // Actions from outside the redraw protocol -- the app activating, a font
+      // change -- ask for a render, and used to get one immediately. Landing
+      // between the redraw batches of one frame, that put the half applied
+      // frame on screen. Their render waits for Neovim to finish the frame.
+      guard updates.needFlush, !isRedrawFrameIncomplete else {
+        return
+      }
+      continuation.yield((state, updates))
+      updates = .init()
     }
 
     for await pendingActions in pendingActions {
