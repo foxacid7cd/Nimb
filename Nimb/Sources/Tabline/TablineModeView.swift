@@ -82,7 +82,7 @@ final class TablineModeView: NSView {
       return
     }
     isHidden = false
-    alphaValue = isApplicationActive ? 1 : 0.7
+    alphaValue = isApplicationActive ? 0.8 : 0.7
     redrawBackground()
   }
 
