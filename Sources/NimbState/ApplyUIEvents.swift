@@ -640,8 +640,25 @@ public extension Actions {
 
           cmdlinesUpdated()
 
+        case .flush:
+          // Ends the current message batch, so the next msg_show starts a
+          // fresh message area.
+          state.hasMsgShowSinceFlush = false
+
         case let .msgShow(batch):
           for params in batch {
+            // The first message of a batch replaces whatever the last batch
+            // left on screen. `:echon` is the exception: it continues the
+            // previous message, so that message has to survive.
+            if !state.hasMsgShowSinceFlush {
+              state.hasMsgShowSinceFlush = true
+
+              if !params.append, !state.msgShows.isEmpty {
+                state.msgShows = []
+                updates.msgShowsUpdates.append(.clear)
+              }
+            }
+
             do {
               // Unknown kinds are treated as `unknown`; the API contract says
               // new ones may be added at any time.
@@ -659,8 +676,14 @@ public extension Actions {
               }
 
               guard !contentParts.isEmpty else {
-                // Empty content replacing the previous message means Neovim
-                // is taking that message back down.
+                // Nothing to add. `:echo ""` arrives here as the `empty` kind
+                // with replaceLast false, and means the message area should
+                // come down -- which the batch clear above has already done,
+                // so long as this message was the only one in its batch, which
+                // is exactly the condition Neovim documents for it.
+                //
+                // Empty content that does replace the previous message is
+                // Neovim taking that one message back down.
                 if params.replaceLast, !state.msgShows.isEmpty {
                   state.msgShows.removeLast()
                   reindexMsgShows()
@@ -686,7 +709,12 @@ public extension Actions {
                 continue
               }
 
-              if params.replaceLast, !state.msgShows.isEmpty {
+              // Only a replacement that found something to replace reloads a
+              // row. replaceLast with nothing on screen is an addition, and
+              // reporting it as a reload pointed the view at a row it did not
+              // have yet.
+              let didReplaceLast = params.replaceLast && !state.msgShows.isEmpty
+              if didReplaceLast {
                 state.msgShows.removeLast()
               }
 
@@ -697,7 +725,7 @@ public extension Actions {
                 messageID: messageID,
               ))
 
-              if params.replaceLast {
+              if didReplaceLast {
                 updates.msgShowsUpdates
                   .append(.reload(indexes: [state.msgShows.count - 1]))
               } else {

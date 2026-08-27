@@ -183,6 +183,15 @@ public struct State: Sendable {
   public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
+
+  /// Whether a msg_show has already arrived since the last flush.
+  ///
+  /// Neovim sends msg_clear only after the screen is cleared, never for
+  /// ordinary messages, and leaves the lifetime of a shown message to the UI:
+  /// a UI presenting them in the cmdline area is expected to clear at the
+  /// start of the next batch. Without that, every message ever shown stayed
+  /// on screen -- `:echo` twice left both lines stacked.
+  public var hasMsgShowSinceFlush: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var gridsHierarchy: GridsHierarchy = .init()
   public var popupmenu: Popupmenu? = nil
