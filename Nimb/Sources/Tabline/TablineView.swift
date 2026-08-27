@@ -37,6 +37,7 @@ final class TablineView: NSVisualEffectView, Rendering {
   /// is on. In the tabline so that nothing covers editor text.
   private let statusTextField = NSTextField(labelWithString: "")
   private let modeView = TablineModeView()
+  private var modeViewWidthConstraint: NSLayoutConstraint! = nil
 
   private lazy var titleParagraphStyle: NSParagraphStyle = {
     let paragraphStyle = NSMutableParagraphStyle()
@@ -83,7 +84,7 @@ final class TablineView: NSVisualEffectView, Rendering {
     modeView.leading(to: self)
     modeView.top(to: self)
     modeView.bottom(to: self)
-    modeView.width(TablineModeView.trafficLightsWidth)
+    modeViewWidthConstraint = modeView.width(TablineModeView.trafficLightsWidth)
 
     addSubview(buffersScrollView)
     buffersScrollView.leadingToTrailing(of: modeView)
@@ -200,6 +201,19 @@ final class TablineView: NSVisualEffectView, Rendering {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+
+    guard let zoomButton = window?.standardWindowButton(.zoomButton) else {
+      return
+    }
+    let buttonFrame = zoomButton.convert(zoomButton.bounds, to: self)
+    modeViewWidthConstraint.constant = max(
+      TablineModeView.trafficLightsWidth,
+      buttonFrame.maxX + TablineModeView.trafficLightsTrailingInset,
+    )
   }
 
   override func mouseDown(with event: NSEvent) {

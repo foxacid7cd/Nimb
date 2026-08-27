@@ -9,6 +9,7 @@ final class TablineModeView: NSView {
   /// What the window's traffic light buttons occupy. The panel is exactly that
   /// wide, so nothing shifts as the mode changes.
   static let trafficLightsWidth: CGFloat = 68
+  static let trafficLightsTrailingInset: CGFloat = 12
 
   override var frame: NSRect {
     didSet {
