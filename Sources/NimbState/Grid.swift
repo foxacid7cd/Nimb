@@ -256,7 +256,6 @@ public struct Grid: Sendable, Identifiable {
 
       var shouldUpdateCursorDrawRun = false
 
-      let cellsCopy = layout.cells
       let rowLayoutsCopy = layout.rowLayouts
       let rowDrawRunsCopy = drawRuns.rowDrawRuns
 
@@ -265,18 +264,28 @@ public struct Grid: Sendable, Identifiable {
         .intersection(with: rectangle)
 
       let isFullWidth = rectangle.size.columnsCount == size.columnsCount
+      // Only the narrower case reads the old cells, and binding them would
+      // hold a second reference to the buffer -- which is what turns the first
+      // write into a copy of the whole grid.
+      let cellsCopy = isFullWidth ? nil : layout.cells
 
-      // Moved as one block. Whole rows are contiguous in the cell buffer, and
-      // a full-width scroll moves a contiguous run of them, so the row-by-row
-      // form below was paying the slice and replaceSubrange plumbing once per
-      // row for what is a single copy.
+      // Not moved at all. A full-width scroll only changes which row is where,
+      // so the rows are renumbered and every cell stays put -- constant work
+      // per row instead of per cell, which is what made this the largest cost
+      // in the reducer on a big window at a small font.
+      //
+      // The rows the scroll disturbs are the destinations plus the sources
+      // they came from, which sit above or below depending on direction.
       if isFullWidth {
-        layout.cells.copyRows(
-          toRectangle.rows.lowerBound + offset.rowsCount
-            ..< toRectangle.rows.upperBound + offset.rowsCount,
-          from: cellsCopy,
-          to: toRectangle.rows.lowerBound,
+        let lower = min(
+          toRectangle.rows.lowerBound,
+          toRectangle.rows.lowerBound + offset.rowsCount,
         )
+        let upper = max(
+          toRectangle.rows.upperBound,
+          toRectangle.rows.upperBound + offset.rowsCount,
+        )
+        layout.cells.rotateRows(lower ..< upper, by: offset.rowsCount)
       }
 
       for toRow in toRectangle.rows {
@@ -289,7 +298,7 @@ public struct Grid: Sendable, Identifiable {
           layout.cells.replaceRow(
             toRow,
             columns: rectangle.columns,
-            with: cellsCopy.rowSlice(fromRow, columns: rectangle.columns),
+            with: cellsCopy!.rowSlice(fromRow, columns: rectangle.columns),
           )
           layout.rowLayouts[toRow] = .init(rowCells: layout.cells.rowSlice(toRow))
           drawRuns.rowDrawRuns[toRow] = .init(

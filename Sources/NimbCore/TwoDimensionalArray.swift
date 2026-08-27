@@ -23,6 +23,16 @@ public struct TwoDimensionalArray<Element> {
   public var columnsCount: Int
   public var rowsCount: Int
 
+  /// Where each logical row lives in `storage`.
+  ///
+  /// Scrolling used to move the cells themselves, which is the whole grid for
+  /// a one line scroll -- forty thousand of them on a large window at a small
+  /// font, and the single largest cost in the reducer there. Rows are
+  /// interchangeable blocks, so scrolling permutes this instead and the cells
+  /// stay put. Every row access goes through it, which costs one extra load
+  /// and keeps the single flat allocation the flat layout was chosen for.
+  public var rowOrder: [Int]
+
   @inlinable
   public var size: IntegerSize {
     .init(columnsCount: columnsCount, rowsCount: rowsCount)
@@ -45,6 +55,7 @@ public struct TwoDimensionalArray<Element> {
 
     columnsCount = size.columnsCount
     rowsCount = size.rowsCount
+    rowOrder = .init(0 ..< size.rowsCount)
     storage = .init(
       repeating: repeatingElement,
       count: size.columnsCount * size.rowsCount,
@@ -60,6 +71,7 @@ public struct TwoDimensionalArray<Element> {
 
     columnsCount = size.columnsCount
     rowsCount = size.rowsCount
+    rowOrder = .init(0 ..< size.rowsCount)
     storage = []
     storage.reserveCapacity(size.columnsCount * size.rowsCount)
     for rowIndex in 0 ..< size.rowsCount {
@@ -71,30 +83,36 @@ public struct TwoDimensionalArray<Element> {
     }
   }
 
+  /// Where `row` starts in `storage`.
+  @inlinable
+  public func rowStart(_ row: Int) -> Int {
+    rowOrder[row] * columnsCount
+  }
+
   @inlinable
   public subscript(point: IntegerPoint) -> Element {
     get {
-      storage[point.row * columnsCount + point.column]
+      storage[rowStart(point.row) + point.column]
     }
     set {
-      storage[point.row * columnsCount + point.column] = newValue
+      storage[rowStart(point.row) + point.column] = newValue
     }
     _modify {
-      yield &storage[point.row * columnsCount + point.column]
+      yield &storage[rowStart(point.row) + point.column]
     }
   }
 
   /// The elements of `row`, in order.
   @inlinable
   public func rowSlice(_ row: Int) -> ArraySlice<Element> {
-    let start = row * columnsCount
+    let start = rowStart(row)
     return storage[start ..< start + columnsCount]
   }
 
   /// The elements of `row` within `columns`, in order.
   @inlinable
   public func rowSlice(_ row: Int, columns: Range<Int>) -> ArraySlice<Element> {
-    let start = row * columnsCount
+    let start = rowStart(row)
     return storage[start + columns.lowerBound ..< start + columns.upperBound]
   }
 
@@ -106,7 +124,7 @@ public struct TwoDimensionalArray<Element> {
     columns: Range<Int>,
     with newElements: some Collection<Element>,
   ) {
-    let start = row * columnsCount
+    let start = rowStart(row)
     storage.replaceSubrange(
       start + columns.lowerBound ..< start + columns.upperBound,
       with: newElements,
@@ -127,32 +145,36 @@ public struct TwoDimensionalArray<Element> {
     )
   }
 
-  /// Copies a run of whole rows out of `source`, starting at `destinationRow`.
+  /// Scrolls `rows` by `offset` without touching a single cell.
   ///
-  /// Whole rows are contiguous in storage, so a run of them is one
-  /// replaceSubrange rather than one per row. Scrolling moves most of the
-  /// screen this way, and doing it a row at a time paid the slice and
-  /// contiguous-storage plumbing sixty times a frame — sampling put that
-  /// overhead above the copy it was wrapping.
+  /// The rows that fall off the end are recycled to the other end, where the
+  /// caller is about to overwrite them -- Neovim always sends the newly
+  /// exposed lines straight after a scroll. That is the same contract the
+  /// copying version had: it left the vacated rows holding stale content too.
   @inlinable
-  public mutating func copyRows(
-    _ sourceRows: Range<Int>,
-    from source: Self,
-    to destinationRow: Int,
-  ) {
-    guard !sourceRows.isEmpty else {
+  public mutating func rotateRows(_ rows: Range<Int>, by offset: Int) {
+    guard !rows.isEmpty, offset != 0, rows.count > abs(offset) else {
       return
     }
-    let count = sourceRows.count * columnsCount
-    let sourceStart = sourceRows.lowerBound * columnsCount
-    let destinationStart = destinationRow * columnsCount
-    storage.replaceSubrange(
-      destinationStart ..< destinationStart + count,
-      with: source.storage[sourceStart ..< sourceStart + count],
-    )
+    let order = Array(rowOrder[rows])
+    let shift = ((offset % order.count) + order.count) % order.count
+    rowOrder.replaceSubrange(rows, with: order[shift...] + order[..<shift])
   }
 }
 
 extension TwoDimensionalArray: Sendable where Element: Sendable { }
 
-extension TwoDimensionalArray: Equatable where Element: Equatable { }
+extension TwoDimensionalArray: Equatable where Element: Equatable {
+  /// Compared by what the grid holds, not by where the rows happen to sit.
+  /// Two grids showing the same thing are equal even if they scrolled there
+  /// differently.
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    guard lhs.columnsCount == rhs.columnsCount, lhs.rowsCount == rhs.rowsCount else {
+      return false
+    }
+    for row in 0 ..< lhs.rowsCount where lhs.rowSlice(row) != rhs.rowSlice(row) {
+      return false
+    }
+    return true
+  }
+}
