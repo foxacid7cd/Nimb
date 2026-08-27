@@ -2,35 +2,17 @@
 
 import Foundation
 
-/// A fixed-size grid stored as one contiguous buffer.
-///
-/// This used to be `[[Element]]`, which for an 80x24 grid meant 24 separate
-/// heap allocations, 24 independent copy-on-write checks per full-grid
-/// mutation, and a double indirection on `subscript(point:)` — the hottest
-/// read in the application.
-///
-/// Row access is deliberately not exposed as a mutable `[Element]`. Slices
-/// keep their parent's indices, so handing one out invites off-by-one bugs
-/// where a caller indexes a row slice with column numbers. The row operations
-/// below all take column ranges and do the base arithmetic themselves.
+/// A fixed-size grid stored as one contiguous buffer, so a full-grid mutation
+/// is one copy-on-write check. Rows are addressed by column range, not sliced.
 public struct TwoDimensionalArray<Element> {
-  /// Row-major, `rowsCount * columnsCount` elements.
-  ///
-  /// Public rather than private(set) so the hot accessors below can be
-  /// @inlinable across the module boundary. Anything mutating it directly must
-  /// preserve the element count — the grid is fixed size.
+  /// Row-major, `rowsCount * columnsCount` elements. Public so the accessors
+  /// below can be @inlinable; a direct mutation must preserve the count.
   public var storage: [Element]
   public var columnsCount: Int
   public var rowsCount: Int
 
-  /// Where each logical row lives in `storage`.
-  ///
-  /// Scrolling used to move the cells themselves, which is the whole grid for
-  /// a one line scroll -- forty thousand of them on a large window at a small
-  /// font, and the single largest cost in the reducer there. Rows are
-  /// interchangeable blocks, so scrolling permutes this instead and the cells
-  /// stay put. Every row access goes through it, which costs one extra load
-  /// and keeps the single flat allocation the flat layout was chosen for.
+  /// Where each logical row lives in `storage`. Scrolling permutes this rather
+  /// than moving cells, at the cost of one extra load per row access.
   public var rowOrder: [Int]
 
   @inlinable
@@ -145,12 +127,8 @@ public struct TwoDimensionalArray<Element> {
     )
   }
 
-  /// Scrolls `rows` by `offset` without touching a single cell.
-  ///
-  /// The rows that fall off the end are recycled to the other end, where the
-  /// caller is about to overwrite them -- Neovim always sends the newly
-  /// exposed lines straight after a scroll. That is the same contract the
-  /// copying version had: it left the vacated rows holding stale content too.
+  /// Scrolls `rows` by `offset` without touching a cell. Rows falling off the
+  /// end are recycled holding stale content, which the caller then overwrites.
   @inlinable
   public mutating func rotateRows(_ rows: Range<Int>, by offset: Int) {
     guard !rows.isEmpty, offset != 0, rows.count > abs(offset) else {
@@ -165,9 +143,8 @@ public struct TwoDimensionalArray<Element> {
 extension TwoDimensionalArray: Sendable where Element: Sendable { }
 
 extension TwoDimensionalArray: Equatable where Element: Equatable {
-  /// Compared by what the grid holds, not by where the rows happen to sit.
-  /// Two grids showing the same thing are equal even if they scrolled there
-  /// differently.
+  /// Compared by what the grid holds, not where the rows sit, so two grids
+  /// showing the same thing are equal however they scrolled there.
   public static func == (lhs: Self, rhs: Self) -> Bool {
     guard lhs.columnsCount == rhs.columnsCount, lhs.rowsCount == rhs.rowsCount else {
       return false

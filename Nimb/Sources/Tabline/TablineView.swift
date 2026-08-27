@@ -33,10 +33,8 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let tabsMaskLayer = CALayer()
   private var tabsScrollViewFrameObservation: NSKeyValueObservation? = nil
   private let titleTextField = NSTextField(labelWithString: "")
-  /// 'showmode' and 'showcmd', which Neovim stops drawing in the grid once
-  /// ext_messages is on and sends as events instead. They live here rather
-  /// than over the grid because the tabline is chrome already, so nothing
-  /// covers editor text.
+  /// 'showmode' and 'showcmd', which Neovim sends as events once ext_messages
+  /// is on. In the tabline so that nothing covers editor text.
   private let statusTextField = NSTextField(labelWithString: "")
   private let modeView = TablineModeView()
 
@@ -80,8 +78,7 @@ final class TablineView: NSVisualEffectView, Rendering {
           )
         }
       }
-    // Under the traffic lights, ending exactly where the buffers used to
-    // start, so adding it moves nothing.
+    // Under the traffic lights, ending where the buffers start.
     addSubview(modeView)
     modeView.leading(to: self)
     modeView.top(to: self)
@@ -182,8 +179,7 @@ final class TablineView: NSVisualEffectView, Rendering {
       for: .horizontal,
     )
 
-    // Between the title and the tabs, so it sits at the trailing end without
-    // fighting the tabs for room. Hugs its text and resists being squeezed,
+    // Between the title and the tabs. Hugs its text and resists squeezing,
     // since it is short and the title truncates gracefully.
     addSubview(statusTextField)
     statusTextField.isHidden = true
@@ -218,18 +214,8 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
-  /// Draws 'showmode' and 'showcmd' side by side, in that order, the way a
-  /// terminal shows them at opposite ends of the last line. Either can be
-  /// empty on its own: Neovim clears one by sending it with no content.
-  /// Drops the mode part of a 'showmode' message, keeping whatever Neovim
-  /// appended to it.
-  ///
-  /// The colour panel at the leading end of the tabline already says which
-  /// mode this is, so spelling it out again here is noise. What is worth
-  /// keeping is the rest: recording a macro in insert mode arrives as
-  /// "-- INSERT --recording @q", one chunk under one highlight, with no
-  /// separator. So the mode has to be cut out of the string rather than
-  /// filtered out as a chunk of its own.
+  /// Drops the mode part of a 'showmode' message, keeping what Neovim appended
+  /// to it. The two arrive as one chunk: "-- INSERT --recording @q".
   private static func strippingMode(_ text: String) -> String {
     guard text.hasPrefix("--") else {
       return text
@@ -348,6 +334,8 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
+  /// Draws 'showmode' and 'showcmd' side by side. Either can be empty on its
+  /// own; Neovim clears one by sending it with no content.
   private func renderStatus() {
     let showmode = state.msgShowmode
       .map { part in
@@ -366,9 +354,8 @@ final class TablineView: NSVisualEffectView, Rendering {
 
     let font = NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium)
     let result = NSMutableAttributedString()
-    // A terminal puts these at opposite ends of the last line, so nothing
-    // separates them there. Sharing one field here, they need a gap or
-    // "-- VISUAL --" and a selection size of 3 read as "-- VISUAL --3".
+    // Sharing one field, they need a gap, or "-- VISUAL --" and a selection
+    // size of 3 read as "-- VISUAL --3".
     let separator: [MsgShow.ContentPart] =
       showmode.isEmpty || showcmd.isEmpty
         ? []

@@ -25,24 +25,15 @@ struct GridRenderInput: Sendable {
   let metalFrame: GridPreparedMetalFrame?
 }
 
-/// Stays off the main actor even though the rest of the app target defaults
-/// to it: CALayer's initialisers and draw(in:) are nonisolated in the SDK, so
-/// an isolated subclass cannot override them.
+/// Stays off the main actor: CALayer's initialisers and draw(in:) are
+/// nonisolated in the SDK, so an isolated subclass cannot override them.
 public nonisolated class GridLayer: CAMetalLayer {
   private struct MetalUniforms {
     var viewportSize: SIMD2<Float>
   }
 
-  /// One buffer per (kind, in-flight frame).
-  ///
-  /// There used to be a single buffer per kind, refilled by memcpy at the top
-  /// of every display(). Nothing stopped the GPU from still reading it for a
-  /// frame that had been presented but not yet finished, so a fast enough
-  /// sequence of frames could rewrite instance data out from under a draw
-  /// call. Cycling matches the number of drawables the layer is allowed to
-  /// have outstanding, which is what bounds how many frames can be reading at
-  /// once -- nextDrawable blocks past that, so the ring can never wrap onto a
-  /// buffer that is still live.
+  /// One buffer per (kind, in-flight frame), so a frame cannot rewrite instance
+  /// data the GPU is still reading. Depth matches the drawable pool.
   private final class MetalBufferCache {
     enum Kind: Int, CaseIterable {
       case backgroundQuads
@@ -112,20 +103,12 @@ public nonisolated class GridLayer: CAMetalLayer {
 
   private static let metalRenderer = GridMetalRenderer.shared
   private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-  /// Also the depth of the instance buffer ring, and the two have to agree:
-  /// the drawable pool is what bounds the number of frames the GPU can be
-  /// reading instance data for.
+  /// Also the depth of the instance buffer ring; the two have to agree, since
+  /// the drawable pool bounds how many frames the GPU can be reading.
   private static let maximumFramesInFlight = 3
 
-  /// Called the first time this layer has a frame to draw, so the view above
-  /// can stop hiding itself.
-  ///
-  /// Fired when the frame is handed over rather than after it is presented.
-  /// Presenting happens inside display(), so signalling from there needed a
-  /// hop back to the main actor and the view unhid a transaction later than
-  /// the content it was waiting for -- a new grid appeared one frame late.
-  /// Both callers of render() are already on the main actor, so marking the
-  /// layer dirty and revealing the view now happen in the same pass.
+  /// Called the first time this layer has a frame to draw, so the view above can
+  /// stop hiding itself. Fired on handover, not on present, to save a hop.
   nonisolated(unsafe) var onFirstFrameReady: (@MainActor () -> Void)? = nil
 
   private let gridID: Grid.ID
@@ -203,16 +186,8 @@ public nonisolated class GridLayer: CAMetalLayer {
       return
     }
 
-    // Whole layer, not the dirty rectangles. display() below re-encodes the
-    // entire scene whatever is marked, so working out which rectangles
-    // changed only to hand them to a path that ignores them was wasted --
-    // and it was not cheap, since coalescing them is quadratic in their
-    // count and a sideways scroll dirties every visible row. The
-    // CoreGraphics layer keeps its own render(), where the rectangles do
-    // decide what gets repainted.
-    //
-    // Unconditional because reaching here already means this grid changed:
-    // GridView only submits a build when the frame can affect it.
+    // Whole layer, not the dirty rectangles: display() re-encodes the entire
+    // scene whatever is marked. Unconditional, since GridView already gated it.
     setNeedsDisplay()
 
     if hasFrame {
@@ -232,15 +207,13 @@ public nonisolated class GridLayer: CAMetalLayer {
     )
   }
 
-  /// Painted behind the drawable. Every frame clears the whole layer, so this
-  /// is only ever visible before the first frame and in any gap during a
-  /// resize -- which is exactly where a transparent layer read as a flash.
+  /// Painted behind the drawable, so the only moments it shows -- before the
+  /// first frame, and gaps during a resize -- are not transparent.
   func setBackground(_ color: Color) {
     backgroundColor = color.appKit.cgColor
   }
 
-  /// Both call sites -- the scene build queue's hop to the main actor, and
-  /// GridView's own render -- are on the main actor, which is what makes
+  /// Both call sites are already on the main actor, which is what makes
   /// assuming it here sound.
   private nonisolated func signalFirstFrameIfNeeded() {
     let shouldSignal = hasSignalledFirstFrame.withLock { signalled -> Bool in
@@ -266,10 +239,8 @@ public nonisolated class GridLayer: CAMetalLayer {
     // Stated rather than left to the default, because the buffer ring below is
     // sized to match it.
     maximumDrawableCount = Self.maximumFramesInFlight
-    // The drawable is only ever a render target -- nothing samples, blits or
-    // reads it back -- so it can stay framebuffer-only and keep lossless
-    // compression. Every grid is its own CAMetalLayer, so the saved
-    // compositor bandwidth multiplies.
+    // The drawable is only ever a render target, so it can stay
+    // framebuffer-only and keep lossless compression.
     framebufferOnly = true
     colorspace = Self.colorSpace
     isOpaque = false
@@ -312,9 +283,8 @@ public nonisolated class GridLayer: CAMetalLayer {
     let bufferCache = prepareBufferCache(renderer: renderer)
     bufferCache.advance()
 
-    // One float per row slot, which is what lets a scrolled row keep the
-    // instances it already had: the shader adds this to every instance
-    // carrying the slot.
+    // One float per row slot; the shader adds it to every instance carrying
+    // that slot, so a scrolled row keeps the instances it already had.
     let rowOffsetsBuffer = bufferCache.buffer(
       for: metalFrame.scene.rowOffsets,
       kind: .rowOffsets,

@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-// Driven from GridLayer, which stays off the main actor because CALayer's
-// overrides are nonisolated. The types here are explicitly nonisolated so the
-// app target's MainActor default does not reach them.
+// Explicitly nonisolated, so the app target's MainActor default does not reach
+// types driven from GridLayer's nonisolated CALayer overrides.
 
 import AppKit
 import CoreText
 import Metal
 
-/// Unchecked because MTLTexture is an unannotated SDK protocol. The frame is
-/// built on one thread and consumed on another, and Metal objects are
-/// documented as safe for this.
+/// Unchecked because MTLTexture is an unannotated SDK protocol, though Metal
+/// documents it as safe to build on one thread and consume on another.
 nonisolated struct GridPreparedMetalFrame: @unchecked Sendable {
   let scene: GridMetalScene
   let atlasTexture: MTLTexture
@@ -36,12 +34,8 @@ struct GridMetalGlyphInstance {
 }
 
 struct GridMetalScene {
-  /// How far each row slot has moved since its instances were built, in
-  /// points. The shader adds it, so scrolling a row costs one float here
-  /// rather than a rewrite of every instance the row owns.
-  ///
-  /// Slot zero is reserved and always zero, for instances that belong to no
-  /// row -- the cursor.
+  /// How far each row slot has moved since its instances were built. The shader
+  /// adds it, so scrolling a row costs one float. Slot zero is reserved.
   var rowOffsets: [Float] = [0]
   var backgroundQuads: [GridMetalQuadInstance] = []
   var decorationQuads: [GridMetalQuadInstance] = []

@@ -79,9 +79,8 @@ public struct Metadata: Sendable {
       )
     }
 
-    /// grid_line's cell array, retyped so it is decoded once off the wire
-    /// rather than built into a tree of Values and walked again. Applied by
-    /// name because the api-info metadata says only "Array".
+    /// grid_line's cell array, retyped so it is decoded once off the wire.
+    /// Applied by name, because the api-info metadata says only "Array".
     public mutating func applyGridLineCellsTypeIfNeeded(uiEventName: String) {
       guard uiEventName == "grid_line", name == "data" else {
         return

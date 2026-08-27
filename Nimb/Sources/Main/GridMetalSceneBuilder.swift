@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// Driven from GridLayer, which stays off the main actor because CALayer's
-// overrides are nonisolated. The types here are explicitly nonisolated so the
-// app target's MainActor default does not reach them.
+// Explicitly nonisolated, so the app target's MainActor default does not reach
+// types driven from GridLayer's nonisolated CALayer overrides.
 
 import AppKit
 import CoreText
@@ -11,12 +10,8 @@ import NimbCore
 import NimbState
 
 final nonisolated class GridMetalSceneBuilder {
-  /// One row's geometry, in the coordinates it was built at.
-  ///
-  /// Kept whole rather than merged into the scene arrays so a row that has not
-  /// changed can be copied out again next frame instead of being rebuilt. A
-  /// row that only moved is re-based by its slot's offset, so its instances
-  /// are never touched at all.
+  /// One row's geometry, in the coordinates it was built at. Kept whole so an
+  /// unchanged row can be copied out again rather than rebuilt.
   private struct CachedRow {
     var slot: Int
     var originY: CGFloat
@@ -25,12 +20,8 @@ final nonisolated class GridMetalSceneBuilder {
     var glyphInstances: [GridMetalGlyphInstance] = []
   }
 
-  /// Everything a cached row depends on other than its own content. A change
-  /// to any of it invalidates every row at once.
-  ///
-  /// Colours are the reason this is needed at all: a draw run stores a
-  /// highlight id and resolves the colour when it is drawn, but a cached row
-  /// has the colour already baked into its vertices.
+  /// Everything a cached row depends on other than its own content; a change to
+  /// any of it invalidates every row. Colours are baked into cached vertices.
   private struct CacheContext: Equatable {
     var fontID: Int
     var scale: CGFloat
@@ -39,28 +30,17 @@ final nonisolated class GridMetalSceneBuilder {
 
   private let renderer: GridMetalRenderer
   /// Instance counts from the previous frame, used to size this frame's arrays
-  /// up front. A full-screen grid produces roughly ten thousand instances, so
-  /// growing from empty cost about fourteen reallocate-and-copy rounds per
-  /// array per frame.
-  ///
-  /// The arrays cannot simply be reused in place: the finished scene is handed
-  /// to the layer, which holds it until the next frame replaces it, so
-  /// mutating them would trigger a copy-on-write anyway. Phase 3 removes the
-  /// intermediate arrays entirely by writing straight into the MTLBuffer ring.
+  /// up front rather than growing them from empty.
   private var previousSceneCounts = GridMetalSceneCounts()
 
-  /// This frame's rows, keyed by row id. `carriedRows` holds last frame's and
-  /// is taken from as the walk goes; whatever is left in it belonged to rows
-  /// that scrolled off or were rebuilt, and is dropped.
+  /// This frame's rows, keyed by row id. `carriedRows` holds last frame's;
+  /// whatever is left in it scrolled off or was rebuilt, and is dropped.
   private var cachedRows: [RowDrawRun.ID: CachedRow] = [:]
   private var carriedRows: [RowDrawRun.ID: CachedRow] = [:]
   private var cacheContext: CacheContext? = nil
 
-  /// Row slots handed out to cached rows, and the ones going spare.
-  ///
-  /// A slot is baked into every instance the row owns, so it has to outlive
-  /// scrolling -- that is the whole point. Slot zero is reserved for
-  /// instances belonging to no row.
+  /// Row slots handed out to cached rows, and the ones going spare. A slot is
+  /// baked into the row's instances, so it outlives scrolling. Zero is reserved.
   private var nextSlot = 1
   private var freeSlots: [Int] = []
 
@@ -143,10 +123,8 @@ final nonisolated class GridMetalSceneBuilder {
     releaseSlots(of: cachedRows.values)
     cachedRows.removeAll(keepingCapacity: true)
 
-    // Walked a row at a time rather than a draw run at a time, which is what
-    // makes the cache possible: a row carries an id that a scroll moves along
-    // with its contents, so an unchanged row is recognisable even though its
-    // index changed.
+    // A row at a time rather than a draw run at a time: the row's id moves with
+    // its contents, so an unchanged row stays recognisable after a scroll.
     snapshot.grid.drawRuns.forEachVisibleRow(
       boundingRect: boundingRect,
       font: snapshot.font,
@@ -161,18 +139,13 @@ final nonisolated class GridMetalSceneBuilder {
       .origin.y
 
       // Taken out once, so the slot is still in hand if the reuse check below
-      // declines and the row has to be rebuilt -- otherwise that path would
-      // allocate a fresh slot and strand the old one.
+      // declines, rather than stranding it and allocating a fresh one.
       let carried = carriedRows.removeValue(forKey: rowDrawRun.id)
 
       if let carried {
         let delta = rowOriginY - carried.originY
-        // Glyph origins in a cached row were snapped to whole device pixels at
-        // the y it was built at, so the row can only be shifted by a whole
-        // number of device pixels without landing on different snapping.
-        // Cell height is a whole number of points, so every vertical scroll
-        // satisfies this and the rebuild below is only reached when something
-        // other than scrolling moved the row.
+        // Cached glyph origins are snapped to whole device pixels, so the row
+        // can only shift by a whole number of them and keep that snapping.
         let deltaPixels = delta * scale
         if (deltaPixels.rounded() - deltaPixels).magnitude < 1e-6 {
           setRowOffset(Float(delta), forSlot: carried.slot, in: &scene)
@@ -217,9 +190,7 @@ final nonisolated class GridMetalSceneBuilder {
   }
 
   /// Turns one row into instances, in the coordinates given by `rowOrigin`.
-  ///
-  /// This is the work the cache exists to skip: an atlas lookup and a rounded
-  /// rect per glyph, plus a colour conversion per draw run.
+  /// This is the work the cache exists to skip.
   private func buildRow(
     rowDrawRun: RowDrawRun,
     rowOrigin: CGPoint,
@@ -273,13 +244,8 @@ final nonisolated class GridMetalSceneBuilder {
     return row
   }
 
-  /// Copies a row's instances into the scene.
-  ///
-  /// Always a bulk append: a row that moved is handled by its offset, not by
-  /// rewriting its instances, so this never touches one. That is the whole
-  /// point of the row slot -- the previous version added the delta to every
-  /// instance of every scrolled row, which on a full-screen scroll meant
-  /// reading and rewriting the entire scene each frame.
+  /// Copies a row's instances into the scene. Always a bulk append: a row that
+  /// moved is handled by its slot offset, never by rewriting its instances.
   private func append(_ row: CachedRow, to scene: inout GridMetalScene) {
     scene.backgroundQuads.append(contentsOf: row.backgroundQuads)
     scene.decorationQuads.append(contentsOf: row.decorationQuads)
@@ -309,14 +275,8 @@ final nonisolated class GridMetalSceneBuilder {
           continue
         }
 
-        // Snapped to whole device pixels.
-        //
-        // The atlas anchors each glyph to the pixel grid, so its size is
-        // already a whole number of pixels; landing the origin on the grid too
-        // is what makes the quad cover exactly as many pixels as the bitmap
-        // has texels. Without it the sampler resamples every glyph by whatever
-        // fraction its cell happened to fall on -- and with a cell width of
-        // 7.44pt, no two columns share a fraction.
+        // Snapped to whole device pixels, so the quad covers exactly as many
+        // pixels as the bitmap has texels and the sampler does not resample.
         let glyphRect = CGRect(
           x: ((rect.origin.x + glyphRun.positions[index].x + CGFloat(entry.origin.x)) * scale)
             .rounded() / scale,
@@ -583,14 +543,8 @@ final nonisolated class GridMetalSceneBuilder {
 }
 
 nonisolated extension Color {
-  /// Built straight from the stored components.
-  ///
-  /// This used to go Color -> NSColor(deviceRed:) -> usingColorSpace(.deviceRGB)
-  /// -> read the components back, which allocated two NSColors and ran a
-  /// colour space conversion to recover the numbers it started from — the
-  /// first NSColor is already deviceRGB, so the conversion was a no-op. It is
-  /// called for every quad and every glyph instance, and showed up in a Time
-  /// Profiler trace as the single most expensive Nimb-owned frame.
+  /// Built straight from the stored components, with no NSColor round trip.
+  /// Called for every quad and every glyph instance.
   var metal: SIMD4<Float> {
     .init(Float(red), Float(green), Float(blue), Float(alpha))
   }

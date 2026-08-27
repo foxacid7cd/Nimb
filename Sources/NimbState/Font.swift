@@ -54,12 +54,7 @@ public struct Font: Sendable, Hashable {
   }
 
   /// The CoreText attribute dictionary for one trait combination, built once
-  /// per font rather than per shaped run.
-  ///
-  /// DrawRun used to hand `[.font: nsFont]` to NSAttributedString, which
-  /// bridges a fresh Swift Dictionary into an NSDictionary on every miss of
-  /// the draw run cache — and most shaped runs are misses, averaging under
-  /// four cells each.
+  /// per font so no Swift dictionary is bridged per shaped run.
   public func attributes(isBold: Bool = false, isItalic: Bool = false) -> CFDictionary {
     wrapped.attributes[FontBridge.WrappedFont.variantIndex(isBold: isBold, isItalic: isItalic)]
   }

@@ -85,10 +85,8 @@ public extension Actions {
         let font = state.font
         let appearance = state.appearance
         if state.grids[gridID] == nil {
-          // Read inline rather than hoisted above the branch: binding the
-          // outer grid to a local keeps a second reference to its cells alive
-          // for the rest of this function, which is exactly what makes the
-          // mutation below copy.
+          // Read inline rather than hoisted: a local would keep a second
+          // reference to the cells alive and make the mutation below copy.
           var grid = Grid(
             id: gridID,
             size: state.outerGrid!.size,
@@ -99,10 +97,8 @@ public extension Actions {
           state.grids[gridID] = grid
         }
 
-        // Mutated in place through the dictionary's _modify accessor. Copying
-        // the grid into a local, mutating it and assigning it back leaves the
-        // dictionary holding the original, so the first write inside `apply`
-        // copies the whole cell buffer and the write-back then releases it.
+        // Mutated in place through the dictionary's _modify accessor, so the
+        // first write inside `apply` does not copy the whole cell buffer.
         let result = state.grids[gridID]!.apply(
           update: update,
           font: font,
@@ -142,8 +138,7 @@ public extension Actions {
         var contentParts = [Cmdline.ContentPart]()
 
         for rawContentPart in rawLine {
-          // [attrs, text, hl_id] — the highlight is the third element. It
-          // used to be a two element [attr_id, text].
+          // [attrs, text, hl_id]: the highlight is the third element.
           guard
             case let .array(rawContentPart) = rawContentPart,
             rawContentPart.count == 3,
@@ -215,16 +210,8 @@ public extension Actions {
           }
 
         case let .defaultColorsSet(batch):
-          // Acted on only when the colours actually differ.
-          //
-          // Neovim re-emits default_colors_set as part of ordinary redraw
-          // cycles, carrying the same values it sent last time, and this used
-          // to take every one of them at face value: flushDrawRuns reshapes
-          // every row of every grid from scratch, and isAppearanceUpdated
-          // makes every grid rebuild its scene while the tabline, the message
-          // list, the cmdlines and the popupmenu all reconstruct their views.
-          // Counting the flag showed it set on half of all frames during a
-          // workload that never changed a colour.
+          // Acted on only when the colours differ: Neovim re-emits
+          // default_colors_set unchanged, and reacting reshapes every grid.
           var didChangeDefaultColors = false
           for params in batch {
             let foregroundColor = Color(rgb: params.rgbFg)
@@ -647,9 +634,8 @@ public extension Actions {
 
         case let .msgShow(batch):
           for params in batch {
-            // The first message of a batch replaces whatever the last batch
-            // left on screen. `:echon` is the exception: it continues the
-            // previous message, so that message has to survive.
+            // The first message of a batch replaces what the last one left.
+            // `:echon` continues the previous message, so it has to survive.
             if !state.hasMsgShowSinceFlush {
               state.hasMsgShowSinceFlush = true
 
@@ -676,20 +662,13 @@ public extension Actions {
               }
 
               guard !contentParts.isEmpty else {
-                // Nothing to add. `:echo ""` arrives here as the `empty` kind
-                // with replaceLast false, and means the message area should
-                // come down -- which the batch clear above has already done,
-                // so long as this message was the only one in its batch, which
-                // is exactly the condition Neovim documents for it.
-                //
-                // Empty content that does replace the previous message is
-                // Neovim taking that one message back down.
+                // Nothing to add. `:echo ""` takes the area down, which the
+                // batch clear already did; replaceLast takes one message down.
                 if params.replaceLast, !state.msgShows.isEmpty {
                   state.msgShows.removeLast()
                   reindexMsgShows()
                   // Two updates, because removal shifts every later index and
-                  // the incremental reload path cannot express that. The view
-                  // rebuilds when it sees more than one update.
+                  // the view rebuilds when it sees more than one.
                   updates.msgShowsUpdates.append(.clear)
                   updates.msgShowsUpdates
                     .append(.added(count: state.msgShows.count))
@@ -710,9 +689,7 @@ public extension Actions {
               }
 
               // Only a replacement that found something to replace reloads a
-              // row. replaceLast with nothing on screen is an addition, and
-              // reporting it as a reload pointed the view at a row it did not
-              // have yet.
+              // row; otherwise the view is pointed at a row it does not have.
               let didReplaceLast = params.replaceLast && !state.msgShows.isEmpty
               if didReplaceLast {
                 state.msgShows.removeLast()
@@ -949,12 +926,8 @@ public extension Actions {
             let colStart = params.colStart
             let data = params.data
 
-            // Only the column count is read out. Binding the grid itself to a
-            // local, as this used to, holds a second reference to its cells
-            // for as long as the local lives, which turns the row replacement
-            // below into a copy of the entire buffer plus a release of the
-            // old one -- together the single most expensive thing the reducer
-            // did while scrolling.
+            // Only the column count is read out: binding the grid to a local
+            // would make the row replacement below copy the entire buffer.
             guard let columnsCount = state.grids[gridID]?.columnsCount else {
               handleError(Failure("grid line event: Grid doesn't exist or destroyed", gridID))
               break
@@ -965,9 +938,8 @@ public extension Actions {
             cells.reserveCapacity(max(data.runs.count, remainingColumns))
             var highlightID = 0
 
-            // The runs arrive already decoded -- the shape checking that used
-            // to happen here now happens once, off the msgpack objects, so
-            // this is only the expansion into cells.
+            // The runs arrive already decoded, so this is only the expansion
+            // into cells.
             for run in data.runs {
               if let runHighlightID = run.highlightID {
                 highlightID = runHighlightID

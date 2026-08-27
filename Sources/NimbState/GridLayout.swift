@@ -52,14 +52,8 @@ public struct RowLayout: Sendable {
     self.init(parts: accumulator.rowParts)
   }
 
-  /// Re-splits only the parts `columns` touches, given the row it now holds.
-  ///
-  /// A grid_line usually rewrites part of a row — every keystroke does — but
-  /// the row was being split end to end regardless, which sampling put at 47%
-  /// of the reducer while typing.
-  ///
-  /// `rowCells` is the whole row after the update, not just the changed span:
-  /// the rebuilt window reaches past the edit on both sides.
+  /// Re-splits only the parts `columns` touches. `rowCells` is the whole row
+  /// after the update, since the rebuilt window reaches past the edit.
   public mutating func replaceCells(
     columns: Range<Int>,
     rowCells: ArraySlice<Cell>,
@@ -73,12 +67,8 @@ public struct RowLayout: Sendable {
       return
     }
 
-    // One part either side of the edit, because the edited cells can merge
-    // into the run next to them — and if they consume that run entirely, into
-    // the one after it. Rebuilding from the neighbour's own start settles
-    // both at once: its leading cells did not change, so whether it merges
-    // with the part beyond it cannot have changed either, and the cascade
-    // stops there.
+    // One part either side, because the edited cells can merge into the run
+    // next to them. Rebuilding from the neighbour's own start stops the cascade.
     let firstIndex = max(firstChanged - 1, 0)
     let lastIndex = min(lastChanged + 1, parts.count - 1)
 
@@ -183,10 +173,8 @@ private struct RowPartsAccumulator {
     }
     let cellCharacterType: CellCharacterType =
       if let character = cell.character {
-        // Space is checked first because almost every whitespace cell in a
-        // terminal grid is one. Character.isWhitespace resolves a Unicode
-        // binary property, which sampling put at 4.4% of the reducer while
-        // scrolling -- paid once per cell of every row rebuilt.
+        // Space first, because Character.isWhitespace resolves a Unicode binary
+        // property and this runs once per cell of every row rebuilt.
         if character == " " || character.isWhitespace {
           .whitespace
         } else {
@@ -196,11 +184,8 @@ private struct RowPartsAccumulator {
         .missing
       }
 
-    // Deliberately indexed rather than going through internalParts.last:
-    // that binds a copy, which leaves the character array in
-    // singleWidthCharacters referenced twice, so appending to it triggers
-    // copy-on-write of the whole run. For a row of plain text that is a
-    // copy per character, quadratic in the run length.
+    // Indexed rather than through internalParts.last, which binds a copy and
+    // makes appending to the run copy it -- quadratic in the run length.
     if !internalParts.isEmpty {
       let lastIndex = internalParts.index(before: internalParts.endIndex)
       if internalParts[lastIndex].highlightID == cell.highlightID {
@@ -268,18 +253,8 @@ private struct RowPartsAccumulator {
 }
 
 public enum RowPartContent: Sendable, Hashable {
-  /// The part's text, with how many grid cells it covers.
-  ///
-  /// Text rather than an array of per-cell characters, which is what this
-  /// used to be. Every consumer wants the text: CoreText shapes it, and the
-  /// draw run cache keys on it. Holding it per cell meant building the string
-  /// again on every cache miss, and hashing the key walked the cells one
-  /// grapheme at a time -- the single largest cost in the reducer during a
-  /// full-screen repaint, ahead of the typesetting the cache exists to avoid.
-  ///
-  /// `isDoubleWidth` marks the parts the accumulator makes for a wide
-  /// character: only those, and only their first character is wide, so no
-  /// per-cell flag is needed to place the rest.
+  /// The part's text and how many grid cells it covers. Text rather than
+  /// per-cell characters, because CoreText and the draw run cache both want it.
   case text(String, cellsCount: Int, isDoubleWidth: Bool)
   case whitespace(columnsCount: Int)
 

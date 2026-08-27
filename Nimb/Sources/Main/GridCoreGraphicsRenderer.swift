@@ -7,13 +7,8 @@ import AppKit
 import NimbCore
 import NimbState
 
-/// The CoreGraphics/CoreText drawing, shared by both layers.
-///
-/// GridLayer used to own this as private methods and fall back to it when Metal
-/// was unavailable, by letting CALayer's display machinery call draw(in:). That
-/// never actually painted -- a CAMetalLayer's contents come from its drawables,
-/// so the fallback produced an empty grid. Drawing with CoreGraphics needs a
-/// plain layer, which is what GridCoreGraphicsLayer is for.
+/// The CoreGraphics/CoreText drawing, shared by both layers. Drawing this way
+/// needs a plain layer, which is what GridCoreGraphicsLayer is for.
 nonisolated enum GridCoreGraphicsRenderer {
   static func draw(
     snapshot: GridDrawSnapshot,

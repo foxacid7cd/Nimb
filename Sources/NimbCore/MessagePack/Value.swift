@@ -16,13 +16,8 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   case dictionary([Value: Value])
   case binary(Data)
   case ext(type: Int8, data: Data)
-  /// A grid_line cell payload, decoded straight off the wire.
-  ///
-  /// Every other payload becomes a tree of Values. This one does not, because
-  /// it is the bulk of everything Neovim sends: a screenful of text arrives as
-  /// one small array per cell run, and building a Value for each was 95% of
-  /// the msgpack reader's time. Nothing packs this case -- it only ever
-  /// travels inbound.
+  /// A grid_line cell payload, decoded straight off the wire rather than into a
+  /// tree of Values, since it is the bulk of what Neovim sends. Inbound only.
   case cellRuns([RawCellRun])
   case `nil`
 
@@ -79,10 +74,7 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
       let cArray = object.via.array
 
       // The count is known up front, so the buffer is allocated once and
-      // written in place: appending grew it by doubling, and going through map
-      // still costs a uniqueness check per element. Every redraw batch from
-      // Neovim is a nested array, making this one of the hottest allocations
-      // in the app. The MAP case below already reserved.
+      // written in place rather than grown by appending.
       let count = Int(cArray.size)
       self = .array([Value](unsafeUninitializedCapacity: count) { buffer, initialized in
         for index in 0 ..< count {
@@ -130,12 +122,7 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   }
 
   /// Converts a whole RPC message, taking the grid_line shortcut where it
-  /// applies and behaving exactly like `init(_:)` everywhere else.
-  ///
-  /// The shape being matched is `[2, "redraw", [[name, event...], ...]]`.
-  /// Anything that is not that, or any grid_line that does not have the
-  /// expected five parameters, falls through to the generic conversion, so a
-  /// protocol change degrades to the old behaviour rather than misreading.
+  /// applies and falling through to the generic conversion where it does not.
   init(message object: msgpack_object) {
     guard
       object.type == MSGPACK_OBJECT_ARRAY,
@@ -212,9 +199,8 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
     ])
   }
 
-  /// The cell array itself. nil when any entry is not the expected
-  /// `[text]`, `[text, hl]` or `[text, hl, repeat]`, so the caller can fall
-  /// back rather than invent data.
+  /// The cell array itself. nil when any entry is not `[text]`, `[text, hl]` or
+  /// `[text, hl, repeat]`, so the caller can fall back rather than invent data.
   private static func cellRuns(_ object: msgpack_object) -> [RawCellRun]? {
     let array = object.via.array
     let count = Int(array.size)
@@ -288,9 +274,8 @@ public enum Value: Sendable, Hashable, ExpressibleByStringLiteral,
   }
 }
 
-/// One run of identical cells exactly as Neovim sends it: the text, the
-/// highlight it switches to if it switches, and how many columns it covers if
-/// more than one.
+/// One run of identical cells as Neovim sends it: text, the highlight it
+/// switches to, and how many columns it covers.
 @PublicInit
 public struct RawCellRun: Sendable, Hashable {
   public var text: String
@@ -298,10 +283,8 @@ public struct RawCellRun: Sendable, Hashable {
   public var repeatCount: Int? = nil
 }
 
-/// The `data` parameter of a grid_line event.
-///
-/// Accepts the fast-path representation and the generic one, so the decoder
-/// generated for grid_line keeps working when the shortcut declines a payload.
+/// The `data` parameter of a grid_line event. Accepts both the fast-path and
+/// the generic representation, so the generated decoder keeps working.
 @PublicInit
 public struct RawCellRuns: Sendable, Hashable {
   public var runs: [RawCellRun]
@@ -347,11 +330,8 @@ public struct RawCellRuns: Sendable, Hashable {
 }
 
 public extension Value {
-  /// Decodes a homogeneous array, failing as a whole if any element does.
-  ///
-  /// The API metadata describes several parameters and returns as
-  /// `ArrayOf(String)`, `ArrayOf(Window)` and so on. Without this they all
-  /// arrived as `[Value]` and every caller unpacked them by hand.
+  /// Decodes a homogeneous array, failing as a whole if any element does, for
+  /// the `ArrayOf(...)` parameters the API metadata describes.
   static func decodeArray<Element>(
     _ value: Value,
     _ decodeElement: (Value) -> Element?,
@@ -373,10 +353,8 @@ public extension Value {
   }
 }
 
-/// Optional accessors for the payload of each case.
-///
-/// These replace @CasePathable. `value.string` and `values.flatMap(\.integer)`
-/// read the same as before; the `.string` subscript form is gone.
+/// Optional accessors for the payload of each case, replacing @CasePathable.
+/// The `.string` subscript form is gone.
 public extension Value {
   var integer: Int? {
     if case let .integer(value) = self {

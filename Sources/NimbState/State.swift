@@ -16,27 +16,15 @@ public struct State: Sendable {
     /// Draw with CoreGraphics/CoreText instead of Metal, so the two can be
     /// compared on the same workload.
     public var isCoreGraphicsRenderingEnabled: Bool = false
-    /// Accumulate per-stage render timings and log a summary every 120 frames.
-    /// Signposts are always emitted; this only turns on the clock reads and the
-    /// aggregation behind them, so a regression is visible without Instruments.
+    /// Accumulate per-stage render timings and log a summary every 120 frames,
+    /// so a regression is visible without Instruments.
     public var isFrameStatsLoggingEnabled: Bool = false
-    /// Drive the reducer on the main actor instead of the cooperative pool.
-    ///
-    /// Only useful for measurement. The reducer and the render walk normally
-    /// run on different threads, so their costs overlap and neither timing
-    /// includes waiting for the other; putting them on the same thread makes
-    /// the two add up into one number, and makes any contention between them
-    /// show up as time rather than hiding in a stall. Read once when the store
-    /// is built, so it takes effect on the next launch.
+    /// Drive the reducer on the main actor instead of the cooperative pool, so
+    /// its cost and the render walk's add up. Read once, at store construction.
     public var isReducingOnMainThreadEnabled: Bool = false
 
-    /// Decoded field by field, treating anything absent as its default.
-    ///
-    /// The synthesised decoding throws on a missing key even where the
-    /// property has a default, and the caller stores these as one JSON blob
-    /// and swallows the error -- so adding a flag here silently reset every
-    /// debug setting the user had turned on, because the blob written before
-    /// the flag existed no longer decoded at all.
+    /// Decoded field by field, treating anything absent as its default: the
+    /// synthesised decoding throws on a missing key, and the caller swallows it.
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
       func flag(_ key: CodingKeys) throws -> Bool {
@@ -55,12 +43,8 @@ public struct State: Sendable {
   public struct Updates: Sendable {
     public var needFlush: Bool = false
 
-    /// Set by every redraw batch, whether or not it ended in flush.
-    ///
-    /// Neovim splits one frame across several redraw notifications and only
-    /// the last one carries flush, so a batch without it leaves the state half
-    /// applied. Read together with `needFlush`, this says whether the frame a
-    /// batch belongs to is complete.
+    /// Set by every redraw batch, whether or not it ended in flush. Read with
+    /// `needFlush`, it says whether the frame that batch belongs to is complete.
     public var isFromRedrawBatch: Bool = false
     public var isRawOptionsUpdated: Bool = false
     public var isDebugUpdated: Bool = false
@@ -68,13 +52,8 @@ public struct State: Sendable {
     public var isTitleUpdated: Bool = false
     public var isFontUpdated: Bool = false
     public var isAppearanceUpdated: Bool = false
-    /// A highlight definition changed.
-    ///
-    /// Weaker than isAppearanceUpdated, which forces every row of every grid
-    /// to reshape and every view to be reconstructed — far too much for a
-    /// colour change, since draw runs hold highlight ids and resolve colours
-    /// when they are drawn. Renderers that instead bake colours into geometry
-    /// ahead of time need to know, and this is what tells them.
+    /// A highlight definition changed. Weaker than isAppearanceUpdated, and
+    /// meant for renderers that bake colours into geometry ahead of time.
     public var isHighlightsUpdated: Bool = false
     public var updatedObservedHighlightNames: Set<
       Appearance
@@ -197,25 +176,16 @@ public struct State: Sendable {
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
 
-  /// 'showmode' and |recording| text: "-- INSERT --", "recording @q".
-  ///
-  /// Its own field rather than an entry in `msgShows`, because it is a status
-  /// indicator rather than a message: Neovim replaces it wholesale and sends
-  /// it empty to take it down, and it must not be swept away by the message
-  /// area clearing at the start of a batch.
+  /// 'showmode' and |recording| text. Its own field rather than a `msgShows`
+  /// entry, so the message area clearing at the start of a batch cannot take it.
   public var msgShowmode: [MsgShow.ContentPart] = []
 
   /// 'showcmd' text: the partially typed command, "2d", or the size of a
   /// visual selection. Same handling as `msgShowmode`.
   public var msgShowcmd: [MsgShow.ContentPart] = []
 
-  /// Whether a msg_show has already arrived since the last flush.
-  ///
-  /// Neovim sends msg_clear only after the screen is cleared, never for
-  /// ordinary messages, and leaves the lifetime of a shown message to the UI:
-  /// a UI presenting them in the cmdline area is expected to clear at the
-  /// start of the next batch. Without that, every message ever shown stayed
-  /// on screen -- `:echo` twice left both lines stacked.
+  /// Whether a msg_show has already arrived since the last flush. Neovim leaves
+  /// a message's lifetime to the UI, which clears at the start of a batch.
   public var hasMsgShowSinceFlush: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var gridsHierarchy: GridsHierarchy = .init()
@@ -389,10 +359,8 @@ public struct State: Sendable {
           )
 
         case let .floating(floatingWindow):
-          // Positioned from screen_row/screen_col rather than worked out from
-          // the anchor. Neovim has already resolved the anchor corner and
-          // clamped the result to the screen, which the manual route would
-          // make our job.
+          // Positioned from screen_row/screen_col: Neovim has already resolved
+          // the anchor corner and clamped the result to the screen.
           let gridSize = grid.size
           let gridColumn = Double(floatingWindow.screenColumn)
           let gridRow = Double(floatingWindow.screenRow)

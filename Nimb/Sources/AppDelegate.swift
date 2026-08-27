@@ -37,9 +37,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
     )
 
-    // Applied here rather than only from isDebugUpdated: the flag is restored
-    // into the initial state rather than toggled into it, so no update ever
-    // carries it and a run started with it on would collect nothing.
+    // Applied here rather than from isDebugUpdated, which never carries it: the
+    // flag is restored into the initial state rather than toggled into it.
     renderStats.isEnabled = initialState.debug.isFrameStatsLoggingEnabled
 
     let neovim = Neovim()
@@ -76,12 +75,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
-  /// Called from the main actor already, so it renders inline.
-  ///
-  /// This used to be nonisolated and wrap its body in `Task { @MainActor in }`,
-  /// which cost a second hop on every frame and, worse, deferred the render to
-  /// a later turn: two frames in flight were two unstructured tasks with no
-  /// ordering between them, so frame N+1 could paint before frame N.
+  /// Called from the main actor already, so it renders inline rather than in a
+  /// task that could paint out of order with the next frame's.
   private func render(state: State, updates: State.Updates) {
     if updates.isAppearanceUpdated {
       renderStats.count(.appearanceUpdatedFrames)
@@ -108,14 +103,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  /// Explicitly off the main actor.
-  ///
-  /// The app target defaults to MainActor, and an unstructured Task started
-  /// from a MainActor context inherits that isolation — so simply writing
-  /// `Task { for await ... }` here would run the whole reducer-to-UI handoff
-  /// on the main thread, serialising it against rendering. @concurrent forces
-  /// this onto the cooperative pool regardless of who calls it. The hop to the
-  /// main actor happens below, once per coalesced frame.
+  /// Explicitly off the main actor, which a bare `Task` would inherit from the
+  /// app target's default. The hop back happens once per coalesced frame.
   @concurrent
   private nonisolated func runUpdatesLoop(store: Store) async {
     do {

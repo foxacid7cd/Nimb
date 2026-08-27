@@ -26,16 +26,8 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
-  /// The msgpack reader loop.
-  ///
-  /// @concurrent rather than a bare `Task { }` body: an unstructured task
-  /// inherits the isolation of the context that created it, and RPC.init is
-  /// reached from applicationDidFinishLaunching on the main actor. This module
-  /// happens to default to nonisolated, so today the loop already runs off the
-  /// main thread — but that is an accident of a build setting, and the app
-  /// target hit exactly this trap when it moved to a MainActor default. Being
-  /// explicit also makes the Unpacker's confinement to a single task a fact
-  /// the compiler checks rather than something the reader has to infer.
+  /// The msgpack reader loop. @concurrent rather than a bare `Task { }`, which
+  /// would inherit the main actor from where RPC.init is reached.
   @concurrent
   private static func read(
     from target: Target,
@@ -97,14 +89,8 @@ public final class RPC<Target: Channel>: Sendable {
     }
   }
 
-  /// Sends on the caller's thread, in call order.
-  ///
-  /// This used to hand the send to an unstructured Task. Neovim applies input
-  /// in the order it arrives, so racing those tasks meant a burst of keystrokes
-  /// or wheel events could reach it transposed -- a replica of the pattern
-  /// reordered 7 to 33 messages out of every 200 sent back to back. The write
-  /// is a single blocking syscall on a pipe, so there was nothing to gain by
-  /// deferring it either.
+  /// Sends on the caller's thread, in call order. Neovim applies input in the
+  /// order it arrives, and the write is one blocking syscall on a pipe.
   public func fastCall(
     method: String,
     withParameters parameters: [Value],
@@ -148,9 +134,7 @@ public final class RPC<Target: Channel>: Sendable {
 }
 
 /// Lock rather than actor isolation, so allocating a request id is a plain
-/// synchronous call. It used to be @MainActor, which forced every send through
-/// an unstructured Task just to reach it -- and that is what made sends
-/// unordered, since those tasks then raced each other to the pipe.
+/// synchronous call and sends need no task that could race another to the pipe.
 private final class Storage: Sendable {
   private struct State {
     var currentRequests = IntKeyedDictionary<@Sendable (Message.Response) -> Void>()
@@ -179,8 +163,7 @@ private final class Storage: Sendable {
     forRequestWithID id: Int,
   ) {
     // Taken under the lock, invoked outside it: the handler resumes a
-    // continuation, and whatever that wakes must not run while the lock is
-    // held.
+    // continuation, and what that wakes must not run while the lock is held.
     let handler = state.withLock { state -> (@Sendable (Message.Response) -> Void)? in
       let handler = state.currentRequests[id]
       state.currentRequests[id] = nil

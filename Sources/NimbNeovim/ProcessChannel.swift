@@ -4,9 +4,8 @@ import Foundation
 import NimbCore
 
 public struct ProcessChannel: Channel {
-  /// Installed once, in `init`. `FileHandle.dataBatches` sets the handle's
-  /// `readabilityHandler`, so evaluating it more than once would silently
-  /// detach every previously vended stream.
+  /// Installed once, in `init`: `FileHandle.dataBatches` sets the handle's
+  /// `readabilityHandler`, detaching any previously vended stream.
   public let dataBatches: AsyncStream<Data>
 
   private let standardOutput = Pipe()

@@ -143,16 +143,12 @@ public struct IntKeyedDictionary<Value> {
       valuesBackingStore[key] = newValue
     }
 
-    // Without this, `dictionary[key]?.field = x` goes through get and set,
-    // copying the whole Value out and back. The values here are Grids, which
-    // own their cell array and draw runs, so that copy is the hottest write in
-    // the application. Yielding into the slot mutates it in place.
+    // Without this, `dictionary[key]?.field = x` copies the whole Value out and
+    // back. Yielding into the slot mutates it in place.
     _modify {
       if key >= valuesBackingStore.count {
-        // Out of range, so there is no slot to yield into. Hand over a
-        // temporary and only touch the storage if something was actually
-        // assigned — growing here unconditionally would make
-        // `dictionary[absentKey]?.field = x`, which is a no-op, allocate.
+        // Out of range, so yield a temporary and only touch storage if
+        // something was assigned; growing here would allocate for a no-op.
         var value: Value? = nil
         yield &value
         if value != nil {

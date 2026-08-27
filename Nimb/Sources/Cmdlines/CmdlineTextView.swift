@@ -304,10 +304,7 @@ public class CmdlineTextView: NSView, Rendering {
   }
 
   /// Attributes for a cmdline content chunk, from its highlight group.
-  ///
-  /// Mirrors what MsgShowsViewController does for message chunks. Before
-  /// Neovim 0.12 the chunk carried an attr id we never resolved; it now
-  /// carries a highlight id, so this actually means something.
+  /// Mirrors what MsgShowsViewController does for message chunks.
   private func attributes(
     forHighlightID highlightID: Highlight.ID,
   )

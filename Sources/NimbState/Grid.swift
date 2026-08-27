@@ -24,12 +24,8 @@ public struct Grid: Sendable, Identifiable {
     case dirtyRectangles([IntegerRectangle])
     case needsDisplay
 
-    /// The rectangles, merged. Coalescing happens here rather than in
-    /// `formUnion` because only one caller ever looks at the list, and
-    /// merging eagerly meant re-coalescing everything accumulated so far on
-    /// every single line update. A sideways scroll resends every visible row,
-    /// so that was sixty passes over a growing array per frame to produce a
-    /// list nothing had asked for yet -- 8% of the reducer.
+    /// The rectangles, merged. Coalescing lazily rather than in `formUnion`,
+    /// since only one caller looks at the list and it accumulates all frame.
     public var coalescedRectangles: [IntegerRectangle] {
       switch self {
       case let .dirtyRectangles(dirtyRectangles):
@@ -224,21 +220,12 @@ public struct Grid: Sendable, Identifiable {
       }
       layout = .init(cells: cells)
 
-      // Reshape in place rather than build a fresh GridDrawRuns.
-      //
-      // Constructing one starts from an empty rowDrawRuns, so its reuse never
-      // had anything to reuse and every row was typeset again -- during a live
-      // resize, once per throttled step. Rows keep their index across a
-      // resize, which is exactly what index-aligned reuse needs: a row whose
-      // content survived keeps its runs outright, and a row whose width
-      // changed still keeps the parts that did not. Reuse compares content and
-      // the bold/italic traits but not the font, and a resize does not change
-      // the font, so it is safe here in a way it is not for SetFont.
+      // Reshaped in place, since rows keep their index across a resize and
+      // index-aligned reuse can keep whatever survived. The font is unchanged.
       drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance)
 
-      // Kept rather than cleared-and-restored, which is what building a fresh
-      // GridDrawRuns forced. Same outcome: dropped only when the new size no
-      // longer contains it.
+      // Kept rather than cleared and restored; dropped only when the new size
+      // no longer contains it.
       if
         let cursorDrawRun = drawRuns.cursorDrawRun,
         cursorDrawRun.origin.column >= integerSize.columnsCount
@@ -264,18 +251,12 @@ public struct Grid: Sendable, Identifiable {
         .intersection(with: rectangle)
 
       let isFullWidth = rectangle.size.columnsCount == size.columnsCount
-      // Only the narrower case reads the old cells, and binding them would
-      // hold a second reference to the buffer -- which is what turns the first
-      // write into a copy of the whole grid.
+      // Only the narrower case reads the old cells; binding them otherwise
+      // would make the first write copy the whole grid.
       let cellsCopy = isFullWidth ? nil : layout.cells
 
-      // Not moved at all. A full-width scroll only changes which row is where,
-      // so the rows are renumbered and every cell stays put -- constant work
-      // per row instead of per cell, which is what made this the largest cost
-      // in the reducer on a big window at a small font.
-      //
-      // The rows the scroll disturbs are the destinations plus the sources
-      // they came from, which sit above or below depending on direction.
+      // A full-width scroll only changes which row is where, so renumber them
+      // and leave every cell put. Disturbed rows are destinations and sources.
       if isFullWidth {
         let lower = min(
           toRectangle.rows.lowerBound,
@@ -403,10 +384,8 @@ public struct Grid: Sendable, Identifiable {
   }
 
   public mutating func flushDrawRuns(font: Font, appearance: Appearance) {
-    // Emptying each row's cache used to be how this forced a reshape, and it
-    // worked only indirectly: positional reuse could not start without a
-    // dictionary hit, so clearing the dictionary disabled reuse as a whole.
-    // Say so directly instead.
+    // Says outright that nothing may be reused, rather than disabling reuse
+    // indirectly by emptying each row's cache.
     drawRuns.renderDrawRuns(for: layout, font: font, appearance: appearance, reusingOld: false)
     if let cursorDrawRun = drawRuns.cursorDrawRun {
       drawRuns.cursorDrawRun = .init(

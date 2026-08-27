@@ -12,19 +12,15 @@ public final class Neovim: Sendable {
 
     var environment = UserDefaults.standard.environmentOverlay
     // percentEncoded: false, because this is a filesystem path and not a URL
-    // component. URL.path() encodes by default, so a bundle living anywhere
-    // with a space in its path -- an app in "~/My Applications", say -- handed
-    // Neovim a VIMRUNTIME containing %20 and it silently found no runtime.
+    // component, and a path with a space would otherwise arrive with %20.
     environment["VIMRUNTIME"] = Bundle.main.resourceURL!
       .appending(path: "nvim")
       .appending(path: "runtime")
       .absoluteURL
       .path(percentEncoded: false)
       .replacing(/\/$/, with: "")
-    // Paths travel in the environment rather than interpolated into the
-    // command, so a space or a quote in one cannot rewrite the command. The
-    // login shell is what picks up the user's PATH, and exec keeps it from
-    // lingering as a parent process.
+    // Paths travel in the environment, so a space or quote cannot rewrite the
+    // command. The login shell picks up PATH; exec avoids a parent process.
     guard let nvimExecutablePath = Bundle.main.path(forAuxiliaryExecutable: "nvim") else {
       preconditionFailure(
         "nvim is missing from the app bundle; run 'make neovim' and rebuild",

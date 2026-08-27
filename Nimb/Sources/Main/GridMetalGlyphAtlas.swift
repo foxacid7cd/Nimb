@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// Driven from GridLayer, which stays off the main actor because CALayer's
-// overrides are nonisolated. The types here are explicitly nonisolated so the
-// app target's MainActor default does not reach them.
+// Explicitly nonisolated, so the app target's MainActor default does not reach
+// types driven from GridLayer's nonisolated CALayer overrides.
 
 import AppKit
 import CoreText
@@ -40,27 +39,13 @@ final nonisolated class GridMetalGlyphAtlas {
   private let device: MTLDevice
   private let textureSize: Int
 
-  /// Entries indexed by (fontID << 16 | glyph) rather than held in a
-  /// Dictionary. This lookup runs once per glyph per frame -- tens of thousands
-  /// of times a second -- and profiling the Metal path found hashing that key
-  /// to be the single largest cost inside scene building, larger than encoding
-  /// the draw calls. Both halves of the key are small and dense, so a flat
-  /// table removes the hash and the probe entirely.
-  ///
-  /// UInt32.max marks an empty slot. A slot per glyph id costs 256KB per font,
-  /// and FontBridge holds four fonts per configured font.
+  /// Entries indexed by (fontID << 16 | glyph) rather than hashed, since this
+  /// runs once per glyph per frame. UInt32.max marks an empty slot.
   private var entryIndices: [UInt32] = []
   private var entries: [GlyphEntry] = []
 
-  /// Fonts are interned to a small Int so the per-glyph lookup key holds no
-  /// String. The key used to carry font.fontName, which bridged an NSString
-  /// out of AppKit and hashed it once per glyph per frame.
-  ///
-  /// Identity is the fast path; the descriptor map behind it is what keeps two
-  /// distinct NSFont instances describing the same font sharing atlas entries,
-  /// so interning cannot silently duplicate rasterizations. Both maps are
-  /// bounded by the number of live NSFont instances, which FontBridge holds
-  /// fixed at four per configured font.
+  /// Fonts interned to a small Int, so the per-glyph key holds no String. The
+  /// descriptor map behind identity stops equal fonts duplicating entries.
   private var fontIDsByIdentity: [ObjectIdentifier: Int] = [:]
   private var fontIDsByDescriptor: [FontDescriptor: Int] = [:]
   /// Retains every interned font: ObjectIdentifier is only meaningful while
@@ -169,19 +154,8 @@ final nonisolated class GridMetalGlyphAtlas {
     let paddingPoints = 2 / max(scale, 1)
     let paddedBounds = bounds.insetBy(dx: -paddingPoints, dy: -paddingPoints)
 
-    // Snapped down to a whole device pixel before rasterising.
-    //
-    // The glyph's bounding box starts at an arbitrary fraction of a pixel, and
-    // that fraction differs per glyph. Rasterising from it put every glyph at
-    // its own subpixel phase inside its bitmap, and since the quad is then
-    // placed at that same fractional offset, the texels never lined up with
-    // the destination pixels -- so the sampler resampled each glyph by a
-    // different amount. Measured against the CoreGraphics renderer on real
-    // code, glyphs on one line landed anywhere from 0.5px above to 1.0px below
-    // where CoreText puts them. That is the jitter.
-    //
-    // Anchoring to the pixel grid here, and snapping the destination in the
-    // scene builder, makes the mapping exactly one texel per pixel.
+    // Snapped down to a whole device pixel before rasterising, so the mapping
+    // is exactly one texel per pixel and the sampler does not resample.
     let originX = (paddedBounds.minX * scale).rounded(.down) / scale
     let originY = (paddedBounds.minY * scale).rounded(.down) / scale
     let pixelWidth = max(1, Int(ceil((paddedBounds.maxX - originX) * scale)))
@@ -202,14 +176,8 @@ final nonisolated class GridMetalGlyphAtlas {
       return nil
     }
 
-    // Draw the glyph rather than filling its outline.
-    //
-    // This used to take CTFontCreatePathForGlyph and fillPath, which is not
-    // text rendering: a path fill gets none of the font smoothing CoreGraphics
-    // applies to glyphs, so every stem came out thinner than the CoreGraphics
-    // renderer's, which draws through CTFontDrawGlyphs with smoothing on. The
-    // atlas now asks for the same treatment, so both paths shape the same
-    // pixels.
+    // Drawn as a glyph rather than as a filled outline, which would get none
+    // of the font smoothing CoreGraphics applies to text.
     context.setShouldAntialias(true)
     context.setAllowsAntialiasing(true)
     context.setShouldSmoothFonts(true)
@@ -287,14 +255,8 @@ final nonisolated class GridMetalGlyphAtlas {
     return entry
   }
 
-  /// Starts over in a brand new texture.
-  ///
-  /// This used to zero the existing one in place, which is both a 16MB write
-  /// and unsound now that scene building runs off the main thread: a command
-  /// buffer encoded for the previous frame may still be sampling the atlas,
-  /// and every glyph it reads would come back blank. Frames hold their atlas
-  /// texture by reference, so handing new frames a different one leaves the
-  /// old contents intact for exactly as long as something is still using them.
+  /// Starts over in a brand new texture rather than zeroing this one, which a
+  /// command buffer from the previous frame may still be sampling.
   private func reset() -> Bool {
     guard let texture = Self.makeTexture(device: device, size: textureSize) else {
       return false

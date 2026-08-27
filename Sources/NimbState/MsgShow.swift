@@ -4,12 +4,8 @@ import NimbCore
 
 @PublicInit
 public struct MsgShow: Identifiable, Sendable, Hashable {
-  /// Message kinds as of Neovim 0.12. Unknown kinds are treated as
-  /// `unknown` per the API contract, which explicitly reserves the right to
-  /// add more.
-  ///
-  /// Note `""` and `"empty"` are distinct: the first means the kind was not
-  /// reported, the second is `:echo ""`.
+  /// Message kinds as of Neovim 0.12; unknown ones are treated as `unknown`.
+  /// `""` means the kind was not reported, `"empty"` means `:echo ""`.
   public enum Kind: String, Sendable {
     case unknown = ""
     case empty
@@ -72,9 +68,8 @@ public struct MsgShow: Identifiable, Sendable, Hashable {
   public var kind: Kind
   public var contentParts: [ContentPart]
 
-  /// The `id` Neovim assigned to this message, if any. A later msg_show
-  /// carrying the same id replaces this message in place. Distinct from `id`
-  /// below, which is this type's Identifiable conformance and is positional.
+  /// The `id` Neovim assigned, if any; a later msg_show with the same one
+  /// replaces this message. Distinct from the positional `id` below.
   public var messageID: Value? = nil
 
   public var id: Int {

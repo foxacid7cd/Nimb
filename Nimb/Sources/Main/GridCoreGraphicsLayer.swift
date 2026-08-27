@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 // Nonisolated for the same reason GridLayer is: CALayer's initialisers and
-// draw(in:) are nonisolated in the SDK, so an isolated subclass cannot override
-// them.
+// draw(in:) are nonisolated in the SDK.
 
 import AppKit
 import NimbCore
@@ -10,12 +9,8 @@ import NimbState
 import QuartzCore
 import Synchronization
 
-/// Draws a grid with CoreGraphics and CoreText.
-///
-/// A plain CALayer, deliberately: CALayer's display machinery allocates a
-/// backing store and calls draw(in:), which is what a CAMetalLayer does not do
-/// -- its contents come from presented drawables. GridLayer's Metal-unavailable
-/// fallback tried to draw this way into itself and silently produced nothing.
+/// Draws a grid with CoreGraphics and CoreText. A plain CALayer, since only
+/// that allocates a backing store and calls draw(in:).
 public final nonisolated class GridCoreGraphicsLayer: CALayer {
   private let gridID: Grid.ID
   private nonisolated let isolatedRenderInput = Mutex<GridRenderInput?>(nil)
@@ -57,9 +52,8 @@ public final nonisolated class GridCoreGraphicsLayer: CALayer {
     isolatedRenderInput.withLock { $0 = renderInput }
   }
 
-  /// Unlike the Metal path, the dirty rects here are load bearing: draw(in:)
-  /// receives them as the context's clip, and only the rows they touch are
-  /// redrawn.
+  /// Unlike the Metal path, the dirty rects are load bearing: draw(in:) gets
+  /// them as the context's clip.
   nonisolated func render() {
     guard let renderInput = isolatedRenderInput.withLock({ $0 }) else {
       return

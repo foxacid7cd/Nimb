@@ -2,11 +2,8 @@
 
 import NimbCore
 
-/// Neovim object handles carrying their display name.
-///
-/// These live here rather than with the application state because the
-/// generated API signatures refer to `Buffer.ID`, `Window.ID` and
-/// `Tabpage.ID`, so they have to be visible to the bindings.
+/// Neovim object handles carrying their display name. Here rather than with
+/// the application state, since the generated API signatures refer to them.
 @PublicInit
 public struct Tabpage: Identifiable, Sendable, Hashable {
   public var id: References.Tabpage

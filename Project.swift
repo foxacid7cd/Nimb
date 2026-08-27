@@ -9,17 +9,13 @@ let project = Project(
   options: .options(
     automaticSchemesOptions: .enabled(),
     disableBundleAccessors: true,
-    // The app uses Xcode's own generated asset symbols
-    // (ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS), so
-    // Tuist's synthesized accessors are redundant — and they reference
-    // Bundle.module, which disableBundleAccessors removes.
+    // Xcode's own generated asset symbols are used instead, and Tuist's
+    // accessors reference the Bundle.module that disableBundleAccessors removes.
     disableSynthesizedResourceAccessors: true,
   ),
   packages: [
-    // Xcode's native SPM integration, matching the hand-maintained project.
-    // Tuist's own XcodeProj-based integration is not used here because it does
-    // not pass -package-name, so packages that use the `package` access level
-    // across their modules (swift-collections, swift-syntax) fail to build.
+    // Xcode's native SPM integration: Tuist's does not pass -package-name, so
+    // packages using the `package` access level fail to build.
     .remote(url: "https://github.com/apple/swift-collections.git", requirement: .upToNextMajor(from: "1.6.0")),
     .remote(url: "https://github.com/apple/swift-algorithms.git", requirement: .upToNextMajor(from: "1.2.1")),
     .remote(url: "https://github.com/apple/swift-argument-parser.git", requirement: .upToNextMajor(from: "1.8.2")),
@@ -36,7 +32,7 @@ let project = Project(
       name: "NimbMacros",
       destinations: Nimb.destinations,
       product: .macro,
-      bundleId: "foxacid7cd.NimbMacros",
+      bundleID: "foxacid7cd.NimbMacros",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["Sources/NimbMacros/**"],
@@ -52,7 +48,7 @@ let project = Project(
       name: "NimbCore",
       destinations: Nimb.destinations,
       product: .staticFramework,
-      bundleId: "foxacid7cd.NimbCore",
+      bundleID: "foxacid7cd.NimbCore",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["Sources/NimbCore/**"],
@@ -71,7 +67,7 @@ let project = Project(
       name: "NimbNeovim",
       destinations: Nimb.destinations,
       product: .staticFramework,
-      bundleId: "foxacid7cd.NimbNeovim",
+      bundleID: "foxacid7cd.NimbNeovim",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: .sourceFilesList(
@@ -96,7 +92,7 @@ let project = Project(
       name: "NimbState",
       destinations: Nimb.destinations,
       product: .staticFramework,
-      bundleId: "foxacid7cd.NimbState",
+      bundleID: "foxacid7cd.NimbState",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["Sources/NimbState/**"],
@@ -115,7 +111,7 @@ let project = Project(
       destinations: Nimb.destinations,
       product: .app,
       productName: "Nimb",
-      bundleId: "foxacid7cd.Nimb$(NIMB_BUNDLE_ID_SUFFIX)",
+      bundleID: "foxacid7cd.Nimb$(NIMB_BUNDLE_ID_SUFFIX)",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .dictionary([
         "CFBundleDevelopmentRegion": "$(DEVELOPMENT_LANGUAGE)",
@@ -157,7 +153,7 @@ let project = Project(
         base: [
           "MARKETING_VERSION": "0.0.1",
           "CURRENT_PROJECT_VERSION": "1",
-            "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
+          "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
           "ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS": "NO",
           "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS": "YES",
           "CODE_SIGN_IDENTITY[sdk=macosx*]": "-",
@@ -170,11 +166,8 @@ let project = Project(
           // Metal shaders are inline MSL strings compiled at runtime, so the
           // app needs no Metal build phase.
           "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
-          // The app target is AppKit end to end. The reducer and the RPC layer
-          // live in NimbState and NimbNeovim, which stay nonisolated, so this
-          // only affects view code. Possible only after the module split:
-          // this setting is per-module, and Action.apply mutates State from
-          // @StateActor, which would not compile against a MainActor State.
+          // View code only: the reducer and RPC layer live in modules that stay
+          // nonisolated, and this setting is per-module.
           "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
         ],
         debug: [
@@ -193,7 +186,7 @@ let project = Project(
       name: "generate",
       destinations: Nimb.destinations,
       product: .commandLineTool,
-      bundleId: "foxacid7cd.generate",
+      bundleID: "foxacid7cd.generate",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["generate/**"],
@@ -214,7 +207,7 @@ let project = Project(
       name: "msgpack-inspector",
       destinations: Nimb.destinations,
       product: .commandLineTool,
-      bundleId: "foxacid7cd.msgpack-inspector",
+      bundleID: "foxacid7cd.msgpack-inspector",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["msgpack-inspector/**"],
@@ -231,7 +224,7 @@ let project = Project(
       name: "speed-tuner",
       destinations: Nimb.destinations,
       product: .commandLineTool,
-      bundleId: "foxacid7cd.speed-tuner",
+      bundleID: "foxacid7cd.speed-tuner",
       deploymentTargets: Nimb.deploymentTargets,
       infoPlist: .default,
       sources: ["speed-tuner/**"],

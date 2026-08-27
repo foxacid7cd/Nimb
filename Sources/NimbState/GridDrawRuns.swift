@@ -29,9 +29,8 @@ public struct GridDrawRuns: Sendable {
     renderDrawRuns(for: layout, font: font, appearance: appearance)
   }
 
-  /// Set reusingOld to false to reshape everything from scratch. Reuse checks
-  /// content and the bold/italic traits but not the font, so a font change has
-  /// to bypass it wholesale.
+  /// Set reusingOld to false to reshape from scratch. Reuse ignores the font,
+  /// so a font change has to bypass it wholesale.
   public mutating func renderDrawRuns(
     for layout: GridLayout,
     font: Font,
@@ -99,19 +98,8 @@ public struct GridDrawRuns: Sendable {
     }
   }
 
-  /// Visits every row overlapping `boundingRect`, top row first, with the
-  /// origin its draw runs are laid out from.
-  ///
-  /// Handing over rows rather than individual draw runs is what lets a caller
-  /// cache per row: the row carries an id that survives scrolling, and the
-  /// origin is what a cached row has to be re-based onto. Callers that want
-  /// the draw runs go on to `RowDrawRun.forEachVisibleDrawRun` with the same
-  /// origin.
-  ///
-  /// The array-returning `visibleRowDrawRuns` below builds two levels of array
-  /// per call — one of rows, each holding one of draw runs — which the Metal
-  /// scene builder rebuilt every frame only to iterate once. This is the same
-  /// walk without the intermediates.
+  /// Visits every row overlapping `boundingRect`, top row first, with its
+  /// origin. Rows rather than draw runs, so a caller can cache per row.
   public func forEachVisibleRow(
     boundingRect: IntegerRectangle,
     font: Font,
@@ -157,22 +145,16 @@ public struct GridDrawRuns: Sendable {
 
 @PublicInit
 public struct RowDrawRun: Sendable {
-  /// Identifies one shaped row.
-  ///
-  /// A renderer that turns rows into geometry needs to tell "the same row I
-  /// already have" from "this row was rebuilt", and the row index cannot say
-  /// it: a scroll moves RowDrawRun values between slots, so the content at row
-  /// three this frame was at row twelve last frame. Moving the value carries
-  /// the id with it, so keying on the id follows the content.
+  /// Identifies one shaped row. The row index cannot, because a scroll moves
+  /// RowDrawRun values between slots; the id travels with the content.
   public struct ID: Hashable, Sendable {
     fileprivate var rawValue: UInt64
   }
 
   private static let nextRawID = Atomic<UInt64>(1)
 
-  /// Fresh on every construction, preserved by assignment. Rows are rebuilt
-  /// only when their content changes, so an unchanged id means unchanged
-  /// geometry.
+  /// Fresh on every construction, preserved by assignment, so an unchanged id
+  /// means unchanged geometry.
   public var id: ID = RowDrawRun.makeID()
   public var drawRuns: [DrawRun]
 
@@ -187,15 +169,8 @@ public struct RowDrawRun: Sendable {
     drawRuns.reserveCapacity(layout.parts.count)
 
     for (index, part) in layout.parts.enumerated() {
-      // Reuse is index-aligned against the previous version of this row, which
-      // covers the case that matters: the row did not change.
-      //
-      // There used to be a per-row dictionary keyed by content as well, which
-      // meant hashing every part's characters twice per update -- once to look
-      // it up, once to insert -- and hashing a run of Characters goes through
-      // String hashing, so it was not cheap. GlobalDrawRunsCache now covers
-      // content reuse across the whole grid rather than within a single row,
-      // so the per-row copy earned nothing.
+      // Index-aligned against the previous version of this row, which covers
+      // the case that matters: the row did not change.
       var drawRun: DrawRun =
         if
           let old, index < old.drawRuns.endIndex,
@@ -313,9 +288,8 @@ public struct RowDrawRun: Sendable {
 
 @PublicInit
 public struct DrawRun: Sendable {
-  /// Runs longer than this are shaped every time. Long runs are both less
-  /// likely to recur verbatim and more expensive to keep, so they are not
-  /// worth a cache slot.
+  /// Runs longer than this are shaped every time: less likely to recur
+  /// verbatim, more expensive to keep.
   private static let maxCachedCellsCount = 64
 
   public var rowPartContent: RowPartContent
@@ -345,11 +319,8 @@ public struct DrawRun: Sendable {
     let isBold = appearance.isBold(for: highlightID)
     let isItalic = appearance.isItalic(for: highlightID)
 
-    // Cache any run that fits. The miss path below builds an NSAttributedString
-    // and runs CoreText typesetting, which profiling put at 12% of the app's
-    // CPU under load. The previous limit of six cells excluded most real
-    // tokens -- "return" and "context" reshaped on every single occurrence,
-    // even though a code buffer repeats the same identifiers constantly.
+    // Cache any run that fits. The miss path below runs CoreText typesetting,
+    // and a code buffer repeats the same identifiers constantly.
     let cacheKey: GlobalDrawRunsCache.Key? =
       if
         case let .text(_, cellsCount, _) = rowPartContent,
@@ -369,11 +340,8 @@ public struct DrawRun: Sendable {
         isItalic: isItalic,
       )
 
-      // CFAttributedString with a prebuilt attribute dictionary, rather than
-      // NSAttributedString with a Swift dictionary literal: the literal is
-      // bridged to an NSDictionary on every call, and this path runs for most
-      // shaped runs because the draw run cache misses roughly two times in
-      // three on real text.
+      // CFAttributedString with a prebuilt attribute dictionary: a Swift
+      // dictionary literal is bridged to an NSDictionary on every call.
       let attributedString = CFAttributedStringCreate(
         nil,
         text as CFString,
@@ -438,12 +406,8 @@ public struct DrawRun: Sendable {
           initializedCount = glyphCount
         }
 
-        // Read straight out of the CFDictionary. Casting it to
-        // [NSAttributedString.Key: Any] bridged the whole dictionary --
-        // allocating a native one and dynamic-casting each key and value --
-        // to look up a single entry. The run only carries a font different
-        // from the one asked for when CoreText substituted for a missing
-        // glyph, but the lookup ran on every run regardless.
+        // Read straight out of the CFDictionary, since casting it bridges the
+        // whole thing to look up one entry.
         let attributesFont = CFDictionaryGetValue(
           CTRunGetAttributes(ctRun),
           Unmanaged.passUnretained(kCTFontAttributeName).toOpaque(),
@@ -608,18 +572,15 @@ public struct DrawRun: Sendable {
     guard !rowPart.content.isWhitespace, rowPart.content == rowPartContent else {
       return false
     }
-    // Glyphs are shaped for a specific weight and slant, so a part whose text
-    // is unchanged still has to be reshaped when its highlight turns bold or
-    // italic. This used to compare content alone; a row keeping its text while
-    // changing highlight -- entering visual mode, say -- kept the old glyphs.
+    // Glyphs are shaped for a specific weight and slant, so unchanged text
+    // still has to be reshaped when its highlight turns bold or italic.
     return isBold == appearance.isBold(for: rowPart.highlightID)
       && isItalic == appearance.isItalic(for: rowPart.highlightID)
   }
 }
 
-/// Unchecked only because of `appKitFont: NSFont`, which is immutable and
-/// documented as thread safe but is not annotated Sendable. Everything else
-/// here is a value type.
+/// Unchecked only because `appKitFont: NSFont` is thread safe but not
+/// annotated Sendable. Everything else here is a value type.
 @PublicInit
 public struct GlyphRun: @unchecked Sendable {
   public var appKitFont: NSFont
@@ -659,15 +620,8 @@ public struct CursorDrawRun: Sendable {
     font: Font,
     appearance: Appearance,
   ) {
-    // Neovim can place the cursor on a row this grid does not have yet: a
-    // cursor_goto for a grid that a resize is about to enlarge, or one that
-    // arrives for a grid the reducer had to create implicitly. Grid.apply
-    // already bounds-checks the position, but only to decide the cursor's
-    // width, and then called this anyway -- so splitting a window could trap
-    // on the subscript below.
-    //
-    // Failing here rather than trapping means no cursor is drawn for that one
-    // frame; the next cursor_goto puts it back.
+    // Neovim can place the cursor on a row this grid does not have yet, so
+    // fail rather than trap; the next cursor_goto puts it back.
     guard rowDrawRuns.indices.contains(origin.row) else {
       return nil
     }
@@ -819,10 +773,8 @@ public struct CursorDrawRun: Sendable {
 }
 
 public final class GlobalDrawRunsCache: Sendable {
-  /// The full identity of a shaped run. This used to be a bare Hasher output,
-  /// so two different runs sharing a hash would silently render each other's
-  /// glyphs; letting Dictionary compare real keys removes that failure mode,
-  /// which matters more now that the cache holds far more entries.
+  /// The full identity of a shaped run, so Dictionary compares real keys
+  /// rather than letting a hash collision swap two runs' glyphs.
   public struct Key: Hashable, Sendable {
     public var content: RowPartContent
     public var font: Font
@@ -837,10 +789,8 @@ public final class GlobalDrawRunsCache: Sendable {
     }
   }
 
-  /// Two generations rather than a true LRU: insertion, lookup and eviction
-  /// are all O(1), where evicting the oldest entry of an ordered dictionary
-  /// shifts every element that follows it. Anything used during the current
-  /// generation is promoted into it and so survives the next rollover.
+  /// Two generations rather than a true LRU, so insertion, lookup and eviction
+  /// are all O(1). Anything used this generation survives the next rollover.
   private struct Storage {
     var current: [Key: DrawRun] = [:]
     var previous: [Key: DrawRun] = [:]

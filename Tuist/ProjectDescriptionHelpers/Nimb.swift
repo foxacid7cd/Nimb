@@ -2,24 +2,14 @@
 
 import ProjectDescription
 
-/// Shared pieces of the Nimb project graph.
-///
-/// This is the parity manifest: it reproduces the hand-maintained
-/// Nimb.xcodeproj exactly — same four targets, same duplicated source
-/// memberships, same bridging headers — so that the build-system swap can be
-/// validated independently of any source reorganisation.
+/// Shared pieces of the Nimb project graph, reproducing the hand-maintained
+/// Nimb.xcodeproj it replaced.
 public enum Nimb {
   public static let destinations: Destinations = .macOS
   public static let deploymentTargets: DeploymentTargets = .macOS("15.6")
 
-  /// The prebuilt msgpack-c archive. Adding it as a dependency gives us the
-  /// link entry, HEADER_SEARCH_PATHS for `publicHeaders` and
-  /// LIBRARY_SEARCH_PATHS for the archive's directory, which together replace
-  /// the hand-written search paths in the old project.
-  ///
-  /// The module map's directory lands on SWIFT_INCLUDE_PATHS, which is what
-  /// lets `import msgpack_c` resolve. It replaces the three bridging headers
-  /// the targets used to carry.
+  /// The prebuilt msgpack-c archive. The dependency supplies the link entry and
+  /// the search paths, including the one that lets `import msgpack_c` resolve.
   public static let msgpack: TargetDependency = .library(
     path: "Third-Party/msgpack-c/libmsgpack-c.a",
     publicHeaders: "Third-Party/msgpack-c/include",
@@ -27,8 +17,7 @@ public enum Nimb {
   )
 
   /// The Neovim API bindings, produced by `make generate` and git-ignored.
-  /// Declared as generated so the project references them even on a clean
-  /// checkout where they do not exist yet.
+  /// Declared as generated so a clean checkout still references them.
   public static let generatedSources: [SourceFileGlob] = [
     .generated("Sources/NimbNeovim/Generated/APIError.swift"),
     .generated("Sources/NimbNeovim/Generated/APIFunctions.swift"),

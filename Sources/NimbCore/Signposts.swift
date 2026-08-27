@@ -3,17 +3,8 @@
 import OSLog
 import Synchronization
 
-/// Signposts for the redraw-to-present pipeline, so Instruments can show where
-/// a frame goes without guessing from a sampled profile.
-///
-/// Emitting a signpost is close to free when nothing is recording, so these
-/// stay compiled in unconditionally. The aggregate counters behind
-/// `renderStats` are the part that costs a clock read per call, and those are
-/// gated on the debug flag.
-/// Spelled out so the frame stats can be filtered for from outside the
-/// process. The global `logger` is a bare `Logger()`, which carries no
-/// subsystem at all, so `log stream --predicate 'subsystem == ...'` matches
-/// nothing it writes.
+/// Named so frame stats can be filtered for from outside the process; the
+/// global `logger` carries no subsystem at all.
 public let renderSubsystem = "foxacid7cd.Nimb.rendering"
 
 public let renderSignposter = OSSignposter(
@@ -54,13 +45,11 @@ public enum RenderStage: Int, CaseIterable, Sendable {
 public enum RenderCounter: Int, CaseIterable, Sendable {
   /// Grids the render walk visited.
   case gridsVisited
-  /// Grids that visit decided actually needed a new scene. The ratio of the
-  /// two is the whole point of skipping clean grids: with six splits and one
-  /// changed line it should read six visited, one built.
+  /// Grids that visit decided actually needed a new scene. The ratio against
+  /// visited is what says whether skipping clean grids is working.
   case gridsBuilt
-  /// Frames carrying isAppearanceUpdated. That flag forces every grid to
-  /// rebuild and every tabline and message view to be reconstructed, so if it
-  /// approaches one per frame, none of the per-grid skipping can fire.
+  /// Frames carrying isAppearanceUpdated, which forces every grid to rebuild.
+  /// Approaching one per frame means no per-grid skipping can fire.
   case appearanceUpdatedFrames
 
   public var name: String {
@@ -73,8 +62,7 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
 }
 
 /// Rolling per-stage timings, summarised to the log every `framesPerSummary`
-/// frames. Instruments gives a better picture, but this makes a regression
-/// visible from a plain run with no tooling attached.
+/// frames, so a regression is visible from a plain run with no tooling.
 public final class RenderStats: Sendable {
   private struct Bucket {
     var callCount = 0
@@ -89,9 +77,8 @@ public final class RenderStats: Sendable {
     var counters = [Int](repeating: 0, count: RenderCounter.allCases.count)
   }
 
-  /// About a second of sustained redraw at 60Hz. Short enough that a scroll
-  /// burst produces several summaries rather than one average over the whole
-  /// gesture.
+  /// About a second of sustained redraw at 60Hz, so a scroll burst produces
+  /// several summaries rather than one average.
   private static let framesPerSummary = 60
 
   private let storage = Mutex(Storage())
@@ -103,9 +90,8 @@ public final class RenderStats: Sendable {
         guard state.isEnabled != newValue else {
           return
         }
-        // Start from a clean window rather than carrying counts across the
-        // toggle, so a summary never mixes instrumented and uninstrumented
-        // runs.
+        // Start from a clean window, so a summary never mixes instrumented and
+        // uninstrumented runs.
         state = .init(isEnabled: newValue)
       }
     }
@@ -192,11 +178,8 @@ public final class RenderStats: Sendable {
     }
 
     if let summary {
-      // Notice rather than info: info-level entries are memory-only unless
-      // something is actively streaming, so a summary written before the
-      // stream attached would be lost.
-      // Explicitly public: os_log redacts interpolated strings by default, so
-      // without this every summary reads as <private> from `log show`.
+      // Notice rather than info, which is memory-only until something streams.
+      // Explicitly public, since os_log redacts interpolated strings.
       renderStatsLogger.notice("\(summary, privacy: .public)")
     }
   }
@@ -204,9 +187,8 @@ public final class RenderStats: Sendable {
 
 public let renderStats = RenderStats()
 
-/// Wraps `body` in a signpost interval and, when frame stats are enabled, in a
-/// clock read. The clock read is skipped entirely when they are not, so this is
-/// safe to leave on hot paths.
+/// Wraps `body` in a signpost interval, and in a clock read only when frame
+/// stats are enabled, so this is safe to leave on hot paths.
 @inline(__always)
 public func measuringRenderStage<T>(
   _ name: StaticString,

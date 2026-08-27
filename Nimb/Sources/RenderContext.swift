@@ -12,17 +12,8 @@ public final class RenderContext: Sendable {
   }
 }
 
-/// Isolated to the main actor: every conformer is an AppKit object, and the
-/// render tree is walked synchronously from the top. Before this was isolated,
-/// each conformer satisfied a nonisolated requirement by hopping to the main
-/// actor itself, so a single frame fanned out into a set of unstructured tasks
-/// whose relative order was unspecified — frame N+1 could interleave with
-/// frame N.
-///
-/// Conformers store the context themselves. It used to be smuggled through an
-/// ObjC associated object so the protocol could provide it without a stored
-/// property, which cost a force-cast on every read and a deliberately leaked
-/// key.
+/// Isolated to the main actor, so the render tree is walked synchronously from
+/// the top rather than fanning one frame out into unordered tasks.
 @MainActor
 public protocol Rendering: AnyObject {
   var renderContext: RenderContext! { get set }

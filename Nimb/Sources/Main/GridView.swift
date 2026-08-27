@@ -7,14 +7,8 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
-  /// Which way the current gesture has committed to, if it has.
-  ///
-  /// AppKit scroll views pin a gesture to one axis once it is clearly going
-  /// that way, which is why a slightly crooked swipe in Safari scrolls
-  /// straight down rather than drifting sideways. Fingers are not precise
-  /// enough to keep a long vertical swipe perfectly vertical, and without
-  /// this the sideways component accumulates until it is worth a column and
-  /// the view slides.
+  /// Which way the current gesture has committed to, if it has. Pinning to one
+  /// axis keeps a crooked swipe from drifting sideways as it accumulates.
   private enum ScrollAxis {
     /// Not enough travel yet to tell.
     case undecided
@@ -24,24 +18,19 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     case free
   }
 
-  /// Most lines or columns one wheel event may ask Neovim to scroll. Past
-  /// this the remainder is dropped rather than queued, so a hard flick cannot
-  /// commit the screen to a redraw that takes seconds.
+  /// Most lines or columns one wheel event may ask Neovim to scroll. The
+  /// remainder is dropped, so a hard flick cannot commit to a long redraw.
   static let maxScrollStep = 15
 
-  /// How far a gesture must travel before it is pinned to an axis. Small
-  /// enough that the decision is made early in the swipe, large enough that
-  /// the very first event -- which is mostly noise -- does not decide it.
+  /// How far a gesture must travel before it is pinned to an axis, so the
+  /// first event alone does not decide it.
   private static let scrollAxisLockThreshold = 6.0
 
-  /// How much one axis must lead the other to pin the gesture. A crooked
-  /// vertical swipe runs about ten to one, so this only lets a genuinely
-  /// diagonal gesture through unpinned.
+  /// How much one axis must lead the other to pin the gesture. Only a
+  /// genuinely diagonal one stays unpinned.
   private static let scrollAxisLockRatio = 2.0
 
-  /// Lines of content per cell of finger travel. Tuned by feel: 1.0 tracks the
-  /// fingers exactly but reads as sluggish, and the 2.4 this code effectively
-  /// used before reads as slightly overshooting.
+  /// Lines of content per cell of finger travel. Tuned by feel.
   private static let scrollLinesPerCell = 2.0
 
   /// Columns of content per cell of finger travel. One to one, as before.
@@ -63,21 +52,15 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
-  /// The bounds the last frame was built for. A resize changes every rect in
-  /// the scene without producing a grid update, so it has to be tracked here
-  /// rather than inferred from State.Updates. nil means nothing has been built.
+  /// Bounds the last frame was built for. A resize changes every rect in the
+  /// scene without producing a grid update. nil means nothing built yet.
   private var builtBounds: CGRect? = nil
   private let metalSceneBuilder: GridMetalSceneBuilder?
   /// What the state says about this grid's visibility, kept apart from
   /// whether the view has anything to show yet.
   private var isHiddenByState = false
-  /// Whether the Metal layer has a frame to draw yet.
-  ///
-  /// A CAMetalLayer has no drawable until it presents, and scene building is
-  /// asynchronous, so a newly created grid is composited before its first
-  /// frame exists -- which is a hole, not a background, since the layer is not
-  /// opaque. Showing a new grid only once it has drawn costs it one frame and
-  /// removes the flash.
+  /// Whether the Metal layer has a frame to draw yet. A new grid is composited
+  /// before its first drawable exists, which shows as a hole.
   private var hasPresentedFrame = false
 
   private var scrollAxis: ScrollAxis = .undecided
@@ -87,13 +70,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private var yScrollingReported: Double = 0
   private var previousMouseMove: (modifier: String, point: IntegerPoint)? = nil
 
-  /// Mirrors what `mousescroll` was last set to, so the option is only pushed
-  /// when it actually changes rather than on every wheel event.
-  ///
-  /// Starts at zero rather than the fine values so the first wheel event
-  /// always pushes them. Assuming Neovim already agreed left the mirror wrong
-  /// whenever the config set `mousescroll` itself, and scroll speed was off by
-  /// that ratio until the first momentum flick happened to correct it.
+  /// Mirrors what `mousescroll` was last set to, so it is pushed only on
+  /// change. Starts at zero, since the config may have set it itself.
   private var scrollLinesPerEvent = 0
   private var scrollColumnsPerEvent = 0
 
@@ -112,14 +90,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
   }
 
-  /// Whether this frame can change what this grid looks like.
-  ///
-  /// GridsView renders every grid view every frame, and a grid used to rebuild
-  /// its whole Metal scene each time regardless of whether anything in it
-  /// moved -- so a window with six splits paid six full scene builds to show
-  /// one changed line. Both layers keep what they last drew (the Metal one
-  /// keeps its last presented drawable, the CoreGraphics one its backing
-  /// store), so returning false here leaves the correct pixels on screen.
+  /// Whether this frame can change what this grid looks like. Both layers keep
+  /// what they last drew, so false leaves the correct pixels on screen.
   private var isAffectedByCurrentUpdates: Bool {
     if builtBounds != bounds {
       return true
@@ -133,9 +105,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     if updates.isMouseUserInteractionEnabledUpdated || updates.isCursorBlinkingPhaseUpdated {
       return true
     }
-    // Content, scroll, clear and both halves of a cursor move all arrive here,
-    // the last two because ApplyUIEvents issues .clearCursor to the old grid
-    // and .cursor to the new one.
+    // Both halves of a cursor move arrive here too: .clearCursor to the old
+    // grid and .cursor to the new one.
     if updates.gridUpdates[gridID] != nil {
       return true
     }
@@ -191,14 +162,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     apply(backingScale: newWindow.backingScaleFactor)
   }
 
-  /// Backing scale can change without the view changing window: dragging
-  /// between a Retina and a non-Retina display, or changing a display's scaled
-  /// resolution. Tracking it only in viewWillMove left contentsScale stale,
-  /// and the Metal path takes that value as gospel -- it is the scale glyphs
-  /// are rasterised at and the multiplier the drawable is sized by, so a stale
-  /// one means every glyph bitmap is built for the wrong pixel density and
-  /// then resampled. The CoreGraphics path never noticed, because it draws
-  /// through CoreText afresh every time.
+  /// Backing scale can change without the view changing window. The Metal path
+  /// takes contentsScale as gospel for glyph rasterisation and drawable size.
   override public func viewDidChangeBackingProperties() {
     super.viewDidChangeBackingProperties()
 
@@ -267,16 +232,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       return
     }
 
-    // One wheel event to Neovim per gesture step, with the distance carried
-    // by `mousescroll` rather than by repeating the event.
-    //
-    // A redraw costs Neovim the same whether it scrolls one line or thirty --
-    // measured at 62ms either way on a heavily highlighted view -- so the
-    // number of events is what the screen pays, not the distance they cover.
-    // Sending the distance as an option and the step as a single event is how
-    // VimR does it, and it is why the same configuration feels smoother
-    // there: the old code here repeated the event up to four times to cover
-    // the same travel, buying four redraws where one would do.
+    // One wheel event per gesture step, distance carried by `mousescroll`: a
+    // redraw costs Neovim the same whatever the distance.
     let linePoints = state.font.cellHeight / Self.scrollLinesPerCell
     let columnPoints = state.font.cellWidth / Self.scrollColumnsPerCell
 
@@ -402,33 +359,25 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     renderStats.count(.gridsVisited)
     let isCoreGraphics = state.debug.isCoreGraphicsRenderingEnabled
 
-    // Kept in step with the editor background so that any moment the drawable
-    // does not cover -- before the first frame, or a gap during a resize --
-    // shows the right colour instead of nothing.
+    // Kept in step with the editor background, so any moment the drawable does
+    // not cover shows the right colour instead of nothing.
     if updates.isAppearanceUpdated || !hasPresentedFrame {
       gridLayer.setBackground(state.appearance.defaultBackgroundColor)
     }
 
-    // The readiness gate only applies to the Metal layer, which is the one
-    // that has nothing to show until it presents. The CoreGraphics layer
-    // draws inside display(), so it is never blank -- and without this the
-    // view would wait for a Metal frame that is never coming and stay hidden
-    // for good.
+    // Only the Metal layer has nothing to show until it presents. The
+    // CoreGraphics layer would wait for a frame that never comes.
     if isCoreGraphics || metalSceneBuilder == nil {
       markPresented()
     }
 
-    // Compared against the mode actually in effect rather than against
-    // updates.isDebugUpdated, which is false on the first render: the flag is
-    // restored into the initial state rather than toggled into it, so keying
-    // off the update left both layers in their constructed visibility and the
-    // grid blank.
+    // Compared against the mode in effect, not updates.isDebugUpdated, which is
+    // false on the first render: the flag is restored, not toggled.
     let didSwitchRenderingMode = renderingMode != isCoreGraphics
     if didSwitchRenderingMode {
       renderingMode = isCoreGraphics
-      // Each layer keeps whatever it last drew, so the one being switched away
-      // from would otherwise stay on screen. Hide it and make the incoming one
-      // repaint from scratch.
+      // Each layer keeps what it last drew, so hide the outgoing one and make
+      // the incoming one repaint from scratch.
       gridLayer.isHidden = isCoreGraphics
       coreGraphicsLayer.isHidden = !isCoreGraphics
       if isCoreGraphics {
@@ -451,10 +400,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     renderStats.count(.gridsBuilt)
     builtBounds = bounds
 
-    // The CoreGraphics path stays synchronous. It shapes nothing up front --
-    // all its work happens inside draw(in:), which CoreAnimation already calls
-    // off the render loop -- and it is the control the Metal path is measured
-    // against, so moving it would make the comparison meaningless.
+    // The CoreGraphics path stays synchronous: its work happens inside
+    // draw(in:), and it is the control the Metal path is measured against.
     guard !isCoreGraphics else {
       coreGraphicsLayer.update(renderInput: renderInput)
       coreGraphicsLayer.render()
@@ -568,9 +515,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     gridLayer.updateDrawableSize()
     coreGraphicsLayer.contentsScale = scale
 
-    // The atlas is keyed by scale, so the next build picks up a correctly
-    // rasterised one -- but only if something asks for a rebuild, and a scale
-    // change produces no grid update of its own.
+    // The atlas is keyed by scale, and a scale change produces no grid update
+    // of its own, so force a rebuild.
     builtBounds = nil
     setNeedsDisplay(bounds)
   }

@@ -12,13 +12,7 @@ public struct FloatingWindow: Sendable, Identifiable {
   public var anchorGridID: Grid.ID
 
   /// Where Neovim has decided this float goes, in cells, relative to the
-  /// screen rather than to the anchor grid.
-  ///
-  /// win_float_pos offers two positioning schemes: work it out yourself from
-  /// anchor/anchor_row/anchor_col, or use these. The first makes the UI
-  /// responsible for keeping the window on screen; these are already clamped,
-  /// so they are what we use. anchor, anchor_row and anchor_col are
-  /// deliberately ignored, as the protocol says to do when taking this route.
+  /// screen. Already clamped, so anchor/anchor_row/anchor_col are ignored.
   public var screenRow: Int
   public var screenColumn: Int
 
@@ -28,8 +22,7 @@ public struct FloatingWindow: Sendable, Identifiable {
   /// actually decides stacking.
   public var zIndex: Int
 
-  /// Neovim's `compindex`: the exact rendering order it has already worked
-  /// out for the floats. The docs are explicit that a UI should render in
+  /// Neovim's `compindex`. The docs are explicit that a UI should render in
   /// this order rather than deriving one from zindex.
   public var compositingIndex: Int = 0
 }

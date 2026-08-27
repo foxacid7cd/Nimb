@@ -6,9 +6,8 @@ let tuist = Tuist(
   project: .tuist(
     compatibleXcodeVersions: .upToNextMajor("26.0"),
     generationOptions: .options(
-      // Left at the default "5". Raising it would push every external SPM
-      // target into the Swift 6 language mode, which they are not ready for.
-      // Our own targets set SWIFT_VERSION = 6.0 explicitly.
+      // Left at the default "5", which would otherwise push external SPM
+      // targets into Swift 6. Our own targets set SWIFT_VERSION explicitly.
       defaultConfiguration: "Debug",
     ),
   ),

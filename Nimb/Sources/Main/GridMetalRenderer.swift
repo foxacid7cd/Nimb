@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// Driven from GridLayer, which stays off the main actor because CALayer's
-// overrides are nonisolated. The types here are explicitly nonisolated so the
-// app target's MainActor default does not reach them.
+// Explicitly nonisolated, so the app target's MainActor default does not reach
+// types driven from GridLayer's nonisolated CALayer overrides.
 
 import AppKit
 import CoreText
@@ -129,13 +128,8 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
   let glyphPipelineState: MTLRenderPipelineState
   let glyphSamplerState: MTLSamplerState
 
-  /// One atlas per backing scale, shared by every grid.
-  ///
-  /// Each atlas is a 4096x4096 r8Unorm texture, so 16MB. They used to be owned
-  /// by GridMetalSceneBuilder, one per GridView, which meant a window with
-  /// eight splits held eight of them and rasterized every glyph eight times.
-  /// The contents are identical by construction — the key is (font, glyph) and
-  /// nothing about it is per-grid — so there was never a reason to duplicate.
+  /// One 16MB atlas per backing scale, shared by every grid. The key is
+  /// (font, glyph), so per-grid copies would be identical by construction.
   private let glyphAtlases = Mutex<[Int: GridMetalGlyphAtlas]>([:])
 
   init?(device: MTLDevice? = MTLCreateSystemDefaultDevice()) {
@@ -226,12 +220,8 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     return try device.makeRenderPipelineState(descriptor: descriptor)
   }
 
-  /// The atlas for `scale`, created on first use.
-  ///
-  /// The atlas itself is not internally synchronised: its entry table and shelf
-  /// packer are plain stored properties. Every caller reaches it from scene
-  /// building, which runs on one thread at a time, so the lock here only
-  /// guards the lookup.
+  /// The atlas for `scale`, created on first use. The atlas itself is not
+  /// synchronised, so the lock guards only the lookup; callers are serialised.
   func glyphAtlas(scale: CGFloat) -> GridMetalGlyphAtlas? {
     // Quantised so float noise in backingScaleFactor cannot mint a second
     // 16MB atlas for what is really the same scale.

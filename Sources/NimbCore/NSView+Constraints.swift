@@ -3,17 +3,7 @@
 import AppKit
 
 /// In-repo replacement for the subset of TinyConstraints this project used.
-///
-/// Signatures and semantics deliberately match TinyConstraints 4.0.2 so that
-/// dropping the dependency required no call-site changes:
-///
-///   - every method sets `translatesAutoresizingMaskIntoConstraints = false`
-///     on the receiver;
-///   - every method activates the constraint and returns it, so callers can
-///     store it and toggle `isActive` later;
-///   - `offset` is applied verbatim — callers pass their own negative values —
-///     except `edgesToSuperview(insets:)`, which takes all-positive insets and
-///     negates bottom/right itself.
+/// Signatures and semantics match 4.0.2, so call sites did not change.
 public enum ConstraintRelation {
   case equal
   case equalOrLess
@@ -213,9 +203,8 @@ public extension NSView {
     bottom(to: requiredSuperview, offset: offset, relation: relation, priority: priority)
   }
 
-  /// Note the sign convention: insets are all positive, and bottom/right are
-  /// negated here. This differs from the individual edge methods above, where
-  /// the caller supplies the sign. TinyConstraints behaved the same way.
+  /// Insets are all positive and bottom/right are negated here, unlike the
+  /// edge methods above where the caller supplies the sign.
   @discardableResult
   func edgesToSuperview(insets: NSEdgeInsets = .init()) -> [NSLayoutConstraint] {
     [
@@ -318,10 +307,8 @@ public extension NSView {
     )
   }
 
-  /// Uses the `NSLayoutConstraint(item:attribute:...)` initialiser rather than
-  /// an anchor, because anchors cannot express a multiplier on a center
-  /// attribute. `centerYToSuperview(multiplier: 0.65)` in MainViewController
-  /// depends on this.
+  /// Uses the `NSLayoutConstraint(item:attribute:...)` initialiser, because
+  /// anchors cannot express a multiplier on a center attribute.
   @discardableResult
   func centerXToSuperview(
     offset: CGFloat = 0,

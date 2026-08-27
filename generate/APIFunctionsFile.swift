@@ -59,9 +59,8 @@ public struct APIFunctionsFile: GeneratableFile {
               }
 
               if function.returnType.swift.isVoid {
-                // Nothing comes back, so there is nothing to decode -- but the
-                // conformance still needs the method, and Success is Void
-                // rather than Value so callers are not handed a nil to check.
+                // Nothing to decode, but the conformance still needs the
+                // method. Success is Void, so callers get no nil to check.
                 try FunctionDeclSyntax(
                   "public static func decodeSuccess(from _: Value) throws -> Void",
                 ) {

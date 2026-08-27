@@ -3,9 +3,8 @@
 import Foundation
 import NimbCore
 
-/// Preferences that configure the embedded Neovim process itself, as opposed
-/// to the application's own window and appearance settings, which stay in the
-/// app target.
+/// Preferences that configure the embedded Neovim process itself. Window and
+/// appearance settings stay in the app target.
 public extension UserDefaults {
   var outerGridSize: IntegerSize {
     get {

@@ -8,10 +8,8 @@ import NimbNeovim
 import NimbState
 import Synchronization
 
-/// Nonisolated by design: dispatch and show are called from key monitors,
-/// gesture handlers and the off-main updates loop alike, and the store owns no
-/// mutable state of its own — the reducer's State lives as a local inside the
-/// single task that drives it.
+/// Nonisolated by design: it is called from key monitors, gesture handlers and
+/// the off-main updates loop alike, and owns no mutable state of its own.
 public final nonisolated class Store: Sendable {
   private enum PendingActions: Sendable {
     case single(any Action)
@@ -20,8 +18,7 @@ public final nonisolated class Store: Sendable {
   }
 
   /// Counts the two producers down so whichever finishes last closes the
-  /// stream. Previously an actor, which cost two suspensions per completion
-  /// for what is a two-bit state machine.
+  /// stream. A lock rather than an actor, to avoid suspending twice.
   private final class PendingActionsState: Sendable {
     private struct Storage {
       var remainingProducers: Int
@@ -153,10 +150,8 @@ public final nonisolated class Store: Sendable {
       neovimNotificationsTask.cancel()
     }
 
-    // The reducer normally runs off the main actor, which is the point: it is
-    // the longest stage of a frame and nothing about it needs the main thread.
-    // The debug flag puts it back on main so the reducer and the render walk
-    // can be timed as one serialised number instead of two overlapping ones.
+    // The debug flag puts the reducer back on main, so it and the render walk
+    // time as one serialised number instead of two overlapping ones.
     let isReducingOnMainThread = initialState.debug.isReducingOnMainThreadEnabled
 
     updates = AsyncStream<(state: State, updates: State.Updates)> { [alertsContinuation] continuation in
@@ -182,12 +177,8 @@ public final nonisolated class Store: Sendable {
     }
   }
 
-  /// Applies actions to State until the action stream ends.
-  ///
-  /// The `isolation` parameter is what lets one body serve both cases: it
-  /// makes the function adopt whatever actor the caller is on, so spawning it
-  /// from `Task { @MainActor in }` runs the whole loop on the main actor and
-  /// spawning it from a plain `Task` leaves it on the cooperative pool.
+  /// Applies actions to State until the action stream ends. `isolation` makes
+  /// this adopt the caller's actor, so one body serves both spawn sites.
   private static func runReducer(
     isolation: isolated (any Actor)? = #isolation,
     initialState: State,
@@ -215,10 +206,8 @@ public final nonisolated class Store: Sendable {
         isRedrawFrameIncomplete = !newUpdates.needFlush
       }
 
-      // Actions from outside the redraw protocol -- the app activating, a font
-      // change -- ask for a render, and used to get one immediately. Landing
-      // between the redraw batches of one frame, that put the half applied
-      // frame on screen. Their render waits for Neovim to finish the frame.
+      // Actions from outside the redraw protocol also ask for a render, but
+      // must wait for Neovim to finish the frame rather than halve it.
       guard updates.needFlush, !isRedrawFrameIncomplete else {
         return
       }

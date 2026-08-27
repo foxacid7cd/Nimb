@@ -115,9 +115,8 @@ public struct ValueType: Sendable {
     } else if rawValue.starts(with: "Array") {
       .array
 
-      // Neovim renamed this from "Dictionary" to "Dict" for functions while
-      // ui_events kept the old spelling, so matching only one of them quietly
-      // dropped every dictionary parameter to an untyped Value.
+      // Neovim renamed this to "Dict" for functions while ui_events kept
+      // "Dictionary", and matching one alone drops the other to untyped Value.
     } else if rawValue == "Dict" || rawValue == "Dictionary" {
       .dictionary
 
@@ -141,11 +140,8 @@ public struct ValueType: Sendable {
     }
   }
 
-  /// The element of `ArrayOf(T)` / `ArrayOf(T, N)`, if this is one.
-  ///
-  /// The fixed length some of them carry is dropped: expressing it would mean
-  /// a tuple, which cannot be a stored property of a `@PublicInit` struct
-  /// without losing Hashable, and the count is already implied by the API.
+  /// The element of `ArrayOf(T)` / `ArrayOf(T, N)`, if this is one. The fixed
+  /// length is dropped, since expressing it would mean a tuple.
   var arrayElementRawValue: String? {
     guard rawValue.hasPrefix("ArrayOf("), rawValue.hasSuffix(")") else {
       return nil

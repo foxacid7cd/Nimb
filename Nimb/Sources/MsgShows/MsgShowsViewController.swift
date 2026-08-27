@@ -39,10 +39,8 @@ public class MsgShowsViewController: NSViewController, Rendering {
     textView.usesFontPanel = false
     textView.allowsUndo = false
 
-    // The panel behind this is translucent (window alphaValue 0.9, isOpaque
-    // false) and the scroll view paints the themed background at alpha 0.8.
-    // NSTextView otherwise fills itself with an opaque textBackgroundColor and
-    // the whole window turns into a solid slab.
+    // The panel behind this is translucent, and NSTextView would otherwise fill
+    // itself with an opaque textBackgroundColor.
     textView.drawsBackground = false
 
     // STTextView insets by nothing; NSTextView defaults to a 5pt line fragment
@@ -51,8 +49,7 @@ public class MsgShowsViewController: NSViewController, Rendering {
     textView.textContainer?.lineFragmentPadding = 0
 
     // documentView of an NSScrollView is driven by autoresizing, not
-    // constraints. Width tracks the scroll view, height grows with content so
-    // the scroll view has something to scroll.
+    // constraints: width tracks the scroll view, height grows with content.
     textView.translatesAutoresizingMaskIntoConstraints = true
     textView.autoresizingMask = [.width]
     textView.minSize = .zero
