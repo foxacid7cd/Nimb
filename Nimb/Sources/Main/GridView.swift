@@ -51,6 +51,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let gridLayer: GridLayer
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   private let scrollbarLayer = CALayer()
+  private var scrollbarHideTask: Task<Void, Never>? = nil
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
   /// Bounds the last frame was built for. A resize changes every rect in the
@@ -514,6 +515,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       let viewport = state.viewports[gridID],
       viewport.lineCount > 0
     else {
+      scrollbarHideTask?.cancel()
+      scrollbarHideTask = nil
       scrollbarLayer.isHidden = true
       return
     }
@@ -543,7 +546,24 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       width: width,
       height: thumbHeight,
     )
-    scrollbarLayer.isHidden = false
+    if updates.updatedViewportGridIDs.contains(gridID) {
+      scrollbarLayer.isHidden = false
+      scheduleScrollbarHide()
+    }
+  }
+
+  private func scheduleScrollbarHide() {
+    scrollbarHideTask?.cancel()
+    scrollbarHideTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: .seconds(1.5))
+      guard !Task.isCancelled else {
+        return
+      }
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      self?.scrollbarLayer.isHidden = true
+      CATransaction.commit()
+    }
   }
 
   private func updateVisibility() {
