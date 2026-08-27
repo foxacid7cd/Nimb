@@ -126,7 +126,9 @@ private struct RowPartsAccumulator {
   private enum InternalPartContent {
     case whitespaceCharacters(count: Int)
     case doubleWidthCharacter(Character, isWithSecondFillerCharacter: Bool)
-    case singleWidthCharacters([Character])
+    /// Accumulated as text, with the count carried alongside because counting
+    /// a string's characters walks it.
+    case singleWidthCharacters(String, count: Int)
   }
 
   private struct InternalPart {
@@ -151,18 +153,13 @@ private struct RowPartsAccumulator {
 
           case let .doubleWidthCharacter(character, isWithSecondFillerCharacter):
             if isWithSecondFillerCharacter {
-              .cells([
-                .init(character: character, isDoubleWidth: true),
-                .init(character: " ", isDoubleWidth: false),
-              ])
+              .text(String(character) + " ", cellsCount: 2, isDoubleWidth: true)
             } else {
-              .cells([
-                .init(character: character, isDoubleWidth: true),
-              ])
+              .text(String(character), cellsCount: 1, isDoubleWidth: true)
             }
 
-          case let .singleWidthCharacters(characters):
-            .cells(characters.map { .init(character: $0, isDoubleWidth: false) })
+          case let .singleWidthCharacters(text, count):
+            .text(text, cellsCount: count, isDoubleWidth: false)
           }
         return RowPart(
           content: content,
@@ -227,12 +224,15 @@ private struct RowPartsAccumulator {
           }
 
         case let .regular(character, false):
-          if case var .singleWidthCharacters(characters) = internalParts[lastIndex].content {
-            // Drop the enum's reference before appending so the array is
+          if case var .singleWidthCharacters(text, count) = internalParts[lastIndex].content {
+            // Drop the enum's reference before appending so the storage is
             // uniquely referenced and grows in place.
             internalParts[lastIndex].content = .whitespaceCharacters(count: 0)
-            characters.append(character)
-            internalParts[lastIndex].content = .singleWidthCharacters(characters)
+            text.append(character)
+            internalParts[lastIndex].content = .singleWidthCharacters(
+              text,
+              count: count + 1,
+            )
             return
           }
 
@@ -251,7 +251,7 @@ private struct RowPartsAccumulator {
         if isDoubleWidth {
           .doubleWidthCharacter(character, isWithSecondFillerCharacter: false)
         } else {
-          .singleWidthCharacters([character])
+          .singleWidthCharacters(String(character), count: 1)
         }
 
       case .missing:
@@ -267,20 +267,26 @@ private struct RowPartsAccumulator {
   }
 }
 
-@PublicInit
-public struct RowPartCell: Sendable, Hashable {
-  public var character: Character
-  public var isDoubleWidth: Bool
-}
-
 public enum RowPartContent: Sendable, Hashable {
-  case cells([RowPartCell])
+  /// The part's text, with how many grid cells it covers.
+  ///
+  /// Text rather than an array of per-cell characters, which is what this
+  /// used to be. Every consumer wants the text: CoreText shapes it, and the
+  /// draw run cache keys on it. Holding it per cell meant building the string
+  /// again on every cache miss, and hashing the key walked the cells one
+  /// grapheme at a time -- the single largest cost in the reducer during a
+  /// full-screen repaint, ahead of the typesetting the cache exists to avoid.
+  ///
+  /// `isDoubleWidth` marks the parts the accumulator makes for a wide
+  /// character: only those, and only their first character is wide, so no
+  /// per-cell flag is needed to place the rest.
+  case text(String, cellsCount: Int, isDoubleWidth: Bool)
   case whitespace(columnsCount: Int)
 
   public var columnsCount: Int {
     switch self {
-    case let .cells(cells):
-      cells.count
+    case let .text(_, cellsCount, _):
+      cellsCount
     case let .whitespace(columnsCount):
       columnsCount
     }

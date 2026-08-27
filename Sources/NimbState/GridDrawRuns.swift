@@ -351,7 +351,10 @@ public struct DrawRun: Sendable {
     // tokens -- "return" and "context" reshaped on every single occurrence,
     // even though a code buffer repeats the same identifiers constantly.
     let cacheKey: GlobalDrawRunsCache.Key? =
-      if case let .cells(cells) = rowPartContent, cells.count <= Self.maxCachedCellsCount {
+      if
+        case let .text(_, cellsCount, _) = rowPartContent,
+        cellsCount <= Self.maxCachedCellsCount
+      {
         .init(content: rowPartContent, font: font, isBold: isBold, isItalic: isItalic)
       } else {
         nil
@@ -360,19 +363,11 @@ public struct DrawRun: Sendable {
       // originColumn and highlightID are overwritten by the caller, and the
       // glyphs depend only on what the key covers, so sharing is safe.
       self = cachedDrawRun
-    } else if case let .cells(cells) = rowPartContent {
+    } else if case let .text(text, cellsCount, _) = rowPartContent {
       let appKitFont = font.appKit(
         isBold: isBold,
         isItalic: isItalic,
       )
-
-      // Built character by character rather than via `String(cells.map(...))`,
-      // which materialises an intermediate [Character] for every shaped run.
-      var text = ""
-      text.reserveCapacity(cells.count)
-      for cell in cells {
-        text.append(cell.character)
-      }
 
       // CFAttributedString with a prebuilt attribute dictionary, rather than
       // NSAttributedString with a Swift dictionary literal: the literal is
@@ -397,7 +392,7 @@ public struct DrawRun: Sendable {
       CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
       let bounds = CTLineGetBoundsWithOptions(ctLine, [])
 
-      let xOffset = (font.cellWidth - bounds.width / Double(cells.count)) /
+      let xOffset = (font.cellWidth - bounds.width / Double(cellsCount)) /
         2
       let yOffset = (font.cellHeight - bounds.height) / 2 + descent
       let offset = CGPoint(x: xOffset, y: yOffset)
@@ -529,7 +524,7 @@ public struct DrawRun: Sendable {
     font: Font,
     appearance: Appearance,
   ) {
-    guard case let .cells(cells) = rowPartContent, let glyphRuns else {
+    guard case let .text(_, cellsCount, _) = rowPartContent, let glyphRuns else {
       return
     }
 
@@ -574,7 +569,7 @@ public struct DrawRun: Sendable {
       let widthDivider = 3
 
       let xStep = font.cellWidth / Double(widthDivider)
-      let pointsCount = cells.count * widthDivider + 1
+      let pointsCount = cellsCount * widthDivider + 1
 
       let oddUnderlineY = underlineY + 3
       let evenUnderlineY = underlineY
@@ -693,10 +688,13 @@ public struct CursorDrawRun: Sendable {
         )
         parentDrawRun = drawRun
         switch drawRun.rowPartContent {
-        case let .cells(cells):
-          for (rowPartCellIndex, rowPartCell) in cells.enumerated() {
-            let lowerBound = rowPartCellsCount + rowPartCellIndex
-            let upperBound = lowerBound + (rowPartCell.isDoubleWidth ? 2 : 1)
+        case let .text(text, _, isDoubleWidth):
+          for (characterIndex, _) in text.enumerated() {
+            let lowerBound = rowPartCellsCount + characterIndex
+            // Only a wide part's first character covers two columns; the
+            // filler that may follow it covers one, same as any other.
+            let isWide = isDoubleWidth && characterIndex == 0
+            let upperBound = lowerBound + (isWide ? 2 : 1)
             let range = lowerBound ..< upperBound
             if range.contains(origin.column) {
               cursorColumnsRange = range

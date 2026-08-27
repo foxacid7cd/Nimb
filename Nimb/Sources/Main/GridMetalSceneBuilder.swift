@@ -415,7 +415,7 @@ final nonisolated class GridMetalSceneBuilder {
     rowSlot: Int,
     to quads: inout [GridMetalQuadInstance],
   ) {
-    guard case let .cells(cells) = drawRun.rowPartContent else {
+    guard case let .text(_, cellsCount, _) = drawRun.rowPartContent else {
       return
     }
 
@@ -488,7 +488,7 @@ final nonisolated class GridMetalSceneBuilder {
     } else if decorations.isUndercurl {
       let widthDivider = 3
       let xStep = font.cellWidth / Double(widthDivider)
-      let pointsCount = cells.count * widthDivider + 1
+      let pointsCount = cellsCount * widthDivider + 1
       let oddUnderlineY = underlineY + 3
       let evenUnderlineY = underlineY
 
