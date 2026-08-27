@@ -50,6 +50,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let gridID: Grid.ID
   private let gridLayer: GridLayer
   private let coreGraphicsLayer: GridCoreGraphicsLayer
+  private let scrollbarLayer = CALayer()
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
   /// Bounds the last frame was built for. A resize changes every rect in the
@@ -146,6 +147,13 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     coreGraphicsLayer.delegate = self
     coreGraphicsLayer.isHidden = true
     layer!.addSublayer(coreGraphicsLayer)
+
+    scrollbarLayer.backgroundColor = NSColor.labelColor
+      .withAlphaComponent(0.35)
+      .cgColor
+    scrollbarLayer.cornerRadius = 2
+    scrollbarLayer.isHidden = true
+    layer!.addSublayer(scrollbarLayer)
   }
 
   @available(*, unavailable)
@@ -364,6 +372,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     if updates.isAppearanceUpdated || !hasPresentedFrame {
       gridLayer.setBackground(state.appearance.defaultBackgroundColor)
     }
+    renderScrollbar()
 
     // Only the Metal layer has nothing to show until it presents. The
     // CoreGraphics layer would wait for a frame that never comes.
@@ -491,6 +500,46 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       row: point.row,
       col: point.column,
     ))
+  }
+
+  private func renderScrollbar() {
+    guard
+      gridID != Grid.OuterID,
+      let grid = state.grids[gridID],
+      case .some(.plain) = grid.associatedWindow,
+      let viewport = state.viewports[gridID],
+      viewport.lineCount > 0
+    else {
+      scrollbarLayer.isHidden = true
+      return
+    }
+
+    let margins = state.viewportMargins[gridID]
+    let topInset = CGFloat(margins?.top ?? 0) * state.font.cellHeight
+    let bottomInset = CGFloat(margins?.bottom ?? 0) * state.font.cellHeight
+    let trackHeight = bounds.height - topInset - bottomInset
+    let visibleLineCount = max(viewport.bottomLine - viewport.topLine, 1)
+    let thumbHeight = max(20, trackHeight * CGFloat(visibleLineCount) / CGFloat(viewport.lineCount))
+
+    guard trackHeight > 0, thumbHeight < trackHeight else {
+      scrollbarLayer.isHidden = true
+      return
+    }
+
+    let scrollableLineCount = max(viewport.lineCount - visibleLineCount, 1)
+    let progress = min(
+      max(CGFloat(viewport.topLine) / CGFloat(scrollableLineCount), 0),
+      1,
+    )
+    let width: CGFloat = 4
+    let horizontalInset: CGFloat = 3
+    scrollbarLayer.frame = .init(
+      x: bounds.maxX - width - horizontalInset,
+      y: bounds.maxY - topInset - thumbHeight - progress * (trackHeight - thumbHeight),
+      width: width,
+      height: thumbHeight,
+    )
+    scrollbarLayer.isHidden = false
   }
 
   private func updateVisibility() {

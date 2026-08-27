@@ -66,6 +66,7 @@ public struct State: Sendable {
     public var isMsgShowmodeUpdated: Bool = false
     public var isMsgShowcmdUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
+    public var updatedViewportGridIDs: Set<Grid.ID> = []
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isGridsHierarchyUpdated: Bool = false
@@ -120,6 +121,7 @@ public struct State: Sendable {
           gridUpdates[gridID] = gridUpdate
         }
       }
+      updatedViewportGridIDs.formUnion(updates.updatedViewportGridIDs)
       isGridsHierarchyUpdated = isGridsHierarchyUpdated || updates.isGridsHierarchyUpdated
       isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
       isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates
@@ -188,6 +190,8 @@ public struct State: Sendable {
   /// a message's lifetime to the UI, which clears at the start of a batch.
   public var hasMsgShowSinceFlush: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
+  public var viewports: IntKeyedDictionary<Viewport> = [:]
+  public var viewportMargins: IntKeyedDictionary<ViewportMargins> = [:]
   public var gridsHierarchy: GridsHierarchy = .init()
   public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
@@ -276,6 +280,10 @@ public struct State: Sendable {
     }
     if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
       grids = state.grids
+    }
+    if !updates.updatedViewportGridIDs.isEmpty {
+      viewports = state.viewports
+      viewportMargins = state.viewportMargins
     }
     if updates.isGridsHierarchyUpdated {
       gridsHierarchy = state.gridsHierarchy

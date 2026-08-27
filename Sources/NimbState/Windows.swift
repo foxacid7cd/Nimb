@@ -31,3 +31,23 @@ public struct FloatingWindow: Sendable, Identifiable {
 public struct ExternalWindow: Sendable, Identifiable {
   public var id: References.Window
 }
+
+@PublicInit
+public struct Viewport: Sendable {
+  public var windowID: References.Window
+  public var topLine: Int
+  public var bottomLine: Int
+  public var cursorLine: Int
+  public var cursorColumn: Int
+  public var lineCount: Int
+  public var scrollDelta: Int
+}
+
+@PublicInit
+public struct ViewportMargins: Sendable {
+  public var windowID: References.Window
+  public var top: Int
+  public var bottom: Int
+  public var left: Int
+  public var right: Int
+}

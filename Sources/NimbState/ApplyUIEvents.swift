@@ -71,6 +71,10 @@ public extension Actions {
         updates.updatedLayoutGridIDs.insert(gridID)
       }
 
+      func viewportUpdated(forGridWithID gridID: Grid.ID) {
+        updates.updatedViewportGridIDs.insert(gridID)
+      }
+
       func mergeGridUpdate(_ gridUpdate: Grid.UpdateResult, forGridWithID gridID: Grid.ID) {
         if let existingUpdate = updates.gridUpdates[gridID] {
           var mergedUpdate = existingUpdate
@@ -318,6 +322,9 @@ public extension Actions {
             if state.grids.removeValue(forKey: params.grid) != nil {
               updates.destroyedGridIDs.insert(params.grid)
             }
+            state.viewports.removeValue(forKey: params.grid)
+            state.viewportMargins.removeValue(forKey: params.grid)
+            viewportUpdated(forGridWithID: params.grid)
 
             state.gridsHierarchy.removeNode(id: params.grid)
           }
@@ -429,12 +436,41 @@ public extension Actions {
               break
             }
             state.grids[params.grid]?.associatedWindow = nil
+            state.viewports.removeValue(forKey: params.grid)
+            state.viewportMargins.removeValue(forKey: params.grid)
 
             state.gridsHierarchy.removeNode(id: params.grid)
 
             updatedLayout(forGridWithID: params.grid)
+            viewportUpdated(forGridWithID: params.grid)
           }
           updates.isGridsHierarchyUpdated = true
+
+        case let .winViewport(batch):
+          for params in batch {
+            state.viewports[params.grid] = .init(
+              windowID: params.windowID,
+              topLine: params.topline,
+              bottomLine: params.botline,
+              cursorLine: params.curline,
+              cursorColumn: params.curcol,
+              lineCount: params.lineCount,
+              scrollDelta: params.scrollDelta,
+            )
+            viewportUpdated(forGridWithID: params.grid)
+          }
+
+        case let .winViewportMargins(batch):
+          for params in batch {
+            state.viewportMargins[params.grid] = .init(
+              windowID: params.windowID,
+              top: params.top,
+              bottom: params.bottom,
+              left: params.left,
+              right: params.right,
+            )
+            viewportUpdated(forGridWithID: params.grid)
+          }
 
         case let .tablineUpdate(batch):
           for params in batch {
