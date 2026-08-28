@@ -31,6 +31,7 @@ public class MainViewController: NSViewController, Rendering {
       getCmdlinesView: { [cmdlinesViewController] in
         cmdlinesViewController.view
       },
+      getGridsView: { [gridsView] in gridsView },
     )
     let reportOuterGridSizeChanged: AsyncStream<IntegerSize>
     (
@@ -231,17 +232,29 @@ public class MainViewController: NSViewController, Rendering {
     }
   }
 
+  /// Tells Neovim where the menu ended up, so it can line floating windows up
+  /// with it. In cells of the outer grid, which is what the API expects.
   private func reportPopupmenuPumBounds() {
     view.layoutSubtreeIfNeeded()
 
-//    var popupmenuFrame = popupmenuViewController.view.frame
-//    popupmenuFrame = view.convert(popupmenuFrame, to: nil)
-//    popupmenuFrame = gridsView.convert(popupmenuFrame, from: nil)
-//    popupmenuFrame = popupmenuFrame.applying(gridsView.upsideDownTransform)
-//    store.reportPumBounds(rectangle: .init(
-//      frame: popupmenuFrame,
-//      cellSize: state.font.cellSize
-//    ))
+    let frameInGrids = gridsView.convert(
+      popupmenuViewController.view.frame,
+      from: popupmenuViewController.view.superview,
+    )
+    .applying(gridsView.upsideDownTransform)
+    let cellSize = state.font.cellSize
+    guard cellSize.width > 0, cellSize.height > 0 else {
+      return
+    }
+
+    store.api.fastCall(
+      APIFunctions.NvimUIPumSetBounds(
+        width: frameInGrids.width / cellSize.width,
+        height: frameInGrids.height / cellSize.height,
+        row: frameInGrids.minY / cellSize.height,
+        col: frameInGrids.minX / cellSize.width,
+      ),
+    )
   }
 
   private func renderBackground() {

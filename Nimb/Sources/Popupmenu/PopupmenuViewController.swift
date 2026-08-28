@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 import AppKit
+import NimbCore
 import NimbState
 
 public class PopupmenuViewController: NSViewController, Rendering {
+  /// Size of the menu when it hangs off a grid, where nothing else decides it.
+  /// The cmdline anchor takes its width from the cmdline instead.
+  private static let gridAnchoredWidth: CGFloat = 290
+  private static let menuHeight: CGFloat = 156
+
   public var renderContext: RenderContext! = nil
 
   public var anchorConstraints = [NSLayoutConstraint]()
@@ -12,14 +18,20 @@ public class PopupmenuViewController: NSViewController, Rendering {
 
   private let store: Store
   private let getCmdlinesView: () -> NSView
+  private let getGridsView: () -> NSView
   private lazy var customView = FloatingWindowView()
   private lazy var scrollView = NSScrollView()
   private lazy var tableView = TableView()
   private var previousSelectedItemIndex: Int? = nil
 
-  public init(store: Store, getCmdlinesView: @escaping () -> NSView) {
+  public init(
+    store: Store,
+    getCmdlinesView: @escaping () -> NSView,
+    getGridsView: @escaping () -> NSView,
+  ) {
     self.store = store
     self.getCmdlinesView = getCmdlinesView
+    self.getGridsView = getGridsView
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -30,7 +42,7 @@ public class PopupmenuViewController: NSViewController, Rendering {
 
   override public func loadView() {
     let view = customView
-    view.height(156)
+    view.height(Self.menuHeight)
 
     scrollView.automaticallyAdjustsContentInsets = false
     scrollView.contentInsets = .init(top: 8, left: 0, bottom: 8, right: 0)
@@ -68,14 +80,19 @@ public class PopupmenuViewController: NSViewController, Rendering {
         NSLayoutConstraint.deactivate(anchorConstraints)
 
         switch popupmenu.anchor {
-        case .grid:
-          break
-//          let offset = origin * state.font.cellSize
-//          anchorConstraints = [
-//            view.leading(to: gridView, offset: offset.x - 13),
-//            view.top(to: gridView, offset: offset.y + state.font.cellHeight + 2),
-//            view.width(290),
-//          ]
+        case let .grid(id, origin):
+          var gridFrame: CGRect? = nil
+          state.walkingGridFrames { walkedID, frame, _ in
+            if walkedID == id {
+              gridFrame = frame
+            }
+          }
+          if let gridFrame {
+            anchorConstraints = gridAnchorConstraints(
+              origin: origin,
+              gridFrame: gridFrame,
+            )
+          }
 
         case .cmdline:
           let cmdlinesView = getCmdlinesView()
@@ -137,9 +154,54 @@ public class PopupmenuViewController: NSViewController, Rendering {
   }
 }
 
+private extension PopupmenuViewController {
+  /// Places the menu below the anchor cell, or above it when there is no room
+  /// below, kept within the grids either way.
+  ///
+  /// Measured from the grids view rather than from any grid view: grid views
+  /// carry imperative frames, and the frames state reports are the same ones
+  /// they are laid out from, so this needs no live geometry to be right.
+  func gridAnchorConstraints(
+    origin: IntegerPoint,
+    gridFrame: CGRect,
+  )
+    -> [NSLayoutConstraint]
+  {
+    let gridsView = getGridsView()
+    let cellSize = state.font.cellSize
+    let width = Self.gridAnchoredWidth
+    let height = Self.menuHeight
+
+    let outerSize = state.outerGrid?.size ?? .init()
+    let gridsWidth = Double(outerSize.columnsCount) * cellSize.width
+    let gridsHeight = Double(outerSize.rowsCount) * cellSize.height
+
+    let anchorTop = gridFrame.minY + Double(origin.row) * cellSize.height
+    var top = anchorTop + cellSize.height
+    if top + height > gridsHeight {
+      let above = anchorTop - height
+      top = above >= 0 ? above : max(0, gridsHeight - height)
+    }
+
+    let leading = min(
+      gridFrame.minX + Double(origin.column) * cellSize.width,
+      max(0, gridsWidth - width),
+    )
+
+    return [
+      view.leading(to: gridsView, offset: leading),
+      view.top(to: gridsView, offset: top),
+      view.width(width),
+    ]
+  }
+}
+
 extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   public func numberOfRows(in tableView: NSTableView) -> Int {
-    state.popupmenu?.items.count ?? 0
+    guard isRendered else {
+      return 0
+    }
+    return state.popupmenu?.items.count ?? 0
   }
 
   public func tableView(
@@ -149,6 +211,9 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
   )
     -> NSView?
   {
+    guard isRendered else {
+      return nil
+    }
     var itemView = tableView.makeView(
       withIdentifier: PopupmenuItemView.reuseIdentifier,
       owner: self,
@@ -160,6 +225,9 @@ extension PopupmenuViewController: NSTableViewDataSource, NSTableViewDelegate {
     if let popupmenu = state.popupmenu, row < popupmenu.items.count {
       itemView!.item = popupmenu.items[row]
       itemView!.isSelected = popupmenu.selectedItemIndex == row
+      // Handed down explicitly: AppKit makes these views, so they are not
+      // reached by renderChildren, and render() reads state through it.
+      itemView!.update(renderContext: renderContext)
       itemView!.render()
     }
     return itemView

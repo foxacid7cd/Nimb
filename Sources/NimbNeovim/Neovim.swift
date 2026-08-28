@@ -103,6 +103,7 @@ public final class Neovim: Sendable {
       .extCmdline,
       .extTabline,
       .extMessages,
+      .extPopupmenu,
     ]
     let initialOuterGridSize = UserDefaults.standard.outerGridSize
     try! await api.nvimUIAttach(
