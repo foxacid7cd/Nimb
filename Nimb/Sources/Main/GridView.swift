@@ -463,8 +463,10 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(
-      column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight),
+      // floor, not Int(): a drag past this view's edge produces negative
+      // coordinates, and Int() truncates toward zero instead of down.
+      column: Int((upsideDownLocation.x / state.font.cellWidth).rounded(.down)),
+      row: Int((upsideDownLocation.y / state.font.cellHeight).rounded(.down)),
     )
   }
 

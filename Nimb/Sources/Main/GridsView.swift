@@ -142,8 +142,8 @@ public class GridsView: NSView, Rendering {
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(
-      column: Int(upsideDownLocation.x / state.font.cellWidth),
-      row: Int(upsideDownLocation.y / state.font.cellHeight),
+      column: Int((upsideDownLocation.x / state.font.cellWidth).rounded(.down)),
+      row: Int((upsideDownLocation.y / state.font.cellHeight).rounded(.down)),
     )
   }
 }
