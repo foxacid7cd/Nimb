@@ -393,6 +393,37 @@ public extension Actions {
           }
           updates.isGridsHierarchyUpdated = true
 
+        case let .msgSetPos(batch):
+          for params in batch {
+            guard
+              state
+                .grids[params.grid] != nil
+            else {
+              logger.error("msgSetPos UI event: Grid \(params.grid) doesn't exist or destroyed")
+              break
+            }
+
+            // No real window backs the message grid, so borrow the "current
+            // window" reference; nothing reads FloatingWindow.id for it.
+            state.grids[params.grid]?.associatedWindow = .floating(
+              .init(
+                id: .current,
+                anchorGridID: Grid.OuterID,
+                screenRow: params.row,
+                screenColumn: 0,
+                isFocusable: true,
+                zIndex: params.zindex,
+                compositingIndex: params.compindex,
+              ),
+            )
+            state.grids[params.grid]?.isHidden = false
+
+            state.gridsHierarchy.addNode(id: params.grid, parent: Grid.OuterID)
+
+            updatedLayout(forGridWithID: params.grid)
+          }
+          updates.isGridsHierarchyUpdated = true
+
         case let .winViewport(batch):
           for params in batch {
             state.viewports[params.grid] = .init(
