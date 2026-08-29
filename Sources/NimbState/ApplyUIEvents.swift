@@ -785,6 +785,20 @@ public extension Actions {
           state.isMouseOn = false
           updates.isMouseOnUpdated = true
 
+        case let .hlGroupSet(batch):
+          // The authoritative source for a built-in group's attributes.
+          // hl_attr_define's info only names groups that were rendered into a
+          // grid, so one Nimb draws itself never resolves that way.
+          for params in batch {
+            guard
+              let name = Appearance.ObservedHighlightName(rawValue: params.name)
+            else {
+              continue
+            }
+            state.appearance.observedHighlights[name] = params.id
+            updates.updatedObservedHighlightNames.insert(name)
+          }
+
         case let .hlAttrDefine(batch):
           for params in batch {
             let noCombine = params.rgbAttrs["noCombine"]
@@ -889,13 +903,12 @@ public extension Actions {
                   rawValue: hiName,
                 )
               {
-                state.appearance
-                  .observedHighlights[observedHighlightName] = (
-                    dict["id"].flatMap(\.integer),
-                    dict["kind"].flatMap(\.string),
-                  )
-                updates.updatedObservedHighlightNames
-                  .insert(observedHighlightName)
+                if let id = dict["id"].flatMap(\.integer) {
+                  state.appearance
+                    .observedHighlights[observedHighlightName] = id
+                  updates.updatedObservedHighlightNames
+                    .insert(observedHighlightName)
+                }
               }
             }
           }

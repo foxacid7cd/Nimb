@@ -21,20 +21,22 @@ public struct Appearance: Sendable {
     case tabLine = "TabLine"
     case tabLineFill = "TabLineFill"
     case tabLineSel = "TabLineSel"
+    case statusLine = "StatusLine"
+    case statusLineNC = "StatusLineNC"
+    case msgSeparator = "MsgSeparator"
+    case title = "Title"
+    case modeMsg = "ModeMsg"
+    case winSeparator = "WinSeparator"
   }
 
   public var highlights: IntKeyedDictionary<Highlight> = [:]
-  public var observedHighlights: TreeDictionary<
-    ObservedHighlightName,
-    (id: Int?, kind: String?),
-  > =
-    [:]
+  public var observedHighlights: TreeDictionary<ObservedHighlightName, Int> = [:]
   public var defaultForegroundColor: Color = .black
   public var defaultBackgroundColor: Color = .black
   public var defaultSpecialColor: Color = .black
 
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
-    guard let (id, _) = observedHighlights[name], let id else {
+    guard let id = observedHighlights[name] else {
       return nil
     }
     return highlights[id]
@@ -42,8 +44,7 @@ public struct Appearance: Sendable {
 
   public func isItalic(for name: ObservedHighlightName) -> Bool {
     guard
-      let (id, _) = observedHighlights[name],
-      let id,
+      let id = observedHighlights[name],
       let highlight = highlights[id]
     else {
       return false
@@ -53,8 +54,7 @@ public struct Appearance: Sendable {
 
   public func isBold(for name: ObservedHighlightName) -> Bool {
     guard
-      let (id, _) = observedHighlights[name],
-      let id,
+      let id = observedHighlights[name],
       let highlight = highlights[id]
     else {
       return false
@@ -64,8 +64,7 @@ public struct Appearance: Sendable {
 
   public func foregroundColor(for name: ObservedHighlightName) -> Color {
     guard
-      let (id, _) = observedHighlights[name],
-      let id,
+      let id = observedHighlights[name],
       let highlight = highlights[id],
       let foregroundColor = highlight.foregroundColor
     else {
@@ -76,8 +75,7 @@ public struct Appearance: Sendable {
 
   public func backgroundColor(for name: ObservedHighlightName) -> Color {
     guard
-      let (id, _) = observedHighlights[name],
-      let id,
+      let id = observedHighlights[name],
       let highlight = highlights[id]
     else {
       return defaultBackgroundColor
@@ -88,8 +86,7 @@ public struct Appearance: Sendable {
 
   public func specialColor(for name: ObservedHighlightName) -> Color {
     guard
-      let (id, _) = observedHighlights[name],
-      let id,
+      let id = observedHighlights[name],
       let highlight = highlights[id],
       let specialColor = highlight.specialColor
     else {
