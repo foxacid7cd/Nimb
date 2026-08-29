@@ -230,6 +230,14 @@ final class MainMenuController: NSObject, Rendering {
     ))
   }
 
+  private func announceGuifontPersist(for font: Font) {
+    store.api.fastCall(APIFunctions.NvimEcho(
+      chunks: [[.string("Add 'set guifont=\(font.guifontEntry)' to your config to persist this font."), .string("")]],
+      history: true,
+      opts: [:],
+    ))
+  }
+
   @objc private func handleCopy() {
     Task {
       guard let text = await requestTextForCopy() else {
@@ -348,7 +356,9 @@ extension MainMenuController: NSFontChanging {
     guard let sender else {
       return
     }
-    setGuifont(to: .init(sender.convert(state.font.appKit())))
+    let font = Font(sender.convert(state.font.appKit()))
+    setGuifont(to: font)
+    announceGuifontPersist(for: font)
   }
 }
 
