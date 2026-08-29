@@ -57,6 +57,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       let terminationStatus = await neovim.bootstrap()
       logger.debug("Neovim process terminated with status \(terminationStatus)")
 
+      // `:restart` exits the old server on purpose, having handed over a
+      // replacement to attach to, so this exit is not the app's to act on.
+      guard !neovim.isReattaching.withLock({ $0 }) else {
+        return
+      }
       NSApplication.shared.terminate(nil)
     }
 
@@ -78,6 +83,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   /// Called from the main actor already, so it renders inline rather than in a
   /// task that could paint out of order with the next frame's.
   private func render(state: State, updates: State.Updates) {
+    if updates.isPendingReattachUpdated, let address = state.pendingReattachAddress {
+      reattach(to: address)
+    }
     if updates.isAppearanceUpdated {
       renderStats.count(.appearanceUpdatedFrames)
     }
@@ -86,6 +94,25 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       render()
     }
     renderStats.frameCompleted()
+  }
+
+  /// Attaches to the server Neovim named and starts over from a clean state.
+  /// The old server is on its way out, so nothing it said still holds.
+  private func reattach(to address: String) {
+    guard let neovim, let store else {
+      return
+    }
+    Task {
+      do {
+        try await neovim.reattach(to: address)
+        store.dispatch(Actions.ResetState(initialState: State(
+          debug: UserDefaults.standard.debug,
+          font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
+        )))
+      } catch {
+        await show(alert: .init(error))
+      }
+    }
   }
 
   private func setupBindings(store: Store) {

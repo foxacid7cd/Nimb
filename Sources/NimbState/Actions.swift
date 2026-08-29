@@ -5,6 +5,19 @@ import NimbCore
 import NimbNeovim
 
 public enum Actions {
+  /// Throws away everything the old server told us. Attaching to another one
+  /// replays the whole screen, but nothing retracts the grids and windows the
+  /// previous one had.
+  @PublicInit
+  public struct ResetState: Action {
+    public var initialState: State
+
+    public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      state = initialState
+      return .init(needFlush: true, isFontUpdated: true, isAppearanceUpdated: true)
+    }
+  }
+
   public struct ToggleDebugUIEventsLogging: Action {
     public init() { }
 

@@ -11,22 +11,23 @@ import Synchronization
 public final class RPC: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
-  private let target: any Channel
+  private let target: Mutex<any Channel>
+  /// Channels the reader should work through, in order. `:restart` hands over
+  /// a new server to attach to, so the transport outlives any one channel.
+  private let targetsContinuation: AsyncStream<any Channel>.Continuation
   private let storage = Storage()
   private let packer = Mutex<Packer>(.init())
 
-  /// Serialises writes to the pipe. A pipe only makes a write atomic up to
-  /// PIPE_BUF, 512 bytes here, so two unserialised writers can interleave a
-  /// larger message -- a big paste, say -- into a stream Neovim cannot parse.
-  /// Separate from `packer` so packing does not queue behind a blocking write.
-  private let writeLock = Mutex<Void>(())
-
   public init(_ target: any Channel) {
-    self.target = target
+    self.target = .init(target)
 
-    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [target, storage] continuation in
+    let (targets, targetsContinuation) = AsyncStream<any Channel>.makeStream()
+    self.targetsContinuation = targetsContinuation
+    targetsContinuation.yield(target)
+
+    notifications = AsyncThrowingStream<[Message.Notification], any Error> { [storage] continuation in
       Task {
-        await Self.read(from: target, into: storage, yieldingTo: continuation)
+        await Self.read(from: targets, into: storage, yieldingTo: continuation)
       }
     }
   }
@@ -34,6 +35,21 @@ public final class RPC: Sendable {
   /// The msgpack reader loop. @concurrent rather than a bare `Task { }`, which
   /// would inherit the main actor from where RPC.init is reached.
   @concurrent
+  private static func read(
+    from targets: AsyncStream<any Channel>,
+    into storage: Storage,
+    yieldingTo continuation: AsyncThrowingStream<[Message.Notification], any Error>.Continuation,
+  ) async {
+    for await target in targets {
+      // A fresh unpacker per channel: a new server starts a new msgpack
+      // stream, and half a message from the old one must not lead into it.
+      await read(from: target, into: storage, yieldingTo: continuation)
+      guard !Task.isCancelled else {
+        break
+      }
+    }
+  }
+
   private static func read(
     from target: any Channel,
     into storage: Storage,
@@ -71,10 +87,16 @@ public final class RPC: Sendable {
         }
       }
 
-      continuation.finish()
     } catch {
       continuation.finish(throwing: error)
     }
+  }
+
+  /// Points reads and writes at a new server. The notifications stream carries
+  /// on across the swap, so everything built on top of this RPC survives it.
+  public func reconnect(to newTarget: any Channel) {
+    target.withLock { $0 = newTarget }
+    targetsContinuation.yield(newTarget)
   }
 
   @discardableResult
@@ -137,10 +159,12 @@ public final class RPC: Sendable {
     write(data)
   }
 
+  /// Writes under the target's own lock, which serialises them: a pipe only
+  /// makes a write atomic up to PIPE_BUF, 512 bytes here, so two unserialised
+  /// writers can interleave a larger message into a stream Neovim cannot
+  /// parse. Separate from `packer`, so packing does not queue behind a write.
   private func write(_ data: Data) {
-    writeLock.withLock { _ in
-      try? target.write(data)
-    }
+    try? target.withLock { try $0.write(data) }
   }
 }
 

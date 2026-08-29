@@ -2,10 +2,15 @@
 
 import Foundation
 import NimbCore
+import Synchronization
 
 public final class Neovim: Sendable {
   public let process: Process
   public let api: API
+
+  /// Set when Neovim tells us to attach elsewhere. The process exiting is then
+  /// expected rather than a reason to quit.
+  public let isReattaching = Mutex(false)
 
   public init() {
     process = Process()
@@ -97,6 +102,46 @@ public final class Neovim: Sendable {
     )!
     try! await api.nvimExecLua(code: initLua, args: [])
 
+    try! await attachUI()
+
+    return await withCheckedContinuation { continuation in
+      process.terminationHandler = { process in
+        continuation.resume(returning: process.terminationStatus)
+      }
+    }
+  }
+
+  /// Points the RPC at another server and introduces ourselves again. Used for
+  /// `:restart`, where Neovim starts a replacement and hands over its address,
+  /// and `:connect`, where it detaches us and names a server to join.
+  public func reattach(to address: String) async throws {
+    isReattaching.withLock { $0 = true }
+    try api.rpc.reconnect(to: SocketChannel(path: address))
+    try await sendClientInfo()
+    try await attachUI()
+    isReattaching.withLock { $0 = false }
+  }
+
+  private func sendClientInfo() async throws {
+    let version = Bundle.main.version ?? (0, 0, 0)
+    try await api.nvimSetClientInfo(
+      name: "Nimb",
+      version: [
+        "major": .integer(version.major),
+        "minor": .integer(version.minor),
+        "patch": .integer(version.patch),
+        "prerelease": "dev",
+      ],
+      type: "ui",
+      methods: ["nimb_notify": .dictionary([
+        "async": true,
+        "nargs": .integer(3),
+      ])],
+      attributes: [:],
+    )
+  }
+
+  private func attachUI() async throws {
     let uiOptions: UIOptions = [
       .extMultigrid,
       .extHlstate,
@@ -104,17 +149,11 @@ public final class Neovim: Sendable {
       .extTabline,
       .extMessages,
     ]
-    let initialOuterGridSize = UserDefaults.standard.outerGridSize
-    try! await api.nvimUIAttach(
-      width: initialOuterGridSize.columnsCount,
-      height: initialOuterGridSize.rowsCount,
+    let outerGridSize = UserDefaults.standard.outerGridSize
+    try await api.nvimUIAttach(
+      width: outerGridSize.columnsCount,
+      height: outerGridSize.rowsCount,
       options: uiOptions.nvimUIAttachOptions,
     )
-
-    return await withCheckedContinuation { continuation in
-      process.terminationHandler = { process in
-        continuation.resume(returning: process.terminationStatus)
-      }
-    }
   }
 }

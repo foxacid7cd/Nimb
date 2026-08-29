@@ -808,6 +808,20 @@ public extension Actions {
             }
           }
 
+        case let .restart(batch):
+          // Neovim started a replacement server and is about to exit.
+          for params in batch {
+            state.pendingReattachAddress = params.listenAddr
+          }
+          updates.isPendingReattachUpdated = true
+
+        case let .connect(batch):
+          // Neovim detached us and named a server to join instead.
+          for params in batch {
+            state.pendingReattachAddress = params.serverAddr
+          }
+          updates.isPendingReattachUpdated = true
+
         case .bell:
           updates.isBellRung = true
 

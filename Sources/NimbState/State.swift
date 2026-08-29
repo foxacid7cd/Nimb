@@ -77,6 +77,7 @@ public struct State: Sendable {
     public var isNimbNotifiesUpdated: Bool = false
     public var isApplicationActiveUpdated: Bool = false
     public var isErrorExitStatusUpdated: Bool = false
+    public var isPendingReattachUpdated: Bool = false
     public var isBellRung: Bool = false
     public var isVisualBellRung: Bool = false
 
@@ -132,6 +133,8 @@ public struct State: Sendable {
       isNimbNotifiesUpdated = isNimbNotifiesUpdated || updates.isNimbNotifiesUpdated
       isApplicationActiveUpdated = isApplicationActiveUpdated || updates.isApplicationActiveUpdated
       isErrorExitStatusUpdated = isErrorExitStatusUpdated || updates.isErrorExitStatusUpdated
+      isPendingReattachUpdated = isPendingReattachUpdated || updates
+        .isPendingReattachUpdated
       // Ored, not counted: two bells inside one frame are still one bell.
       isBellRung = isBellRung || updates.isBellRung
       isVisualBellRung = isVisualBellRung || updates.isVisualBellRung
@@ -205,6 +208,10 @@ public struct State: Sendable {
   public var nimbNotifies: [NimbNotify] = []
   public var isApplicationActive: Bool = false
   public var errorExitStatus: Int? = nil
+
+  /// Where Neovim told us to attach next, via `:restart` or `:connect`.
+  /// Cleared once the app has acted on it.
+  public var pendingReattachAddress: String? = nil
 
   public var outerGrid: Grid? {
     get {
