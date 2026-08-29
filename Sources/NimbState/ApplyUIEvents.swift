@@ -769,6 +769,12 @@ public extension Actions {
           state.msgShows = []
           updates.msgShowsUpdates.append(.clear)
 
+        case .bell:
+          updates.isBellRung = true
+
+        case .visualBell:
+          updates.isVisualBellRung = true
+
         case .busyStart:
           state.isBusy = true
           isBusyUpdated()

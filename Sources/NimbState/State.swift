@@ -76,6 +76,8 @@ public struct State: Sendable {
     public var isNimbNotifiesUpdated: Bool = false
     public var isApplicationActiveUpdated: Bool = false
     public var isErrorExitStatusUpdated: Bool = false
+    public var isBellRung: Bool = false
+    public var isVisualBellRung: Bool = false
 
     public var isOuterGridLayoutUpdated: Bool {
       updatedLayoutGridIDs.contains(Grid.OuterID)
@@ -128,6 +130,9 @@ public struct State: Sendable {
       isNimbNotifiesUpdated = isNimbNotifiesUpdated || updates.isNimbNotifiesUpdated
       isApplicationActiveUpdated = isApplicationActiveUpdated || updates.isApplicationActiveUpdated
       isErrorExitStatusUpdated = isErrorExitStatusUpdated || updates.isErrorExitStatusUpdated
+      // Ored, not counted: two bells inside one frame are still one bell.
+      isBellRung = isBellRung || updates.isBellRung
+      isVisualBellRung = isVisualBellRung || updates.isVisualBellRung
     }
   }
 

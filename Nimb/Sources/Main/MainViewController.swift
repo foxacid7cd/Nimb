@@ -17,6 +17,9 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var gridsContainerView = NSView()
   private var preMaximizeWindowFrame: CGRect? = nil
   private lazy var modalOverlayView = NSView()
+  /// Its own view rather than modalOverlayView, whose isHidden is already
+  /// bound to whether a cmdline is up.
+  private lazy var visualBellView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>? = nil
 
@@ -125,6 +128,12 @@ public class MainViewController: NSViewController, Rendering {
     view.addSubview(modalOverlayView)
     modalOverlayView.edgesToSuperview()
 
+    visualBellView.wantsLayer = true
+    visualBellView.layer!.backgroundColor = NSColor.white.cgColor
+    visualBellView.layer!.opacity = 0
+    view.addSubview(visualBellView)
+    visualBellView.edgesToSuperview()
+
     view.addSubview(cmdlinesViewController.view)
     cmdlinesViewController.view.centerXToSuperview()
     cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
@@ -160,6 +169,14 @@ public class MainViewController: NSViewController, Rendering {
         .isEmpty
     }
 
+    if updates.isBellRung {
+      NSSound.beep()
+    }
+
+    if updates.isVisualBellRung {
+      flashVisualBell()
+    }
+
     renderChildren(gridsView, cmdlinesViewController)
   }
 
@@ -187,6 +204,14 @@ public class MainViewController: NSViewController, Rendering {
       width: mainFrameSize.width,
       height: mainFrameSize.height + tablineView.intrinsicContentSize.height,
     )
+  }
+
+  private func flashVisualBell() {
+    let animation = CABasicAnimation(keyPath: "opacity")
+    animation.fromValue = 0.25
+    animation.toValue = 0
+    animation.duration = 0.12
+    visualBellView.layer!.add(animation, forKey: "visualBell")
   }
 
   @objc private func handleTablineDoubleClick(_: NSClickGestureRecognizer) {
