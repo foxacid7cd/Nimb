@@ -220,8 +220,8 @@ final class MainMenuController: NSObject, Rendering {
     setGuifont(to: Font(newFont))
   }
 
-  /// Sets Neovim's runtime 'guifont' rather than the font directly. Neovim
-  /// reports it back through option_set, which is what actually applies it.
+  /// Neovim reports the option back through option_set, which is what applies
+  /// the font.
   private func setGuifont(to font: Font) {
     store.api.fastCall(APIFunctions.NvimSetOptionValue(
       name: "guifont",

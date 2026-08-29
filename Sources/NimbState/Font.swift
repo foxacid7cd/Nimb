@@ -66,9 +66,8 @@ public extension Font {
     public var size: Double? = nil
   }
 
-  /// The 'guifont' entry naming this font. Only a comma needs escaping: the
-  /// value is set through the API, not through `:set`, which is what makes a
-  /// space in a family name need a backslash.
+  /// Only a comma needs escaping: `:set` is what makes a space in a family
+  /// name need a backslash, and this goes through the API.
   @MainActor
   var guifontEntry: String {
     let appKit = appKit()
@@ -84,8 +83,7 @@ public extension Font {
       : String(format: "%.1f", size)
   }
 
-  /// Splits a 'guifont' value into its fallback entries, honouring the
-  /// backslash that escapes a comma or a space inside a font name.
+  /// A backslash escapes a comma or a space inside a font name.
   static func parseGuifont(_ value: String) -> [GuifontEntry] {
     var entries = [GuifontEntry]()
     var field = ""
@@ -102,8 +100,7 @@ public extension Font {
       else {
         return
       }
-      // Only the height is meaningful here; the width and charset modifiers
-      // Vim documents are Win32 only.
+      // Vim's other modifiers -- width, bold, charset -- are Win32 only.
       let size = fields.dropFirst()
         .first { $0.hasPrefix("h") }
         .flatMap { Double($0.dropFirst()) }

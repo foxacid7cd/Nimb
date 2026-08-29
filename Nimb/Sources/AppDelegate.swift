@@ -23,8 +23,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   private nonisolated let pendingStateAndUpdates = Mutex<(State, State.Updates)?>(nil)
 
-  /// Called from the main actor already, so it renders inline rather than in a
-  /// task that could paint out of order with the next frame's.
   private var appliedGuifont: String? = nil
 
   override public init() {
@@ -105,6 +103,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetFont(value: Font(resolved)))
   }
 
+  /// Called from the main actor already, so it renders inline rather than in a
+  /// task that could paint out of order with the next frame's.
   private func render(state: State, updates: State.Updates) {
     if updates.isRawOptionsUpdated {
       applyGuifontIfNeeded(state: state)
