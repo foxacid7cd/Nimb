@@ -234,10 +234,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   override public func scrollWheel(with event: NSEvent) {
-    guard
-      state.isMouseUserInteractionEnabled,
-      state.cmdlines.dictionary.isEmpty
-    else {
+    guard state.isMouseUserInteractionEnabled else {
       return
     }
 
@@ -438,10 +435,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   public func reportMouseMove(for event: NSEvent) {
-    guard
-      state.isMouseUserInteractionEnabled,
-      state.cmdlines.dictionary.isEmpty
-    else {
+    guard state.isMouseUserInteractionEnabled else {
       return
     }
     let mouseMove = (

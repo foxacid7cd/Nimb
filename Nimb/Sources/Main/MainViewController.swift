@@ -11,14 +11,10 @@ public class MainViewController: NSViewController, Rendering {
   let gridsView: GridsView
 
   private let store: Store
-  private let cmdlinesViewController: CmdlinesViewController
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
   private var preMaximizeWindowFrame: CGRect? = nil
-  private lazy var modalOverlayView = NSView()
-  /// Its own view rather than modalOverlayView, whose isHidden is already
-  /// bound to whether a cmdline is up.
   private lazy var visualBellView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
   private var reportOuterGridSizeChangedTask: Task<Void, Never>? = nil
@@ -27,7 +23,6 @@ public class MainViewController: NSViewController, Rendering {
     self.store = store
     self.minOuterGridSize = minOuterGridSize
     gridsView = .init(store: store)
-    cmdlinesViewController = .init(store: store)
     let reportOuterGridSizeChanged: AsyncStream<IntegerSize>
     (
       reportOuterGridSizeChanged,
@@ -120,24 +115,11 @@ public class MainViewController: NSViewController, Rendering {
     gridsView.centerXToSuperview()
     gridsView.topToSuperview()
 
-    modalOverlayView.wantsLayer = true
-    modalOverlayView.layer!.backgroundColor = NSColor.black
-      .withAlphaComponent(0.25)
-      .cgColor
-    modalOverlayView.isHidden = true
-    view.addSubview(modalOverlayView)
-    modalOverlayView.edgesToSuperview()
-
     visualBellView.wantsLayer = true
     visualBellView.layer!.backgroundColor = NSColor.white.cgColor
     visualBellView.layer!.opacity = 0
     view.addSubview(visualBellView)
     visualBellView.edgesToSuperview()
-
-    view.addSubview(cmdlinesViewController.view)
-    cmdlinesViewController.view.centerXToSuperview()
-    cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
-    addChild(cmdlinesViewController)
 
     self.view = view
   }
@@ -163,12 +145,6 @@ public class MainViewController: NSViewController, Rendering {
 
     renderChildren(tablineView)
 
-    if updates.isCmdlinesUpdated {
-      modalOverlayView.isHidden = state
-        .cmdlines.dictionary
-        .isEmpty
-    }
-
     if updates.isBellRung {
       NSSound.beep()
     }
@@ -177,7 +153,7 @@ public class MainViewController: NSViewController, Rendering {
       flashVisualBell()
     }
 
-    renderChildren(gridsView, cmdlinesViewController)
+    renderChildren(gridsView)
   }
 
   public func windowFrame(

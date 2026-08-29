@@ -33,9 +33,6 @@ final class TablineView: NSVisualEffectView, Rendering {
   private let tabsMaskLayer = CALayer()
   private var tabsScrollViewFrameObservation: NSKeyValueObservation? = nil
   private let titleTextField = NSTextField(labelWithString: "")
-  /// 'showmode' and 'showcmd', which Neovim sends as events once ext_messages
-  /// is on. In the tabline so that nothing covers editor text.
-  private let statusTextField = NSTextField(labelWithString: "")
   private let modeView = TablineModeView()
   private var modeViewWidthConstraint: NSLayoutConstraint! = nil
 
@@ -179,23 +176,6 @@ final class TablineView: NSVisualEffectView, Rendering {
       .defaultLow,
       for: .horizontal,
     )
-
-    // Between the title and the tabs. Hugs its text and resists squeezing,
-    // since it is short and the title truncates gracefully.
-    addSubview(statusTextField)
-    statusTextField.isHidden = true
-    statusTextField.centerY(to: self)
-    statusTextField.trailingToLeading(of: tabsScrollView, offset: -10)
-    statusTextField.leadingToTrailing(
-      of: titleTextField,
-      offset: 10,
-      relation: .equalOrGreater,
-    )
-    statusTextField.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    statusTextField.setContentCompressionResistancePriority(
-      .defaultHigh,
-      for: .horizontal,
-    )
   }
 
   @available(*, unavailable)
@@ -228,21 +208,6 @@ final class TablineView: NSVisualEffectView, Rendering {
     }
   }
 
-  /// Drops the mode part of a 'showmode' message, keeping what Neovim appended
-  /// to it. The two arrive as one chunk: "-- INSERT --recording @q".
-  private static func strippingMode(_ text: String) -> String {
-    guard text.hasPrefix("--") else {
-      return text
-    }
-    let afterOpening = text.index(text.startIndex, offsetBy: 2)
-    guard
-      let closing = text.range(of: "--", range: afterOpening ..< text.endIndex)
-    else {
-      return text
-    }
-    return String(text[closing.upperBound...])
-  }
-
   func render() {
     guard isRendered else {
       return
@@ -259,13 +224,6 @@ final class TablineView: NSVisualEffectView, Rendering {
           .paragraphStyle: titleParagraphStyle,
         ],
       )
-    }
-
-    if
-      updates.isMsgShowmodeUpdated || updates.isMsgShowcmdUpdated ||
-      updates.isAppearanceUpdated || updates.isApplicationActiveUpdated
-    {
-      renderStatus()
     }
 
     if updates.isModeUpdated {
@@ -346,50 +304,6 @@ final class TablineView: NSVisualEffectView, Rendering {
         }
       }
     }
-  }
-
-  /// Draws 'showmode' and 'showcmd' side by side. Either can be empty on its
-  /// own; Neovim clears one by sending it with no content.
-  private func renderStatus() {
-    let showmode = state.msgShowmode
-      .map { part in
-        MsgShow.ContentPart(
-          highlightID: part.highlightID,
-          text: Self.strippingMode(part.text),
-        )
-      }
-      .filter { !$0.text.isEmpty }
-    let showcmd = state.msgShowcmd
-    guard !showmode.isEmpty || !showcmd.isEmpty else {
-      statusTextField.attributedStringValue = .init()
-      statusTextField.isHidden = true
-      return
-    }
-
-    let font = NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium)
-    let result = NSMutableAttributedString()
-    // Sharing one field, they need a gap, or "-- VISUAL --" and a selection
-    // size of 3 read as "-- VISUAL --3".
-    let separator: [MsgShow.ContentPart] =
-      showmode.isEmpty || showcmd.isEmpty
-        ? []
-        : [.init(highlightID: 0, text: "   ")]
-    for part in showmode + separator + showcmd {
-      // Both carry highlight ids, so `recording @q` keeps whatever colour the
-      // colourscheme gives it rather than being flattened to the label colour.
-      result.append(.init(
-        string: part.text,
-        attributes: [
-          .font: font,
-          .foregroundColor: state.appearance
-            .foregroundColor(for: part.highlightID).appKit,
-        ],
-      ))
-    }
-
-    statusTextField.attributedStringValue = result
-    statusTextField.isHidden = false
-    statusTextField.alphaValue = state.isApplicationActive ? 0.8 : 0.7
   }
 
   private func reloadBuffers() {

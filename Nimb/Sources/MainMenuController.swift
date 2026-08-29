@@ -336,15 +336,6 @@ final class MainMenuController: NSObject, Rendering {
         return nil
       }
       return text
-    } else if firstCharacter == "c" {
-      if
-        let lastCmdlineLevel = state.cmdlines.lastCmdlineLevel,
-        let cmdline = state.cmdlines.dictionary[lastCmdlineLevel]
-      {
-        return cmdline.contentParts
-          .map { _ in "" }
-          .joined()
-      }
     }
 
     return nil

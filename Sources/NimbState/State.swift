@@ -61,11 +61,6 @@ public struct State: Sendable {
     > = []
     public var isCursorUpdated: Bool = false
     public var tabline: TablineUpdate = .init()
-    public var isCmdlinesUpdated: Bool = false
-    public var msgShowsUpdates: [MsgShowsUpdate] = []
-    public var isMsgHistoryUpdated: Bool = false
-    public var isMsgShowmodeUpdated: Bool = false
-    public var isMsgShowcmdUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var updatedViewportGridIDs: Set<Grid.ID> = []
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
@@ -103,11 +98,6 @@ public struct State: Sendable {
         .formUnion(updates.updatedObservedHighlightNames)
       isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
       tabline.formUnion(updates.tabline)
-      isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
-      msgShowsUpdates.append(contentsOf: updates.msgShowsUpdates)
-      isMsgHistoryUpdated = isMsgHistoryUpdated || updates.isMsgHistoryUpdated
-      isMsgShowmodeUpdated = isMsgShowmodeUpdated || updates.isMsgShowmodeUpdated
-      isMsgShowcmdUpdated = isMsgShowcmdUpdated || updates.isMsgShowcmdUpdated
       for gridID in updates.destroyedGridIDs {
         updatedLayoutGridIDs.remove(gridID)
         gridUpdates.removeValue(forKey: gridID)
@@ -165,12 +155,6 @@ public struct State: Sendable {
     }
   }
 
-  public enum MsgShowsUpdate: Sendable {
-    case added(count: Int)
-    case reload(indexes: Set<Int>)
-    case clear
-  }
-
   public var debug: Debug = .init()
   public var rawOptions: OrderedDictionary<String, Value> = [:]
   public var title: String? = nil
@@ -180,24 +164,6 @@ public struct State: Sendable {
   public var mode: Mode? = nil
   public var cursor: Cursor? = nil
   public var tabline: Tabline? = nil
-  public var cmdlines: Cmdlines = .init()
-  public var msgShows: [MsgShow] = []
-
-  /// What `:messages` and |g<| last showed. Its own field rather than
-  /// `msgShows`, which the batch clear empties the moment anything else prints.
-  public var msgHistory: [MsgShow] = []
-
-  /// 'showmode' and |recording| text. Its own field rather than a `msgShows`
-  /// entry, so the message area clearing at the start of a batch cannot take it.
-  public var msgShowmode: [MsgShow.ContentPart] = []
-
-  /// 'showcmd' text: the partially typed command, "2d", or the size of a
-  /// visual selection. Same handling as `msgShowmode`.
-  public var msgShowcmd: [MsgShow.ContentPart] = []
-
-  /// Whether a msg_show has already arrived since the last flush. Neovim leaves
-  /// a message's lifetime to the UI, which clears at the start of a batch.
-  public var hasMsgShowSinceFlush: Bool = false
   public var grids: IntKeyedDictionary<Grid> = [:]
   public var viewports: IntKeyedDictionary<Viewport> = [:]
   public var viewportMargins: IntKeyedDictionary<ViewportMargins> = [:]
@@ -232,20 +198,12 @@ public struct State: Sendable {
     return modeInfo.cursorStyles[mode.cursorStyleIndex]
   }
 
-  public var hasModalMsgShows: Bool {
-    msgShows.contains(where: { MsgShow.Kind.modal.contains($0.kind) })
-  }
-
   public var isMouseUserInteractionEnabled: Bool {
     isMouseOn && !isBusy
   }
 
   public var shouldNextMouseEventStopinsert: Bool {
-    if hasModalMsgShows {
-      return false
-    }
-
-    return false
+    false
   }
 
   public mutating func flushDrawRuns() {
@@ -278,15 +236,6 @@ public struct State: Sendable {
     }
     if updates.tabline.hasUpdates {
       tabline = state.tabline
-    }
-    if updates.isCmdlinesUpdated {
-      cmdlines = state.cmdlines
-    }
-    if updates.isMsgHistoryUpdated {
-      msgHistory = state.msgHistory
-    }
-    if !updates.msgShowsUpdates.isEmpty {
-      msgShows = state.msgShows
     }
     if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
       grids = state.grids

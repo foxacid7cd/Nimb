@@ -11,7 +11,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   public var renderContext: RenderContext! = nil
 
   private var mainMenuController: MainMenuController? = nil
-  private var msgShowsWindowController: MsgShowsWindowController? = nil
   private var mainWindowController: MainWindowController? = nil
   private var settingsWindowController: SettingsWindowController? = nil
   private var keyDownMonitor: Any? = nil
@@ -30,7 +29,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   }
 
   public func render() {
-    renderChildren(mainMenuController!, msgShowsWindowController!, mainWindowController!)
+    renderChildren(mainMenuController!, mainWindowController!)
   }
 
   public func applicationDidFinishLaunching(_: Notification) {
@@ -231,8 +230,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       store: store,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
     )
-
-    msgShowsWindowController = MsgShowsWindowController(store: store)
   }
 
   private func setupKeyDownMonitor(store: Store) {
