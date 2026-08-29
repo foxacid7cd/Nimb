@@ -8,10 +8,10 @@ import Foundation
 import msgpack_c
 import Synchronization
 
-public final class RPC<Target: Channel>: Sendable {
+public final class RPC: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
-  private let target: Target
+  private let target: any Channel
   private let storage = Storage()
   private let packer = Mutex<Packer>(.init())
 
@@ -21,7 +21,7 @@ public final class RPC<Target: Channel>: Sendable {
   /// Separate from `packer` so packing does not queue behind a blocking write.
   private let writeLock = Mutex<Void>(())
 
-  public init(_ target: Target) {
+  public init(_ target: any Channel) {
     self.target = target
 
     notifications = AsyncThrowingStream<[Message.Notification], any Error> { [target, storage] continuation in
@@ -35,7 +35,7 @@ public final class RPC<Target: Channel>: Sendable {
   /// would inherit the main actor from where RPC.init is reached.
   @concurrent
   private static func read(
-    from target: Target,
+    from target: any Channel,
     into storage: Storage,
     yieldingTo continuation: AsyncThrowingStream<[Message.Notification], any Error>.Continuation,
   ) async {

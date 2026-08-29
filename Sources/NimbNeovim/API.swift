@@ -2,12 +2,12 @@
 
 import NimbCore
 
-public final class API<Target: Channel>: Sendable {
+public final class API: Sendable {
   public let neovimNotifications: AsyncThrowingStream<[NeovimNotification], any Error>
 
-  let rpc: RPC<Target>
+  let rpc: RPC
 
-  public init(_ rpc: RPC<Target>) {
+  public init(_ rpc: RPC) {
     self.rpc = rpc
 
     let notifications = rpc.notifications

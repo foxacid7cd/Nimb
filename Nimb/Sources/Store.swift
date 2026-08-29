@@ -61,14 +61,14 @@ public final nonisolated class Store: Sendable {
 
   public let updates: AsyncStream<(state: State, updates: State.Updates)>
 
-  public let api: API<ProcessChannel>
+  public let api: API
 
   public let alerts: AsyncStream<Alert>
 
   private let actionsContinuation: AsyncStream<Action>.Continuation
   private let alertsContinuation: AsyncStream<Alert>.Continuation
 
-  public init(api: API<ProcessChannel>, initialState: State) {
+  public init(api: API, initialState: State) {
     self.api = api
 
     let actions: AsyncStream<Action>

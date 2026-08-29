@@ -5,7 +5,7 @@ import NimbCore
 
 public final class Neovim: Sendable {
   public let process: Process
-  public let api: API<ProcessChannel>
+  public let api: API
 
   public init() {
     process = Process()
