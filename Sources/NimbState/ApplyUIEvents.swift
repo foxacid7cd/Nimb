@@ -403,22 +403,30 @@ public extension Actions {
               break
             }
 
-            // No real window backs the message grid, so borrow the "current
-            // window" reference; nothing reads FloatingWindow.id for it.
-            state.grids[params.grid]?.associatedWindow = .floating(
-              .init(
-                id: .current,
-                anchorGridID: Grid.OuterID,
-                screenRow: params.row,
-                screenColumn: 0,
-                isFocusable: true,
-                zIndex: params.zindex,
-                compositingIndex: params.compindex,
-              ),
-            )
-            state.grids[params.grid]?.isHidden = false
+            // Nvim hides the message grid by repositioning it at or past the
+            // last screen row rather than sending a dedicated hide event.
+            if params.row >= (state.outerGrid?.rowsCount ?? 0) {
+              state.grids[params.grid]?.isHidden = true
 
-            state.gridsHierarchy.addNode(id: params.grid, parent: Grid.OuterID)
+              state.gridsHierarchy.removeNode(id: params.grid)
+            } else {
+              // No real window backs the message grid, so borrow the "current
+              // window" reference; nothing reads FloatingWindow.id for it.
+              state.grids[params.grid]?.associatedWindow = .floating(
+                .init(
+                  id: .current,
+                  anchorGridID: Grid.OuterID,
+                  screenRow: params.row,
+                  screenColumn: 0,
+                  isFocusable: true,
+                  zIndex: params.zindex,
+                  compositingIndex: params.compindex,
+                ),
+              )
+              state.grids[params.grid]?.isHidden = false
+
+              state.gridsHierarchy.addNode(id: params.grid, parent: Grid.OuterID)
+            }
 
             updatedLayout(forGridWithID: params.grid)
           }
