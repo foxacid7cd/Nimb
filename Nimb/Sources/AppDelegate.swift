@@ -23,6 +23,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   private nonisolated let pendingStateAndUpdates = Mutex<(State, State.Updates)?>(nil)
 
+  /// Called from the main actor already, so it renders inline rather than in a
+  /// task that could paint out of order with the next frame's.
+  private var appliedGuifont: String? = nil
+
   override public init() {
     super.init()
   }
@@ -80,9 +84,38 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store?.dispatch(Actions.SetApplicationActive(value: false))
   }
 
-  /// Called from the main actor already, so it renders inline rather than in a
-  /// task that could paint out of order with the next frame's.
+  private func applyGuifontIfNeeded(state: State) {
+    guard
+      case let .string(guifont)? = state.rawOptions["guifont"],
+      guifont != appliedGuifont
+    else {
+      return
+    }
+    appliedGuifont = guifont
+
+    // Only entries carrying a size are honoured. Neovim's macOS default for
+    // 'guifont' is a non-empty list without one, and is indistinguishable at
+    // attach from a value the user set, so applying it would override the font
+    // chosen in the font panel on every launch.
+    let resolved = Font.parseGuifont(guifont)
+      .lazy
+      .compactMap { entry in
+        entry.size.flatMap { NSFont(name: entry.name, size: $0) }
+      }
+      .first
+      .error(
+        "GFPROBE guifont=\(guifont, privacy: .public) entries=\(String(describing: Font.parseGuifont(guifont)), privacy: .public) resolved=\(resolved?.fontName ?? "nil", privacy: .public) size=\(resolved?.pointSize ?? -1)",
+      )
+    guard let resolved else {
+      return
+    }
+    store?.dispatch(Actions.SetFont(value: Font(resolved)))
+  }
+
   private func render(state: State, updates: State.Updates) {
+    if updates.isRawOptionsUpdated {
+      applyGuifontIfNeeded(state: state)
+    }
     if updates.isPendingReattachUpdated, let address = state.pendingReattachAddress {
       reattach(to: address)
     }

@@ -60,6 +60,59 @@ public struct Font: Sendable, Hashable {
   }
 }
 
+public extension Font {
+  struct GuifontEntry: Sendable, Hashable {
+    public var name: String
+    public var size: Double? = nil
+  }
+
+  /// Splits a 'guifont' value into its fallback entries, honouring the
+  /// backslash that escapes a comma or a space inside a font name.
+  static func parseGuifont(_ value: String) -> [GuifontEntry] {
+    var entries = [GuifontEntry]()
+    var field = ""
+    var fields = [String]()
+    var isEscaped = false
+
+    func endEntry() {
+      fields.append(field)
+      field = ""
+      defer { fields = [] }
+      guard
+        let name = fields.first?.trimmingCharacters(in: .whitespaces),
+        !name.isEmpty
+      else {
+        return
+      }
+      // Only the height is meaningful here; the width and charset modifiers
+      // Vim documents are Win32 only.
+      let size = fields.dropFirst()
+        .first { $0.hasPrefix("h") }
+        .flatMap { Double($0.dropFirst()) }
+      entries.append(.init(name: name, size: size))
+    }
+
+    for character in value {
+      if isEscaped {
+        field.append(character)
+        isEscaped = false
+      } else if character == "\\" {
+        isEscaped = true
+      } else if character == "," {
+        endEntry()
+      } else if character == ":" {
+        fields.append(field)
+        field = ""
+      } else {
+        field.append(character)
+      }
+    }
+    endEntry()
+
+    return entries
+  }
+}
+
 @MainActor
 final class FontBridge {
   /// Unchecked for the same reason as GlyphRun: it holds NSFont values,
