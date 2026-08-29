@@ -63,6 +63,7 @@ public struct State: Sendable {
     public var tabline: TablineUpdate = .init()
     public var isCmdlinesUpdated: Bool = false
     public var msgShowsUpdates: [MsgShowsUpdate] = []
+    public var isMsgHistoryUpdated: Bool = false
     public var isMsgShowmodeUpdated: Bool = false
     public var isMsgShowcmdUpdated: Bool = false
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
@@ -103,6 +104,7 @@ public struct State: Sendable {
       tabline.formUnion(updates.tabline)
       isCmdlinesUpdated = isCmdlinesUpdated || updates.isCmdlinesUpdated
       msgShowsUpdates.append(contentsOf: updates.msgShowsUpdates)
+      isMsgHistoryUpdated = isMsgHistoryUpdated || updates.isMsgHistoryUpdated
       isMsgShowmodeUpdated = isMsgShowmodeUpdated || updates.isMsgShowmodeUpdated
       isMsgShowcmdUpdated = isMsgShowcmdUpdated || updates.isMsgShowcmdUpdated
       for gridID in updates.destroyedGridIDs {
@@ -177,6 +179,10 @@ public struct State: Sendable {
   public var tabline: Tabline? = nil
   public var cmdlines: Cmdlines = .init()
   public var msgShows: [MsgShow] = []
+
+  /// What `:messages` and |g<| last showed. Its own field rather than
+  /// `msgShows`, which the batch clear empties the moment anything else prints.
+  public var msgHistory: [MsgShow] = []
 
   /// 'showmode' and |recording| text. Its own field rather than a `msgShows`
   /// entry, so the message area clearing at the start of a batch cannot take it.
@@ -269,6 +275,9 @@ public struct State: Sendable {
     }
     if updates.isCmdlinesUpdated {
       cmdlines = state.cmdlines
+    }
+    if updates.isMsgHistoryUpdated {
+      msgHistory = state.msgHistory
     }
     if !updates.msgShowsUpdates.isEmpty {
       msgShows = state.msgShows

@@ -50,8 +50,8 @@ class MsgShowsWindowController: NSWindowController, Rendering {
   func render() {
     renderChildren(viewController)
 
-    if !updates.msgShowsUpdates.isEmpty {
-      if !state.msgShows.isEmpty {
+    if !updates.msgShowsUpdates.isEmpty || updates.isMsgHistoryUpdated {
+      if !state.msgShows.isEmpty || !state.msgHistory.isEmpty {
         if !isWindowInitiallyShown, let frame = UserDefaults.standard.lastMsgShowsWindowFrame {
           customWindow!.setFrame(frame, display: false, animate: false)
           isWindowInitiallyShown = true

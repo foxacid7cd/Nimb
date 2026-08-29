@@ -72,6 +72,18 @@ public class MsgShowsViewController: NSViewController, Rendering {
   }
 
   public func render() {
+    // History supersedes the live area while it is up, and is dropped as soon
+    // as the next batch of messages arrives.
+    if updates.isMsgHistoryUpdated || (updates.isAppearanceUpdated && !state.msgHistory.isEmpty) {
+      renderedMsgShows = state.msgHistory
+        .map { ($0, makeAttributedString(for: $0)) }
+      renderText()
+      return
+    }
+    guard state.msgHistory.isEmpty else {
+      return
+    }
+
     if updates.isAppearanceUpdated {
       renderBackgroundColor()
 

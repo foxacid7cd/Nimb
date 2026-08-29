@@ -667,6 +667,11 @@ public extension Actions {
             if !state.hasMsgShowSinceFlush {
               state.hasMsgShowSinceFlush = true
 
+              if !state.msgHistory.isEmpty {
+                state.msgHistory = []
+                updates.isMsgHistoryUpdated = true
+              }
+
               if !params.append, !state.msgShows.isEmpty {
                 state.msgShows = []
                 updates.msgShowsUpdates.append(.clear)
@@ -768,6 +773,40 @@ public extension Actions {
         case .msgClear:
           state.msgShows = []
           updates.msgShowsUpdates.append(.clear)
+          if !state.msgHistory.isEmpty {
+            state.msgHistory = []
+            updates.isMsgHistoryUpdated = true
+          }
+
+        case let .msgHistoryShow(batch):
+          // Entries are [kind, content, append], the same chunk shape a
+          // msg_show carries. `prevCmd` tells g< from :messages, which
+          // nothing here needs yet.
+          for params in batch {
+            do {
+              var history = [MsgShow]()
+              for rawEntry in params.entries {
+                guard
+                  case let .array(entry) = rawEntry,
+                  entry.count >= 2,
+                  case let .string(rawKind) = entry[0],
+                  case let .array(rawContent) = entry[1]
+                else {
+                  throw Failure("invalid msg history entry", rawEntry)
+                }
+                try history.append(.init(
+                  index: history.count,
+                  kind: MsgShow.Kind(rawValue: rawKind) ?? .unknown,
+                  contentParts: rawContent
+                    .map(MsgShow.ContentPart.init(raw:)),
+                ))
+              }
+              state.msgHistory = history
+              updates.isMsgHistoryUpdated = true
+            } catch {
+              handleError(error)
+            }
+          }
 
         case .bell:
           updates.isBellRung = true
