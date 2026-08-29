@@ -12,7 +12,6 @@ public class MainViewController: NSViewController, Rendering {
 
   private let store: Store
   private let cmdlinesViewController: CmdlinesViewController
-  private let popupmenuViewController: PopupmenuViewController
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
@@ -26,13 +25,6 @@ public class MainViewController: NSViewController, Rendering {
     self.minOuterGridSize = minOuterGridSize
     gridsView = .init(store: store)
     cmdlinesViewController = .init(store: store)
-    popupmenuViewController = .init(
-      store: store,
-      getCmdlinesView: { [cmdlinesViewController] in
-        cmdlinesViewController.view
-      },
-      getGridsView: { [gridsView] in gridsView },
-    )
     let reportOuterGridSizeChanged: AsyncStream<IntegerSize>
     (
       reportOuterGridSizeChanged,
@@ -138,17 +130,6 @@ public class MainViewController: NSViewController, Rendering {
     cmdlinesViewController.view.centerYToSuperview(multiplier: 0.65)
     addChild(cmdlinesViewController)
 
-    popupmenuViewController.willShowPopupmenu = { [weak self] in
-      self?.reportPopupmenuPumBounds()
-    }
-    view.addSubview(popupmenuViewController.view)
-    popupmenuViewController.anchorConstraints = [
-      popupmenuViewController.view.centerXToSuperview(),
-      popupmenuViewController.view.centerYToSuperview(),
-    ]
-
-    addChild(popupmenuViewController)
-
     self.view = view
   }
 
@@ -179,7 +160,7 @@ public class MainViewController: NSViewController, Rendering {
         .isEmpty
     }
 
-    renderChildren(gridsView, cmdlinesViewController, popupmenuViewController)
+    renderChildren(gridsView, cmdlinesViewController)
   }
 
   public func windowFrame(
@@ -230,31 +211,6 @@ public class MainViewController: NSViewController, Rendering {
         window.setFrame(preMaximizeWindowFrame, display: true, animate: true)
       }
     }
-  }
-
-  /// Tells Neovim where the menu ended up, so it can line floating windows up
-  /// with it. In cells of the outer grid, which is what the API expects.
-  private func reportPopupmenuPumBounds() {
-    view.layoutSubtreeIfNeeded()
-
-    let frameInGrids = gridsView.convert(
-      popupmenuViewController.view.frame,
-      from: popupmenuViewController.view.superview,
-    )
-    .applying(gridsView.upsideDownTransform)
-    let cellSize = state.font.cellSize
-    guard cellSize.width > 0, cellSize.height > 0 else {
-      return
-    }
-
-    store.api.fastCall(
-      APIFunctions.NvimUIPumSetBounds(
-        width: frameInGrids.width / cellSize.width,
-        height: frameInGrids.height / cellSize.height,
-        row: frameInGrids.minY / cellSize.height,
-        col: frameInGrids.minX / cellSize.width,
-      ),
-    )
   }
 
   private func renderBackground() {

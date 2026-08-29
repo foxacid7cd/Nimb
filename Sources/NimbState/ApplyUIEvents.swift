@@ -120,14 +120,6 @@ public extension Actions {
         }
       }
 
-      func popupmenuUpdated() {
-        updates.isPopupmenuUpdated = true
-      }
-
-      func popupmenuSelectionUpdated() {
-        updates.isPopupmenuSelectionUpdated = true
-      }
-
       func isBusyUpdated() {
         updates.isBusyUpdated = true
       }
@@ -776,49 +768,6 @@ public extension Actions {
         case .msgClear:
           state.msgShows = []
           updates.msgShowsUpdates.append(.clear)
-
-        case let .popupmenuShow(batch):
-          for params in batch {
-            do {
-              let items = try params.items
-                .map(PopupmenuItem.init(raw:))
-
-              let selectedItemIndex: Int? = params.selected >= 0 ? params.selected : nil
-
-              let anchor: Popupmenu.Anchor =
-                switch params.grid {
-                case -1:
-                  .cmdline(location: params.col)
-
-                default:
-                  .grid(id: params.grid, origin: .init(column: params.col, row: params.row))
-                }
-
-              state.popupmenu = .init(
-                items: items,
-                selectedItemIndex: selectedItemIndex,
-                anchor: anchor,
-              )
-              popupmenuUpdated()
-            } catch {
-              handleError(error)
-            }
-          }
-
-        case let .popupmenuSelect(batch):
-          for params in batch {
-            if state.popupmenu != nil {
-              state.popupmenu!
-                .selectedItemIndex = params.selected >= 0 ? params.selected : nil
-              popupmenuSelectionUpdated()
-            }
-          }
-
-        case .popupmenuHide:
-          if state.popupmenu != nil {
-            state.popupmenu = nil
-            popupmenuUpdated()
-          }
 
         case .busyStart:
           state.isBusy = true

@@ -70,8 +70,6 @@ public struct State: Sendable {
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
     public var destroyedGridIDs: Set<Grid.ID> = []
     public var isGridsHierarchyUpdated: Bool = false
-    public var isPopupmenuUpdated: Bool = false
-    public var isPopupmenuSelectionUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
     public var isMouseOnUpdated: Bool = false
@@ -123,9 +121,6 @@ public struct State: Sendable {
       }
       updatedViewportGridIDs.formUnion(updates.updatedViewportGridIDs)
       isGridsHierarchyUpdated = isGridsHierarchyUpdated || updates.isGridsHierarchyUpdated
-      isPopupmenuUpdated = isPopupmenuUpdated || updates.isPopupmenuUpdated
-      isPopupmenuSelectionUpdated = isPopupmenuSelectionUpdated || updates
-        .isPopupmenuSelectionUpdated
       isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates
         .isCursorBlinkingPhaseUpdated
       isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
@@ -193,7 +188,6 @@ public struct State: Sendable {
   public var viewports: IntKeyedDictionary<Viewport> = [:]
   public var viewportMargins: IntKeyedDictionary<ViewportMargins> = [:]
   public var gridsHierarchy: GridsHierarchy = .init()
-  public var popupmenu: Popupmenu? = nil
   public var cursorBlinkingPhase: Bool = true
   public var isBusy: Bool = false
   public var isMouseOn: Bool = true
@@ -232,10 +226,6 @@ public struct State: Sendable {
   public var shouldNextMouseEventStopinsert: Bool {
     if hasModalMsgShows {
       return false
-    }
-
-    if let popupmenu, case .grid = popupmenu.anchor {
-      return true
     }
 
     return false
@@ -287,9 +277,6 @@ public struct State: Sendable {
     }
     if updates.isGridsHierarchyUpdated {
       gridsHierarchy = state.gridsHierarchy
-    }
-    if updates.isPopupmenuUpdated || updates.isPopupmenuSelectionUpdated {
-      popupmenu = state.popupmenu
     }
     if updates.isCursorBlinkingPhaseUpdated {
       cursorBlinkingPhase = state.cursorBlinkingPhase
