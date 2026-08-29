@@ -15,6 +15,12 @@ public final class RPC<Target: Channel>: Sendable {
   private let storage = Storage()
   private let packer = Mutex<Packer>(.init())
 
+  /// Serialises writes to the pipe. A pipe only makes a write atomic up to
+  /// PIPE_BUF, 512 bytes here, so two unserialised writers can interleave a
+  /// larger message -- a big paste, say -- into a stream Neovim cannot parse.
+  /// Separate from `packer` so packing does not queue behind a blocking write.
+  private let writeLock = Mutex<Void>(())
+
   public init(_ target: Target) {
     self.target = target
 
@@ -120,7 +126,7 @@ public final class RPC<Target: Channel>: Sendable {
       return data
     }
 
-    try? target.write(data)
+    write(data)
   }
 
   public func send(request: Message.Request) {
@@ -128,7 +134,13 @@ public final class RPC<Target: Channel>: Sendable {
       $0.pack(request.makeValue())
     }
 
-    try? target.write(data)
+    write(data)
+  }
+
+  private func write(_ data: Data) {
+    writeLock.withLock { _ in
+      try? target.write(data)
+    }
   }
 }
 
