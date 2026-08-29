@@ -779,9 +779,7 @@ public extension Actions {
           }
 
         case let .msgHistoryShow(batch):
-          // Entries are [kind, content, append], the same chunk shape a
-          // msg_show carries. `prevCmd` tells g< from :messages, which
-          // nothing here needs yet.
+          // Entries are [kind, content, append], the chunk shape msg_show uses.
           for params in batch {
             do {
               var history = [MsgShow]()
@@ -809,14 +807,12 @@ public extension Actions {
           }
 
         case let .restart(batch):
-          // Neovim started a replacement server and is about to exit.
           for params in batch {
             state.pendingReattachAddress = params.listenAddr
           }
           updates.isPendingReattachUpdated = true
 
         case let .connect(batch):
-          // Neovim detached us and named a server to join instead.
           for params in batch {
             state.pendingReattachAddress = params.serverAddr
           }
@@ -845,9 +841,8 @@ public extension Actions {
           updates.isMouseOnUpdated = true
 
         case let .hlGroupSet(batch):
-          // The authoritative source for a built-in group's attributes.
-          // hl_attr_define's info only names groups that were rendered into a
-          // grid, so one Nimb draws itself never resolves that way.
+          // hl_attr_define's info only names groups rendered into a grid, so
+          // one Nimb draws itself never resolves that way.
           for params in batch {
             guard
               let name = Appearance.ObservedHighlightName(rawValue: params.name)

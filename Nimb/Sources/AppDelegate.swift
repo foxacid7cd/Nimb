@@ -96,8 +96,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     renderStats.frameCompleted()
   }
 
-  /// Attaches to the server Neovim named and starts over from a clean state.
-  /// The old server is on its way out, so nothing it said still holds.
   private func reattach(to address: String) {
     guard let neovim, let store else {
       return

@@ -5,9 +5,8 @@ import NimbCore
 import NimbNeovim
 
 public enum Actions {
-  /// Throws away everything the old server told us. Attaching to another one
-  /// replays the whole screen, but nothing retracts the grids and windows the
-  /// previous one had.
+  /// Attaching replays the whole screen, but nothing retracts the previous
+  /// server's grids and windows.
   @PublicInit
   public struct ResetState: Action {
     public var initialState: State

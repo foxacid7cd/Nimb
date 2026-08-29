@@ -2,8 +2,8 @@
 
 import Foundation
 
-/// Stated as a concrete stream rather than an associated type, so RPC can hold
-/// any channel and the transport can be swapped underneath it.
+/// A concrete stream rather than an associated type, so the transport can be
+/// swapped underneath a running RPC.
 public protocol Channel: Sendable {
   var dataBatches: AsyncStream<Data> { get }
   func write(_ data: Data) throws

@@ -3,9 +3,7 @@
 import Foundation
 import NimbCore
 
-/// Talks to a Neovim server over a unix socket, which is what `:restart` and
-/// `:connect` hand over -- an address to attach to rather than a process to
-/// spawn.
+/// The transport `:restart` and `:connect` hand over.
 public struct SocketChannel: Channel {
   public struct ConnectionFailure: Error, Sendable {
     public var path: String

@@ -12,8 +12,8 @@ public final class RPC: Sendable {
   public let notifications: AsyncThrowingStream<[Message.Notification], any Error>
 
   private let target: Mutex<any Channel>
-  /// Channels the reader should work through, in order. `:restart` hands over
-  /// a new server to attach to, so the transport outlives any one channel.
+  /// Channels the reader works through in order; the transport outlives any
+  /// one of them.
   private let targetsContinuation: AsyncStream<any Channel>.Continuation
   private let storage = Storage()
   private let packer = Mutex<Packer>(.init())
@@ -41,8 +41,8 @@ public final class RPC: Sendable {
     yieldingTo continuation: AsyncThrowingStream<[Message.Notification], any Error>.Continuation,
   ) async {
     for await target in targets {
-      // A fresh unpacker per channel: a new server starts a new msgpack
-      // stream, and half a message from the old one must not lead into it.
+      // A fresh unpacker per channel: half a message from the old server must
+      // not lead into the new one's stream.
       await read(from: target, into: storage, yieldingTo: continuation)
       guard !Task.isCancelled else {
         break
@@ -92,8 +92,7 @@ public final class RPC: Sendable {
     }
   }
 
-  /// Points reads and writes at a new server. The notifications stream carries
-  /// on across the swap, so everything built on top of this RPC survives it.
+  /// `notifications` carries on across the swap.
   public func reconnect(to newTarget: any Channel) {
     target.withLock { $0 = newTarget }
     targetsContinuation.yield(newTarget)
@@ -159,10 +158,8 @@ public final class RPC: Sendable {
     write(data)
   }
 
-  /// Writes under the target's own lock, which serialises them: a pipe only
-  /// makes a write atomic up to PIPE_BUF, 512 bytes here, so two unserialised
-  /// writers can interleave a larger message into a stream Neovim cannot
-  /// parse. Separate from `packer`, so packing does not queue behind a write.
+  /// Under the target's own lock, which serialises writes: a pipe is atomic
+  /// only to PIPE_BUF, so larger messages could otherwise interleave.
   private func write(_ data: Data) {
     try? target.withLock { try $0.write(data) }
   }

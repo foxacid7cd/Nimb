@@ -8,8 +8,7 @@ public final class Neovim: Sendable {
   public let process: Process
   public let api: API
 
-  /// Set when Neovim tells us to attach elsewhere. The process exiting is then
-  /// expected rather than a reason to quit.
+  /// While set, the process exiting is expected rather than a reason to quit.
   public let isReattaching = Mutex(false)
 
   public init() {
@@ -111,9 +110,6 @@ public final class Neovim: Sendable {
     }
   }
 
-  /// Points the RPC at another server and introduces ourselves again. Used for
-  /// `:restart`, where Neovim starts a replacement and hands over its address,
-  /// and `:connect`, where it detaches us and names a server to join.
   public func reattach(to address: String) async throws {
     isReattaching.withLock { $0 = true }
     try api.rpc.reconnect(to: SocketChannel(path: address))

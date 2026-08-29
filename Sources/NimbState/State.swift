@@ -209,7 +209,6 @@ public struct State: Sendable {
   public var isApplicationActive: Bool = false
   public var errorExitStatus: Int? = nil
 
-  /// Where Neovim told us to attach next, via `:restart` or `:connect`.
   /// Cleared once the app has acted on it.
   public var pendingReattachAddress: String? = nil
 
