@@ -52,27 +52,6 @@ public extension UserDefaults {
     }
   }
 
-  var appKitFont: NSFont? {
-    get {
-      guard
-        let name = value(forKey: "fontName") as? String,
-        let size = value(forKey: "fontSize") as? Double
-      else {
-        return nil
-      }
-      return .init(name: name, size: size)
-    }
-    set(value) {
-      if let value {
-        set(value.fontName, forKey: "fontName")
-        set(value.pointSize, forKey: "fontSize")
-      } else {
-        removeObject(forKey: "fontName")
-        removeObject(forKey: "fontSize")
-      }
-    }
-  }
-
   var debug: State.Debug {
     get {
       guard

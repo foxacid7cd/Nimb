@@ -66,6 +66,24 @@ public extension Font {
     public var size: Double? = nil
   }
 
+  /// The 'guifont' entry naming this font. Only a comma needs escaping: the
+  /// value is set through the API, not through `:set`, which is what makes a
+  /// space in a family name need a backslash.
+  @MainActor
+  var guifontEntry: String {
+    let appKit = appKit()
+    let name = (appKit.familyName ?? appKit.fontName)
+      .replacingOccurrences(of: "\\", with: "\\\\")
+      .replacingOccurrences(of: ",", with: "\\,")
+    return "\(name):h\(formatted(size: appKit.pointSize))"
+  }
+
+  private func formatted(size: Double) -> String {
+    size == size.rounded()
+      ? String(Int(size))
+      : String(format: "%.1f", size)
+  }
+
   /// Splits a 'guifont' value into its fallback entries, honouring the
   /// backslash that escapes a comma or a space inside a font name.
   static func parseGuifont(_ value: String) -> [GuifontEntry] {

@@ -38,7 +38,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   public func applicationDidFinishLaunching(_: Notification) {
     let initialState = State(
       debug: UserDefaults.standard.debug,
-      font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
+      font: .init(),
     )
 
     // Applied here rather than from isDebugUpdated, which never carries it: the
@@ -93,19 +93,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
     appliedGuifont = guifont
 
-    // Only entries carrying a size are honoured. Neovim's macOS default for
-    // 'guifont' is a non-empty list without one, and is indistinguishable at
-    // attach from a value the user set, so applying it would override the font
-    // chosen in the font panel on every launch.
     let resolved = Font.parseGuifont(guifont)
       .lazy
       .compactMap { entry in
-        entry.size.flatMap { NSFont(name: entry.name, size: $0) }
+        NSFont(name: entry.name, size: entry.size ?? state.font.appKit().pointSize)
       }
       .first
-      .error(
-        "GFPROBE guifont=\(guifont, privacy: .public) entries=\(String(describing: Font.parseGuifont(guifont)), privacy: .public) resolved=\(resolved?.fontName ?? "nil", privacy: .public) size=\(resolved?.pointSize ?? -1)",
-      )
     guard let resolved else {
       return
     }
@@ -138,7 +131,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         try await neovim.reattach(to: address)
         store.dispatch(Actions.ResetState(initialState: State(
           debug: UserDefaults.standard.debug,
-          font: UserDefaults.standard.appKitFont.map(Font.init) ?? .init(),
+          font: .init(),
         )))
       } catch {
         await show(alert: .init(error))
@@ -202,9 +195,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
             }
             if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
               UserDefaults.standard.outerGridSize = outerGrid.size
-            }
-            if updates.isFontUpdated {
-              UserDefaults.standard.appKitFont = state.font.appKit()
             }
             if updates.isDebugUpdated {
               UserDefaults.standard.debug = state.debug
