@@ -378,12 +378,22 @@ public struct State: Sendable {
       }
     }
 
+    let screenSize = (grids[Grid.OuterID]?.size ?? .init()) * font.cellSize
+
     for (index, keyValues) in layouts.enumerated() {
       let (id, layout) = keyValues
 
+      // Clipped to the screen the way Neovim's own compositor clips: the
+      // message grid is allocated at full screen height and then positioned
+      // near the bottom, so its unused rows hang below the last screen row.
+      let origin = layout.positionInParent
+      let size = layout.size * font.cellSize
       let frame = CGRect(
-        origin: layout.positionInParent,
-        size: layout.size * font.cellSize,
+        origin: origin,
+        size: .init(
+          width: max(0, min(size.width, screenSize.width - origin.x)),
+          height: max(0, min(size.height, screenSize.height - origin.y)),
+        ),
       )
       try body(id, frame, Double(index))
     }

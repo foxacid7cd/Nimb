@@ -84,12 +84,14 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     return state.grids[gridID]
   }
 
+  /// Anchored to the view's own height, not the grid's: a grid clipped to the
+  /// screen keeps its first row at the top of what is left of it.
   private var upsideDownTransform: CGAffineTransform? {
-    guard let grid else {
+    guard grid != nil else {
       return nil
     }
     return .init(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * state.font.cellHeight)
+      .translatedBy(x: 0, y: -bounds.height)
   }
 
   /// Whether this frame can change what this grid looks like. Both layers keep
@@ -560,7 +562,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
 
     let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * renderContext.state.font.cellHeight)
+      .translatedBy(x: 0, y: -bounds.height)
 
     return GridRenderInput(
       snapshot: .init(
