@@ -197,42 +197,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     ))
   }
 
-  override public func mouseDown(with event: NSEvent) {
-    report(mouseButton: "left", action: "press", with: event)
-  }
-
-  override public func mouseDragged(with event: NSEvent) {
-    report(mouseButton: "left", action: "drag", with: event)
-  }
-
-  override public func mouseUp(with event: NSEvent) {
-    report(mouseButton: "left", action: "release", with: event)
-  }
-
-  override public func rightMouseDown(with event: NSEvent) {
-    report(mouseButton: "right", action: "press", with: event)
-  }
-
-  override public func rightMouseDragged(with event: NSEvent) {
-    report(mouseButton: "right", action: "drag", with: event)
-  }
-
-  override public func rightMouseUp(with event: NSEvent) {
-    report(mouseButton: "right", action: "release", with: event)
-  }
-
-  override public func otherMouseDown(with event: NSEvent) {
-    report(mouseButton: "middle", action: "press", with: event)
-  }
-
-  override public func otherMouseDragged(with event: NSEvent) {
-    report(mouseButton: "middle", action: "drag", with: event)
-  }
-
-  override public func otherMouseUp(with event: NSEvent) {
-    report(mouseButton: "middle", action: "release", with: event)
-  }
-
   override public func scrollWheel(with event: NSEvent) {
     guard state.isMouseUserInteractionEnabled else {
       return

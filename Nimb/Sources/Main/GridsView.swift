@@ -41,6 +41,70 @@ public class GridsView: NSView, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
+  /// Mouse events are handled here rather than by the grid views themselves.
+  /// Reordering subviews drops AppKit's mouse-down view, so a drag started on
+  /// a separator would be re-hit-tested onto whichever grid slid under the
+  /// cursor and report coordinates in that grid's space instead.
+  override public func hitTest(_ point: NSPoint) -> NSView? {
+    let localPoint = superview.map { convert(point, from: $0) } ?? point
+    return bounds.contains(localPoint) ? self : nil
+  }
+
+  override public func mouseDown(with event: NSEvent) {
+    leftMouseInteractionTarget = gridView(for: event)
+    leftMouseInteractionTarget?
+      .report(mouseButton: "left", action: "press", with: event)
+  }
+
+  override public func mouseDragged(with event: NSEvent) {
+    leftMouseInteractionTarget?
+      .report(mouseButton: "left", action: "drag", with: event)
+  }
+
+  override public func mouseUp(with event: NSEvent) {
+    leftMouseInteractionTarget?
+      .report(mouseButton: "left", action: "release", with: event)
+    leftMouseInteractionTarget = nil
+  }
+
+  override public func rightMouseDown(with event: NSEvent) {
+    rightMouseInteractionTarget = gridView(for: event)
+    rightMouseInteractionTarget?
+      .report(mouseButton: "right", action: "press", with: event)
+  }
+
+  override public func rightMouseDragged(with event: NSEvent) {
+    rightMouseInteractionTarget?
+      .report(mouseButton: "right", action: "drag", with: event)
+  }
+
+  override public func rightMouseUp(with event: NSEvent) {
+    rightMouseInteractionTarget?
+      .report(mouseButton: "right", action: "release", with: event)
+    rightMouseInteractionTarget = nil
+  }
+
+  override public func otherMouseDown(with event: NSEvent) {
+    otherMouseInteractionTarget = gridView(for: event)
+    otherMouseInteractionTarget?
+      .report(mouseButton: "middle", action: "press", with: event)
+  }
+
+  override public func otherMouseDragged(with event: NSEvent) {
+    otherMouseInteractionTarget?
+      .report(mouseButton: "middle", action: "drag", with: event)
+  }
+
+  override public func otherMouseUp(with event: NSEvent) {
+    otherMouseInteractionTarget?
+      .report(mouseButton: "middle", action: "release", with: event)
+    otherMouseInteractionTarget = nil
+  }
+
+  override public func scrollWheel(with event: NSEvent) {
+    gridView(for: event)?.scrollWheel(with: event)
+  }
+
   public func render() {
     for gridID in updates.destroyedGridIDs {
       let view = arrangedGridView(forGridWithID: gridID)
@@ -136,6 +200,19 @@ public class GridsView: NSView, Rendering {
       arrangedGridViews[id] = view
       return view
     }
+  }
+
+  /// Frontmost visible grid under the event, or the outer grid: separators and
+  /// status lines are drawn by Neovim on the outer grid, in the gaps window
+  /// grids leave behind.
+  private func gridView(for event: NSEvent) -> GridView? {
+    let location = convert(event.locationInWindow, from: nil)
+    for case let gridView as GridView in subviews.reversed()
+      where !gridView.isHidden && gridView.frame.contains(location)
+    {
+      return gridView
+    }
+    return arrangedGridViews[Grid.OuterID]
   }
 
   private func point(for event: NSEvent) -> IntegerPoint {
