@@ -16,6 +16,11 @@ TUIST_MANIFESTS := Project.swift Tuist.swift \
                    $(wildcard Tuist/ProjectDescriptionHelpers/*.swift)
 GENERATOR_SRCS  := $(wildcard generate/*.swift)
 
+# Signed with a self-signed local certificate when one is present, so TCC
+# grants survive a rebuild. Falls back to ad-hoc on a clean machine.
+SIGN_IDENTITY   := $(shell security find-identity -p codesigning 2>/dev/null \
+                     | grep -q "Nimb Local Signing" && echo "Nimb Local Signing" || echo "-")
+
 MISE            := mise
 TUIST           := $(MISE) exec -- tuist
 SWIFTFORMAT     := $(MISE) exec -- swiftformat
@@ -83,14 +88,16 @@ format:
 app: project
 	xcodebuild build -workspace "$(NAME).xcworkspace" -scheme "$(NAME)" \
 		-configuration Release -destination "platform=macOS,arch=arm64" \
-		-derivedDataPath "$(DERIVED_DATA)"
+		-derivedDataPath "$(DERIVED_DATA)" \
+		NIMB_CODE_SIGN_IDENTITY="$(SIGN_IDENTITY)"
 	rm -rf "$(INSTALL_DIR)/$(NAME).app"
 	ditto "$(RELEASE_APP)" "$(INSTALL_DIR)/$(NAME).app"
 
 ## Universal archive, exported to .build/export, for distributing.
 archive: project
 	xcodebuild archive -workspace "$(NAME).xcworkspace" -scheme "$(NAME)" \
-		-configuration Release -archivePath "$(ARCHIVE)"
+		-configuration Release -archivePath "$(ARCHIVE)" \
+		NIMB_CODE_SIGN_IDENTITY="$(SIGN_IDENTITY)"
 	rm -rf "$(EXPORT_DIR)"
 	xcodebuild -exportArchive -archivePath "$(ARCHIVE)" \
 		-exportOptionsPlist "$(EXPORT_OPTIONS)" -exportPath "$(EXPORT_DIR)"

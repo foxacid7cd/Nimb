@@ -156,7 +156,14 @@ let project = Project(
           "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
           "ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS": "NO",
           "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS": "YES",
-          "CODE_SIGN_IDENTITY[sdk=macosx*]": "-",
+          // Ad-hoc unless a local signing identity is passed in. Ad-hoc
+          // rebuilds change the app's identity, so macOS re-asks for every
+          // TCC permission; a stable certificate keeps the grants.
+          "CODE_SIGN_IDENTITY[sdk=macosx*]": "$(NIMB_CODE_SIGN_IDENTITY:default=-)",
+          // Manual, because automatic signing insists on a development team
+          // the moment the identity is anything but ad-hoc.
+          "CODE_SIGN_STYLE": "Manual",
+          "PROVISIONING_PROFILE_SPECIFIER": "",
           "SWIFT_EMIT_LOC_STRINGS": "YES",
           "SWIFT_ENABLE_EMIT_CONST_VALUES": "YES",
           "SWIFT_ENFORCE_EXCLUSIVE_ACCESS": "debug-only",

@@ -35,3 +35,11 @@ cp -R "$PACKAGE_DIR/share/nvim/runtime/" "$RUNTIME_DIR"
 cp -R "$PACKAGE_DIR/lib/nvim/" "$RUNTIME_DIR"
 cp -R "$PROJECT_DIR/NeovimRuntime/src/nimb-gui" "$RUNTIME_DIR/lua"
 cp "$PROJECT_DIR/NeovimRuntime/src/init.lua" "$DESTINATION_DIR"
+
+# Xcode signs the app wrapper after every build phase, but never the Mach-O
+# files copied here, and an unsigned one invalidates the bundle's signature.
+IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY_NAME:-${CODE_SIGN_IDENTITY:--}}"
+codesign --force --timestamp=none --sign "$IDENTITY" \
+  "$TARGET_BUILD_DIR/$EXECUTABLE_FOLDER_PATH/nvim"
+find "$RUNTIME_DIR" -name '*.so' -exec \
+  codesign --force --timestamp=none --sign "$IDENTITY" {} +
