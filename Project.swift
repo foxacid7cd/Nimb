@@ -126,6 +126,35 @@ let project = Project(
         "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)",
         "LSApplicationCategoryType": "public.app-category.developer-tools",
         "NSPrincipalClass": "NSApplication",
+        "CFBundleDocumentTypes": .array([
+          .dictionary([
+            "CFBundleTypeName": "Text Document",
+            "CFBundleTypeRole": "Editor",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": .array([
+              "public.text",
+              "public.plain-text",
+              "public.source-code",
+              "public.script",
+              "public.shell-script",
+              "public.xml",
+              "public.json",
+              "public.yaml",
+              "net.daringfireball.markdown",
+            ]),
+          ]),
+          // Any other file, the way a plain-text editor takes anything it is
+          // handed, and directories, which Neovim opens with its file browser.
+          .dictionary([
+            "CFBundleTypeName": "Any File",
+            "CFBundleTypeRole": "Editor",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": .array([
+              "public.data",
+              "public.folder",
+            ]),
+          ]),
+        ]),
         "NSHumanReadableCopyright": "Copyright © 2022 foxacid7cd. All rights reserved.",
       ]),
       sources: ["Nimb/Sources/**"],

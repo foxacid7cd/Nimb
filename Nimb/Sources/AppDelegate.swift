@@ -24,6 +24,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   private var appliedGuifont: String? = nil
 
+  /// Files handed over by Launch Services, held until Neovim is attached: the
+  /// first ones arrive before the process has even been spawned.
+  private var pendingOpenURLs = [URL]()
+  private var isNeovimAttached = false
+
   override public init() {
     super.init()
   }
@@ -69,6 +74,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     logger.debug("Application did finish launching")
   }
 
+  public func application(_: NSApplication, open urls: [URL]) {
+    pendingOpenURLs.append(contentsOf: urls)
+    openPendingURLs()
+  }
+
   public func applicationWillTerminate(_: Notification) {
     logger.debug("Application will terminate")
   }
@@ -79,6 +89,29 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func applicationWillResignActive(_: Notification) {
     store?.dispatch(Actions.SetApplicationActive(value: false))
+  }
+
+  private func openPendingURLs() {
+    guard isNeovimAttached, !pendingOpenURLs.isEmpty, let store else {
+      return
+    }
+    let paths = pendingOpenURLs.map { Value.string($0.path(percentEncoded: false)) }
+    pendingOpenURLs.removeAll()
+
+    // Paths travel as Lua arguments rather than spliced into a command, so
+    // one containing a space or a backslash cannot become something else.
+    store.api.fastCall(APIFunctions.NvimExecLua(
+      code: """
+      for index, path in ipairs(...) do
+        if index == 1 then
+          vim.cmd.drop(vim.fn.fnameescape(path))
+        else
+          vim.cmd.badd(vim.fn.fnameescape(path))
+        end
+      end
+      """,
+      args: [.array(paths)],
+    ))
   }
 
   private func applyGuifontIfNeeded(state: State) {
@@ -105,6 +138,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   /// Called from the main actor already, so it renders inline rather than in a
   /// task that could paint out of order with the next frame's.
   private func render(state: State, updates: State.Updates) {
+    if !isNeovimAttached {
+      // Updates only start once the UI is attached, so the first one is the
+      // signal that API calls will be answered.
+      isNeovimAttached = true
+      openPendingURLs()
+    }
     if updates.isRawOptionsUpdated {
       applyGuifontIfNeeded(state: state)
     }
