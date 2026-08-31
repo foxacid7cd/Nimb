@@ -21,20 +21,38 @@ function M.scroll(direction, count)
   vim.api.nvim_feedkeys(multipleKeys, "n", false)
 end
 
-function M.buf_text_for_copy()
-  local a_orig = vim.fn.getreg("a")
-  local mode = vim.fn.mode()
+local visual_modes = { v = true, V = true, ["\22"] = true }
 
-  if mode ~= "v" and mode ~= "V" then
-    vim.cmd([[normal! V]])
+---The visual selection, or the current line when nothing is selected, read
+---without touching a register or leaving the mode the user is in.
+function M.buf_text_for_copy()
+  local mode = vim.fn.mode()
+  if not visual_modes[mode] then
+    return r.success(vim.api.nvim_get_current_line() .. "\n")
   end
 
-  vim.cmd([[normal! "aygv]])
-
-  local text = vim.fn.getreg("a")
-  vim.fn.setreg("a", a_orig)
-
+  local lines = vim.fn.getregion(vim.fn.getpos("v"), vim.fn.getpos("."), { type = mode })
+  local text = table.concat(lines, "\n")
+  -- Linewise selections carry their final newline, the way yanking them does.
+  if mode == "V" then
+    text = text .. "\n"
+  end
   return r.success(text)
+end
+
+---Copies, then deletes what it took. Only where deleting means something: in
+---insert or terminal mode there is nothing selected to cut.
+function M.cut()
+  local mode = vim.fn.mode()
+  if visual_modes[mode] then
+    local result = M.buf_text_for_copy()
+    vim.api.nvim_feedkeys("d", "nx", false)
+    return result
+  elseif mode == "n" then
+    local result = M.buf_text_for_copy()
+    vim.api.nvim_feedkeys("dd", "nx", false)
+    return result
+  end
 end
 
 ---Runs an Ex command given as a dict. Arguments are passed through rather than

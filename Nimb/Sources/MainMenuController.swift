@@ -50,6 +50,11 @@ final class MainMenuController: NSObject, Rendering {
     keyEquivalent: "w",
   )
   private let editMenu = NSMenu(title: "Edit")
+  private let cutItem = NSMenuItem(
+    title: "Cut",
+    action: #selector(handleCut),
+    keyEquivalent: "x",
+  )
   private let copyItem = NSMenuItem(
     title: "Copy",
     action: #selector(handleCopy),
@@ -92,6 +97,8 @@ final class MainMenuController: NSObject, Rendering {
     fileMenu.addItem(closeWindowMenuItem)
 
     let editMenu = NSMenu(title: "Edit")
+    cutItem.target = self
+    editMenu.addItem(cutItem)
     copyItem.target = self
     editMenu.addItem(copyItem)
     pasteItem.target = self
@@ -281,16 +288,28 @@ final class MainMenuController: NSObject, Rendering {
     ))
   }
 
-  @objc private func handleCopy() {
+  @objc private func handleCut() {
     Task {
-      guard let text = await requestTextForCopy() else {
+      guard let text = await requestText(nimbMethod: "cut") else {
         return
       }
-
-      let pasteboard = NSPasteboard.general
-      pasteboard.clearContents()
-      pasteboard.setString(text, forType: .string)
+      write(toPasteboard: text)
     }
+  }
+
+  @objc private func handleCopy() {
+    Task {
+      guard let text = await requestText(nimbMethod: "buf_text_for_copy") else {
+        return
+      }
+      write(toPasteboard: text)
+    }
+  }
+
+  private func write(toPasteboard text: String) {
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents()
+    pasteboard.setString(text, forType: .string)
   }
 
   @objc private func handlePaste() {
@@ -361,7 +380,7 @@ final class MainMenuController: NSObject, Rendering {
     }
   }
 
-  private func requestTextForCopy() async -> String? {
+  private func requestText(nimbMethod: String) async -> String? {
     guard
       let mode = state.mode,
       let modeInfo = state.modeInfo
@@ -373,7 +392,7 @@ final class MainMenuController: NSObject, Rendering {
     let firstCharacter = shortName?.lowercased().first
     if ["i", "n", "o", "r", "s", "v"].contains(firstCharacter) {
       guard
-        let rawSuccess = try? await store.api.nimb(method: "buf_text_for_copy"),
+        let rawSuccess = try? await store.api.nimb(method: nimbMethod),
         case let .string(text) = rawSuccess
       else {
         return nil
