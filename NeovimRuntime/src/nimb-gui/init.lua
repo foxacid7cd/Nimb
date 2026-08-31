@@ -37,46 +37,40 @@ function M.buf_text_for_copy()
   return r.success(text)
 end
 
-function M.edit(path)
-  local escaped = vim.fn.escape(path, "\"\\")
-  vim.v.errmsg = ""
-  vim.cmd(([[silent! edit %s]]):format(escaped))
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
+---Runs an Ex command given as a dict. Arguments are passed through rather than
+---spliced into a command line, so a path needs no escaping. Most callers do not
+---wait for the reply, so a failure is also reported in the message area.
+---@param cmd table
+local function run(cmd)
+  -- No file magic: a path holding % or # is a path, not a reference to the
+  -- current or alternate file.
+  cmd.magic = { file = false, bar = false }
+  local ok, err = pcall(vim.api.nvim_cmd, cmd, {})
+  if not ok then
+    vim.notify(err, vim.log.levels.ERROR)
+    return r.failure(err)
   end
+end
+
+function M.edit(path)
+  return run({ cmd = "edit", args = { path } })
 end
 
 function M.write()
-  vim.v.errmsg = ""
-  vim.cmd([[silent! write]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
-  end
+  return run({ cmd = "write" })
 end
 
 function M.save_as(path)
-  local escaped = vim.fn.escape(path, "\"\\")
-  vim.v.errmsg = ""
-  vim.cmd(([[silent! saveas %s]]):format(escaped))
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
-  end
+  -- bang: the save panel already asked about replacing an existing file.
+  return run({ cmd = "saveas", bang = true, args = { path } })
 end
 
 function M.close()
-  vim.v.errmsg = ""
-  vim.cmd([[silent! close]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
-  end
+  return run({ cmd = "close" })
 end
 
 function M.quit_all()
-  vim.v.errmsg = ""
-  vim.cmd([[silent! qa]])
-  if vim.v.errmsg ~= "" then
-    return r.failure(vim.v.errmsg)
-  end
+  return run({ cmd = "qall" })
 end
 
 function M.echo_err(text)

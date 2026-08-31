@@ -135,31 +135,54 @@ final class MainMenuController: NSObject, Rendering {
   }
 
   @objc private func handleSave() {
-    store.api.nimbFast(method: "write")
+    Task {
+      guard let buf = await getCurrentBufferInfo() else {
+        return
+      }
+      // A buffer nvim has no file name for cannot be written; ask for one,
+      // the way every other editor's Save does.
+      if buf.name.isEmpty {
+        saveAs(buffer: buf)
+      } else {
+        store.api.nimbFast(method: "write")
+      }
+    }
   }
 
   @objc private func handleSaveAs() {
     Task {
-      let validBuftypes: Set<String> = ["", "help"]
-
-      guard let buf = await getCurrentBufferInfo(), validBuftypes.contains(buf.type) else {
+      guard let buf = await getCurrentBufferInfo() else {
         return
       }
-
-      let panel = NSSavePanel()
-      panel.showsHiddenFiles = true
-      panel.runModal()
-      let name2 = panel.nameFieldStringValue
-      if name2.isEmpty {
-        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-        panel.nameFieldStringValue = "Untitled"
-      } else {
-        let url = URL(filePath: "panel")
-        panel.directoryURL = url.deletingLastPathComponent()
-        panel.nameFieldStringValue = url.lastPathComponent
-        store.api.nimbFast(method: "save_as", parameters: [.string(url.path(percentEncoded: false))])
-      }
+      saveAs(buffer: buf)
     }
+  }
+
+  private func saveAs(buffer: (name: String, type: String)) {
+    let validBuftypes: Set<String> = ["", "help"]
+    guard validBuftypes.contains(buffer.type) else {
+      return
+    }
+
+    let panel = NSSavePanel()
+    panel.showsHiddenFiles = true
+    panel.canCreateDirectories = true
+    if buffer.name.isEmpty {
+      panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
+      panel.nameFieldStringValue = "Untitled"
+    } else {
+      let url = URL(filePath: buffer.name)
+      panel.directoryURL = url.deletingLastPathComponent()
+      panel.nameFieldStringValue = url.lastPathComponent
+    }
+
+    guard panel.runModal() == .OK, let url = panel.url else {
+      return
+    }
+    store.api.nimbFast(
+      method: "save_as",
+      parameters: [.string(url.path(percentEncoded: false))],
+    )
   }
 
   private func getCurrentBufferInfo() async -> (name: String, type: String)? {
