@@ -16,6 +16,10 @@ TUIST_MANIFESTS := Project.swift Tuist.swift \
                    $(wildcard Tuist/ProjectDescriptionHelpers/*.swift)
 GENERATOR_SRCS  := $(wildcard generate/*.swift)
 
+# `app` installs to this machine, so it builds for this machine only. `archive`
+# is what ships, and stays universal.
+NATIVE_ARCH     := $(shell uname -m)
+
 # Signed with a self-signed local certificate when one is present, so TCC
 # grants survive a rebuild. Falls back to ad-hoc on a clean machine.
 SIGN_IDENTITY   := $(shell security find-identity -p codesigning 2>/dev/null \
@@ -89,7 +93,8 @@ app: project
 	xcodebuild build -workspace "$(NAME).xcworkspace" -scheme "$(NAME)" \
 		-configuration Release -destination "platform=macOS,arch=arm64" \
 		-derivedDataPath "$(DERIVED_DATA)" \
-		NIMB_CODE_SIGN_IDENTITY="$(SIGN_IDENTITY)"
+		NIMB_CODE_SIGN_IDENTITY="$(SIGN_IDENTITY)" \
+		ONLY_ACTIVE_ARCH=YES ARCHS="$(NATIVE_ARCH)"
 	rm -rf "$(INSTALL_DIR)/$(NAME).app"
 	ditto "$(RELEASE_APP)" "$(INSTALL_DIR)/$(NAME).app"
 
