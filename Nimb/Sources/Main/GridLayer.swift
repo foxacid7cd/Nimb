@@ -277,8 +277,16 @@ public nonisolated class GridLayer: CAMetalLayer {
       return false
     }
 
+    // The drawable rounds up to whole pixels, so its size in points is what
+    // maps one point to exactly `scale` pixels. Taking bounds instead stretches
+    // the scene by the rounded-up fraction, and every glyph quad the scene
+    // builder snapped to the pixel grid lands off it, blurred by the sampler.
+    let scale = max(contentsScale, 1)
     let uniforms = MetalUniforms(
-      viewportSize: .init(Float(bounds.width), Float(bounds.height)),
+      viewportSize: .init(
+        Float(drawableSize.width / scale),
+        Float(drawableSize.height / scale),
+      ),
     )
     let bufferCache = prepareBufferCache(renderer: renderer)
     bufferCache.advance()

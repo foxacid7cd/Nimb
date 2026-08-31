@@ -152,7 +152,7 @@ public class GridsView: NSView, Rendering {
           return
         }
 
-        let newFrame = frame.applying(upsideDownTransform)
+        let newFrame = snappedToDevicePixels(frame.applying(upsideDownTransform))
         if gridView.frame != newFrame {
           gridView.frame = newFrame
         }
@@ -200,6 +200,22 @@ public class GridsView: NSView, Rendering {
       arrangedGridViews[id] = view
       return view
     }
+  }
+
+  /// A grid view's frame is a multiple of the cell size, which is fractional,
+  /// so its layer would land between device pixels and be resampled onto them.
+  /// The top-left corner is what the glyphs are laid out from, so that is the
+  /// corner rounded to the nearest pixel; the rest grows outwards.
+  private func snappedToDevicePixels(_ frame: CGRect) -> CGRect {
+    let scale = window?.backingScaleFactor ?? 1
+    guard scale > 0 else {
+      return frame
+    }
+    let minX = (frame.minX * scale).rounded() / scale
+    let maxY = (frame.maxY * scale).rounded() / scale
+    let maxX = (frame.maxX * scale).rounded(.up) / scale
+    let minY = (frame.minY * scale).rounded(.down) / scale
+    return .init(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
   }
 
   /// Frontmost visible grid under the event, or the outer grid: separators and
