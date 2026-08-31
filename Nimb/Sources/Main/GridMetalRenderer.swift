@@ -118,6 +118,13 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     sampler atlasSampler [[sampler(0)]]
   ) {
     float alpha = atlasTexture.sample(atlasSampler, in.uv).r;
+    // Coverage is blended in a nonlinear space, where a half covered pixel
+    // reads as much darker than half. Light glyphs on a dark ground lose
+    // weight from that and dark glyphs on a light one gain it, so the curve
+    // leans on the glyph's own luminance. CoreGraphics corrects text the same
+    // way when it composites a mask itself.
+    float luminance = dot(in.color.rgb, float3(0.2126, 0.7152, 0.0722));
+    alpha = pow(alpha, mix(1.15, 0.72, luminance));
     return float4(in.color.rgb, in.color.a * alpha);
   }
   """#
@@ -183,8 +190,10 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     }
 
     let samplerDescriptor = MTLSamplerDescriptor()
-    samplerDescriptor.minFilter = .linear
-    samplerDescriptor.magFilter = .linear
+    // One texel per pixel, so there is nothing to interpolate between: linear
+    // filtering could only soften a glyph that is off by a rounding error.
+    samplerDescriptor.minFilter = .nearest
+    samplerDescriptor.magFilter = .nearest
     samplerDescriptor.sAddressMode = .clampToEdge
     samplerDescriptor.tAddressMode = .clampToEdge
 

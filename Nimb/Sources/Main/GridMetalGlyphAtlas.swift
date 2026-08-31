@@ -180,6 +180,8 @@ final nonisolated class GridMetalGlyphAtlas {
     // of the font smoothing CoreGraphics applies to text.
     context.setShouldAntialias(true)
     context.setAllowsAntialiasing(true)
+    // Smoothing dilates the stems, which at this size is what keeps most of a
+    // stem's pixels fully covered rather than half covered.
     context.setShouldSmoothFonts(true)
     context.setAllowsFontSmoothing(true)
     context.setFillColor(gray: 1, alpha: 1)
