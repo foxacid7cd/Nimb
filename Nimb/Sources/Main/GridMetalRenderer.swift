@@ -45,6 +45,9 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     float4 position [[position]];
     float2 uv;
     float4 color;
+    // Constant across the quad, so it is neither recomputed per fragment nor
+    // interpolated across one.
+    float gammaExponent [[flat]];
   };
 
   constant float2 quadCorners[4] = {
@@ -109,6 +112,8 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
       corner.y * instance.uvSize.y
     );
     out.color = instance.color;
+    float luminance = dot(instance.color.rgb, float3(0.2126, 0.7152, 0.0722));
+    out.gammaExponent = mix(1.15, 0.72, luminance);
     return out;
   }
 
@@ -120,11 +125,10 @@ final nonisolated class GridMetalRenderer: @unchecked Sendable {
     float alpha = atlasTexture.sample(atlasSampler, in.uv).r;
     // Coverage is blended in a nonlinear space, where a half covered pixel
     // reads as much darker than half. Light glyphs on a dark ground lose
-    // weight from that and dark glyphs on a light one gain it, so the curve
+    // weight from that and dark glyphs on a light one gain it, so the exponent
     // leans on the glyph's own luminance. CoreGraphics corrects text the same
     // way when it composites a mask itself.
-    float luminance = dot(in.color.rgb, float3(0.2126, 0.7152, 0.0722));
-    alpha = pow(alpha, mix(1.15, 0.72, luminance));
+    alpha = powr(alpha, in.gammaExponent);
     return float4(in.color.rgb, in.color.a * alpha);
   }
   """#
