@@ -79,6 +79,21 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     openPendingURLs()
   }
 
+  /// Quitting from the Dock, the Apple menu or a logout never reaches the menu
+  /// handler. Neovim is asked to quit instead, and terminating is left to the
+  /// process exiting, so a cancelled prompt leaves everything running.
+  public func applicationShouldTerminate(
+    _: NSApplication,
+  )
+    -> NSApplication.TerminateReply
+  {
+    guard let store, isNeovimAttached else {
+      return .terminateNow
+    }
+    store.api.nimbFast(method: "quit_all")
+    return .terminateCancel
+  }
+
   public func applicationWillTerminate(_: Notification) {
     logger.debug("Application will terminate")
   }

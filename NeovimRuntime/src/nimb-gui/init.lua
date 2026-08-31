@@ -65,12 +65,14 @@ function M.save_as(path)
   return run({ cmd = "saveas", bang = true, args = { path } })
 end
 
+-- confirm: quitting is where unsaved work is lost, so Neovim asks rather than
+-- refusing with an error the user has no way to answer.
 function M.close()
-  return run({ cmd = "close" })
+  return run({ cmd = "quit", mods = { confirm = true } })
 end
 
 function M.quit_all()
-  return run({ cmd = "qall" })
+  return run({ cmd = "qall", mods = { confirm = true } })
 end
 
 function M.echo_err(text)
