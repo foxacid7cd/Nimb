@@ -113,20 +113,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     let paths = pendingOpenURLs.map { Value.string($0.path(percentEncoded: false)) }
     pendingOpenURLs.removeAll()
 
-    // Paths travel as Lua arguments rather than spliced into a command, so
-    // one containing a space or a backslash cannot become something else.
-    store.api.fastCall(APIFunctions.NvimExecLua(
-      code: """
-      for index, path in ipairs(...) do
-        if index == 1 then
-          vim.cmd.drop(vim.fn.fnameescape(path))
-        else
-          vim.cmd.badd(vim.fn.fnameescape(path))
-        end
-      end
-      """,
-      args: [.array(paths)],
-    ))
+    store.api.nimbFast(method: "open_paths", parameters: [.array(paths)])
   }
 
   private func applyGuifontIfNeeded(state: State) {

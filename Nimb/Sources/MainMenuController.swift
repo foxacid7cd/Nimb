@@ -29,6 +29,11 @@ final class MainMenuController: NSObject, Rendering {
     action: #selector(handleOpen),
     keyEquivalent: "o",
   )
+  private let openFolderMenuItem = NSMenuItem(
+    title: "Open Folder",
+    action: #selector(handleOpenFolder),
+    keyEquivalent: "o",
+  )
   private let saveMenuItem = NSMenuItem(
     title: "Save",
     action: #selector(handleSave),
@@ -72,6 +77,9 @@ final class MainMenuController: NSObject, Rendering {
     let fileMenu = NSMenu(title: "File")
     openMenuItem.target = self
     fileMenu.addItem(openMenuItem)
+    openFolderMenuItem.target = self
+    openFolderMenuItem.keyEquivalentModifierMask = [.shift, .command]
+    fileMenu.addItem(openFolderMenuItem)
     fileMenu.addItem(.separator())
     saveMenuItem.target = self
     saveMenuItem.keyEquivalentModifierMask = [.command]
@@ -121,17 +129,29 @@ final class MainMenuController: NSObject, Rendering {
 
   @objc private func handleOpen() {
     let panel = NSOpenPanel()
-    panel.canChooseDirectories = true
+    panel.canChooseDirectories = false
     panel.showsHiddenFiles = true
-    switch panel.runModal() {
-    case .OK:
-      if let url = panel.url {
-        store.api.nimbFast(method: "edit", parameters: [.string(url.path(percentEncoded: false))])
-      }
-
-    default:
-      break
+    guard panel.runModal() == .OK, let url = panel.url else {
+      return
     }
+    store.api.nimbFast(
+      method: "edit",
+      parameters: [.string(url.path(percentEncoded: false))],
+    )
+  }
+
+  @objc private func handleOpenFolder() {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.showsHiddenFiles = true
+    guard panel.runModal() == .OK, let url = panel.url else {
+      return
+    }
+    store.api.nimbFast(
+      method: "open_folder",
+      parameters: [.string(url.path(percentEncoded: false))],
+    )
   }
 
   @objc private func handleSave() {

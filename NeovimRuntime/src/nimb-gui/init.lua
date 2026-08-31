@@ -56,6 +56,44 @@ function M.edit(path)
   return run({ cmd = "edit", args = { path } })
 end
 
+---Opens a directory and makes it the working directory, which is what opening
+---a project folder is expected to mean.
+---@param path string
+function M.open_folder(path)
+  local failure = run({ cmd = "cd", args = { path } })
+  if failure then
+    return failure
+  end
+  return run({ cmd = "edit", args = { path } })
+end
+
+---Opens paths handed over by the system: the first in the current window, the
+---rest as buffers, a directory as the working directory.
+---@param paths string[]
+function M.open_paths(paths)
+  for index, path in ipairs(paths) do
+    if vim.fn.isdirectory(path) == 1 then
+      local failure = M.open_folder(path)
+      if failure then
+        return failure
+      end
+    else
+      -- The buffer API rather than :drop and :badd, which take several file
+      -- arguments and so split a path on its spaces.
+      local buffer = vim.fn.bufadd(path)
+      vim.bo[buffer].buflisted = true
+      if index == 1 then
+        local window = vim.fn.win_findbuf(buffer)[1]
+        if window then
+          vim.api.nvim_set_current_win(window)
+        else
+          vim.api.nvim_win_set_buf(0, buffer)
+        end
+      end
+    end
+  end
+end
+
 function M.write()
   return run({ cmd = "write" })
 end
