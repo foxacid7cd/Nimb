@@ -50,6 +50,16 @@ final class MainMenuController: NSObject, Rendering {
     keyEquivalent: "w",
   )
   private let editMenu = NSMenu(title: "Edit")
+  private let undoItem = NSMenuItem(
+    title: "Undo",
+    action: #selector(handleUndo),
+    keyEquivalent: "z",
+  )
+  private let redoItem = NSMenuItem(
+    title: "Redo",
+    action: #selector(handleRedo),
+    keyEquivalent: "z",
+  )
   private let cutItem = NSMenuItem(
     title: "Cut",
     action: #selector(handleCut),
@@ -64,6 +74,11 @@ final class MainMenuController: NSObject, Rendering {
     title: "Paste",
     action: #selector(handlePaste),
     keyEquivalent: "v",
+  )
+  private let selectAllItem = NSMenuItem(
+    title: "Select All",
+    action: #selector(handleSelectAll),
+    keyEquivalent: "a",
   )
   private let viewMenu = NSMenu(title: "View")
   private let debugMenu = NSMenu(title: "Debug")
@@ -97,12 +112,21 @@ final class MainMenuController: NSObject, Rendering {
     fileMenu.addItem(closeWindowMenuItem)
 
     let editMenu = NSMenu(title: "Edit")
+    undoItem.target = self
+    editMenu.addItem(undoItem)
+    redoItem.target = self
+    redoItem.keyEquivalentModifierMask = [.shift, .command]
+    editMenu.addItem(redoItem)
+    editMenu.addItem(.separator())
     cutItem.target = self
     editMenu.addItem(cutItem)
     copyItem.target = self
     editMenu.addItem(copyItem)
     pasteItem.target = self
     editMenu.addItem(pasteItem)
+    editMenu.addItem(.separator())
+    selectAllItem.target = self
+    editMenu.addItem(selectAllItem)
 
     viewMenu.delegate = self
 
@@ -286,6 +310,18 @@ final class MainMenuController: NSObject, Rendering {
       history: true,
       opts: [:],
     ))
+  }
+
+  @objc private func handleUndo() {
+    store.api.nimbFast(method: "undo")
+  }
+
+  @objc private func handleRedo() {
+    store.api.nimbFast(method: "redo")
+  }
+
+  @objc private func handleSelectAll() {
+    store.api.nimbFast(method: "select_all")
   }
 
   @objc private func handleCut() {

@@ -55,6 +55,10 @@ function M.cut()
   end
 end
 
+local function escape_key()
+  return vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
+end
+
 ---Runs an Ex command given as a dict. Arguments are passed through rather than
 ---spliced into a command line, so a path needs no escaping. Most callers do not
 ---wait for the reply, so a failure is also reported in the message area.
@@ -68,6 +72,40 @@ local function run(cmd)
     vim.notify(err, vim.log.levels.ERROR)
     return r.failure(err)
   end
+end
+
+---Leaves insert or replace mode first, so an undo takes the whole insert with
+---it rather than whatever came before it.
+local function undo_redo(cmd)
+  local mode = vim.fn.mode()
+  if mode == "t" or mode == "c" then
+    return
+  end
+  if mode ~= "n" and not visual_modes[mode] then
+    vim.api.nvim_feedkeys(escape_key(), "nx", false)
+  end
+  return run({ cmd = cmd })
+end
+
+function M.undo()
+  return undo_redo("undo")
+end
+
+function M.redo()
+  return undo_redo("redo")
+end
+
+---Selects the whole buffer, linewise, whatever mode the user is in.
+function M.select_all()
+  local mode = vim.fn.mode()
+  if mode == "t" or mode == "c" then
+    return
+  end
+  local keys = ""
+  if mode ~= "n" and not visual_modes[mode] then
+    keys = escape_key()
+  end
+  vim.api.nvim_feedkeys(keys .. "ggVG", "nx", false)
 end
 
 function M.edit(path)
