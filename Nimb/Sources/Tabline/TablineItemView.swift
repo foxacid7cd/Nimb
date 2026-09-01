@@ -36,6 +36,7 @@ class TablineItemView: NSView, Rendering {
   private let textField = NSTextField(labelWithString: "")
   private var trackingArea: NSTrackingArea? = nil
   private var isMouseInside = false
+  private var isPressed = false
   private var shouldRedrawImageViews = false
   private var isAnimated = false
 
@@ -57,13 +58,6 @@ class TablineItemView: NSView, Rendering {
     textField.leading(to: self, offset: 12)
     textField.trailing(to: self, offset: -12)
     textField.centerY(to: self)
-
-    let clickGestureRecognizer = NSClickGestureRecognizer(
-      target: self,
-      action: #selector(handleClick),
-    )
-    clickGestureRecognizer.delaysPrimaryMouseButtonEvents = true
-    addGestureRecognizer(clickGestureRecognizer)
 
     render()
   }
@@ -97,6 +91,31 @@ class TablineItemView: NSView, Rendering {
     render()
   }
 
+  /// The label and the background images are decoration. Taking every mouse
+  /// event inside the item keeps a press from landing on one of them instead.
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    let localPoint = superview.map { convert(point, from: $0) } ?? point
+    return bounds.contains(localPoint) ? self : nil
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    setPressed(true)
+  }
+
+  /// A press follows the cursor out of the item and back in, the way every
+  /// other button on the platform does.
+  override func mouseDragged(with event: NSEvent) {
+    setPressed(contains(event))
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    let wasPressed = isPressed
+    setPressed(false)
+    if wasPressed, contains(event) {
+      clicked?()
+    }
+  }
+
   func render() {
     textField.attributedStringValue = .init(string: text)
 
@@ -105,15 +124,47 @@ class TablineItemView: NSView, Rendering {
       shouldRedrawImageViews = false
     }
 
+    // A press reads as the stronger version of a hover, and it registers
+    // immediately: an animated press lags behind the finger.
     CATransaction.begin()
-    CATransaction.setAnimationDuration(isAnimated ? 0.07 : 0)
+    CATransaction.setAnimationDuration(isAnimated && !isPressed ? 0.07 : 0)
     CATransaction.setAnimationTimingFunction(.init(name: .linear))
-    backgroundImageView.animator().alphaValue = isSelected ? 0 : isMouseInside ? 0.75 : 1
-    accentBackgroundImageView.animator().alphaValue = isSelected ? 1 : 0
-    textField.animator().alphaValue = isSelected ? 0.95 : 0.8
+    backgroundImageView.animator().alphaValue =
+      if isSelected {
+        0
+      } else if isPressed {
+        0.5
+      } else if isMouseInside {
+        0.75
+      } else {
+        1
+      }
+    accentBackgroundImageView.animator().alphaValue =
+      if isSelected {
+        isPressed ? 0.75 : 1
+      } else if isPressed {
+        0.35
+      } else if isMouseInside {
+        0.15
+      } else {
+        0
+      }
+    textField.animator().alphaValue = isSelected ? 0.95 : isMouseInside || isPressed ? 0.95 : 0.8
     CATransaction.commit()
 
     isAnimated = true
+  }
+
+  private func contains(_ event: NSEvent) -> Bool {
+    bounds.contains(convert(event.locationInWindow, from: nil))
+  }
+
+  private func setPressed(_ isPressed: Bool) {
+    guard isPressed != self.isPressed else {
+      return
+    }
+    self.isPressed = isPressed
+    render()
   }
 
   private func redrawImageViews() {
@@ -172,9 +223,5 @@ class TablineItemView: NSView, Rendering {
       font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
     }
     return font
-  }
-
-  @objc private func handleClick(_: NSClickGestureRecognizer) {
-    clicked?()
   }
 }

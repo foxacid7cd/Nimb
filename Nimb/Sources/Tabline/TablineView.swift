@@ -196,16 +196,11 @@ final class TablineView: NSVisualEffectView, Rendering {
     )
   }
 
+  /// Items take their own mouse events, so anything arriving here is empty
+  /// title bar: the whole of it drags the window, including the gaps between
+  /// items, which is what a title bar does everywhere else.
   override func mouseDown(with event: NSEvent) {
-    let location = convert(event.locationInWindow, from: nil)
-    if
-      buffersScrollView.frame.contains(location) || tabsScrollView.frame
-        .contains(location)
-    {
-      super.mouseDown(with: event)
-    } else {
-      window!.performDrag(with: event)
-    }
+    window?.performDrag(with: event)
   }
 
   func render() {
