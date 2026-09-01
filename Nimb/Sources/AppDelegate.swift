@@ -318,9 +318,18 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     )
   }
 
+  /// Scoped to the grid window. The monitor sees every key the application
+  /// gets and returning nil swallows it, so an unscoped one takes typing away
+  /// from a settings field or a save panel, which run in this process too.
   private func setupKeyDownMonitor(store: Store) {
+    let gridWindow = mainWindowController?.window.map(ObjectIdentifier.init)
+
     keyDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      if event.modifierFlags.contains(.command) {
+      guard
+        !event.modifierFlags.contains(.command),
+        let window = event.window,
+        ObjectIdentifier(window) == gridWindow
+      else {
         return event
       }
       store.api.keyPressed(.init(event: event))
