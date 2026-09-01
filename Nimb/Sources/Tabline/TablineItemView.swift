@@ -140,9 +140,11 @@ class TablineItemView: NSView, Rendering {
       } else {
         1
       }
+    // A selected item does not react to the mouse: clicking it selects what is
+    // already selected, so there is nothing to give feedback about.
     let accentAlpha: Double =
       if isSelected {
-        isPressed ? 0.75 : 1
+        1
       } else if isPressed {
         0.35
       } else if isMouseInside {
