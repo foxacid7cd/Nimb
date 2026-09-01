@@ -7,6 +7,7 @@ import SwiftUI
 @PublicInit
 public struct Color: Sendable, Hashable {
   public static let black = Color(rgb: 0)
+  public static let clear = Color(rgb: 0, alpha: 0)
 
   public var rgb: Int
   public var alpha: Double = 1

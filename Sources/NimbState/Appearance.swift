@@ -32,7 +32,7 @@ public struct Appearance: Sendable {
   public var highlights: IntKeyedDictionary<Highlight> = [:]
   public var observedHighlights: TreeDictionary<ObservedHighlightName, Int> = [:]
   public var defaultForegroundColor: Color = .black
-  public var defaultBackgroundColor: Color = .black
+  public var defaultBackgroundColor: Color = .clear
   public var defaultSpecialColor: Color = .black
 
   public func observedHighlight(_ name: ObservedHighlightName) -> Highlight? {
