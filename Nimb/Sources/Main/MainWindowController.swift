@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbState
 
 public class MainWindowController: NSWindowController, Rendering {
   private class CustomWindow: NSWindow {
@@ -88,6 +89,14 @@ public class MainWindowController: NSWindowController, Rendering {
 }
 
 extension MainWindowController: NSWindowDelegate {
+  public func windowDidBecomeKey(_: Notification) {
+    store.dispatch(Actions.SetWindowKey(value: true))
+  }
+
+  public func windowDidResignKey(_: Notification) {
+    store.dispatch(Actions.SetWindowKey(value: false))
+  }
+
   public func windowDidResize(_: Notification) {
     if isWindowInitiallyShown {
       viewController.reportOuterGridSizeChanged()

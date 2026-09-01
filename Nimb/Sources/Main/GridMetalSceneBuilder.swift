@@ -331,7 +331,7 @@ final nonisolated class GridMetalSceneBuilder {
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(snapshot.upsideDownTransform)
 
-    let isHollow = !snapshot.isApplicationActive && cursorDrawRun.isHollowWhenInactive
+    let isHollow = !snapshot.isWindowKey && cursorDrawRun.isHollowWhenInactive
 
     // Slot zero: the cursor belongs to no row and never needs re-basing.
     let cursorRects = isHollow

@@ -611,9 +611,9 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
-  /// An unfocused window gets an outlined block rather than a filled one, so a
-  /// window that is not taking keys does not look like it is. Only the block
-  /// shape: hollowing a bar leaves nothing to see.
+  /// A window that is not taking keys gets an outlined block rather than a
+  /// filled one, so it does not look like it is. Only the block shape:
+  /// hollowing a bar leaves nothing to see.
   public var isHollowWhenInactive: Bool {
     style.cursorShape == .block
   }
@@ -752,10 +752,10 @@ public struct CursorDrawRun: Sendable {
     font: Font,
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform,
-    isApplicationActive: Bool,
+    isWindowKey: Bool,
   ) {
     let (cursorForegroundColor, cursorBackgroundColor) = colors(with: appearance)
-    let isHollow = !isApplicationActive && isHollowWhenInactive
+    let isHollow = !isWindowKey && isHollowWhenInactive
 
     let offset = origin * font.cellSize
     let rect = cellFrame

@@ -71,6 +71,7 @@ public struct State: Sendable {
     public var isMouseOnUpdated: Bool = false
     public var isNimbNotifiesUpdated: Bool = false
     public var isApplicationActiveUpdated: Bool = false
+    public var isWindowKeyUpdated: Bool = false
     public var isErrorExitStatusUpdated: Bool = false
     public var isPendingReattachUpdated: Bool = false
     public var isBellRung: Bool = false
@@ -122,6 +123,7 @@ public struct State: Sendable {
       isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
       isNimbNotifiesUpdated = isNimbNotifiesUpdated || updates.isNimbNotifiesUpdated
       isApplicationActiveUpdated = isApplicationActiveUpdated || updates.isApplicationActiveUpdated
+      isWindowKeyUpdated = isWindowKeyUpdated || updates.isWindowKeyUpdated
       isErrorExitStatusUpdated = isErrorExitStatusUpdated || updates.isErrorExitStatusUpdated
       isPendingReattachUpdated = isPendingReattachUpdated || updates
         .isPendingReattachUpdated
@@ -173,6 +175,9 @@ public struct State: Sendable {
   public var isMouseOn: Bool = true
   public var nimbNotifies: [NimbNotify] = []
   public var isApplicationActive: Bool = false
+  /// The grid window holding focus, which is not the same as the application
+  /// being active: a settings window takes keys away from the grid.
+  public var isWindowKey: Bool = false
   public var errorExitStatus: Int? = nil
 
   /// Cleared once the app has acted on it.
@@ -261,6 +266,9 @@ public struct State: Sendable {
     }
     if updates.isApplicationActiveUpdated {
       isApplicationActive = state.isApplicationActive
+    }
+    if updates.isWindowKeyUpdated {
+      isWindowKey = state.isWindowKey
     }
   }
 

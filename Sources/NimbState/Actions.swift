@@ -72,6 +72,16 @@ public enum Actions {
   }
 
   @PublicInit
+  public struct SetWindowKey: Action {
+    public var value: Bool
+
+    public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      state.isWindowKey = value
+      return .init(needFlush: true, isWindowKeyUpdated: true)
+    }
+  }
+
+  @PublicInit
   public struct SetCursorBlinkingPhase: Action {
     public var value: Bool
 
