@@ -46,8 +46,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
 
   public var renderContext: RenderContext! = nil
 
+  let gridID: Grid.ID
+
   private let store: Store
-  private let gridID: Grid.ID
   private let gridLayer: GridLayer
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   private let scrollbarLayer = CALayer()

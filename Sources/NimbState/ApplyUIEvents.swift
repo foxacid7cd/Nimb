@@ -418,9 +418,10 @@ public extension Actions {
                   anchorGridID: Grid.OuterID,
                   screenRow: params.row,
                   screenColumn: 0,
-                  isFocusable: true,
+                  isFocusable: false,
                   zIndex: params.zindex,
                   compositingIndex: params.compindex,
+                  messageSeparator: params.scrolled && params.row > 0 ? params.sepChar : nil,
                 ),
               )
               state.grids[params.grid]?.isHidden = false

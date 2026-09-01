@@ -273,9 +273,9 @@ public struct State: Sendable {
   }
 
   public func walkingGridFrames(_ body: (_ id: Grid.ID, _ frame: CGRect, _ zPosition: Double) throws -> Void) rethrows {
-    var queue: Deque<(id: Grid.ID, depth: Int, indexInParent: Int)> = [(id: Grid.OuterID, depth: 0, indexInParent: 0)]
-    var layouts = OrderedDictionary<Grid.ID, (size: IntegerSize, positionInParent: CGPoint, depth: Int, indexInParent: Int, floatingZIndex: Int?)>()
-    while let (id, depth, indexInParent) = queue.popFirst() {
+    var queue: Deque<Grid.ID> = [Grid.OuterID]
+    var layouts = OrderedDictionary<Grid.ID, (size: IntegerSize, positionInParent: CGPoint, compositingIndex: Int?)>()
+    while let id = queue.popFirst() {
       guard let grid = grids[id], let gridsHierarchyNode = gridsHierarchy.allNodes[id] else {
         continue
       }
@@ -290,9 +290,7 @@ public struct State: Sendable {
           (
             size: grid.size,
             positionInParent: .init(),
-            depth: depth,
-            indexInParent: indexInParent,
-            floatingZIndex: nil,
+            compositingIndex: nil,
           ),
           forKey: id,
           insertingAt: 0,
@@ -301,33 +299,14 @@ public struct State: Sendable {
       } else if let associatedWindow = grid.associatedWindow {
         switch associatedWindow {
         case let .plain(window):
-          var position: Int?
-          for (index, layout) in layouts.values.enumerated() {
-            if depth < layout.depth {
-              position = index
-              break
-            } else if depth == layout.depth {
-              if layout.floatingZIndex != nil {
-                position = index
-                break
-              }
-              if indexInParent < layout.indexInParent {
-                position = index
-                break
-              }
-            }
-          }
-
           layouts.updateValue(
             (
               size: window.size,
               positionInParent: window.origin * font.cellSize,
-              depth: depth,
-              indexInParent: indexInParent,
-              floatingZIndex: nil,
+              compositingIndex: nil,
             ),
             forKey: id,
-            insertingAt: position ?? layouts.count,
+            insertingAt: layouts.count,
           )
 
         case let .floating(floatingWindow):
@@ -336,27 +315,6 @@ public struct State: Sendable {
           let gridSize = grid.size
           let gridColumn = Double(floatingWindow.screenColumn)
           let gridRow = Double(floatingWindow.screenRow)
-
-          var position: Int?
-          for (index, layout) in layouts.values.enumerated() {
-            if depth < layout.depth {
-              position = index
-              break
-            } else if depth == layout.depth {
-              // compindex is the order nvim itself renders these in.
-              if let layoutFloatingZIndex = layout.floatingZIndex {
-                if floatingWindow.compositingIndex < layoutFloatingZIndex {
-                  position = index
-                  break
-                } else if floatingWindow.compositingIndex == layoutFloatingZIndex {
-                  if indexInParent < layout.indexInParent {
-                    position = index
-                    break
-                  }
-                }
-              }
-            }
-          }
 
           layouts.updateValue(
             (
@@ -367,12 +325,10 @@ public struct State: Sendable {
                 x: gridColumn * font.cellWidth,
                 y: gridRow * font.cellHeight,
               ),
-              depth: depth,
-              indexInParent: indexInParent,
-              floatingZIndex: floatingWindow.compositingIndex,
+              compositingIndex: floatingWindow.compositingIndex,
             ),
             forKey: id,
-            insertingAt: position ?? layouts.count,
+            insertingAt: layouts.count,
           )
 
         case .external:
@@ -380,16 +336,28 @@ public struct State: Sendable {
         }
       }
 
-      let nextDepth = depth + 1
-      for (index, id) in gridsHierarchyNode.children.enumerated() {
-        queue.append((id: id, depth: nextDepth, indexInParent: index))
+      for id in gridsHierarchyNode.children {
+        queue.append(id)
       }
     }
 
     let screenSize = (grids[Grid.OuterID]?.size ?? .init()) * font.cellSize
 
-    for (index, keyValues) in layouts.enumerated() {
-      let (id, layout) = keyValues
+    let orderedLayouts = layouts.enumerated().sorted { lhs, rhs in
+      switch (lhs.element.value.compositingIndex, rhs.element.value.compositingIndex) {
+      case (nil, .some):
+        true
+      case (.some, nil):
+        false
+      case let (.some(lhsIndex), .some(rhsIndex)):
+        lhsIndex == rhsIndex ? lhs.offset < rhs.offset : lhsIndex < rhsIndex
+      case (nil, nil):
+        lhs.offset < rhs.offset
+      }
+    }
+
+    for (index, keyValues) in orderedLayouts.enumerated() {
+      let (id, layout) = keyValues.element
 
       // Clipped to the screen the way Neovim's own compositor clips: the
       // message grid is allocated at full screen height and then positioned

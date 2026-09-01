@@ -25,6 +25,8 @@ public struct FloatingWindow: Sendable, Identifiable {
   /// Neovim's `compindex`. The docs are explicit that a UI should render in
   /// this order rather than deriving one from zindex.
   public var compositingIndex: Int = 0
+
+  public var messageSeparator: String? = nil
 }
 
 @PublicInit
