@@ -279,7 +279,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
               return
             }
             if updates.isOuterGridLayoutUpdated, let outerGrid = state.outerGrid {
-              UserDefaults.standard.outerGridSize = outerGrid.size
+              mainWindowController?.saveWindowGeometry(
+                outerGridSize: outerGrid.size,
+              )
             }
             if updates.isDebugUpdated {
               UserDefaults.standard.debug = state.debug

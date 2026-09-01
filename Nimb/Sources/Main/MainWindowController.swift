@@ -2,6 +2,7 @@
 
 import AppKit
 import NimbCore
+import NimbNeovim
 import NimbState
 
 public class MainWindowController: NSWindowController, Rendering {
@@ -66,7 +67,7 @@ public class MainWindowController: NSWindowController, Rendering {
       isWindowInitiallyShown = true
 
       Task { @MainActor in
-        let contentSize = UserDefaults.standard.lastWindowSize ?? viewController
+        let contentSize = UserDefaults.standard.savedWindowGeometry?.contentSize ?? viewController
           .estimatedContentSize(outerGridSize: outerGrid.size)
         customWindow.setContentSize(contentSize)
         customWindow.makeMain()
@@ -75,8 +76,18 @@ public class MainWindowController: NSWindowController, Rendering {
     }
   }
 
-  private func saveWindowFrame() {
-    UserDefaults.standard.lastWindowSize = customWindow.frame.size
+  public func saveWindowGeometry(outerGridSize: IntegerSize) {
+    guard
+      isWindowInitiallyShown,
+      !customWindow.inLiveResize,
+      let contentSize = customWindow.contentView?.frame.size
+    else {
+      return
+    }
+    UserDefaults.standard.savedWindowGeometry = .init(
+      contentSize: contentSize,
+      outerGridSize: outerGridSize,
+    )
   }
 
   private func renderIsMouseUserInteractionEnabled() {
@@ -99,15 +110,16 @@ extension MainWindowController: NSWindowDelegate {
 
   public func windowDidResize(_: Notification) {
     if isWindowInitiallyShown {
-      viewController.reportOuterGridSizeChanged()
+      let outerGridSize = viewController.reportOuterGridSizeChanged()
       if !customWindow.inLiveResize {
-        saveWindowFrame()
+        saveWindowGeometry(outerGridSize: outerGridSize)
       }
     }
   }
 
   public func windowDidEndLiveResize(_: Notification) {
-    viewController.reportOuterGridSizeChanged()
-    saveWindowFrame()
+    saveWindowGeometry(
+      outerGridSize: viewController.reportOuterGridSizeChanged(),
+    )
   }
 }

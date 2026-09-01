@@ -165,13 +165,15 @@ public class MainViewController: NSViewController, Rendering {
     gridsView.windowFrame(forGridID: gridID, gridFrame: gridFrame)
   }
 
-  public func reportOuterGridSizeChanged() {
-    let outerGridSizeNeeded = IntegerSize(
+  @discardableResult
+  public func reportOuterGridSizeChanged() -> IntegerSize {
+    let outerGridSize = IntegerSize(
       columnsCount: Int(gridsContainerView.frame.width / state.font.cellWidth),
       rowsCount: Int(gridsContainerView.frame.height / state.font.cellHeight),
     )
     reportOuterGridSizeChangedContinuation
-      .yield(outerGridSizeNeeded)
+      .yield(outerGridSize)
+    return outerGridSize
   }
 
   public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {

@@ -3,22 +3,75 @@
 import Foundation
 import NimbCore
 
-/// Preferences that configure the embedded Neovim process itself. Window and
-/// appearance settings stay in the app target.
+@PublicInit
+public struct SavedWindowGeometry: Codable, Sendable {
+  private enum CodingKeys: String, CodingKey {
+    case contentSize
+    case columnsCount
+    case rowsCount
+  }
+
+  public var contentSize: CGSize
+  public var outerGridSize: IntegerSize
+
+  public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    contentSize = try container.decode(CGSize.self, forKey: .contentSize)
+    outerGridSize = try .init(
+      columnsCount: container.decode(Int.self, forKey: .columnsCount),
+      rowsCount: container.decode(Int.self, forKey: .rowsCount),
+    )
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(contentSize, forKey: .contentSize)
+    try container.encode(outerGridSize.columnsCount, forKey: .columnsCount)
+    try container.encode(outerGridSize.rowsCount, forKey: .rowsCount)
+  }
+}
+
+/// Preferences shared by the embedded Neovim process and the app.
 public extension UserDefaults {
-  var outerGridSize: IntegerSize {
+  var savedWindowGeometry: SavedWindowGeometry? {
     get {
+      if
+        let data = value(forKey: "windowGeometry") as? Data,
+        let geometry = try? JSONDecoder().decode(SavedWindowGeometry.self, from: data)
+      {
+        return geometry
+      }
+
       guard
+        let width = value(forKey: "windowWidth") as? Double,
+        let height = value(forKey: "windowHeight") as? Double,
         let columnsCount = value(forKey: "columnsCount") as? Int,
         let rowsCount = value(forKey: "rowsCount") as? Int
       else {
-        return .init(columnsCount: 110, rowsCount: 34)
+        return nil
       }
-      return .init(columnsCount: columnsCount, rowsCount: rowsCount)
+
+      return .init(
+        contentSize: .init(width: width, height: height),
+        outerGridSize: .init(
+          columnsCount: columnsCount,
+          rowsCount: rowsCount,
+        ),
+      )
     }
-    set(value) {
-      set(value.columnsCount, forKey: "columnsCount")
-      set(value.rowsCount, forKey: "rowsCount")
+    set(geometry) {
+      if let geometry {
+        guard let data = try? JSONEncoder().encode(geometry) else {
+          return
+        }
+        set(data, forKey: "windowGeometry")
+      } else {
+        removeObject(forKey: "windowGeometry")
+      }
+      removeObject(forKey: "windowWidth")
+      removeObject(forKey: "windowHeight")
+      removeObject(forKey: "columnsCount")
+      removeObject(forKey: "rowsCount")
     }
   }
 
