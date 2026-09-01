@@ -124,6 +124,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
     let style = state.currentCursorStyle
     guard
+      // An unfocused window shows a steady cursor: it is not taking keys, so
+      // there is nothing for a blink to draw attention to.
+      state.isApplicationActive,
       let blinkWait = style?.blinkWait, blinkWait > 0,
       let blinkOn = style?.blinkOn, blinkOn > 0,
       let blinkOff = style?.blinkOff, blinkOff > 0
@@ -188,7 +191,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
     // Both restart the cycle: a moved cursor waits out blinkwait again, and a
     // mode change may have brought a different set of timings with it.
-    if updates.isCursorUpdated || updates.isModeUpdated {
+    if updates.isCursorUpdated || updates.isModeUpdated || updates.isApplicationActiveUpdated {
       restartCursorBlinking(state: state)
     }
     if updates.isPendingReattachUpdated, let address = state.pendingReattachAddress {

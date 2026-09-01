@@ -69,6 +69,7 @@ nonisolated enum GridCoreGraphicsRenderer {
         font: snapshot.font,
         appearance: snapshot.appearance,
         upsideDownTransform: snapshot.upsideDownTransform,
+        isApplicationActive: snapshot.isApplicationActive,
       )
     }
   }
@@ -113,6 +114,7 @@ nonisolated enum GridCoreGraphicsRenderer {
     if
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
       renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isBusyUpdated
+      || renderInput.updates.isApplicationActiveUpdated
     {
       dirtyRects.append(
         (cursorDrawRun.rectangle * snapshot.font.cellSize)

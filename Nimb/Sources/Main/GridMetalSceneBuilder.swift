@@ -331,12 +331,22 @@ final nonisolated class GridMetalSceneBuilder {
       .offsetBy(dx: offset.x, dy: offset.y)
       .applying(snapshot.upsideDownTransform)
 
-    // Slot zero: the cursor belongs to no row and never needs re-basing.
-    scene.cursorQuads.append(
-      quadInstance(rect: cursorRect, color: cursorBackgroundColor.metal, rowSlot: 0),
-    )
+    let isHollow = !snapshot.isApplicationActive && cursorDrawRun.isHollowWhenInactive
 
+    // Slot zero: the cursor belongs to no row and never needs re-basing.
+    let cursorRects = isHollow
+      ? cursorDrawRun.outlineRects(of: cursorRect, thickness: 1 / max(scale, 1))
+      : [cursorRect]
+    for rect in cursorRects {
+      scene.cursorQuads.append(
+        quadInstance(rect: rect, color: cursorBackgroundColor.metal, rowSlot: 0),
+      )
+    }
+
+    // A hollow cursor leaves the row's own text showing through, so there is
+    // nothing to redraw in the swapped colour.
     if
+      !isHollow,
       cursorDrawRun.shouldDrawParentText,
       let glyphRuns = cursorDrawRun.parentDrawRun.glyphRuns
     {

@@ -611,6 +611,13 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
+  /// An unfocused window gets an outlined block rather than a filled one, so a
+  /// window that is not taking keys does not look like it is. Only the block
+  /// shape: hollowing a bar leaves nothing to see.
+  public var isHollowWhenInactive: Bool {
+    style.cursorShape == .block
+  }
+
   init?(
     layout: GridLayout,
     rowDrawRuns: [RowDrawRun],
@@ -728,13 +735,27 @@ public struct CursorDrawRun: Sendable {
     )
   }
 
+  /// The four edges of `rect`, each `thickness` thick, drawn instead of filling
+  /// it. They overlap at the corners, which costs nothing at one pixel.
+  public func outlineRects(of rect: CGRect, thickness: CGFloat) -> [CGRect] {
+    let thickness = min(thickness, min(rect.width, rect.height) / 2)
+    return [
+      .init(x: rect.minX, y: rect.minY, width: rect.width, height: thickness),
+      .init(x: rect.minX, y: rect.maxY - thickness, width: rect.width, height: thickness),
+      .init(x: rect.minX, y: rect.minY, width: thickness, height: rect.height),
+      .init(x: rect.maxX - thickness, y: rect.minY, width: thickness, height: rect.height),
+    ]
+  }
+
   public func draw(
     to context: CGContext,
     font: Font,
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform,
+    isApplicationActive: Bool,
   ) {
     let (cursorForegroundColor, cursorBackgroundColor) = colors(with: appearance)
+    let isHollow = !isApplicationActive && isHollowWhenInactive
 
     let offset = origin * font.cellSize
     let rect = cellFrame
@@ -745,9 +766,11 @@ public struct CursorDrawRun: Sendable {
     context.setShouldAntialias(false)
 
     context.setFillColor(cursorBackgroundColor.cg)
-    context.fill([rect])
+    context.fill(isHollow ? outlineRects(of: rect, thickness: 1) : [rect])
 
-    if shouldDrawParentText, let glyphRuns = parentDrawRun.glyphRuns {
+    // A hollow cursor leaves the row's own text showing through, so there is
+    // nothing to redraw in the swapped colour.
+    if !isHollow, shouldDrawParentText, let glyphRuns = parentDrawRun.glyphRuns {
       context.clip(to: [rect])
 
       context.setFillColor(cursorForegroundColor.cg)
