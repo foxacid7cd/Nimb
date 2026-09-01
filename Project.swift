@@ -27,6 +27,24 @@ let project = Project(
     defaultSettings: .recommended,
   ),
   targets: [
+    .target(
+      name: "msgpack_c",
+      destinations: Nimb.destinations,
+      product: .staticLibrary,
+      bundleId: "foxacid7cd.msgpack-c",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: ["Third-Party/msgpack-c/src/**"],
+      headers: .headers(public: [
+        "Third-Party/msgpack-c-support/include/**",
+        "Third-Party/msgpack-c/include/**",
+      ]),
+      settings: Nimb.settings(base: [
+        "DEFINES_MODULE": "YES",
+        "HEADER_SEARCH_PATHS": "$(SRCROOT)/Third-Party/msgpack-c-support/include/msgpack $(SRCROOT)/Third-Party/msgpack-c-support/include $(SRCROOT)/Third-Party/msgpack-c/include",
+      ]),
+    ),
+
     // ── Macro plugin ────────────────────────────────────────────────────
     .target(
       name: "NimbMacros",
@@ -54,7 +72,7 @@ let project = Project(
       sources: ["Sources/NimbCore/**"],
       dependencies: [
         .macro(name: "NimbMacros"),
-        Nimb.msgpack,
+        .target(name: "msgpack_c"),
         .package(product: "Algorithms"),
         .package(product: "Collections"),
         .package(product: "CustomDump"),

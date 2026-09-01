@@ -8,14 +8,6 @@ public enum Nimb {
   public static let destinations: Destinations = .macOS
   public static let deploymentTargets: DeploymentTargets = .macOS("15.6")
 
-  /// The prebuilt msgpack-c archive. The dependency supplies the link entry and
-  /// the search paths, including the one that lets `import msgpack_c` resolve.
-  public static let msgpack: TargetDependency = .library(
-    path: "Third-Party/msgpack-c/libmsgpack-c.a",
-    publicHeaders: "Third-Party/msgpack-c/include",
-    swiftModuleMap: "Third-Party/msgpack-c/include/module.modulemap",
-  )
-
   /// The Neovim API bindings, produced by `make generate` and git-ignored.
   /// Declared as generated so a clean checkout still references them.
   public static let generatedSources: [SourceFileGlob] = [

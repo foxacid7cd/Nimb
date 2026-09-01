@@ -1,0 +1,4 @@
+module msgpack_c {
+  header "../../msgpack-c/include/msgpack.h"
+  export *
+}
