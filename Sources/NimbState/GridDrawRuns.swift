@@ -710,23 +710,31 @@ public struct CursorDrawRun: Sendable {
     }
   }
 
+  /// attr_id 0 means "swap the foreground and background colors", and the
+  /// colors it swaps are the ones of the cell the cursor is over. Taking the
+  /// default pair instead loses whatever the text under it was highlighted in.
+  public func colors(with appearance: Appearance)
+    -> (foreground: Color, background: Color)
+  {
+    guard highlightID != .zero else {
+      return (
+        foreground: appearance.backgroundColor(for: parentDrawRun.highlightID),
+        background: appearance.foregroundColor(for: parentDrawRun.highlightID),
+      )
+    }
+    return (
+      foreground: appearance.foregroundColor(for: highlightID),
+      background: appearance.backgroundColor(for: highlightID),
+    )
+  }
+
   public func draw(
     to context: CGContext,
     font: Font,
     appearance: Appearance,
     upsideDownTransform: CGAffineTransform,
   ) {
-    let cursorForegroundColor: Color
-    let cursorBackgroundColor: Color
-
-    if highlightID == .zero {
-      cursorForegroundColor = appearance.defaultBackgroundColor
-      cursorBackgroundColor = appearance.defaultForegroundColor
-
-    } else {
-      cursorForegroundColor = appearance.foregroundColor(for: highlightID)
-      cursorBackgroundColor = appearance.backgroundColor(for: highlightID)
-    }
+    let (cursorForegroundColor, cursorBackgroundColor) = colors(with: appearance)
 
     let offset = origin * font.cellSize
     let rect = cellFrame

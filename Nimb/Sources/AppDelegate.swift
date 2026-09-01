@@ -29,6 +29,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var pendingOpenURLs = [URL]()
   private var isNeovimAttached = false
 
+  private var cursorBlinkTask: Task<Void, Never>? = nil
+
   override public init() {
     super.init()
   }
@@ -116,6 +118,41 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     store.api.nimbFast(method: "open_paths", parameters: [.array(paths)])
   }
 
+  private func restartCursorBlinking(state: State) {
+    cursorBlinkTask?.cancel()
+    cursorBlinkTask = nil
+
+    let style = state.currentCursorStyle
+    guard
+      let blinkWait = style?.blinkWait, blinkWait > 0,
+      let blinkOn = style?.blinkOn, blinkOn > 0,
+      let blinkOff = style?.blinkOff, blinkOff > 0
+    else {
+      // Any of the three at zero turns blinking off, so the cursor stays on.
+      if !state.cursorBlinkingPhase {
+        store?.dispatch(Actions.SetCursorBlinkingPhase(value: true))
+      }
+      return
+    }
+
+    if !state.cursorBlinkingPhase {
+      store?.dispatch(Actions.SetCursorBlinkingPhase(value: true))
+    }
+    cursorBlinkTask = Task { @MainActor [weak self] in
+      do {
+        try await Task.sleep(for: .milliseconds(blinkWait))
+        while true {
+          self?.store?.dispatch(Actions.SetCursorBlinkingPhase(value: false))
+          try await Task.sleep(for: .milliseconds(blinkOff))
+          self?.store?.dispatch(Actions.SetCursorBlinkingPhase(value: true))
+          try await Task.sleep(for: .milliseconds(blinkOn))
+        }
+      } catch {
+        // Cancelled by the next restart, which shows the cursor itself.
+      }
+    }
+  }
+
   private func applyGuifontIfNeeded(state: State) {
     guard
       case let .string(guifont)? = state.rawOptions["guifont"],
@@ -148,6 +185,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
     if updates.isRawOptionsUpdated {
       applyGuifontIfNeeded(state: state)
+    }
+    // Both restart the cycle: a moved cursor waits out blinkwait again, and a
+    // mode change may have brought a different set of timings with it.
+    if updates.isCursorUpdated || updates.isModeUpdated {
+      restartCursorBlinking(state: state)
     }
     if updates.isPendingReattachUpdated, let address = state.pendingReattachAddress {
       reattach(to: address)

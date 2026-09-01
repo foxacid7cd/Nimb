@@ -172,7 +172,9 @@ final nonisolated class GridMetalSceneBuilder {
 
     if
       snapshot.cursorBlinkingPhase,
-      snapshot.isMouseUserInteractionEnabled,
+      // Hidden while Neovim is busy, as busy_start asks. Not tied to the
+      // mouse: 'mouse' being off says nothing about the cursor.
+      !snapshot.isBusy,
       let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
       boundingRect.contains(cursorDrawRun.origin)
     {
@@ -321,16 +323,8 @@ final nonisolated class GridMetalSceneBuilder {
     scale: CGFloat,
     to scene: inout GridMetalScene,
   ) {
-    let cursorForegroundColor: Color
-    let cursorBackgroundColor: Color
-
-    if cursorDrawRun.highlightID == .zero {
-      cursorForegroundColor = snapshot.appearance.defaultBackgroundColor
-      cursorBackgroundColor = snapshot.appearance.defaultForegroundColor
-    } else {
-      cursorForegroundColor = snapshot.appearance.foregroundColor(for: cursorDrawRun.highlightID)
-      cursorBackgroundColor = snapshot.appearance.backgroundColor(for: cursorDrawRun.highlightID)
-    }
+    let (cursorForegroundColor, cursorBackgroundColor) = cursorDrawRun
+      .colors(with: snapshot.appearance)
 
     let offset = cursorDrawRun.origin * snapshot.font.cellSize
     let cursorRect = cursorDrawRun.cellFrame

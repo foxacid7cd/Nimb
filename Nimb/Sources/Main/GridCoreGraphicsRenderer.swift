@@ -60,7 +60,7 @@ nonisolated enum GridCoreGraphicsRenderer {
 
     if
       snapshot.cursorBlinkingPhase,
-      snapshot.isMouseUserInteractionEnabled,
+      !snapshot.isBusy,
       let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
       boundingRect.contains(cursorDrawRun.origin)
     {
@@ -112,7 +112,7 @@ nonisolated enum GridCoreGraphicsRenderer {
 
     if
       let cursorDrawRun = grid.drawRuns.cursorDrawRun,
-      renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isMouseUserInteractionEnabledUpdated
+      renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isBusyUpdated
     {
       dirtyRects.append(
         (cursorDrawRun.rectangle * snapshot.font.cellSize)

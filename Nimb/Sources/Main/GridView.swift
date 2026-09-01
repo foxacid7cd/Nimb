@@ -106,7 +106,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     // The cursor is drawn from the snapshot rather than from a grid update, so
     // anything that gates it has to invalidate on its own.
-    if updates.isMouseUserInteractionEnabledUpdated || updates.isCursorBlinkingPhaseUpdated {
+    if updates.isBusyUpdated || updates.isCursorBlinkingPhaseUpdated {
       return true
     }
     // Both halves of a cursor move arrive here too: .clearCursor to the old
@@ -571,7 +571,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
         font: renderContext.state.font,
         appearance: renderContext.state.appearance,
         cursorBlinkingPhase: renderContext.state.cursorBlinkingPhase,
-        isMouseUserInteractionEnabled: renderContext.state.isMouseUserInteractionEnabled,
+        isBusy: renderContext.state.isBusy,
       ),
       updates: renderContext.updates,
       metalFrame: nil,

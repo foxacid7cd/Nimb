@@ -16,7 +16,7 @@ struct GridDrawSnapshot: Sendable {
   let font: Font
   let appearance: Appearance
   let cursorBlinkingPhase: Bool
-  let isMouseUserInteractionEnabled: Bool
+  let isBusy: Bool
 }
 
 struct GridRenderInput: Sendable {
