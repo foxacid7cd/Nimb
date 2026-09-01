@@ -124,12 +124,13 @@ class TablineItemView: NSView, Rendering {
       shouldRedrawImageViews = false
     }
 
-    // A press reads as the stronger version of a hover, and it registers
-    // immediately: an animated press lags behind the finger.
-    CATransaction.begin()
-    CATransaction.setAnimationDuration(isAnimated && !isPressed ? 0.07 : 0)
-    CATransaction.setAnimationTimingFunction(.init(name: .linear))
-    backgroundImageView.animator().alphaValue =
+    // A press reads as the stronger version of a hover. Pressing lands at
+    // once, an animation there lagging behind the finger; releasing fades back
+    // like every other state change. These are views rather than layers, so the
+    // duration has to come from NSAnimationContext: an animator proxy ignores a
+    // CATransaction around it and animates at the default duration instead.
+    let duration = isAnimated && !isPressed ? 0.07 : 0
+    let backgroundAlpha: Double =
       if isSelected {
         0
       } else if isPressed {
@@ -139,7 +140,7 @@ class TablineItemView: NSView, Rendering {
       } else {
         1
       }
-    accentBackgroundImageView.animator().alphaValue =
+    let accentAlpha: Double =
       if isSelected {
         isPressed ? 0.75 : 1
       } else if isPressed {
@@ -149,8 +150,24 @@ class TablineItemView: NSView, Rendering {
       } else {
         0
       }
-    textField.animator().alphaValue = isSelected ? 0.95 : isMouseInside || isPressed ? 0.95 : 0.8
-    CATransaction.commit()
+    let textAlpha: Double = isSelected || isMouseInside || isPressed ? 0.95 : 0.8
+
+    NSAnimationContext.runAnimationGroup { context in
+      context.duration = duration
+      context.timingFunction = .init(name: .linear)
+
+      func setAlpha(_ alpha: Double, of view: NSView) {
+        if duration > 0 {
+          view.animator().alphaValue = alpha
+        } else {
+          view.alphaValue = alpha
+        }
+      }
+
+      setAlpha(backgroundAlpha, of: backgroundImageView)
+      setAlpha(accentAlpha, of: accentBackgroundImageView)
+      setAlpha(textAlpha, of: textField)
+    }
 
     isAnimated = true
   }
