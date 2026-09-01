@@ -158,20 +158,20 @@ class TablineItemView: NSView, Rendering {
       context.duration = duration
       context.timingFunction = .init(name: .linear)
 
-      func setAlpha(_ alpha: Double, of view: NSView) {
-        if duration > 0 {
-          view.animator().alphaValue = alpha
-        } else {
-          view.alphaValue = alpha
-        }
-      }
-
-      setAlpha(backgroundAlpha, of: backgroundImageView)
-      setAlpha(accentAlpha, of: accentBackgroundImageView)
-      setAlpha(textAlpha, of: textField)
+      setAlpha(backgroundAlpha, of: backgroundImageView, animated: duration > 0)
+      setAlpha(accentAlpha, of: accentBackgroundImageView, animated: duration > 0)
+      setAlpha(textAlpha, of: textField, animated: duration > 0)
     }
 
     isAnimated = true
+  }
+
+  private func setAlpha(_ alpha: Double, of view: NSView, animated: Bool) {
+    if animated {
+      view.animator().alphaValue = alpha
+    } else {
+      view.alphaValue = alpha
+    }
   }
 
   private func contains(_ event: NSEvent) -> Bool {
