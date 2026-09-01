@@ -84,7 +84,9 @@ final class TablineView: NSVisualEffectView, Rendering {
     modeViewWidthConstraint = modeView.width(TablineModeView.trafficLightsWidth)
 
     addSubview(buffersScrollView)
-    buffersScrollView.leadingToTrailing(of: modeView)
+    // Items sit 14 apart while their slanted backgrounds overhang 12, leaving
+    // 2 of separator between them. The mode panel gets the same.
+    buffersScrollView.leadingToTrailing(of: modeView, offset: 2)
     buffersScrollView.top(to: self)
     buffersScrollView.bottom(to: self)
     buffersScrollView.widthToSuperview(
