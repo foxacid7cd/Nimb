@@ -75,6 +75,7 @@ public class MainWindowController: NSWindowController, Rendering {
         customWindow.setContentSize(contentSize)
         customWindow.makeMain()
         customWindow.makeKeyAndOrderFront(nil)
+        customWindow.makeFirstResponder(viewController.gridsView)
       }
     }
   }
@@ -104,6 +105,7 @@ public class MainWindowController: NSWindowController, Rendering {
 
 extension MainWindowController: NSWindowDelegate {
   public func windowDidBecomeKey(_: Notification) {
+    customWindow.makeFirstResponder(viewController.gridsView)
     store.dispatch(Actions.SetWindowKey(value: true))
   }
 

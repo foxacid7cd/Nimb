@@ -50,6 +50,26 @@ private final class MessageSeparatorView: NSView {
   }
 }
 
+private final class MarkedTextView: NSView {
+  override var isFlipped: Bool {
+    true
+  }
+
+  var text = NSAttributedString() {
+    didSet { needsDisplay = true }
+  }
+
+  var backgroundColor = NSColor.clear {
+    didSet { needsDisplay = true }
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    backgroundColor.setFill()
+    dirtyRect.fill()
+    text.draw(at: .zero)
+  }
+}
+
 public class GridsView: NSView, Rendering {
   private enum LeftMouseInteraction {
     case editor(GridView)
@@ -63,6 +83,10 @@ public class GridsView: NSView, Rendering {
     return outerGrid.size * state.font.cellSize
   }
 
+  override public var acceptsFirstResponder: Bool {
+    true
+  }
+
   public var renderContext: RenderContext! = nil
 
   private var store: Store
@@ -72,6 +96,11 @@ public class GridsView: NSView, Rendering {
   private var scrollbarHoverTarget: GridView? = nil
   private var rightMouseInteractionTarget: GridView? = nil
   private var otherMouseInteractionTarget: GridView? = nil
+  private let markedTextView = MarkedTextView()
+  private var markedText = NSAttributedString()
+  private var markedSelectionRange = NSRange(location: NSNotFound, length: 0)
+  private var interpretingKeyEvent: NSEvent? = nil
+  private var didInterpretKeyEvent = false
 
   public var upsideDownTransform: CGAffineTransform {
     .init(scaleX: 1, y: -1)
@@ -88,6 +117,8 @@ public class GridsView: NSView, Rendering {
     canDrawConcurrently = true
     messageSeparatorView.isHidden = true
     addSubview(messageSeparatorView)
+    markedTextView.isHidden = true
+    addSubview(markedTextView)
   }
 
   @available(*, unavailable)
@@ -133,6 +164,11 @@ public class GridsView: NSView, Rendering {
   }
 
   override public func mouseDown(with event: NSEvent) {
+    window?.makeFirstResponder(self)
+    if hasMarkedText() {
+      inputContext?.discardMarkedText()
+      clearMarkedText()
+    }
     if case let .scrollbar(target) = leftMouseInteraction {
       target.endScrollbarInteraction()
     }
@@ -210,6 +246,39 @@ public class GridsView: NSView, Rendering {
 
   override public func scrollWheel(with event: NSEvent) {
     gridView(for: event)?.scrollWheel(with: event)
+  }
+
+  override public func keyDown(with event: NSEvent) {
+    guard !event.modifierFlags.contains(.command) else {
+      super.keyDown(with: event)
+      return
+    }
+    if event.modifierFlags.contains(.control), !hasMarkedText() {
+      store.api.keyPressed(.init(event: event))
+      return
+    }
+
+    interpretingKeyEvent = event
+    didInterpretKeyEvent = false
+    interpretKeyEvents([event])
+    interpretingKeyEvent = nil
+
+    if !didInterpretKeyEvent {
+      store.api.keyPressed(.init(event: event))
+    }
+  }
+
+  override public func resignFirstResponder() -> Bool {
+    inputContext?.discardMarkedText()
+    clearMarkedText()
+    return super.resignFirstResponder()
+  }
+
+  override public func doCommand(by _: Selector) {
+    didInterpretKeyEvent = true
+    if let event = interpretingKeyEvent {
+      store.api.keyPressed(.init(event: event))
+    }
   }
 
   public func render() {
@@ -293,11 +362,17 @@ public class GridsView: NSView, Rendering {
       // the order above. Anything walkingGridFrames did not visit — hidden or
       // external grids — keeps its relative position underneath.
       let ordered = Set(orderedGridViews.map(ObjectIdentifier.init))
-      let unvisited = subviews.filter { !ordered.contains(ObjectIdentifier($0)) }
-      let newSubviews = unvisited + orderedGridViews
-      if subviews != newSubviews {
-        subviews = newSubviews
+      let unvisited = subviews.filter {
+        $0 !== markedTextView && !ordered.contains(ObjectIdentifier($0))
       }
+      let newSubviews = unvisited + orderedGridViews
+      if subviews != newSubviews + [markedTextView] {
+        subviews = newSubviews + [markedTextView]
+      }
+    }
+
+    if !markedTextView.isHidden {
+      updateMarkedTextView()
     }
 
     renderChildren(arrangedGridViews.values.lazy.map(\.self))
@@ -369,5 +444,147 @@ public class GridsView: NSView, Rendering {
       column: Int((upsideDownLocation.x / state.font.cellWidth).rounded(.down)),
       row: Int((upsideDownLocation.y / state.font.cellHeight).rounded(.down)),
     )
+  }
+
+  private func updateMarkedTextView() {
+    guard
+      markedText.length > 0,
+      let cursor = state.cursor,
+      let gridView = arrangedGridViews[cursor.gridID]
+    else {
+      markedTextView.isHidden = true
+      return
+    }
+
+    let cursorFrame = gridView.windowFrame(forGridFrame: .init(
+      origin: cursor.position,
+      size: .init(columnsCount: 1, rowsCount: 1),
+    ))
+    let localFrame = convert(cursorFrame, from: nil)
+    let textWidth = max(markedText.size().width, state.font.cellWidth)
+    markedTextView.frame = .init(
+      x: localFrame.minX,
+      y: localFrame.minY,
+      width: textWidth,
+      height: max(markedText.size().height, state.font.cellHeight),
+    )
+    markedTextView.backgroundColor = state.appearance.defaultBackgroundColor.appKit
+    markedTextView.isHidden = false
+  }
+
+  private func clearMarkedText() {
+    markedText = .init()
+    markedSelectionRange = .init(location: NSNotFound, length: 0)
+    markedTextView.text = .init()
+    markedTextView.isHidden = true
+  }
+}
+
+extension GridsView: NSTextInputClient {
+  public func insertText(_ string: Any, replacementRange _: NSRange) {
+    didInterpretKeyEvent = true
+    let text = (string as? NSAttributedString)?.string ?? string as? String ?? ""
+    clearMarkedText()
+    if !text.isEmpty {
+      store.api.input(text: text)
+    }
+  }
+
+  public func setMarkedText(
+    _ string: Any,
+    selectedRange: NSRange,
+    replacementRange _: NSRange,
+  ) {
+    didInterpretKeyEvent = true
+    let attributedText: NSAttributedString =
+      if let value = string as? NSAttributedString {
+        value
+      } else {
+        .init(string: string as? String ?? "")
+      }
+
+    guard attributedText.length > 0 else {
+      clearMarkedText()
+      return
+    }
+
+    let value = NSMutableAttributedString(
+      string: attributedText.string,
+      attributes: [
+        .font: state.font.appKit(),
+        .foregroundColor: state.appearance.defaultForegroundColor.appKit,
+        .underlineStyle: NSUnderlineStyle.single.rawValue,
+      ],
+    )
+    let range = NSRange(location: 0, length: value.length)
+    attributedText.enumerateAttributes(in: range) { attributes, range, _ in
+      value.addAttributes(attributes, range: range)
+    }
+    markedText = value
+    markedSelectionRange = selectedRange
+    markedTextView.text = value
+    updateMarkedTextView()
+  }
+
+  public func unmarkText() {
+    clearMarkedText()
+  }
+
+  public func selectedRange() -> NSRange {
+    markedSelectionRange
+  }
+
+  public func markedRange() -> NSRange {
+    markedText.length > 0
+      ? .init(location: 0, length: markedText.length)
+      : .init(location: NSNotFound, length: 0)
+  }
+
+  public func hasMarkedText() -> Bool {
+    markedText.length > 0
+  }
+
+  public func attributedSubstring(
+    forProposedRange range: NSRange,
+    actualRange: NSRangePointer?,
+  )
+  -> NSAttributedString? {
+    guard markedText.length > 0 else {
+      return nil
+    }
+    let intersection = NSIntersectionRange(range, markedRange())
+    guard intersection.length > 0 else {
+      return nil
+    }
+    actualRange?.pointee = intersection
+    return markedText.attributedSubstring(from: intersection)
+  }
+
+  public func validAttributesForMarkedText() -> [NSAttributedString.Key] {
+    [.underlineStyle, .underlineColor, .markedClauseSegment, .replacementIndex]
+  }
+
+  public func firstRect(
+    forCharacterRange _: NSRange,
+    actualRange: NSRangePointer?,
+  )
+  -> NSRect {
+    actualRange?.pointee = markedRange()
+    guard
+      let cursor = state.cursor,
+      let gridView = arrangedGridViews[cursor.gridID],
+      let window
+    else {
+      return .zero
+    }
+    let rect = gridView.windowFrame(forGridFrame: .init(
+      origin: cursor.position,
+      size: .init(columnsCount: 1, rowsCount: 1),
+    ))
+    return window.convertToScreen(rect)
+  }
+
+  public func characterIndex(for _: NSPoint) -> Int {
+    NSNotFound
   }
 }

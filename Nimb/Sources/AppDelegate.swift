@@ -13,8 +13,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private var mainMenuController: MainMenuController? = nil
   private var mainWindowController: MainWindowController? = nil
   private var settingsWindowController: SettingsWindowController? = nil
-  private var keyDownMonitor: Any? = nil
-
   private var neovim: Neovim? = nil
   private var store: Store? = nil
   private var alertsTask: Task<Void, Never>? = nil
@@ -56,8 +54,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     self.store = store
 
     setupInitialControllers(store: store)
-
-    setupKeyDownMonitor(store: store)
 
     Task { @MainActor in
       setupBindings(store: store)
@@ -318,25 +314,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
       store: store,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
     )
-  }
-
-  /// Scoped to the grid window. The monitor sees every key the application
-  /// gets and returning nil swallows it, so an unscoped one takes typing away
-  /// from a settings field or a save panel, which run in this process too.
-  private func setupKeyDownMonitor(store: Store) {
-    let gridWindow = mainWindowController?.window.map(ObjectIdentifier.init)
-
-    keyDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-      guard
-        !event.modifierFlags.contains(.command),
-        let window = event.window,
-        ObjectIdentifier(window) == gridWindow
-      else {
-        return event
-      }
-      store.api.keyPressed(.init(event: event))
-      return nil
-    }
   }
 
   private func showCriticalAlert(error: Error) async {

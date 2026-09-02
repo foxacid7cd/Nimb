@@ -39,6 +39,10 @@ public extension API {
     fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
   }
 
+  func input(text: String) {
+    fastCall(APIFunctions.NvimInput(keys: text.replacingOccurrences(of: "<", with: "<lt>")))
+  }
+
   func scrollWindow(_ windowID: References.Window, toTopLine topLine: Int) {
     nimbFast(
       method: "scroll_window",
