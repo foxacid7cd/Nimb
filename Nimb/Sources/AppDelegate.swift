@@ -62,7 +62,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     let store = Store(api: neovim.api, initialState: initialState)
     self.store = store
 
-    setupInitialControllers(store: store)
+    setupInitialControllers(store: store, initialFont: initialState.font)
 
     Task { @MainActor [weak self] in
       guard let self else {
@@ -422,7 +422,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     }
   }
 
-  private func setupInitialControllers(store: Store) {
+  private func setupInitialControllers(store: Store, initialFont: Font) {
     mainMenuController = MainMenuController(store: store)
     mainMenuController!.settingsClicked = { [unowned self] in
       if settingsWindowController == nil {
@@ -436,6 +436,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     mainWindowController = MainWindowController(
       store: store,
       minOuterGridSize: .init(columnsCount: 80, rowsCount: 24),
+    )
+    mainWindowController!.showInitialWindow(
+      outerGridSize: Neovim.initialOuterGridSize,
+      font: initialFont,
     )
   }
 

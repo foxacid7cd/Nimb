@@ -44,6 +44,11 @@ public final class Neovim: Sendable {
     }
   }
 
+  public static var initialOuterGridSize: IntegerSize {
+    UserDefaults.standard.savedWindowGeometry?.outerGridSize
+      ?? .init(columnsCount: 110, rowsCount: 34)
+  }
+
   public let api: API
 
   private let isReattaching = Mutex(false)
@@ -228,8 +233,7 @@ public final class Neovim: Sendable {
       .extHlstate,
       .extTabline,
     ]
-    let outerGridSize = outerGridSize ?? UserDefaults.standard.savedWindowGeometry?.outerGridSize
-      ?? .init(columnsCount: 110, rowsCount: 34)
+    let outerGridSize = outerGridSize ?? Self.initialOuterGridSize
     try await api.nvimUIAttach(
       width: outerGridSize.columnsCount,
       height: outerGridSize.rowsCount,

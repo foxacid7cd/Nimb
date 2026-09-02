@@ -27,6 +27,7 @@ public class MainWindowController: NSWindowController, Rendering {
   )
   private let viewController: MainViewController
   private var isWindowInitiallyShown = false
+  private var canReportOuterGridSize = false
 
   public init(
     store: Store,
@@ -71,18 +72,37 @@ public class MainWindowController: NSWindowController, Rendering {
 
     renderChildren(viewController)
 
-    if !isWindowInitiallyShown, let outerGrid = state.outerGrid {
-      isWindowInitiallyShown = true
-
-      Task { @MainActor in
-        let contentSize = UserDefaults.standard.savedWindowGeometry?.contentSize ?? viewController
-          .estimatedContentSize(outerGridSize: outerGrid.size)
-        customWindow.setContentSize(contentSize)
-        customWindow.makeMain()
-        customWindow.makeKeyAndOrderFront(nil)
-        customWindow.makeFirstResponder(viewController.gridsView)
-      }
+    if !canReportOuterGridSize, state.outerGrid != nil {
+      canReportOuterGridSize = true
+      viewController.reportOuterGridSizeChanged()
     }
+  }
+
+  public func showInitialWindow(outerGridSize: IntegerSize, font: Font) {
+    guard !isWindowInitiallyShown else {
+      return
+    }
+
+    let contentSize: CGSize
+    if let savedContentSize = UserDefaults.standard.savedWindowGeometry?.contentSize {
+      contentSize = savedContentSize
+    } else {
+      let gridSize = outerGridSize * font.cellSize
+      customWindow.setContentSize(gridSize)
+      customWindow.contentView?.layoutSubtreeIfNeeded()
+      let titlebarHeight = customWindow.contentView!.frame.height
+        - customWindow.contentLayoutRect.height
+      contentSize = .init(
+        width: gridSize.width,
+        height: gridSize.height + titlebarHeight + 1,
+      )
+    }
+
+    customWindow.setContentSize(contentSize)
+    isWindowInitiallyShown = true
+    customWindow.makeMain()
+    customWindow.makeKeyAndOrderFront(nil)
+    customWindow.makeFirstResponder(viewController.gridsView)
   }
 
   public func saveWindowGeometry(outerGridSize: IntegerSize) {
@@ -119,7 +139,7 @@ extension MainWindowController: NSWindowDelegate {
   }
 
   public func windowDidResize(_: Notification) {
-    if isWindowInitiallyShown {
+    if canReportOuterGridSize {
       let outerGridSize = viewController.reportOuterGridSizeChanged()
       if !customWindow.inLiveResize {
         saveWindowGeometry(outerGridSize: outerGridSize)
@@ -128,6 +148,9 @@ extension MainWindowController: NSWindowDelegate {
   }
 
   public func windowDidEndLiveResize(_: Notification) {
+    guard canReportOuterGridSize else {
+      return
+    }
     saveWindowGeometry(
       outerGridSize: viewController.reportOuterGridSizeChanged(),
     )

@@ -14,6 +14,7 @@ public class MainViewController: NSViewController, Rendering {
   private let minOuterGridSize: IntegerSize
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
+  private lazy var loadingIndicator = NSProgressIndicator()
   private var preMaximizeWindowFrame: CGRect? = nil
   private lazy var visualBellView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
@@ -115,6 +116,13 @@ public class MainViewController: NSViewController, Rendering {
     gridsView.centerXToSuperview()
     gridsView.topToSuperview()
 
+    loadingIndicator.style = .spinning
+    loadingIndicator.controlSize = .regular
+    loadingIndicator.setAccessibilityLabel("Loading Neovim")
+    gridsContainerView.addSubview(loadingIndicator)
+    loadingIndicator.centerInSuperview()
+    loadingIndicator.startAnimation(nil)
+
     visualBellView.wantsLayer = true
     visualBellView.layer!.backgroundColor = NSColor.white.cgColor
     visualBellView.layer!.opacity = 0
@@ -135,6 +143,8 @@ public class MainViewController: NSViewController, Rendering {
   }
 
   public func render() {
+    renderLoadingIndicator()
+
     if updates.isFontUpdated {
       reportOuterGridSizeChanged()
     }
@@ -156,6 +166,16 @@ public class MainViewController: NSViewController, Rendering {
     renderChildren(gridsView)
   }
 
+  private func renderLoadingIndicator() {
+    let isLoading = state.outerGrid == nil
+    loadingIndicator.isHidden = !isLoading
+    if isLoading {
+      loadingIndicator.startAnimation(nil)
+    } else {
+      loadingIndicator.stopAnimation(nil)
+    }
+  }
+
   public func windowFrame(
     forGridID gridID: Grid.ID,
     gridFrame: IntegerRectangle,
@@ -174,14 +194,6 @@ public class MainViewController: NSViewController, Rendering {
     reportOuterGridSizeChangedContinuation
       .yield(outerGridSize)
     return outerGridSize
-  }
-
-  public func estimatedContentSize(outerGridSize: IntegerSize) -> CGSize {
-    let mainFrameSize = outerGridSize * state.font.cellSize
-    return .init(
-      width: mainFrameSize.width,
-      height: mainFrameSize.height + tablineView.intrinsicContentSize.height,
-    )
   }
 
   private func flashVisualBell() {
