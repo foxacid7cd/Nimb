@@ -64,6 +64,7 @@ public class GridsView: NSView, Rendering {
   private var arrangedGridViews = IntKeyedDictionary<GridView>()
   private let messageSeparatorView = MessageSeparatorView()
   private var leftMouseInteractionTarget: GridView? = nil
+  private var scrollbarInteractionTarget: GridView? = nil
   private var rightMouseInteractionTarget: GridView? = nil
   private var otherMouseInteractionTarget: GridView? = nil
 
@@ -99,17 +100,34 @@ public class GridsView: NSView, Rendering {
   }
 
   override public func mouseDown(with event: NSEvent) {
+    scrollbarInteractionTarget?.endScrollbarInteraction()
+    scrollbarInteractionTarget = nil
     leftMouseInteractionTarget = gridView(for: event)
+    if leftMouseInteractionTarget?.beginScrollbarInteraction(with: event) == true {
+      scrollbarInteractionTarget = leftMouseInteractionTarget
+      leftMouseInteractionTarget = nil
+      return
+    }
     leftMouseInteractionTarget?
       .report(mouseButton: "left", action: "press", with: event)
   }
 
   override public func mouseDragged(with event: NSEvent) {
+    if let scrollbarInteractionTarget {
+      scrollbarInteractionTarget.updateScrollbarInteraction(with: event)
+      return
+    }
     leftMouseInteractionTarget?
       .report(mouseButton: "left", action: "drag", with: event)
   }
 
   override public func mouseUp(with event: NSEvent) {
+    if let scrollbarInteractionTarget {
+      scrollbarInteractionTarget.updateScrollbarInteraction(with: event)
+      scrollbarInteractionTarget.endScrollbarInteraction()
+      self.scrollbarInteractionTarget = nil
+      return
+    }
     leftMouseInteractionTarget?
       .report(mouseButton: "left", action: "release", with: event)
     leftMouseInteractionTarget = nil

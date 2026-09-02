@@ -7,6 +7,26 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
+  private struct ScrollbarMetrics {
+    var viewport: Viewport
+    var track: CGRect
+    var thumbHeight: CGFloat
+    var scrollableLineCount: Int
+
+    var thumbTravel: CGFloat {
+      track.height - thumbHeight
+    }
+
+    func thumbFrame(in bounds: CGRect, progress: CGFloat) -> CGRect {
+      .init(
+        x: bounds.maxX - 7,
+        y: track.maxY - thumbHeight - progress * thumbTravel,
+        width: 4,
+        height: thumbHeight,
+      )
+    }
+  }
+
   /// Which way the current gesture has committed to, if it has. Pinning to one
   /// axis keeps a crooked swipe from drifting sideways as it accumulates.
   private enum ScrollAxis {
@@ -53,6 +73,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   private let scrollbarLayer = CALayer()
   private var scrollbarHideTask: Task<Void, Never>? = nil
+  private var scrollbarDragOffset: CGFloat? = nil
+  private var requestedScrollbarTopLine: Int? = nil
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
   /// Bounds the last frame was built for. A resize changes every rect in the
@@ -118,6 +140,46 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     // Size or visibility changed; the frame may not have been applied yet, so
     // builtBounds alone would not catch it.
     return updates.updatedLayoutGridIDs.contains(gridID)
+  }
+
+  private var scrollbarMetrics: ScrollbarMetrics? {
+    guard
+      gridID != Grid.OuterID,
+      let grid = state.grids[gridID],
+      case .some(.plain) = grid.associatedWindow,
+      let viewport = state.viewports[gridID],
+      viewport.lineCount > 0
+    else {
+      return nil
+    }
+
+    let margins = state.viewportMargins[gridID]
+    let topInset = CGFloat(margins?.top ?? 0) * state.font.cellHeight
+    let bottomInset = CGFloat(margins?.bottom ?? 0) * state.font.cellHeight
+    let track = CGRect(
+      x: 0,
+      y: bottomInset,
+      width: bounds.width,
+      height: bounds.height - topInset - bottomInset,
+    )
+    let visibleLineCount = max(
+      grid.rowsCount - (margins?.top ?? 0) - (margins?.bottom ?? 0),
+      1,
+    )
+    let thumbHeight = max(
+      20,
+      track.height * CGFloat(visibleLineCount) / CGFloat(viewport.lineCount),
+    )
+    let scrollableLineCount = viewport.lineCount - visibleLineCount
+    guard track.height > 0, thumbHeight < track.height, scrollableLineCount > 0 else {
+      return nil
+    }
+    return .init(
+      viewport: viewport,
+      track: track,
+      thumbHeight: thumbHeight,
+      scrollableLineCount: scrollableLineCount,
+    )
   }
 
   public init(frame frameRect: NSRect, store: Store, gridID: Grid.ID) {
@@ -466,53 +528,120 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     ))
   }
 
+  public func beginScrollbarInteraction(with event: NSEvent) -> Bool {
+    guard state.isMouseUserInteractionEnabled, let metrics = scrollbarMetrics else {
+      return false
+    }
+    let location = convert(event.locationInWindow, from: nil)
+    let hitTrack = CGRect(
+      x: bounds.maxX - 12,
+      y: metrics.track.minY,
+      width: 12,
+      height: metrics.track.height,
+    )
+    guard hitTrack.contains(location) else {
+      return false
+    }
+
+    scrollbarHideTask?.cancel()
+    scrollbarHideTask = nil
+    scrollbarLayer.isHidden = false
+
+    let thumbFrame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
+    if thumbFrame.minY ... thumbFrame.maxY ~= location.y {
+      scrollbarDragOffset = location.y - thumbFrame.minY
+    } else {
+      scrollbarDragOffset = metrics.thumbHeight / 2
+      updateScrollbarInteraction(with: event)
+    }
+    return true
+  }
+
+  public func updateScrollbarInteraction(with event: NSEvent) {
+    guard let dragOffset = scrollbarDragOffset, let metrics = scrollbarMetrics else {
+      return
+    }
+    let location = convert(event.locationInWindow, from: nil)
+    let thumbMinY = min(
+      max(location.y - dragOffset, metrics.track.minY),
+      metrics.track.maxY - metrics.thumbHeight,
+    )
+    let progress = (metrics.track.maxY - metrics.thumbHeight - thumbMinY)
+      / metrics.thumbTravel
+    let topLine = Int((progress * CGFloat(metrics.scrollableLineCount)).rounded())
+    guard topLine != requestedScrollbarTopLine else {
+      return
+    }
+
+    requestedScrollbarTopLine = topLine
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    scrollbarLayer.frame = metrics.thumbFrame(in: bounds, progress: progress)
+    CATransaction.commit()
+
+    store.api.fastCall(APIFunctions.NvimExecLua(
+      code: """
+      local window, topline = ...
+      if vim.api.nvim_win_is_valid(window) then
+        vim.api.nvim_win_call(window, function()
+          local view = vim.fn.winsaveview()
+          local cursor_offset = view.lnum - view.topline
+          view.topline = topline
+          view.lnum = math.min(
+            topline + cursor_offset,
+            vim.api.nvim_buf_line_count(0)
+          )
+          vim.fn.winrestview(view)
+        end)
+      end
+      """,
+      args: [
+        .ext(type: References.Window.type, data: metrics.viewport.windowID.data),
+        .integer(topLine + 1),
+      ],
+    ))
+  }
+
+  public func endScrollbarInteraction() {
+    guard scrollbarDragOffset != nil else {
+      return
+    }
+    scrollbarDragOffset = nil
+    requestedScrollbarTopLine = nil
+    scheduleScrollbarHide()
+  }
+
   private func renderScrollbar() {
     CATransaction.begin()
     CATransaction.setDisableActions(true)
     defer { CATransaction.commit() }
 
-    guard
-      gridID != Grid.OuterID,
-      let grid = state.grids[gridID],
-      case .some(.plain) = grid.associatedWindow,
-      let viewport = state.viewports[gridID],
-      viewport.lineCount > 0
-    else {
+    if updates.updatedViewportGridIDs.contains(gridID) {
+      requestedScrollbarTopLine = nil
+      if scrollbarDragOffset != nil, NSEvent.pressedMouseButtons & 1 == 0 {
+        scrollbarDragOffset = nil
+      }
+    }
+
+    guard let metrics = scrollbarMetrics else {
       scrollbarHideTask?.cancel()
       scrollbarHideTask = nil
       scrollbarLayer.isHidden = true
       return
     }
 
-    let margins = state.viewportMargins[gridID]
-    let topInset = CGFloat(margins?.top ?? 0) * state.font.cellHeight
-    let bottomInset = CGFloat(margins?.bottom ?? 0) * state.font.cellHeight
-    let trackHeight = bounds.height - topInset - bottomInset
-    let visibleLineCount = max(viewport.bottomLine - viewport.topLine, 1)
-    let thumbHeight = max(20, trackHeight * CGFloat(visibleLineCount) / CGFloat(viewport.lineCount))
-
-    guard trackHeight > 0, thumbHeight < trackHeight else {
-      scrollbarLayer.isHidden = true
-      return
-    }
-
-    let scrollableLineCount = max(viewport.lineCount - visibleLineCount, 1)
-    let progress = min(
-      max(CGFloat(viewport.topLine) / CGFloat(scrollableLineCount), 0),
-      1,
-    )
-    let width: CGFloat = 4
-    let horizontalInset: CGFloat = 3
-    scrollbarLayer.frame = .init(
-      x: bounds.maxX - width - horizontalInset,
-      y: bounds.maxY - topInset - thumbHeight - progress * (trackHeight - thumbHeight),
-      width: width,
-      height: thumbHeight,
-    )
-    if updates.updatedViewportGridIDs.contains(gridID) {
+    scrollbarLayer.frame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
+    if scrollbarDragOffset != nil {
+      scrollbarLayer.isHidden = false
+    } else if updates.updatedViewportGridIDs.contains(gridID) {
       scrollbarLayer.isHidden = false
       scheduleScrollbarHide()
     }
+  }
+
+  private func scrollbarProgress(for metrics: ScrollbarMetrics) -> CGFloat {
+    let topLine = requestedScrollbarTopLine ?? metrics.viewport.topLine
+    return min(max(CGFloat(topLine) / CGFloat(metrics.scrollableLineCount), 0), 1)
   }
 
   private func scheduleScrollbarHide() {
