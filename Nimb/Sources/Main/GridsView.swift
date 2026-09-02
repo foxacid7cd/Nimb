@@ -65,6 +65,7 @@ public class GridsView: NSView, Rendering {
   private let messageSeparatorView = MessageSeparatorView()
   private var leftMouseInteractionTarget: GridView? = nil
   private var scrollbarInteractionTarget: GridView? = nil
+  private var scrollbarHoverTarget: GridView? = nil
   private var rightMouseInteractionTarget: GridView? = nil
   private var otherMouseInteractionTarget: GridView? = nil
 
@@ -97,6 +98,34 @@ public class GridsView: NSView, Rendering {
   override public func hitTest(_ point: NSPoint) -> NSView? {
     let localPoint = superview.map { convert(point, from: $0) } ?? point
     return bounds.contains(localPoint) ? self : nil
+  }
+
+  override public func updateTrackingAreas() {
+    super.updateTrackingAreas()
+
+    for trackingArea in trackingAreas {
+      removeTrackingArea(trackingArea)
+    }
+    addTrackingArea(.init(
+      rect: bounds,
+      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved, .mouseEnteredAndExited],
+      owner: self,
+      userInfo: nil,
+    ))
+  }
+
+  override public func mouseMoved(with event: NSEvent) {
+    let target = gridView(for: event)
+    let newHoverTarget = target?.updateScrollbarHover(with: event) == true ? target : nil
+    if scrollbarHoverTarget !== newHoverTarget {
+      scrollbarHoverTarget?.endScrollbarHover()
+      scrollbarHoverTarget = newHoverTarget
+    }
+  }
+
+  override public func mouseExited(with _: NSEvent) {
+    scrollbarHoverTarget?.endScrollbarHover()
+    scrollbarHoverTarget = nil
   }
 
   override public func mouseDown(with event: NSEvent) {

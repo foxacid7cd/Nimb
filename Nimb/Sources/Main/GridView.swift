@@ -73,6 +73,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let coreGraphicsLayer: GridCoreGraphicsLayer
   private let scrollbarLayer = CALayer()
   private var scrollbarHideTask: Task<Void, Never>? = nil
+  private var isScrollbarHovered = false
   private var scrollbarDragOffset: CGFloat? = nil
   private var requestedScrollbarTopLine: Int? = nil
   /// nil until the first render, so the first pass always applies visibility.
@@ -245,21 +246,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       return
     }
     apply(backingScale: scale)
-  }
-
-  override public func updateTrackingAreas() {
-    super.updateTrackingAreas()
-
-    for trackingArea in trackingAreas {
-      removeTrackingArea(trackingArea)
-    }
-
-    addTrackingArea(.init(
-      rect: bounds,
-      options: [.inVisibleRect, .activeInKeyWindow, .mouseMoved],
-      owner: self,
-      userInfo: nil,
-    ))
   }
 
   override public func scrollWheel(with event: NSEvent) {
@@ -557,6 +543,40 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     return true
   }
 
+  public func updateScrollbarHover(with event: NSEvent) -> Bool {
+    guard state.isMouseUserInteractionEnabled, let metrics = scrollbarMetrics else {
+      endScrollbarHover()
+      return false
+    }
+    let location = convert(event.locationInWindow, from: nil)
+    let hitTrack = CGRect(
+      x: bounds.maxX - 12,
+      y: metrics.track.minY,
+      width: 12,
+      height: metrics.track.height,
+    )
+    guard hitTrack.contains(location) else {
+      endScrollbarHover()
+      return false
+    }
+
+    isScrollbarHovered = true
+    scrollbarHideTask?.cancel()
+    scrollbarHideTask = nil
+    setScrollbarVisible(true)
+    return true
+  }
+
+  public func endScrollbarHover() {
+    guard isScrollbarHovered else {
+      return
+    }
+    isScrollbarHovered = false
+    if scrollbarDragOffset == nil {
+      scheduleScrollbarHide()
+    }
+  }
+
   public func updateScrollbarInteraction(with event: NSEvent) {
     guard let dragOffset = scrollbarDragOffset, let metrics = scrollbarMetrics else {
       return
@@ -608,7 +628,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     scrollbarDragOffset = nil
     requestedScrollbarTopLine = nil
-    scheduleScrollbarHide()
+    if !isScrollbarHovered {
+      scheduleScrollbarHide()
+    }
   }
 
   private func renderScrollbar() {
@@ -635,7 +657,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       setScrollbarVisible(true)
     } else if updates.updatedViewportGridIDs.contains(gridID) {
       setScrollbarVisible(true)
-      scheduleScrollbarHide()
+      if !isScrollbarHovered {
+        scheduleScrollbarHide()
+      }
     }
   }
 
@@ -649,6 +673,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     scrollbarHideTask = Task { @MainActor [weak self] in
       try? await Task.sleep(for: .seconds(1.5))
       guard !Task.isCancelled else {
+        return
+      }
+      guard self?.isScrollbarHovered == false, self?.scrollbarDragOffset == nil else {
         return
       }
       self?.setScrollbarVisible(false)
