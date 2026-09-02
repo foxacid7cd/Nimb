@@ -8,6 +8,11 @@ import NimbState
 import Synchronization
 
 public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
+  private enum RecoveryChoice {
+    case restart
+    case quit
+  }
+
   public var renderContext: RenderContext! = nil
 
   private var mainMenuController: MainMenuController? = nil
@@ -21,6 +26,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   private nonisolated let pendingStateAndUpdates = Mutex<(State, State.Updates)?>(nil)
 
   private var appliedGuifont: String? = nil
+  private var isTerminatingAfterNeovimExit = false
 
   /// Files handed over by Launch Services, held until Neovim is attached: the
   /// first ones arrive before the process has even been spawned.
@@ -58,18 +64,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
     setupInitialControllers(store: store)
 
-    Task { @MainActor in
-      setupBindings(store: store)
-
-      let terminationStatus = await neovim.bootstrap()
-      logger.debug("Neovim process terminated with status \(terminationStatus)")
-
-      // `:restart` exits the old server on purpose, having handed over a
-      // replacement to attach to, so this exit is not the app's to act on.
-      guard !neovim.isReattaching.withLock({ $0 }) else {
+    Task { @MainActor [weak self] in
+      guard let self else {
         return
       }
-      NSApplication.shared.terminate(nil)
+      setupBindings(store: store)
+      await runNeovim(neovim, store: store)
     }
 
     logger.debug("Application did finish launching")
@@ -88,6 +88,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
   )
     -> NSApplication.TerminateReply
   {
+    if isTerminatingAfterNeovimExit {
+      return .terminateNow
+    }
     guard let store, isNeovimAttached else {
       return .terminateNow
     }
@@ -210,17 +213,134 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
     guard let neovim, let store else {
       return
     }
+    let outerGridSize = renderContext?.state.outerGrid?.size
+    appliedGuifont = nil
+    neovim.prepareForReattach()
     Task {
       do {
-        try await neovim.reattach(to: address)
-        store.dispatch(Actions.ResetState(initialState: State(
-          debug: UserDefaults.standard.debug,
-          font: .init(),
-        )))
+        await store.dispatchAndWait(Actions.ResetState(initialState: restartState()))
+        try await neovim.reattach(to: address, outerGridSize: outerGridSize)
       } catch {
         await show(alert: .init(error))
       }
     }
+  }
+
+  private func runNeovim(_ neovim: Neovim, store: Store) async {
+    var isRestart = false
+    var restartOuterGridSize: IntegerSize? = nil
+
+    while true {
+      do {
+        var termination =
+          if isRestart {
+            try await neovim.restart(outerGridSize: restartOuterGridSize)
+          } else {
+            try await neovim.bootstrap()
+          }
+        if
+          termination.status == 0,
+          let reportedStatus = renderContext?.state.errorExitStatus,
+          reportedStatus != 0
+        {
+          termination.status = Int32(clamping: reportedStatus)
+        }
+        logger.debug("Neovim process terminated with status \(termination.status)")
+
+        if neovim.consumeExpectedProcessExit() {
+          return
+        }
+
+        isNeovimAttached = false
+        if termination.reason == .exit, termination.status == 0 {
+          terminateAfterNeovimExit()
+          return
+        }
+
+        guard await recoveryChoice(termination: termination) == .restart else {
+          terminateAfterNeovimExit()
+          return
+        }
+      } catch {
+        isNeovimAttached = false
+        logger.error("Could not start Neovim: \(String(customDumping: error))")
+        guard await recoveryChoice(startupError: error) == .restart else {
+          terminateAfterNeovimExit()
+          return
+        }
+      }
+
+      cursorBlinkTask?.cancel()
+      cursorBlinkTask = nil
+      appliedGuifont = nil
+      restartOuterGridSize = renderContext?.state.outerGrid?.size
+      await store.dispatchAndWait(Actions.ResetState(initialState: restartState()))
+      isRestart = true
+    }
+  }
+
+  private func restartState() -> State {
+    State(
+      debug: UserDefaults.standard.debug,
+      font: renderContext?.state.font ?? .init(),
+      isApplicationActive: NSApplication.shared.isActive,
+      isWindowKey: mainWindowController?.window?.isKeyWindow == true,
+    )
+  }
+
+  private func recoveryChoice(
+    termination: Neovim.Termination? = nil,
+    startupError: (any Error)? = nil,
+  ) async
+  -> RecoveryChoice {
+    let alert = NSAlert()
+    alert.alertStyle = .critical
+    alert.messageText = termination == nil
+      ? "Neovim could not start"
+      : "Neovim stopped unexpectedly"
+
+    var details = ""
+    if let termination {
+      alert.informativeText =
+        termination.reason == .exit
+          ? "Neovim exited with status \(termination.status)."
+          : "Neovim was terminated by signal \(termination.status)."
+      details = termination.standardError.trimmingCharacters(in: .whitespacesAndNewlines)
+    } else if let startupError {
+      alert.informativeText = "Nimb could not initialize its embedded Neovim process."
+      details = String(customDumping: startupError)
+    }
+
+    if !details.isEmpty {
+      let textView = NSTextView(frame: .init(x: 0, y: 0, width: 480, height: 140))
+      textView.string = details
+      textView.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+      textView.isEditable = false
+      textView.isSelectable = true
+      let scrollView = NSScrollView(frame: textView.frame)
+      scrollView.hasVerticalScroller = true
+      scrollView.borderType = .bezelBorder
+      scrollView.documentView = textView
+      alert.accessoryView = scrollView
+    }
+
+    alert.addButton(withTitle: "Restart Neovim")
+    alert.addButton(withTitle: "Quit Nimb")
+
+    let response: NSApplication.ModalResponse =
+      if let window = mainWindowController?.window, window.isVisible {
+        await withCheckedContinuation { continuation in
+          alert.beginSheetModal(for: window) { continuation.resume(returning: $0) }
+        }
+      } else {
+        alert.runModal()
+      }
+    return response == .alertFirstButtonReturn ? .restart : .quit
+  }
+
+  private func terminateAfterNeovimExit() {
+    isTerminatingAfterNeovimExit = true
+    NSApplication.shared.terminate(nil)
   }
 
   private func setupBindings(store: Store) {

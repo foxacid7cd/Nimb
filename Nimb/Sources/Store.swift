@@ -11,6 +11,17 @@ import Synchronization
 /// Nonisolated by design: it is called from key monitors, gesture handlers and
 /// the off-main updates loop alike, and owns no mutable state of its own.
 public final nonisolated class Store: Sendable {
+  private struct AcknowledgedAction: Action {
+    var action: any Action
+    var continuation: CheckedContinuation<Void, Never>
+
+    func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      let updates = action.apply(to: &state, handleError: handleError)
+      continuation.resume()
+      return updates
+    }
+  }
+
   private enum PendingActions: Sendable {
     case single(any Action)
     case batch([any Action])
@@ -241,6 +252,18 @@ public final nonisolated class Store: Sendable {
 
   public nonisolated func dispatch(_ action: Action) {
     actionsContinuation.yield(action)
+  }
+
+  public nonisolated func dispatchAndWait(_ action: some Action) async {
+    await withCheckedContinuation { continuation in
+      let result = actionsContinuation.yield(AcknowledgedAction(
+        action: action,
+        continuation: continuation,
+      ))
+      if case .terminated = result {
+        continuation.resume()
+      }
+    }
   }
 
   public nonisolated func show(alert: Alert) {

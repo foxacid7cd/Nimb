@@ -102,11 +102,14 @@ public class GridsView: NSView, Rendering {
   private var interpretingKeyEvent: NSEvent? = nil
   private var didInterpretKeyEvent = false
 
-  public var upsideDownTransform: CGAffineTransform {
-    .init(scaleX: 1, y: -1)
+  public var upsideDownTransform: CGAffineTransform? {
+    guard let outerGrid = state.outerGrid else {
+      return nil
+    }
+    return .init(scaleX: 1, y: -1)
       .translatedBy(
         x: 0,
-        y: -Double(state.outerGrid!.rowsCount) * state.font.cellHeight,
+        y: -Double(outerGrid.rowsCount) * state.font.cellHeight,
       )
   }
 
@@ -322,7 +325,11 @@ public class GridsView: NSView, Rendering {
       || updates.isAppearanceUpdated
       || updates.updatedObservedHighlightNames.contains(.msgSeparator)
     {
-      let upsideDownTransform = upsideDownTransform
+      guard let upsideDownTransform else {
+        messageSeparatorView.isHidden = true
+        markedTextView.isHidden = true
+        return
+      }
 
       // walkingGridFrames yields back to front, so this is the stacking order.
       var orderedGridViews = [NSView]()
@@ -438,6 +445,9 @@ public class GridsView: NSView, Rendering {
   }
 
   private func point(for event: NSEvent) -> IntegerPoint {
+    guard let upsideDownTransform else {
+      return .init()
+    }
     let upsideDownLocation = convert(event.locationInWindow, from: nil)
       .applying(upsideDownTransform)
     return .init(

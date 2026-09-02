@@ -5,14 +5,59 @@ import NimbCore
 import Synchronization
 
 public final class Neovim: Sendable {
-  public let process: Process
+  @PublicInit
+  public struct Termination: Sendable {
+    public enum Reason: String, Sendable {
+      case exit
+      case uncaughtSignal
+    }
+
+    public var status: Int32
+    public var reason: Reason
+    public var standardError: String
+  }
+
+  private final class Launch: @unchecked Sendable {
+    let process: Process
+    let standardError: StandardErrorBuffer
+
+    init(process: Process, standardError: StandardErrorBuffer) {
+      self.process = process
+      self.standardError = standardError
+    }
+  }
+
+  private final class StandardErrorBuffer: Sendable {
+    private let data = Mutex(Data())
+
+    var string: String {
+      data.withLock { String(decoding: $0, as: UTF8.self) }
+    }
+
+    func append(_ newData: Data) {
+      data.withLock { buffer in
+        buffer.append(newData)
+        if buffer.count > 65536 {
+          buffer.removeFirst(buffer.count - 65536)
+        }
+      }
+    }
+  }
+
   public let api: API
 
-  /// While set, the process exiting is expected rather than a reason to quit.
-  public let isReattaching = Mutex(false)
+  private let isReattaching = Mutex(false)
+
+  private let launch: Mutex<Launch>
 
   public init() {
-    process = Process()
+    let launch = Self.makeLaunch()
+    self.launch = .init(launch)
+    api = .init(RPC(ProcessChannel(launch.process)))
+  }
+
+  private static func makeLaunch() -> Launch {
+    let process = Process()
 
     var environment = UserDefaults.standard.environmentOverlay
     // percentEncoded: false, because this is a filesystem path and not a URL
@@ -59,63 +104,103 @@ public final class Neovim: Sendable {
     process.currentDirectoryURL = FileManager.default
       .homeDirectoryForCurrentUser
 
+    let standardError = StandardErrorBuffer()
     let standardErrorPipe = Pipe()
     process.standardError = standardErrorPipe
 
     standardErrorPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-      _ = fileHandle.availableData
+      let data = fileHandle.availableData
+      guard !data.isEmpty else {
+        return
+      }
+      standardError.append(data)
     }
 
-    let processChannel = ProcessChannel(process)
-    let rpc = RPC(processChannel)
-    api = .init(rpc)
+    return .init(process: process, standardError: standardError)
   }
 
-  public func bootstrap() async -> Int32 {
-    try! process.run()
+  public func bootstrap() async throws -> Termination {
+    try await run(launch.withLock { $0 })
+  }
 
-    let version = Bundle.main.version ?? (0, 0, 0)
-    try! await api.nvimSetClientInfo(
-      name: "Nimb",
-      version: [
-        "major": .integer(version.major),
-        "minor": .integer(version.minor),
-        "patch": .integer(version.patch),
-        "prerelease": "dev",
-      ],
-      type: "ui",
-      methods: ["nimb_notify": .dictionary([
-        "async": true,
-        "nargs": .integer(3),
-      ])],
-      attributes: [:],
-    )
+  public func restart(outerGridSize: IntegerSize? = nil) async throws -> Termination {
+    let newLaunch = Self.makeLaunch()
+    launch.withLock { $0 = newLaunch }
+    api.rpc.reconnect(to: ProcessChannel(newLaunch.process))
+    return try await run(newLaunch, outerGridSize: outerGridSize)
+  }
 
-    let initLua = try! String(
-      data: Data(
+  public func reattach(to address: String, outerGridSize: IntegerSize? = nil) async throws {
+    do {
+      try api.rpc.reconnect(to: SocketChannel(path: address))
+      try await sendClientInfo()
+      try await attachUI(outerGridSize: outerGridSize)
+    } catch {
+      isReattaching.withLock { $0 = false }
+      throw error
+    }
+  }
+
+  public func prepareForReattach() {
+    isReattaching.withLock { $0 = true }
+  }
+
+  public func consumeExpectedProcessExit() -> Bool {
+    isReattaching.withLock { value in
+      defer { value = false }
+      return value
+    }
+  }
+
+  private func run(_ launch: Launch, outerGridSize: IntegerSize? = nil) async throws -> Termination {
+    let process = launch.process
+    let (terminations, continuation) = AsyncStream<Int32>.makeStream()
+    process.terminationHandler = { process in
+      continuation.yield(process.terminationStatus)
+      continuation.finish()
+    }
+    try process.run()
+
+    do {
+      let version = Bundle.main.version ?? (0, 0, 0)
+      try await api.nvimSetClientInfo(
+        name: "Nimb",
+        version: [
+          "major": .integer(version.major),
+          "minor": .integer(version.minor),
+          "patch": .integer(version.patch),
+          "prerelease": "dev",
+        ],
+        type: "ui",
+        methods: ["nimb_notify": .dictionary([
+          "async": true,
+          "nargs": .integer(3),
+        ])],
+        attributes: [:],
+      )
+
+      let initLua = try String(
         contentsOf: Bundle.main.resourceURL!
           .appending(path: "nvim")
           .appending(path: "init.lua"),
-      ),
-      encoding: .utf8,
-    )!
-    try! await api.nvimExecLua(code: initLua, args: [])
-
-    try! await attachUI()
-
-    return await withCheckedContinuation { continuation in
-      process.terminationHandler = { process in
-        continuation.resume(returning: process.terminationStatus)
+        encoding: .utf8,
+      )
+      try await api.nvimExecLua(code: initLua, args: [])
+      try await attachUI(outerGridSize: outerGridSize)
+    } catch {
+      if process.isRunning {
+        process.terminate()
+        _ = await terminations.first(where: { _ in true })
       }
+      process.terminationHandler = nil
+      throw error
     }
-  }
 
-  public func reattach(to address: String) async throws {
-    isReattaching.withLock { $0 = true }
-    try api.rpc.reconnect(to: SocketChannel(path: address))
-    try await sendClientInfo()
-    try await attachUI()
-    isReattaching.withLock { $0 = false }
+    let status = await terminations.first(where: { _ in true }) ?? process.terminationStatus
+    process.terminationHandler = nil
+    let reason: Termination.Reason = process.terminationReason == .exit ? .exit : .uncaughtSignal
+    let standardError = launch.standardError.string
+    return .init(status: status, reason: reason, standardError: standardError)
   }
 
   private func sendClientInfo() async throws {
@@ -137,13 +222,13 @@ public final class Neovim: Sendable {
     )
   }
 
-  private func attachUI() async throws {
+  private func attachUI(outerGridSize: IntegerSize? = nil) async throws {
     let uiOptions: UIOptions = [
       .extMultigrid,
       .extHlstate,
       .extTabline,
     ]
-    let outerGridSize = UserDefaults.standard.savedWindowGeometry?.outerGridSize
+    let outerGridSize = outerGridSize ?? UserDefaults.standard.savedWindowGeometry?.outerGridSize
       ?? .init(columnsCount: 110, rowsCount: 34)
     try await api.nvimUIAttach(
       width: outerGridSize.columnsCount,

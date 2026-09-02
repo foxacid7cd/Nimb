@@ -41,8 +41,8 @@ public class MainWindowController: NSWindowController, Rendering {
     customWindow.titlebarAppearsTransparent = true
     customWindow.title = ""
     customWindow.isMovable = false
-    customWindow.isOpaque = false
-    customWindow.backgroundColor = .clear
+    customWindow.isOpaque = true
+    customWindow.backgroundColor = .windowBackgroundColor
     customWindow.allowsConcurrentViewDrawing = true
     super.init(window: customWindow)
 
@@ -60,8 +60,13 @@ public class MainWindowController: NSWindowController, Rendering {
     }
     if updates.isAppearanceUpdated {
       let backgroundColor = state.appearance.defaultBackgroundColor
-      customWindow.isOpaque = backgroundColor.alpha == 1
-      customWindow.backgroundColor = backgroundColor.appKit
+      if backgroundColor.alpha == 0 {
+        customWindow.isOpaque = true
+        customWindow.backgroundColor = .windowBackgroundColor
+      } else {
+        customWindow.isOpaque = backgroundColor.alpha == 1
+        customWindow.backgroundColor = backgroundColor.appKit
+      }
     }
 
     renderChildren(viewController)

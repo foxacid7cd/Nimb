@@ -12,8 +12,37 @@ public enum Actions {
     public var initialState: State
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      let destroyedGridIDs = Set(state.grids.keys)
+      let updatedViewportGridIDs = Set(state.viewports.keys)
       state = initialState
-      return .init(needFlush: true, isFontUpdated: true, isAppearanceUpdated: true)
+      return .init(
+        needFlush: true,
+        isRawOptionsUpdated: true,
+        isDebugUpdated: true,
+        isModeUpdated: true,
+        isTitleUpdated: true,
+        isFontUpdated: true,
+        isAppearanceUpdated: true,
+        isHighlightsUpdated: true,
+        isCursorUpdated: true,
+        tabline: .init(
+          isTabpagesUpdated: true,
+          isTabpagesContentUpdated: true,
+          isBuffersUpdated: true,
+          isSelectedTabpageUpdated: true,
+          isSelectedBufferUpdated: true,
+        ),
+        updatedViewportGridIDs: updatedViewportGridIDs,
+        destroyedGridIDs: destroyedGridIDs,
+        isGridsHierarchyUpdated: true,
+        isCursorBlinkingPhaseUpdated: true,
+        isBusyUpdated: true,
+        isMouseOnUpdated: true,
+        isApplicationActiveUpdated: true,
+        isWindowKeyUpdated: true,
+        isErrorExitStatusUpdated: true,
+        isPendingReattachUpdated: true,
+      )
     }
   }
 

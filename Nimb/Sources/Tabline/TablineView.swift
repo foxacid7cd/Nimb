@@ -248,7 +248,14 @@ final class TablineView: NSVisualEffectView, Rendering {
       }
     }
 
-    if let tabline = state.tabline {
+    if state.tabline == nil {
+      if updates.tabline.isBuffersUpdated {
+        reloadBuffers()
+      }
+      if updates.tabline.isTabpagesUpdated {
+        reloadTabpages()
+      }
+    } else if let tabline = state.tabline {
       if updates.tabline.isBuffersUpdated {
         reloadBuffers()
       } else if updates.tabline.isSelectedBufferUpdated {
