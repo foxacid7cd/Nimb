@@ -35,6 +35,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
 
   public func render() {
     renderChildren(mainMenuController!, mainWindowController!)
+    if let settingsWindowController {
+      renderChildren(settingsWindowController)
+    }
   }
 
   public func applicationDidFinishLaunching(_: Notification) {

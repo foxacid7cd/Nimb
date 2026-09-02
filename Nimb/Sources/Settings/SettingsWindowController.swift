@@ -7,9 +7,8 @@ public class SettingsWindowController: NSWindowController, Rendering {
 
   public var renderContext: RenderContext! = nil
 
-  private let store: Store
   private let customWindow = CustomWindow(
-    contentRect: .init(x: 0, y: 0, width: 400, height: 250),
+    contentRect: .init(x: 0, y: 0, width: 520, height: 420),
     styleMask: [.closable, .titled],
     backing: .buffered,
     defer: true,
@@ -17,9 +16,12 @@ public class SettingsWindowController: NSWindowController, Rendering {
   private let viewController: SettingsViewController
 
   init(store: Store) {
-    self.store = store
-    viewController = .init()
+    viewController = .init(store: store)
     customWindow.contentViewController = viewController
+    customWindow.title = "Settings"
+    customWindow.toolbarStyle = .preference
+    customWindow.isReleasedWhenClosed = false
+    customWindow.center()
     super.init(window: customWindow)
   }
 
@@ -28,5 +30,7 @@ public class SettingsWindowController: NSWindowController, Rendering {
     fatalError("init(coder:) has not been implemented")
   }
 
-  public func render() { }
+  public func render() {
+    renderChildren(viewController)
+  }
 }

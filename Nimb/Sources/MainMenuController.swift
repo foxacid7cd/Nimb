@@ -17,7 +17,7 @@ final class MainMenuController: NSObject, Rendering {
   private let settingsMenuItem = NSMenuItem(
     title: "Settings...",
     action: #selector(handleSettings),
-    keyEquivalent: "",
+    keyEquivalent: ",",
   )
   private let quitMenuItem = NSMenuItem(
     title: "Quit Nimb",
