@@ -21,6 +21,21 @@ function M.scroll(direction, count)
   vim.api.nvim_feedkeys(multipleKeys, "n", false)
 end
 
+---@param window integer
+---@param topline integer
+function M.scroll_window(window, topline)
+  if not vim.api.nvim_win_is_valid(window) then
+    return
+  end
+  vim.api.nvim_win_call(window, function()
+    local view = vim.fn.winsaveview()
+    local cursor_offset = view.lnum - view.topline
+    view.topline = topline + 1
+    view.lnum = math.min(view.topline + cursor_offset, vim.api.nvim_buf_line_count(0))
+    vim.fn.winrestview(view)
+  end)
+end
+
 local visual_modes = { v = true, V = true, ["\22"] = true }
 
 ---The visual selection, or the current line when nothing is selected, read

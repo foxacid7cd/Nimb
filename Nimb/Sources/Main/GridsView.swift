@@ -51,6 +51,11 @@ private final class MessageSeparatorView: NSView {
 }
 
 public class GridsView: NSView, Rendering {
+  private enum LeftMouseInteraction {
+    case editor(GridView)
+    case scrollbar(GridView)
+  }
+
   override public var intrinsicContentSize: NSSize {
     guard isRendered, let outerGrid = state.outerGrid else {
       return .zero
@@ -63,8 +68,7 @@ public class GridsView: NSView, Rendering {
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<GridView>()
   private let messageSeparatorView = MessageSeparatorView()
-  private var leftMouseInteractionTarget: GridView? = nil
-  private var scrollbarInteractionTarget: GridView? = nil
+  private var leftMouseInteraction: LeftMouseInteraction? = nil
   private var scrollbarHoverTarget: GridView? = nil
   private var rightMouseInteractionTarget: GridView? = nil
   private var otherMouseInteractionTarget: GridView? = nil
@@ -129,37 +133,45 @@ public class GridsView: NSView, Rendering {
   }
 
   override public func mouseDown(with event: NSEvent) {
-    scrollbarInteractionTarget?.endScrollbarInteraction()
-    scrollbarInteractionTarget = nil
-    leftMouseInteractionTarget = gridView(for: event)
-    if leftMouseInteractionTarget?.beginScrollbarInteraction(with: event) == true {
-      scrollbarInteractionTarget = leftMouseInteractionTarget
-      leftMouseInteractionTarget = nil
+    if case let .scrollbar(target) = leftMouseInteraction {
+      target.endScrollbarInteraction()
+    }
+    guard let target = gridView(for: event) else {
+      leftMouseInteraction = nil
       return
     }
-    leftMouseInteractionTarget?
-      .report(mouseButton: "left", action: "press", with: event)
+    if target.beginScrollbarInteraction(with: event) {
+      leftMouseInteraction = .scrollbar(target)
+    } else {
+      leftMouseInteraction = .editor(target)
+      target.report(mouseButton: "left", action: "press", with: event)
+    }
   }
 
   override public func mouseDragged(with event: NSEvent) {
-    if let scrollbarInteractionTarget {
-      scrollbarInteractionTarget.updateScrollbarInteraction(with: event)
-      return
+    switch leftMouseInteraction {
+    case let .editor(target):
+      target.report(mouseButton: "left", action: "drag", with: event)
+    case let .scrollbar(target):
+      target.updateScrollbarInteraction(with: event)
+    case nil:
+      break
     }
-    leftMouseInteractionTarget?
-      .report(mouseButton: "left", action: "drag", with: event)
   }
 
   override public func mouseUp(with event: NSEvent) {
-    if let scrollbarInteractionTarget {
-      scrollbarInteractionTarget.updateScrollbarInteraction(with: event)
-      scrollbarInteractionTarget.endScrollbarInteraction()
-      self.scrollbarInteractionTarget = nil
-      return
+    switch leftMouseInteraction {
+    case let .editor(target):
+      target.report(mouseButton: "left", action: "release", with: event)
+
+    case let .scrollbar(target):
+      target.updateScrollbarInteraction(with: event)
+      target.endScrollbarInteraction()
+
+    case nil:
+      break
     }
-    leftMouseInteractionTarget?
-      .report(mouseButton: "left", action: "release", with: event)
-    leftMouseInteractionTarget = nil
+    leftMouseInteraction = nil
   }
 
   override public func rightMouseDown(with event: NSEvent) {

@@ -38,6 +38,16 @@ public extension API {
   func keyPressed(_ keyPress: KeyPress) {
     fastCall(APIFunctions.NvimInput(keys: keyPress.makeNvimKeyCode()))
   }
+
+  func scrollWindow(_ windowID: References.Window, toTopLine topLine: Int) {
+    nimbFast(
+      method: "scroll_window",
+      parameters: [
+        .ext(type: References.Window.type, data: windowID.data),
+        .integer(topLine),
+      ],
+    )
+  }
 }
 
 @PublicInit

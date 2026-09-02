@@ -7,26 +7,6 @@ import NimbNeovim
 import NimbState
 
 public class GridView: NSView, CALayerDelegate, Rendering {
-  private struct ScrollbarMetrics {
-    var viewport: Viewport
-    var track: CGRect
-    var thumbHeight: CGFloat
-    var scrollableLineCount: Int
-
-    var thumbTravel: CGFloat {
-      track.height - thumbHeight
-    }
-
-    func thumbFrame(in bounds: CGRect, progress: CGFloat) -> CGRect {
-      .init(
-        x: bounds.maxX - 7,
-        y: track.maxY - thumbHeight - progress * thumbTravel,
-        width: 4,
-        height: thumbHeight,
-      )
-    }
-  }
-
   /// Which way the current gesture has committed to, if it has. Pinning to one
   /// axis keeps a crooked swipe from drifting sideways as it accumulates.
   private enum ScrollAxis {
@@ -71,11 +51,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private let store: Store
   private let gridLayer: GridLayer
   private let coreGraphicsLayer: GridCoreGraphicsLayer
-  private let scrollbarLayer = CALayer()
-  private var scrollbarHideTask: Task<Void, Never>? = nil
-  private var isScrollbarHovered = false
-  private var scrollbarDragOffset: CGFloat? = nil
-  private var requestedScrollbarTopLine: Int? = nil
+  private let scrollbar: GridScrollbar
   /// nil until the first render, so the first pass always applies visibility.
   private var renderingMode: Bool? = nil
   /// Bounds the last frame was built for. A resize changes every rect in the
@@ -94,8 +70,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   private var xScrollingReported: Double = 0
   private var yScrollingAccumulator: Double = 0
   private var yScrollingReported: Double = 0
-  private var previousMouseMove: (modifier: String, point: IntegerPoint)? = nil
-
   /// Mirrors what `mousescroll` was last set to, so it is pushed only on
   /// change. Starts at zero, since the config may have set it itself.
   private var scrollLinesPerEvent = 0
@@ -143,7 +117,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     return updates.updatedLayoutGridIDs.contains(gridID)
   }
 
-  private var scrollbarMetrics: ScrollbarMetrics? {
+  private var scrollbarGeometry: GridScrollbarGeometry? {
     guard
       gridID != Grid.OuterID,
       let grid = state.grids[gridID],
@@ -155,31 +129,14 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
 
     let margins = state.viewportMargins[gridID]
-    let topInset = CGFloat(margins?.top ?? 0) * state.font.cellHeight
-    let bottomInset = CGFloat(margins?.bottom ?? 0) * state.font.cellHeight
-    let track = CGRect(
-      x: 0,
-      y: bottomInset,
-      width: bounds.width,
-      height: bounds.height - topInset - bottomInset,
-    )
-    let visibleLineCount = max(
-      grid.rowsCount - (margins?.top ?? 0) - (margins?.bottom ?? 0),
-      1,
-    )
-    let thumbHeight = max(
-      20,
-      track.height * CGFloat(visibleLineCount) / CGFloat(viewport.lineCount),
-    )
-    let scrollableLineCount = viewport.lineCount - visibleLineCount
-    guard track.height > 0, thumbHeight < track.height, scrollableLineCount > 0 else {
-      return nil
-    }
     return .init(
-      viewport: viewport,
-      track: track,
-      thumbHeight: thumbHeight,
-      scrollableLineCount: scrollableLineCount,
+      bounds: bounds,
+      gridRows: grid.rowsCount,
+      cellHeight: state.font.cellHeight,
+      topMarginRows: margins?.top ?? 0,
+      bottomMarginRows: margins?.bottom ?? 0,
+      lineCount: viewport.lineCount,
+      topLine: viewport.topLine,
     )
   }
 
@@ -189,6 +146,9 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     metalSceneBuilder = GridMetalRenderer.shared.map(GridMetalSceneBuilder.init(renderer:))
     gridLayer = .init(store: store, gridID: gridID)
     coreGraphicsLayer = .init(gridID: gridID)
+    scrollbar = .init { windowID, topLine in
+      store.api.scrollWindow(windowID, toTopLine: topLine)
+    }
     super.init(frame: frameRect)
 
     wantsLayer = true
@@ -215,12 +175,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     coreGraphicsLayer.isHidden = true
     layer!.addSublayer(coreGraphicsLayer)
 
-    scrollbarLayer.backgroundColor = NSColor.labelColor
-      .withAlphaComponent(0.35)
-      .cgColor
-    scrollbarLayer.cornerRadius = 2
-    scrollbarLayer.opacity = 0
-    layer!.addSublayer(scrollbarLayer)
+    layer!.addSublayer(scrollbar.layer)
   }
 
   @available(*, unavailable)
@@ -449,28 +404,6 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     )
   }
 
-  public func reportMouseMove(for event: NSEvent) {
-    guard state.isMouseUserInteractionEnabled else {
-      return
-    }
-    let mouseMove = (
-      modifier: event.modifierFlags.makeModifiers(isSpecialKey: false).joined(),
-      point: point(for: event),
-    )
-    if mouseMove.modifier == previousMouseMove?.modifier, mouseMove.point == previousMouseMove?.point {
-      return
-    }
-    store.api.fastCall(APIFunctions.NvimInputMouse(
-      button: "move",
-      action: "",
-      modifier: mouseMove.modifier,
-      grid: gridID,
-      row: mouseMove.point.row,
-      col: mouseMove.point.column,
-    ))
-    previousMouseMove = mouseMove
-  }
-
   public func point(for event: NSEvent) -> IntegerPoint {
     guard let upsideDownTransform else {
       return .init()
@@ -515,188 +448,55 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   }
 
   public func beginScrollbarInteraction(with event: NSEvent) -> Bool {
-    guard state.isMouseUserInteractionEnabled, let metrics = scrollbarMetrics else {
+    guard
+      state.isMouseUserInteractionEnabled,
+      let geometry = scrollbarGeometry,
+      let windowID = state.viewports[gridID]?.windowID
+    else {
       return false
     }
-    let location = convert(event.locationInWindow, from: nil)
-    let hitTrack = CGRect(
-      x: bounds.maxX - 12,
-      y: metrics.track.minY,
-      width: 12,
-      height: metrics.track.height,
+    return scrollbar.begin(
+      at: convert(event.locationInWindow, from: nil),
+      geometry: geometry,
+      windowID: windowID,
     )
-    guard hitTrack.contains(location) else {
-      return false
-    }
-
-    scrollbarHideTask?.cancel()
-    scrollbarHideTask = nil
-    setScrollbarVisible(true)
-
-    let thumbFrame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
-    if thumbFrame.minY ... thumbFrame.maxY ~= location.y {
-      scrollbarDragOffset = location.y - thumbFrame.minY
-    } else {
-      scrollbarDragOffset = metrics.thumbHeight / 2
-      updateScrollbarInteraction(with: event)
-    }
-    return true
   }
 
   public func updateScrollbarHover(with event: NSEvent) -> Bool {
-    guard state.isMouseUserInteractionEnabled, let metrics = scrollbarMetrics else {
-      endScrollbarHover()
+    guard state.isMouseUserInteractionEnabled, let geometry = scrollbarGeometry else {
+      scrollbar.endHover()
       return false
     }
-    let location = convert(event.locationInWindow, from: nil)
-    let hitTrack = CGRect(
-      x: bounds.maxX - 12,
-      y: metrics.track.minY,
-      width: 12,
-      height: metrics.track.height,
+    return scrollbar.updateHover(
+      at: convert(event.locationInWindow, from: nil),
+      geometry: geometry,
     )
-    guard hitTrack.contains(location) else {
-      endScrollbarHover()
-      return false
-    }
-
-    isScrollbarHovered = true
-    scrollbarHideTask?.cancel()
-    scrollbarHideTask = nil
-    setScrollbarVisible(true)
-    return true
   }
 
   public func endScrollbarHover() {
-    guard isScrollbarHovered else {
-      return
-    }
-    isScrollbarHovered = false
-    if scrollbarDragOffset == nil {
-      scheduleScrollbarHide()
-    }
+    scrollbar.endHover()
   }
 
   public func updateScrollbarInteraction(with event: NSEvent) {
-    guard let dragOffset = scrollbarDragOffset, let metrics = scrollbarMetrics else {
+    guard let geometry = scrollbarGeometry, let windowID = state.viewports[gridID]?.windowID else {
       return
     }
-    let location = convert(event.locationInWindow, from: nil)
-    let thumbMinY = min(
-      max(location.y - dragOffset, metrics.track.minY),
-      metrics.track.maxY - metrics.thumbHeight,
+    scrollbar.update(
+      at: convert(event.locationInWindow, from: nil),
+      geometry: geometry,
+      windowID: windowID,
     )
-    let progress = (metrics.track.maxY - metrics.thumbHeight - thumbMinY)
-      / metrics.thumbTravel
-    let topLine = Int((progress * CGFloat(metrics.scrollableLineCount)).rounded())
-    guard topLine != requestedScrollbarTopLine else {
-      return
-    }
-
-    requestedScrollbarTopLine = topLine
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    scrollbarLayer.frame = metrics.thumbFrame(in: bounds, progress: progress)
-    CATransaction.commit()
-
-    store.api.fastCall(APIFunctions.NvimExecLua(
-      code: """
-      local window, topline = ...
-      if vim.api.nvim_win_is_valid(window) then
-        vim.api.nvim_win_call(window, function()
-          local view = vim.fn.winsaveview()
-          local cursor_offset = view.lnum - view.topline
-          view.topline = topline
-          view.lnum = math.min(
-            topline + cursor_offset,
-            vim.api.nvim_buf_line_count(0)
-          )
-          vim.fn.winrestview(view)
-        end)
-      end
-      """,
-      args: [
-        .ext(type: References.Window.type, data: metrics.viewport.windowID.data),
-        .integer(topLine + 1),
-      ],
-    ))
   }
 
   public func endScrollbarInteraction() {
-    guard scrollbarDragOffset != nil else {
-      return
-    }
-    scrollbarDragOffset = nil
-    requestedScrollbarTopLine = nil
-    if !isScrollbarHovered {
-      scheduleScrollbarHide()
-    }
+    scrollbar.endInteraction()
   }
 
   private func renderScrollbar() {
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    defer { CATransaction.commit() }
-
-    if updates.updatedViewportGridIDs.contains(gridID) {
-      requestedScrollbarTopLine = nil
-      if scrollbarDragOffset != nil, NSEvent.pressedMouseButtons & 1 == 0 {
-        scrollbarDragOffset = nil
-      }
-    }
-
-    guard let metrics = scrollbarMetrics else {
-      scrollbarHideTask?.cancel()
-      scrollbarHideTask = nil
-      setScrollbarVisible(false)
-      return
-    }
-
-    scrollbarLayer.frame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
-    if scrollbarDragOffset != nil {
-      setScrollbarVisible(true)
-    } else if updates.updatedViewportGridIDs.contains(gridID) {
-      setScrollbarVisible(true)
-      if !isScrollbarHovered {
-        scheduleScrollbarHide()
-      }
-    }
-  }
-
-  private func scrollbarProgress(for metrics: ScrollbarMetrics) -> CGFloat {
-    let topLine = requestedScrollbarTopLine ?? metrics.viewport.topLine
-    return min(max(CGFloat(topLine) / CGFloat(metrics.scrollableLineCount), 0), 1)
-  }
-
-  private func scheduleScrollbarHide() {
-    scrollbarHideTask?.cancel()
-    scrollbarHideTask = Task { @MainActor [weak self] in
-      try? await Task.sleep(for: .seconds(1.5))
-      guard !Task.isCancelled else {
-        return
-      }
-      guard self?.isScrollbarHovered == false, self?.scrollbarDragOffset == nil else {
-        return
-      }
-      self?.setScrollbarVisible(false)
-    }
-  }
-
-  private func setScrollbarVisible(_ isVisible: Bool) {
-    let opacity: Float = isVisible ? 1 : 0
-    guard scrollbarLayer.opacity != opacity else {
-      return
-    }
-
-    let currentOpacity = scrollbarLayer.presentation()?.opacity ?? scrollbarLayer.opacity
-    scrollbarLayer.opacity = opacity
-
-    let animation = CABasicAnimation(keyPath: "opacity")
-    animation.fromValue = currentOpacity
-    animation.toValue = opacity
-    animation.duration = 0.16
-    animation.timingFunction = .init(name: .easeInEaseOut)
-    scrollbarLayer.add(animation, forKey: "visibility")
+    scrollbar.render(
+      geometry: scrollbarGeometry,
+      viewportUpdated: updates.updatedViewportGridIDs.contains(gridID),
+    )
   }
 
   private func updateVisibility() {
