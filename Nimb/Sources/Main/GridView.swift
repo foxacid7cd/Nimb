@@ -218,7 +218,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       .withAlphaComponent(0.35)
       .cgColor
     scrollbarLayer.cornerRadius = 2
-    scrollbarLayer.isHidden = true
+    scrollbarLayer.opacity = 0
     layer!.addSublayer(scrollbarLayer)
   }
 
@@ -545,7 +545,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
 
     scrollbarHideTask?.cancel()
     scrollbarHideTask = nil
-    scrollbarLayer.isHidden = false
+    setScrollbarVisible(true)
 
     let thumbFrame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
     if thumbFrame.minY ... thumbFrame.maxY ~= location.y {
@@ -626,15 +626,15 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     guard let metrics = scrollbarMetrics else {
       scrollbarHideTask?.cancel()
       scrollbarHideTask = nil
-      scrollbarLayer.isHidden = true
+      setScrollbarVisible(false)
       return
     }
 
     scrollbarLayer.frame = metrics.thumbFrame(in: bounds, progress: scrollbarProgress(for: metrics))
     if scrollbarDragOffset != nil {
-      scrollbarLayer.isHidden = false
+      setScrollbarVisible(true)
     } else if updates.updatedViewportGridIDs.contains(gridID) {
-      scrollbarLayer.isHidden = false
+      setScrollbarVisible(true)
       scheduleScrollbarHide()
     }
   }
@@ -651,11 +651,25 @@ public class GridView: NSView, CALayerDelegate, Rendering {
       guard !Task.isCancelled else {
         return
       }
-      CATransaction.begin()
-      CATransaction.setDisableActions(true)
-      self?.scrollbarLayer.isHidden = true
-      CATransaction.commit()
+      self?.setScrollbarVisible(false)
     }
+  }
+
+  private func setScrollbarVisible(_ isVisible: Bool) {
+    let opacity: Float = isVisible ? 1 : 0
+    guard scrollbarLayer.opacity != opacity else {
+      return
+    }
+
+    let currentOpacity = scrollbarLayer.presentation()?.opacity ?? scrollbarLayer.opacity
+    scrollbarLayer.opacity = opacity
+
+    let animation = CABasicAnimation(keyPath: "opacity")
+    animation.fromValue = currentOpacity
+    animation.toValue = opacity
+    animation.duration = 0.16
+    animation.timingFunction = .init(name: .easeInEaseOut)
+    scrollbarLayer.add(animation, forKey: "visibility")
   }
 
   private func updateVisibility() {
