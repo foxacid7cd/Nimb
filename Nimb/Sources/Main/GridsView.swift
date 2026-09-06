@@ -89,6 +89,8 @@ public class GridsView: NSView, Rendering {
 
   public var renderContext: RenderContext! = nil
 
+  var onOuterGridFirstFramePresented: (() -> Void)? = nil
+
   private var store: Store
   private var arrangedGridViews = IntKeyedDictionary<GridView>()
   private let messageSeparatorView = MessageSeparatorView()
@@ -287,6 +289,7 @@ public class GridsView: NSView, Rendering {
   public func render() {
     for gridID in updates.destroyedGridIDs {
       let view = arrangedGridView(forGridWithID: gridID)
+      view.resetPresentedFrame()
       view.setHiddenByState(true)
     }
 
@@ -404,6 +407,11 @@ public class GridsView: NSView, Rendering {
         store: store,
         gridID: id,
       )
+      if id == Grid.OuterID {
+        view.onFirstFramePresented = { [weak self] in
+          self?.onOuterGridFirstFramePresented?()
+        }
+      }
       renderChildren(view)
       view.autoresizingMask = []
       view.translatesAutoresizingMaskIntoConstraints = false

@@ -102,21 +102,45 @@ public nonisolated class GridLayer: CAMetalLayer {
     }
   }
 
+  private final class FirstFrameState: Sendable {
+    private let value = Mutex((generation: 0, hasSignalled: false))
+
+    var generation: Int {
+      value.withLock(\.generation)
+    }
+
+    func reset() {
+      value.withLock { state in
+        state.generation += 1
+        state.hasSignalled = false
+      }
+    }
+
+    func shouldSignal(generation: Int) -> Bool {
+      value.withLock { state in
+        guard state.generation == generation, !state.hasSignalled else {
+          return false
+        }
+        state.hasSignalled = true
+        return true
+      }
+    }
+  }
+
   private static let metalRenderer = GridMetalRenderer.shared
   private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
   /// Also the depth of the instance buffer ring; the two have to agree, since
   /// the drawable pool bounds how many frames the GPU can be reading.
   private static let maximumFramesInFlight = 3
 
-  /// Called the first time this layer has a frame to draw, so the view above can
-  /// stop hiding itself. Fired on handover, not on present, to save a hop.
-  nonisolated(unsafe) var onFirstFrameReady: (@MainActor () -> Void)? = nil
+  /// Called after this layer's first frame finishes rendering.
+  nonisolated(unsafe) var onFirstFrameReady: (@MainActor @Sendable () -> Void)? = nil
 
   private let gridID: Grid.ID
   private let store: Store
   private nonisolated let isolatedRenderInput = Mutex<GridRenderInput?>(nil)
   private var metalBufferCache: MetalBufferCache? = nil
-  private let hasSignalledFirstFrame = Mutex(false)
+  private let firstFrameState = FirstFrameState()
 
   override public init(layer: Any) {
     let gridLayer = layer as! GridLayer
@@ -177,23 +201,17 @@ public nonisolated class GridLayer: CAMetalLayer {
   }
 
   public nonisolated func render() {
-    let hasFrame = isolatedRenderInput.withLock { renderInput -> Bool? in
-      guard let renderInput else {
-        return nil
-      }
-      return renderInput.metalFrame != nil
-    }
-    guard let hasFrame else {
+    guard isolatedRenderInput.withLock({ $0 != nil }) else {
       return
     }
 
     // Whole layer, not the dirty rectangles: display() re-encodes the entire
     // scene whatever is marked. Unconditional, since GridView already gated it.
     setNeedsDisplay()
+  }
 
-    if hasFrame {
-      signalFirstFrameIfNeeded()
-    }
+  func resetFirstFrame() {
+    firstFrameState.reset()
   }
 
   nonisolated func update(renderInput: GridRenderInput?) {
@@ -216,20 +234,6 @@ public nonisolated class GridLayer: CAMetalLayer {
 
   /// Both call sites are already on the main actor, which is what makes
   /// assuming it here sound.
-  private nonisolated func signalFirstFrameIfNeeded() {
-    let shouldSignal = hasSignalledFirstFrame.withLock { signalled -> Bool in
-      guard !signalled else {
-        return false
-      }
-      signalled = true
-      return true
-    }
-    guard shouldSignal, let onFirstFrameReady else {
-      return
-    }
-    MainActor.assumeIsolated { onFirstFrameReady() }
-  }
-
   private func configureMetalLayer() {
     guard let metalRenderer = Self.metalRenderer else {
       return
@@ -340,6 +344,17 @@ public nonisolated class GridLayer: CAMetalLayer {
     )
     renderEncoder.endEncoding()
 
+    let generation = firstFrameState.generation
+    let firstFrameState = firstFrameState
+    let onFirstFrameReady = onFirstFrameReady
+    commandBuffer.addCompletedHandler { _ in
+      guard firstFrameState.shouldSignal(generation: generation), let onFirstFrameReady else {
+        return
+      }
+      Task { @MainActor in
+        onFirstFrameReady()
+      }
+    }
     commandBuffer.present(drawable)
     commandBuffer.commit()
 

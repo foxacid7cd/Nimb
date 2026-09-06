@@ -47,6 +47,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
   public var renderContext: RenderContext! = nil
 
   let gridID: Grid.ID
+  var onFirstFramePresented: (() -> Void)? = nil
 
   private let store: Store
   private let gridLayer: GridLayer
@@ -327,6 +328,12 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     updateVisibility()
   }
 
+  public func resetPresentedFrame() {
+    hasPresentedFrame = false
+    gridLayer.resetFirstFrame()
+    updateVisibility()
+  }
+
   public nonisolated func action(for layer: CALayer, forKey event: String) -> (any CAAction)? {
     NSNull()
   }
@@ -509,6 +516,7 @@ public class GridView: NSView, CALayerDelegate, Rendering {
     }
     hasPresentedFrame = true
     updateVisibility()
+    onFirstFramePresented?()
   }
 
   private func apply(backingScale scale: CGFloat) {

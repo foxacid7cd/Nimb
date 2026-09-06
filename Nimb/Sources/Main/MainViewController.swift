@@ -15,6 +15,7 @@ public class MainViewController: NSViewController, Rendering {
   private lazy var tablineView = TablineView(store: store)
   private lazy var gridsContainerView = NSView()
   private lazy var loadingIndicator = NSProgressIndicator()
+  private var isWaitingForFirstGridFrame = true
   private var preMaximizeWindowFrame: CGRect? = nil
   private lazy var visualBellView = NSView()
   private let reportOuterGridSizeChangedContinuation: AsyncStream<IntegerSize>.Continuation
@@ -30,6 +31,11 @@ public class MainViewController: NSViewController, Rendering {
       reportOuterGridSizeChangedContinuation,
     ) = AsyncStream.makeStream()
     super.init(nibName: nil, bundle: nil)
+
+    gridsView.onOuterGridFirstFramePresented = { [weak self] in
+      self?.isWaitingForFirstGridFrame = false
+      self?.renderLoadingIndicator()
+    }
 
     reportOuterGridSizeChangedTask = Task {
       let outerGridSizes = reportOuterGridSizeChanged
@@ -166,16 +172,6 @@ public class MainViewController: NSViewController, Rendering {
     renderChildren(gridsView)
   }
 
-  private func renderLoadingIndicator() {
-    let isLoading = state.outerGrid == nil
-    loadingIndicator.isHidden = !isLoading
-    if isLoading {
-      loadingIndicator.startAnimation(nil)
-    } else {
-      loadingIndicator.stopAnimation(nil)
-    }
-  }
-
   public func windowFrame(
     forGridID gridID: Grid.ID,
     gridFrame: IntegerRectangle,
@@ -194,6 +190,19 @@ public class MainViewController: NSViewController, Rendering {
     reportOuterGridSizeChangedContinuation
       .yield(outerGridSize)
     return outerGridSize
+  }
+
+  private func renderLoadingIndicator() {
+    if isRendered, state.outerGrid == nil {
+      isWaitingForFirstGridFrame = true
+    }
+    let isLoading = isWaitingForFirstGridFrame
+    loadingIndicator.isHidden = !isLoading
+    if isLoading {
+      loadingIndicator.startAnimation(nil)
+    } else {
+      loadingIndicator.stopAnimation(nil)
+    }
   }
 
   private func flashVisualBell() {
