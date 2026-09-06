@@ -9,7 +9,7 @@ import OrderedCollections
 @PublicInit
 public struct State: Sendable {
   @PublicInit
-  public struct Debug: Sendable, Codable {
+  public struct Debug: Sendable, Codable, Equatable {
     public var isUIEventsLoggingEnabled: Bool = false
     public var isMessagePackInspectorEnabled: Bool = false
     public var isStoreActionsLoggingEnabled: Bool = false
@@ -22,6 +22,9 @@ public struct State: Sendable {
     /// Drive the reducer on the main actor instead of the cooperative pool, so
     /// its cost and the render walk's add up. Read once, at store construction.
     public var isReducingOnMainThreadEnabled: Bool = false
+    /// After each action, compare the cheap state fields against the updates it
+    /// declared and log whatever it changed silently.
+    public var isUpdatesVerificationEnabled: Bool = false
 
     /// Decoded field by field, treating anything absent as its default: the
     /// synthesised decoding throws on a missing key, and the caller swallows it.
@@ -36,16 +39,18 @@ public struct State: Sendable {
       isCoreGraphicsRenderingEnabled = try flag(.isCoreGraphicsRenderingEnabled)
       isFrameStatsLoggingEnabled = try flag(.isFrameStatsLoggingEnabled)
       isReducingOnMainThreadEnabled = try flag(.isReducingOnMainThreadEnabled)
+      isUpdatesVerificationEnabled = try flag(.isUpdatesVerificationEnabled)
     }
   }
 
   @PublicInit
+  @Mergeable
   public struct Updates: Sendable {
-    public var needFlush: Bool = false
+    @MergeReplacing public var needFlush: Bool = false
 
     /// Set by every redraw batch, whether or not it ended in flush. Read with
     /// `needFlush`, it says whether the frame that batch belongs to is complete.
-    public var isFromRedrawBatch: Bool = false
+    @MergeReplacing public var isFromRedrawBatch: Bool = false
     public var isRawOptionsUpdated: Bool = false
     public var isDebugUpdated: Bool = false
     public var isModeUpdated: Bool = false
@@ -64,7 +69,7 @@ public struct State: Sendable {
     public var updatedLayoutGridIDs: Set<Grid.ID> = []
     public var updatedViewportGridIDs: Set<Grid.ID> = []
     public var gridUpdates: IntKeyedDictionary<Grid.UpdateResult> = [:]
-    public var destroyedGridIDs: Set<Grid.ID> = []
+    @MergeCustom public var destroyedGridIDs: Set<Grid.ID> = []
     public var isGridsHierarchyUpdated: Bool = false
     public var isCursorBlinkingPhaseUpdated: Bool = false
     public var isBusyUpdated: Bool = false
@@ -85,55 +90,19 @@ public struct State: Sendable {
       isMouseOnUpdated || isBusyUpdated
     }
 
-    public mutating func formUnion(_ updates: Updates) {
-      needFlush = updates.needFlush
-      isFromRedrawBatch = updates.isFromRedrawBatch
-      isRawOptionsUpdated = isRawOptionsUpdated || updates.isRawOptionsUpdated
-      isDebugUpdated = isDebugUpdated || updates.isDebugUpdated
-      isModeUpdated = isModeUpdated || updates.isModeUpdated
-      isTitleUpdated = isTitleUpdated || updates.isTitleUpdated
-      isFontUpdated = isFontUpdated || updates.isFontUpdated
-      isAppearanceUpdated = isAppearanceUpdated || updates.isAppearanceUpdated
-      isHighlightsUpdated = isHighlightsUpdated || updates.isHighlightsUpdated
-      updatedObservedHighlightNames
-        .formUnion(updates.updatedObservedHighlightNames)
-      isCursorUpdated = isCursorUpdated || updates.isCursorUpdated
-      tabline.formUnion(updates.tabline)
-      for gridID in updates.destroyedGridIDs {
+    /// A destroyed grid retracts whatever the frame had already accumulated for
+    /// it, so this runs before the incoming layout and grid updates are merged.
+    private mutating func mergeCustom(_ other: Self) {
+      for gridID in other.destroyedGridIDs {
         updatedLayoutGridIDs.remove(gridID)
         gridUpdates.removeValue(forKey: gridID)
         destroyedGridIDs.insert(gridID)
       }
-      for gridID in updates.updatedLayoutGridIDs {
-        updatedLayoutGridIDs.insert(gridID)
-      }
-      for (gridID, gridUpdate) in updates.gridUpdates {
-        if var accumulator = gridUpdates[gridID] {
-          accumulator.formUnion(gridUpdate)
-          gridUpdates[gridID] = accumulator
-        } else {
-          gridUpdates[gridID] = gridUpdate
-        }
-      }
-      updatedViewportGridIDs.formUnion(updates.updatedViewportGridIDs)
-      isGridsHierarchyUpdated = isGridsHierarchyUpdated || updates.isGridsHierarchyUpdated
-      isCursorBlinkingPhaseUpdated = isCursorBlinkingPhaseUpdated || updates
-        .isCursorBlinkingPhaseUpdated
-      isBusyUpdated = isBusyUpdated || updates.isBusyUpdated
-      isMouseOnUpdated = isMouseOnUpdated || updates.isMouseOnUpdated
-      isNimbNotifiesUpdated = isNimbNotifiesUpdated || updates.isNimbNotifiesUpdated
-      isApplicationActiveUpdated = isApplicationActiveUpdated || updates.isApplicationActiveUpdated
-      isWindowKeyUpdated = isWindowKeyUpdated || updates.isWindowKeyUpdated
-      isErrorExitStatusUpdated = isErrorExitStatusUpdated || updates.isErrorExitStatusUpdated
-      isPendingReattachUpdated = isPendingReattachUpdated || updates
-        .isPendingReattachUpdated
-      // Ored, not counted: two bells inside one frame are still one bell.
-      isBellRung = isBellRung || updates.isBellRung
-      isVisualBellRung = isVisualBellRung || updates.isVisualBellRung
     }
   }
 
   @PublicInit
+  @Mergeable
   public struct TablineUpdate: Sendable {
     public var isTabpagesUpdated: Bool = false
     public var isTabpagesContentUpdated: Bool = false
@@ -143,17 +112,6 @@ public struct State: Sendable {
 
     public var hasUpdates: Bool {
       isTabpagesUpdated || isTabpagesContentUpdated || isBuffersUpdated || isSelectedTabpageUpdated || isSelectedBufferUpdated
-    }
-
-    public mutating func formUnion(_ update: TablineUpdate) {
-      isTabpagesUpdated = isTabpagesUpdated || update.isTabpagesUpdated
-      isTabpagesContentUpdated = isTabpagesContentUpdated || update
-        .isTabpagesContentUpdated
-      isBuffersUpdated = isBuffersUpdated || update.isBuffersUpdated
-      isSelectedTabpageUpdated = isSelectedTabpageUpdated || update
-        .isSelectedTabpageUpdated
-      isSelectedBufferUpdated = isSelectedBufferUpdated || update
-        .isSelectedBufferUpdated
     }
   }
 
@@ -207,69 +165,61 @@ public struct State: Sendable {
     isMouseOn && !isBusy
   }
 
-  public var shouldNextMouseEventStopinsert: Bool {
-    false
-  }
-
   public mutating func flushDrawRuns() {
     for gridID in grids.keys {
       grids[gridID]!.flushDrawRuns(font: font, appearance: appearance)
     }
   }
 
-  public mutating func apply(updates: Updates, from state: State) {
-    if updates.isRawOptionsUpdated {
-      rawOptions = state.rawOptions
+  /// Debug aid: names the fields that changed since `previous` without
+  /// `updates` declaring them. Cheap fields only, since comparing grids and
+  /// appearance costs more than the check is worth.
+  public func undeclaredUpdates(since previous: State, updates: Updates) -> [String] {
+    var undeclared = [String]()
+
+    func check(_ name: String, _ isDeclared: Bool, _ hasChanged: Bool) {
+      if hasChanged, !isDeclared {
+        undeclared.append(name)
+      }
     }
-    if updates.isDebugUpdated {
-      debug = state.debug
-    }
-    if updates.isModeUpdated {
-      mode = state.mode
-    }
-    if updates.isTitleUpdated {
-      title = state.title
-    }
-    if updates.isFontUpdated {
-      font = state.font
-    }
-    if updates.isAppearanceUpdated || !updates.updatedObservedHighlightNames.isEmpty {
-      appearance = state.appearance
-    }
-    if updates.isCursorUpdated {
-      cursor = state.cursor
-    }
-    if updates.tabline.hasUpdates {
-      tabline = state.tabline
-    }
-    if !updates.updatedLayoutGridIDs.isEmpty || !updates.gridUpdates.isEmpty || !updates.destroyedGridIDs.isEmpty {
-      grids = state.grids
-    }
-    if !updates.updatedViewportGridIDs.isEmpty {
-      viewports = state.viewports
-      viewportMargins = state.viewportMargins
-    }
-    if updates.isGridsHierarchyUpdated {
-      gridsHierarchy = state.gridsHierarchy
-    }
-    if updates.isCursorBlinkingPhaseUpdated {
-      cursorBlinkingPhase = state.cursorBlinkingPhase
-    }
-    if updates.isBusyUpdated {
-      isBusy = state.isBusy
-    }
-    if updates.isMouseOnUpdated {
-      isMouseOn = state.isMouseOn
-    }
-    if updates.isNimbNotifiesUpdated {
-      nimbNotifies = state.nimbNotifies
-    }
-    if updates.isApplicationActiveUpdated {
-      isApplicationActive = state.isApplicationActive
-    }
-    if updates.isWindowKeyUpdated {
-      isWindowKey = state.isWindowKey
-    }
+
+    check("rawOptions", updates.isRawOptionsUpdated, rawOptions != previous.rawOptions)
+    check("debug", updates.isDebugUpdated, debug != previous.debug)
+    check("title", updates.isTitleUpdated, title != previous.title)
+    check("font", updates.isFontUpdated, font != previous.font)
+    check("mode", updates.isModeUpdated, mode != previous.mode)
+    check("cursor", updates.isCursorUpdated, cursor != previous.cursor)
+    check("tabline", updates.tabline.hasUpdates, tabline != previous.tabline)
+    check(
+      "cursorBlinkingPhase",
+      updates.isCursorBlinkingPhaseUpdated,
+      cursorBlinkingPhase != previous.cursorBlinkingPhase,
+    )
+    check("isBusy", updates.isBusyUpdated, isBusy != previous.isBusy)
+    check("isMouseOn", updates.isMouseOnUpdated, isMouseOn != previous.isMouseOn)
+    check(
+      "nimbNotifies",
+      updates.isNimbNotifiesUpdated,
+      nimbNotifies != previous.nimbNotifies,
+    )
+    check(
+      "isApplicationActive",
+      updates.isApplicationActiveUpdated,
+      isApplicationActive != previous.isApplicationActive,
+    )
+    check("isWindowKey", updates.isWindowKeyUpdated, isWindowKey != previous.isWindowKey)
+    check(
+      "errorExitStatus",
+      updates.isErrorExitStatusUpdated,
+      errorExitStatus != previous.errorExitStatus,
+    )
+    check(
+      "pendingReattachAddress",
+      updates.isPendingReattachUpdated,
+      pendingReattachAddress != previous.pendingReattachAddress,
+    )
+
+    return undeclared
   }
 
   public func walkingGridFrames(_ body: (_ id: Grid.ID, _ frame: CGRect, _ zPosition: Double) throws -> Void) rethrows {

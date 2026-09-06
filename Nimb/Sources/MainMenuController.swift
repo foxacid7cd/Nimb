@@ -382,6 +382,10 @@ final class MainMenuController: NSObject, Rendering {
     store.dispatch(Actions.ToggleReducingOnMainThread())
   }
 
+  @objc private func handleToggleUpdatesVerification() {
+    store.dispatch(Actions.ToggleUpdatesVerification())
+  }
+
   @objc private func handleLogState() {
     Task {
       var dump = ""
@@ -564,12 +568,22 @@ extension MainMenuController: NSMenuDelegate {
       )
       toggleReducingOnMainThreadMenuItem.target = self
 
+      let toggleUpdatesVerificationMenuItem = NSMenuItem(
+        title: state.debug
+          .isUpdatesVerificationEnabled ? "Disable updates verification" :
+          "Enable updates verification",
+        action: #selector(handleToggleUpdatesVerification),
+        keyEquivalent: "",
+      )
+      toggleUpdatesVerificationMenuItem.target = self
+
       menu.items = [
         logStateMenuItem,
         NSMenuItem.separator(),
         toggleUIEventsLoggingMenuItem,
         toggleMessagePackInspector,
         toggleStoreActionsLoggingMenuItem,
+        toggleUpdatesVerificationMenuItem,
         NSMenuItem.separator(),
         toggleCoreGraphicsRenderingMenuItem,
         toggleFrameStatsLoggingMenuItem,

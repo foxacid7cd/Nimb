@@ -369,11 +369,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate, Rendering {
         try Task.checkCancellation()
 
         if updates.isNimbNotifiesUpdated {
-          for _ in presentedNimbNotifiesCount ..< state.nimbNotifies.count {
-            let notification = state.nimbNotifies[presentedNimbNotifiesCount]
-            showNimbNotify(notification)
+          // Clamped, not just advanced: a restart empties the list, and the
+          // count would otherwise stay past its end.
+          presentedNimbNotifiesCount = min(
+            presentedNimbNotifiesCount,
+            state.nimbNotifies.count,
+          )
+          while presentedNimbNotifiesCount < state.nimbNotifies.count {
+            showNimbNotify(state.nimbNotifies[presentedNimbNotifiesCount])
+            presentedNimbNotifiesCount += 1
           }
-          presentedNimbNotifiesCount = state.nimbNotifies.count
         }
 
         let shouldCreateRenderTask = pendingStateAndUpdates.withLock { value in

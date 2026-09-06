@@ -10,6 +10,7 @@ final class SettingsAdvancedViewController: NSViewController, Rendering {
   private lazy var uiEvents = checkbox("Log Neovim UI events", action: #selector(toggleUIEvents))
   private lazy var messagePack = checkbox("Capture MessagePack traffic", action: #selector(toggleMessagePack))
   private lazy var storeActions = checkbox("Log state actions", action: #selector(toggleStoreActions))
+  private lazy var updatesVerification = checkbox("Verify state updates", action: #selector(toggleUpdatesVerification))
   private lazy var frameStats = checkbox("Log rendering performance", action: #selector(toggleFrameStats))
   private lazy var reduceOnMain = checkbox("Reduce state on main thread", action: #selector(toggleReduceOnMain))
 
@@ -32,6 +33,7 @@ final class SettingsAdvancedViewController: NSViewController, Rendering {
       uiEvents,
       messagePack,
       storeActions,
+      updatesVerification,
       frameStats,
       reduceOnMain,
       note,
@@ -50,6 +52,7 @@ final class SettingsAdvancedViewController: NSViewController, Rendering {
     uiEvents.state = state.debug.isUIEventsLoggingEnabled ? .on : .off
     messagePack.state = state.debug.isMessagePackInspectorEnabled ? .on : .off
     storeActions.state = state.debug.isStoreActionsLoggingEnabled ? .on : .off
+    updatesVerification.state = state.debug.isUpdatesVerificationEnabled ? .on : .off
     frameStats.state = state.debug.isFrameStatsLoggingEnabled ? .on : .off
     reduceOnMain.state = state.debug.isReducingOnMainThreadEnabled ? .on : .off
   }
@@ -68,6 +71,10 @@ final class SettingsAdvancedViewController: NSViewController, Rendering {
 
   @objc private func toggleStoreActions() {
     store.dispatch(Actions.ToggleStoreActionsLogging())
+  }
+
+  @objc private func toggleUpdatesVerification() {
+    store.dispatch(Actions.ToggleUpdatesVerification())
   }
 
   @objc private func toggleFrameStats() {

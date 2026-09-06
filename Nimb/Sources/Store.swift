@@ -206,11 +206,26 @@ public final nonisolated class Store: Sendable {
     var isRedrawFrameIncomplete = false
 
     func apply(_ action: any Action) {
+      let stateBeforeAction = state.debug.isUpdatesVerificationEnabled ? state : nil
+
       let newUpdates = measuringRenderStage("reduce", .reduce) {
         action.apply(to: &state) { error in
           alertsContinuation.yield(.init(error))
         }
       }
+
+      if let stateBeforeAction {
+        let undeclared = state.undeclaredUpdates(
+          since: stateBeforeAction,
+          updates: newUpdates,
+        )
+        if !undeclared.isEmpty {
+          logger.fault(
+            "\(String(describing: type(of: action))) changed \(undeclared.joined(separator: ", ")) without declaring it in its updates",
+          )
+        }
+      }
+
       updates.formUnion(newUpdates)
 
       if newUpdates.isFromRedrawBatch {

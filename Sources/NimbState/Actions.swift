@@ -38,6 +38,7 @@ public enum Actions {
         isCursorBlinkingPhaseUpdated: true,
         isBusyUpdated: true,
         isMouseOnUpdated: true,
+        isNimbNotifiesUpdated: true,
         isApplicationActiveUpdated: true,
         isWindowKeyUpdated: true,
         isErrorExitStatusUpdated: true,
@@ -87,6 +88,15 @@ public enum Actions {
 
     public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
       state.debug.isReducingOnMainThreadEnabled.toggle()
+      return .init(needFlush: true, isDebugUpdated: true)
+    }
+  }
+
+  public struct ToggleUpdatesVerification: Action {
+    public init() { }
+
+    public func apply(to state: inout State, handleError: @Sendable (Error) -> Void) -> State.Updates {
+      state.debug.isUpdatesVerificationEnabled.toggle()
       return .init(needFlush: true, isDebugUpdated: true)
     }
   }

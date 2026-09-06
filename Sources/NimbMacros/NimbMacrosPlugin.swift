@@ -7,5 +7,7 @@ import SwiftSyntaxMacros
 struct NimbMacrosPlugin: CompilerPlugin {
   let providingMacros: [Macro.Type] = [
     PublicInitMacro.self,
+    MergeableMacro.self,
+    MergeMarkerMacro.self,
   ]
 }

@@ -4,13 +4,13 @@ import Foundation
 import NimbCore
 
 @PublicInit
-public struct Cursor: Sendable {
+public struct Cursor: Sendable, Equatable {
   public var gridID: Grid.ID
   public var position: IntegerPoint
 }
 
 @PublicInit
-public struct Mode: Sendable {
+public struct Mode: Sendable, Equatable {
   public var name: String
   public var cursorStyleIndex: Int
 }

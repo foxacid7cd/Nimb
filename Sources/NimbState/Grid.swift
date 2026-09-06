@@ -400,3 +400,16 @@ public struct Grid: Sendable, Identifiable {
     }
   }
 }
+
+public extension IntKeyedDictionary where Value == Grid.UpdateResult {
+  mutating func formUnion(_ other: Self) {
+    for (gridID, gridUpdate) in other {
+      if var accumulator = self[gridID] {
+        accumulator.formUnion(gridUpdate)
+        self[gridID] = accumulator
+      } else {
+        self[gridID] = gridUpdate
+      }
+    }
+  }
+}
