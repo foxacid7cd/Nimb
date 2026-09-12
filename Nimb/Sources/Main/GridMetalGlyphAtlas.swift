@@ -34,6 +34,7 @@ final nonisolated class GridMetalGlyphAtlas {
   /// Replaced wholesale rather than cleared when the atlas fills up, so any
   /// frame still in flight keeps sampling the texture it was built against.
   private(set) var texture: MTLTexture
+  private(set) var generation: UInt64 = 0
   let scale: CGFloat
 
   private let device: MTLDevice
@@ -265,6 +266,8 @@ final nonisolated class GridMetalGlyphAtlas {
     }
 
     self.texture = texture
+    generation &+= 1
+    renderStats.count(.glyphAtlasResets)
     entries.removeAll(keepingCapacity: true)
     for index in entryIndices.indices {
       entryIndices[index] = .max

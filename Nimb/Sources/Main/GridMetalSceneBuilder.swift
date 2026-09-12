@@ -26,6 +26,7 @@ final nonisolated class GridMetalSceneBuilder {
     var fontID: Int
     var scale: CGFloat
     var columns: Range<Int>
+    var atlasGeneration: UInt64
   }
 
   private let renderer: GridMetalRenderer
@@ -63,15 +64,26 @@ final nonisolated class GridMetalSceneBuilder {
       return nil
     }
 
-    let scene = measuringRenderStage("scene build", .sceneBuild) {
-      buildScene(
-        gridID: gridID,
-        snapshot: snapshot,
-        updates: updates,
-        bounds: bounds,
-        glyphAtlas: glyphAtlas,
-        scale: scale,
-      )
+    var scene: GridMetalScene? = nil
+    for _ in 0 ..< 2 {
+      let atlasGeneration = glyphAtlas.generation
+      let builtScene = measuringRenderStage("scene build", .sceneBuild) {
+        buildScene(
+          gridID: gridID,
+          snapshot: snapshot,
+          updates: updates,
+          bounds: bounds,
+          glyphAtlas: glyphAtlas,
+          scale: scale,
+        )
+      }
+      guard glyphAtlas.generation != atlasGeneration else {
+        scene = builtScene
+        break
+      }
+    }
+    guard let scene else {
+      return nil
     }
 
     return .init(
@@ -114,6 +126,7 @@ final nonisolated class GridMetalSceneBuilder {
       fontID: snapshot.font.id,
       scale: scale,
       columns: boundingRect.columns,
+      atlasGeneration: glyphAtlas.generation,
     )
 
     if

@@ -72,6 +72,7 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
   case assembledInstances
   case staticScenesReused
   case metalBuffersReused
+  case glyphAtlasResets
   /// Frames carrying isAppearanceUpdated, which forces every grid to rebuild.
   /// Approaching one per frame means no per-grid skipping can fire.
   case appearanceUpdatedFrames
@@ -92,6 +93,7 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
     case .assembledInstances: "instances"
     case .staticScenesReused: "scenes-reused"
     case .metalBuffersReused: "buffers-reused"
+    case .glyphAtlasResets: "atlas-resets"
     case .appearanceUpdatedFrames: "appearance"
     }
   }
