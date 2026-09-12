@@ -11,7 +11,8 @@ import QuartzCore
 import Synchronization
 
 struct GridDrawSnapshot: Sendable {
-  let grid: Grid
+  let size: IntegerSize
+  let drawRuns: GridDrawRuns
   let upsideDownTransform: CGAffineTransform
   let font: Font
   let appearance: Appearance

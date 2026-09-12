@@ -125,7 +125,7 @@ final nonisolated class GridMetalSceneBuilder {
 
     // A row at a time rather than a draw run at a time: the row's id moves with
     // its contents, so an unchanged row stays recognisable after a scroll.
-    snapshot.grid.drawRuns.forEachVisibleRow(
+    snapshot.drawRuns.forEachVisibleRow(
       boundingRect: boundingRect,
       font: snapshot.font,
     ) { rowDrawRun, rowOrigin in
@@ -175,7 +175,7 @@ final nonisolated class GridMetalSceneBuilder {
       // Hidden while Neovim is busy, as busy_start asks. Not tied to the
       // mouse: 'mouse' being off says nothing about the cursor.
       !snapshot.isBusy,
-      let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
+      let cursorDrawRun = snapshot.drawRuns.cursorDrawRun,
       boundingRect.contains(cursorDrawRun.origin)
     {
       appendCursorInstances(

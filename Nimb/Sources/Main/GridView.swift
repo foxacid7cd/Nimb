@@ -545,7 +545,8 @@ public class GridView: NSView, CALayerDelegate, Rendering {
 
     return GridRenderInput(
       snapshot: .init(
-        grid: grid,
+        size: grid.size,
+        drawRuns: grid.drawRuns,
         upsideDownTransform: upsideDownTransform,
         font: renderContext.state.font,
         appearance: renderContext.state.appearance,

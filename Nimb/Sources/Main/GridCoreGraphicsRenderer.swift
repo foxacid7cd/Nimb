@@ -22,7 +22,7 @@ nonisolated enum GridCoreGraphicsRenderer {
       frame: clipRect.applying(snapshot.upsideDownTransform),
       cellSize: snapshot.font.cellSize,
     )
-    let visibleRowDrawRuns = snapshot.grid.drawRuns.visibleRowDrawRuns(
+    let visibleRowDrawRuns = snapshot.drawRuns.visibleRowDrawRuns(
       boundingRect: boundingRect,
       font: snapshot.font,
       upsideDownTransform: snapshot.upsideDownTransform,
@@ -61,7 +61,7 @@ nonisolated enum GridCoreGraphicsRenderer {
     if
       snapshot.cursorBlinkingPhase,
       !snapshot.isBusy,
-      let cursorDrawRun = snapshot.grid.drawRuns.cursorDrawRun,
+      let cursorDrawRun = snapshot.drawRuns.cursorDrawRun,
       boundingRect.contains(cursorDrawRun.origin)
     {
       cursorDrawRun.draw(
@@ -82,9 +82,8 @@ nonisolated enum GridCoreGraphicsRenderer {
     -> [CGRect]
   {
     let snapshot = renderInput.snapshot
-    let grid = snapshot.grid
     let upsideDownTransform = CGAffineTransform(scaleX: 1, y: -1)
-      .translatedBy(x: 0, y: -Double(grid.rowsCount) * snapshot.font.cellHeight)
+      .translatedBy(x: 0, y: -Double(snapshot.size.rowsCount) * snapshot.font.cellHeight)
 
     if renderInput.updates.isFontUpdated || renderInput.updates.isAppearanceUpdated {
       return [bounds]
@@ -112,7 +111,7 @@ nonisolated enum GridCoreGraphicsRenderer {
     }
 
     if
-      let cursorDrawRun = grid.drawRuns.cursorDrawRun,
+      let cursorDrawRun = snapshot.drawRuns.cursorDrawRun,
       renderInput.updates.isCursorBlinkingPhaseUpdated || renderInput.updates.isBusyUpdated
       || renderInput.updates.isWindowKeyUpdated
     {
