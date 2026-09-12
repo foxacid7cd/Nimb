@@ -58,6 +58,7 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
   case receivedBytes
   case decodedMessages
   case expandedCells
+  case unchangedCells
   case uploadedBytes
   case coalescedSceneRequests
   /// Grids the render walk visited.
@@ -80,6 +81,7 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
     case .receivedBytes: "rx-bytes"
     case .decodedMessages: "messages"
     case .expandedCells: "cells"
+    case .unchangedCells: "cells-unchanged"
     case .uploadedBytes: "upload-bytes"
     case .coalescedSceneRequests: "scene-coalesced"
     case .gridsVisited: "visited"

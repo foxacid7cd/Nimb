@@ -773,7 +773,9 @@ public extension Actions {
                 appearance: appearance,
               )
             }
-            mergeGridUpdate(.dirtyRectangles(dirtyRectangles), forGridWithID: gridID)
+            if !dirtyRectangles.isEmpty {
+              mergeGridUpdate(.dirtyRectangles(dirtyRectangles), forGridWithID: gridID)
+            }
           }
 
         case let .errorExit(batch):

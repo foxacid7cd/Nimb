@@ -95,6 +95,36 @@ final class RedrawPerformanceTests: XCTestCase {
     XCTAssertEqual(dirtyRectangles.count, updates.count)
   }
 
+  func testUnchangedLineUpdatesDoNotInvalidateGrid() {
+    let font = Font()
+    let appearance = Appearance()
+    var grid = Grid(
+      id: Grid.OuterID,
+      size: .init(columnsCount: 12, rowsCount: 4),
+      font: font,
+      appearance: appearance,
+    )
+    let cells = [
+      Cell(character: "a", isDoubleWidth: false, highlightID: 1),
+      Cell(character: "b", isDoubleWidth: false, highlightID: 1),
+    ]
+    _ = grid.applyLineUpdate(
+      originColumn: 4,
+      cells: cells,
+      row: 3,
+      font: font,
+      appearance: appearance,
+    )
+
+    let dirtyRectangles = grid.applyLineUpdates(
+      [.init(originColumn: 4, cells: cells, row: 3)],
+      font: font,
+      appearance: appearance,
+    )
+
+    XCTAssertTrue(dirtyRectangles.isEmpty)
+  }
+
   private func decodedEvents() throws -> [UIEvent] {
     let value = try XCTUnwrap(Unpacker().unpack(Packer().pack(redrawMessageValue())).first)
     let message = try Message(value: value)

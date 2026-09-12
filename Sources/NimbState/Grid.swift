@@ -384,6 +384,10 @@ public struct Grid: Sendable, Identifiable {
 
     for update in lineUpdates {
       let columns = update.originColumn ..< update.originColumn + update.cells.count
+      if layout.cells.rowSlice(update.row, columns: columns).elementsEqual(update.cells) {
+        renderStats.count(.unchangedCells, by: update.cells.count)
+        continue
+      }
       layout.cells.replaceRow(update.row, columns: columns, with: update.cells)
 
       if let existing = changedColumnsByRow[update.row] {
