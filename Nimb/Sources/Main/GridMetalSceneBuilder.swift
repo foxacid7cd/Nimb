@@ -129,6 +129,7 @@ final nonisolated class GridMetalSceneBuilder {
       boundingRect: boundingRect,
       font: snapshot.font,
     ) { rowDrawRun, rowOrigin in
+      renderStats.count(.rowsVisited)
       let rowOriginY = CGRect(
         x: 0,
         y: rowOrigin.y,
@@ -148,6 +149,7 @@ final nonisolated class GridMetalSceneBuilder {
         // can only shift by a whole number of them and keep that snapping.
         let deltaPixels = delta * scale
         if (deltaPixels.rounded() - deltaPixels).magnitude < 1e-6 {
+          renderStats.count(.rowsReused)
           setRowOffset(Float(delta), forSlot: carried.slot, in: &scene)
           append(carried, to: &scene)
           cachedRows[rowDrawRun.id] = carried
@@ -155,6 +157,7 @@ final nonisolated class GridMetalSceneBuilder {
         }
       }
 
+      renderStats.count(.rowsBuilt)
       let built = buildRow(
         rowDrawRun: rowDrawRun,
         rowOrigin: rowOrigin,
@@ -249,6 +252,10 @@ final nonisolated class GridMetalSceneBuilder {
   /// Copies a row's instances into the scene. Always a bulk append: a row that
   /// moved is handled by its slot offset, never by rewriting its instances.
   private func append(_ row: CachedRow, to scene: inout GridMetalScene) {
+    renderStats.count(
+      .assembledInstances,
+      by: row.backgroundQuads.count + row.decorationQuads.count + row.glyphInstances.count,
+    )
     scene.backgroundQuads.append(contentsOf: row.backgroundQuads)
     scene.decorationQuads.append(contentsOf: row.decorationQuads)
     scene.glyphInstances.append(contentsOf: row.glyphInstances)

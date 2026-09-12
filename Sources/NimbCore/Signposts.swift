@@ -65,6 +65,10 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
   /// Grids that visit decided actually needed a new scene. The ratio against
   /// visited is what says whether skipping clean grids is working.
   case gridsBuilt
+  case rowsVisited
+  case rowsReused
+  case rowsBuilt
+  case assembledInstances
   /// Frames carrying isAppearanceUpdated, which forces every grid to rebuild.
   /// Approaching one per frame means no per-grid skipping can fire.
   case appearanceUpdatedFrames
@@ -78,6 +82,10 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
     case .coalescedSceneRequests: "scene-coalesced"
     case .gridsVisited: "visited"
     case .gridsBuilt: "built"
+    case .rowsVisited: "rows"
+    case .rowsReused: "rows-reused"
+    case .rowsBuilt: "rows-built"
+    case .assembledInstances: "instances"
     case .appearanceUpdatedFrames: "appearance"
     }
   }
