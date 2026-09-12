@@ -437,6 +437,35 @@ public struct Grid: Sendable, Identifiable {
       )
     }
   }
+
+  public mutating func refreshDrawRuns(
+    forHighlightIDs highlightIDs: Set<Highlight.ID>,
+    font: Font,
+    appearance: Appearance,
+  )
+  -> Bool {
+    var didRefresh = false
+    for row in layout.rowLayouts.indices where layout.rowLayouts[row].parts.contains(where: {
+      highlightIDs.contains($0.highlightID)
+    }) {
+      drawRuns.rowDrawRuns[row] = RowDrawRun(
+        row: row,
+        layout: layout.rowLayouts[row],
+        font: font,
+        appearance: appearance,
+        old: drawRuns.rowDrawRuns[row],
+      )
+      didRefresh = true
+    }
+
+    if didRefresh, drawRuns.cursorDrawRun != nil {
+      drawRuns.cursorDrawRun!.updateParent(
+        with: layout,
+        rowDrawRuns: drawRuns.rowDrawRuns,
+      )
+    }
+    return didRefresh
+  }
 }
 
 public extension IntKeyedDictionary where Value == Grid.UpdateResult {

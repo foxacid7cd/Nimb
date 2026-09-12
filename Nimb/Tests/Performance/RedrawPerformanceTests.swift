@@ -125,6 +125,41 @@ final class RedrawPerformanceTests: XCTestCase {
     XCTAssertTrue(dirtyRectangles.isEmpty)
   }
 
+  func testHighlightRefreshOnlyRebuildsRowsUsingIt() {
+    let font = Font()
+    var appearance = Appearance()
+    var grid = Grid(
+      id: Grid.OuterID,
+      size: .init(columnsCount: 4, rowsCount: 2),
+      font: font,
+      appearance: appearance,
+    )
+    _ = grid.applyLineUpdates(
+      [
+        .init(
+          originColumn: 0,
+          cells: [.init(character: "a", isDoubleWidth: false, highlightID: 1)],
+          row: 0,
+        ),
+        .init(
+          originColumn: 0,
+          cells: [.init(character: "b", isDoubleWidth: false, highlightID: 2)],
+          row: 1,
+        ),
+      ],
+      font: font,
+      appearance: appearance,
+    )
+    let oldIDs = grid.drawRuns.rowDrawRuns.map(\.id)
+    var highlight = Highlight(id: 1)
+    highlight.isBold = true
+    appearance.highlights[1] = highlight
+
+    XCTAssertTrue(grid.refreshDrawRuns(forHighlightIDs: [1], font: font, appearance: appearance))
+    XCTAssertNotEqual(grid.drawRuns.rowDrawRuns[0].id, oldIDs[0])
+    XCTAssertEqual(grid.drawRuns.rowDrawRuns[1].id, oldIDs[1])
+  }
+
   private func decodedEvents() throws -> [UIEvent] {
     let value = try XCTUnwrap(Unpacker().unpack(Packer().pack(redrawMessageValue())).first)
     let message = try Message(value: value)

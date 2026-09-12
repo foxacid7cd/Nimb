@@ -588,6 +588,7 @@ public extension Actions {
           }
 
         case let .hlAttrDefine(batch):
+          var updatedHighlightIDs = Set<Highlight.ID>()
           for params in batch {
             let noCombine = params.rgbAttrs["noCombine"]
               .flatMap(\.boolean) ?? false
@@ -681,6 +682,7 @@ public extension Actions {
             }
 
             state.appearance.highlights[params.id] = highlight
+            updatedHighlightIDs.insert(params.id)
             updates.isHighlightsUpdated = true
 
             for rawInfoItem in params.info {
@@ -699,6 +701,16 @@ public extension Actions {
                 }
               }
             }
+          }
+
+          let font = state.font
+          let appearance = state.appearance
+          for gridID in state.grids.keys where state.grids[gridID]!.refreshDrawRuns(
+            forHighlightIDs: updatedHighlightIDs,
+            font: font,
+            appearance: appearance,
+          ) {
+            mergeGridUpdate(.needsDisplay, forGridWithID: gridID)
           }
 
         case let .gridLine(batch):

@@ -154,7 +154,7 @@ final nonisolated class GridMetalSceneBuilder {
     var scene = GridMetalScene()
     previousSceneCounts.reserve(in: &scene)
 
-    if cacheContext != context || updates.isAppearanceUpdated || updates.isHighlightsUpdated {
+    if cacheContext != context || updates.isAppearanceUpdated {
       releaseSlots(of: cachedRows.values)
       cachedRows.removeAll(keepingCapacity: true)
       cacheContext = context
