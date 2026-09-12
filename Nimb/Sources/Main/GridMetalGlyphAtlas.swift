@@ -92,8 +92,8 @@ final nonisolated class GridMetalGlyphAtlas {
     return texture
   }
 
-  func entry(for glyph: CGGlyph, font: NSFont) -> GlyphEntry? {
-    let slot = fontID(for: font) << 16 | Int(glyph)
+  func entry(for glyph: CGGlyph, font: NSFont, fontID: Int) -> GlyphEntry? {
+    let slot = fontID << 16 | Int(glyph)
     let index = entryIndices[slot]
     if index != .max {
       return entries[Int(index)]
@@ -106,7 +106,7 @@ final nonisolated class GridMetalGlyphAtlas {
     return place(rasterizedGlyph: rasterizedGlyph, at: slot)
   }
 
-  private func fontID(for font: NSFont) -> Int {
+  func fontID(for font: NSFont) -> Int {
     let identity = ObjectIdentifier(font)
     if let fontID = fontIDsByIdentity[identity] {
       return fontID

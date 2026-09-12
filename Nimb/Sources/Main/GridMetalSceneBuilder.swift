@@ -328,8 +328,15 @@ final nonisolated class GridMetalSceneBuilder {
     to glyphInstances: inout [GridMetalGlyphInstance],
   ) {
     for glyphRun in glyphRuns {
+      let fontID = glyphAtlas.fontID(for: glyphRun.appKitFont)
       for index in glyphRun.glyphs.indices {
-        guard let entry = glyphAtlas.entry(for: glyphRun.glyphs[index], font: glyphRun.appKitFont) else {
+        guard
+          let entry = glyphAtlas.entry(
+            for: glyphRun.glyphs[index],
+            font: glyphRun.appKitFont,
+            fontID: fontID,
+          )
+        else {
           continue
         }
 
