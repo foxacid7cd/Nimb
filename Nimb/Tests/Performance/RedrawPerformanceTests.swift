@@ -47,6 +47,54 @@ final class RedrawPerformanceTests: XCTestCase {
     }
   }
 
+  func testBatchedLineUpdatesMatchSequentialUpdates() {
+    let font = Font()
+    let appearance = Appearance()
+    let updates = [
+      Grid.LineUpdate(
+        originColumn: 2,
+        cells: [.init(character: "a", isDoubleWidth: false, highlightID: 1)],
+        row: 0,
+      ),
+      Grid.LineUpdate(
+        originColumn: 8,
+        cells: [.init(character: "b", isDoubleWidth: false, highlightID: 2)],
+        row: 0,
+      ),
+      Grid.LineUpdate(
+        originColumn: 4,
+        cells: [.init(character: "c", isDoubleWidth: false, highlightID: 3)],
+        row: 1,
+      ),
+    ]
+    var sequential = Grid(
+      id: Grid.OuterID,
+      size: .init(columnsCount: 12, rowsCount: 2),
+      font: font,
+      appearance: appearance,
+    )
+    var batched = sequential
+
+    for update in updates {
+      _ = sequential.applyLineUpdate(
+        originColumn: update.originColumn,
+        cells: update.cells,
+        row: update.row,
+        font: font,
+        appearance: appearance,
+      )
+    }
+    let dirtyRectangles = batched.applyLineUpdates(
+      updates,
+      font: font,
+      appearance: appearance,
+    )
+
+    XCTAssertEqual(batched.layout.cells, sequential.layout.cells)
+    XCTAssertEqual(batched.layout.rowLayouts.map(\.parts), sequential.layout.rowLayouts.map(\.parts))
+    XCTAssertEqual(dirtyRectangles.count, updates.count)
+  }
+
   private func decodedEvents() throws -> [UIEvent] {
     let value = try XCTUnwrap(Unpacker().unpack(Packer().pack(redrawMessageValue())).first)
     let message = try Message(value: value)
@@ -62,23 +110,35 @@ final class RedrawPerformanceTests: XCTestCase {
       .array([.integer(1), .integer(columnsCount), .integer(rowsCount)]),
     ])
     let lines: Value = .array(
-      ["grid_line"] + (0 ..< rowsCount).map { row in
-        .array([
-          .integer(1),
-          .integer(row),
-          .integer(0),
-          .cellRuns([
-            .init(text: "l", highlightID: 1, repeatCount: 20),
-            .init(text: " ", highlightID: 0, repeatCount: 4),
-            .init(text: "v", highlightID: 2, repeatCount: 30),
-            .init(text: " ", highlightID: 0, repeatCount: 4),
-            .init(text: "=", highlightID: 3),
-            .init(text: " ", highlightID: 0, repeatCount: 4),
-            .init(text: "0", highlightID: 4),
-            .init(text: " ", highlightID: 0, repeatCount: columnsCount - 64),
+      ["grid_line"] + (0 ..< rowsCount).flatMap { row in
+        [
+          .array([
+            .integer(1),
+            .integer(row),
+            .integer(0),
+            .cellRuns([
+              .init(text: "l", highlightID: 1, repeatCount: 20),
+              .init(text: " ", highlightID: 0, repeatCount: 4),
+              .init(text: "v", highlightID: 2, repeatCount: 30),
+              .init(text: " ", highlightID: 0, repeatCount: 4),
+              .init(text: "=", highlightID: 3),
+              .init(text: " ", highlightID: 0, repeatCount: 4),
+              .init(text: "0", highlightID: 4),
+              .init(text: " ", highlightID: 0, repeatCount: 16),
+            ]),
+            false,
           ]),
-          false,
-        ])
+          .array([
+            .integer(1),
+            .integer(row),
+            .integer(columnsCount / 2),
+            .cellRuns([
+              .init(text: "x", highlightID: 5, repeatCount: 40),
+              .init(text: " ", highlightID: 0, repeatCount: 40),
+            ]),
+            false,
+          ]),
+        ]
       },
     )
     return .array([

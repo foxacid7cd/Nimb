@@ -132,6 +132,13 @@ public struct Grid: Sendable, Identifiable {
     public var shouldUpdateCursorDrawRun: Bool
   }
 
+  @PublicInit
+  public struct LineUpdate: Sendable {
+    public var originColumn: Int
+    public var cells: [Cell]
+    public var row: Int
+  }
+
   public static let OuterID = 1
 
   public var id: Int
@@ -358,29 +365,56 @@ public struct Grid: Sendable, Identifiable {
     appearance: Appearance,
   )
   -> IntegerRectangle {
-    layout.cells.replaceRow(
-      row,
-      columns: originColumn ..< originColumn + cells.count,
-      with: cells,
-    )
-
-    layout.rowLayouts[row].replaceCells(
-      columns: originColumn ..< originColumn + cells.count,
-      rowCells: layout.cells.rowSlice(row),
-    )
-
-    drawRuns.rowDrawRuns[row] = RowDrawRun(
-      row: row,
-      layout: layout.rowLayouts[row],
+    applyLineUpdates(
+      [.init(originColumn: originColumn, cells: cells, row: row)],
       font: font,
       appearance: appearance,
-      old: drawRuns.rowDrawRuns[row],
-    )
+    )[0]
+  }
 
-    return .init(
-      origin: .init(column: originColumn, row: row),
-      size: .init(columnsCount: cells.count, rowsCount: 1),
-    )
+  public mutating func applyLineUpdates(
+    _ lineUpdates: some Sequence<LineUpdate>,
+    font: Font,
+    appearance: Appearance,
+  )
+  -> [IntegerRectangle] {
+    var changedColumnsByRow = [Int: Range<Int>]()
+    var changedRows = [Int]()
+    var dirtyRectangles = [IntegerRectangle]()
+
+    for update in lineUpdates {
+      let columns = update.originColumn ..< update.originColumn + update.cells.count
+      layout.cells.replaceRow(update.row, columns: columns, with: update.cells)
+
+      if let existing = changedColumnsByRow[update.row] {
+        changedColumnsByRow[update.row] = min(existing.lowerBound, columns.lowerBound)
+          ..< max(existing.upperBound, columns.upperBound)
+      } else {
+        changedColumnsByRow[update.row] = columns
+        changedRows.append(update.row)
+      }
+
+      dirtyRectangles.append(.init(
+        origin: .init(column: update.originColumn, row: update.row),
+        size: .init(columnsCount: update.cells.count, rowsCount: 1),
+      ))
+    }
+
+    for row in changedRows {
+      layout.rowLayouts[row].replaceCells(
+        columns: changedColumnsByRow[row]!,
+        rowCells: layout.cells.rowSlice(row),
+      )
+      drawRuns.rowDrawRuns[row] = RowDrawRun(
+        row: row,
+        layout: layout.rowLayouts[row],
+        font: font,
+        appearance: appearance,
+        old: drawRuns.rowDrawRuns[row],
+      )
+    }
+
+    return dirtyRectangles
   }
 
   public mutating func flushDrawRuns(font: Font, appearance: Appearance) {

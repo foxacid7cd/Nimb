@@ -702,7 +702,9 @@ public extension Actions {
           }
 
         case let .gridLine(batch):
-          for params in batch {
+          var lineUpdatesByGrid = IntKeyedDictionary<[Grid.LineUpdate]>()
+
+          gridLines: for params in batch {
             if state.debug.isStoreActionsLoggingEnabled {
               logger.trace("UIEvent.gridLine: grid: \(params.grid), row: \(params.row), colStart: \(params.colStart)")
             }
@@ -716,7 +718,7 @@ public extension Actions {
             // replacement below copy the entire buffer.
             guard state.grids[gridID] != nil else {
               handleError(Failure("grid line event: Grid doesn't exist or destroyed", gridID))
-              break
+              break gridLines
             }
 
             let cells = measuringRenderStage("grid line expand", .gridLineExpand) {
@@ -752,22 +754,26 @@ public extension Actions {
             }
             renderStats.count(.expandedCells, by: cells.count)
 
-            // Hoisted so neither is read from `state` while the grid slot is
-            // being mutated through it.
-            let font = state.font
-            let appearance = state.appearance
+            var gridLineUpdates = lineUpdatesByGrid.removeValue(forKey: gridID) ?? []
+            gridLineUpdates.append(.init(
+              originColumn: colStart,
+              cells: cells,
+              row: row,
+            ))
+            lineUpdatesByGrid[gridID] = gridLineUpdates
+          }
 
-            let dirtyRectangle = measuringRenderStage("grid line update", .gridLineUpdate) {
-              state.grids[gridID]!.applyLineUpdate(
-                originColumn: colStart,
-                cells: cells,
-                row: row,
+          let font = state.font
+          let appearance = state.appearance
+          for (gridID, lineUpdates) in lineUpdatesByGrid {
+            let dirtyRectangles = measuringRenderStage("grid line update", .gridLineUpdate) {
+              state.grids[gridID]!.applyLineUpdates(
+                lineUpdates,
                 font: font,
                 appearance: appearance,
               )
             }
-
-            mergeGridUpdate(.dirtyRectangles([dirtyRectangle]), forGridWithID: gridID)
+            mergeGridUpdate(.dirtyRectangles(dirtyRectangles), forGridWithID: gridID)
           }
 
         case let .errorExit(batch):

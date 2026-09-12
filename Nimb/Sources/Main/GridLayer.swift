@@ -95,7 +95,7 @@ public nonisolated class GridLayer: CAMetalLayer {
         guard let baseAddress = bytes.baseAddress else {
           return
         }
-        measuringRenderStage("metal upload", .metalUpload) {
+        _ = measuringRenderStage("metal upload", .metalUpload) {
           memcpy(entry.buffer.contents(), baseAddress, length)
         }
       }
