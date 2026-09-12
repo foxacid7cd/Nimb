@@ -20,6 +20,7 @@ public let renderStatsLogger = Logger(
 public enum RenderStage: Int, CaseIterable, Sendable {
   case messagePackDecode
   case messageDecode
+  case uiEventDecode
   /// Applying actions to State on the reducer task.
   case reduce
   case gridLineExpand
@@ -39,6 +40,7 @@ public enum RenderStage: Int, CaseIterable, Sendable {
     switch self {
     case .messagePackDecode: "msgpack-decode"
     case .messageDecode: "message-decode"
+    case .uiEventDecode: "ui-event-decode"
     case .reduce: "reduce"
     case .gridLineExpand: "grid-line-expand"
     case .gridLineUpdate: "grid-line-update"

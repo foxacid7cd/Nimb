@@ -24,7 +24,7 @@ public final nonisolated class Store: Sendable {
 
   private enum PendingActions: Sendable {
     case single(any Action)
-    case batch([any Action])
+    case redrawBatches([[UIEvent]])
     case failure(any Error)
   }
 
@@ -112,17 +112,13 @@ public final nonisolated class Store: Sendable {
             return
           }
 
-          var redrawActions = [any Action]()
-          redrawActions.reserveCapacity(neovimNotificationsBatch.count)
+          var redrawBatches = [[UIEvent]]()
+          redrawBatches.reserveCapacity(neovimNotificationsBatch.count)
 
           for notification in neovimNotificationsBatch {
             switch notification {
             case let .redraw(uiEvents):
-              redrawActions.append(
-                Actions.ApplyUIEvents(
-                  uiEvents: uiEvents,
-                ),
-              )
+              redrawBatches.append(uiEvents)
 
             case let .nvimErrorEvent(event):
               alertsContinuation.yield("nvimErrorEvent received \(cd: event)")
@@ -132,15 +128,8 @@ public final nonisolated class Store: Sendable {
             }
           }
 
-          switch redrawActions.count {
-          case 0:
-            break
-
-          case 1:
-            pendingActionsContinuation.yield(.single(redrawActions[0]))
-
-          default:
-            pendingActionsContinuation.yield(.batch(redrawActions))
+          if !redrawBatches.isEmpty {
+            pendingActionsContinuation.yield(.redrawBatches(redrawBatches))
           }
         }
       } catch {
@@ -205,7 +194,7 @@ public final nonisolated class Store: Sendable {
     // batch carrying flush completes one.
     var isRedrawFrameIncomplete = false
 
-    func apply(_ action: any Action) {
+    func apply(_ action: some Action) {
       let stateBeforeAction = state.debug.isUpdatesVerificationEnabled ? state : nil
 
       let newUpdates = measuringRenderStage("reduce", .reduce) {
@@ -250,9 +239,9 @@ public final nonisolated class Store: Sendable {
       case let .single(action):
         apply(action)
 
-      case let .batch(batch):
-        for action in batch {
-          apply(action)
+      case let .redrawBatches(batches):
+        for uiEvents in batches {
+          apply(Actions.ApplyUIEvents(uiEvents: uiEvents))
         }
 
       case let .failure(error):

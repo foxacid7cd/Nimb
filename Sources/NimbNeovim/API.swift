@@ -15,7 +15,10 @@ public final class API: Sendable {
       let task = Task {
         do {
           for try await batch in notifications {
-            try continuation.yield(Self.neovimNotifications(from: batch))
+            let decoded = try measuringRenderStage("ui event decode", .uiEventDecode) {
+              try Self.neovimNotifications(from: batch)
+            }
+            continuation.yield(decoded)
           }
           continuation.finish()
         } catch {
