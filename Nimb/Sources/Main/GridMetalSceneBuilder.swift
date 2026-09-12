@@ -38,6 +38,8 @@ final nonisolated class GridMetalSceneBuilder {
   private var cachedRows: [RowDrawRun.ID: CachedRow] = [:]
   private var carriedRows: [RowDrawRun.ID: CachedRow] = [:]
   private var cacheContext: CacheContext? = nil
+  private var cachedStaticScene: GridMetalScene? = nil
+  private var cachedStaticBounds: CGRect? = nil
 
   /// Row slots handed out to cached rows, and the ones going spare. A slot is
   /// baked into the row's instances, so it outlives scrolling. Zero is reserved.
@@ -49,6 +51,7 @@ final nonisolated class GridMetalSceneBuilder {
   }
 
   func makeFrame(
+    gridID: Grid.ID,
     snapshot: GridDrawSnapshot,
     updates: State.Updates,
     bounds: CGRect,
@@ -61,6 +64,7 @@ final nonisolated class GridMetalSceneBuilder {
 
     let scene = measuringRenderStage("scene build", .sceneBuild) {
       buildScene(
+        gridID: gridID,
         snapshot: snapshot,
         updates: updates,
         bounds: bounds,
@@ -91,6 +95,7 @@ final nonisolated class GridMetalSceneBuilder {
   }
 
   private func buildScene(
+    gridID: Grid.ID,
     snapshot: GridDrawSnapshot,
     updates: State.Updates,
     bounds: CGRect,
@@ -98,9 +103,6 @@ final nonisolated class GridMetalSceneBuilder {
     scale: CGFloat,
   )
   -> GridMetalScene {
-    var scene = GridMetalScene()
-    previousSceneCounts.reserve(in: &scene)
-
     let boundingRect = IntegerRectangle(
       frame: bounds.applying(snapshot.upsideDownTransform),
       cellSize: snapshot.font.cellSize,
@@ -111,6 +113,32 @@ final nonisolated class GridMetalSceneBuilder {
       scale: scale,
       columns: boundingRect.columns,
     )
+
+    if
+      cacheContext == context,
+      cachedStaticBounds == bounds,
+      !updates.isFontUpdated,
+      !updates.isAppearanceUpdated,
+      !updates.isHighlightsUpdated,
+      updates.gridUpdates[gridID] == nil,
+      !updates.updatedLayoutGridIDs.contains(gridID),
+      var scene = cachedStaticScene
+    {
+      renderStats.count(.staticScenesReused)
+      appendCursorIfVisible(
+        snapshot: snapshot,
+        boundingRect: boundingRect,
+        glyphAtlas: glyphAtlas,
+        scale: scale,
+        to: &scene,
+      )
+      previousSceneCounts = .init(scene: scene)
+      return scene
+    }
+
+    var scene = GridMetalScene()
+    previousSceneCounts.reserve(in: &scene)
+
     if cacheContext != context || updates.isAppearanceUpdated || updates.isHighlightsUpdated {
       releaseSlots(of: cachedRows.values)
       cachedRows.removeAll(keepingCapacity: true)
@@ -173,6 +201,27 @@ final nonisolated class GridMetalSceneBuilder {
       cachedRows[rowDrawRun.id] = built
     }
 
+    cachedStaticScene = scene
+    cachedStaticBounds = bounds
+    appendCursorIfVisible(
+      snapshot: snapshot,
+      boundingRect: boundingRect,
+      glyphAtlas: glyphAtlas,
+      scale: scale,
+      to: &scene,
+    )
+
+    previousSceneCounts = .init(scene: scene)
+    return scene
+  }
+
+  private func appendCursorIfVisible(
+    snapshot: GridDrawSnapshot,
+    boundingRect: IntegerRectangle,
+    glyphAtlas: GridMetalGlyphAtlas,
+    scale: CGFloat,
+    to scene: inout GridMetalScene,
+  ) {
     if
       snapshot.cursorBlinkingPhase,
       // Hidden while Neovim is busy, as busy_start asks. Not tied to the
@@ -189,9 +238,6 @@ final nonisolated class GridMetalSceneBuilder {
         to: &scene,
       )
     }
-
-    previousSceneCounts = .init(scene: scene)
-    return scene
   }
 
   /// Turns one row into instances, in the coordinates given by `rowOrigin`.

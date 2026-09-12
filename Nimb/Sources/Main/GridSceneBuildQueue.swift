@@ -14,6 +14,7 @@ final nonisolated class GridSceneBuildQueue: Sendable {
   /// Unchecked because it carries a CALayer and a builder, both reached only
   /// from the drain task. `bounds`/`scale` are captured at submit time.
   private struct Request: @unchecked Sendable {
+    let gridID: Grid.ID
     let target: GridLayer
     let builder: GridMetalSceneBuilder
     let snapshot: GridDrawSnapshot
@@ -49,6 +50,7 @@ final nonisolated class GridSceneBuildQueue: Sendable {
     scale: CGFloat,
   ) {
     let request = Request(
+      gridID: gridID,
       target: target,
       builder: builder,
       snapshot: snapshot,
@@ -87,6 +89,7 @@ final nonisolated class GridSceneBuildQueue: Sendable {
 
       for request in batch {
         let metalFrame = request.builder.makeFrame(
+          gridID: request.gridID,
           snapshot: request.snapshot,
           updates: request.updates,
           bounds: request.bounds,
