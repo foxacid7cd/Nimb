@@ -712,56 +712,60 @@ public extension Actions {
             let colStart = params.colStart
             let data = params.data
 
-            // Only the column count is read out: binding the grid to a local
-            // would make the row replacement below copy the entire buffer.
-            guard let columnsCount = state.grids[gridID]?.columnsCount else {
+            // Avoid binding the grid to a local, which would make the row
+            // replacement below copy the entire buffer.
+            guard state.grids[gridID] != nil else {
               handleError(Failure("grid line event: Grid doesn't exist or destroyed", gridID))
               break
             }
 
-            var cells = [Cell]()
-            let remainingColumns = columnsCount - colStart
-            cells.reserveCapacity(max(data.runs.count, remainingColumns))
-            var highlightID = 0
+            let cells = measuringRenderStage("grid line expand", .gridLineExpand) {
+              var cells = [Cell]()
+              cells.reserveCapacity(data.runs.reduce(into: 0) { count, run in
+                count += run.repeatCount ?? 1
+              })
+              var highlightID = 0
 
-            // The runs arrive already decoded, so this is only the expansion
-            // into cells.
-            for run in data.runs {
-              if let runHighlightID = run.highlightID {
-                highlightID = runHighlightID
-              }
+              for run in data.runs {
+                if let runHighlightID = run.highlightID {
+                  highlightID = runHighlightID
+                }
 
-              if run.text.count > 1 {
-                handleError(
-                  Failure("grid line cell text has more than one character", run.text),
+                if run.text.count > 1 {
+                  handleError(
+                    Failure("grid line cell text has more than one character", run.text),
+                  )
+                } else if run.text.isEmpty, !cells.isEmpty {
+                  cells[cells.count - 1].isDoubleWidth = true
+                }
+
+                let cell = Cell(
+                  character: run.text.first,
+                  isDoubleWidth: false,
+                  highlightID: highlightID,
                 )
-              } else if run.text.isEmpty, !cells.isEmpty {
-                cells[cells.count - 1].isDoubleWidth = true
+                for _ in 0 ..< (run.repeatCount ?? 1) {
+                  cells.append(cell)
+                }
               }
-
-              let cell = Cell(
-                character: run.text.first,
-                isDoubleWidth: false,
-                highlightID: highlightID,
-              )
-              for _ in 0 ..< (run.repeatCount ?? 1) {
-                cells.append(cell)
-              }
+              return cells
             }
+            renderStats.count(.expandedCells, by: cells.count)
 
             // Hoisted so neither is read from `state` while the grid slot is
             // being mutated through it.
             let font = state.font
             let appearance = state.appearance
 
-            let dirtyRectangle = state.grids[gridID]!
-              .applyLineUpdate(
+            let dirtyRectangle = measuringRenderStage("grid line update", .gridLineUpdate) {
+              state.grids[gridID]!.applyLineUpdate(
                 originColumn: colStart,
                 cells: cells,
                 row: row,
                 font: font,
                 appearance: appearance,
               )
+            }
 
             mergeGridUpdate(.dirtyRectangles([dirtyRectangle]), forGridWithID: gridID)
           }

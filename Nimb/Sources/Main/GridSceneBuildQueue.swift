@@ -60,6 +60,8 @@ final nonisolated class GridSceneBuildQueue: Sendable {
     let shouldStartDraining = storage.withLock { state in
       if state.requests.updateValue(request, forKey: gridID) == nil {
         state.gridIDs.append(gridID)
+      } else {
+        renderStats.count(.coalescedSceneRequests)
       }
       guard !state.isDraining else {
         return false

@@ -65,8 +65,14 @@ public final class RPC: Sendable {
           break
         }
 
-        let messages = try unpacker.unpack(data)
-          .map { try Message(value: $0) }
+        renderStats.count(.receivedBytes, by: data.count)
+        let values = try measuringRenderStage("msgpack decode", .messagePackDecode) {
+          try unpacker.unpack(data)
+        }
+        let messages = try measuringRenderStage("message decode", .messageDecode) {
+          try values.map { try Message(value: $0) }
+        }
+        renderStats.count(.decodedMessages, by: messages.count)
 
         for message in messages {
           switch message {

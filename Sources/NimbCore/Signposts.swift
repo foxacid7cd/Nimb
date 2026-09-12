@@ -18,8 +18,12 @@ public let renderStatsLogger = Logger(
 )
 
 public enum RenderStage: Int, CaseIterable, Sendable {
+  case messagePackDecode
+  case messageDecode
   /// Applying actions to State on the reducer task.
   case reduce
+  case gridLineExpand
+  case gridLineUpdate
   /// The whole main-actor render tree walk, once per coalesced frame.
   case frameHop
   /// Turning one grid's snapshot into Metal instance data.
@@ -29,20 +33,31 @@ public enum RenderStage: Int, CaseIterable, Sendable {
   case glyphRasterize
   /// Acquiring a drawable, encoding and presenting one grid.
   case display
+  case metalUpload
 
   public var name: String {
     switch self {
+    case .messagePackDecode: "msgpack-decode"
+    case .messageDecode: "message-decode"
     case .reduce: "reduce"
+    case .gridLineExpand: "grid-line-expand"
+    case .gridLineUpdate: "grid-line-update"
     case .frameHop: "frame-hop"
     case .sceneBuild: "scene-build"
     case .glyphRasterize: "glyph-raster"
     case .display: "display"
+    case .metalUpload: "metal-upload"
     }
   }
 }
 
 /// Things worth counting per frame rather than timing.
 public enum RenderCounter: Int, CaseIterable, Sendable {
+  case receivedBytes
+  case decodedMessages
+  case expandedCells
+  case uploadedBytes
+  case coalescedSceneRequests
   /// Grids the render walk visited.
   case gridsVisited
   /// Grids that visit decided actually needed a new scene. The ratio against
@@ -54,6 +69,11 @@ public enum RenderCounter: Int, CaseIterable, Sendable {
 
   public var name: String {
     switch self {
+    case .receivedBytes: "rx-bytes"
+    case .decodedMessages: "messages"
+    case .expandedCells: "cells"
+    case .uploadedBytes: "upload-bytes"
+    case .coalescedSceneRequests: "scene-coalesced"
     case .gridsVisited: "visited"
     case .gridsBuilt: "built"
     case .appearanceUpdatedFrames: "appearance"
@@ -117,12 +137,12 @@ public final class RenderStats: Sendable {
     }
   }
 
-  public func count(_ counter: RenderCounter) {
+  public func count(_ counter: RenderCounter, by amount: Int = 1) {
     storage.withLock { state in
       guard state.isEnabled else {
         return
       }
-      state.counters[counter.rawValue] += 1
+      state.counters[counter.rawValue] += amount
     }
   }
 
@@ -174,7 +194,7 @@ public final class RenderStats: Sendable {
         count: RenderStage.allCases.count,
       )
       state.counters = .init(repeating: 0, count: RenderCounter.allCases.count)
-      return "frame stats over \(frameCount) frames (mean/peak per call, calls per frame): \(description)  |  grids/frame \(counters)"
+      return "frame stats over \(frameCount) frames (mean/peak per call, calls per frame): \(description)  |  counts/frame \(counters)"
     }
 
     if let summary {

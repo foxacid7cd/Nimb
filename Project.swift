@@ -235,6 +235,22 @@ let project = Project(
       ),
     ),
 
+    .target(
+      name: "NimbPerformanceTests",
+      destinations: Nimb.destinations,
+      product: .unitTests,
+      bundleId: "foxacid7cd.NimbPerformanceTests",
+      deploymentTargets: Nimb.deploymentTargets,
+      infoPlist: .default,
+      sources: ["Nimb/Tests/Performance/**"],
+      dependencies: [
+        .target(name: "NimbState"),
+        .target(name: "NimbNeovim"),
+        .target(name: "NimbCore"),
+      ],
+      settings: Nimb.settings(),
+    ),
+
     // ── Neovim API code generator ───────────────────────────────────────
     .target(
       name: "generate",
@@ -262,6 +278,7 @@ let project = Project(
       name: "Nimb",
       shared: true,
       buildAction: .buildAction(targets: ["Nimb"]),
+      testAction: .targets(["NimbPerformanceTests"], configuration: "Debug"),
       runAction: .runAction(configuration: "Debug", executable: "Nimb"),
       archiveAction: .archiveAction(configuration: "Release"),
     ),
