@@ -40,6 +40,7 @@ final nonisolated class GridMetalSceneBuilder {
   private var cacheContext: CacheContext? = nil
   private var cachedStaticScene: GridMetalScene? = nil
   private var cachedStaticBounds: CGRect? = nil
+  private var staticRevision: UInt64 = 0
 
   /// Row slots handed out to cached rows, and the ones going spare. A slot is
   /// baked into the row's instances, so it outlives scrolling. Zero is reserved.
@@ -75,6 +76,7 @@ final nonisolated class GridMetalSceneBuilder {
 
     return .init(
       scene: scene,
+      staticRevision: staticRevision,
       atlasTexture: glyphAtlas.texture,
       clearColor: snapshot.appearance.defaultBackgroundColor.metalClearColor,
     )
@@ -203,6 +205,7 @@ final nonisolated class GridMetalSceneBuilder {
 
     cachedStaticScene = scene
     cachedStaticBounds = bounds
+    staticRevision &+= 1
     appendCursorIfVisible(
       snapshot: snapshot,
       boundingRect: boundingRect,

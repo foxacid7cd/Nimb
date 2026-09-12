@@ -11,6 +11,7 @@ import Metal
 /// documents it as safe to build on one thread and consume on another.
 nonisolated struct GridPreparedMetalFrame: @unchecked Sendable {
   let scene: GridMetalScene
+  let staticRevision: UInt64
   let atlasTexture: MTLTexture
   let clearColor: MTLClearColor
 }

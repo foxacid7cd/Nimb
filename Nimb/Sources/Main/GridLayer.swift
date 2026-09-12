@@ -49,6 +49,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     private struct Entry {
       let buffer: MTLBuffer
       let capacity: Int
+      var revision: UInt64? = nil
     }
 
     private let device: MTLDevice
@@ -69,7 +70,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       frameIndex = (frameIndex + 1) % depth
     }
 
-    func buffer<T>(for values: [T], kind: Kind) -> MTLBuffer? {
+    func buffer<T>(for values: [T], kind: Kind, revision: UInt64? = nil) -> MTLBuffer? {
       let length = MemoryLayout<T>.stride * values.count
       guard length > 0 else {
         return nil
@@ -88,8 +89,13 @@ public nonisolated class GridLayer: CAMetalLayer {
         entries[slot] = Entry(buffer: buffer, capacity: capacity)
       }
 
-      guard let entry = entries[slot] else {
+      guard var entry = entries[slot] else {
         return nil
+      }
+
+      if let revision, entry.revision == revision {
+        renderStats.count(.metalBuffersReused)
+        return entry.buffer
       }
 
       values.withUnsafeBytes { bytes in
@@ -101,6 +107,8 @@ public nonisolated class GridLayer: CAMetalLayer {
         }
       }
       renderStats.count(.uploadedBytes, by: length)
+      entry.revision = revision
+      entries[slot] = entry
 
       return entry.buffer
     }
@@ -305,6 +313,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     let rowOffsetsBuffer = bufferCache.buffer(
       for: metalFrame.scene.rowOffsets,
       kind: .rowOffsets,
+      revision: metalFrame.staticRevision,
     )
 
     encodeQuadInstances(
@@ -313,6 +322,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       uniforms: uniforms,
       renderer: renderer,
       bufferCache: bufferCache,
+      revision: metalFrame.staticRevision,
       rowOffsetsBuffer: rowOffsetsBuffer,
       encoder: renderEncoder,
     )
@@ -322,6 +332,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       uniforms: uniforms,
       renderer: renderer,
       bufferCache: bufferCache,
+      revision: metalFrame.staticRevision,
       rowOffsetsBuffer: rowOffsetsBuffer,
       encoder: renderEncoder,
     )
@@ -331,6 +342,7 @@ public nonisolated class GridLayer: CAMetalLayer {
       uniforms: uniforms,
       renderer: renderer,
       bufferCache: bufferCache,
+      revision: metalFrame.staticRevision,
       rowOffsetsBuffer: rowOffsetsBuffer,
       atlasTexture: metalFrame.atlasTexture,
       encoder: renderEncoder,
@@ -384,13 +396,14 @@ public nonisolated class GridLayer: CAMetalLayer {
     uniforms: MetalUniforms,
     renderer: GridMetalRenderer,
     bufferCache: MetalBufferCache,
+    revision: UInt64? = nil,
     rowOffsetsBuffer: MTLBuffer?,
     encoder: MTLRenderCommandEncoder,
   ) {
     guard
       !instances.isEmpty,
       let rowOffsetsBuffer,
-      let buffer = bufferCache.buffer(for: instances, kind: kind)
+      let buffer = bufferCache.buffer(for: instances, kind: kind, revision: revision)
     else {
       return
     }
@@ -409,6 +422,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     uniforms: MetalUniforms,
     renderer: GridMetalRenderer,
     bufferCache: MetalBufferCache,
+    revision: UInt64? = nil,
     rowOffsetsBuffer: MTLBuffer?,
     atlasTexture: MTLTexture,
     encoder: MTLRenderCommandEncoder,
@@ -416,7 +430,7 @@ public nonisolated class GridLayer: CAMetalLayer {
     guard
       !instances.isEmpty,
       let rowOffsetsBuffer,
-      let buffer = bufferCache.buffer(for: instances, kind: kind)
+      let buffer = bufferCache.buffer(for: instances, kind: kind, revision: revision)
     else {
       return
     }
